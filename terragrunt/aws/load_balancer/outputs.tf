@@ -1,21 +1,14 @@
-output "lb_arn" {
-  description = "The ARN of the application load balancer"
-  value       = aws_lb.main.arn
+output "lb_listener" {
+  description = "Load balancer listener of AI Answers"
+  value       = aws_lb_listener.ai_answers_listener
 }
 
-
-output "lb_dns_name" {
-  description = "The DNS name of the application load balancer"
-  value       = aws_lb.main.dns_name
+output "lb_target_group_arn" {
+  description = "Arn of the Load balancer target group"
+  value       = aws_lb_target_group.ai_answers.arn
 }
 
-output "https_listener_arn" {
-  description = "The ARN of the HTTPS listener"
-  value       = aws_lb_listener.https.arn
-}
-
-
-output "lb_zone_id" {
-  description = "The canonical hosted zone ID of the load balancer"
-  value       = aws_lb.main.zone_id
+output "ai_answers_load_balancer_sg" {
+  description = "Security group of the Load balancer"
+  value       = aws_security_group.ai_answers_load_balancer_sg.id
 }

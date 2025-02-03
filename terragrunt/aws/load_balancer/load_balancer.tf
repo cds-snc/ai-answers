@@ -1,72 +1,61 @@
-resource "aws_lb" "main" {
-  name               = "ai-answers-lb"          # Unique name for the lb
-  internal           = false                     # false = internet-facing, true = internal
-  load_balancer_type = "application"            # lb type (as opposed to Network Load Balancer)
-  security_groups    = [var.lb_security_group_id]  # Security group that controls inbound/outbound traffic
-  subnets            = var.public_subnet_ids    # Public subnets where the lb will be placed
+resource "aws_lb" "ai_answers" {
 
-  enable_deletion_protection = false  ƒ          # Set to true in production to prevent accidental deletion
+  name               = "ai-answers-lb"
+  internal           = false #tfsec:ignore:AWS005
+  load_balancer_type = "application"
+
+  enable_deletion_protection = true
+  drop_invalid_header_fields = true
+
+  security_groups = [
+    aws_security_group.ai_answers_load_balancer_sg.id
+  ]
+
+  subnets = var.vpc_public_subnet_ids
 
   tags = {
-    Environment = var.environment
-    Terraform   = "true"
+    "CostCentre" = var.billing_code
   }
 }
 
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.main.arn          # Attaches listener to our lb
-  port              = "443"                     # Standard HTTPS port
-  protocol          = "HTTPS"                   # Use HTTPS protocol
-  ssl_policy        = "ELBSecurityPolicy-2016-08"  # AWS-managed SSL policy
-  certificate_arn   = var.certificate_arn       # SSL certificate for HTTPS
+resource "aws_lb_listener" "ai_answers_listener" {
+  depends_on = [
+    aws_acm_certificate.ai_answers,
+    aws_route53_record.ai_answers_certificate_validation,
+    aws_acm_certificate_validation.ai_answers,
+  ]
+
+  load_balancer_arn = aws_lb.ai_answers.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = aws_acm_certificate.ai_answers.arn
 
   default_action {
-    type = "fixed-response"                     # Returns a fixed response
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "Not Found"
-      status_code  = "404"
-    }
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ai_answers.arn
   }
 }
 
-# HTTP Listener
-# Automatically redirects HTTP traffic to HTTPS
-resource "aws_lb_listener" "http_redirect" {
-  load_balancer_arn = aws_lb.main.arn          # Attaches listener to our lb
-  port              = "80"                      # Standard HTTP port
-  protocol          = "HTTP"                    # Use HTTP protocol
+resource "aws_lb_target_group" "ai_answers" {
+  name                 = "ai-answers"
+  port                 = 8000
+  protocol             = "HTTP"
+  protocol_version     = "HTTP1"
+  target_type          = "ip"
+  deregistration_delay = 30
+  vpc_id               = var.vpc_id
 
-  # Redirect all HTTP traffic to HTTPS
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"                       # Redirect to HTTPS port
-      protocol    = "HTTPS"                     # Redirect to HTTPS protocol
-      status_code = "HTTP_301"                  # Permanent redirect
-    }
+  health_check {
+    enabled             = true
+    interval            = 60
+    path                = "/health"
+    timeout             = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
   }
-}
 
-
-variable "environment" {
-  type        = string
-  description = "The environment name"
-}
-
-variable "lb_security_group_id" {
-  type        = string
-  description = "Security group ID for the lb"
-}
-
-variable "public_subnet_ids" {
-  type        = list(string)
-  description = "List of public subnet IDs for the lb"
-}
-
-variable "certificate_arn" {
-  type        = string
-  description = "ARN of the SSL certificate for HTTPS"
+  tags = {
+    "CostCentre" = var.billing_code
+  }
 }
