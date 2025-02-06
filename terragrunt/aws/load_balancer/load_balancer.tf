@@ -39,7 +39,7 @@ resource "aws_lb_listener" "ai_answers_listener" {
 
 resource "aws_lb_target_group" "ai_answers" {
   name                 = "ai-answers"
-  port                 = 8000
+  port                 = 3001
   protocol             = "HTTP"
   protocol_version     = "HTTP1"
   target_type          = "ip"
@@ -49,7 +49,7 @@ resource "aws_lb_target_group" "ai_answers" {
   health_check {
     enabled             = true
     interval            = 60
-    path                = "/health"
+    path                = "/"
     timeout             = 30
     healthy_threshold   = 2
     unhealthy_threshold = 2

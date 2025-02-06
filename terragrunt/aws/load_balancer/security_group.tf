@@ -12,8 +12,8 @@ resource "aws_security_group" "ai_answers_load_balancer_sg" {
   } 
   egress {
     protocol    = "tcp"
-    from_port   = 8000
-    to_port     = 8000
+    from_port   = 3001
+    to_port     = 3001
     cidr_blocks = [var.vpc_cidr_block] #tfsec:ignore:AWS008
   }
 
