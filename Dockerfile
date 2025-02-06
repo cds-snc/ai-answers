@@ -1,5 +1,6 @@
 # Use Node.js LTS as the base image
-FROM node:lts
+FROM node:lts AS build
+
 
 # Set working directory
 WORKDIR /app
@@ -15,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # Use Node.js for the backend
-FROM node:18
+FROM node:lts
 
 # Set working directory
 WORKDIR /app

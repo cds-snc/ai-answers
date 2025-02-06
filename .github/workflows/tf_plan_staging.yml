@@ -33,6 +33,7 @@ jobs:
           - module: ssm
           - module: network
           - module: hosted_zone
+          - module: load_balancer
           - module: database
     runs-on: ubuntu-latest
     steps:

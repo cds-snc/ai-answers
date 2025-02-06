@@ -61,3 +61,7 @@ jobs:
       - name: Apply database
         working-directory: terragrunt/env/staging/database
         run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply load balancer
+        working-directory: terragrunt/env/staging/load_balancer
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
