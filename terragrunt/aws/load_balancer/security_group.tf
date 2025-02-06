@@ -9,7 +9,7 @@ resource "aws_security_group" "ai_answers_load_balancer_sg" {
     to_port     = 443
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow HTTPS inbound traffic"
-  } 
+  }
   egress {
     protocol    = "tcp"
     from_port   = 3001

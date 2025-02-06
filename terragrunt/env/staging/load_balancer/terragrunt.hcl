@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../hosted_zone","../network"]
+  paths = ["../hosted_zone", "../network"]
 }
 
 dependency "hosted_zone" {
@@ -26,7 +26,7 @@ dependency "network" {
     vpc_id                 = ""
     vpc_private_subnet_ids = [""]
     vpc_public_subnet_ids  = [""]
-    vpc_cidr_block        = ""
+    vpc_cidr_block         = ""
   }
 }
 
@@ -36,9 +36,9 @@ inputs = {
   vpc_id                 = dependency.network.outputs.vpc_id
   vpc_private_subnet_ids = dependency.network.outputs.vpc_private_subnet_ids
   vpc_public_subnet_ids  = dependency.network.outputs.vpc_public_subnet_ids
-  vpc_cidr_block        = dependency.network.outputs.vpc_cidr_block
-  environment           = "staging"
-} 
+  vpc_cidr_block         = dependency.network.outputs.vpc_cidr_block
+  environment            = "staging"
+}
 
 include {
   path = find_in_parent_folders("root.hcl")
