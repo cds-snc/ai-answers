@@ -17,7 +17,7 @@ resource "aws_security_group" "ai_answers_load_balancer_sg" {
     cidr_blocks = [var.vpc_cidr_block] #tfsec:ignore:AWS008
   }
 
-    tags = {
-        "CostCentre" = var.billing_code
-    }
+  tags = {
+    "CostCentre" = var.billing_code
+  }
 }
