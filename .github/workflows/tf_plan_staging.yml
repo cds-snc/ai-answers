@@ -37,6 +37,7 @@ jobs:
           - module: load_balancer
           - module: database
           - module: iam
+          - module: ecs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
