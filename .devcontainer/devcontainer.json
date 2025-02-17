@@ -23,10 +23,9 @@
         }
     },
     "forwardPorts": [3000],
-    "postCreateCommand": "npm install",
+    // "postCreateCommand": "npm install",
     "remoteUser": "node",
     "features": {
-        "ghcr.io/devcontainers/features/node:1": {},
         "ghcr.io/devcontainers/features/terraform:1": {},
         "ghcr.io/devcontainers/features/aws-cli:1": {},
         "ghcr.io/devcontainers-extra/features/terragrunt:1": {}
