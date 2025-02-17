@@ -23,7 +23,7 @@
         }
     },
     "forwardPorts": [3000],
-    // "postCreateCommand": "npm install",
+    "postCreateCommand": "npm install",
     "remoteUser": "node",
     "features": {
         "ghcr.io/devcontainers/features/terraform:1": {},
