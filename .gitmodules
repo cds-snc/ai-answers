@@ -1,0 +1,3 @@
+[submodule "opa_checks"]
+	path = opa_checks
+	url = https://github.com/cds-snc/opa_checks
