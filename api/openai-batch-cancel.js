@@ -3,7 +3,7 @@ import { Batch } from '../models/batch.js';
 import dbConnect from './db-connect.js';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export default async function handler(req, res) {
@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   }
   const { batchId } = req.query;
   try {
-    
     if (!batchId) {
       return res.status(400).json({ error: 'Batch ID is required' });
     }
@@ -21,14 +20,14 @@ export default async function handler(req, res) {
     const batch = await openai.batches.cancel(batchId);
     return res.status(200).json({
       message: 'Cancellation initiated',
-      note: 'Cancellation may not take immediate effect'
+      note: 'Cancellation may not take immediate effect',
     });
   } catch (error) {
     await Batch.findOneAndDelete({ batchId });
     console.error('Error canceling batch:', error);
     return res.status(500).json({
       error: 'Failed to cancel batch',
-      details: error.message
+      details: error.message,
     });
   }
-} 
+}

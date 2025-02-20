@@ -27,7 +27,7 @@ describe('ContextService', () => {
         searchResults: ['result1'],
         searchProvider: 'google',
         conversationHistory: [],
-        referringUrl: 'https://referrer.com'
+        referringUrl: 'https://referrer.com',
       });
     });
 
@@ -40,7 +40,7 @@ describe('ContextService', () => {
         searchResults: null,
         searchProvider: null,
         conversationHistory: [],
-        referringUrl: ''
+        referringUrl: '',
       });
     });
   });
@@ -51,13 +51,13 @@ describe('ContextService', () => {
         content: 'response message',
         model: 'claude-2',
         inputTokens: 100,
-        outputTokens: 50
+        outputTokens: 50,
       };
 
-      fetch.mockImplementationOnce(() => 
+      fetch.mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(mockResponse)
+          json: () => Promise.resolve(mockResponse),
         })
       );
 
@@ -78,7 +78,7 @@ describe('ContextService', () => {
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: expect.any(String)
+          body: expect.any(String),
         })
       );
     });
@@ -88,24 +88,24 @@ describe('ContextService', () => {
         Promise.resolve({
           ok: false,
           status: 500,
-          text: () => Promise.resolve('Server error')
+          text: () => Promise.resolve('Server error'),
         })
       );
 
-      await expect(
-        ContextService.sendMessage('anthropic', 'test message')
-      ).rejects.toThrow('HTTP error! status: 500');
+      await expect(ContextService.sendMessage('anthropic', 'test message')).rejects.toThrow(
+        'HTTP error! status: 500'
+      );
     });
   });
 
   describe('contextSearch', () => {
     it('should perform search successfully', async () => {
       const mockSearchResults = { results: ['result1', 'result2'] };
-      
+
       fetch.mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(mockSearchResults)
+          json: () => Promise.resolve(mockSearchResults),
         })
       );
 
@@ -119,8 +119,8 @@ describe('ContextService', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             query: 'search query',
-            searchService: 'google'
-          })
+            searchService: 'google',
+          }),
         })
       );
     });
@@ -129,12 +129,13 @@ describe('ContextService', () => {
   describe('parseContext', () => {
     it('should parse context with all fields', () => {
       const mockContext = {
-        message: '<topic>Test Topic</topic><topicUrl>https://example.com</topicUrl><department>Test Dept</department><departmentUrl>https://dept.com</departmentUrl>',
+        message:
+          '<topic>Test Topic</topic><topicUrl>https://example.com</topicUrl><department>Test Dept</department><departmentUrl>https://dept.com</departmentUrl>',
         searchResults: ['result1'],
         searchProvider: 'google',
         model: 'claude-2',
         inputTokens: 100,
-        outputTokens: 50
+        outputTokens: 50,
       };
 
       const result = ContextService.parseContext(mockContext);
@@ -148,7 +149,7 @@ describe('ContextService', () => {
         searchProvider: 'google',
         model: 'claude-2',
         inputTokens: 100,
-        outputTokens: 50
+        outputTokens: 50,
       });
     });
 
@@ -156,7 +157,7 @@ describe('ContextService', () => {
       const mockContext = {
         message: '<topic>Test Topic</topic>',
         searchResults: [],
-        model: 'claude-2'
+        model: 'claude-2',
       };
 
       const result = ContextService.parseContext(mockContext);
@@ -170,7 +171,7 @@ describe('ContextService', () => {
         searchProvider: undefined,
         model: 'claude-2',
         inputTokens: undefined,
-        outputTokens: undefined
+        outputTokens: undefined,
       });
     });
   });

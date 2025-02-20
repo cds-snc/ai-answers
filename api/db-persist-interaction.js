@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     chat.aiProvider = interaction.selectedAI;
     chat.searchProvider = interaction.searchProvider;
     chat.pageLanguage = interaction.pageLanguage;
-    
+
     const dbInteraction = new Interaction();
     dbInteraction.interactionId = interaction.userMessageId;
     dbInteraction.responseTime = interaction.responseTime;
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     answer.sentences = interaction.answer.sentences;
     await answer.save();
     dbInteraction.answer = answer._id;
-    
+
     const question = new Question();
     question.redactedQuestion = interaction.question;
     question.language = interaction.answer.questionLanguage;

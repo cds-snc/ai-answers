@@ -8,7 +8,6 @@ import '../models/context.js';
 import '../models/chat.js';
 import '../models/batch.js';
 
-
 let cached = global.mongoose;
 
 if (!cached) {
@@ -26,16 +25,15 @@ async function dbConnect() {
       //useUnifiedTopology: true,
       bufferCommands: false,
       serverSelectionTimeoutMS: 60000,
-      socketTimeoutMS: 120000,        
-      connectTimeoutMS: 60000,        
-    
+      socketTimeoutMS: 120000,
+      connectTimeoutMS: 60000,
     };
 
     cached.promise = mongoose.connect(process.env.DOCDB_URI, opts).then((mongoose) => {
       return mongoose;
     });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {

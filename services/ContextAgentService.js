@@ -3,30 +3,36 @@ import { createContextAgent } from '../agents/AgentService.js';
 const invokeContextAgent = async (agentType, request) => {
   try {
     const contextAgent = await createContextAgent(agentType);
-    const { message, systemPrompt, searchResults, searchProvider, conversationHistory = [] } = request;
+    const {
+      message,
+      systemPrompt,
+      searchResults,
+      searchProvider,
+      conversationHistory = [],
+    } = request;
 
     const messages = [
       {
-        role: "system",
+        role: 'system',
         content: `${systemPrompt}<searchResults>${searchResults.results}</searchResults>`,
-      }
+      },
     ];
 
     // Add conversation history messages before the current message
-    conversationHistory.forEach(entry => {
+    conversationHistory.forEach((entry) => {
       messages.push({
-        role: "user",
-        content: entry.interaction.question
+        role: 'user',
+        content: entry.interaction.question,
       });
       messages.push({
-        role: "assistant",
-        content: entry.interaction.answer.content
+        role: 'assistant',
+        content: entry.interaction.answer.content,
       });
     });
 
     // Add the current message
     messages.push({
-      role: "user",
+      role: 'user',
       content: message,
     });
 
@@ -48,10 +54,10 @@ const invokeContextAgent = async (agentType, request) => {
         outputTokens: lastResult.response_metadata.tokenUsage?.completionTokens,
         model: lastResult.response_metadata.model_name,
         searchProvider: request.searchProvider,
-        searchResults: request.searchResults
-      }
+        searchResults: request.searchResults,
+      };
     } else {
-      return "No messages available";
+      return 'No messages available';
     }
   } catch (error) {
     console.error(`Error with ${agentType} agent:`, error);

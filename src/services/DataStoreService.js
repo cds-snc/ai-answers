@@ -7,7 +7,7 @@ export const DataStoreService = {
     }
 
     try {
-      const response = await fetch(getApiUrl("db-check"));
+      const response = await fetch(getApiUrl('db-check'));
       if (!response.ok) {
         throw new Error('Database connection failed');
       }
@@ -20,10 +20,7 @@ export const DataStoreService = {
     }
   },
 
-  persistInteractionSmall: async (interactionData) => {
-
-
-  },
+  persistInteractionSmall: async (interactionData) => {},
   persistInteraction: async (
     selectedAI,
     question,
@@ -50,7 +47,7 @@ export const DataStoreService = {
       chatId: chatId,
       pageLanguage: lang,
       responseTime: totalResponseTime,
-      searchProvider: searchProvider
+      searchProvider: searchProvider,
     };
 
     try {
@@ -59,9 +56,7 @@ export const DataStoreService = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(
-          interaction
-        ),
+        body: JSON.stringify(interaction),
       });
 
       if (!response.ok) {
@@ -71,7 +66,7 @@ export const DataStoreService = {
       console.log('Interaction logged successfully to database');
     } catch (error) {
       console.log('Development mode: Interaction logged to console', {
-        ...interaction
+        ...interaction,
       });
     }
   },
@@ -88,7 +83,7 @@ export const DataStoreService = {
         citationScore: expertFeedback.citationScore ?? null,
         answerImprovement: expertFeedback.answerImprovement || '',
         expertCitationUrl: expertFeedback.expertCitationUrl || '',
-        feedback: expertFeedback.isPositive ? 'positive' : 'negative'
+        feedback: expertFeedback.isPositive ? 'positive' : 'negative',
       };
     }
     console.log(`User feedback:`, formattedExpertFeedback);
@@ -102,7 +97,7 @@ export const DataStoreService = {
         body: JSON.stringify({
           chatId: chatId,
           interactionId: userMessageId,
-          expertFeedback: formattedExpertFeedback
+          expertFeedback: formattedExpertFeedback,
         }),
       });
 
@@ -113,10 +108,8 @@ export const DataStoreService = {
       console.log('Interaction logged successfully to database');
     } catch (error) {
       console.log('Development mode: Interaction logged to console', {
-        expertFeedback: formattedExpertFeedback
+        expertFeedback: formattedExpertFeedback,
       });
     }
-
-  }
+  },
 };
-

@@ -42,8 +42,9 @@ const handleOpenAI = async (batch) => {
           const result = JSON.parse(line.trim());
           const customId = result.custom_id;
           batch = await Batch.findById(batch._id).populate('interactions');
-          const interaction = batch.interactions.find(interaction => interaction.interactionId === customId);
-
+          const interaction = batch.interactions.find(
+            (interaction) => interaction.interactionId === customId
+          );
 
           if (interaction) {
             if (batch.type === 'context') {
@@ -51,22 +52,26 @@ const handleOpenAI = async (batch) => {
               const topicMatch = response.match(/<topic>([\s\S]*?)<\/topic>/);
               const topicUrlMatch = response.match(/<topicUrl>([\s\S]*?)<\/topicUrl>/);
               const departmentMatch = response.match(/<department>([\s\S]*?)<\/department>/);
-              const departmentUrlMatch = response.match(/<departmentUrl>([\s\S]*?)<\/departmentUrl>/);
+              const departmentUrlMatch = response.match(
+                /<departmentUrl>([\s\S]*?)<\/departmentUrl>/
+              );
 
               let context = await Context.findById(interaction.context);
               context.topic = topicMatch ? topicMatch[1] : context.topic;
               context.topicUrl = topicUrlMatch ? topicUrlMatch[1] : context.topicUrl;
               context.department = departmentMatch ? departmentMatch[1] : context.department;
-              context.departmentUrl = departmentUrlMatch ? departmentUrlMatch[1] : context.departmentUrl;
+              context.departmentUrl = departmentUrlMatch
+                ? departmentUrlMatch[1]
+                : context.departmentUrl;
               context.model = result.response.body.model;
-              context.inputTokens = result.response.body.usage.prompt_tokens,
-              context.outputTokens = result.response.body.usage.completion_tokens,
-              await context.save();
-              
+              (context.inputTokens = result.response.body.usage.prompt_tokens),
+                (context.outputTokens = result.response.body.usage.completion_tokens),
+                await context.save();
             } else {
               // TODO put this in common place
-              const parsedAnswer = AnswerService.parseResponse(result.response.body.choices[0].message.content);
-
+              const parsedAnswer = AnswerService.parseResponse(
+                result.response.body.choices[0].message.content
+              );
 
               const citation = new Citation();
               citation.aiCitationUrl = parsedAnswer.citationUrl;
@@ -99,13 +104,9 @@ const handleOpenAI = async (batch) => {
       }
     }
 
-
-
-
     batch.status = 'processed';
     await batch.save();
     return { status: 'completed' };
-
   } catch (error) {
     console.error('Error processing batch incrementally:', error);
     throw error;
@@ -121,8 +122,7 @@ export default async function handler(req, res) {
         throw new Error('Batch ID is required');
       }
       await dbConnect();
-      
-            
+
       const batch = await Batch.findOne({ batchId });
       if (!batch) {
         throw new Error('Batch not found');
@@ -131,7 +131,6 @@ export default async function handler(req, res) {
       const result = await handleOpenAI(batch);
 
       return res.status(200).json(result);
-
     } catch (error) {
       console.error('Error handling request:', error);
       return res.status(500).json({ error: 'Error handling request', details: error.message });

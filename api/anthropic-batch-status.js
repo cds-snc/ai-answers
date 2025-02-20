@@ -5,8 +5,8 @@ import { Batch } from '../models/batch.js';
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   headers: {
-    'anthropic-beta': 'message-batches-2024-09-24'
-  }
+    'anthropic-beta': 'message-batches-2024-09-24',
+  },
 });
 
 export default async function handler(req, res) {
@@ -18,12 +18,12 @@ export default async function handler(req, res) {
 
     if (messageBatch.processing_status === 'ended' && messageBatch.results_url) {
       result = {
-        status: "completed",
+        status: 'completed',
       };
       return res.status(200).json(result);
     } else {
       result = {
-        status: "processing",
+        status: 'processing',
       };
       return res.status(200).json(result);
     }
@@ -31,9 +31,4 @@ export default async function handler(req, res) {
     console.error('Error checking batch status:', error);
     return res.status(500).json({ error: 'Error checking batch status', details: error.message });
   }
-
-};
-
-
-
-
+}

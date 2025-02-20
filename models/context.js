@@ -2,7 +2,8 @@ import mongoose, { model } from 'mongoose';
 
 const Schema = mongoose.Schema;
 
-const contextSchema = new Schema({
+const contextSchema = new Schema(
+  {
     topic: { type: String, required: false, default: '' },
     topicUrl: { type: String, required: false, default: '' },
     department: { type: String, required: false, default: '' },
@@ -12,9 +13,12 @@ const contextSchema = new Schema({
     outputTokens: { type: String, required: false, default: '' },
     model: { type: String, required: false, default: '' },
     searchProvider: { type: String, required: false, default: '' },
-}, {
-    timestamps: true, versionKey: false,
+  },
+  {
+    timestamps: true,
+    versionKey: false,
     id: false,
-});
+  }
+);
 
 export const Context = mongoose.models.Context || mongoose.model('Context', contextSchema);

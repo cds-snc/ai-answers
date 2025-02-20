@@ -2,8 +2,6 @@
 import dbConnect from './db-connect.js';
 import { Chat } from '../models/chat.js';
 
-
-
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -21,38 +19,31 @@ export default async function handler(req, res) {
     startDate.setDate(startDate.getDate() - days);
 
     const chats = await Chat.find({
-      createdAt: { $gte: startDate }
+      createdAt: { $gte: startDate },
     })
       .populate({
         path: 'interactions',
         populate: [
-          { path: 'context'},
+          { path: 'context' },
           { path: 'expertFeedback' },
           { path: 'question' },
           {
             path: 'answer',
-            populate: [
-              { path: 'sentences' },
-              { path: 'citation' }
-            ]
-          }
-        ]
+            populate: [{ path: 'sentences' }, { path: 'citation' }],
+          },
+        ],
       })
       .sort({ createdAt: -1 });
 
-    
-
     return res.status(200).json({
       success: true,
-      logs: chats
+      logs: chats,
     });
-
-
   } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({
       error: 'Failed to fetch logs',
-      details: error.message
+      details: error.message,
     });
   }
 }

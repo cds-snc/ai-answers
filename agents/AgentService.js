@@ -92,17 +92,13 @@ const createContextAgent = async (agentType) => {
       break;
     default:
       throw new Error(`Unknown agent type: ${agentType}`);
-  };
+  }
   const agent = await createReactAgent({
     llm: llm,
     tools: tools,
   });
   return agent;
-}
-
-
-
-
+};
 
 const createAgents = async () => {
   const openAIAgent = await createOpenAIAgent();
@@ -127,4 +123,11 @@ const getAgent = (agents, selectedAgent) => {
   }
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createContextAgent };
+export {
+  createAgents,
+  getAgent,
+  createClaudeAgent,
+  createCohereAgent,
+  createOpenAIAgent,
+  createContextAgent,
+};

@@ -1,20 +1,18 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { Batch } from "../models/batch.js";
-import dbConnect from "./db-connect.js";
-import { Context } from "../models/context.js";
-import { Question } from "../models/question.js";
-import { Answer } from "../models/answer.js";
-import ContextService from "../src/services/ContextService.js";
-import AnswerService from "../src/services/AnswerService.js";
-import { Citation } from "../models/citation.js";
-
-
+import Anthropic from '@anthropic-ai/sdk';
+import { Batch } from '../models/batch.js';
+import dbConnect from './db-connect.js';
+import { Context } from '../models/context.js';
+import { Question } from '../models/question.js';
+import { Answer } from '../models/answer.js';
+import ContextService from '../src/services/ContextService.js';
+import AnswerService from '../src/services/AnswerService.js';
+import { Citation } from '../models/citation.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   headers: {
-    'anthropic-beta': 'message-batches-2024-09-24'
-  }
+    'anthropic-beta': 'message-batches-2024-09-24',
+  },
 });
 
 const handleAnthropic = async (batch) => {
@@ -24,7 +22,9 @@ const handleAnthropic = async (batch) => {
     for await (const result of resultsStream) {
       const customId = result.custom_id;
       batch = await Batch.findById(batch._id).populate('interactions');
-      const interaction = batch.interactions.find(interaction => interaction.interactionId === customId);
+      const interaction = batch.interactions.find(
+        (interaction) => interaction.interactionId === customId
+      );
       if (interaction) {
         if (batch.type === 'context') {
           // TODO fix this when services moved to server side
@@ -38,14 +38,16 @@ const handleAnthropic = async (batch) => {
           context.topic = topicMatch ? topicMatch[1] : context.topic;
           context.topicUrl = topicUrlMatch ? topicUrlMatch[1] : context.topicUrl;
           context.department = departmentMatch ? departmentMatch[1] : context.department;
-          context.departmentUrl = departmentUrlMatch ? departmentUrlMatch[1] : context.departmentUrl;
+          context.departmentUrl = departmentUrlMatch
+            ? departmentUrlMatch[1]
+            : context.departmentUrl;
           context.model = result.result.message.model;
           context.inputTokens = result.result.message.usage.input_tokens;
           context.outputTokens = result.result.message.usage.output_tokens;
-          context.cachedCreationInputTokens = result.result.message.usage.cache_creation_input_tokens;
+          context.cachedCreationInputTokens =
+            result.result.message.usage.cache_creation_input_tokens;
           context.cachedReadInputTokens = result.result.message.usage.cache_read_input_tokens;
           await context.save();
-
         } else {
           const parsedAnswer = AnswerService.parseResponse(result.result.message.content[0].text);
 
@@ -73,9 +75,8 @@ const handleAnthropic = async (batch) => {
     batch.status = 'processed';
     await batch.save();
     return {
-      status: "completed",
+      status: 'completed',
     };
-
   } catch (error) {
     console.error('Error processing batch incrementally:', error);
     throw error;
@@ -99,7 +100,6 @@ export default async function handler(req, res) {
       let result = await handleAnthropic(batch);
 
       return res.status(200).json(result);
-
     } catch (error) {
       console.error('Error handling request:', error);
       return res.status(500).json({ error: 'Error handling request', log: error.message });

@@ -47,12 +47,13 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
-mongoose.connect(process.env.DOCDB_URI)
+mongoose
+  .connect(process.env.DOCDB_URI)
   .then(() => {
     console.log('MongoDB connected successfully');
     console.log(`Running in ${process.env.REACT_APP_ENV || 'production'} mode`);
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('MongoDB connection error:', err);
   });
 
@@ -78,10 +79,9 @@ app.post('/api/db-persist-interaction', dbPersistInteraction);
 app.get('/api/db-chat-session', dbChatSessionHandler);
 
 app.get('/api/db-verify-chat-session', dbVerifyChatSessionHandler);
-app.post("/api/openai-message", openAIHandler);
+app.post('/api/openai-message', openAIHandler);
 
 app.post('/api/anthropic-message', anthropicAgentHandler);
-
 
 app.post('/api/anthropic-context', anthropicContextAgentHandler);
 
@@ -118,8 +118,6 @@ app.get('/api/openai-batch-process-results', openAIBatchProcessResultsHandler);
 app.get('/api/db-batch-retrieve', dbBatchRetrieveHandler);
 
 app.get('/api/db-check', dbCheckhandler);
-
-
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Healthy' });

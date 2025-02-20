@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AdminPage from './pages/AdminPage.js';
-import EvaluationPage from './pages/EvaluationPage.js';
+import EvaluationPage from './pages/BatchPage.js';
 import {
   GcdsHeader,
   GcdsBreadcrumbs,

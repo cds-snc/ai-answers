@@ -3,25 +3,23 @@ import { createClaudeAgent } from '../agents/AgentService.js';
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
 
-
 const convertInteractionsToMessages = (interactions) => {
   let messages = [];
   // Reverse the interactions array to process them in reverse order.
   const reversedInteractions = [...interactions].reverse();
   for (let i = reversedInteractions.length - 1; i >= 0; i--) {
     messages.push({
-      role: "user",
+      role: 'user',
       content: reversedInteractions[i].interaction.question,
     });
 
     messages.push({
-      role: "assistant",
+      role: 'assistant',
       content: reversedInteractions[i].interaction.answer.content,
     });
   }
   return messages;
 };
-
 
 async function invokeHandler(req, res) {
   if (req.method === 'POST') {
@@ -30,17 +28,16 @@ async function invokeHandler(req, res) {
       const { message, systemPrompt, conversationHistory } = req.body;
       console.log('Request body:', req.body);
 
-
       const claudeAgent = await createClaudeAgent();
 
       const messages = [
         {
-          role: "system",
+          role: 'system',
           content: systemPrompt,
         },
         ...convertInteractionsToMessages(conversationHistory),
         {
-          role: "user",
+          role: 'user',
           content: message,
         },
       ];
@@ -87,7 +84,7 @@ export default async function handler(req, res) {
 
       if (attempt < NUM_RETRIES - 1) {
         const delay = Math.pow(2, attempt) * BASE_DELAY;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
@@ -95,6 +92,6 @@ export default async function handler(req, res) {
   console.error('All retry attempts failed');
   return res.status(500).json({
     error: 'Failed after retries',
-    details: lastError?.message
+    details: lastError?.message,
   });
 }
