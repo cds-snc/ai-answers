@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import FeedbackComponent from './FeedbackComponent.js';
-import { useTranslations } from '../../hooks/useTranslations.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const MAX_CHARS = 400;
@@ -15,11 +14,13 @@ const ChatInterface = ({
   handleSendMessage,
   handleReload,
   handleAIToggle,
+  handleSearchToggle, // Add this prop
   handleDepartmentChange,
   handleReferringUrlChange,
   handleFeedback,
   formatAIResponse,
   selectedAI,
+  selectedSearch, // Add this prop
   selectedDepartment,
   referringUrl,
   turnCount,
@@ -32,6 +33,7 @@ const ChatInterface = ({
   lang,
   parsedResponses,
   extractSentences,
+  chatId,
 }) => {
   const [charCount, setCharCount] = useState(0);
   const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
@@ -109,10 +111,11 @@ const ChatInterface = ({
     return t('homepage.chat.input.initial');
   };
 
+  // TOOD is there a difference between paragraphs and sentrences?
   const getLastMessageSentenceCount = () => {
     const lastAiMessage = messages.filter((m) => m.sender === 'ai').pop();
-    if (lastAiMessage && parsedResponses[lastAiMessage.id]) {
-      return parsedResponses[lastAiMessage.id].paragraphs.reduce(
+    if (lastAiMessage.interaction.answer.paragraphs.length > 0) {
+      return lastAiMessage.interaction.answer.paragraphs.reduce(
         (count, paragraph) => count + extractSentences(paragraph).length,
         0
       );
@@ -182,25 +185,25 @@ const ChatInterface = ({
                         : ''
                   }
                 >
-                  {message.redactedText}
+                  {message.text}
                 </p>
                 {message.redactedItems?.length > 0 && message.redactedText && (
                   <p
                     className={
-                      message.redactedText.includes('XXX')
+                      message.redactedText?.includes('XXX')
                         ? 'privacy-preview'
-                        : message.redactedText.includes('###')
+                        : message.redactedText?.includes('###')
                           ? 'redacted-preview'
                           : ''
                     }
                   >
-                    {message.redactedText.includes('XXX') && (
+                    {message.redactedText?.includes('XXX') && (
                       <>
                         <FontAwesomeIcon icon="circle-info" />{' '}
                         {t('homepage.chat.messages.privacyMessage')}
                       </>
                     )}
-                    {message.redactedText.includes('###') &&
+                    {message.redactedText?.includes('###') &&
                       t('homepage.chat.messages.blockedMessage')}
                   </p>
                 )}
@@ -208,18 +211,48 @@ const ChatInterface = ({
             ) : (
               <>
                 {message.error ? (
-                  <div className="error-message">{message.text}</div>
+                  <div
+                    className={`error-message-box ${
+                      messages[
+                        messages.findIndex((m) => m.id === message.id) - 1
+                      ]?.redactedText?.includes('XXX')
+                        ? 'privacy-error-box'
+                        : 'error-box'
+                    }`}
+                  >
+                    <p
+                      className={
+                        messages[
+                          messages.findIndex((m) => m.id === message.id) - 1
+                        ]?.redactedText?.includes('XXX')
+                          ? 'privacy-error-message'
+                          : 'error-message'
+                      }
+                    >
+                      {message.text}
+                    </p>
+                  </div>
                 ) : (
-                  formatAIResponse(message.text, message.aiService, message.id)
+                  <>
+                    {formatAIResponse(message.aiService, message)}
+                    {chatId && (
+                      <div className="chat-id">
+                        <p>
+                          {t('homepage.chat.chatId')}: {chatId}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
-                {message.id === messages.length - 1 &&
+                {message.id === messages[messages.length - 1].id &&
                   showFeedback &&
                   !message.error &&
-                  !message.text.includes('<clarifying-question>') && (
+                  message.interaction.answer.answerType === 'normal' && (
                     <FeedbackComponent
-                      onFeedback={handleFeedback}
                       lang={lang}
                       sentenceCount={getLastMessageSentenceCount()}
+                      chatId={chatId}
+                      userMessageId={message.id}
                     />
                   )}
               </>
@@ -329,40 +362,66 @@ const ChatInterface = ({
                   <div className="ai-toggle_option">
                     <input
                       type="radio"
-                      id="claude"
+                      id="anthropic"
                       name="ai-selection"
-                      value="claude"
-                      checked={selectedAI === 'claude'}
+                      value="anthropic"
+                      checked={selectedAI === 'anthropic'}
                       onChange={handleAIToggle}
                       className="ai-toggle_radio-input"
                     />
-                    <label htmlFor="claude">{t('homepage.chat.options.aiSelection.claude')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="chatgpt"
-                      name="ai-selection"
-                      value="chatgpt"
-                      checked={selectedAI === 'chatgpt'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="chatgpt">
-                      {t('homepage.chat.options.aiSelection.chatgpt')}
+                    <label htmlFor="claude">
+                      {t('homepage.chat.options.aiSelection.anthropic')}
                     </label>
                   </div>
                   <div className="ai-toggle_option">
                     <input
                       type="radio"
-                      id="cohere"
+                      id="openai"
                       name="ai-selection"
-                      value="cohere"
-                      checked={selectedAI === 'cohere'}
+                      value="openai"
+                      checked={selectedAI === 'openai'}
                       onChange={handleAIToggle}
                       className="ai-toggle_radio-input"
                     />
-                    <label htmlFor="cohere">{t('homepage.chat.options.aiSelection.cohere')}</label>
+                    <label htmlFor="openai">{t('homepage.chat.options.aiSelection.openai')}</label>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div className="search-toggle">
+              <fieldset className="ai-toggle_fieldset">
+                <div className="ai-toggle_container">
+                  <legend className="ai-toggle_legend">
+                    {t('homepage.chat.options.searchSelection.label')}
+                  </legend>
+                  <div className="ai-toggle_option">
+                    <input
+                      type="radio"
+                      id="search-canadaca"
+                      name="search-selection"
+                      value="canadaca"
+                      checked={selectedSearch === 'canadaca'}
+                      onChange={handleSearchToggle}
+                      className="ai-toggle_radio-input"
+                    />
+                    <label htmlFor="search-canadaca">
+                      {t('homepage.chat.options.searchSelection.canadaca')}
+                    </label>
+                  </div>
+                  <div className="ai-toggle_option">
+                    <input
+                      type="radio"
+                      id="search-google"
+                      name="search-selection"
+                      value="google"
+                      checked={selectedSearch === 'google'}
+                      onChange={handleSearchToggle}
+                      className="ai-toggle_radio-input"
+                    />
+                    <label htmlFor="search-google">
+                      {t('homepage.chat.options.searchSelection.google')}
+                    </label>
                   </div>
                 </div>
               </fieldset>

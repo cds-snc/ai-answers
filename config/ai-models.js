@@ -17,9 +17,8 @@ const AI_MODELS = {
         maxTokens: 1024,
         temperature: 0.0,
         timeoutMs: 60000,
-    }
-
-    }
+      },
+    },
   },
   anthropic: {
     default: 'claude-3-5-sonnet-20241022',
@@ -30,8 +29,8 @@ const AI_MODELS = {
         knowledgeCutoff: '2024-04',
         beta: {
           promptCaching: 'prompt-caching-2024-07-31',
-          messageBatches: 'message-batches-2024-09-24'
-        }
+          messageBatches: 'message-batches-2024-09-24',
+        },
       },
       'claude-3-5-haiku-20241022': {
         maxTokens: 8192,
@@ -39,10 +38,10 @@ const AI_MODELS = {
         timeoutMs: 60000,
         beta: {
           promptCaching: 'prompt-caching-2024-07-31',
-          messageBatches: 'message-batches-2024-09-24'
+          messageBatches: 'message-batches-2024-09-24',
         },
-      }
-    }
+      },
+    },
   },
   //TODO: When cohere is working on Vercel, implement via this config file
   //   cohere: {
@@ -77,7 +76,7 @@ export const getModelConfig = (provider, modelName = null) => {
 
   return {
     name: selectedModel,
-    ...modelConfig
+    ...modelConfig,
   };
 };
 

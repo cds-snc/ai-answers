@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import ExpertRatingComponent from './ExpertRatingComponent.js';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { DataStoreService } from '../../services/DataStoreService.js';
 
-const FeedbackComponent = ({ onFeedback, lang = 'en', sentenceCount = 1 }) => {
+const FeedbackComponent = ({ lang = 'en', sentenceCount = 1, chatId, userMessageId }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
   const [showExpertRating, setShowExpertRating] = useState(false);
@@ -12,9 +13,10 @@ const FeedbackComponent = ({ onFeedback, lang = 'en', sentenceCount = 1 }) => {
     if (isPositive) {
       const expertFeedback = {
         totalScore: 100,
+        isPositive: true,
       };
-      onFeedback(true, expertFeedback);
       setFeedbackGiven(true);
+      DataStoreService.persistFeedback(expertFeedback, chatId, userMessageId);
     } else {
       setShowExpertRating(true);
     }
@@ -22,9 +24,9 @@ const FeedbackComponent = ({ onFeedback, lang = 'en', sentenceCount = 1 }) => {
 
   const handleExpertFeedback = (expertFeedback) => {
     console.log('Expert feedback received:', expertFeedback);
-    onFeedback(false, expertFeedback);
     setFeedbackGiven(true);
     setShowExpertRating(false);
+    DataStoreService.persistFeedback(expertFeedback, chatId, userMessageId);
   };
 
   if (feedbackGiven) {

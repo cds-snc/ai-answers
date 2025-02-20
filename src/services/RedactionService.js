@@ -13,11 +13,14 @@ import profanityListEn from './redactions/badwords_en.txt';
 import profanityListFr from './redactions/badwords_fr.txt';
 import manipulationEn from './redactions/manipulation_en.json';
 import manipulationFr from './redactions/manipulation_fr.json';
+import threatsListEn from './redactions/threats_en.txt';
+import threatsListFr from './redactions/threats_fr.txt';
 
 class RedactionService {
   constructor() {
     this.profanityPattern = null;
     this.manipulationPattern = null;
+    this.threatPattern = null;
     this.isInitialized = false;
     this.initialize();
   }
@@ -36,6 +39,7 @@ class RedactionService {
   async initialize() {
     try {
       await this.initializeProfanityPattern();
+      await this.initializeThreatPattern();
       this.initializeManipulationPattern();
       this.isInitialized = true;
     } catch (error) {
@@ -57,8 +61,8 @@ class RedactionService {
 
       const [textEn, textFr] = await Promise.all([responseEn.text(), responseFr.text()]);
 
-      const cleanFrenchWords = this.cleanFrenchProfanityList(textFr);
-      const cleanEnglishWords = this.cleanEnglishProfanityList(textEn);
+      const cleanFrenchWords = this.cleanWordList(textFr);
+      const cleanEnglishWords = this.cleanWordList(textEn);
 
       const combinedWords = [...cleanEnglishWords, ...cleanFrenchWords];
       console.log('Loaded profanity words:', combinedWords.length, 'words');
@@ -71,13 +75,39 @@ class RedactionService {
   }
 
   /**
-   * Clean and process the French profanity list
-   * @param {string} text Raw French profanity list
-   * @returns {string[]} Cleaned French words
+   * Load and process threat lists from both English and French sources
+   * @returns {Promise<string[]>} Array of cleaned threat words
    */
-  cleanFrenchProfanityList(text) {
+  async loadThreatLists() {
+    try {
+      const [responseEn, responseFr] = await Promise.all([
+        fetch(threatsListEn),
+        fetch(threatsListFr),
+      ]);
+
+      const [textEn, textFr] = await Promise.all([responseEn.text(), responseFr.text()]);
+
+      const cleanEnglishWords = this.cleanWordList(textEn);
+      const cleanFrenchWords = this.cleanWordList(textFr);
+
+      const combinedWords = [...cleanEnglishWords, ...cleanFrenchWords];
+      console.log('Loaded threat words:', combinedWords.length, 'words');
+
+      return combinedWords;
+    } catch (error) {
+      console.error('Error loading threat lists:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Clean and process a word list
+   * @param {string} text Raw word list
+   * @returns {string[]} Cleaned words
+   */
+  cleanWordList(text) {
     return text
-      .split(',')
+      .split('\n')
       .map((word) =>
         word
           .replace(/[!@,]/g, '')
@@ -89,24 +119,21 @@ class RedactionService {
   }
 
   /**
-   * Clean and process the English profanity list
-   * @param {string} text Raw English profanity list
-   * @returns {string[]} Cleaned English words
-   */
-  cleanEnglishProfanityList(text) {
-    return text
-      .split(',')
-      .map((word) => word.trim())
-      .filter((word) => word.length > 0);
-  }
-
-  /**
    * Initialize the profanity pattern
    */
   async initializeProfanityPattern() {
     const words = await this.loadProfanityLists();
     const pattern = words.map((word) => `\\b${word}\\b`).join('|');
     this.profanityPattern = new RegExp(`(${pattern})`, 'gi');
+  }
+
+  /**
+   * Initialize the threat pattern
+   */
+  async initializeThreatPattern() {
+    const words = await this.loadThreatLists();
+    const pattern = words.map((word) => `\\b${word}\\b`).join('|');
+    this.threatPattern = new RegExp(`(${pattern})`, 'gi');
   }
 
   /**
@@ -154,8 +181,9 @@ class RedactionService {
         description: 'Passport Numbers',
       },
       {
-        pattern: /(\\d{3}\\s*\\d{3}\\s*\\d{3}|\\d{3}\\D*\\d{3}\\D*\\d{3})/g,
-        description: 'Social Insurance Numbers (with flexible separators)',
+        pattern: /\b(?<!\$)(?!\d+\b)[0-9][A-Z0-9\s\-.]{3,}[0-9]\b/gi,
+        description:
+          'Sequences starting and ending with digits that contain non-numeric characters (catches various ID numbers, SSN, SIN, credit cards, etc., but excludes pure number sequences)',
       },
       {
         pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
@@ -183,10 +211,6 @@ class RedactionService {
         description: 'IP addresses',
       },
       {
-        pattern: /(\d{3}\s*\d{3}\s*\d{3}|\d{3}\D*\d{3}\D*\d{3})/g,
-        description: 'Social Insurance Numbers (with flexible separators)',
-      },
-      {
         pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
         description: 'URLs',
       },
@@ -195,19 +219,6 @@ class RedactionService {
         description: 'Long number sequences',
       },
     ].map(({ pattern }) => pattern);
-  }
-
-  /**
-   * Get the list of threat patterns in English and French
-   * @returns {RegExp} Regular expression for threats
-   */
-  get threatPattern() {
-    const englishThreats =
-      'bomb|gun|knife|sword|kill|murder|suicide|maim|die|anthrax|attack|assassinate|bomb|bombs|bombing|bombed|execution|explosive|explosives|shoot|shoots|shooting|shot|hostage|murder|suicide|kill|killed|killing';
-    const frenchThreats =
-      'anthrax|attaque|assassiner|bombe|bombarder|bombance|bombardera|bombarderons|bombarderont|bombes|bombardement|bombardé|exécution|explosif|explosifs|tirer|tirerai|tirera|tirerons|tireront|tirons|fusillade|tiré|otage|meurtre|suicider|tuer|tuerai|tuera|tuerons|tueront|tuons|tué|tuerie';
-
-    return new RegExp(`\\b(${englishThreats}|${frenchThreats})\\b`, 'gi');
   }
 
   /**

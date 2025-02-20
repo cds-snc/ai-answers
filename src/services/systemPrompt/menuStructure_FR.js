@@ -246,13 +246,24 @@ export const menuStructure_FR = {
         'https://www.canada.ca/fr/services/sante/systeme-et-services-sante.html',
       'Science, recherche et données':
         'https://www.canada.ca/fr/services/sante/science-recherche-et-donnees.html',
+      'Aide médicale à mourir ':
+        'https://www.canada.ca/fr/sante-canada/services/services-avantages-lies-sante/aide-medicale-mourir.html',
     },
     mostRequested: {
       'Guide alimentaire Canada': 'https://guide-alimentaire.canada.ca/fr/',
-      'Rappels et avis de sécurité': 'https://recalls-rappels.canada.ca/fr',
+      'Rappels et avis de sécurité pour les aliments, les allergènes non déclarés, les produits de santé et les produits de consommation':
+        'https://recalls-rappels.canada.ca/fr',
       "Soutien en santé mentale : Demander de l'aide":
         'https://www.canada.ca/fr/sante-publique/services/services-sante-mentale/sante-mentale-obtenir-aide.html',
       Rougeole: 'https://www.canada.ca/fr/sante-publique/services/maladies/rougeole.html',
+      'Virus respiratoire syncytial (VRS)':
+        'https://www.canada.ca/fr/sante-publique/services/maladies/virus-respiratoire-syncytial-vrs.html',
+      'Maladie du coronavirus (COVID-19)':
+        'https://www.canada.ca/fr/sante-publique/services/maladies/maladie-coronavirus-covid-19.html',
+      'Régime canadien de soins dentaires':
+        'https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html',
+      'Maladies respiratoires infectieuses : Réduire la propagation grâce à des mesures de protection individuelle':
+        'https://www.canada.ca/fr/sante-publique/services/maladies/maladies-respiratoires-infectieuses-reduire-propagation-protection-individuelle.html',
     },
   },
   Impôts: {
@@ -379,10 +390,12 @@ export const menuStructure_FR = {
       'Hymnes et symboles du Canada':
         'https://www.canada.ca/fr/services/culture/identite-canadienne-societe/hymnes-symboles.html',
       'Trouvez une décision du CRTC': 'https://crtc.gc.ca/fra/8045/d2018.htm',
-      'Faites des recherches sur votre histoire familiale':
+      'Faites des recherches sur votre histoire familiale (genealogie)':
         'https://bibliotheque-archives.canada.ca/fra/collection/aide-recherche/genealogie-histoire-famille/Pages/genealogie-histoire-famille.aspx',
       'Cherchez des documents de recensement':
         'https://bibliotheque-archives.canada.ca/fra/collection/aide-recherche/genealogie-histoire-famille/recensements/Pages/recensements.aspx',
+      'Recherchez des documents dans les collections de la Bibliothèque et des Archives du Canada':
+        'https://library-archives.canada.ca/fra/collection/Pages/collection.aspx',
       'Lieux et attraits dans la capitale du Canada':
         'https://www.canada.ca/fr/services/culture/attraits-culturels/attraits-capitale-canada.html',
     },
@@ -436,6 +449,12 @@ export const menuStructure_FR = {
         'https://tc.canada.ca/fr/marchandises-dangereuses/table-matieres',
       "Règlement de l'aviation canadien":
         'https://tc.canada.ca/fr/services-generaux/lois-reglements/liste-reglements/reglement-aviation-canadien-dors-96-433',
+      'Rappels des véhicules, des pneus et des sièges d’auto pour enfant':
+        'https://tc.canada.ca/fr/transport-routier/defauts-rappels-vehicules-pneus-sieges-auto-enfant/consulter-rappels-vehicules-pneus-sieges-auto-enfant',
+      'Demander ou gérer un permis d’embarcation de plaisance':
+        'https://tc.canada.ca/fr/transport-maritime/permis-immatriculation-batiments/permis-embarcation-plaisance/demander-gerer-permis-embarcation-plaisance/demander-gerer-permis-embarcation-plaisance',
+      "Delivrance des licences de pilotes et personnel de l'aviation":
+        'https://tc.canada.ca/fr/aviation/delivrance-licences-pilotes-personnel',
     },
   },
   'Canada et le monde': {
@@ -634,6 +653,8 @@ export const menuStructure_FR = {
       'Gestion des urgences': 'https://www.sac-isc.gc.ca/fra/1309369889599',
     },
     mostRequested: {
+      "Renouvelez votre carte de statut sécurisé - comment, quand, vérifier l'éligibilité":
+        'https://www.sac-isc.gc.ca/fra/1695840367366/1695840394948',
       'Obtenez, renouvelez ou remplacez une carte de statut':
         'https://www.sac-isc.gc.ca/fra/1100100032380/1572461388012',
       'Traverser la frontière canado-américaine avec une carte de statut':

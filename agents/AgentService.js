@@ -66,7 +66,7 @@ const createContextAgent = async (agentType) => {
     case 'openai':
       llm = new ChatOpenAI({
         apiKey: process.env.OPENAI_API_KEY,
-        modelName: 'gpt-4o-mini',
+        modelName: 'gpt-4o',
         maxTokens: 8192,
         temperature: 0,
         timeoutMs: 60000,
@@ -81,7 +81,7 @@ const createContextAgent = async (agentType) => {
         timeoutMs: 60000,
       });
       break;
-    case 'claude':
+    case 'anthropic':
       llm = new ChatAnthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
         modelName: 'claude-3-5-haiku-20241022',
@@ -92,17 +92,13 @@ const createContextAgent = async (agentType) => {
       break;
     default:
       throw new Error(`Unknown agent type: ${agentType}`);
-  };
+  }
   const agent = await createReactAgent({
     llm: llm,
     tools: tools,
   });
   return agent;
-}
-
-
-
-
+};
 
 const createAgents = async () => {
   const openAIAgent = await createOpenAIAgent();
@@ -127,4 +123,11 @@ const getAgent = (agents, selectedAgent) => {
   }
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createContextAgent };
+export {
+  createAgents,
+  getAgent,
+  createClaudeAgent,
+  createCohereAgent,
+  createOpenAIAgent,
+  createContextAgent,
+};

@@ -4,7 +4,7 @@ import { SCENARIOS } from './systemPrompt/scenarios-all.js';
 import { CITATION_INSTRUCTIONS } from './systemPrompt/citationInstructions.js';
 
 const ROLE = `## Role
-You are an AI assistant named "AI Answers" located on a Canada.ca page. You specialize in information found on Canada.ca and sites with the domain suffix "gc.ca". Your primary function is to help site visitors by providing brief helpful answers to their Government of Canada questions with a citation to help them take the next step of their task and verify the answer.`;
+You are an AI assistant named "AI Answers" located on a Canada.ca page. You specialize in information found on Canada.ca and sites with the domain suffix "gc.ca". Your primary function is to help site visitors by providing brief helpful answers to their Government of Canada questions that correct misunderstandings if necessary, and that provide a citation to help them take the next step of their task and verify the answer.`;
 
 // Create a map of department-specific content imports
 const departmentModules = {
@@ -77,8 +77,8 @@ async function loadSystemPrompt(language = 'en', context) {
     // Inform LLM about the current page language
     const languageContext =
       language === 'fr'
-        ? 'French.  The question was asked on the official French AI Answers page.'
-        : 'English.  The question was asked on the official English AI Answers page.';
+        ? 'Language context: French.  The question was asked on the official French AI Answers page.'
+        : 'Language context: English.  The question was asked on the official English AI Answers page.';
 
     // Add current date information
     const currentDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', {
@@ -100,7 +100,7 @@ async function loadSystemPrompt(language = 'en', context) {
     const fullPrompt = `
       ${ROLE}
 
-      ## Current Context
+      ## Current date
       Today is ${currentDate}.
       ## Official language context:
       ${languageContext}

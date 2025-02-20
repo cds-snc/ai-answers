@@ -1,23 +1,102 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "type" : "module",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "name": "react-answers",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "proxy": "https://api.anthropic.com",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.29.2",
-    "cohere-ai": "^7.14.0",
+    "@anthropic-ai/sdk": "^0.33.1",
+    "@cdssnc/gcds-components": "^0.26.1",
+    "@cdssnc/gcds-components-react": "^0.26.3",
+    "@cdssnc/gcds-utility": "^1.4.0",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@fortawesome/fontawesome-svg-core": "^6.6.0",
+    "@fortawesome/free-regular-svg-icons": "^6.6.0",
+    "@fortawesome/free-solid-svg-icons": "^6.6.0",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@langchain/anthropic": "^0.3.9",
+    "@langchain/cohere": "^0.3.1",
+    "@langchain/langgraph": "^0.2.33",
+    "@langchain/openai": "^0.3.14",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "cohere-ai": "^2.3.0",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "datatables.net": "^2.2.1",
+    "datatables.net-dt": "^2.2.1",
+    "datatables.net-react": "^1.0.0",
     "dotenv": "^16.4.5",
+    "duck-duck-scrape": "^2.2.6",
     "express": "^4.21.1",
+    "flat": "^6.0.1",
+    "googleapis": "^144.0.0",
+    "install": "^0.13.0",
+    "jsonwebtoken": "^9.0.2",
+    "langchain": "^0.3.7",
+    "lucide-react": "^0.454.0",
+    "mongodb": "^6.9.0",
     "mongoose": "^8.8.3",
-    "openai": "^4.73.1"
+    "npm": "^10.9.0",
+    "openai": "^4.73.1",
+    "playwright": "^1.49.1",
+    "playwright-extra": "^4.3.6",
+    "playwright-extra-plugin-stealth": "^0.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.5",
+    "react-scripts": "^5.0.1",
+    "uuid": "^11.0.5",
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@cdssnc/gcds-components-react)/)"
+    ],
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest",
+      "^.+\\.tsx?$": "babel-jest"
+    }
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "start-server": "node server/server.js",
+    "dev": "concurrently \"npm run start-server\" \"npm start\"",
+    "lint": "dotenv -e .env eslint src/**/*.{js,jsx}"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.25.9",
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/preset-env": "^7.25.4",
+    "babel-jest": "^29.7.0",
+    "concurrently": "^9.0.1",
+    "dotenv-cli": "^7.4.4",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.2"
   }
 }
