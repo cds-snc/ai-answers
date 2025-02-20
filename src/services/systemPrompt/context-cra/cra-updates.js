@@ -1,10 +1,25 @@
 export const CRA_UPDATES = `
 <cra_gst_holiday_break>
-	<link rel="schema.dcterms" href="http://purl.org/dc/terms/"/>
 	<link rel="canonical" href="https://www.canada.ca/en/services/taxes/child-and-family-benefits/gst-hst-holiday-tax-break.html"/>
 		<meta name="description" content="A measure to provide GST/HST relief on certain items beginning December 14, 2024, and ending February 15, 2025."/>
 		<meta name="keywords" content="GST holiday, GST break, GST relief, holiday for GST, temporary tax break, sales tax holiday, GST/HST tax rebate, GST/HST rebate, GST tax pause, GST/HST, holiday tax relief, temporarily zero-rated, temporary GST break, GST/HST exemption, GST/HST free, Christmas tax break"/>
 </cra_gst_holiday_break>
+
+<personal-income-tax-filing-updates>
+## Most tax pages were updated January 23rd 2025 for the 2024 tax year or with 2025 dates and deductions. For example:
+- https://www.canada.ca/en/revenue-agency/services/forms-publications/tax-packages-years/general-income-tax-benefit-package.html or https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/trousses-impot-toutes-annees-imposition/trousse-generale-impot-prestations.html
+- https://www.canada.ca/en/services/taxes/income-tax/personal-income-tax/get-ready-taxes.html or https://www.canada.ca/fr/services/impots/impot-sur-le-revenu/impot-sur-le-revenu-des-particuliers/preparez-vous-impots.html
+- https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/t4032-payroll-deductions-tables.html or https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/retenues-paie/t4032-tables-retenues-paie.html
+- https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/t4032-payroll-deductions-tables/t4032on-jan/t4032on-january-general-information.html or https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/retenues-paie/t4032-tables-retenues-paie/t4032on-jan/t4032on-janvier-information-generale.html
+
+Key dates for filing 2024 taxes in 2025:
+February 24, 2025: Earliest day to file your taxes online
+April 30, 2025: Deadline to file your taxes
+March 3 2025: Deadline to contribute to an RRSP, a PRPP, or an SPP
+June 15, 2025 (June 16, 2025, since June 15 is a Sunday): Deadline to file your taxes if you or your spouse or common-law partner are self-employed
+April 30, 2025: Deadline to pay your taxes
+ - What's new for 2024: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/whats-new.html or https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/quoi-neuf.html
+</personal-income-tax-filing-updates>
 
 <cra-account-update>
 ## CRA Account - Sign-in to your CRA account page
@@ -16,8 +31,8 @@ export const CRA_UPDATES = `
 
 ## Decide if you need to register
 If you have already registered for My CRA Account, My Business Account or Represent a Client using a CRA user ID and password or a Sign-In Partner, you cannot register again. You must use the same sign-in information you already registered with to access your CRA account. If you have forgotten your CRA user ID or password, go to: Lost or forgotten CRA user ID or password at url: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/cra-userid-password.html#section3b or in French: https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/id-utilisateur-mots-passe-arc.html#section3b
+
 ## Choosing a sign-in option to register with
-The option you register with will be the same option you use each time you sign in. Make a selection below to begin.
 #### Interac Sign-In Partner:
 This option lets you use the same banking sign-in information you use with other online financial accounts. You must already have an online account with one of our Sign-In Partners.You must have an online account with one of our Sign-In Partners:Affinity Credit Union, Alberta Treasury Branches, BMO Financial Group, Caisse Alliance, CIBC Canadian Imperial Bank of Commerce, Coast Capital Savings, connectFirst Credit Union, Conexus Credit Union, Desjardins Group (Caisses Populaires), Libro, Meridian Credit Union, National Bank of Canada, RBC Royal Bank, Scotiabank, Servus Credit Union, Simplii Financial, Tangerine, TD Bank Group, UNI, Vancity, Wealthsimple.
 - Do not use autofill on a shared device for your online banking information. When you are on your Sign-In Partner's website, ensure it is your information that is entered and not that of somebody else.

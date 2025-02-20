@@ -43,18 +43,20 @@ const downloadWebPage = async (url) => {
     const httpsAgent = new Agent({ rejectUnauthorized: false });
     
     try {
+        console.log(`Downloading webpage: ${url}`);
         const response = await axios.get(url, {
             httpsAgent,
             maxRedirects: 10,
             timeout: 10000, // Set timeout to 10 seconds
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': process.env.USER_AGENT
             }
+
         });
         
         const $ = load(response.data);
         const bodyContent = extractBodyContentWithLinks($);
-        
+        console.log(`Downloaded webpage: ${url}`);
         return bodyContent;
     } catch (error) {
         console.error(`Error downloading webpage: ${url}. Details: ${error.message}`);

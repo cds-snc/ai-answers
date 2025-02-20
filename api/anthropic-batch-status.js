@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import fetch from 'node-fetch';
+import { Batch } from '../models/batch.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,

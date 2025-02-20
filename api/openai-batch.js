@@ -1,8 +1,10 @@
 import OpenAI from 'openai';
 import { getModelConfig } from '../config/ai-models.js';
-import { Readable } from 'stream';
 import dbConnect from './db-connect.js';
-import { Batch } from '../models/batch/batch.js';
+import { Batch } from '../models/batch.js';
+import { Interaction } from '../models/interaction.js';
+import { Context } from '../models/context.js';
+import { Question } from '../models/question.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -29,7 +31,7 @@ export default async function handler(req, res) {
         const modelConfig = getModelConfig('openai');
 
         const jsonlRequests = requests.map((request, index) => ({
-            custom_id: `eval-${index}`,
+            custom_id: `batch-${index}`,
             method: "POST",
             url: "/v1/chat/completions",
             body: {
@@ -75,7 +77,7 @@ export default async function handler(req, res) {
         });
         const fileData = await file.json();
         console.log('File created with ID:', fileData.id);
-     
+
 
         // Create the batch using the file
         const batch = await openai.batches.create({
@@ -88,16 +90,39 @@ export default async function handler(req, res) {
         // save the batch id and entries
         await dbConnect();
         const savedBatch = new Batch({
+            name: req.body.batchName,
             batchId: batch.id,
             type: "question",
-            provider: "openai",
-            entries: req.body.requests.map((request, index) => ({
-                entry_id: `eval-${index}`,
-                ...request.entry
-            }))
+            aiProvider: "openai",
+            pageLanguage: req.body.lang,
+            referringUrl: req.body.referringUrl,
         });
-        await savedBatch.save();
 
+        await savedBatch.save();
+        for (const [index, request] of req.body.requests.entries()) {
+            const context = new Context({
+                ...request.context,
+            });
+            await context.save();
+
+            // Create Question document
+            const question = new Question({
+                redactedQuestion: request.message
+            });
+            await question.save();
+
+            // Create Interaction with references
+            let interaction = new Interaction({
+                interactionId: `batch-${index}`,
+                question: question._id,
+                context: context._id
+            });
+            await interaction.save();
+
+            // Add interaction reference to batch
+            savedBatch.interactions.push(interaction._id);
+        }
+        await savedBatch.save();
         console.log('Batch saved:', savedBatch);
 
         return res.status(200).json({ batchId: batch.id });

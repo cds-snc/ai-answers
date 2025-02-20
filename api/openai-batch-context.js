@@ -1,9 +1,10 @@
 import OpenAI from 'openai';
 import { getModelConfig } from '../config/ai-models.js';
-import fs from 'fs';
 import dbConnect from './db-connect.js';
-import { Batch } from '../models/batch/batch.js';
-
+import { Batch } from '../models/batch.js';
+import { Interaction } from '../models/interaction.js';
+import { Context } from '../models/context.js';
+import { Question } from '../models/question.js';
 
 const modelConfig = getModelConfig('openai', 'gpt-4o-mini');
 const openai = new OpenAI({
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
         }
 
         const jsonlRequests = req.body.requests.map((request, index) => ({
-            custom_id: `eval-${index}`,
+            custom_id: `batch-${index}`,
             method: "POST",
             url: "/v1/chat/completions",
             body: {
@@ -33,7 +34,7 @@ export default async function handler(req, res) {
                 messages: [
                     {
                         role: "system",
-                        content: request.systemPrompt + request.searchResults,
+                        content: `${request.systemPrompt}<searchResults>${request.searchResults.results}</searchResults>`,
                     },
                     {
                         role: "user",
@@ -46,24 +47,14 @@ export default async function handler(req, res) {
         }));
 
         // Convert to JSONL format
-        let jsonlContent = jsonlRequests
-            .map(req => JSON.stringify(req))
-            .join('\n');
-
-        // Log the size of the JSONL content
-        console.log('Size of JSONL content:', Buffer.byteLength(jsonlContent, 'utf8'), 'bytes');
-
-
-        
+        const jsonlContent = jsonlRequests.map(req => JSON.stringify(req)).join('\n');
         const jsonlBuffer = Buffer.from(jsonlContent, 'utf-8');
-
         const jsonlBlob = new Blob([jsonlBuffer], { type: 'application/jsonl' });
 
         const formData = new FormData();
-        formData.append('file', jsonlBlob, 'data.jsonl'); // Filename is important
-
+        formData.append('file', jsonlBlob, 'data.jsonl');
         formData.append('purpose', 'batch');
-        
+
         const file = await fetch('https://api.openai.com/v1/files', {
             method: 'POST',
             headers: {
@@ -72,42 +63,53 @@ export default async function handler(req, res) {
             body: formData,
         });
         const fileData = await file.json();
-        console.log('File created with ID:', fileData.id);
 
         // Create the batch using the file
-        const batch = await openai.batches.create({
+        const openAIBatch = await openai.batches.create({
             input_file_id: fileData.id,
             endpoint: "/v1/chat/completions",
             completion_window: "24h"
         });
-        console.log('Batch created with ID:', batch.id);
 
-
-
-        console.log('Context Batch created successfully:', {
-            batchId: batch.id,
-            status: batch.processing_status,
-            model: modelConfig.name
-        });
-
-        // save the batch id and entries
+        // Save to database
         await dbConnect();
         const savedBatch = new Batch({
-            batchId: batch.id,
+            batchId: openAIBatch.id,
             type: "context",
-            provider: "openai",
-            entries: req.body.requests.map((request, index) => ({
-                entry_id: `eval-${index}`,
-                question: request.message,
-                searchResults: request.searchResults,
-            }))
+            aiProvider: req.body.aiService,
+            pageLanguage: req.body.lang,
+            name: req.body.batchName
         });
         await savedBatch.save();
 
-        console.log('Batch saved:', savedBatch);
+        // Store interactions, contexts, and questions
+        for (const [index, request] of req.body.requests.entries()) {
+            const context = new Context({
+                searchProvider: request.searchProvider,
+                searchResults: request.searchResults.results,
+            });
+            await context.save();
+
+            const question = new Question({
+                redactedQuestion: request.message
+            });
+            await question.save();
+
+            const interaction = new Interaction({
+                interactionId: `batch-${index}`,
+                question: question._id,
+                context: context._id,
+                referringUrl: request.referringUrl,
+            });
+            await interaction.save();
+
+            savedBatch.interactions.push(interaction._id);
+        }
+        await savedBatch.save();
+
         return res.status(200).json({
-            batchId: batch.id,
-            status: batch.processing_status
+            batchId: openAIBatch.id,
+            status: openAIBatch.status
         });
 
     } catch (error) {
@@ -121,4 +123,4 @@ export default async function handler(req, res) {
             details: error.message
         });
     }
-} 
+}

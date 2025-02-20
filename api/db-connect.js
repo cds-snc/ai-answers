@@ -1,4 +1,13 @@
 import mongoose from 'mongoose';
+import '../models/interaction.js';
+import '../models/question.js';
+import '../models/answer.js';
+import '../models/citation.js';
+import '../models/expertFeedback.js';
+import '../models/context.js';
+import '../models/chat.js';
+import '../models/batch.js';
+
 
 let cached = global.mongoose;
 
@@ -13,10 +22,13 @@ async function dbConnect() {
 
   if (!cached.promise) {
     const opts = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      //useNewUrlParser: true,
+      //useUnifiedTopology: true,
       bufferCommands: false,
-      connectTimeoutMS: 30000, // 30 seconds timeout
+      serverSelectionTimeoutMS: 60000,
+      socketTimeoutMS: 120000,        
+      connectTimeoutMS: 60000,        
+    
     };
 
     cached.promise = mongoose.connect(process.env.DOCDB_URI, opts).then((mongoose) => {

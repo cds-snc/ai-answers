@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ChatAppContainer from '../components/chat/ChatAppContainer.js';
 import { GcdsContainer, GcdsDetails, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 
 // Error Boundary remains the same
 class ErrorBoundary extends React.Component {
@@ -43,6 +44,7 @@ class ErrorBoundary extends React.Component {
 const HomePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [serviceStatus, setServiceStatus] = useState(null);
+  const [chatId, setChatId] = useState(null);
 
   useEffect(() => {
     // TODO: Replace with actual API call to get status
@@ -51,6 +53,21 @@ const HomePage = ({ lang = 'en' }) => {
       message: t('homepage.errors.serviceUnavailable'),
     };
     setServiceStatus(status);
+    // TODO move to DataStoreService
+    async function fetchSession() {
+      try {
+        const res = await fetch(getApiUrl('db-chat-session'));
+        const data = await res.json();
+        setChatId(data.chatId);
+      } catch (error) {
+        console.error(error);
+        setServiceStatus({
+          isAvailable: false,
+          message: t('homepage.errors.serviceUnavailable'),
+        });
+      }
+    }
+    fetchSession();
   }, [t]);
 
   // Wrap ErrorBoundary to provide translations
@@ -98,7 +115,7 @@ const HomePage = ({ lang = 'en' }) => {
           <GcdsText>{t('homepage.about.contact')}</GcdsText>
         </GcdsDetails>
 
-        <ChatAppContainer lang={lang} />
+        <ChatAppContainer lang={lang} chatId={chatId} />
       </GcdsContainer>
 
       <GcdsContainer size="xl" mainContainer centered tag="below" className="mb-600">

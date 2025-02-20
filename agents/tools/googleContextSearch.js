@@ -27,19 +27,19 @@ function extractSearchResults(results, numResults = 3) {
 const contextSearch = async (query) => {
     const CX = process.env.GOOGLE_SEARCH_ENGINE_ID; // Ensure this is set in your environment variables
     const API_KEY = process.env.GOOGLE_API_KEY; // Ensure this is set in your environment variables
-    try {
-        const res = await customsearch.cse.list({
-            cx: CX,
-            q: query,
-            key: API_KEY,
-        });
-        const results = res.data;
-        const extractedResults = extractSearchResults(results);
-        return extractedResults;
-    } catch (error) {
-        console.error("Error during Google Custom Search:", error);
-        return "The search service is currently down. Please try again later.";
-    }
+
+    const res = await customsearch.cse.list({
+        cx: CX,
+        q: query,
+        key: API_KEY,
+    });
+    const results = res.data;
+    const extractedResults = extractSearchResults(results);
+    return {
+        results: extractedResults,
+        provider: "google"
+    };
+
 };
 
 const contextSearchTool = tool(
