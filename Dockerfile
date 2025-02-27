@@ -21,6 +21,9 @@ FROM node:lts
 # Set working directory
 WORKDIR /app
 
+# Download RDS certificate
+RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
