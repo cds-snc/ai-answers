@@ -1,5 +1,5 @@
 import dbConnect from './db-connect.js';
-import { Batch } from '../models/batch/batch.js';
+import { Batch } from '../models/batch.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
@@ -14,7 +14,23 @@ export default async function handler(req, res) {
 
     try {
         await dbConnect();
-        const batch = await Batch.findOne({ batchId });
+        const batch = await Batch.findOne({ batchId }).populate({
+            path: 'interactions',
+            populate: [
+                { path: 'context' },
+                { path: 'expertFeedback' },
+                { path: 'question' },
+                {
+                    path: 'answer',
+                    populate: [
+                        { path: 'sentences' },
+                        { path: 'citation' }
+                    ]
+                }
+            ]
+        });
+
+
         if (!batch) {
             return res.status(404).json({ message: 'Batch not found' });
         }

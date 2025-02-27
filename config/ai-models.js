@@ -22,14 +22,13 @@ const AI_MODELS = {
     }
   },
   anthropic: {
-    default: 'claude-3-5-sonnet-20241022',
+    default: 'claude-3-7-sonnet-latest',
     models: {
-      'claude-3-5-sonnet-20241022': {
+      'claude-3-7-sonnet-latest': {
         maxTokens: 1024,
         temperature: 0.0,
         knowledgeCutoff: '2024-04',
         beta: {
-          promptCaching: 'prompt-caching-2024-07-31',
           messageBatches: 'message-batches-2024-09-24'
         }
       },

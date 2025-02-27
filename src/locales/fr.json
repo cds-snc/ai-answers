@@ -1,115 +1,221 @@
-  {
-    "homepage": {
-      "title": "Réponses IA",
-      "subtitle": "Obtenez des réponses à vos questions sur Canada.ca.",
-      "alpha": {
-        "label": "Alpha",
-        "description": "Page expérimentale — non publique."
+{
+  "homepage": {
+    "title": "Réponses IA",
+    "subtitle": "Obtenez des réponses à vos questions sur Canada.ca.",
+    "alpha": {
+      "label": "Alpha",
+      "description": "Page expérimentale — non publique."
+    },
+    "intro": {
+      "researchOnly": "Cette preuve de concept est uniquement destinée à la recherche. Elle fait l'objet de travaux continus."
+    },
+    "about": {
+      "title": "À propos de Réponses IA",
+      "privacyNote": "Pour protéger votre vie privée, les numéros et les adresses ne sont pas envoyés au service d'IA.",
+      "aiServices": {
+        "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
+        "chatgpt": "Service d'IA ChatGPT : GPT-4o d'OpenAI, connaissances jusqu'en novembre 2024",
+        "cohere": "Autres services peuvent être ajoutés dans le futur."
       },
-      "intro": {
-        "researchOnly": "Cette preuve de concept est uniquement destinée à la recherche. Elle fait l'objet de travaux continus."
+      "systemPrompt": "Lire l'invite système",
+      "contact": "Le développement est toujours en cours — Contactez lisa.fast@cds-snc.ca pour plus d'informations."
+    },
+    "feedback": {
+      "title": "",
+      "surveyLink": "Donnez votre avis (s'ouvre dans un nouvel onglet)",
+      "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA",
+      "question": "Cette réponse était-elle utile?",
+      "useful": "Bonne",
+      "notUseful": "Nécessite une amélioration",
+      "or": "ou",
+      "thankYou": "Merci d'avoir donné votre avis!"
+    },
+    "privacy": {
+      "title": "Confidentialité et conditions d'utilisation de l'IA",
+      "storage": "Nous pouvons conserver vos questions et réponses pour améliorer les performances du système. Les informations personnelles seront supprimées et remplacées par XXX. Les informations personnelles ne seront pas conservées.",
+      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
+      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada et votre utilisation de ce système et de toute information générée est également soumise aux",
+      "termsLink": "Conditions d'utilisation de Canada.ca."
+    },
+    "errors": {
+      "timeout": {
+        "title": "Réponses IA a expiré.",
+        "message": "Actualisez la page pour réessayer.",
+        "button": "Actualiser"
       },
-      "about": {
-        "title": "À propos de Réponses IA",
-        "privacyNote": "Pour protéger votre vie privée, les numéros et les adresses seront supprimés avant que votre question ne soit envoyée au service d'IA. Le texte supprimé s'affichera sous la forme XXX.",
-        "aiServices": {
-          "claude": "Service d'IA Claude : Claude 3.5 Sonnet d'Anthropic, connaissances jusqu'en avril 2024",
-          "chatgpt": "Service d'IA ChatGPT : GPT-4o d'OpenAI, connaissances jusqu'en mai 2024",
-          "cohere": "Service d'IA Cohere : Cohere Chat V2, connaissances jusqu'en août 2024"
-        },
-        "systemPrompt": "Lire l'invite système",
-        "contact": "Le développement est toujours en cours — Contactez lisa.fast@cds-snc.ca pour plus d'informations."
+      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard."
+    },
+    "chat": {
+      "chatId": "ID de chat",
+      "input": {
+        "initial": "Posez une question sur Canada.ca",
+        "followUp": "Posez une question de suivi ou répondez",
+        "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
+        "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse."
       },
-      "feedback": {
-        "title": "",
-        "surveyLink": "Donnez votre avis (s'ouvre dans un nouvel onglet)",
-        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA",
-        "question": "Cette réponse était-elle utile?",
-        "useful": "Bonne",
-        "notUseful": "Nécessite une amélioration",
-        "or": "ou",
-        "thankYou": "Merci d'avoir donné votre avis!"
+      "buttons": {
+        "send": "Envoyer",
+        "reload": "Actualiser la page"
       },
-      "privacy": {
-        "title": "Confidentialité et conditions d'utilisation de l'IA",
-        "storage": "Nous pouvons conserver vos questions et réponses pour améliorer les performances du système. Les informations personnelles seront supprimées et remplacées par XXX. Les informations personnelles ne seront pas conservées.",
-        "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
-        "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada et votre utilisation de ce système et de toute information générée est également soumise aux",
-        "termsLink": "Conditions d'utilisation de Canada.ca."
-      },
-      "errors": {
-        "timeout": {
-          "title": "Réponses IA a expiré.",
-          "message": "Actualisez la page pour réessayer.",
-          "button": "Actualiser"
+      "options": {
+        "title": "Options",
+        "aiSelection": {
+          "label": "IA :",
+          "anthropic": "Anthropic",
+          "openai": "OpenAI",
+          "cohere": "Cohere"
         },
-        "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard."
-      },
-      "chat": {
-        "input": {
-          "initial": "Posez une question sur Canada.ca",
-          "followUp": "Posez une question de suivi ou répondez",
-          "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
-          "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse."
+        "searchSelection": {
+          "label": "Recherche :",
+          "canadaca": "Canada.ca",
+          "google": "Google"
         },
-        "buttons": {
-          "send": "Envoyer",
-          "reload": "Actualiser la page"
-        },
-        "options": {
-          "title": "Options",
-          "aiSelection": {
-            "label": "IA :",
-            "claude": "Claude 3.5 Sonnet d'Anthropic",
-            "chatgpt": "ChatGPT-4o d'OpenAI",
-            "cohere": "Cohere"
-          },
-          "referringUrl": {
-            "label": "URL de référence Canada.ca (facultatif)"
-          }
-        },
-        "messages": {
-          "startingToThink": "Réflexion...",
-          "thinking": "Réflexion...",
-          "thinkingWithContext": "Tirant la réponse à partir de ",
-          "thinkingMore": "Réflexion prolongée...",
-          "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
-          "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
-          "blockedContent": "Votre question contenait des mots qui ne sont pas acceptés.\nVeuillez la reformuler différemment.",
-          "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
-          "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA.",
-          "privacyMessage": "Votre question contenait des renseignements personnels remplacés par XXX. Veuillez la poser sans inclure de renseignements personnels.",
-          "characterWarning": "{count} {unit} restants",
-          "characterLimit": "Votre message est trop long de {count} {unit}. Veuillez simplifier votre question.",
-          "character": "caractère",
-          "characters": "caractères"
-        },
-        "citation": {
-          "confidence": "Niveau de confiance :",
-          "ai": "IA :",
-          "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
+        "referringUrl": {
+          "label": "URL de référence Canada.ca (facultatif)"
         }
       },
-      "expertRating": {
-        "title": "Évaluation de la réponse",
-        "hint": "Évaluez chaque partie de la réponse",
-        "sentence1": "Phrase 1",
-        "sentence2": "Phrase 2",
-        "sentence3": "Phrase 3",
-        "sentence4": "Phrase 4",
-        "citation": "Citation",
-        "options": {
-          "good": "Bonne",
-          "needsImprovement": "Nécessite une amélioration",
-          "incorrect": "Incorrecte",
-          "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
-          "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
-        },
-        "submit": "Soumettre",
-        "errors": {
-          "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
-        },
-        "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+      "messages": {
+        "startingToThink": "Réflexion...",
+        "thinking": "Réflexion...",
+        "thinkingWithContext": "Tirant la réponse à partir de ",
+        "thinkingMore": "Réflexion prolongée...",
+        "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
+        "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
+        "blockedContent": "Votre question contenait des mots qui ne sont pas acceptés.\nVeuillez la reformuler différemment.",
+        "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
+        "privateContent": "Pour protéger vos renseignements personnels, votre question n'a pas été envoyée au service AI. Veuillez reposer votre question sans fournir de détails personnels.",
+        "privacyMessage": "Votre question contenait des renseignements personnels remplacés par XXX.",
+        "characterWarning": "{count} {unit} restants",
+        "characterLimit": "Votre message est trop long de {count} {unit}. Veuillez simplifier votre question.",
+        "character": "caractère",
+        "characters": "caractères",
+        "redacting": "Vérification du message...",
+        "searching": "Recherche d'informations pertinentes...",
+        "gettingContext": "Compréhension du contexte...",
+        "generatingAnswer": "Génération de la réponse...",
+        "complete": "Réponse prête...",
+        "verifyingCitation": "Vérification de l'URL de citation...",
+        "updatingDatastore": "Mise à jour du datastore...",
+        "moderatingAnswer": "Modération de la réponse...",
+        "moderatingQuestion": "Modération de la question...",
+        "needClarification" : "Nécessite des précisions..."
+      },
+      "citation": {
+        "confidence": "Niveau de confiance :",
+        "ai": "IA :",
+        "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
+      }
+    },
+    "expertRating": {
+      "title": "Évaluation de la réponse",
+      "hint": "Évaluez chaque partie de la réponse",
+      "sentence1": "Phrase 1",
+      "sentence2": "Phrase 2",
+      "sentence3": "Phrase 3",
+      "sentence4": "Phrase 4",
+      "citation": "Citation",
+      "options": {
+        "good": "Bonne",
+        "needsImprovement": "Nécessite une amélioration",
+        "incorrect": "Incorrecte",
+        "harmful": "Nuisible",
+        "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
+        "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
+        "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
+      },
+      "submit": "Soumettre",
+      "errors": {
+        "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
+      },
+      "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+    }
+  },
+  "batch": {
+    "title": "Lots",
+    "navigation": {
+      "title": "Sur cette page",
+      "links": {
+        "onThisPage": "Links on this page",
+        "newEvaluation": "Nouveau lot",
+        "runningBatches": "Lots en cours",
+        "processedBatches": "Lots traités"
+      }
+    },
+    "sections": {
+      "evaluator": {
+        "title": "Nouveau lot"
+      },
+      "running": {
+        "title": "Lots en cours"
+      },
+      "processed": {
+        "title": "Lots traités"
+      }
+    },
+    "upload": {
+      "batchName": "Nom",
+      "intro": "Sélectionnez le service d'IA, la langue et votre fichier CSV. Utilisez un fichier que vous avez téléchargé et nettoyé depuis le visualiseur de rétroaction.",
+      "csvRequirements": {
+        "title": "Le CSV doit contenir :",
+        "items": {
+          "problemDetails": "Détails du problème/Question - requis",
+          "url": "URL - optionnel",
+          "context": "Propriétés de contexte - optionnel - Si laissé vide, le lot dérivera d'abord le contexte, si fourni, il utilisera le contexte fourni pour récupérer les réponses"
+        }
+      },
+      "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
+      "aiService": {
+        "label": "Service d'IA :",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic"
+      },
+      "language": {
+        "label": "Langue d'évaluation :",
+        "english": "Anglais",
+        "french": "Français"
+      },
+      "file": {
+        "label": "Sélectionner le fichier CSV de rétroaction :",
+        "selected": "Fichier sélectionné :"
+      },
+      "searchService": {
+        "label": "Service de recherche",
+        "google": "Google",
+        "canadaca": "Recherche Canada.ca"
+      },
+      "buttons": {
+        "upload": "Télécharger le fichier",
+        "startProcessing": "Démarrer le traitement"
+      },
+      "status": {
+        "preparing": "Création du lot...",
+        "started": "Lot démarré...",
+        "openaiWait": "Cela peut prendre jusqu'à une minute pour démarrer..."
+      },
+      "results": {
+        "title": "Traitement terminé",
+        "file": "Fichier :",
+        "entriesProcessed": "Entrées traitées :"
+      }
+    },
+    "list": {
+      
+      "title": "title",
+      "columns": {
+        "batchName": "Nom",
+        "batchId": "ID du lot",
+        "createdDate": "Date de création",
+        "provider": "Fournisseur",
+        "type": "Type",
+        "status": "Statut",
+        "action": "Action"
+      },
+      "actions": {
+        "csv": "CSV",
+        "excel": "Excel",
+        "process": "Traiter",
+        "cancel": "Annuler"
       }
     }
   }
+}

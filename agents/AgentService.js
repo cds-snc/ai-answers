@@ -66,7 +66,7 @@ const createContextAgent = async (agentType) => {
     case 'openai':
       llm = new ChatOpenAI({
         apiKey: process.env.OPENAI_API_KEY,
-        modelName: 'gpt-4o-mini',
+        modelName: 'gpt-4o',
         maxTokens: 8192,
         temperature: 0,
         timeoutMs: 60000,
@@ -81,7 +81,7 @@ const createContextAgent = async (agentType) => {
         timeoutMs: 60000,
       });
       break;
-    case 'claude':
+    case 'anthropic':
       llm = new ChatAnthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
         modelName: 'claude-3-5-haiku-20241022',

@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable import/no-unused-modules */
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AdminPage from './pages/AdminPage.js';
-import EvaluationPage from './pages/EvaluationPage.js';
+import EvaluationPage from './pages/BatchPage.js';
 import {
   GcdsHeader,
   GcdsBreadcrumbs,
@@ -24,7 +24,7 @@ const getAlternatePath = (currentPath, currentLang) => {
   return `/${newLang}${pathWithoutLang}`;
 };
 
-const AppContent = () => {
+const AppLayout = () => {
   const location = useLocation();
   const currentLang = location.pathname.startsWith('/fr') ? 'fr' : 'en';
   const alternateLangHref = getAlternatePath(location.pathname, currentLang);
@@ -47,18 +47,8 @@ const AppContent = () => {
       </GcdsHeader>
 
       <main id="main-content">
-        <Routes>
-          {/* English routes */}
-          <Route path="/" element={<HomePage lang="en" />} />
-          <Route path="/en" element={<HomePage lang="en" />} />
-          <Route path="/en/admin" element={<AdminPage lang="en" />} />
-          <Route path="/en/evaluation" element={<EvaluationPage lang="en" />} />
-
-          {/* French routes */}
-          <Route path="/fr" element={<HomePage lang="fr" />} />
-          <Route path="/fr/admin" element={<AdminPage lang="fr" />} />
-          <Route path="/fr/evaluation" element={<EvaluationPage lang="fr" />} />
-        </Routes>
+        {/* Outlet will be replaced by the matching route's element */}
+        <Outlet />
       </main>
 
       <GcdsFooter display="compact" lang={currentLang} />
@@ -66,12 +56,44 @@ const AppContent = () => {
   );
 };
 
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      {
+        path: '/',
+        element: <HomePage lang="en" />,
+      },
+      {
+        path: '/en',
+        element: <HomePage lang="en" />,
+      },
+      {
+        path: '/en/admin',
+        element: <AdminPage lang="en" />,
+      },
+      {
+        path: '/en/batch',
+        element: <EvaluationPage lang="en" />,
+      },
+      {
+        path: '/fr',
+        element: <HomePage lang="fr" />,
+      },
+      {
+        path: '/fr/admin',
+        element: <AdminPage lang="fr" />,
+      },
+      {
+        path: '/fr/batch',
+        element: <EvaluationPage lang="fr" />,
+      },
+    ],
+  },
+]);
+
 function App() {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

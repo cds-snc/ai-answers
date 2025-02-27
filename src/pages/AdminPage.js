@@ -1,14 +1,6 @@
 import React from 'react';
 // import { useTranslations } from '../hooks/useTranslations';
-import {
-  GcdsContainer,
-  GcdsText,
-  GcdsLink,
-  GcdsCheckbox,
-  GcdsTextarea,
-  GcdsButton,
-  GcdsDetails,
-} from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
 
 const AdminPage = ({ lang = 'en' }) => {

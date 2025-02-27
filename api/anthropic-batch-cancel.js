@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { Batch } from '../models/batch/batch.js';
+import { Batch } from '../models/batch.js';
+import dbConnect from './db-connect.js';
 
 
 const anthropic = new Anthropic({
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     }
 
     await anthropic.beta.messages.batches.cancel(batchId);
-
+    await dbConnect();
     await Batch.findOneAndDelete({ batchId });
     
     return res.status(200).json({ 
@@ -36,4 +37,4 @@ export default async function handler(req, res) {
       details: error.message 
     });
   }
-} 
+}
