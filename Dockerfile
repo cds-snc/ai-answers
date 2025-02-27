@@ -31,11 +31,16 @@ RUN npm install
 
 # Copy built frontend and backend code
 COPY --from=build /app/build /app/build
-COPY server /app/server
+# Copy all necessary files and directories
 COPY api /app/api
 COPY agents /app/agents
 COPY config /app/config
 COPY models /app/models
+COPY server /app/server
+COPY services /app/services
+COPY src /app/src
+# Copy any other necessary files at the root level
+COPY *.js *.json /app/
 
 # Expose only the backend port
 EXPOSE 3001
