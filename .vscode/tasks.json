@@ -12,7 +12,10 @@
           "owner": "typescript",
           "source": "ts",
           "applyTo": "closedDocuments",
-          "fileLocation": ["relative", "${cwd}"],
+          "fileLocation": [
+            "relative",
+            "${cwd}"
+          ],
           "pattern": "$tsc",
           "background": {
             "activeOnStart": true,
@@ -20,7 +23,10 @@
             "endsPattern": "^.*Compiled successfully\\.$"
           }
         }
-      ]
+      ],
+      "presentation": {
+        "reveal": "silent"
+      }
     }
   ]
 }

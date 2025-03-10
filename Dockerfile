@@ -41,4 +41,4 @@ COPY models /app/models
 EXPOSE 3001
 
 # Start the backend server
-CMD ["node", "server/server.js"]
+#CMD ["node", "server/server.js"]

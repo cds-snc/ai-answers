@@ -9,7 +9,7 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
-import checkDatabaseConnection from './services/database.js';
+import { DataStoreService } from './services/DataStoreService.js';
 // Add the icon packs to the library
 library.add(fas, far);
 
@@ -23,7 +23,7 @@ const renderApp = () => {
 };
 
 if (process.env.REACT_APP_ENV === 'production') {
-  checkDatabaseConnection()
+  DataStoreService.checkDatabaseConnection()
     .then((isConnected) => {
       if (isConnected) {
         console.log('Database is connected');

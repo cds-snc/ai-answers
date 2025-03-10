@@ -20,5 +20,11 @@ USER node
 
 EXPOSE 3000
 
+# Set working directory
+WORKDIR /app
+
+# Download AWS DocumentDB certificate bundle
+RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
 # Set the working directory
 WORKDIR /workspace

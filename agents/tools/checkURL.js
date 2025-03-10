@@ -2,10 +2,8 @@ import { tool } from "@langchain/core/tools";
 import axios from 'axios';
 import { Agent } from 'https';
 
-const checkUrlStatus = async (url) => {
+const checkUrlStatus = async (url, chatId = 'system') => {
     const httpsAgent = new Agent({ rejectUnauthorized: false });
-
-
 
     try {
         const response = await axios.get(url, { 
@@ -13,22 +11,43 @@ const checkUrlStatus = async (url) => {
             maxRedirects: 10,
             timeout: 10000,
         });
-        console.log(response.status === 200 ? `URL is live (${url})` : `URL is dead (${url})`);
-        return response.status === 200 ? `URL is live (${url})` : `URL is dead (${url})`;
-    } catch (getError) {
-        console.log(`Error checking URL with GET request: ${url}. Details: ${getError.message}`);
-        return `URL is dead ${url}`;
+        const isLive = response.status === 200;
+        if (!isLive) {
+            throw new Error(`URL returned status ${response.status}: ${url}`);
+        }
+        return `URL is live (${url})`;
+    } catch (error) {
+        if (error.code === 'ECONNREFUSED') {
+            throw new Error(`Connection refused: ${url}`);
+        } else if (error.response?.status === 403) {
+            throw new Error(`Access forbidden (403): ${url}`);
+        } else if (error.response?.status === 404) {
+            throw new Error(`Page not found (404): ${url}`);
+        } else if (error.code === 'ETIMEDOUT') {
+            throw new Error(`Request timed out: ${url}`);
+        } else {
+            throw new Error(`URL check failed: ${url} - ${error.message}`);
+        }
     }
-
 };
 
 const checkUrlStatusTool = tool(
-    async (input) => {
-        return await checkUrlStatus(input);
+    async ({ url, chatId = 'system' }) => {
+        return await checkUrlStatus(url, chatId);
     },
     {
         name: "checkUrl",
-        description: "Always use this tool to verify the status of a URL. Provide a valid URL as input to check its status. Example input: 'https://example.com'",
+        description: "Always use this tool to verify the status of a URL. Provide a valid URL.",
+        schema: {
+            type: "object",
+            properties: {
+                url: { 
+                    type: "string", 
+                    description: "The URL to check" 
+                }
+            },
+            required: ["url"]
+        }
     }
 );
 

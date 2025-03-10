@@ -1,6 +1,6 @@
 // config/ai-models.js
 const AI_MODELS = {
-  openai: {
+  azure: {
     default: 'openai-gpt4o-mini',
     models: {
       'openai-gpt4o-mini': {
@@ -11,15 +11,35 @@ const AI_MODELS = {
 
     }
   },
-  anthropic: {
-    default: 'claude-3-5-sonnet-20241022',
+  openai: {
+    default: 'gpt-4o-2024-11-20',
     models: {
-      'claude-3-5-sonnet-20241022': {
+      'gpt-4o-2024-11-20': {
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+      },
+      'gpt-4o': {
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+      },
+      'gpt-4o-mini': {
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+    }
+
+    }
+  },
+  anthropic: {
+    default: 'claude-3-7-sonnet-latest',
+    models: {
+      'claude-3-7-sonnet-latest': {
         maxTokens: 1024,
         temperature: 0.0,
         knowledgeCutoff: '2024-04',
         beta: {
-          promptCaching: 'prompt-caching-2024-07-31',
           messageBatches: 'message-batches-2024-09-24'
         }
       },
@@ -34,22 +54,7 @@ const AI_MODELS = {
       }
     }
   },
-  //TODO: When cohere is working on Vercel, implement via this config file
-  //   cohere: {
-  //     default: 'command-r-plus-08-2024',
-  //     models: {
-  //       'command-r-plus-08-2024': {
-  //         maxTokens: 1024,
-  //         temperature: 0.5,
-  //         knowledgeCutoff: '2024-08'
-  //       },
-  //       'command-r-plus': {
-  //         maxTokens: 1024,
-  //         temperature: 0.5,
-  //         knowledgeCutoff: '2024-05'
-  //       }
-  //     }
-  //   }
+ 
 };
 
 export const getModelConfig = (provider, modelName = null) => {

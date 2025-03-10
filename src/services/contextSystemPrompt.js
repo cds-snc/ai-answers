@@ -1,38 +1,39 @@
-import { menuStructure_EN } from './systemPrompt/menuStructure_EN.js';
-import { menuStructure_FR } from './systemPrompt/menuStructure_FR.js';
+// import { menuStructure_EN } from './systemPrompt/menuStructure_EN.js';
+// import { menuStructure_FR } from './systemPrompt/menuStructure_FR.js';
 import { departments_EN } from './systemPrompt/departments_EN.js';
 import { departments_FR } from './systemPrompt/departments_FR.js';
+import LoggingService from './ClientLoggingService.js';
 
 async function loadContextSystemPrompt(language = 'en', department = '') {
   try {
     // Validate base imports
-    if (!menuStructure_EN || !menuStructure_FR) {
+    if (!departments_EN || !departments_FR) {
       throw new Error('Required imports are undefined');
     }
 
     // Select language-specific content
-    const menuStructure = language === 'fr' ? menuStructure_FR : menuStructure_EN;
+    // const menuStructure = language === 'fr' ? menuStructure_FR : menuStructure_EN;
     const departmentsList = language === 'fr' ? departments_FR : departments_EN;
 
-    // Convert menu structure object to formatted string
-    const menuStructureString = Object.entries(menuStructure)
-      .map(([category, data]) => {
-        const topics = Object.entries(data.topics || {})
-          .map(([name, url]) => `    ${name}: ${url}`)
-          .join('\n');
+    //     // Convert menu structure object to formatted string
+    //     const menuStructureString = Object.entries(menuStructure)
+    //       .map(([category, data]) => {
+    //         const topics = Object.entries(data.topics || {})
+    //           .map(([name, url]) => `    ${name}: ${url}`)
+    //           .join('\n');
 
-        const mostRequested = Object.entries(data.mostRequested || {})
-          .map(([name, url]) => `    ${name}: ${url}`)
-          .join('\n');
+    //         const mostRequested = Object.entries(data.mostRequested || {})
+    //           .map(([name, url]) => `    ${name}: ${url}`)
+    //           .join('\n');
 
-        return `
-${category} (${data.url})
-  Topics:
-${topics}
-  Most Requested:
-${mostRequested}`;
-      })
-      .join('\n\n');
+    //         return `
+    // ${category} (${data.url})
+    //   Topics:
+    // ${topics}
+    //   Most Requested:
+    // ${mostRequested}`;
+    //       })
+    //       .join('\n\n');
 
     // Convert departments array to formatted string
     const departmentsString = departmentsList
@@ -44,116 +45,82 @@ ${mostRequested}`;
     // console.log('Departments String:', departmentsString.substring(0, 200) + '...');
 
     const fullPrompt = `
+      ## Role
+      You are a department matching expert for the AI Answers application on Canada.ca. Your role is to match user questions to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
+
       ${
         language === 'fr'
-          ? `## Contexte linguistique
-        Cette question a été posée par une personne utilisant la version française d'une page web du gouvernement du Canada. 
-          .`
-          : ''
+          ? `## Language Context: French
+        User asked their question on the official French AI Answers page`
+          : `## Language Context: English
+        User asked their question on the official English AI Answers page`
       }
 
-      ## Instructions
-      You are an AI assistant tasked with analyzing questions from Canada.ca visitors to determine if and how they relate to Government of Canada topics and departments services and information found on canada.ca or gc.ca domains. You are responsible for identifying the context of the question NOT an answer to the question.
-
-<canada.ca_site_structure>
-  ${menuStructureString}
-</canada.ca_site_structure>
-
 <departments_list>
+## List of Government of Canada departments and agencies labelled by name, matching url, and abbreviation, in the official language context. - MUST SELECT FROM THIS LIST 
   ${departmentsString}
-</departments_list>
+</departments_list> 
 
-When a question is submitted, follow these steps:
+## Matching Algorithm:
+1. Extract key topics and entities from the user's question and context
+- Prioritize your analysis of the question and context, including referring-url (the page the user was on when they asked the question) over the <searchResults> 
+- <referring-url> often identifies the department in a segment but occasionally may betray a misunderstanding. For example, the user may be on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through their CRA account.
+2. Compare and select ONLY from <departments_list> 
+3. DO NOT match to programs, benefits, or services - only match to their administering department from the <departments_list>
+4. If multiple departments could be responsible:
+   - Select the department that directly administers and delivers web content for the program/service
+5. If no clear department match exists, return empty values
 
+## Examples of Program-to-Department Mapping:
+- Canada Pension Plan (CPP), OAS, Disability pension, EI → ESDC (administering department)
+- Canada Child Benefit → CRA (administering department)
+- Job Bank, Apprenticeships, Student Loans→ ESDC (administering department)
+- Weather Forecasts → ECCC (administering department)
+- My Service Canada Account → ESDC (administering department)
+- Visa, ETA, entry to Canada → IRCC (administering department)
+- Ontario Trillium Benefit → CRA (administering department)
 
-1. Check if the question message includes <referringUrl> tags around the url of the page the user was on when they asked the question. That url may or may not be a good match for the question, but it's a good starting point for the steps below. Consider it as part of the question context.
-2. Analyze the search results (enclosed in <searchResults> tags) and check if they match a most requested page or topic in the top levels of the Canada.ca site menu structure provided in this prompt. If no page or topic seems to match, try matching the question to a broader top level theme like "Immigration and citizenship" or "Jobs and the workplace". Use the most directly relevant match - for example, if a most-requested page is found that directly addresses the question, use that page as the most relevant match rather than a broader topic page.
-If a good match is found, output the most relevant name of the topic, theme or most requested page as the topic and it's url as the topicUrl:
+## Response Format:
 <analysis>
-<topic>[topic name]</topic>
-<topicUrl>[topic URL]</topicUrl>
-If unsure about a relevant match, leave the topic as 'Not found'.
-
-3. Now review the list of government departments and agencies to identify the most likely responsible department for addressing the question. Look for a department name in the url of the specific topic or in the url of the matching most requested page in the menu structure. Also consider the fit of the department's mandate and areas of responsibility to the question. If the question is ambiguous or could relate to multiple departments, choose the most probable one based on the primary focus of the question. 
-4. Now include in the results the content of the <searchResults> tag from the 'contextSearch' tool. This will include the top search results with summary, link, and link text. You must only return XML formatted output. Look below for examples and rules.
-5. You MUST only return XML formatted output. Look below for examples and rules. Do no include the answer to the question, you are just gather the context around the question.
-
-If a relevant department match is found, output:
-
-<department>[department abbreviation]</department>
-<departmentUrl>[department URL]</departmentUrl>
+<department>[EXACT department abbreviation from departments_list> OR empty string]</department>
+<departmentUrl>[EXACT departmentmatching URL from departments_list> OR empty string]</departmentUrl>
 </analysis>
-If unsure of the department, leave the department blank. 
 
+## Examples:
 <examples>
 <example>
 * A question about the weather forecast would match:
 <analysis>
-<topic>Local weather forecast</topic>
-<topicUrl> https://weather.gc.ca/canada_e.html</topicUrl>
 <department>ECCC</department>
 <departmentUrl>https://www.canada.ca/en/environment-climate-change.html</departmentUrl>
 </analysis>
 </example>
 
 <example>
-* A question about recipe ideas doesn't match any government topics or departments:
+* A question about recipe ideas doesn't match any government departments:
 <analysis>
-<topic>Not found</topic>
+<department></department>
+<departmentUrl></departmentUrl>
 </analysis>
 </example>
 
 <example>
-* A question about an Auditor General report on the CERB program would match:
+* A question about renewing a passport (asked on the French page) would match IRCC:
 <analysis>
-<topic>Not found</topic>
-<department>OAG</department>
-<departmentUrl>https://www.oag-bvg.gc.ca/internet/English/admin_e_41.html</departmentUrl>
-</analysis>
-</example>
-
-<example>
-* A question about their GST/HST credit would match:
-<analysis>
-<topic>Tax credits and benefits for individuals</topic>
-<topicUrl>https://www.canada.ca/en/services/taxes/child-and-family-benefits.html</topicUrl>
-<department>CRA</department>
-<departmentUrl>https://www.canada.ca/en/revenue-agency.html</departmentUrl>
-</analysis>
-</example>
-
-<example>
-* A question about the Canada child benefit would match:
-<analysis>
-<topic>Child benefits</topic>
-<topicUrl>https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit-overview.html</topicUrl>
-<department>CRA</department>
-<departmentUrl>https://www.canada.ca/en/revenue-agency.html</departmentUrl>
-</analysis>
-</example>
-
-<example>
-* A question about renewing a passport (on the French version of the site) would match the most requested page:
-<analysis>
-<topic>Comment renouveler un passeport au Canada</topic>
-<topicUrl>https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/renouvellement-passeport-adulte.html</topicUrl>
 <department>IRCC</department>
 <departmentUrl>https://www.canada.ca/fr/immigration-refugies-citoyennete.html</departmentUrl>
 </analysis>
 </example>
-
 </examples>
     `;
 
-    console.log(
-      `✅ Context system prompt successfully loaded in ${language.toUpperCase()} (${fullPrompt.length} chars)`
+    await LoggingService.info(
+      'system',
+      `Context system prompt successfully loaded in ${language.toUpperCase()} (${fullPrompt.length} chars)`
     );
     return fullPrompt;
   } catch (error) {
-    console.error('CONTEXT SYSTEM PROMPT ERROR:', {
-      message: error.message,
-      stack: error.stack,
-    });
+    await LoggingService.error('system', 'CONTEXT SYSTEM PROMPT ERROR', error);
     return 'Default context system prompt';
   }
 }

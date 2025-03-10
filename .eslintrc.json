@@ -17,13 +17,11 @@
       "eslint:recommended",
       "plugin:react/recommended",
       "plugin:react-hooks/recommended",
-      "plugin:import/recommended",
-      "plugin:prettier/recommended"
+      "plugin:import/recommended"
     ],
     "plugins": [
       "react",
       "react-hooks",
-      "prettier",
       "import"
     ],
     "rules": {
@@ -35,7 +33,6 @@
       "no-irregular-whitespace": "off",
       "react/no-unescaped-entities": "off",
       "react/react-in-jsx-scope": "off",
-      "prettier/prettier": "error",
       "import/no-unused-modules": "off"
     },
     "settings": {
