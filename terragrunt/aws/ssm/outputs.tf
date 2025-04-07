@@ -52,3 +52,13 @@ output "jwt_secret_key_arn" {
   description = "ARN of the JWT secret key parameter"
   value       = aws_ssm_parameter.jwt_secret_key.arn
 }
+
+output "google_ai_api_key_arn" {
+  description = "ARN of the Google AI API key parameter"
+  value       = aws_ssm_parameter.google_ai_api_key.arn
+}
+
+output "google_search_engine_id_arn" {
+  description = "ARN of the Google Search Engine ID parameter"
+  value       = aws_ssm_parameter.google_search_engine_id.arn
+}
