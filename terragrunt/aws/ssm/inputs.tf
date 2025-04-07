@@ -50,3 +50,14 @@ variable "jwt_secret_key" {
   sensitive   = true
   type        = string
 }
+variable "google_ai_api_key" {
+  description = "The Google AI API key"
+  sensitive   = true
+  type        = string
+}
+
+variable "google_search_engine_id" {
+  description = "The Google Search Engine ID"
+  sensitive   = true
+  type        = string
+}

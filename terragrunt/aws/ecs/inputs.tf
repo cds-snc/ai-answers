@@ -113,3 +113,12 @@ variable "jwt_secret_key_arn" {
   description = "ARN of the JWT Secret Key parameter"
   type        = string
 }
+variable "google_ai_api_key_arn" {
+  description = "ARN of the Google AI API key parameter"
+  type        = string
+}
+
+variable "google_search_engine_id_arn" {
+  description = "ARN of the Google Search Engine ID parameter"
+  type        = string
+}

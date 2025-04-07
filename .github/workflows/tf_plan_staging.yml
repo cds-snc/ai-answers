@@ -23,6 +23,8 @@ env:
   TF_VAR_jwt_secret_key: ${{ secrets.JWT_SECRET_KEY}}
   TF_VAR_sentinel_customer_id: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
   TF_VAR_sentinel_shared_key: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
+  TF_VAR_google_ai_api_key: ${{ secrets.GOOGLE_AI_API_KEY}}
+  TF_VAR_google_search_engine_id: ${{ secrets.GOOGLE_SEARCH_ENGINE_ID}}
 
 permissions:
   id-token: write

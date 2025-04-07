@@ -31,6 +31,14 @@ locals {
     {
       "name"      = "JWT_SECRET_KEY"
       "valueFrom" = var.jwt_secret_key_arn
+    },
+    {
+      "name"      = "GOOGLE_AI_API_KEY"
+      "valueFrom" = var.google_ai_api_key_arn
+    },
+    {
+      "name"      = "GOOGLE_SEARCH_ENGINE_ID"
+      "valueFrom" = var.google_search_engine_id_arn
     }
   ]
 }
