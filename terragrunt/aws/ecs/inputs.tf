@@ -4,7 +4,7 @@ variable "vpc_id" {
 }
 
 variable "vpc_cidr_block" {
-  description = "List of cidr block ips for the React Answers VPC"
+  description = "CIDR block list for the React Answers VPC"
   type        = string
 }
 
