@@ -297,8 +297,12 @@ class RedactionService {
         description: 'Passport Numbers'
       },
       {
-        pattern: /\b(?<!\$)(?=[A-Z0-9-]*[0-9])(?=[A-Z0-9-]*[A-Z])[A-Z0-9-]{5,}\b/gi,
-        description: 'Alphanumeric sequences of 5+ chars that contain both letters and numbers (catches various ID numbers, passport numbers, account codes, etc., but excludes pure text or numbers)'
+        pattern: /\b(?=[A-Z0-9-]*[0-9])(?=[A-Z0-9-]*[A-Z])(?!(?:GST\d{3}|RC\d{3}\b|RC\d+[A-Z-]*)\b)[A-Z0-9-]{6,}\b/gi,
+        description: 'Alphanumeric sequences of 6+ chars that contain both letters and numbers (excluding GST and RC forms)'
+      },
+      {
+        pattern: /\b(?<!\$)\d{6,}\b/g,
+        description: 'Long number sequences like credit card numbers with negative lookbehind to exclude dollar amounts'
       },
       {
         pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
@@ -309,8 +313,8 @@ class RedactionService {
         description: 'Street addresses'
       },
       {
-        pattern: /\b\d{5}(?:-\d{4})?\b/g,
-        description: 'US ZIP codes'
+        pattern: /\b(?<!\$)\d{5}(?:-\d{4})?\b/g,
+        description: 'US ZIP codes of 5 digits (excluding dollar amounts)'
       },
       {
         pattern: /\b(apt|bldg|dept|fl|hngr|lot|pier|rm|ste|slip|trlr|unit|#)\.? *\d+[a-z]?\b/gi,
@@ -327,10 +331,6 @@ class RedactionService {
       {
         pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
         description: 'URLs'
-      },
-      {
-        pattern: /(?<!\$)(?!\d{4}\b)\b\d{5,}\b/g,
-        description: 'Long number sequences'
       },
       {
         pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g,

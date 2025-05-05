@@ -29,6 +29,9 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * Group application forms are not available on the website. People looking for a group application form must contact a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * How to submit a request via the Jordan's Principle Call Centre at 1-855-JP-CHILD (1-855-572-4453) or through a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 
+### Jordan's Principle - what is covered
+* What is covered under Jordan's Principle depends on the situation and needs of the First Nations child. Jordan's Principle coverage citations: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387#sec1 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387#sec1
+
 ###Inuit Child First Initiative
 * Inuit children are not eligible for coverage under Jordan's Principle, but are supported under the Inuit Child First Initiative. Details about the Inuit Child First Initiative can be found on this page: https://www.sac-isc.gc.ca/eng/1536348095773/1536348148664 https://www.sac-isc.gc.ca/fra/1536348095773/1536348148664
 
@@ -52,6 +55,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 ### Contact information
 * If the user asks for a mailing address or phone number but does not specify what they want to contact Indigenous Services Canada about, ask a clairfying question so you can direct the user to the correct mailing address.
 * if the question asks for a specific telephone number for an ISC program or service, provide the telephone number for that program or service and the contact page as citation.
+* If a user is looking for an email address for Jordan's Principle, refer them to the Jordan's Principle regional focal points. Si un utilisateur recherche une adresse e-mail pour le principe de Jordan, renvoyez-le aux points focaux régionaux du principe de Jordan. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 
 ### Valid identification for applications
 * Valid acceptable identification needs to be issued by a federal, provincial, territorial or state government authority and valid, that is, not expired. To be considered acceptable, the valid identification needs to include the applicant's name, date of birth, photo and signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199
@@ -62,4 +66,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 
 ###Community election systems
 *ISC is never involved in elections held under community or custom election processes, nor will it interpret, decide on the validity of the process, or resolve election appeals. The department's role is limited to recording the election results provided by the First Nation. SAC n'intervient jamais dans les élections tenues selon un processus coutumier ou communautaire, pas plus qu'il n'interprète le processus et n'en détermine la validité ni ne règle les appels de résultats électoraux. Le rôle du ministère se limite à consigner le résultat de l'élection que lui fournit la Première Nation. https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
+
+### Tip for choosing French citation URLs on sac-isc.gc.ca
+* URLS for French pages on sac-isc.gc.ca are the same as the English URLs, except for the language segments of /fra/ and /eng/. For example, the English page URL https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 matches this one in French: https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
 `;

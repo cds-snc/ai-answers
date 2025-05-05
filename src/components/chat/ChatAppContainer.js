@@ -6,8 +6,6 @@ import ChatInterface from './ChatInterface.js';
 import { ChatPipelineService, RedactionError } from '../../services/ChatPipelineService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-
-
 // Utility functions go here, before the component
 const extractSentences = (paragraph) => {
   const sentenceRegex = /<s-?\d+>(.*?)<\/s-?\d+>/g;
@@ -19,11 +17,17 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-
 const ChatAppContainer = ({ lang = 'en', chatId }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
+  
+  // Add safeT helper function
+  const safeT = useCallback((key) => {
+    const result = t(key);
+    return typeof result === 'object' && result !== null ? result.text : result;
+  }, [t]);
+  
   const { url: pageUrl, department: urlDepartment } = usePageContext();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -41,6 +45,43 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
   const statusQueueRef = useRef([]);
   // Add a ref to track if we're currently typing
   const isTyping = useRef(false);
+  const [ariaLiveMessage, setAriaLiveMessage] = useState('');
+
+  useEffect(() => {
+    if (isLoading) {
+      setAriaLiveMessage(
+        displayStatus === 'thinkingWithContext'
+          ? `${safeT('homepage.chat.messages.thinkingWithContext')}`
+          : safeT(`homepage.chat.messages.${displayStatus}`)
+      );
+    } else {
+      const lastMessage = messages[messages.length - 1];
+      const secondToLastMessage = messages[messages.length - 2];
+      
+      if (lastMessage) {
+        if (lastMessage.sender === 'ai') {
+          const paragraphs = lastMessage.interaction?.answer?.paragraphs || [];
+          const sentences = paragraphs.flatMap(paragraph => extractSentences(paragraph));
+          const plainText = sentences.join(' ');
+          const citation = lastMessage.interaction?.answer?.citationHead || '';
+          const displayUrl = lastMessage.interaction?.citationUrl || '';
+          setAriaLiveMessage(`${safeT('homepage.chat.messages.yourAnswerIs')} ${plainText} ${citation} ${displayUrl}`.trim());
+        } else if (lastMessage.sender === 'user') {
+          setAriaLiveMessage(lastMessage.text || '');
+        } else if (lastMessage.error) {
+          // Check if this is a redaction case by looking at the second-to-last message
+          if (secondToLastMessage?.redactedText) {
+            const redactionType = secondToLastMessage.redactedText.includes('XXX') 
+              ? t('homepage.chat.messages.privateContent')
+              : t('homepage.chat.messages.blockedContent');
+            setAriaLiveMessage(`${redactionType}. ${safeT('homepage.chat.messages.yourQuestionWas')} ${secondToLastMessage.redactedText}`);
+          } else {
+            setAriaLiveMessage(lastMessage.errorMessage || t('homepage.chat.messages.error'));
+          }
+        }
+      }
+    }
+  }, [isLoading, displayStatus, messages, t, selectedDepartment, safeT]);
 
   const processNextStatus = useCallback(() => {
     if (statusQueueRef.current.length === 0) {
@@ -75,7 +116,6 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     };
   }, []);
 
-
   const handleInputChange = (e) => {
     isTyping.current = true;
     setInputText(e.target.value);
@@ -99,8 +139,6 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     setInputText('');
     setTextareaKey(prevKey => prevKey + 1);
   }, []);
-
-
 
   const handleReferringUrlChange = (e) => {
     const url = e.target.value.trim();
@@ -138,7 +176,6 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     window.location.reload();
   };
 
-
   const handleSendMessage = useCallback(async () => {
     if (inputText.trim() !== '' && !isLoading) {
 
@@ -151,7 +188,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
           ...prevMessages,
           {
             id: errorMessageId,
-            text: t('homepage.chat.messages.characterLimit'),
+            text: safeT('homepage.chat.messages.characterLimit'),
             sender: 'system',
             error: true
           }
@@ -218,7 +255,9 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
               id: blockedMessageId,
               text: <div dangerouslySetInnerHTML={{
                 __html:
-                  (error.redactedText.includes('XXX') ? t('homepage.chat.messages.privateContent') : t('homepage.chat.messages.blockedContent'))
+                  (error.redactedText.includes('XXX') 
+                    ? safeT('homepage.chat.messages.privateContent')
+                    : safeT('homepage.chat.messages.blockedContent'))
               }} />,
               sender: 'system',
               error: true
@@ -234,7 +273,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
             ...prevMessages,
             {
               id: errorMessageId,
-              text: t('homepage.chat.messages.error'),
+              text: safeT('homepage.chat.messages.error'),
               sender: 'system',
               error: true
             }
@@ -257,7 +296,8 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     selectedDepartment,
     isLoading,
     messages,
-    updateStatusWithTimer
+    updateStatusWithTimer,
+    safeT
   ]);
 
   useEffect(() => {
@@ -294,7 +334,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
         })}
         <div className="mistake-disc">
           <p><FontAwesomeIcon icon="wand-magic-sparkles" />&nbsp;
-          {t('homepage.chat.input.loadingHint')}
+          {safeT('homepage.chat.input.loadingHint')}
         </p>
        </div>
         {message.interaction.answer.answerType === 'normal' && (message.interaction.answer.citationHead || displayUrl) && (
@@ -308,51 +348,75 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
               </p>
             )}
             <p key={`${messageId}-confidence`} className="confidence-rating">
-              {finalConfidenceRating !== undefined && `${t('homepage.chat.citation.confidence')} ${finalConfidenceRating}`}
+              {finalConfidenceRating !== undefined && `${safeT('homepage.chat.citation.confidence')} ${finalConfidenceRating}`}
               {finalConfidenceRating !== undefined && (aiService || messageDepartment) && ' | '}
-              {aiService && `${t('homepage.chat.citation.ai')} ${aiService}`}
+              {aiService && `${safeT('homepage.chat.citation.ai')} ${aiService}`}
               {messageDepartment && ` | ${messageDepartment}`}
             </p>
           </div>
         )}
       </div>
     );
-  }, [t, selectedDepartment]);
+  }, [t, selectedDepartment, safeT]);
 
   // Add handler for department changes
   const handleDepartmentChange = (department) => {
     setSelectedDepartment(department);
   };
 
+  const initialInput = t('homepage.chat.input.initial');
+
   return (
-    <ChatInterface
-      messages={messages}
-      inputText={inputText}
-      isLoading={isLoading}
-      textareaKey={textareaKey}
-      handleInputChange={handleInputChange}
-      handleSendMessage={handleSendMessage}
-      handleReload={handleReload}
-      handleAIToggle={handleAIToggle}
-      handleSearchToggle={handleSearchToggle} // Add this line
-      handleDepartmentChange={handleDepartmentChange}
-      handleReferringUrlChange={handleReferringUrlChange}
-      formatAIResponse={formatAIResponse}
-      selectedAI={selectedAI}
-      selectedSearch={selectedSearch} // Add this line
-      selectedDepartment={selectedDepartment}
-      referringUrl={referringUrl}
-      turnCount={turnCount}
-      showFeedback={showFeedback}
-      displayStatus={displayStatus}
-      MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
-      t={t}
-      lang={lang}
-      privacyMessage={t('homepage.chat.messages.privacy')}
-      getLabelForInput={() => turnCount >= 1 ? t('homepage.chat.input.followUp') : t('homepage.chat.input.initial')}
-      extractSentences={extractSentences}
-      chatId={chatId}
-    />
+    <>
+      <ChatInterface
+        messages={messages}
+        inputText={inputText}
+        isLoading={isLoading}
+        textareaKey={textareaKey}
+        handleInputChange={handleInputChange}
+        handleSendMessage={handleSendMessage}
+        handleReload={handleReload}
+        handleAIToggle={handleAIToggle}
+        handleSearchToggle={handleSearchToggle} // Add this line
+        handleDepartmentChange={handleDepartmentChange}
+        handleReferringUrlChange={handleReferringUrlChange}
+        formatAIResponse={formatAIResponse}
+        selectedAI={selectedAI}
+        selectedSearch={selectedSearch} // Add this line
+        selectedDepartment={selectedDepartment}
+        referringUrl={referringUrl}
+        turnCount={turnCount}
+        showFeedback={showFeedback}
+        displayStatus={displayStatus}
+        MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
+        t={t}
+        lang={lang}
+        privacyMessage={safeT('homepage.chat.messages.privacy')}
+        getLabelForInput={() =>
+          turnCount === 0
+            ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
+            : (typeof t('homepage.chat.input.followUp') === 'object' 
+               ? t('homepage.chat.input.followUp').text 
+               : t('homepage.chat.input.followUp'))
+        }
+        ariaLabelForInput={
+          turnCount === 0
+            ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
+            : (typeof t('homepage.chat.input.followUp') === 'object'
+               ? t('homepage.chat.input.followUp').ariaLabel
+               : undefined)
+        }
+        extractSentences={extractSentences}
+        chatId={chatId}
+      />
+      <div
+        aria-live="polite"
+        role="status"
+        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+      >
+        {ariaLiveMessage}
+      </div>
+    </>
   );
 };
 

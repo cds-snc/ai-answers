@@ -1,13 +1,19 @@
 {
   "homepage": {
     "title": "Réponses IA",
-    "subtitle": "Obtenez des réponses à vos questions sur Canada.ca.",
+    "subtitle": {
+      "text": "Obtenez des réponses à vos questions sur Canada.ca.",
+      "ariaLabel": "Obtenez des réponses à vos questions sur Canada point CA."
+    },
     "alpha": {
       "label": "Alpha",
       "description": "Page expérimentale — non publique."
     },
     "intro": {
-      "researchOnly": "Cette preuve de concept est uniquement destinée à la recherche. Elle fait l'objet de travaux continus."
+      "researchOnly": "Les réponses fournies par ce service d'IA sont des informations, et non des conseils officiels. Des améliorations sont en cours."
+    },
+    "textarea": {
+      "ariaLabel": "Voici les réponses de Canada point CA, veuillez entrer votre question."
     },
     "about": {
       "title": "À propos de Réponses IA",
@@ -32,7 +38,7 @@
     },
     "privacy": {
       "title": "Confidentialité et conditions d'utilisation de l'IA",
-      "storage": "Nous pouvons conserver vos questions et réponses pour améliorer les performances du système. Les informations personnelles seront supprimées et remplacées par XXX. Les informations personnelles ne seront pas conservées.",
+      "storage": "Toutes les questions et réponses sont stockées pour améliorer les performances du système. La plupart des renseignements personnels (noms, adresses, numéros de téléphone, adresses courriel, numéros de compte, etc.) sont bloqués pour ne pas être envoyés au service d'IA afin de protéger votre vie privée. Les renseignements personnels qui sont bloqués ne seront pas stockés.",
       "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
       "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada et votre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
@@ -48,8 +54,14 @@
     "chat": {
       "chatId": "ID de chat",
       "input": {
-        "initial": "Posez une question sur Canada.ca",
-        "followUp": "Posez une question de suivi ou répondez",
+        "initial": {
+          "text": "Posez une question sur Canada.ca",
+          "ariaLabel": "Posez une question sur Canada point ca"
+        },
+        "followUp": {
+          "text": "Posez une question de suivi ou répondez",
+          "ariaLabel": "Posez une question de suivi ou répondez"
+        },
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse."
       },
@@ -98,7 +110,9 @@
         "updatingDatastore": "Mise à jour du datastore...",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Modération de la question...",
-        "needClarification" : "Nécessite des précisions..."
+        "needClarification" : "Nécessite des précisions...",
+        "yourQuestionWas": "Votre question était :",
+        "yourAnswerIs": "Votre réponse est :"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
