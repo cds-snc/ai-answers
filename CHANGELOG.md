@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/cds-snc/ai-answers/compare/v1.4.1...v1.4.2) (2025-05-30)
+
+
+### Bug Fixes
+
+* update Azure OpenAI client creation to use correct model configuration and add logging ([83e082b](https://github.com/cds-snc/ai-answers/commit/83e082b59d28051d139a061075bb29e86a5655b0))
+
 ## [1.4.1](https://github.com/cds-snc/ai-answers/compare/v1.4.0...v1.4.1) (2025-05-23)
 
 
