@@ -14,8 +14,6 @@ const ChatViewer = () => {
   const { language } = usePageContext();
   const [chatId, setChatId] = useState('');
   const [logs, setLogs] = useState([]);
-  const [isPolling, setIsPolling] = useState(false);
-  const [pollingInterval, setPollingInterval] = useState(null);
   const tableRef = useRef(null);
   const dataTableRef = useRef(null);
   const [expandedMetadata, setExpandedMetadata] = useState(null);
@@ -195,15 +193,8 @@ const ChatViewer = () => {
   const handleChatIdChange = (e) => {
     const newValue = e.target ? e.target.value : e;
 
-    // If chat ID changes, stop polling and clear the data table
+    // If chat ID changes, clear the data table
     if (newValue !== chatId) {
-      if (isPolling && pollingInterval) {
-        console.log('Stopping polling due to chat ID change');
-        clearInterval(pollingInterval);
-        setIsPolling(false);
-        setPollingInterval(null);
-      }
-
       // Properly cleanup DataTable before clearing logs
       if (dataTableRef.current) {
         console.log('Destroying DataTable instance before changing chat ID');
@@ -247,32 +238,9 @@ const ChatViewer = () => {
     }
   };
 
-  const handleStartStopLogging = () => {
-    const newIsPolling = !isPolling;
-    console.log(newIsPolling ? 'Starting' : 'Stopping', 'logging with chat ID:', chatId);
-    setIsPolling(newIsPolling);
-
-    if (!newIsPolling && pollingInterval) {
-      clearInterval(pollingInterval);
-      setPollingInterval(null);
-      return;
-    }
-
-    // Initial fetch if we're starting polling - uses whatever ID is currently in the input
-    if (newIsPolling) {
-      fetchLogs(); // Uses current chatId state value
-      const interval = setInterval(fetchLogs, 5000);
-      setPollingInterval(interval);
-    }
+  const handleRefreshLogs = () => {
+    fetchLogs();
   };
-
-  useEffect(() => {
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [pollingInterval]);
 
   useEffect(() => {
     // Control body scroll when modal is open
@@ -323,15 +291,10 @@ const ChatViewer = () => {
               <GcdsButton
                 type="button"
                 disabled={!chatId}
-                onClick={handleStartStopLogging}
+                onClick={handleRefreshLogs}
               >
-                {isPolling ? t('logging.pause') : t('logging.start')}
+                {t('logging.refresh')}
               </GcdsButton>
-              {isPolling && (
-                <div className="text-green-600 font-medium">
-                  Polling active for chat ID: {chatId}
-                </div>
-              )}
             </div>
 
             {chatId && logs && (

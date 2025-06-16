@@ -267,8 +267,7 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "start": "Démarrer",
-    "pause": "Pause"
+    "refresh": "Actualiser"
   },
   "admin": {
     "title": "Tableau de bord d'administration de Réponses IA",

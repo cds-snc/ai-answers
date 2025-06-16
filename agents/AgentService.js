@@ -5,6 +5,7 @@ import { ChatCohere } from '@langchain/cohere';
 import OpenAI from 'openai';
 import downloadWebPageTool from './tools/downloadWebPage.js';
 import checkUrlStatusTool from './tools/checkURL.js';
+import createContextAgentTool from './tools/contextAgentTool.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
 import dotenv from 'dotenv';
@@ -54,7 +55,7 @@ const createDirectAzureOpenAIClient = () => {
   }
 };
 
-const createTools = (chatId = 'system') => {
+const createTools = (chatId = 'system', agentType = 'openai') => {
   const callbacks = [new ToolTrackingHandler(chatId)];
 
   // Wrap tools with callbacks to ensure consistent tracking
@@ -71,10 +72,13 @@ const createTools = (chatId = 'system') => {
     }
   });
 
+  const contextTool = createContextAgentTool(agentType);
+
   return {
     tools: [
       wrapToolWithCallbacks(downloadWebPageTool),
       wrapToolWithCallbacks(checkUrlStatusTool),
+      wrapToolWithCallbacks(contextTool),
 
     ],
     callbacks
@@ -93,7 +97,7 @@ const createAzureOpenAIAgent = async (chatId = 'system') => {
     timeout: modelConfig.timeoutMs,
   });
 
-  const { tools, callbacks } = createTools(chatId);
+  const { tools, callbacks } = createTools(chatId, 'azure');
   const agent = await createReactAgent({
     llm: openai, tools,
     agentConfig: {
@@ -118,7 +122,7 @@ const createOpenAIAgent = async (chatId = 'system') => {
 
   });
 
-  const { tools, callbacks } = createTools(chatId);
+  const { tools, callbacks } = createTools(chatId, 'openai');
 
 
   const agent = await createReactAgent({
@@ -145,7 +149,7 @@ const createCohereAgent = async (chatId = 'system') => {
     maxTokens: modelConfig.maxTokens,
   });
 
-  const { tools, callbacks } = createTools(chatId);
+  const { tools, callbacks } = createTools(chatId, 'cohere');
   const agent = await createReactAgent({ llm: cohere, tools });
   agent.callbacks = callbacks;
   return agent;
@@ -161,7 +165,7 @@ const createClaudeAgent = async (chatId = 'system') => {
     beta: modelConfig.beta,
   });
 
-  const { tools, callbacks } = createTools(chatId);
+  const { tools, callbacks } = createTools(chatId, 'anthropic');
   const agent = await createReactAgent({ llm: claude, tools });
   agent.callbacks = callbacks;
   return agent;

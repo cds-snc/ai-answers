@@ -72,8 +72,7 @@ export const ChatPipelineService = {
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
     if (
       conversationHistory.length > 0 &&
-      conversationHistory[conversationHistory.length - 1].interaction.answer.answerType !==
-      'question'
+      !conversationHistory[conversationHistory.length - 1].interaction.answer.answerType.includes('question')
     ) {
       const lastMessage = conversationHistory[conversationHistory.length - 1];
       context = lastMessage.interaction.context;
@@ -134,7 +133,7 @@ export const ChatPipelineService = {
       });
     }
 
-    if (answer.answerType === 'question') {
+    if (answer.answerType && answer.answerType.includes('question')) {
       sendStatusUpdate(onStatusUpdate, PipelineStatus.NEED_CLARIFICATION);
     }
 

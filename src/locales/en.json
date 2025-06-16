@@ -265,9 +265,9 @@
   },
   "logging": {
     "title": "Chat Viewer",
-    "start": "Start",
-    "pause": "Pause"
-  },  "admin": {
+    "refresh": "Refresh"
+  },
+  "admin": {
     "title": "AI Answers Admin dashboard",
     "navigation": {
       "ariaLabel": "Admin Navigation",
