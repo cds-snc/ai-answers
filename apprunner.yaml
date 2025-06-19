@@ -1,0 +1,15 @@
+version: 1.0
+runtime: nodejs22
+
+build:
+  commands:
+    build:
+      - npm install
+      - npm run build
+
+run:
+  runtime-version: 22.14.0
+  command: npm run start-server
+  network:
+    port: 3001
+    env: PORT
