@@ -1,6 +1,7 @@
+
 resource "aws_acm_certificate" "ai_answers" {
   domain_name               = var.domain
-  subject_alternative_names = ["*.${var.domain}"]
+  subject_alternative_names = var.san
   validation_method         = "DNS"
 
   tags = {
