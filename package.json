@@ -71,7 +71,7 @@
     "test": "vitest run",
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
-    "dev": "concurrently \"npm run start-server\" \"npm start\"",
+    "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\""
   },
   "eslintConfig": {
