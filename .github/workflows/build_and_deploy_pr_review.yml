@@ -1,0 +1,78 @@
+name: Staging Review Apps
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+env:
+  FUNCTION_NAME: "ai-answers-pr-review"
+  IMAGE: ai-answers-pr-review
+  REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
+  ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-pr-review
+  REGION: ca-central-1
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set PR Number
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/$IMAGE:$PR_NUMBER . -f Dockerfile.lambda
+          docker push $ECR_REGISTRY/$IMAGE:$PR_NUMBER
+
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code --function-name $FUNCTION_NAME-$PR_NUMBER --image-uri $ECR_REGISTRY/$IMAGE:$PR_NUMBER
+
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = process.env.PR_NUMBER;
+            const url = `https://${prNumber}.your-domain.com`; // Replace with your actual domain
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Live preview available at: ${url}`
+            });
+
+  teardown:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set PR Number
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.REGION }}
+
+      - name: Delete Lambda Function
+        run: aws lambda delete-function --function-name $FUNCTION_NAME-$PR_NUMBER

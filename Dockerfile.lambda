@@ -1,0 +1,23 @@
+FROM node:lts as build
+
+ENV NODE_ENV=production
+
+# Add and set up the static lambda server
+ADD https://github.com/cds-snc/static-content-lambda/raw/main/release/latest/lambda-static-server /lambda-static-server
+RUN chmod 755 /lambda-static-server
+
+# Copy source and install dependencies
+COPY . /src
+WORKDIR /src
+
+RUN npm install
+RUN npm run build
+
+# Final, minimal image
+FROM scratch
+
+# Copy the built static assets and the server
+COPY --from=build /src/build /var/www/html
+COPY --from=build /lambda-static-server /lambda-static-server
+
+ENTRYPOINT [ "/lambda-static-server" ]
