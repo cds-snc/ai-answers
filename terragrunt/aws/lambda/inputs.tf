@@ -1,13 +1,3 @@
-variable "product_name" {
-  description = "The name of the product"
-  type        = string
-}
-
-variable "billing_code" {
-  description = "The billing code for the product"
-  type        = string
-}
-
 variable "vpc_id" {
   description = "The ID of the VPC"
   type        = string
