@@ -27,7 +27,7 @@ COPY package.json package-lock.json ./
 RUN npm install --omit=dev
 
 # Install Lambda-specific dependencies
-RUN npm install aws-serverless-express express-fileupload
+RUN npm install @vendia/serverless-express express-fileupload
 
 # Copy built frontend and backend code (same structure as ECS)
 COPY --from=build /app/build ${LAMBDA_TASK_ROOT}/build
