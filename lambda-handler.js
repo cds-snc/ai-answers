@@ -1,8 +1,8 @@
-import { createServer, proxy } from "aws-serverless-express";
+import serverlessExpress from "aws-serverless-express";
 import app from "./server-lambda.js";
 
 console.log("Lambda handler initializing...");
-const server = createServer(app);
+const server = serverlessExpress.createServer(app);
 console.log("Express server created for Lambda");
 
 export const handler = (event, context) => {
@@ -13,9 +13,7 @@ export const handler = (event, context) => {
   });
 
   try {
-    const result = proxy(server, event, context);
-    console.log("Lambda proxy result:", result);
-    return result;
+    return serverlessExpress.proxy(server, event, context, "PROMISE").promise;
   } catch (error) {
     console.error("Lambda handler error:", error);
     throw error;
