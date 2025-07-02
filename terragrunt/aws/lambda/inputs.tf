@@ -43,16 +43,6 @@ variable "docdb_uri_name" {
   type        = string
 }
 
-variable "product_name" {
-  description = "The name of the product"
-  type        = string
-}
-
-variable "billing_code" {
-  description = "The billing code for cost allocation"
-  type        = string
-}
-
 variable "canada_ca_search_uri_name" {
   description = "The name of the SSM parameter containing the Canada.ca search URI"
   type        = string
