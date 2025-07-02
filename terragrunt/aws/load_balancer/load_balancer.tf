@@ -59,3 +59,33 @@ resource "aws_lb_target_group" "ai_answers" {
     CostCentre = var.billing_code
   }
 }
+
+resource "aws_lb_target_group" "pr_review" {
+  count = var.pr_number != "" ? 1 : 0
+
+  name        = "${var.product_name}-pr-${var.pr_number}"
+  target_type = "lambda"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    CostCentre = var.billing_code
+  }
+}
+
+resource "aws_lb_listener_rule" "pr_review" {
+  count = var.pr_number != "" ? 1 : 0
+
+  listener_arn = aws_lb_listener.ai_answers_listener.arn
+  priority     = tonumber("1${var.pr_number}")
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.pr_review[0].arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.pr_number}.${var.domain}"]
+    }
+  }
+}

@@ -22,3 +22,9 @@ variable "vpc_public_subnet_ids" {
   description = "Public subnet ids of the VPC"
   type        = list(string)
 }
+
+variable "pr_number" {
+  description = "(Optional) PR number for review apps"
+  type        = string
+  default     = ""
+}

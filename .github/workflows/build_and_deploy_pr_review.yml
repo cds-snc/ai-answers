@@ -10,6 +10,7 @@ env:
   REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
   ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-pr-review
   REGION: ca-central-1
+  DOMAIN: ai-answers.cdssandbox.xyz
 
 permissions:
   id-token: write
@@ -52,6 +53,11 @@ jobs:
           cd terragrunt/env/staging/lambda
           terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
 
+     - name: Terragrunt Apply Load Balancer
+       run: |
+         cd terragrunt/env/staging/load_balancer
+         terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
+
       - name: Update Lambda Function Code
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -63,7 +69,7 @@ jobs:
         with:
           script: |
             const prNumber = process.env.PR_NUMBER;
-            const url = `https://${prNumber}.your-domain.com`; // Replace with your actual domain
+            const url = `https://${prNumber}.${process.env.DOMAIN}`;
             github.rest.issues.createComment({
               issue_number: prNumber,
               owner: context.repo.owner,
@@ -91,3 +97,8 @@ jobs:
         run: |
           cd terragrunt/env/staging/lambda
           terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
+
+     - name: Terragrunt Destroy Load Balancer
+       run: |
+         cd terragrunt/env/staging/load_balancer
+         terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
