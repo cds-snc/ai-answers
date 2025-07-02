@@ -28,3 +28,9 @@ variable "pr_number" {
   type        = string
   default     = ""
 }
+
+variable "lambda_function_arn" {
+  description = "(Optional) The ARN of the Lambda function to attach to the load balancer"
+  type        = string
+  default     = ""
+}
