@@ -13,7 +13,7 @@ WORKDIR ${LAMBDA_TASK_ROOT}
 RUN npm install
 RUN npm run build
 
-# Install aws-serverless-express for Lambda integration
-RUN npm install aws-serverless-express
+# Install Lambda-specific dependencies
+RUN npm install aws-serverless-express express-fileupload
 
 CMD ["lambda-handler.handler"]

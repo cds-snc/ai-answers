@@ -28,7 +28,9 @@ import dbSettingsHandler from "./api/db/db-settings.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+console.log("Initializing Express app for Lambda...");
 const app = express();
+console.log("Express app created");
 app.use(express.json({ limit: "10mb" }));
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname, "build")));
