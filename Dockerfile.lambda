@@ -19,8 +19,8 @@ FROM public.ecr.aws/lambda/nodejs:20
 ENV NODE_ENV=production
 ENV REACT_APP_ENV=production
 
-# Download DocumentDB TLS certificate
-RUN curl -o /app/global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+# Create app directory and download DocumentDB TLS certificate
+RUN mkdir -p /app && curl -o /app/global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
