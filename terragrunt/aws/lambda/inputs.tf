@@ -38,52 +38,52 @@ variable "image_name" {
   type        = string
 }
 
-variable "docdb_uri_name" {
-  description = "The name of the SSM parameter containing the DocumentDB URI"
+variable "docdb_uri_arn" {
+  description = "ARN of the Document DB URI parameter"
   type        = string
 }
 
-variable "canada_ca_search_uri_name" {
-  description = "The name of the SSM parameter containing the Canada.ca search URI"
+variable "canada_ca_search_uri_arn" {
+  description = "ARN of the Canada.ca search URI parameter"
   type        = string
 }
 
-variable "canada_ca_search_api_key_name" {
-  description = "The name of the SSM parameter containing the Canada.ca search API key"
+variable "canada_ca_search_api_key_arn" {
+  description = "ARN of the Canada.ca search API key parameter"
   type        = string
 }
 
-variable "azure_openai_api_key_name" {
-  description = "The name of the SSM parameter containing the Azure OpenAI API key"
+variable "azure_openai_api_key_arn" {
+  description = "ARN of the Azure OpenAI API key parameter"
   type        = string
 }
 
-variable "azure_openai_endpoint_name" {
-  description = "The name of the SSM parameter containing the Azure OpenAI endpoint"
+variable "azure_openai_endpoint_arn" {
+  description = "ARN of the Azure OpenAI endpoint parameter"
   type        = string
 }
 
-variable "azure_openai_api_version_name" {
-  description = "The name of the SSM parameter containing the Azure OpenAI API version"
+variable "azure_openai_api_version_arn" {
+  description = "ARN of the Azure OpenAI API version parameter"
   type        = string
 }
 
-variable "user_agent_name" {
-  description = "The name of the SSM parameter containing the user agent"
+variable "user_agent_arn" {
+  description = "ARN of the User Agent parameter"
   type        = string
 }
 
-variable "jwt_secret_key_name" {
-  description = "The name of the SSM parameter containing the JWT secret key"
+variable "jwt_secret_key_arn" {
+  description = "ARN of the JWT Secret Key parameter"
   type        = string
 }
 
-variable "google_api_key_name" {
-  description = "The name of the SSM parameter containing the Google API key"
+variable "google_api_key_arn" {
+  description = "ARN of the Google AI API key parameter"
   type        = string
 }
 
-variable "google_search_engine_id_name" {
-  description = "The name of the SSM parameter containing the Google Search Engine ID"
+variable "google_search_engine_id_arn" {
+  description = "ARN of the Google Search Engine ID parameter"
   type        = string
 }
