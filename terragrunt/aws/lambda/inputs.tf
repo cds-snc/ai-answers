@@ -37,3 +37,8 @@ variable "image_name" {
   description = "The name of the Docker image"
   type        = string
 }
+
+variable "docdb_uri_name" {
+  description = "The name of the SSM parameter containing the DocumentDB URI"
+  type        = string
+}
