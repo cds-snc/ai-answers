@@ -6,11 +6,22 @@ import { fileURLToPath } from "url";
 import openAIHandler from "./api/openai/openai-message.js";
 import azureHandler from "./api/azure/azure-message.js";
 import azureContextHandler from "./api/azure/azure-context.js";
+import azureBatchProcessResultsHandler from "./api/azure/azure-batch-process-results.js";
 import anthropicAgentHandler from "./api/anthropic/anthropic-message.js";
 import dbChatLogsHandler from "./api/db/db-chat-logs.js";
+import anthropicBatchHandler from "./api/anthropic/anthropic-batch.js";
+import openAIBatchHandler from "./api/openai/openai-batch.js";
+import anthropicBatchStatusHandler from "./api/anthropic/anthropic-batch-status.js";
+import openAIBatchStatusHandler from "./api/openai/openai-batch-status.js";
 import contextSearchHandler from "./api/search/search-context.js";
+import anthropicBatchContextHandler from "./api/anthropic/anthropic-batch-context.js";
+import openAIBatchContextHandler from "./api/openai/openai-batch-context.js";
 import dbBatchListHandler from "./api/db/db-batch-list.js";
+import anthropicBatchProcessResultsHandler from "./api/anthropic/anthropic-batch-process-results.js";
+import openAIBatchProcessResultsHandler from "./api/openai/openai-batch-process-results.js";
 import dbBatchRetrieveHandler from "./api/db/db-batch-retrieve.js";
+import anthropicBatchCancelHandler from "./api/anthropic/anthropic-batch-cancel.js";
+import openAIBatchCancelHandler from "./api/openai/openai-batch-cancel.js";
 import anthropicContextAgentHandler from "./api/anthropic/anthropic-context.js";
 import openAIContextAgentHandler from "./api/openai/openai-context.js";
 import dbChatSessionHandler from "./api/db/db-chat-session.js";
@@ -23,6 +34,10 @@ import signupHandler from "./api/db/db-auth-signup.js";
 import loginHandler from "./api/db/db-auth-login.js";
 import dbUsersHandler from "./api/db/db-users.js";
 import deleteChatHandler from "./api/db/db-delete-chat.js";
+import generateEmbeddingsHandler from "./api/db/db-generate-embeddings.js";
+import generateEvalsHandler from "./api/db/db-generate-evals.js";
+import dbDatabaseManagementHandler from "./api/db/db-database-management.js";
+import dbDeleteSystemLogsHandler from "./api/db/db-delete-system-logs.js";
 import dbSettingsHandler from "./api/db/db-settings.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +69,14 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "Healthy" });
 });
 
+app.get("*", (req, res, next) => {
+  if (req.url.startsWith("/api")) {
+    next();
+    return;
+  }
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
 // API routes
 app.post("/api/db/db-persist-feedback", dbPersistFeedback);
 app.post("/api/db/db-persist-interaction", dbPersistInteraction);
@@ -69,19 +92,40 @@ app.post("/api/db/db-auth-signup", signupHandler);
 app.post("/api/db/db-auth-login", loginHandler);
 app.all("/api/db/db-users", dbUsersHandler);
 app.delete("/api/db/db-delete-chat", deleteChatHandler);
+app.post("/api/db/db-generate-embeddings", generateEmbeddingsHandler);
+app.post("/api/db/db-generate-evals", generateEvalsHandler);
+app.all("/api/db/db-database-management", dbDatabaseManagementHandler);
+app.delete("/api/db/db-delete-system-logs", dbDeleteSystemLogsHandler);
 app.all("/api/db/db-settings", dbSettingsHandler);
 
 app.post("/api/openai/openai-message", openAIHandler);
 app.post("/api/openai/openai-context", openAIContextAgentHandler);
+app.post("/api/openai/openai-batch", openAIBatchHandler);
+app.post("/api/openai/openai-batch-context", openAIBatchContextHandler);
+app.get(
+  "/api/openai/openai-batch-process-results",
+  openAIBatchProcessResultsHandler
+);
+app.get("/api/openai/openai-batch-status", openAIBatchStatusHandler);
+app.get("/api/openai/openai-batch-cancel", openAIBatchCancelHandler);
+
 app.post("/api/anthropic/anthropic-message", anthropicAgentHandler);
 app.post("/api/anthropic/anthropic-context", anthropicContextAgentHandler);
+app.post("/api/anthropic/anthropic-batch", anthropicBatchHandler);
+app.post(
+  "/api/anthropic/anthropic-batch-context",
+  anthropicBatchContextHandler
+);
+app.get(
+  "/api/anthropic/anthropic-batch-process-results",
+  anthropicBatchProcessResultsHandler
+);
+app.get("/api/anthropic/anthropic-batch-status", anthropicBatchStatusHandler);
+app.get("/api/anthropic/anthropic-batch-cancel", anthropicBatchCancelHandler);
+
 app.post("/api/azure/azure-message", azureHandler);
 app.post("/api/azure/azure-context", azureContextHandler);
-app.post("/api/search/search-context", contextSearchHandler);
 
-// Serve React app for all other routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
-});
+app.post("/api/search/search-context", contextSearchHandler);
 
 export default app;

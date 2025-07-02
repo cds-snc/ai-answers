@@ -45,7 +45,18 @@ resource "aws_iam_role_policy" "lambda_ssm_policy" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = "arn:aws:ssm:*:*:parameter/${var.docdb_uri_name}"
+        Resource = [
+          "arn:aws:ssm:*:*:parameter/${var.docdb_uri_name}",
+          "arn:aws:ssm:*:*:parameter/${var.canada_ca_search_uri_name}",
+          "arn:aws:ssm:*:*:parameter/${var.canada_ca_search_api_key_name}",
+          "arn:aws:ssm:*:*:parameter/${var.azure_openai_api_key_name}",
+          "arn:aws:ssm:*:*:parameter/${var.azure_openai_endpoint_name}",
+          "arn:aws:ssm:*:*:parameter/${var.azure_openai_api_version_name}",
+          "arn:aws:ssm:*:*:parameter/${var.user_agent_name}",
+          "arn:aws:ssm:*:*:parameter/${var.jwt_secret_key_name}",
+          "arn:aws:ssm:*:*:parameter/${var.google_api_key_name}",
+          "arn:aws:ssm:*:*:parameter/${var.google_search_engine_id_name}"
+        ]
       }
     ]
   })
@@ -81,9 +92,45 @@ resource "aws_security_group_rule" "docdb_ingress_lambda" {
   security_group_id        = var.aws_docdb_security_group_id
 }
 
-# Get DocumentDB URI from SSM
+# Get all SSM parameters
 data "aws_ssm_parameter" "docdb_uri" {
   name = var.docdb_uri_name
+}
+
+data "aws_ssm_parameter" "canada_ca_search_uri" {
+  name = var.canada_ca_search_uri_name
+}
+
+data "aws_ssm_parameter" "canada_ca_search_api_key" {
+  name = var.canada_ca_search_api_key_name
+}
+
+data "aws_ssm_parameter" "azure_openai_api_key" {
+  name = var.azure_openai_api_key_name
+}
+
+data "aws_ssm_parameter" "azure_openai_endpoint" {
+  name = var.azure_openai_endpoint_name
+}
+
+data "aws_ssm_parameter" "azure_openai_api_version" {
+  name = var.azure_openai_api_version_name
+}
+
+data "aws_ssm_parameter" "user_agent" {
+  name = var.user_agent_name
+}
+
+data "aws_ssm_parameter" "jwt_secret_key" {
+  name = var.jwt_secret_key_name
+}
+
+data "aws_ssm_parameter" "google_api_key" {
+  name = var.google_api_key_name
+}
+
+data "aws_ssm_parameter" "google_search_engine_id" {
+  name = var.google_search_engine_id_name
 }
 
 # Lambda Function
@@ -105,6 +152,15 @@ resource "aws_lambda_function" "ai_answers_lambda" {
       NODE_ENV = "production"
       REACT_APP_ENV = "production"
       DOCDB_URI = data.aws_ssm_parameter.docdb_uri.value
+      CANADA_CA_SEARCH_URI = data.aws_ssm_parameter.canada_ca_search_uri.value
+      CANADA_CA_SEARCH_API_KEY = data.aws_ssm_parameter.canada_ca_search_api_key.value
+      AZURE_OPENAI_API_KEY = data.aws_ssm_parameter.azure_openai_api_key.value
+      AZURE_OPENAI_ENDPOINT = data.aws_ssm_parameter.azure_openai_endpoint.value
+      AZURE_OPENAI_API_VERSION = data.aws_ssm_parameter.azure_openai_api_version.value
+      USER_AGENT = data.aws_ssm_parameter.user_agent.value
+      JWT_SECRET_KEY = data.aws_ssm_parameter.jwt_secret_key.value
+      GOOGLE_API_KEY = data.aws_ssm_parameter.google_api_key.value
+      GOOGLE_SEARCH_ENGINE_ID = data.aws_ssm_parameter.google_search_engine_id.value
     }
   }
 
