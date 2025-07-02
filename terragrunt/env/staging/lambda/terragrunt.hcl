@@ -35,6 +35,7 @@ inputs = {
   pr_number                   = "216" # This will be updated by the pipeline
   ecr_registry                = "992382783569.dkr.ecr.ca-central-1.amazonaws.com"
   image_name                  = "ai-answers-pr-review"
+  docdb_uri_name              = "docdb_uri"
 }
 
 include {
