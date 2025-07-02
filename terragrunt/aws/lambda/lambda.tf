@@ -93,6 +93,7 @@ resource "aws_lambda_function" "ai_answers_lambda" {
   package_type  = "Image"
   image_uri     = "${var.ecr_registry}/${var.image_name}:${var.pr_number}"
   timeout       = 900
+  memory_size   = 2048
 
   vpc_config {
     subnet_ids         = var.vpc_private_subnet_ids
