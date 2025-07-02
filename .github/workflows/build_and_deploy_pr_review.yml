@@ -1,69 +1,62 @@
 name: Staging Review Apps
-
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
-
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 env:
-  FUNCTION_NAME: "ai-answers-pr-review"
+  FUNCTION_NAME: ai-answers-pr-review
   IMAGE: ai-answers-pr-review
   REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
   ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-pr-review
   REGION: ca-central-1
   DOMAIN: ai-answers.cdssandbox.xyz
-
 permissions:
   id-token: write
   contents: read
   pull-requests: write
-
 jobs:
   deploy:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Set PR Number
-        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
-
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number
+          "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v4.1.1
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
         with:
           role-to-assume: ${{ env.ROLE_ARN }}
           aws-region: ${{ env.REGION }}
-
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: Build, Tag, and Push Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build -t $ECR_REGISTRY/$IMAGE:$PR_NUMBER . -f Dockerfile.lambda
           docker push $ECR_REGISTRY/$IMAGE:$PR_NUMBER
-
       - name: Install Terragrunt
         uses: cds-snc/terraform-tools-setup@v1
-
       - name: Terragrunt Apply
         run: |
           cd terragrunt/env/staging/lambda
           terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
-
-     - name: Terragrunt Apply Load Balancer
-       run: |
-         cd terragrunt/env/staging/load_balancer
-         terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
-
+      - name: Terragrunt Apply Load Balancer
+        run: |
+          cd terragrunt/env/staging/load_balancer
+          terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
       - name: Update Lambda Function Code
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          aws lambda update-function-code --function-name $FUNCTION_NAME-$PR_NUMBER --image-uri $ECR_REGISTRY/$IMAGE:$PR_NUMBER
-
+        run: >
+          aws lambda update-function-code --function-name
+          $FUNCTION_NAME-$PR_NUMBER --image-uri $ECR_REGISTRY/$IMAGE:$PR_NUMBER
       - name: Comment on PR
         uses: actions/github-script@v6
         with:
@@ -76,29 +69,25 @@ jobs:
               repo: context.repo.repo,
               body: `🚀 Live preview available at: ${url}`
             });
-
   teardown:
     if: github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Set PR Number
-        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
-
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number
+          "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
         with:
           role-to-assume: ${{ env.ROLE_ARN }}
           aws-region: ${{ env.REGION }}
-
       - name: Install Terragrunt
         uses: cds-snc/terraform-tools-setup@v1
-
       - name: Terragrunt Destroy
         run: |
           cd terragrunt/env/staging/lambda
           terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
-
-     - name: Terragrunt Destroy Load Balancer
-       run: |
-         cd terragrunt/env/staging/load_balancer
-         terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
+      - name: Terragrunt Destroy Load Balancer
+        run: |
+          cd terragrunt/env/staging/load_balancer
+          terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
