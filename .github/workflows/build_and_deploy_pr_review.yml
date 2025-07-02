@@ -53,6 +53,8 @@ jobs:
           terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
 
       - name: Update Lambda Function Code
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           aws lambda update-function-code --function-name $FUNCTION_NAME-$PR_NUMBER --image-uri $ECR_REGISTRY/$IMAGE:$PR_NUMBER
 
