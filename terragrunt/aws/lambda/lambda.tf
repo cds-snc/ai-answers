@@ -95,6 +95,61 @@ resource "aws_security_group" "lambda_sg" {
   }
 }
 
+# Data source to get the load balancer
+data "aws_lb" "main" {
+  name = "${var.product_name}-lb"
+}
+
+# Data source to get the HTTPS listener
+data "aws_lb_listener" "https" {
+  load_balancer_arn = data.aws_lb.main.arn
+  port              = 443
+}
+
+# Target group for this PR's Lambda function
+resource "aws_lb_target_group" "pr_lambda" {
+  name        = "${var.product_name}-pr-${var.pr_number}"
+  target_type = "lambda"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+# Listener rule for this PR's subdomain
+resource "aws_lb_listener_rule" "pr_lambda" {
+  listener_arn = data.aws_lb_listener.https.arn
+  priority     = tonumber("1${var.pr_number}")
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.pr_lambda.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.pr_number}.${var.domain}"]
+    }
+  }
+}
+
+# Lambda permission for ALB to invoke the function
+resource "aws_lambda_permission" "alb_invoke" {
+  statement_id  = "AllowExecutionFromALB"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ai_answers_lambda.function_name
+  principal     = "elasticloadbalancing.amazonaws.com"
+  source_arn    = aws_lb_target_group.pr_lambda.arn
+}
+
+# Attach Lambda to target group
+resource "aws_lb_target_group_attachment" "pr_lambda" {
+  target_group_arn = aws_lb_target_group.pr_lambda.arn
+  target_id        = aws_lambda_function.ai_answers_lambda.arn
+}
+
 # Rule to allow Lambda to talk to DocumentDB
 resource "aws_security_group_rule" "docdb_ingress_lambda" {
   description              = "Allow Lambda to communicate with DocumentDB"

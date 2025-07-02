@@ -1,9 +1,26 @@
+# Template for deploying Lambda functions for PR review
+# To deploy a new PR:
+# 1. Copy this directory to lambda-pr-{PR_NUMBER}
+# 2. Update the pr_number variable below
+# 3. Run terragrunt apply
+
 terraform {
   source = "../../../aws//lambda"
 }
 
 dependencies {
-  paths = ["../network", "../database", "../ssm"]
+  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm"]
+}
+
+dependency "iam" {
+  config_path = "../iam"
+
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    iam_role_ai-answers-ecs-role_arn = ""
+    ai-answers-ecs-policy_attachment = ""
+  }
 }
 
 dependency "network" {
@@ -14,6 +31,29 @@ dependency "network" {
     vpc_id                 = ""
     vpc_private_subnet_ids = [""]
     vpc_cidr_block         = ""
+  }
+}
+
+dependency "ecr" {
+  config_path = "../ecr"
+
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    ecr_repository_arn = ""
+    ecr_repository_url = ""
+  }
+}
+
+dependency "load_balancer" {
+  config_path = "../load_balancer"
+
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    lb_listener                 = ""
+    lb_target_group_arn         = ""
+    ai_answers_load_balancer_sg = ""
   }
 }
 
@@ -47,12 +87,12 @@ dependency "ssm" {
 
 inputs = {
   vpc_id                       = dependency.network.outputs.vpc_id
-  vpc_private_subnet_ids       = dependency.network.outputs.vpc_private_subnet_ids
   vpc_cidr_block               = dependency.network.outputs.vpc_cidr_block
+  vpc_private_subnet_ids       = dependency.network.outputs.vpc_private_subnet_ids
   aws_docdb_security_group_id  = dependency.database.outputs.aws_docdb_security_group_id
   function_name                = "ai-answers-pr-review"
-  pr_number                    = "216" # This will be updated by the pipeline
-  ecr_registry                 = "992382783569.dkr.ecr.ca-central-1.amazonaws.com"
+  pr_number                    = "CHANGE_ME" # Update this to your PR number (e.g., "217")
+  ecr_registry                 = dependency.ecr.outputs.ecr_repository_url
   image_name                   = "ai-answers-pr-review"
   docdb_uri_arn                = dependency.database.outputs.docdb_uri_arn
   azure_openai_api_key_arn     = dependency.ssm.outputs.azure_openai_api_key_arn
