@@ -91,18 +91,18 @@ resource "aws_lb_listener_rule" "pr_review" {
 }
 
 resource "aws_lambda_permission" "pr_review" {
-  count = var.lambda_function_arn != "" ? 1 : 0
+  count = var.pr_number != "" ? 1 : 0
 
   statement_id  = "AllowExecutionFromALB"
   action        = "lambda:InvokeFunction"
-  function_name = var.lambda_function_arn
+  function_name = var.lambda_function_arn != "" ? var.lambda_function_arn : "ai-answers-pr-review-${var.pr_number}"
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_lb_target_group.pr_review[0].arn
 }
 
 resource "aws_lb_target_group_attachment" "pr_review" {
-  count = var.lambda_function_arn != "" ? 1 : 0
+  count = var.pr_number != "" ? 1 : 0
 
   target_group_arn = aws_lb_target_group.pr_review[0].arn
-  target_id        = var.lambda_function_arn
+  target_id        = var.lambda_function_arn != "" ? var.lambda_function_arn : "ai-answers-pr-review-${var.pr_number}"
 }
