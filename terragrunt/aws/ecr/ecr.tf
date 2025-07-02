@@ -38,7 +38,7 @@ resource "aws_ecr_lifecycle_policy" "ai_answers_pr_review_policy" {
         rulePriority = 2,
         description  = "Keep last 20 tagged images",
         selection = {
-          tagStatus   = "tagged",
+          tagStatus   = "any",
           countType   = "imageCountMoreThan",
           countNumber = 20
         },

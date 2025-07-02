@@ -44,7 +44,15 @@ jobs:
           docker build -t $ECR_REGISTRY/$IMAGE:$PR_NUMBER . -f Dockerfile.lambda
           docker push $ECR_REGISTRY/$IMAGE:$PR_NUMBER
 
-      - name: Deploy to Lambda
+      - name: Install Terragrunt
+        uses: cds-snc/terraform-tools-setup@v1
+
+      - name: Terragrunt Apply
+        run: |
+          cd terragrunt/env/staging/lambda
+          terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
+
+      - name: Update Lambda Function Code
         run: |
           aws lambda update-function-code --function-name $FUNCTION_NAME-$PR_NUMBER --image-uri $ECR_REGISTRY/$IMAGE:$PR_NUMBER
 
@@ -74,5 +82,10 @@ jobs:
           role-to-assume: ${{ env.ROLE_ARN }}
           aws-region: ${{ env.REGION }}
 
-      - name: Delete Lambda Function
-        run: aws lambda delete-function --function-name $FUNCTION_NAME-$PR_NUMBER
+      - name: Install Terragrunt
+        uses: cds-snc/terraform-tools-setup@v1
+
+      - name: Terragrunt Destroy
+        run: |
+          cd terragrunt/env/staging/lambda
+          terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
