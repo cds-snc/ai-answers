@@ -17,7 +17,7 @@ For comprehensive system information, see:
 - **Staging**: ai-answers.cdssandbox.xyz
 
 ### Key Features
-- **Context-Aware Responses**: Uses referral URLs and department detection
+- **Context-Aware responses**: Uses referral URLs and department detection
 - **Citation system**: Every answer includes a verified government source link
 - **Privacy and manipulation protection**: Automatic PI, profanity, manipulation and threat blocking 
 - **Accessibility**: Screen reader tested and WCAG compliant
