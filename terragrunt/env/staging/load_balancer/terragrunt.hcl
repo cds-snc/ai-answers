@@ -37,6 +37,8 @@ inputs = {
   vpc_private_subnet_ids = dependency.network.outputs.vpc_private_subnet_ids
   vpc_public_subnet_ids  = dependency.network.outputs.vpc_public_subnet_ids
   vpc_cidr_block         = dependency.network.outputs.vpc_cidr_block
+  lambda_function_arn    = "" # Will be attached later by Lambda deployment
+  pr_number              = "" # No PR-specific resources in main load balancer
 }
 
 include {
