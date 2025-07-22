@@ -22,6 +22,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     offset: 0,
     hasMore: false
   });
+  const [currentFilters, setCurrentFilters] = useState(null);
 
   // Convert new filter format to API parameters
   const buildApiParams = (filters) => {
@@ -123,6 +124,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleApplyFilters = (filters) => {
+    setCurrentFilters(filters);
     fetchLogs(filters, 0);
   };
 
@@ -142,23 +144,65 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     return name + '.' + ext;
   };
 
-  const downloadJSON = () => {
-    const json = JSON.stringify(logs, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename('json');
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadJSON = async () => {
+    try {
+      // Use the current filters that were last applied to the UI
+      const apiParams = buildApiParams(currentFilters || {});
+      apiParams.export = 'true';
+      
+      const data = await DataStoreService.getChatLogs(apiParams);
+      if (data.success) {
+        const json = JSON.stringify(data.logs, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename('json');
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        alert('Failed to export data');
+      }
+    } catch (error) {
+      console.error('Error downloading JSON:', error);
+      alert('Failed to download JSON file');
+    }
   };
 
-  const downloadCSV = () => {
-    ExportService.export(logs, filename('csv'));
+  const downloadCSV = async () => {
+    try {
+      // Use the current filters that were last applied to the UI
+      const apiParams = buildApiParams(currentFilters || {});
+      apiParams.export = 'true';
+      
+      const data = await DataStoreService.getChatLogs(apiParams);
+      if (data.success) {
+        ExportService.export(data.logs, filename('csv'));
+      } else {
+        alert('Failed to export data');
+      }
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      alert('Failed to download CSV file');
+    }
   };
 
-  const downloadExcel = () => {
-    ExportService.export(logs, filename('xlsx'));
+  const downloadExcel = async () => {
+    try {
+      // Use the current filters that were last applied to the UI
+      const apiParams = buildApiParams(currentFilters || {});
+      apiParams.export = 'true';
+      
+      const data = await DataStoreService.getChatLogs(apiParams);
+      if (data.success) {
+        ExportService.export(data.logs, filename('xlsx'));
+      } else {
+        alert('Failed to export data');
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      alert('Failed to download Excel file');
+    }
   };
 
   return (

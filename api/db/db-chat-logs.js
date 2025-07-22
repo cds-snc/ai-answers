@@ -19,11 +19,12 @@ async function chatLogsHandler(req, res) {
       days, startDate, endDate,
       filterType, presetValue,
       department, referringUrl,
-      limit, offset
+      limit, offset,
+      export: isExport
     } = req.query;
 
-    // Parse pagination parameters - if not provided, return all data
-    const usePagination = limit !== undefined || offset !== undefined;
+    // Parse pagination parameters - if export=true, skip pagination
+    const usePagination = !isExport && (limit !== undefined || offset !== undefined);
     const pageLimit = usePagination ? (parseInt(limit) || 50) : null;
     const pageOffset = usePagination ? (parseInt(offset) || 0) : null;
 
@@ -41,6 +42,39 @@ async function chatLogsHandler(req, res) {
       dateFilter.createdAt = { $gte: dt };
     }
 
+    // Export populate - same as UI populate to ensure ALL data is exported
+    const exportPopulate = [
+      { path: 'user', select: 'email' },
+      {
+        path: 'interactions',
+        populate: [
+          { path: 'context' },
+          { path: 'expertFeedback', model: 'ExpertFeedback', select: '-__v' },
+          { path: 'publicFeedback', model: 'PublicFeedback', select: '-__v' },
+          { path: 'question', select: '-embedding' },
+          {
+            path: 'answer',
+            select: '-embedding -sentenceEmbeddings',
+            populate: [
+              { path: 'sentences' },
+              { path: 'citation' },
+              { path: 'tools' }
+            ]
+          },
+          {
+            path: 'autoEval',
+            model: 'Eval',
+            populate: {
+              path: 'expertFeedback',
+              model: 'ExpertFeedback',
+              select: '-__v'
+            }
+          }
+        ]
+      }
+    ];
+
+    // Full populate for UI - includes all nested data
     const chatPopulate = [
       { path: 'user', select: 'email' },
       {
@@ -71,6 +105,9 @@ async function chatLogsHandler(req, res) {
         ]
       }
     ];
+
+    // Choose populate configuration based on export flag
+    const populateConfig = isExport ? exportPopulate : chatPopulate;
 
     let chats;
     let totalCount = 0;
@@ -228,7 +265,7 @@ async function chatLogsHandler(req, res) {
       }
 
       let query = Chat.find(dateFilter)
-        .populate(chatPopulate)
+        .populate(populateConfig)
         .sort({ createdAt: -1 });
 
       // Add pagination only if requested
