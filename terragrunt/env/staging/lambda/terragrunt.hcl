@@ -46,24 +46,24 @@ dependency "ssm" {
 }
 
 inputs = {
-  vpc_id                      = dependency.network.outputs.vpc_id
-  vpc_private_subnet_ids      = dependency.network.outputs.vpc_private_subnet_ids
-  vpc_cidr_block              = dependency.network.outputs.vpc_cidr_block
-  aws_docdb_security_group_id = dependency.database.outputs.aws_docdb_security_group_id
-  function_name               = "ai-answers-pr-review"
-  pr_number                   = "216" # This will be updated by the pipeline
-  ecr_registry                = "992382783569.dkr.ecr.ca-central-1.amazonaws.com"
-  image_name                  = "ai-answers-pr-review"
-  docdb_uri_arn               = dependency.database.outputs.docdb_uri_arn
-  azure_openai_api_key_arn    = dependency.ssm.outputs.azure_openai_api_key_arn
-  azure_openai_endpoint_arn   = dependency.ssm.outputs.azure_openai_endpoint_arn
+  vpc_id                       = dependency.network.outputs.vpc_id
+  vpc_private_subnet_ids       = dependency.network.outputs.vpc_private_subnet_ids
+  vpc_cidr_block               = dependency.network.outputs.vpc_cidr_block
+  aws_docdb_security_group_id  = dependency.database.outputs.aws_docdb_security_group_id
+  function_name                = "ai-answers-pr-review"
+  pr_number                    = "216" # This will be updated by the pipeline
+  ecr_registry                 = "992382783569.dkr.ecr.ca-central-1.amazonaws.com"
+  image_name                   = "ai-answers-pr-review"
+  docdb_uri_arn                = dependency.database.outputs.docdb_uri_arn
+  azure_openai_api_key_arn     = dependency.ssm.outputs.azure_openai_api_key_arn
+  azure_openai_endpoint_arn    = dependency.ssm.outputs.azure_openai_endpoint_arn
   azure_openai_api_version_arn = dependency.ssm.outputs.azure_openai_api_version_arn
-  canada_ca_search_uri_arn    = dependency.ssm.outputs.canada_ca_search_uri_arn
+  canada_ca_search_uri_arn     = dependency.ssm.outputs.canada_ca_search_uri_arn
   canada_ca_search_api_key_arn = dependency.ssm.outputs.canada_ca_search_api_key_arn
-  user_agent_arn              = dependency.ssm.outputs.user_agent_arn
-  jwt_secret_key_arn          = dependency.ssm.outputs.jwt_secret_key_arn
-  google_api_key_arn          = dependency.ssm.outputs.google_api_key_arn
-  google_search_engine_id_arn = dependency.ssm.outputs.google_search_engine_id_arn
+  user_agent_arn               = dependency.ssm.outputs.user_agent_arn
+  jwt_secret_key_arn           = dependency.ssm.outputs.jwt_secret_key_arn
+  google_api_key_arn           = dependency.ssm.outputs.google_api_key_arn
+  google_search_engine_id_arn  = dependency.ssm.outputs.google_search_engine_id_arn
 }
 
 include {

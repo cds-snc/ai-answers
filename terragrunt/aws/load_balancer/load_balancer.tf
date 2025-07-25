@@ -1,20 +1,20 @@
 data "aws_lambda_function" "pr_review" {
-  count = var.pr_number != "" && var.lambda_function_arn == "" ? 1 : 0
+  count         = var.pr_number != "" && var.lambda_function_arn == "" ? 1 : 0
   function_name = "ai-answers-pr-review-${var.pr_number}"
 }
 
 # Local value to determine the correct function name and ARN
 locals {
   lambda_function_name = var.pr_number != "" ? (
-    var.lambda_function_arn != "" ? 
-      split(":", var.lambda_function_arn)[6] : 
-      try(data.aws_lambda_function.pr_review[0].function_name, null)
+    var.lambda_function_arn != "" ?
+    split(":", var.lambda_function_arn)[6] :
+    try(data.aws_lambda_function.pr_review[0].function_name, null)
   ) : null
-  
+
   lambda_function_arn = var.pr_number != "" ? (
-    var.lambda_function_arn != "" ? 
-      var.lambda_function_arn : 
-      try(data.aws_lambda_function.pr_review[0].arn, null)
+    var.lambda_function_arn != "" ?
+    var.lambda_function_arn :
+    try(data.aws_lambda_function.pr_review[0].arn, null)
   ) : null
 }
 
