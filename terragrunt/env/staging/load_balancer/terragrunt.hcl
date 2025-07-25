@@ -48,7 +48,7 @@ inputs = {
   vpc_public_subnet_ids  = dependency.network.outputs.vpc_public_subnet_ids
   vpc_cidr_block         = dependency.network.outputs.vpc_cidr_block
   lambda_function_arn    = dependency.lambda.outputs.lambda_function_arn
-  pr_number              = "217" # Using 217 for staging to match Lambda configuration
+  pr_number              = "216" #overridden by GitHub workflow for PRs
 }
 
 include {
