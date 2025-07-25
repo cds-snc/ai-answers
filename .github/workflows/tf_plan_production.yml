@@ -32,6 +32,7 @@ permissions:
 
 jobs:
   terraform-plan:
+    if: github.repository == 'cds-snc/ai-answers'
     strategy:
       fail-fast: false
       matrix:

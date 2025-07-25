@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "proxy": "https://api.anthropic.com",
+  "proxy": "http://localhost:3001",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@cdssnc/gcds-components": "^0.26.1",
     "@cdssnc/gcds-components-react": "^0.34.3",
     "@cdssnc/gcds-utility": "^1.4.0",
@@ -36,7 +37,6 @@
     "dotenv": "^16.5.0",
     "duck-duck-scrape": "^2.2.6",
     "express": "^4.21.1",
-    "express-fileupload": "^1.5.1",
     "flat": "^6.0.1",
     "googleapis": "^144.0.0",
     "install": "^0.13.0",
@@ -52,17 +52,18 @@
     "playwright-extra": "^4.3.6",
     "playwright-extra-plugin-stealth": "^0.0.1",
     "prismjs": "^1.29.0",
+    "rate-limiter-flexible": "^7.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.1.5",
     "react-scripts": "^5.0.1",
+    "recharts": "^2.15.3",
     "similarity": "^1.2.1",
     "streamsaver": "^2.0.6",
     "uuid": "^11.0.5",
     "vitest": "^3.1.4",
     "web-vitals": "^2.1.4",
-    "xlsx": "^0.18.5",
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -70,7 +71,7 @@
     "test": "vitest run",
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
-    "dev": "concurrently \"npm run start-server\" \"npm start\"",
+    "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\""
   },
   "eslintConfig": {
@@ -98,6 +99,7 @@
     "dotenv-cli": "^7.4.4",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
+    "get-port": "^7.1.0",
     "mongodb-memory-server": "^10.1.4"
   }
 }

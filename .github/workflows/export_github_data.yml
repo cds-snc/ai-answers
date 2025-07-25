@@ -6,6 +6,7 @@ on:
 
 jobs:
   export-data:
+    if: github.repository == 'cds-snc/ai-answers'
     runs-on: ubuntu-latest
     steps:
       - name: Audit DNS requests

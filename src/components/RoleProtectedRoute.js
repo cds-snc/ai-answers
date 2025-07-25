@@ -12,8 +12,8 @@ export const ProtectedRoute = ({ children, lang = 'en' }) => {
   }
   
   if (!currentUser) {
-    // Redirect to login page with return url
-    return <Navigate to={`/${lang}/login`} state={{ from: location }} replace />;
+    // Redirect to signin page with return url
+    return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
   }
 
   return children;
@@ -36,7 +36,7 @@ export const RoleProtectedRoute = ({
   
   // First check authentication
   if (!currentUser) {
-    return <Navigate to={`/${lang}/login`} state={{ from: location }} replace />;
+    return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
   }
     // If roles are specified, check if user has one of them
   if (roles.length > 0 && !roles.includes(currentUser.role)) {

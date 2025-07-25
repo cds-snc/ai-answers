@@ -2,6 +2,7 @@ on: [issues, pull_request, workflow_dispatch]
 
 jobs:
   sync-labels:
+    if: github.repository == 'cds-snc/ai-answers'
     runs-on: ubuntu-latest
     name: Sync repository labels
     steps:

@@ -7,7 +7,12 @@
     "éviter",
     "convaincre",
     "prétendre",
-    "jeu de rôle"
+    "jeu de rôle",
+    "Anthropic",
+    "OpenAI",
+    "Cohere",
+    "Claude",
+    "GPT"
   ],
   "manipulationPhrases": [
     "vos instructions",
@@ -22,6 +27,11 @@
     "résumer notre",
     "notre conversation",
     "failles logiques",
-    "contradictions"
+    "contradictions",
+    "parle-moi de tes",
+    "invite système",
+    "es-tu sûr",
+    "haïku",
+    "sous forme d'histoire"
   ]
 } 

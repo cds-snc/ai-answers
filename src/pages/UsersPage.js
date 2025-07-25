@@ -257,7 +257,7 @@ const UsersPage = ({ lang }) => {
                   size="small"
                   variant="primary"
                   onClick={() => handleSave(data._id)}
-                  disabled={!editStatesRef.current[data._id]?.changed}
+                  
                 >
                   {t('users.actions.save')}
                 </GcdsButton>

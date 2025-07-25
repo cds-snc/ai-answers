@@ -14,6 +14,6 @@ const toolSchema = new mongoose.Schema({
         required: true
     },
     error: String
-});
+}, { timestamps: true }); 
 
 export const Tool = mongoose.models.Tool || mongoose.model('Tool', toolSchema);

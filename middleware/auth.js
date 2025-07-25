@@ -13,6 +13,22 @@ export const generateToken = (user) => {
   );
 };
 
+// Utility to extract user from request without sending a response
+export const getUserFromRequest = async (req) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    await dbConnect();
+    const user = await User.findById(decoded.userId);
+    if (!user) return null;
+    return decoded;
+  } catch (e) {
+    return null;
+  }
+};
+
 const handleCORS = (req, res) => {
   console.log('CORS handling for request:', { 
     method: req.method, 
@@ -118,6 +134,12 @@ export const withProtection = (handler, ...middleware) => {
     console.log('All middleware passed, executing handler');
     return handler(req, res);
   };
+};
+
+// Optional authentication: sets req.user if valid token, does not block if not
+export const withOptionalUser = (handler) => async (req, res) => {
+  req.user = await getUserFromRequest(req); // Use new utility
+  return handler(req, res);
 };
 
 export const authMiddleware = verifyAuth;

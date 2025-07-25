@@ -91,6 +91,9 @@ module "ai_answers" {
   sentinel_forwarder_layer_arn = "arn:aws:lambda:ca-central-1:283582579564:layer:aws-sentinel-connector-layer:199"
 
   billing_tag_value = var.billing_code
+
+  # Enabled to allow connection to DB only in staging
+  enable_execute_command = var.env == "staging" ? true : false
 }
 
 resource "aws_cloudwatch_log_group" "ai_answers_group" {

@@ -9,8 +9,8 @@ const LogoutPage = ({ lang = 'en' }) => {
     logout();
   }, [logout]);
 
-  // Redirect to login page after logout
-  return <Navigate to={`/${lang}/login`} replace />;
+  // Redirect to signin page after logout
+  return <Navigate to={`/${lang}/signin`} replace />;
 };
 
 export default LogoutPage;

@@ -7,7 +7,7 @@ const OutageComponent = () => {
   return (
     <GcdsContainer size="xl" mainContainer centered style={{ paddingBottom: '2rem' }}>
       <GcdsNotice type="warning" noticeTitleTag="h2" noticeTitle={t('outage.title')} className="mb-400">
-        <GcdsText>{t('outage.message')}</GcdsText>
+        <GcdsText>Service is at capacity, please try again later.</GcdsText>
       </GcdsNotice>
     </GcdsContainer>
   );

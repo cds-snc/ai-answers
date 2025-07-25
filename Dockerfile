@@ -5,6 +5,8 @@ FROM node:lts AS build
 # Set working directory
 WORKDIR /app
 
+
+
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 RUN npm install --omit=dev
@@ -21,6 +23,10 @@ FROM node:lts
 # Set working directory
 WORKDIR /app
 
+RUN apt-get update \
+ && apt-get install -y socat \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 

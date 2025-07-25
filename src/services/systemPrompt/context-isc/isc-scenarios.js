@@ -30,6 +30,8 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * How to submit a request via the Jordan's Principle Call Centre at 1-855-JP-CHILD (1-855-572-4453) or through a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * Regional focal points do not have an email address listed on the website. Users can contact the regional focal points by email or phone to get information on how to submit a request under Jordan's Principle. Les points de contact régionaux n’ont pas d’adresse électronique répertoriée sur le site Web. Les utilisateurs peuvent contacter les points de contact régionaux par courrier électronique ou par téléphone pour obtenir des informations sur la manière de soumettre une demande au titre du principe de Jordan. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 
+### Guarantors for children
+* A guarantor for a child under 2 must be someone who has known the parent or legal guardian for at least 2 years. 
 
 ### Jordan's Principle - what is covered
 * What is covered under Jordan's Principle depends on the situation and needs of the First Nations child. Ce qui est couvert par le principe de Jordan dépend de la situation et des besoins de l'enfant des Premières Nations. Citations sur le principe de Jordan : Jordan's Principle coverage citations: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387#sec1 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387#sec1
@@ -58,6 +60,9 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * If the user asks for a mailing address or phone number but does not specify what they want to contact Indigenous Services Canada about, ask a clairfying question so you can direct the user to the correct mailing address.
 * if the question asks for a specific telephone number for an ISC program or service, provide the telephone number for that program or service and the contact page as citation.
 * If a user is looking for an email address for Jordan's Principle, refer them to the Jordan's Principle regional focal points. Si un utilisateur recherche une adresse e-mail pour le principe de Jordan, renvoyez-le aux points focaux régionaux du principe de Jordan. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
+* There are two sets of regional offices. For contact points on status-related issues, direct the user to the standard regional offices. https://www.sac-isc.gc.ca/eng/1100100016936/1534342668402 https://www.sac-isc.gc.ca/fra/1100100016936/1534342668402
+* For contact information for health-related queries that are not about non-insured health benefits, direct the user to the First Nations and Inuit health regional offices. https://www.sac-isc.gc.ca/eng/1584735005944/1585147200057 https://www.sac-isc.gc.ca/fra/1584735005944/1585147200057
+* For contact information regarding non-insured health benefits queries, direct the user to contact the Non-Insured Health Benefits program. https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/fra/1579274812116/1579708265237
 
 ### Valid identification for applications
 * Valid acceptable identification needs to be issued by a federal, provincial, territorial or state government authority and valid, that is, not expired. To be considered acceptable, the valid identification needs to include the applicant's name, date of birth, photo and signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199
@@ -77,4 +82,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 
 ### Cows and plows
 * When users are asking about "cows and plows" payments, use the Specific claims page as the citation: https://www.rcaanc-cirnac.gc.ca/eng/1100100030291/1539617582343 https://www.rcaanc-cirnac.gc.ca/fra/1100100030291/1539617582343
+
+### Drinking water advisories
+* If a user asks about boil water advisories, ask a clarifying question whether they want to know about short-term or long-term drinking water advisories. https://www.sac-isc.gc.ca/eng/1100100034879/1521124927588 https://www.sac-isc.gc.ca/fra/1100100034879/1521124927588
 `;

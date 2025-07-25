@@ -17,6 +17,7 @@ jobs:
     permissions:
       actions: read
       contents: read
+    if: github.repository == 'cds-snc/ai-answers'
 
     steps:
       - name: 'Checkout code'

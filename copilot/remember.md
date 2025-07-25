@@ -9,3 +9,4 @@
 - When adding new files to the /api/ folder, remember to add the new api call to server.js
 - Use test drive development - TDD, write the test first before adding feature. If it is a fix, verify the test works and update if needed.
 - dbConnect is needed in the class if doing database calls
+- Never use hardcoded text in components - always use the translation system with locale files (en.json, fr.json). All user-facing text must come from translation keys.

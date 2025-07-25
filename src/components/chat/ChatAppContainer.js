@@ -3,7 +3,7 @@ import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import { ChatPipelineService, RedactionError } from '../../services/ChatPipelineService.js';
+import { ChatPipelineService, RedactionError, ShortQueryValidation } from '../../services/ChatPipelineService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Utility functions go here, before the component
@@ -17,7 +17,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [] }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -33,7 +33,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [textareaKey, setTextareaKey] = useState(0);
-  const [selectedAI, setSelectedAI] = useState('azure');    
+  const [selectedAI, setSelectedAI] = useState('azure');
   const [selectedSearch, setSelectedSearch] = useState('google'); 
   const [showFeedback, setShowFeedback] = useState(false);
   const [referringUrl, setReferringUrl] = useState(pageUrl || '');
@@ -48,6 +48,15 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
   // Add this new state to prevent multiple loading announcements
   const [loadingAnnounced, setLoadingAnnounced] = useState(false);
+
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+      const userTurns = initialMessages.filter(m => m.sender === 'user').length;
+      setTurnCount(userTurns);
+      setShowFeedback(true);
+    }
+  }, [initialMessages]);
 
   // This effect monitors displayStatus changes to update screen reader announcements
   useEffect(() => {
@@ -241,6 +250,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
           selectedSearch  // Add this parameter
         );
         clearInput();
+        
         // Add the AI response to messages
         setMessages(prevMessages => [...prevMessages, {
           id: aiMessageId,
@@ -274,6 +284,28 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
               text: error.redactedText.includes('XXX') 
                 ? safeT('homepage.chat.messages.privateContent')
                 : safeT('homepage.chat.messages.blockedContent'),
+              sender: 'system',
+              error: true
+            }
+          ]);
+          clearInput();
+          setIsLoading(false);
+          return;
+        } else if (error instanceof ShortQueryValidation) {
+          // Remove the user message that was added before the error
+          setMessages(prevMessages => prevMessages.slice(0, -1));
+          
+          // Decrement turn count since this was caught after it was incremented
+          setTurnCount(prev => prev - 1);
+          
+          // Display short query message (will be filtered out of conversation history)
+          const shortQueryMessageId = messageIdCounter.current++;
+          setMessages(prevMessages => [
+            ...prevMessages,
+            {
+              id: shortQueryMessageId,
+              text: safeT('homepage.chat.messages.shortQueryMessage'),
+              searchUrl: error.searchUrl,
               sender: 'system',
               error: true
             }
@@ -326,19 +358,29 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
 
   const formatAIResponse = useCallback((aiService, message) => {
     const messageId = message.id;
-    let paragraphs = message.interaction.answer.paragraphs;
-    if (paragraphs) {
-      paragraphs = paragraphs.map(paragraph =>
-        paragraph.replace(/<translated-question>.*?<\/translated-question>/g, '')
-      );
+    // Prefer paragraphs, fallback to sentences, fallback to empty array
+    let contentArr = [];
+    if (message.interaction && message.interaction.answer) {
+      if (Array.isArray(message.interaction.answer.paragraphs) && message.interaction.answer.paragraphs.length > 0) {
+        contentArr = message.interaction.answer.paragraphs.map(paragraph =>
+          paragraph.replace(/<translated-question>.*?<\/translated-question>/g, '')
+        );
+      } else if (Array.isArray(message.interaction.answer.sentences) && message.interaction.answer.sentences.length > 0) {
+        contentArr = message.interaction.answer.sentences;
+      }
     }
-    const displayUrl = message.interaction.citationUrl;
-    // Confidence rating and department are currently unused
-  
+    // Updated citation logic
+    const answer = message.interaction?.answer || {};
+    const citation = answer.citation || {};
+    const citationHead = answer.citationHead || citation.citationHead || '';
+    const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
     return (
       <div className="ai-message-content">
-        {paragraphs.map((paragraph, index) => {
-          const sentences = extractSentences(paragraph);
+        {contentArr.map((content, index) => {
+          // If using paragraphs, split into sentences; if using sentences, just display
+          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+            ? extractSentences(content)
+            : [content];
           return sentences.map((sentence, sentenceIndex) => (
             <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
               {sentence}
@@ -350,9 +392,9 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
           {safeT('homepage.chat.input.loadingHint')}
         </p>
        </div>
-        {message.interaction.answer.answerType === 'normal' && (message.interaction.answer.citationHead || displayUrl) && (
+        {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <div className="citation-container">
-            {message.interaction.answer.citationHead && <p key={`${messageId}-head`} className="citation-head">{message.interaction.answer.citationHead}</p>}
+            {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
             {displayUrl && (
               <p key={`${messageId}-link`} className="citation-link">
                 <a href={displayUrl} target="_blank" rel="noopener noreferrer" tabIndex="0">
@@ -360,12 +402,6 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
                 </a>
               </p>
             )}
-            {/* <p key={`${messageId}-confidence`} className="confidence-rating">
-              {finalConfidenceRating !== undefined && `${safeT('homepage.chat.citation.confidence')} ${finalConfidenceRating}`}
-              {finalConfidenceRating !== undefined && (aiService || messageDepartment) && ' | '}
-              {aiService && `${safeT('homepage.chat.citation.ai')} ${aiService}`}
-              {messageDepartment && ` | ${messageDepartment}`}
-            </p> */}
           </div>
         )}
       </div>
@@ -416,6 +452,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
         }
         extractSentences={extractSentences}
         chatId={chatId}
+        readOnly={readOnly}
       />
       <div
         aria-live="polite"

@@ -21,18 +21,18 @@
     },
     "about": {
       "title": "À propos de Réponses IA",
-      "privacyNote": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
+      "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
       "aiServices": {
         "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
         "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
         "azure": "Service d'IA Azure : Microsoft Azure OpenAI"
       },
-      "systemPrompt": "Réponses IA sur Github",
-      "contact": "Le développement est toujours en cours — Contactez lisa.fast@cds-snc.ca pour plus d'informations."
+      "cdslink": "Service numérique canadien",
+      "contact": "Écrivez à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations."
     },
     "feedback": {
       "title": "",
-      "surveyLink": "Donnez votre avis (s'ouvre dans un nouvel onglet)",
+      "surveyLink": "Fini ? Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
       "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA",
       "question": "Cette réponse était-elle utile?",
       "useful": "Bonne",
@@ -40,12 +40,46 @@
       "or": "ou",
       "thankYou": "Merci d'avoir donné votre avis!"
     },
+    "publicFeedback": {
+      "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
+      "send": "Envoyer",
+      "question": "C'était utile?",
+      "yes": {
+        "question": "Dites-nous plus. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
+        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA&so=pub&cl=y",
+        "options": {
+          "noCall": "Je n'ai pas besoin d'appeler le gouvernement",
+          "noVisit": "Je n'ai pas besoin de me rendre dans un bureau",
+          "savedTime": "J'ai gagné du temps en cherchant et en lisant",
+          "other": "Autre - veuillez remplir l'enquête"
+        },
+        "shortQuestion": "Pourquoi était-ce utile ?"
+      },
+      "no": {
+        "question": "Aidez-nous à améliorer. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
+        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA&so=pub&cl=n",
+        "options": {
+          "irrelevant": "Non pertinent ou hors sujet",
+          "confusing": "Trop complexe ou déroutant",
+          "notDetailed": "Pas assez détaillé",
+          "notWanted": "La réponse est claire, mais ce n'est pas ce que je voulais entendre",
+          "other": "Autre - veuillez remplir l'enquête"
+        },
+        "shortQuestion": "Pourquoi n'était-ce pas utile ?"
+      }
+    },
     "privacy": {
       "title": "Confidentialité et conditions d'utilisation de l'IA",
       "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
       "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
       "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada et votre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
+    },
+    "immigration": {
+      "title": "Vous souhaitez vivre, travailler ou étudier au Canada ?",
+      "advice": "Réponses IA fournit des réponses courtes, ne peut pas accéder à l'état de votre dossier ou fournir des conseils juridiques.",
+      "explore": "Explorez les programmes d'immigration pour ",
+      "exploreLink": "vivre, travailler ou étudier au Canada"
     },
     "errors": {
       "timeout": {
@@ -95,13 +129,13 @@
         }
       },
       "messages": {
-        "startingToThink": "Réflexion...",
-        "thinking": "Réflexion...",
-        "thinkingWithContext": "Tirant la réponse à partir de ",
-        "thinkingMore": "Réflexion prolongée...",
+        "startingToThink": "Génération de la réponse...",
+        "thinking": "Génération de la réponse...",
+        "thinkingWithContext": "Génération de la réponse à partir de ",
+        "thinkingMore": "Génération de la réponse en cours...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
-        "blockedContent": "Votre question contenait des mots qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
+        "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
         "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Posez-la différemment ci-dessous sans aucune information personnelle.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
@@ -110,14 +144,17 @@
         "character": "caractère",
         "characters": "caractères",
         "searching": "Recherche d'informations pertinentes...",
-        "generatingAnswer": "Réflexion...",
+        "generatingAnswer": "Génération de la réponse...",
         "verifyingCitation": "Test du lien de citation",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Évaluation de la question",
         "needClarification": "Nécessite des précisions...",
         "yourQuestionWas": "Votre question était :",
         "yourAnswerIs": "Votre réponse est :",
-        "warning": "Avertissement :"
+        "warning": "Avertissement :",
+        "shortQueryMessage": "Votre requête courte n'a pas été envoyée au service d'IA car elle ne contenait pas assez de détails.",
+        "shortQueryDetails": "Posez à nouveau avec plus de détails, ou pour rechercher, utilisez ce lien créé avec votre requête :",
+        "shortQuerySearch": " Recherche Canada.ca"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
@@ -239,8 +276,7 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "start": "Démarrer",
-    "pause": "Pause"
+    "refresh": "Actualiser"
   },
   "admin": {
     "title": "Tableau de bord d'administration de Réponses IA",
@@ -253,10 +289,47 @@
       "chatViewer": "Voir le journal complet pour un ID de chat",
       "database": "Gérer la base de données",
       "eval": "Contrôler les intégrations d'évaluation",
+      "metrics": "Voir les métriques de performance",
+      "publicEval": "Évaluation publique",
       "logout": "Se déconnecter"
     },
-    "chatLogs": {
-      "title": "Télécharger les journaux de chat récents"
+    "filters": {
+      "title": "Filtres - sélectionnez puis Appliquer pour voir",
+      "clearAll": "Effacer",
+      "apply": "Appliquer",
+      "loading": "Chargement...",
+      "dateRange": "Plage de dates",
+      "days": "jours",
+      "allTime": "Tout le temps",
+      "referringUrl": "URL de référence",
+      "referringUrlPlaceholder": "Entrez l'URL de référence...",
+      "department": "Département",
+      "allDepartments": "Tous les départements",
+      "activeFilters": "Filtres actifs",
+      "noActiveFilters": "Aucun filtre actif"
+    },
+
+    "dateRange": {
+      "title": "Sélectionner la période",
+      "filterType": "Type de filtre de date",
+      "presetRanges": "Plages prédéfinies",
+      "customRange": "Plage personnalisée",
+      "chooseRange": "Choisir une plage",
+      "startDateTime": "Date et heure de début",
+      "endDateTime": "Date et heure de fin",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "thisWeek": "Cette semaine",
+      "currentSelection": "Sélection actuelle",
+      "period": "Période:",
+      "from": "De:",
+      "to": "À:"
+    },
+    "publicEval": {
+      "title": "Évaluation publique",
+      "chatId": "ID de chat",
+      "department": "Ministère",
+      "date": "Date"
     },
     "deleteChat": {
       "title": "Supprimer une conversation avec des rétroactions incorrectes",
@@ -267,6 +340,27 @@
       "loading": "Suppression en cours...",
       "success": "Conversation supprimée avec succès",
       "error": "Échec de la suppression de la conversation : "
+    },
+    "chatLogs": {
+      "title": "Télécharger les journaux de chat récents",
+      "timeRange": "Plage de temps",
+      "last1Day": "Dernier jour",
+      "last7Days": "7 derniers jours",
+      "last30Days": "30 derniers jours",
+      "last60Days": "60 derniers jours",
+      "last90Days": "90 derniers jours",
+      "allLogs": "Tous les journaux",
+      "getLogs": "Obtenir les journaux",
+      "loading": "Chargement...",
+      "loadingLogs": "Chargement des journaux...",
+      "downloadJson": "Télécharger JSON",
+      "downloadCsv": "Télécharger CSV",
+      "downloadExcel": "Télécharger Excel",
+      "found": "Trouvé",
+      "interactionsFound": "chats. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
+      "date": "Date",
+      "chatId": "ID de chat",
+      "interactions": "Interactions"
     }
   },
   "signup": {
@@ -328,6 +422,11 @@
     "statuses": {
       "available": "Disponible",
       "unavailable": "Indisponible"
+    },
+    "deploymentModeLabel": "Mode de déploiement",
+    "deploymentMode": {
+      "cds": "CDS (travailleur en arrière-plan)",
+      "vercel": "Vercel (attendre la fin de l'évaluation)"
     }
   },
   "outage": {
@@ -335,6 +434,71 @@
     "message": "Ce service est actuellement indisponible."
   },
   "common": {
-    "backToAdmin": "Retour à l'administration"
+    "backToAdmin": "Retour à l'administration",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "metrics": {
+    "title": "Tableau de bord des métriques",
+    "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
+    "dashboard": {
+      "title": "Résultats",
+      "usageMetrics": "Métriques d'utilisation",
+      "totalSessions": "Total des sessions",
+      "outputTokens": "Jetons de sortie",
+      "totalQuestions": "Total des questions",
+      "sessionsByQuestionCount": {
+        "singleQuestion": "Sessions à une question",
+        "twoQuestions": "Sessions à deux questions",
+        "threeQuestions": "Sessions à trois questions"
+      },
+      "answerTypes": {
+        "normal": "Réponses normales",
+        "clarifyingQuestion": "Questions de clarification",
+        "ptMuni": "Provincial/Municipal",
+        "notGc": "Non gouvernement du Canada"
+      },
+      "metric": "Métrique",
+      "count": "Nombre",
+      "percentage": "%",
+      "enCount": "Nombre EN",
+      "enPercentage": "% EN",
+      "frCount": "Nombre FR",
+      "frPercentage": "% FR",
+      "expertScored": {
+        "title": "Évaluations des partenaires",
+        "description": "Évaluations par des partenaires ministériels connectés",
+        "total": "Total des questions évaluées",
+        "correct": "Correct",
+        "needsImprovement": "Nécessite une amélioration",
+        "hasError": "Contient une erreur",
+        "hasErrorPercent": "Contient une erreur (%)",
+        "harmful": "Codé comme nuisible"
+      },
+      "aiScored": {
+        "title": "Évaluations IA",
+        "description": "Évaluations automatisées par IA basées sur les évaluations d'experts de questions similaires",
+        "total": "Total des questions évaluées",
+        "correct": "Correct",
+        "needsImprovement": "Nécessite une amélioration",       
+        "hasError": "Contient une erreur"
+      },
+      "userScored": {
+        "title": "Rétroaction des utilisateurs",
+        "description": "Rétroaction oui-non des utilisateurs finaux",
+        "total": "Total des questions avec rétroaction",
+        "helpful": "Utile (oui)",
+        "unhelpful": "Problème (non)",
+        "reasonTableTitle": "Répartition des raisons des commentaires publics",
+        "reason": "Raison"
+      },
+      "byDepartment": {
+        "title": "Répartition par département",
+        "department": "Département",
+        "totalQuestions": "Total des questions",
+        "totalSessions": "Sessions totales",
+        "expertTotal": "Évaluations d'experts"
+      }
+    }
   }
 }

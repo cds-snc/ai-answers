@@ -3,6 +3,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 import { GcdsContainer, GcdsText, GcdsButton, GcdsDetails, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import DataStoreService from '../services/DataStoreService.js';
 
 const EvalPage = () => {
   const { t } = useTranslations();
@@ -15,6 +16,20 @@ const EvalPage = () => {
   const [isRegeneratingEmbeddings] = useState(false);
   const [isRequestInProgress, setIsRequestInProgress] = useState(false);
   const [isEvalRequestInProgress, setIsEvalRequestInProgress] = useState(false);
+  const [expertFeedbackCount, setExpertFeedbackCount] = useState(null);
+  const [nonEmptyEvalCount, setNonEmptyEvalCount] = useState(null);
+  // Add state for time range selectors
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  React.useEffect(() => {
+    DataStoreService.getExpertFeedbackCount()
+      .then(setExpertFeedbackCount)
+      .catch(() => setExpertFeedbackCount('Error'));
+    DataStoreService.getEvalNonEmptyCount()
+      .then(setNonEmptyEvalCount)
+      .catch(() => setNonEmptyEvalCount('Error'));
+  }, []);
 
   const handleGenerateEmbeddings = async (isAutoProcess = false, regenerateAll = false, lastId = null) => {
     if (isRequestInProgress) {
@@ -27,30 +42,13 @@ const EvalPage = () => {
         setIsAutoProcessingEmbeddings(true);
       }
 
-      const response = await fetch(getApiUrl('db-generate-embeddings'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          lastProcessedId: lastId,
-          regenerateAll: regenerateAll 
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate embeddings');
-      }
-
-      const result = await response.json();
-      
+      const result = await DataStoreService.generateEmbeddings({ lastProcessedId: lastId, regenerateAll });
       // Only update progress if we got a valid response
       if (typeof result.remaining === 'number') {
         setEmbeddingProgress({
           remaining: result.remaining,
           lastProcessedId: result.lastProcessedId
         });
-        
         // Only continue processing if there are actually items remaining
         if (result.remaining > 0) {
           handleGenerateEmbeddings(true, false, result.lastProcessedId);
@@ -76,7 +74,7 @@ const EvalPage = () => {
     }
   };
 
-  const handleGenerateEvals = async (isAutoProcess = false, regenerateAll = false, lastId = null) => {
+  const handleGenerateEvals = async (isAutoProcess = false, regenerateAll = false, lastId = null, skipEmptyCleanup = false) => {
     if (isEvalRequestInProgress) {
       return; // Skip if a request is already in progress
     }
@@ -89,31 +87,29 @@ const EvalPage = () => {
           setIsRegeneratingAll(true);
         }
       }
-
       setEvalProgress(prev => ({ ...prev, loading: true }));
-      const response = await fetch(getApiUrl('db-generate-evals'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          lastProcessedId: lastId,
-          regenerateAll: regenerateAll 
-        })
+      // Pass startTime and endTime in the payload
+      const result = await DataStoreService.generateEvals({
+        lastProcessedId: lastId,
+        regenerateAll,
+        startTime: startTime || undefined,
+        endTime: endTime || undefined,
+        skipEmptyCleanup
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate evals');
-      }
-
-      const result = await response.json();
-      
       // Only update progress if we got a valid response
       if (typeof result.remaining === 'number') {
         setEvalProgress({
           remaining: result.remaining,
-          lastProcessedId: result.lastProcessedId
+          lastProcessedId: result.lastProcessedId,
+          processed: result.processed || 0,
+          failed: result.failed || 0,
+          duration: result.duration || 0
         });
+        
+        // Show progress message for non-auto processes
+        if (!isAutoProcess && (result.processed > 0 || result.failed > 0)) {
+          console.log(`Evaluation batch completed: ${result.processed} successful, ${result.failed} failed in ${result.duration}s`);
+        }
         
         // Only continue processing if there are actually items remaining
         if (result.remaining > 0) {
@@ -122,7 +118,7 @@ const EvalPage = () => {
           setIsAutoProcessingEvals(false);
           setIsRegeneratingAll(false);
           if (!isAutoProcess) {
-            alert('All evaluations have been generated!');
+            alert(`All evaluations have been generated! Final totals: ${result.processed || 0} successful, ${result.failed || 0} failed.`);
           }
         }
       } else {
@@ -143,13 +139,18 @@ const EvalPage = () => {
     }
   };
 
-  const handleRegenerateAllEvals = () => {
+
+  // Delete evaluations in date range
+  const handleDeleteEvals = async () => {
     const confirmed = window.confirm(
-      'This will delete all existing evaluations and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?'
+      'This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
     );
-    
-    if (confirmed) {
-      handleGenerateEvals(false, true);
+    if (!confirmed) return;
+    try {
+      const result = await DataStoreService.deleteEvals({ startTime: startTime || undefined, endTime: endTime || undefined });
+      alert(`Deleted ${result.deleted} evaluations and ${result.expertFeedbackDeleted} expert feedback records.`);
+    } catch (error) {
+      alert('Failed to delete evaluations. Check the console for details.');
     }
   };
 
@@ -176,6 +177,16 @@ const EvalPage = () => {
 
       <div className="mb-400">
         <h2>Generate Embeddings</h2>
+        {expertFeedbackCount !== null && (
+          <GcdsText>
+            <strong>Expert Evaluations in System:</strong> {expertFeedbackCount}
+          </GcdsText>
+        )}
+        {nonEmptyEvalCount !== null && (
+          <GcdsText>
+            <strong>Non-Empty Evaluations in System:</strong> {nonEmptyEvalCount}
+          </GcdsText>
+        )}
         <GcdsText>
           Process interactions to generate embeddings.
         </GcdsText>
@@ -217,9 +228,7 @@ const EvalPage = () => {
         <GcdsText>
           This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring the feedback scores and explanations.
         </GcdsText>
-        
         <GcdsDetails detailsTitle="Detailed Evaluation Process" className="mt-400">
-          
           <ol className="mb-200">
             <li><strong>Initial Validation:</strong> The system first validates that the interaction has question and answer content, then checks if an evaluation already exists</li>
             <li><strong>Embedding Retrieval:</strong> Finds vector embeddings for the interaction (question+answer combined, answer-only, and sentence-level)</li>
@@ -257,6 +266,27 @@ const EvalPage = () => {
           </ol>
         </GcdsDetails>
         <br/>
+        {/* Date range selectors above the button group */}
+        <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>
+          <label>
+            Start Time:
+            <input
+              type="datetime-local"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              style={{ marginLeft: "0.5rem" }}
+            />
+          </label>
+          <label>
+            End Time:
+            <input
+              type="datetime-local"
+              value={endTime}
+              onChange={e => setEndTime(e.target.value)}
+              style={{ marginLeft: "0.5rem" }}
+            />
+          </label>
+        </div>
         <div className="button-group">
           <GcdsButton 
             onClick={() => handleGenerateEvals(false)}
@@ -265,25 +295,36 @@ const EvalPage = () => {
           >
             {evalProgress?.loading && !isAutoProcessingEvals && !isRegeneratingAll ? 'Processing...' : 'Generate Evaluations'}
           </GcdsButton>
-          
           <GcdsButton 
-            onClick={handleRegenerateAllEvals}
+            onClick={() => handleGenerateEvals(false, false, null, true)}
             disabled={evalProgress?.loading || isAutoProcessingEvals || isRegeneratingAll}
+            className="mb-200 mr-200"
+          >
+            Continue Generate
+          </GcdsButton>
+          <GcdsButton 
+            onClick={handleDeleteEvals}
+            disabled={evalProgress?.loading || isAutoProcessingEvals}
             variant="danger"
             className="mb-200 mr-200"
           >
-            {isRegeneratingAll ? 'Regenerating All...' : 'Regenerate All Evaluations'}
+            Delete Evaluations
           </GcdsButton>
         </div>
-        
-        {evalProgress && (
+          {evalProgress && (
           <div className="mb-200">
             <p>
-              {evalProgress.successful !== undefined && (
-                <span> • Successful: {evalProgress.successful}</span>
+              {evalProgress.processed !== undefined && (
+                <span> • Processed: {evalProgress.processed}</span>
+              )}
+              {evalProgress.failed !== undefined && (
+                <span> • Failed: {evalProgress.failed}</span>
               )}
               {evalProgress.remaining !== undefined && (
                 <span> • Remaining: {evalProgress.remaining}</span>
+              )}
+              {evalProgress.duration !== undefined && (
+                <span> • Duration: {evalProgress.duration}s</span>
               )}
               {isAutoProcessingEvals && !isRegeneratingAll && (
                 <span> • <strong>Auto-processing active</strong></span>
