@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.29.2",
+    "@vendia/serverless-express": "^4.12.6",
     "bcryptjs": "^3.0.2",
     "cohere-ai": "^7.14.0",
     "cors": "^2.8.5",

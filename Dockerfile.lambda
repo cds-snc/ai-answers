@@ -1,0 +1,51 @@
+# Build stage - identical to ECS Dockerfile
+FROM node:lts AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev
+
+# Copy the rest of the application
+COPY . .
+
+# Build the React app
+RUN npm run build
+
+# Lambda runtime stage
+FROM public.ecr.aws/lambda/nodejs:20
+
+ENV NODE_ENV=pr-preview
+ENV REACT_APP_ENV=pr-preview
+
+# Set working directory
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Download AWS DocumentDB certificate bundle (same as ECS)
+RUN curl -o global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+COPY server/package.json server/package-lock.json ./server/
+RUN npm install --omit=dev
+
+# Install Lambda-specific dependencies
+RUN npm install @vendia/serverless-express express-fileupload
+
+# Copy built frontend and backend code (identical structure to ECS)
+COPY --from=build /app/build ${LAMBDA_TASK_ROOT}/build
+COPY server ${LAMBDA_TASK_ROOT}/server
+COPY api ${LAMBDA_TASK_ROOT}/api
+COPY middleware ${LAMBDA_TASK_ROOT}/middleware
+COPY agents ${LAMBDA_TASK_ROOT}/agents
+COPY config ${LAMBDA_TASK_ROOT}/config
+COPY models ${LAMBDA_TASK_ROOT}/models
+COPY services ${LAMBDA_TASK_ROOT}/services
+COPY src ${LAMBDA_TASK_ROOT}/src
+
+# Copy Lambda handler
+COPY lambda-handler.js ${LAMBDA_TASK_ROOT}/
+
+CMD ["lambda-handler.handler"]

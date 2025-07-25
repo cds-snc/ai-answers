@@ -7,7 +7,7 @@ data "aws_iam_policy_document" "ai-answers-ecs-policy" {
 
     principals {
       type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
+      identifiers = ["ecs-tasks.amazonaws.com", "lambda.amazonaws.com"]
     }
   }
 }
@@ -57,6 +57,18 @@ resource "aws_iam_role" "ai-answers-ecs-role" {
 resource "aws_iam_role_policy_attachment" "ai-answers-ecs-policy" {
   role       = aws_iam_role.ai-answers-ecs-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Add Lambda basic execution policy for PR preview environments
+resource "aws_iam_role_policy_attachment" "ai-answers-lambda-basic" {
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Add Lambda VPC access policy for PR preview environments
+resource "aws_iam_role_policy_attachment" "ai-answers-lambda-vpc" {
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_policy_attachment" "ai-answers-ssm-policy" {
