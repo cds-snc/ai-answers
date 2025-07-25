@@ -3,8 +3,8 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import DataStoreService from '../../services/DataStoreService.js';
 
-const DeleteChatSection = () => {
-  const { t } = useTranslations();
+const DeleteChatSection = ({ lang = 'en' }) => {
+  const { t } = useTranslations(lang);
   const [chatId, setChatId] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -26,12 +26,12 @@ const DeleteChatSection = () => {
     setLoading(true);
     try {
       await DataStoreService.deleteChat(chatId);
-      alert(t('admin.deleteChat.success', 'Chat deleted successfully'));
+      alert(t('admin.deleteChat.success'));
       setChatId('');
       setShowConfirm(false);
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert(t('admin.deleteChat.error', 'Failed to delete chat: ') + error.message);
+      alert(t('admin.deleteChat.error') + error.message);
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ const DeleteChatSection = () => {
 
   return (
     <div className="bg-white shadow rounded-lg p-4">
-      <h2 className="mt-400 mb-400">{t('admin.deleteChat.title', 'Delete Chat')}</h2>
+      <h2 className="mt-400 mb-400">{t('admin.deleteChat.title')}</h2>
       <div className="flex gap-400">
         <input
           type="text"
@@ -51,7 +51,7 @@ const DeleteChatSection = () => {
           className="form-control"
           value={chatId}
           onChange={handleInputChange}
-          placeholder={t('admin.deleteChat.idLabel', 'Chat ID')}
+          placeholder={t('admin.deleteChat.idLabel')}
           disabled={loading}
           required
         />
@@ -63,8 +63,8 @@ const DeleteChatSection = () => {
             className="me-400 hydrated mrgn-tp-1r"
           >
             {loading 
-              ? t('admin.deleteChat.loading', 'Deleting...') 
-              : t('admin.deleteChat.button', 'Delete Chat')}
+              ? t('admin.deleteChat.loading')
+              : t('admin.deleteChat.button')}
           </GcdsButton>
         ) : (
           <div className="flex gap-400">
@@ -75,8 +75,8 @@ const DeleteChatSection = () => {
               className="me-400 hydrated mrgn-tp-1r"
             >
               {loading 
-                ? t('admin.deleteChat.loading', 'Deleting...') 
-                : t('admin.deleteChat.confirm', 'Confirm Delete')}
+                ? t('admin.deleteChat.loading')
+                : t('admin.deleteChat.confirm')}
             </GcdsButton>
             <GcdsButton 
               onClick={handleCancel}
@@ -84,7 +84,7 @@ const DeleteChatSection = () => {
               disabled={loading}
               className="hydrated mrgn-tp-1r"
             >
-              {t('admin.deleteChat.cancel', 'Cancel')}
+              {t('admin.deleteChat.cancel')}
             </GcdsButton>
           </div>
         )}

@@ -18,13 +18,16 @@ async function validateInteractionAndCheckExisting(interaction, chatId) {
         ServerLoggingService.warn('Invalid interaction or missing question/answer (worker)', chatId);
         return null;
     }
-    const existingEval = await Eval.findOne({ interaction: interaction._id });
-    if (existingEval) {
+    
+    // Check if the interaction already has an autoEval reference
+    const existingInteraction = await Interaction.findById(interaction._id).populate('autoEval');
+    if (existingInteraction?.autoEval) {
         ServerLoggingService.info('Evaluation already exists for interaction (worker)', chatId, {
-            evaluationId: existingEval._id
+            evaluationId: existingInteraction.autoEval._id
         });
-        return existingEval;
+        return existingInteraction.autoEval;
     }
+    
     ServerLoggingService.debug('Interaction validation successful (worker)', chatId);
     return true;
 }
@@ -75,6 +78,8 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
                     { _id: 1, expertFeedback: 1, createdAt: 1 }
                 ).lean();
                 if (!interaction) continue;
+                // Skip if this is the same as the source interaction
+              if (interaction._id.toString() === sourceEmbedding.interactionId.toString()) continue;
                 const embedding = await Embedding.findOne({
                     interactionId: interaction._id,
                     questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } }
@@ -82,7 +87,7 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
                 if (!embedding) continue;
                 const similarity = cosineSimilarity(
                     sourceEmbedding.questionsAnswerEmbedding,
-                    embedding.questionsAnswerEmbedding
+                embedding.questionsAnswerEmbedding
                 );
                 processedCount++;
                 if (similarity >= similarityThreshold) {
@@ -146,7 +151,7 @@ function findBestAnswerMatches(sourceEmbedding, similarEmbeddings, topMatches = 
             const sentenceCountPenalty = Math.abs(
                 sourceEmbedding.sentenceEmbeddings.length -
                 match.embedding.sentenceEmbeddings.length
-            ) * 0.05;
+            ) * 0.15;
             const recencyBias = match.embedding.interactionId.createdAt ?
                 (new Date() - new Date(match.embedding.interactionId.createdAt)) / (1000 * 60 * 60 * 24 * 365) : 0;
             const recencyWeight = 0.1;
@@ -203,6 +208,20 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
         url: '',
         similarity: 0
     };
+    // Always score the search page as zero
+    const searchPagePattern = /^https:\/\/www\.canada\.ca\/(en|fr)\/sr\/srb\.html$/i;
+    if (searchPagePattern.test(sourceUrl)) {
+        bestCitationMatch.score = 0;
+        bestCitationMatch.explanation = 'Search page citations are always scored zero.';
+        bestCitationMatch.url = sourceUrl;
+        bestCitationMatch.similarity = 1;
+        ServerLoggingService.debug('Citation matching result (worker):', 'system', {
+            sourceUrl,
+            matchedUrl: bestCitationMatch.url,
+            score: bestCitationMatch.score
+        });
+        return bestCitationMatch;
+    }
     for (const match of bestAnswerMatches) {
         const expertFeedback = match.embedding.interactionId.expertFeedback;
         const matchInteraction = await Interaction.findById(match.embedding.interactionId._id).populate({
@@ -280,6 +299,13 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
                 populate: { path: 'sentences' }
             });
         const matchedSentenceText = matchedInteraction?.answer?.sentences[match.targetIndex];
+        // Fetch chatId from Chat collection by finding the chat that contains this interaction
+        let matchedChatId = null;
+        const Chat = mongoose.model('Chat');
+        const chatDoc = await Chat.findOne({ interactions: matchedInteraction._id }, { chatId: 1 });
+        if (chatDoc) {
+            matchedChatId = chatDoc._id; // Use the MongoDB _id for reference
+        }
         if (match.expertFeedback && feedbackIdx >= 1 && feedbackIdx <= 4) {
             const score = match.expertFeedback[`sentence${feedbackIdx}Score`] ?? 100;
             newExpertFeedback[`sentence${newIdx}Score`] = score;
@@ -290,6 +316,7 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
             sourceIndex: match.sourceIndex,
             sourceSentenceText: sourceSentenceText,
             matchedInteractionId: match.matchId,
+            matchedChatId: matchedChatId, 
             matchedSentenceIndex: match.targetIndex,
             matchedSentenceText: matchedSentenceText,
             matchedExpertFeedbackSentenceScore: match.expertFeedback?.[`sentence${feedbackIdx}Score`] ?? 100,
@@ -310,9 +337,10 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         feedbackId: savedFeedback._id,
         totalScore: recalculatedScore,
         citationScore: bestCitationMatch.score
-    });
-    const newEval = new Eval({
+    });    const newEval = new Eval({
         expertFeedback: savedFeedback._id,
+        processed: true,
+        hasMatches: true,
         similarityScores: {
             sentences: sentenceSimilarities,
             citation: bestCitationMatch.similarity || 0
@@ -331,7 +359,34 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         totalScore: recalculatedScore,
         similarityScores: newEval.similarityScores,
         traceCount: sentenceTrace.length
+    });    return savedEval;
+}
+
+// Create an evaluation record to mark that an interaction has been processed but no matches were found
+async function createNoMatchEvaluation(interaction, chatId, reason) {
+    const newEval = new Eval({
+        processed: true,
+        hasMatches: false,
+        similarityScores: {
+            sentences: [],
+            citation: 0
+        },
+        sentenceMatchTrace: []
     });
+    
+    const savedEval = await newEval.save();
+    
+    await Interaction.findByIdAndUpdate(
+        interaction._id,
+        { autoEval: savedEval._id },
+        { new: true }
+    );
+    
+    ServerLoggingService.info(`Created no-match evaluation record (worker) - ${reason}`, chatId, {
+        interactionId: interaction._id.toString(),
+        evaluationId: savedEval._id
+    });
+    
     return savedEval;
 }
 
@@ -350,27 +405,40 @@ export default async function ({ interactionId, chatId }) {
         if (!interaction) {
             ServerLoggingService.warn('Interaction not found (worker)', chatId, { interactionId });
             return null;
-        }
-        const validationResult = await validateInteractionAndCheckExisting(interaction, chatId);
+        }        const validationResult = await validateInteractionAndCheckExisting(interaction, chatId);
         if (validationResult !== true) return validationResult;
         const sourceEmbedding = await getEmbeddingForInteraction(interaction);
-        if (!sourceEmbedding) return null;
+        if (!sourceEmbedding) {
+            await createNoMatchEvaluation(interaction, chatId, 'no embeddings found');
+            return null;
+        }
         const similarEmbeddings = await findSimilarEmbeddingsWithFeedback(
             sourceEmbedding,
-            config.thresholds.questionAnswerSimilarity
+            config.thresholds.questionAnswerSimilarity,
+            config.searchLimits.similarEmbeddings,
+            config.similarEmbeddingsTimeLimit
         );
-        if (!similarEmbeddings.length) return null;
+        if (!similarEmbeddings.length) {
+            await createNoMatchEvaluation(interaction, chatId, 'no similar embeddings found');
+            return null;
+        }
         const bestAnswerMatches = findBestAnswerMatches(
             sourceEmbedding,
             similarEmbeddings,
             config.searchLimits.topAnswerMatches
         );
-        if (!bestAnswerMatches.length) return null;
+        if (!bestAnswerMatches.length) {
+            await createNoMatchEvaluation(interaction, chatId, 'no answer matches found');
+            return null;
+        }
         const bestSentenceMatches = findBestSentenceMatches(
             sourceEmbedding,
             bestAnswerMatches
         );
-        if (!bestSentenceMatches.length || bestSentenceMatches.length !== sourceEmbedding.sentenceEmbeddings.length) return null;
+        if (!bestSentenceMatches.length || bestSentenceMatches.length !== sourceEmbedding.sentenceEmbeddings.length) {
+            await createNoMatchEvaluation(interaction, chatId, 'no sentence matches found or mismatch in sentence count');
+            return null;
+        }
         const bestCitationMatch = await findBestCitationMatch(
             interaction,
             bestAnswerMatches

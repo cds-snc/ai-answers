@@ -1,8 +1,7 @@
-// server/server.js - this is only used for local development NOT for Vercel
+import dbDeleteEvalsHandler from '../api/db/db-delete-evals.js';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import fileUpload from 'express-fileupload';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import dotenv from 'dotenv';
@@ -43,6 +42,15 @@ import generateEvalsHandler from '../api/db/db-generate-evals.js';
 import dbDatabaseManagementHandler from '../api/db/db-database-management.js';
 import dbDeleteSystemLogsHandler from '../api/db/db-delete-system-logs.js';
 import dbSettingsHandler from '../api/db/db-settings.js';
+import dbPublicSiteStatusHandler from '../api/db/db-public-site-status.js';
+import dbPublicEvalListHandler from '../api/db/db-public-eval-list.js';
+import dbChatHandler from '../api/db/db-chat.js';
+import dbExpertFeedbackCountHandler from '../api/db/db-expert-feedback-count.js';
+import dbEvalNonEmptyCountHandler from '../api/db/db-eval-non-empty-count.js';
+import dbTableCountsHandler from '../api/db/db-table-counts.js';
+import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
+import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
+import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,7 +60,6 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-app.use(fileUpload());
 app.use(express.static(path.join(__dirname, "../build")));
 
 // Set higher timeout limits for all routes
@@ -80,7 +87,10 @@ app.get("*", (req, res, next) => {
   }
   res.sendFile(path.join(__dirname, "../build", "index.html"));
 });
-
+app.post('/api/db/db-delete-evals', dbDeleteEvalsHandler);
+app.get('/api/db/db-public-site-status', dbPublicSiteStatusHandler);
+app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
+app.get('/api/db/db-chat', dbChatHandler);
 app.post('/api/db/db-persist-feedback', dbPersistFeedback);
 app.post('/api/db/db-persist-interaction', dbPersistInteraction);
 app.get('/api/db/db-chat-session', dbChatSessionHandler);
@@ -100,7 +110,12 @@ app.post('/api/db/db-generate-evals', generateEvalsHandler);
 app.all('/api/db/db-database-management', dbDatabaseManagementHandler);
 app.delete('/api/db/db-delete-system-logs', dbDeleteSystemLogsHandler);
 app.all('/api/db/db-settings', dbSettingsHandler);
-
+app.get('/api/db/db-expert-feedback-count', dbExpertFeedbackCountHandler);
+app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
+app.get('/api/db/db-table-counts', dbTableCountsHandler);
+app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
+app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
+app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
 app.post("/api/openai/openai-message", openAIHandler);
 app.post("/api/openai/openai-context", openAIContextAgentHandler);
 app.post('/api/openai/openai-batch', openAIBatchHandler);
@@ -127,13 +142,14 @@ app.post("/api/azure/azure-context", azureContextHandler);
 
 app.post('/api/search/search-context', contextSearchHandler);
 
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-fetch("http://localhost:3001/health")
+fetch(`http://localhost:${PORT}/health`)
   .then((response) => response.json())
   .then((data) => console.log("Health check:", data))
   .catch((error) => console.error("Error:", error));

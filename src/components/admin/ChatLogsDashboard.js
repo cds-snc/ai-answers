@@ -5,19 +5,30 @@ import DataStoreService from '../../services/DataStoreService.js';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import ExportService from '../../services/ExportService.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import FilterPanel from './FilterPanel.js';
+
 DataTable.use(DT);
 
-const ChatLogsDashboard = () => {
-  const [timeRange, setTimeRange] = useState('1');
+const ChatLogsDashboard = ({ lang = 'en' }) => {
+  const { t } = useTranslations(lang);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const fetchLogs = async () => {
+
+  const fetchLogs = async (filters = null) => {
     setLoading(true);
     try {
-      const data = await DataStoreService.getChatLogs({ days: timeRange });
+      console.log('Fetching logs with params:', filters);
+      const data = await DataStoreService.getChatLogs(filters || {});
+      console.log('API response:', data);
       if (data.success) {
-        setLogs(data.logs || []);
+        const logsData = data.logs || [];
+        setLogs(logsData);
+        setHasLoadedData(true);
+        console.log('Set logs:', logsData);
       } else {
         console.error('API returned error:', data.error);
         alert(data.error || 'Failed to fetch logs');
@@ -29,12 +40,31 @@ const ChatLogsDashboard = () => {
     setLoading(false);
   };
 
+  const handleGetLogs = () => {
+    // Only show filter panel, do not query
+    setShowFilterPanel(true);
+  };
+
+  const handleApplyFilters = (filters) => {
+    fetchLogs(filters);
+  };
+
+  const handleClearFilters = () => {
+    const today = new Date();
+    const todayFilters = {
+      startDate: today,
+      endDate: today
+    };
+    fetchLogs(todayFilters);
+  };
+
   const filename = (ext) => {
-    let name = 'chat-logs-' + timeRange + '-' + new Date().toISOString();
+    let name = 'chat-logs-' + new Date().toISOString();
     return name + '.' + ext;
   };
 
   const downloadJSON = () => {
+    // Always export the currently filtered logs
     const json = JSON.stringify(logs, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -55,101 +85,55 @@ const ChatLogsDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="w-48">
-          <label htmlFor="timeRange" className="block text-sm font-medium text-gray-700 mb-1">
-            Time range
-          </label>
-          <select
-            id="timeRange"
-            name="timeRange"
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      {!hasLoadedData && (
+        <div className="bg-white shadow rounded-lg p-4">
+          <GcdsButton
+            onClick={handleGetLogs}
+            disabled={loading}
+            className="me-400 hydrated"
           >
-            <option value="1">Last 1 day</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="60">Last 60 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="all">All logs</option>
-          </select>
+            {loading ? t('admin.chatLogs.loading') : t('admin.chatLogs.getLogs')}
+          </GcdsButton>
         </div>
+      )}
 
-        <GcdsButton
-          onClick={fetchLogs}
-          disabled={loading}
-          className="me-400 hydrated mrgn-tp-1r"
-        >
-          {loading ? 'Loading...' : 'Get logs'}
-        </GcdsButton>
+      {showFilterPanel && (
+        <FilterPanel
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
+          isVisible={true}
+        />
+      )}
 
-        {logs.length > 0 && (
-          <>
-            <GcdsButton
-              onClick={downloadJSON}
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              Download JSON
-            </GcdsButton>
-
-            <GcdsButton
-              onClick={downloadCSV}
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              Download CSV
-            </GcdsButton>
-            <GcdsButton
-              onClick={downloadExcel}
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              Download Excel
-            </GcdsButton>
-          </>
-        )}
-      </div>
-
-      <div className="bg-white shadow rounded-lg">
-        {loading ? (
-          <div className="p-4">
-            <p className="text-gray-500">Loading logs...</p>
+      {logs.length > 0 && (
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="mrgn-tp-1r">
+            {t('admin.chatLogs.found')} {logs.length} {t('admin.chatLogs.interactionsFound')}
           </div>
-        ) : logs.length > 0 ? (
-          <div className="p-4">
-            <p className="mb-4 text-gray-600">
-              Found {logs.length} chat interactions. Download the logs to see the full set and
-              details.
-            </p>
-            <DataTable
-              data={logs}
-              columns={[
-                { title: 'Date', data: 'createdAt', render: (data) => (data ? data : '') },
-                { title: 'Chat ID', data: 'chatId', render: (data) => (data ? data : '') },
-                {
-                  title: 'Interactions',
-                  data: 'interactions',
-                  render: (data) => (data ? data.length : 0),
-                },
-              ]}
-              options={{
-                paging: true,
-                searching: true,
-                ordering: true,
-                order: [[0, 'desc']],
-              }}
-            />
-          </div>
-        ) : (
-          <div className="p-4">
-            <p className="text-gray-500">
-              Select a time range and click 'Get logs' to view chat history
-            </p>
-          </div>
-        )}
-      </div>
+          <GcdsButton
+            onClick={downloadJSON}
+            disabled={loading}
+            className="me-400 hydrated mrgn-tp-1r"
+          >
+            {t('admin.chatLogs.downloadJson')}
+          </GcdsButton>
+
+          <GcdsButton
+            onClick={downloadCSV}
+            disabled={loading}
+            className="me-400 hydrated mrgn-tp-1r"
+          >
+            {t('admin.chatLogs.downloadCsv')}
+          </GcdsButton>
+          <GcdsButton
+            onClick={downloadExcel}
+            disabled={loading}
+            className="me-400 hydrated mrgn-tp-1r"
+          >
+            {t('admin.chatLogs.downloadExcel')}
+          </GcdsButton>
+        </div>
+      )}
     </div>
   );
 };

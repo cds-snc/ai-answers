@@ -37,6 +37,19 @@ const sendStatusUpdate = (onStatusUpdate, status) => {
   }
 };
 
+// Helper function to count words in a string
+const countWords = (text) => {
+  if (!text || typeof text !== 'string') return 0;
+  const words = text.trim().split(/\s+/);
+  // Stop counting after 4 words for efficiency
+  return Math.min(words.length, 4);
+};
+
+// Helper function to check if query is too short
+const isShortQuery = (wordCount) => {
+  return wordCount <= 2;
+};
+
 export const ChatPipelineService = {
   processResponse: async (
     chatId,
@@ -56,8 +69,18 @@ export const ChatPipelineService = {
     // Send updated status (displaying "Assessing question")
     sendStatusUpdate(onStatusUpdate, PipelineStatus.MODERATING_QUESTION);
 
+    // Check for short queries before redaction (only for first question in session)
+    if (conversationHistory.length === 0) {
+      const wordCount = countWords(userMessage);
+      if (isShortQuery(wordCount)) {
+        // Generate search URL using the same logic as redaction fallback
+        const searchUrl = urlToSearch.generateFallbackSearchUrl(lang, userMessage, department, translationF);
+        throw new ShortQueryValidation('Short query detected', userMessage, searchUrl.fallbackUrl);
+      }
+    }
+
     // Do redaction but don't display status
-    await ChatPipelineService.processRedaction(userMessage);
+    await ChatPipelineService.processRedaction(userMessage, lang);
     await LoggingService.info(chatId, 'Starting pipeline with data:', {
       userMessage,
       lang,
@@ -72,8 +95,7 @@ export const ChatPipelineService = {
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
     if (
       conversationHistory.length > 0 &&
-      conversationHistory[conversationHistory.length - 1].interaction.answer.answerType !==
-      'question'
+      !conversationHistory[conversationHistory.length - 1].interaction.answer.answerType.includes('question')
     ) {
       const lastMessage = conversationHistory[conversationHistory.length - 1];
       context = lastMessage.interaction.context;
@@ -134,7 +156,7 @@ export const ChatPipelineService = {
       });
     }
 
-    if (answer.answerType === 'question') {
+    if (answer.answerType && answer.answerType.includes('question')) {
       sendStatusUpdate(onStatusUpdate, PipelineStatus.NEED_CLARIFICATION);
     }
 
@@ -181,11 +203,11 @@ export const ChatPipelineService = {
     await LoggingService.info(null, 'Validated URL:', validationResult);
     return validationResult;
   },
-  processRedaction: async (userMessage) => {
+  processRedaction: async (userMessage, lang) => {
     // Ensure RedactionService is initialized before using it
-    await RedactionService.ensureInitialized();
+    await RedactionService.ensureInitialized(lang);
 
-    const { redactedText, redactedItems } = RedactionService.redactText(userMessage);
+    const { redactedText, redactedItems } = RedactionService.redactText(userMessage, lang);
 
     // Check for blocked content (# for profanity/threats/manipulation, XXX for private info)
     const hasBlockedContent = redactedText.includes('#') || redactedText.includes('XXX');
@@ -201,5 +223,14 @@ export class RedactionError extends Error {
     this.name = 'RedactionError';
     this.redactedText = redactedText;
     this.redactedItems = redactedItems;
+  }
+}
+
+export class ShortQueryValidation extends Error {
+  constructor(message, userMessage, searchUrl) {
+    super(message);
+    this.name = 'ShortQueryValidation';
+    this.userMessage = userMessage;
+    this.searchUrl = searchUrl;
   }
 }

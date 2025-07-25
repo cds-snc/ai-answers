@@ -12,39 +12,47 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
+// Remove isActuallyOnVercel and only use deploymentMode
+let pool;
+let directWorkerFn;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const numCPUs = os.cpus().length;
-const pool = new Piscina({
+
+// Always initialize both, but only use one depending on deploymentMode
+pool = new Piscina({
   filename: path.resolve(__dirname, 'evaluation.worker.js'),
   minThreads: 1,
   maxThreads: Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1),
 });
+// directWorkerFn will be loaded as needed
 
 class EvaluationService {
-    async evaluateInteraction(interaction, chatId) {
+    async evaluateInteraction(interaction, chatId, deploymentMode) {
         if (!interaction || !interaction._id) {
             ServerLoggingService.error('Invalid interaction object passed to evaluateInteraction', chatId, 
                 { hasInteraction: !!interaction, hasId: !!interaction?._id });
-            // Return a rejected promise or throw an error for consistency, as the method is async.
-            // Throwing is fine as it will result in a rejected promise.
             throw new Error('Invalid interaction object'); 
         }
         const interactionIdStr = interaction._id.toString();
         try {
-            ServerLoggingService.debug('Dispatching evaluation task to worker', chatId, { interactionId: interactionIdStr });
-            // Return the promise from pool.run() directly.
-            // The caller (e.g., processEvaluationsForDuration) will await this promise
-            // and handle its resolution or rejection.
-            return pool.run({ interactionId: interactionIdStr, chatId });
+            if (deploymentMode === 'CDS') {
+                // Use Piscina worker pool for background processing
+                return pool.run({ interactionId: interactionIdStr, chatId });
+            } else {
+                // For 'Vercel' or any other mode, run worker function directly
+                if (!directWorkerFn) {
+                    // Use dynamic import instead of require
+                    const imported = await import('./evaluation.worker.js');
+                    directWorkerFn = imported.default || imported;
+                }
+                return directWorkerFn({ interactionId: interactionIdStr, chatId });
+            }
         } catch (error) {
-            // This catch block will only handle synchronous errors from pool.run() itself (e.g., pool closed).
-            // Errors during worker execution will cause the promise returned by pool.run() to reject.
-            ServerLoggingService.error('Error synchronously dispatching task to evaluation worker', chatId, { 
+            ServerLoggingService.error('Error during interaction evaluation dispatch', chatId, { 
                 interactionId: interactionIdStr, 
-                errorMessage: error.message,
+                errorMessage: error.message
             });
-            // Re-throw the error so the caller's await will reject.
             throw error;
         }
     }
@@ -90,9 +98,10 @@ class EvaluationService {
      * Process interactions for evaluation for a specified duration.
      * This method will now call the worker-offloaded `evaluateInteraction`.
      */
-    async processEvaluationsForDuration(duration, skipExisting = true, lastProcessedId = null) {
+    async processEvaluationsForDuration(duration, skipExisting = true, lastProcessedId = null, deploymentMode = 'CDS', extraFilter = {}) {
         const startTime = Date.now();
         let lastId = lastProcessedId;
+        const concurrency = config.evalConcurrency || 8;
 
         try {
             await dbConnect();
@@ -101,23 +110,19 @@ class EvaluationService {
             // delete all existing evaluations and expert feedback
             if (!skipExisting && !lastProcessedId) {
                 ServerLoggingService.info('Regenerating all evaluations - deleting existing evaluations', 'system');
-                
                 // First get all evals to find the expert feedback IDs
                 const allEvals = await Eval.find({});
                 const expertFeedbackIds = allEvals
                     .map(evaluation => evaluation.expertFeedback)
                     .filter(id => id); // Filter out null/undefined values
-                
                 // Delete all evaluations
                 await Eval.deleteMany({});
                 ServerLoggingService.info(`Deleted ${allEvals.length} evaluations`, 'system');
-                
                 // Delete associated expert feedback
                 if (expertFeedbackIds.length > 0) {
                     await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
                     ServerLoggingService.info(`Deleted ${expertFeedbackIds.length} expert feedback records`, 'system');
                 }
-                
                 // Clear autoEval field from all interactions
                 await Interaction.updateMany(
                     { autoEval: { $exists: true } },
@@ -129,7 +134,8 @@ class EvaluationService {
             // Find interactions that have both question and answer
             const query = {
                 question: { $exists: true, $ne: null },
-                answer: { $exists: true, $ne: null }
+                answer: { $exists: true, $ne: null },
+                ...extraFilter
             };
 
             // If skipExisting is true, exclude interactions that already have evaluations
@@ -148,26 +154,53 @@ class EvaluationService {
                 .limit(100) // Process in batches of 100
                 .populate('question answer');
 
-            // Process each interaction until time runs out
-            for (const interaction of interactions) {
+            let processedCount = 0;
+            let failedCount = 0;
+            let idx = 0;
+            while (idx < interactions.length && ((Date.now() - startTime) / 1000 < duration)) {
+                const batch = interactions.slice(idx, idx + concurrency);
+                const promises = batch.map(async (interaction) => {
+                    try {
+                        const chats = await Chat.find({ interactions: interaction._id });
+                        const chatId = chats.length > 0 ? chats[0].chatId : null;
+                        await this.evaluateInteraction(interaction, chatId, deploymentMode);
+                        processedCount++;
+                        ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
+                        lastId = interaction._id.toString();
+                    } catch (error) {
+                        failedCount++;
+                        ServerLoggingService.error(
+                            `Failed to evaluate interaction ${interaction._id}, continuing with next interaction`,
+                            'eval-service',
+                            error
+                        );
+                        lastId = interaction._id.toString();
+                    }
+                });
+                await Promise.allSettled(promises);
+                idx += concurrency;
                 if ((Date.now() - startTime) / 1000 >= duration) {
                     break;
                 }
-                const chats = await Chat.find({ interactions: interaction._id });
-                const chatId = chats.length > 0 ? chats[0].chatId : null;
-                await this.evaluateInteraction(interaction, chatId);
-                lastId = interaction._id.toString();
             }
 
-            // Calculate and return only remaining count
+            ServerLoggingService.info(
+                `Evaluation batch completed: ${processedCount} successful, ${failedCount} failed`,
+                'eval-service'
+            );
+
+            // Calculate and return remaining count and stats
             const remainingQuery = {
                 ...query,
                 _id: { $gt: new mongoose.Types.ObjectId(lastId || '000000000000000000000000') }
             };
-            
+
             return {
                 remaining: await Interaction.countDocuments(remainingQuery),
-                lastProcessedId: lastId
+                lastProcessedId: lastId,
+                processed: processedCount,
+                failed: failedCount,
+                duration: Math.round((Date.now() - startTime) / 1000)
             };
         } catch (error) {
             ServerLoggingService.error('Error processing evaluations for duration', 'system', error);

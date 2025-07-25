@@ -26,8 +26,5 @@ async function settingsHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  if (req.method === 'POST') {
-    return withProtection(settingsHandler, authMiddleware, adminMiddleware)(req, res);
-  }
-  return settingsHandler(req, res);
+  return withProtection(settingsHandler, authMiddleware, adminMiddleware)(req, res);
 }

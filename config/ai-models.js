@@ -1,8 +1,18 @@
-// config/ai-models.js
-const AI_MODELS = {
+ // config/ai-models.js
+const AI_MODELS = {  
   azure: {
-    default: "gpt-4o",
+    default: "openai-gpt41",
     models: {
+      "openai-gpt41-mini": { 
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+      },
+       "openai-gpt41": { 
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+      },
       "gpt-4o": {
         maxTokens: 1024,
         temperature: 0.0,
@@ -35,6 +45,11 @@ const AI_MODELS = {
   openai: {
     default: 'gpt-4.1-2025-04-14',
     models: {
+      'gpt-4.1-mini': { 
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+      },
       'gpt-4.1-2025-04-14': {
         maxTokens: 1024,
         temperature: 0.0,

@@ -10,6 +10,7 @@ const ChatSchema = new mongoose.Schema({
     aiProvider: { type: String, required: false, default: '' },
     searchProvider: { type: String, required: false, default: '' },
     pageLanguage: { type: String, required: false, default: '' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
 },{
     timestamps: true,
     versionKey: false,

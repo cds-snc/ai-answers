@@ -9,13 +9,17 @@ const SettingsPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
   const [status, setStatus] = useState('available');
   const [saving, setSaving] = useState(false);
+  const [deploymentMode, setDeploymentMode] = useState('CDS');
+  const [savingDeployment, setSavingDeployment] = useState(false);
 
   useEffect(() => {
-    async function loadStatus() {
+    async function loadSettings() {
       const current = await DataStoreService.getSiteStatus();
       setStatus(current);
+      const mode = await DataStoreService.getDeploymentMode();
+      setDeploymentMode(mode);
     }
-    loadStatus();
+    loadSettings();
   }, []);
 
   const handleChange = async (e) => {
@@ -26,6 +30,17 @@ const SettingsPage = ({ lang = 'en' }) => {
       await DataStoreService.setSiteStatus(newStatus);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeploymentModeChange = async (e) => {
+    const newMode = e.target.value;
+    setDeploymentMode(newMode);
+    setSavingDeployment(true);
+    try {
+      await DataStoreService.setDeploymentMode(newMode);
+    } finally {
+      setSavingDeployment(false);
     }
   };
 
@@ -41,6 +56,14 @@ const SettingsPage = ({ lang = 'en' }) => {
       <select id="site-status" value={status} onChange={handleChange} disabled={saving}>
         <option value="available">{t('settings.statuses.available', 'Available')}</option>
         <option value="unavailable">{t('settings.statuses.unavailable', 'Unavailable')}</option>
+      </select>
+
+      <label htmlFor="deployment-mode" className="mb-200 display-block mt-400">
+        {t('settings.deploymentModeLabel', 'Deployment Mode')}
+      </label>
+      <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
+        <option value="CDS">{t('settings.deploymentMode.cds', 'CDS (Background worker)')}</option>
+        <option value="Vercel">{t('settings.deploymentMode.vercel', 'Vercel (Wait for completion)')}</option>
       </select>
     </GcdsContainer>
   );

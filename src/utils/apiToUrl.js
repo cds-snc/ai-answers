@@ -1,13 +1,16 @@
 const getApiUrl = (endpoint) => {
   const serverUrl =
-    process.env.NODE_ENV === "development" ? "http://127.0.0.1:3001" : "";
-  const prefix = endpoint.split('-')[0];
-  return `${serverUrl}/api/${prefix}/${endpoint}`;
+    process.env.REACT_APP_API_URL ||
+    (process.env.NODE_ENV === "development" ? "http://127.0.0.1:3001/api" : "/api");
+  const prefix = endpoint.split("-")[0];
+  console.log("getApiUrl called with endpoint:", endpoint, "=> serverUrl:", serverUrl, "prefix:", prefix);
+  return `${serverUrl}/${prefix}/${endpoint}`;
 };
 
 const getProviderApiUrl = (provider, endpoint) => {
   const serverUrl =
-    process.env.NODE_ENV === "development" ? "http://127.0.0.1:3001" : "";
+    process.env.REACT_APP_API_URL ||
+    (process.env.NODE_ENV === "development" ? "http://127.0.0.1:3001/api" : "/api");
   // Map provider aliases to their actual service names
   if (provider === "claude") {
     provider = "anthropic";
@@ -17,7 +20,7 @@ const getProviderApiUrl = (provider, endpoint) => {
     provider = "azure";
   }
 
-  return `${serverUrl}/api/${provider}/${provider}-${endpoint}`;
+  return `${serverUrl}/${provider}/${provider}-${endpoint}`;
 };
 
 const providerOrder = ["openai", "azure", "anthropic", "cohere"];

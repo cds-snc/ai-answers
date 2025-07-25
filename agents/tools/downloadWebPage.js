@@ -15,7 +15,7 @@ const tokenizer = getEncoding("cl100k_base"); // OpenAI's default tokenizer
  */
 function extractBodyContentWithLinks($, maxTokens = 8000) {
     const bodyContent = [];
-    const blockTags = new Set(['p', 'div', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'ul', 'ol', 'hr', 'details', 'summary']);
+    const blockTags = new Set(['p', 'div', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'ul', 'ol', 'hr', 'details', 'summary', 'table', 'tr', 'td', 'th']);
     const mainTag = $('main');
     let totalTokens = 0;
 
@@ -34,6 +34,65 @@ function extractBodyContentWithLinks($, maxTokens = 8000) {
                 if (text) content = text;
             } else if (element.tagName === 'a') {
                 content = $.html(element).trim();
+            } else if (element.tagName === 'table') {
+                // Special handling for tables
+                const tableContent = [];
+                let isFirstRow = true;
+                
+                tag.find('tr').each((_, row) => {
+                    const rowContent = [];
+                    $(row).find('th, td').each((_, cell) => {
+                        const $cell = $(cell);
+                        let cellText = '';
+                        
+                        // Handle cells that contain links
+                        const links = $cell.find('a');
+                        if (links.length > 0) {
+                            links.each((_, link) => {
+                                const $link = $(link);
+                                const linkText = $link.text().trim();
+                                if (linkText) cellText += linkText;
+                            });
+                        } else {
+                            // Handle bold text
+                            const boldText = $cell.find('strong').text().trim();
+                            if (boldText) {
+                                cellText = boldText;
+                                // Add the rest of the text if any
+                                const remainingText = $cell.clone().find('strong').remove().end().text().trim();
+                                if (remainingText) cellText += remainingText;
+                            } else {
+                                cellText = $cell.text().trim();
+                            }
+                        }
+                        
+                        // Clean up multiple spaces and newlines, but preserve intentional line breaks
+                        cellText = cellText
+                            .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+                            .replace(/\n\s*\n/g, '\n')  // Replace multiple newlines with single newline
+                            .trim();
+                        
+                        if (cellText) rowContent.push(cellText);
+                    });
+                    
+                    if (rowContent.length > 0) {
+                        if (isFirstRow) {
+                            // Add header row
+                            tableContent.push(rowContent.join(' | '));
+                            // Add separator row for markdown tables
+                            tableContent.push(rowContent.map(() => '---').join(' | '));
+                            isFirstRow = false;
+                        } else {
+                            // For long content, wrap in a single line
+                            const wrappedRow = rowContent.map(text => {
+                                // If text is too long, wrap it to maintain table structure
+                                return text.length > 100 ? text.substring(0, 97) + '...' : text;
+                            });
+                            tableContent.push(wrappedRow.join(' | '));
+                        }
+                    }
+                });
+                content = tableContent.join('\n');
             } else if (element.tagName === 'details') {
                 // Special handling for details element
                 const summary = tag.find('summary').text().trim();

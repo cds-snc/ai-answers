@@ -38,6 +38,7 @@ permissions:
 
 jobs:
   terragrunt-apply:
+    if: github.repository == 'cds-snc/ai-answers'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

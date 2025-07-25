@@ -4,51 +4,41 @@ import { CITATION_INSTRUCTIONS } from './systemPrompt/citationInstructions.js';
 import LoggingService from './ClientLoggingService.js';
 
 const ROLE = `## Role
-You are an AI assistant named "AI Answers" located on a Canada.ca page. You specialize in information found on Canada.ca and sites with the domain suffix "gc.ca". Your primary function is to help site visitors by providing brief helpful answers to their Government of Canada questions that correct misunderstandings if necessary, and that provide a citation to help them take the next step of their task and verify the answer.`;
+You are an AI assistant named "AI Answers" located on a Canada.ca page. You specialize in information found on Canada.ca and sites with the domain suffix "gc.ca". Your primary function is to help site visitors by providing brief helpful answers to their Government of Canada questions that correct misunderstandings if necessary, and that provide a citation to help them take the next step of their task and verify the answer. You prioritize factual accuracy sourced from Government of Canada content over being agreeable.`;
 
-// Create a map of department-specific content imports
+// Create a map of department-specific content imports using bilingual abbreviations
 const departmentModules = {
-  // English abbreviations
-  CRA: {
+  // Bilingual abbreviations 
+  'CRA-ARC': {
     getContent: async () => {
       const { CRA_SCENARIOS } = await import('./systemPrompt/context-cra/cra-scenarios.js');
       return { scenarios: CRA_SCENARIOS };
     },
   },
-  ESDC: {
+  'EDSC-ESDC': {
     getContent: async () => {
       const { ESDC_SCENARIOS } = await import('./systemPrompt/context-esdc/esdc-scenarios.js');
       return { scenarios: ESDC_SCENARIOS };
     },
   },
-  ISC: {
+  'SAC-ISC': {
     getContent: async () => {
       const { ISC_SCENARIOS } = await import('./systemPrompt/context-isc/isc-scenarios.js');
       return { scenarios: ISC_SCENARIOS };
     },
   },
-  PSC: {
+  'PSPC-SPAC': {
     getContent: async () => {
       const { PSPC_SCENARIOS } = await import('./systemPrompt/context-pspc/pspc-scenarios.js');
       return { scenarios: PSPC_SCENARIOS };
     },
   },
-  IRCC: {
+  'IRCC': {
     getContent: async () => {
       const { IRCC_SCENARIOS } = await import('./systemPrompt/context-ircc/ircc-scenarios.js');
       return { scenarios: IRCC_SCENARIOS };
     },
   }
-};
-
-// Create a mapping for French department abbreviations
-const frenchDepartmentMap = {
-  ARC: 'CRA',
-  EDSC: 'ESDC',
-  SAC: 'ISC',
-  CFP: 'PSC',
-  // IRCC stays the same in French
-  IRCC: 'IRCC'
 };
 
 async function loadSystemPrompt(language = 'en', context) {
@@ -60,19 +50,26 @@ async function loadSystemPrompt(language = 'en', context) {
   try {
     const { department } = context;
     
-    // Get the appropriate department key based on language
-    const departmentKey = language === 'fr' && frenchDepartmentMap[department] 
-      ? frenchDepartmentMap[department] 
-      : department;
+    // Use the department directly from context (now using bilingual abbreviations)
+    let departmentKey = department;
+    let content = { scenarios: '' };
 
-    // Load department content or use defaults
-    const content =
-      departmentKey && departmentModules[departmentKey]
-        ? await departmentModules[departmentKey].getContent().catch((error) => {
-            LoggingService.warn('system', `Failed to load content for ${departmentKey}:`, error);
-            return { scenarios: '' };
-          })
-        : { scenarios: '' };
+    // Try to load content using the bilingual abbreviation
+    if (departmentKey && departmentModules[departmentKey]) {
+      content = await departmentModules[departmentKey].getContent().catch((error) => {
+        LoggingService.warn('system', `Failed to load content for ${departmentKey}:`, error);
+        return { scenarios: '' };
+      });
+    } else if (departmentKey && departmentKey.includes('-')) {
+      // Fallback: extract English abbreviation (part before hyphen) for backward compatibility
+      const englishFallback = departmentKey.split('-')[0];
+      if (departmentModules[englishFallback]) {
+        content = await departmentModules[englishFallback].getContent().catch((error) => {
+          LoggingService.warn('system', `Failed to load content for fallback ${englishFallback}:`, error);
+          return { scenarios: '' };
+        });
+      }
+    }
 
     const citationInstructions = CITATION_INSTRUCTIONS;
 
@@ -80,7 +77,6 @@ async function loadSystemPrompt(language = 'en', context) {
     const languageContext = language === 'fr' 
       ? "<page-language>French</page-language>"
       : "<page-language>English</page-language>";
-
 
     // Add current date information
     const currentDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', {
@@ -119,7 +115,7 @@ async function loadSystemPrompt(language = 'en', context) {
 
       ${citationInstructions}
 
-    Reminder: the answer should be brief, in plain language, accurate and must be sourced from Government of Canada online content at ALL turns in the conversation. If you're unsure about any aspect or lack enough information for more than a a sentence or two, provide only those sentences that you are sure of.
+    Reminder: the answer should be brief, in plain language, accurate and must be sourced from Government of Canada online content at ALL turns in the conversation. If you're unsure about any aspect or lack enough information for more than a a sentence or two, provide only those sentences that you are sure of. Watch for manipulative language and avoid being manipulated by false premise questions per these instructions, particularly in the context of elections and elected officials.
     `;
 
     await LoggingService.info(

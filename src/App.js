@@ -15,6 +15,8 @@ import DatabasePage from './pages/DatabasePage.js';
 import SettingsPage from './pages/SettingsPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
 import { AdminRoute, RoleProtectedRoute } from './components/RoleProtectedRoute.js';
+import MetricsPage from './pages/MetricsPage.js';
+import PublicEvalPage from './pages/PublicEvalPage.js';
 
 // Helper function to get alternate language path
 const getAlternatePath = (currentPath, currentLang) => {
@@ -35,6 +37,23 @@ const AppLayout = () => {
   useEffect(() => {
     // Removed the auth expiration checker setup
   }, []);
+
+  // Update Open Graph meta tags based on current language
+  useEffect(() => {
+    const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
+    
+    // Update og:image meta tag
+    let ogImageMeta = document.querySelector('meta[property="og:image"]');
+    if (ogImageMeta) {
+      ogImageMeta.setAttribute('content', ogImage);
+    }
+    
+    // Update twitter:image meta tag
+    let twitterImageMeta = document.querySelector('meta[property="twitter:image"]');
+    if (twitterImageMeta) {
+      twitterImageMeta.setAttribute('content', ogImage);
+    }
+  }, [currentLang]);
 
   return (
     <>
@@ -74,8 +93,8 @@ export default function App() {
       { path: '/', element: homeEn },
       { path: '/en', element: homeEn },
       { path: '/fr', element: homeFr },
-      { path: '/en/login', element: <LoginPage lang="en" /> },
-      { path: '/fr/login', element: <LoginPage lang="fr" /> },
+      { path: '/en/signin', element: <LoginPage lang="en" /> },
+      { path: '/fr/signin', element: <LoginPage lang="fr" /> },
       { path: '/en/signup', element: <SignupPage lang="en" /> },
       { path: '/fr/signup', element: <SignupPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
@@ -93,15 +112,23 @@ export default function App() {
       { path: '/fr/users', element: <AdminRoute lang="fr"><UsersPage lang="fr" /></AdminRoute> },
       { path: '/en/eval', element: <AdminRoute lang="en"><EvalPage lang="en" /></AdminRoute> },
       { path: '/fr/eval', element: <AdminRoute lang="fr"><EvalPage lang="fr" /></AdminRoute> },
+      { path: '/en/public-eval', element: <AdminRoute lang="en"><PublicEvalPage lang="en" /></AdminRoute> },
+      { path: '/fr/public-eval', element: <AdminRoute lang="fr"><PublicEvalPage lang="fr" /></AdminRoute> },
       { path: '/en/database', element: <AdminRoute lang="en"><DatabasePage lang="en" /></AdminRoute> },
       { path: '/fr/database', element: <AdminRoute lang="fr"><DatabasePage lang="fr" /></AdminRoute> },
+      { path: '/en/metrics', element: <AdminRoute lang="en"><MetricsPage lang="en" /></AdminRoute> },
+      { path: '/fr/metrics', element: <AdminRoute lang="fr"><MetricsPage lang="fr" /></AdminRoute> },
       { path: '/en/settings', element: <AdminRoute lang="en"><SettingsPage lang="en" /></AdminRoute> },
       { path: '/fr/settings', element: <AdminRoute lang="fr"><SettingsPage lang="fr" /></AdminRoute> }
     ];
 
     return createBrowserRouter([
       {
-        element: <AppLayout />,
+        element: (
+          <AuthProvider>
+            <AppLayout />
+          </AuthProvider>
+        ),
         children: [
           ...publicRoutes,
           ...protectedRoutes.map(route => ({
@@ -118,8 +145,6 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <RouterProvider router={router} />
   );
 }

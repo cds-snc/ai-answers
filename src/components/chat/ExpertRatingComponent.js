@@ -64,9 +64,12 @@ const ExpertRatingComponent = ({
     event.preventDefault();
 
     const totalScore = computeTotalScore(expertFeedback);
+
+    
     const feedbackWithScore = {
       ...expertFeedback,
       totalScore,
+      feedback: 'negative',
     };
 
     console.log('Submitting expert feedback:', feedbackWithScore);

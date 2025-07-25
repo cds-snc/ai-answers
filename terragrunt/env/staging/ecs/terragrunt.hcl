@@ -101,6 +101,8 @@ inputs = {
   jwt_secret_key_arn               = dependency.ssm.outputs.jwt_secret_key_arn
   google_api_key_arn               = dependency.ssm.outputs.google_api_key_arn
   google_search_engine_id_arn      = dependency.ssm.outputs.google_search_engine_id_arn
+  #fargate_cpu                      = 2048  
+  #fargate_memory                   = 16384  
 }
 
 include {

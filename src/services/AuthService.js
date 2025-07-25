@@ -1,6 +1,12 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 
 class AuthService {
+  static unauthorizedCallback = null; // <-- Add this
+
+  static setUnauthorizedCallback(cb) {
+    this.unauthorizedCallback = cb;
+  }
+
   static setToken(token) {
     localStorage.setItem('token', token);
   }
@@ -112,7 +118,7 @@ class AuthService {
 
   static isPublicRoute(pathname) {
     // Define public routes that do not require authentication
-    const publicRoutes = ['/', '/login', '/signup', '/about', '/contact'];
+    const publicRoutes = ['/', '/signin', '/signup', '/about', '/contact'];
     return publicRoutes.some(route => pathname.startsWith(route));
   }
 
@@ -122,11 +128,30 @@ class AuthService {
   }
 
   static async fetchWithAuth(url, options = {}) {
-    const headers = { ...this.getAuthHeader(), ...options.headers };
-    const response = await fetch(url, { ...options, headers });
+    const method = (options.method || 'GET').toUpperCase();
+    const hasBody = !!options.body;
+
+    // Start with authentication header
+    let combinedHeaders = { ...this.getAuthHeader() };
+
+    // Add Content-Type: application/json by default for relevant methods with a body,
+    // but only if not already specified in options.headers.
+    if (['POST', 'PUT', 'PATCH'].includes(method) && hasBody) {
+      if (!(options.headers && options.headers['Content-Type'])) {
+        combinedHeaders['Content-Type'] = 'application/json';
+      }
+    }
+
+    // Merge with any headers passed in options, allowing options.headers to override
+    combinedHeaders = { ...combinedHeaders, ...options.headers };
+
+    const response = await fetch(url, { ...options, headers: combinedHeaders });
 
     if (response.status === 401) {
-      this.logout(); // Redirect to login if token is invalid
+      this.logout();
+      if (typeof this.unauthorizedCallback === 'function') {
+        this.unauthorizedCallback(); // Notify context/provider
+      }
     }
 
     return response;

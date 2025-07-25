@@ -187,8 +187,8 @@ class ExportService {
       );
 
       // Make sure we include the referringUrl from both the chat level and interaction level
-      const globalInfo = [chat.chatId, chat.pageLanguage, chat.aiProvider, chat.searchProvider];
-      const globalInfoHeaders = ['chatId', 'pageLanguage', 'aiService', 'searchService'];
+      const globalInfo = [chat.chatId, chat.pageLanguage, chat.aiProvider, chat.searchProvider, chat.user?.email || ''];
+      const globalInfoHeaders = ['chatId', 'pageLanguage', 'aiService', 'searchService','user.email'];
 
       const rowsWithGlobalInfo = filteredRows.map((row) => globalInfo.concat(row));
 
@@ -230,6 +230,7 @@ class ExportService {
     const headerOrder = [
       { dataLabel: 'uniqueID', outputLabel: 'uniqueID' },
       { dataLabel: 'chatId', outputLabel: 'chatId' },
+      { dataLabel: 'user.email', outputLabel: 'userEmail' }, // <-- Add user email as 3rd column
       { dataLabel: 'createdAt', outputLabel: 'createdAt' },
       { dataLabel: 'pageLanguage', outputLabel: 'pageLanguage' },
       { dataLabel: 'referringUrl', outputLabel: 'referringUrl' },
@@ -295,7 +296,10 @@ class ExportService {
       {
         dataLabel: 'expertFeedback.expertCitationUrl',
         outputLabel: 'expertFeedback.expertCitationUrl',
-      }
+      },
+      { dataLabel: 'publicFeedback.feedback', outputLabel: 'publicFeedback.feedback' },
+      { dataLabel: 'publicFeedback.publicFeedbackReason', outputLabel: 'publicFeedback.publicFeedbackReason' },
+      { dataLabel: 'publicFeedback.publicFeedbackScore', outputLabel: 'publicFeedback.publicFeedbackScore' }
     ];
     const type = filename.endsWith('.csv') ? 'csv' : filename.endsWith('.xlsx') ? 'xlsx' : 'xlsx';
     return ExportService.toSpreadsheet(items, headerOrder, type, filename);

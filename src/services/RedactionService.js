@@ -1,7 +1,7 @@
 /**
  * RedactionService.js
  * A service for redacting sensitive information from text content.
- *
+ * Important: This service uses the words lists associated with the language passed in - which is the PAGE language, not the language of the user's question. 
  * Redaction Types:
  * - Private Information (including names, replaced with 'XXX')
  * - Profanity (replaced with '#' characters)
@@ -26,7 +26,7 @@ class RedactionService {
     this.namePattern = null;
     this.isInitialized = false;
     this.enableNameDetection = false; // Temporarily disabled name detection
-    this.initialize();
+    this.currentLang = null;
   }
 
   /**
@@ -47,13 +47,15 @@ class RedactionService {
   }
 
   /**
-   * Initialize the redaction patterns
+   * Initialize patterns for the specified language
+   * @param {string} lang Language code ('en' or 'fr')
    */
-  async initialize() {
+  async initialize(lang = 'en') {
     try {
-      await this.initializeProfanityPattern();
-      await this.initializeThreatPattern();
-      this.initializeManipulationPattern();
+      this.currentLang = lang;
+      await this.initializeProfanityPattern(lang);
+      await this.initializeThreatPattern(lang);
+      this.initializeManipulationPattern(lang);
       this.initializeNamePattern();
       this.isInitialized = true;
     } catch (error) {
@@ -63,59 +65,37 @@ class RedactionService {
   }
 
   /**
-   * Load and process profanity lists from both English and French sources
+   * Load and process profanity lists for the specified language
+   * @param {string} lang Language code ('en' or 'fr')
    * @returns {Promise<string[]>} Array of cleaned profanity words
    */
-  async loadProfanityLists() {
+  async loadProfanityLists(lang) {
     try {
-      const [responseEn, responseFr] = await Promise.all([
-        fetch(profanityListEn),
-        fetch(profanityListFr)
-      ]);
-
-      const [textEn, textFr] = await Promise.all([
-        responseEn.text(),
-        responseFr.text()
-      ]);
-
-      const cleanFrenchWords = this.cleanWordList(textFr);
-      const cleanEnglishWords = this.cleanWordList(textEn);
-
-      const combinedWords = [...cleanEnglishWords, ...cleanFrenchWords];
-      await LoggingService.info("system", `Loaded profanity words: ${combinedWords.length} words`);
-
-      return combinedWords;
+      const response = await fetch(lang === 'fr' ? profanityListFr : profanityListEn);
+      const text = await response.text();
+      const words = this.cleanWordList(text);
+      await LoggingService.info("system", `Loaded profanity words for ${lang}: ${words.length} words`);
+      return words;
     } catch (error) {
-      await LoggingService.error("system", 'Error loading profanity lists:', error);
+      await LoggingService.error("system", `Error loading profanity list for ${lang}:`, error);
       return [];
     }
   }
 
   /**
-   * Load and process threat lists from both English and French sources
+   * Load and process threat lists for the specified language
+   * @param {string} lang Language code ('en' or 'fr')
    * @returns {Promise<string[]>} Array of cleaned threat words
    */
-  async loadThreatLists() {
+  async loadThreatLists(lang) {
     try {
-      const [responseEn, responseFr] = await Promise.all([
-        fetch(threatsListEn),
-        fetch(threatsListFr)
-      ]);
-
-      const [textEn, textFr] = await Promise.all([
-        responseEn.text(),
-        responseFr.text()
-      ]);
-
-      const cleanEnglishWords = this.cleanWordList(textEn);
-      const cleanFrenchWords = this.cleanWordList(textFr);
-
-      const combinedWords = [...cleanEnglishWords, ...cleanFrenchWords];
-      await LoggingService.info("system", `Loaded threat words: ${combinedWords.length} words`);
-
-      return combinedWords;
+      const response = await fetch(lang === 'fr' ? threatsListFr : threatsListEn);
+      const text = await response.text();
+      const words = this.cleanWordList(text);
+      await LoggingService.info("system", `Loaded threat words for ${lang}: ${words.length} words`);
+      return words;
     } catch (error) {
-      await LoggingService.error("system", 'Error loading threat lists:', error);
+      await LoggingService.error("system", `Error loading threat list for ${lang}:`, error);
       return [];
     }
   }
@@ -138,42 +118,47 @@ class RedactionService {
   }
 
   /**
-   * Initialize the profanity pattern
+   * Initialize the profanity pattern for the specified language
+   * @param {string} lang Language code ('en' or 'fr')
    */
-  async initializeProfanityPattern() {
-    const words = await this.loadProfanityLists();
+  async initializeProfanityPattern(lang) {
+    const words = await this.loadProfanityLists(lang);
     const pattern = words.map(word => `\\b${word}\\b`).join('|');
     this.profanityPattern = new RegExp(`(${pattern})`, 'gi');
   }
 
   /**
-   * Initialize the threat pattern
+   * Initialize the threat pattern for the specified language
+   * @param {string} lang Language code ('en' or 'fr')
    */
-  async initializeThreatPattern() {
-    const words = await this.loadThreatLists();
+  async initializeThreatPattern(lang) {
+    const words = await this.loadThreatLists(lang);
     const pattern = words.map(word => `\\b${word}\\b`).join('|');
     this.threatPattern = new RegExp(`(${pattern})`, 'gi');
   }
 
   /**
-   * Initialize the manipulation pattern
+   * Initialize the manipulation pattern for the specified language
+   * @param {string} lang Language code ('en' or 'fr')
    */
-  initializeManipulationPattern() {
-    const manipulationWords = [
-      ...manipulationEn.suspiciousWords,
-      ...manipulationEn.manipulationPhrases,
-      ...manipulationFr.suspiciousWords,
-      ...manipulationFr.manipulationPhrases
-    ];
+  initializeManipulationPattern(lang) {
+    const manipulationWords = lang === 'fr' 
+      ? [...manipulationFr.suspiciousWords, ...manipulationFr.manipulationPhrases]
+      : [...manipulationEn.suspiciousWords, ...manipulationEn.manipulationPhrases];
 
-    const pattern = manipulationWords
+    // Create pattern for manipulation words
+    const wordPattern = manipulationWords
       .map(word => {
         const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         return `\\b${escaped}\\b`;
       })
       .join('|');
 
-    this.manipulationPattern = new RegExp(`(${pattern})`, 'gi');
+    // Add URL pattern to manipulation patterns
+    const urlPattern = /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g;
+    
+    // Combine word patterns with URL pattern
+    this.manipulationPattern = new RegExp(`(${wordPattern}|${urlPattern.source})`, 'gi');
   }
 
   /**
@@ -305,10 +290,6 @@ class RedactionService {
         description: 'Long number sequences like credit card numbers with negative lookbehind to exclude dollar amounts'
       },
       {
-        pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
-        description: 'Name patterns in EN/FR'
-      },
-      {
         pattern: /\d+\s+([A-Za-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|circle|cir|Loop)\b/gi,
         description: 'Street addresses'
       },
@@ -328,36 +309,37 @@ class RedactionService {
         pattern: /(\d{1,3}(\.\d{1,3}){3}|[0-9A-F]{4}(:[0-9A-F]{4}){5}(::|(:0000)+))/gi,
         description: 'IP addresses'
       },
-      {
-        pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
-        description: 'URLs'
-      },
+      // {
+      //   pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
+      //   description: 'URLs'
+      // },
       {
         pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g,
         description: 'Canadian SIN (Social Insurance Number)'
       },
-      {
-        // Common name prefixes pattern
-        pattern: /\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g,
-        description: 'Names with prefixes'
-      },
+      // NAME DETECTION PATTERNS - Grouped together for easier maintenance
       {
         // Names in "My name is..." format
         pattern: /\b(?:my name is|je m'appelle|je me nomme|my name's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
         description: 'Names in introduction phrases'
       },
+      {
+        // Names with prefixes (Mr., Mrs., Dr., etc.)
+        pattern: /\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g,
+        description: 'Names with prefixes'
+      },
+      {
+        // Names in "name:" or "nom:" format
+        pattern: /(?<=\b(name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
+        description: 'Name patterns in EN/FR'
+      },
+      // REMOVED: Names in "name [Name]" format pattern - was too broad and caught legitimate questions about name changes
       // {
-        // Capitalized names (2-3 words)
-        // pattern: /\b([A-Z][a-z]{1,20}(?:\s+[A-Z][a-z]{1,20}){1,2})\b(?!\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|Circle|Cir|Loop))\b/g,
-        // description: 'Capitalized names (2-3 words, not followed by street type)'
-      // },
-      // {
-      //   // Names in greeting patterns
-      //   pattern: /\b(?:Dear|Hello|Hi|Bonjour|Cher|Chère|Salut)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
-      //   description: 'Names in greeting patterns'
+      //   pattern: /\b(?:name|nom)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
+      //   description: 'Names in incomplete introduction phrases'
       // },
       {
-        // // Names in signature patterns
+        // Names in signature patterns
         // pattern: /\b(?:Sincerely|Regards|Best|Cheers|Cordialement|Sincèrement|Amicalement)\s*,\s*\n*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
         // description: 'Names in signature patterns'
       }
@@ -369,6 +351,9 @@ class RedactionService {
    * @returns {Array<{pattern: RegExp, type: string}>} Array of pattern objects
    */
   get redactionPatterns() {
+    // Comprehensive emoji regex that covers most emoji ranges including praying hands and other symbols
+    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{FE00}-\u{FE0F}]|[\u{1F3FB}-\u{1F3FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F650}-\u{1F67F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F3FB}-\u{1F3FF}]|[\u{1F9B0}-\u{1F9B3}]|[\u{1F9B4}-\u{1F9B5}]|[\u{1F9B6}-\u{1F9B7}]|[\u{1F9B8}-\u{1F9B9}]|[\u{1F9BA}-\u{1F9BB}]|[\u{1F9BC}-\u{1F9BD}]|[\u{1F9BE}-\u{1F9BF}]|[\u{1F9C0}-\u{1F9C1}]|[\u{1F9C2}-\u{1F9C3}]|[\u{1F9C4}-\u{1F9C5}]|[\u{1F9C6}-\u{1F9C7}]|[\u{1F9C8}-\u{1F9C9}]|[\u{1F9CA}-\u{1F9CB}]|[\u{1F9CC}-\u{1F9CD}]|[\u{1F9CE}-\u{1F9CF}]|[\u{1F9D0}-\u{1F9D1}]|[\u{1F9D2}-\u{1F9D3}]|[\u{1F9D4}-\u{1F9D5}]|[\u{1F9D6}-\u{1F9D7}]|[\u{1F9D8}-\u{1F9D9}]|[\u{1F9DA}-\u{1F9DB}]|[\u{1F9DC}-\u{1F9DD}]|[\u{1F9DE}-\u{1F9DF}]|[\u{1F9E0}-\u{1F9E1}]|[\u{1F9E2}-\u{1F9E3}]|[\u{1F9E4}-\u{1F9E5}]|[\u{1F9E6}-\u{1F9E7}]|[\u{1F9E8}-\u{1F9E9}]|[\u{1F9EA}-\u{1F9EB}]|[\u{1F9EC}-\u{1F9ED}]|[\u{1F9EE}-\u{1F9EF}]|[\u{1F9F0}-\u{1F9F1}]|[\u{1F9F2}-\u{1F9F3}]|[\u{1F9F4}-\u{1F9F5}]|[\u{1F9F6}-\u{1F9F7}]|[\u{1F9F8}-\u{1F9F9}]|[\u{1F9FA}-\u{1F9FB}]|[\u{1F9FC}-\u{1F9FD}]|[\u{1F9FE}-\u{1F9FF}]/gu;
+    
     return [
       ...this.privatePatterns.map(pattern => ({ pattern, type: 'private' })),
       {
@@ -382,6 +367,10 @@ class RedactionService {
       {
         pattern: this.manipulationPattern,
         type: 'manipulation'
+      },
+      {
+        pattern: emojiRegex,
+        type: 'profanity'
       }
     ];
   }
@@ -389,12 +378,13 @@ class RedactionService {
   /**
    * Redact sensitive information from text
    * @param {string} text Text to redact
+   * @param {string} lang Language code ('en' or 'fr')
    * @returns {{redactedText: string, redactedItems: Array<{value: string, type: string}>}}
    * @throws {Error} If service is not initialized
    */
-  redactText(text) {
-    if (!this.isReady()) {
-      throw new Error('RedactionService is not initialized');
+  redactText(text, lang = 'en') {
+    if (!this.isReady() || this.currentLang !== lang) {
+      throw new Error('RedactionService is not initialized for the current language');
     }
 
     if (!text) return { redactedText: '', redactedItems: [] };
@@ -432,9 +422,9 @@ class RedactionService {
 
     validPatterns.forEach(({ pattern, type }, index) => {
       redactedText = redactedText.replace(pattern, (match) => {
-        console.log(`Pattern ${index} matched: "${match}"`);
+        // console.log(`Pattern ${index} matched: "${match}"`);
         redactedItems.push({ value: match, type });
-        return type === 'private' ? 'XXX' : '#'.repeat(match.length);
+        return type === 'private' ? 'XXX' : '####';
       });
     });
 
@@ -446,10 +436,10 @@ class RedactionService {
 const redactionService = new RedactionService();
 
 // Add a method to ensure the service is initialized before use
-redactionService.ensureInitialized = async function() {
-  if (!this.isInitialized) {
-    console.log('RedactionService not initialized, initializing now...');
-    await this.initialize();
+redactionService.ensureInitialized = async function(lang = 'en') {
+  if (!this.isInitialized || this.currentLang !== lang) {
+    console.log(`RedactionService not initialized, initializing now for language: ${lang}...`);
+    await this.initialize(lang);
   }
   return this.isInitialized;
 };

@@ -27,6 +27,11 @@ const InteractionSchema = new mongoose.Schema({
     ref: 'ExpertFeedback',
     default: null
   },
+  publicFeedback: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PublicFeedback',
+    default: null
+  },
   autoEval: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Eval',
@@ -52,18 +57,21 @@ InteractionSchema.pre('deleteMany', async function() {
   const answerIds = interactions.map(i => i.answer).filter(Boolean);
   const questionIds = interactions.map(i => i.question).filter(Boolean);
   const expertFeedbackIds = interactions.map(i => i.expertFeedback).filter(Boolean);
+  const publicFeedbackIds = interactions.map(i => i.publicFeedback).filter(Boolean);
   const contextIds = interactions.map(i => i.context).filter(Boolean);
 
   // Delete all related documents
   const Answer = mongoose.model('Answer');
   const Question = mongoose.model('Question');
   const ExpertFeedback = mongoose.model('ExpertFeedback');
+  const PublicFeedback = mongoose.model('PublicFeedback');
   const Context = mongoose.model('Context');
 
   await Promise.all([
     Answer.deleteMany({ _id: { $in: answerIds } }),
     Question.deleteMany({ _id: { $in: questionIds } }),
     ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } }),
+    PublicFeedback.deleteMany({ _id: { $in: publicFeedbackIds } }),
     Context.deleteMany({ _id: { $in: contextIds } })
   ]);
 });

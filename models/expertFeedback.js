@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const expertFeedbackSchema = new Schema({
     totalScore: { type: Number, required: false, default: null },
-    type: { type: String, required: false, default: 'public' },
+    type: { type: String, required: false, default: '' },
     sentence1Score: { type: Number, required: false, default: null },
     sentence1Explanation: { type: String, required: false, default: '' },
     sentence1Harmful: { type: Boolean, required: false, default: false },
