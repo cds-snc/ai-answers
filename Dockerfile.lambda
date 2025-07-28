@@ -41,7 +41,6 @@ COPY config ${LAMBDA_TASK_ROOT}/config
 COPY models ${LAMBDA_TASK_ROOT}/models
 COPY services ${LAMBDA_TASK_ROOT}/services
 COPY src ${LAMBDA_TASK_ROOT}/src
-COPY modules ${LAMBDA_TASK_ROOT}/modules
 
 # Copy Lambda handler
 COPY lambda-handler.js ${LAMBDA_TASK_ROOT}/

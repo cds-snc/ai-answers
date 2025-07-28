@@ -21,6 +21,9 @@ jobs:
   deploy:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
+    concurrency:
+      group: staging-deploy-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     steps:
       - name: Set PR Number
         run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number
@@ -76,6 +79,9 @@ jobs:
   teardown:
     if: github.event.action == 'closed'
     runs-on: ubuntu-latest
+    concurrency:
+      group: staging-deploy-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     steps:
       - name: Set PR Number
         run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number
