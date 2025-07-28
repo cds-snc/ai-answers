@@ -13,13 +13,29 @@ import DataStoreService from "./services/DataStoreService.js";
 // Add the icon packs to the library
 library.add(fas, far);
 
-// Render the application immediately
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Render the application immediately with error handling
+try {
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+  console.log("React app rendered successfully");
+} catch (error) {
+  console.error("Failed to render React app:", error);
+  // Fallback: show error message in the root div
+  const rootElement = document.getElementById("root");
+  if (rootElement) {
+    rootElement.innerHTML = `
+      <div style="padding: 20px; color: red; font-family: Arial, sans-serif;">
+        <h1>Application Error</h1>
+        <p>Failed to load the application. Please check the console for details.</p>
+        <pre>${error.message}</pre>
+      </div>
+    `;
+  }
+}
 
 // Perform the database connection check in the background without blocking the UI
 if (process.env.REACT_APP_ENV === "production") {

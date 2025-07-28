@@ -29,10 +29,7 @@ RUN curl -o global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/gl
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
-RUN npm install --omit=dev
-
-# Install Lambda-specific dependencies
-RUN npm install @vendia/serverless-express express-fileupload
+RUN npm install --omit=dev && npm install @vendia/serverless-express express-fileupload
 
 # Copy built frontend and backend code (identical structure to ECS)
 COPY --from=build /app/build ${LAMBDA_TASK_ROOT}/build
@@ -44,6 +41,7 @@ COPY config ${LAMBDA_TASK_ROOT}/config
 COPY models ${LAMBDA_TASK_ROOT}/models
 COPY services ${LAMBDA_TASK_ROOT}/services
 COPY src ${LAMBDA_TASK_ROOT}/src
+COPY modules ${LAMBDA_TASK_ROOT}/modules
 
 # Copy Lambda handler
 COPY lambda-handler.js ${LAMBDA_TASK_ROOT}/
