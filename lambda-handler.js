@@ -55,8 +55,6 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(fileUpload());
-app.use(express.static(path.join(__dirname, "build")));
-
 // Set higher timeout limits for all routes
 app.use((req, res, next) => {
   req.setTimeout(300000);
@@ -72,16 +70,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check route
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "Healthy" });
-});
-
-app.get("*", (req, res, next) => {
-  if (req.url.startsWith("/api")) {
-    next();
-    return;
-  }
-  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 // All the same API routes as server/server.js
@@ -134,6 +125,14 @@ app.post("/api/azure/azure-message", azureHandler);
 app.post("/api/azure/azure-context", azureContextHandler);
 
 app.post("/api/search/search-context", contextSearchHandler);
+
+// Serve static files from the 'build' directory
+app.use(express.static(path.join(__dirname, "build")));
+
+// For any other request, serve the index.html file
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 console.log("Express server created for Lambda");
 
