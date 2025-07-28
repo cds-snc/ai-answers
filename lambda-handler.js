@@ -55,13 +55,6 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(fileUpload());
-// Set higher timeout limits for all routes
-app.use((req, res, next) => {
-  req.setTimeout(300000);
-  res.setTimeout(300000);
-  next();
-});
-
 // Logging middleware
 app.use((req, res, next) => {
   console.log(
