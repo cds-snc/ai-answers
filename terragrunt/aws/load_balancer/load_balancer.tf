@@ -87,6 +87,15 @@ resource "aws_lb_target_group" "pr_review" {
   target_type = "lambda"
   vpc_id      = var.vpc_id
 
+  health_check {
+    enabled             = true
+    interval            = 60
+    path                = "/health"
+    timeout             = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+
   tags = {
     CostCentre = var.billing_code
   }
