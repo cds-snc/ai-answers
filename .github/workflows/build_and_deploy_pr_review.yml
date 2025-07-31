@@ -54,9 +54,13 @@ jobs:
         run: |
           cd terragrunt/env/staging/lambda
           terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
-      - name: Terragrunt Apply Load Balancer
+      - name: Ensure Shared Load Balancer Exists
         run: |
           cd terragrunt/env/staging/load_balancer
+          terragrunt apply -auto-approve
+      - name: Terragrunt Apply PR Load Balancer
+        run: |
+          cd terragrunt/env/staging/pr_load_balancer
           terragrunt apply -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
       - name: Update Lambda Function Code
         env:
@@ -97,7 +101,7 @@ jobs:
         run: |
           cd terragrunt/env/staging/lambda
           terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"
-      - name: Terragrunt Destroy Load Balancer
+      - name: Terragrunt Destroy PR Load Balancer
         run: |
-          cd terragrunt/env/staging/load_balancer
+          cd terragrunt/env/staging/pr_load_balancer
           terragrunt destroy -auto-approve -var="pr_number=${{ env.PR_NUMBER }}"

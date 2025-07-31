@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../hosted_zone", "../network", "../lambda"]
+  paths = ["../hosted_zone", "../network"]
 }
 
 dependency "hosted_zone" {
@@ -30,15 +30,6 @@ dependency "network" {
   }
 }
 
-dependency "lambda" {
-  config_path = "../lambda"
-
-  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
-  mock_outputs_merge_with_state           = true
-  mock_outputs = {
-    lambda_function_arn = "arn:aws:lambda:us-east-1:123456789012:function:fake"
-  }
-}
 
 inputs = {
   hosted_zone_id         = dependency.hosted_zone.outputs.hosted_zone_id
@@ -47,8 +38,6 @@ inputs = {
   vpc_private_subnet_ids = dependency.network.outputs.vpc_private_subnet_ids
   vpc_public_subnet_ids  = dependency.network.outputs.vpc_public_subnet_ids
   vpc_cidr_block         = dependency.network.outputs.vpc_cidr_block
-  lambda_function_arn    = dependency.lambda.outputs.lambda_function_arn
-  pr_number              = "216" #overridden by GitHub workflow for PRs
 }
 
 include {

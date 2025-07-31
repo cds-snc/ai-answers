@@ -1,22 +1,5 @@
-data "aws_lambda_function" "pr_review" {
-  count         = var.pr_number != "" && var.lambda_function_arn == "" ? 1 : 0
-  function_name = "ai-answers-pr-review-${var.pr_number}"
-}
-
-# Local value to determine the correct function name and ARN
-locals {
-  lambda_function_name = var.pr_number != "" ? (
-    var.lambda_function_arn != "" ?
-    split(":", var.lambda_function_arn)[6] :
-    try(data.aws_lambda_function.pr_review[0].function_name, null)
-  ) : null
-
-  lambda_function_arn = var.pr_number != "" ? (
-    var.lambda_function_arn != "" ?
-    var.lambda_function_arn :
-    try(data.aws_lambda_function.pr_review[0].arn, null)
-  ) : null
-}
+# Shared load balancer infrastructure only
+# PR-specific resources are managed by the pr_load_balancer module
 
 resource "aws_lb" "ai_answers" {
   name               = "${var.product_name}-lb"
@@ -80,58 +63,4 @@ resource "aws_lb_target_group" "ai_answers" {
   }
 }
 
-resource "aws_lb_target_group" "pr_review" {
-  count = var.pr_number != "" ? 1 : 0
-
-  name        = "${var.product_name}-pr-${var.pr_number}"
-  target_type = "lambda"
-  vpc_id      = var.vpc_id
-
-  health_check {
-    enabled             = true
-    interval            = 60
-    path                = "/health"
-    timeout             = 30
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    CostCentre = var.billing_code
-  }
-}
-
-resource "aws_lb_listener_rule" "pr_review" {
-  count = var.pr_number != "" ? 1 : 0
-
-  listener_arn = aws_lb_listener.ai_answers_listener.arn
-  priority     = tonumber("1${var.pr_number}")
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.pr_review[0].arn
-  }
-
-  condition {
-    host_header {
-      values = ["${var.pr_number}.${var.domain}"]
-    }
-  }
-}
-
-resource "aws_lambda_permission" "pr_review" {
-  count = var.pr_number != "" && local.lambda_function_name != null ? 1 : 0
-
-  statement_id  = "AllowExecutionFromALB"
-  action        = "lambda:InvokeFunction"
-  function_name = local.lambda_function_name
-  principal     = "elasticloadbalancing.amazonaws.com"
-  source_arn    = aws_lb_target_group.pr_review[0].arn
-}
-
-resource "aws_lb_target_group_attachment" "pr_review" {
-  count = var.pr_number != "" && local.lambda_function_arn != null ? 1 : 0
-
-  target_group_arn = aws_lb_target_group.pr_review[0].arn
-  target_id        = local.lambda_function_arn
-}
+# PR-specific resources removed - now managed by pr_load_balancer module

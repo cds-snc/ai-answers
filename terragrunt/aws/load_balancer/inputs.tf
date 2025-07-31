@@ -22,15 +22,3 @@ variable "vpc_public_subnet_ids" {
   description = "Public subnet ids of the VPC"
   type        = list(string)
 }
-
-variable "pr_number" {
-  description = "(Optional) PR number for review apps"
-  type        = string
-  default     = ""
-}
-
-variable "lambda_function_arn" {
-  description = "(Optional) The ARN of the Lambda function to attach to the load balancer"
-  type        = string
-  default     = ""
-}
