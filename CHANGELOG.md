@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.22.0](https://github.com/cds-snc/ai-answers/compare/v1.21.1...v1.22.0) (2025-08-01)
+
+
+### Features
+
+* add createSearchAgent for enhanced search capabilities using 4o-mini model ([e7f0026](https://github.com/cds-snc/ai-answers/commit/e7f00269fa77b616e5f594c5e965fe5b7d18747b))
+* add search agent prompt for language translation and query formatting ([4b87c33](https://github.com/cds-snc/ai-answers/commit/4b87c33424995a60abcdd017a25fbbdabc9ff751))
+* add searchQuery, translatedQuestion, and originalLang fields to context schema ([dca1dc2](https://github.com/cds-snc/ai-answers/commit/dca1dc2e9ec8282620071b0c4df8fe0ba6b98e3e))
+* enhance search handler to integrate SearchAgentService for improved query processing ([1fa3b4a](https://github.com/cds-snc/ai-answers/commit/1fa3b4ab75164df50e1ba45f627820e02ba6b0d3))
+* explicitly set new context fields in interaction handling ([974be8a](https://github.com/cds-snc/ai-answers/commit/974be8a943fb0520fef55239df2e4b4e8f64cc5e))
+* extend contextSearch and deriveContext to include agentType and additional context fields ([18e4ab4](https://github.com/cds-snc/ai-answers/commit/18e4ab4476f52413125306ec96ae748e7aa26969))
+* implement invokeSearchAgent function for handling search agent interactions ([3acdeb5](https://github.com/cds-snc/ai-answers/commit/3acdeb5ef5f8c3f68c9bf53ffbf69dd384aacfd8))
+
+
+### Bug Fixes
+
+* follow-on-context-ircc-rcmp ([f2f0ece](https://github.com/cds-snc/ai-answers/commit/f2f0eceba17570e21fd4287c806272b9d2c071b5))
+* follow-on-context-ircc-rcmp ([b7926d4](https://github.com/cds-snc/ai-answers/commit/b7926d46f88cf15e36070c67792d2941f3d20d56))
+* manipulation-names ([cfc1adf](https://github.com/cds-snc/ai-answers/commit/cfc1adf228b28a9b3ff1f8e59c99b304da5c84c1))
+* manipulation-names ([cb9a652](https://github.com/cds-snc/ai-answers/commit/cb9a65258f67572f42d29a1ed894497902eec628))
+* revert-to-original ([4a33d32](https://github.com/cds-snc/ai-answers/commit/4a33d321fb7ec82e44a78a076722515045135db5))
+
+
+### Code Refactoring
+
+* remove explicit setting of new context fields in interaction handling ([a91dc52](https://github.com/cds-snc/ai-answers/commit/a91dc524618a52342cae14497d557b852a920588))
+
 ## [1.21.1](https://github.com/cds-snc/ai-answers/compare/v1.21.0...v1.21.1) (2025-07-31)
 
 
