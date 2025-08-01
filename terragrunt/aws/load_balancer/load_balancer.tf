@@ -1,3 +1,6 @@
+# Shared load balancer infrastructure only
+# PR-specific resources are managed by the pr_load_balancer module
+
 resource "aws_lb" "ai_answers" {
   name               = "${var.product_name}-lb"
   internal           = false #tfsec:ignore:AWS005
@@ -59,3 +62,5 @@ resource "aws_lb_target_group" "ai_answers" {
     CostCentre = var.billing_code
   }
 }
+
+# PR-specific resources removed - now managed by pr_load_balancer module

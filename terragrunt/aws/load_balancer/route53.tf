@@ -1,6 +1,6 @@
-resource "aws_route53_record" "ai_answers" {
+resource "aws_route53_record" "ai_answers_wildcard" {
   zone_id = var.hosted_zone_id
-  name    = var.hosted_zone_name
+  name    = "*.${var.hosted_zone_name}"
   type    = "A"
 
   alias {

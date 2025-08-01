@@ -3,6 +3,11 @@ output "lb_listener" {
   value       = aws_lb_listener.ai_answers_listener
 }
 
+output "lb_listener_arn" {
+  description = "ARN of the load balancer listener for PR modules"
+  value       = aws_lb_listener.ai_answers_listener.arn
+}
+
 output "lb_target_group_arn" {
   description = "Arn of the Load balancer target group"
   value       = aws_lb_target_group.ai_answers.arn

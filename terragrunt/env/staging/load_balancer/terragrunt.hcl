@@ -30,6 +30,7 @@ dependency "network" {
   }
 }
 
+
 inputs = {
   hosted_zone_id         = dependency.hosted_zone.outputs.hosted_zone_id
   hosted_zone_name       = dependency.hosted_zone.outputs.hosted_zone_name
