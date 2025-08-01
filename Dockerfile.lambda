@@ -1,0 +1,56 @@
+# AI Answers that runs as a Lambda function. It is used to create 
+# Lambda function review environments for each PR.
+FROM node:22-alpine as build
+
+ENV NODE_ENV=production
+
+COPY . /src
+WORKDIR /src
+
+# Install dependencies and build the React app
+RUN npm ci --only=production --ignore-scripts
+RUN npm run build
+
+FROM node:22-alpine as final
+LABEL maintainer="AI Answers Team"
+
+ENV NODE_ENV=production
+ENV PORT=3001
+
+# Use the LAMBDA_ENV environment variable to determine if the app is running in a Lambda environment
+ENV LAMBDA_ENV=1
+
+# Use the REVIEW_ENV environment variable to determine if the app is running in a Review environment
+ENV REVIEW_ENV=1
+
+WORKDIR /src
+
+# Copy built React app
+COPY --from=build /src/build ./build
+
+# Copy server files and dependencies
+COPY --from=build /src/node_modules ./node_modules
+COPY --from=build /src/package*.json ./
+COPY server ./server
+COPY api ./api
+COPY models ./models
+COPY services ./services
+COPY agents ./agents
+COPY middleware ./middleware
+COPY modules ./modules
+COPY config ./config
+
+# Required by the entrypoint.sh to load the SSM ParameterStore environment variables
+RUN apk update && apk add --no-cache aws-cli
+
+# Lambda web adapter: https://github.com/awslabs/aws-lambda-web-adapter
+COPY --from=public.ecr.aws/cds-snc/aws-lambda-adapter:0.9.0@sha256:19cd0b92bc4a376b2b63e3b02d8b9ad3b4031ea3549fd5e54faa848c49948e09 /lambda-adapter /opt/extensions/lambda-adapter
+
+# Create entrypoint script for loading SSM parameters
+RUN echo '#!/bin/sh' > ./entrypoint.sh && \
+    echo 'exec node server/server.js' >> ./entrypoint.sh && \
+    chmod +x ./entrypoint.sh
+
+EXPOSE 3001
+
+ENTRYPOINT ["./entrypoint.sh"]
