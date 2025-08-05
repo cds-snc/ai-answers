@@ -236,14 +236,7 @@ const HomePage = ({ lang = "en" }) => {
           initialMessages={initialMessages}
         />
       </GcdsContainer>
-      <GcdsContainer
-        size="xl"
-        mainContainer
-        centered
-        tag="below"
-        className="mb-600"
-        tabIndex={0}
-      >
+      <div className="mb-600 container-custom">
         {/* Feedback survey link - shown/hidden via CSS based on AI responses */}
         <GcdsText>
           <a
@@ -275,7 +268,7 @@ const HomePage = ({ lang = "en" }) => {
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
-      </GcdsContainer>
+      </div>
     </WrappedErrorBoundary>
   );
 };
