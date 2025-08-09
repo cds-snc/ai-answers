@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.28.0](https://github.com/cds-snc/ai-answers/compare/v1.27.1...v1.28.0) (2025-08-09)
+
+
+### Features
+
+* add citation match traceability fields to evaluation schema and worker ([4f79c55](https://github.com/cds-snc/ai-answers/commit/4f79c559fc2bb131812209bc4ca85229affcf08d))
+* add debug logging for similarity calculations in sentence and QA search methods ([c95a653](https://github.com/cds-snc/ai-answers/commit/c95a6534e6b40506762339a878dfcaf110e71dcc))
+* add debug logging for sorted similarity lists in search methods of DocDBVectorService ([832d120](https://github.com/cds-snc/ai-answers/commit/832d120fe8306e91af0c5d664004c2dc165fc9e0))
+* add debug logging to getStats method in DocDBVectorService ([05298dd](https://github.com/cds-snc/ai-answers/commit/05298ddd3c9d51a64979db20e478555133c61709))
+* add detailed statistics retrieval in DocDBVectorService ([743dda0](https://github.com/cds-snc/ai-answers/commit/743dda0f972ec02f1634a626fa20d75754155295))
+* enhance DocDBVectorService to include expert feedback in search results and improve similarity scoring ([a1dc33b](https://github.com/cds-snc/ai-answers/commit/a1dc33b117da1f325f41115b58f41d1163f9d37c))
+* Enhance Embedding and Vector Services with Sentence Embeddings ([e4f4cbb](https://github.com/cds-snc/ai-answers/commit/e4f4cbb29f74df79ae2039dccb52a92c77c5514c))
+* enhance findSimilarEmbeddingsWithFeedback and createEvaluation with expert feedback logging and similarity thresholding ([0c6b394](https://github.com/cds-snc/ai-answers/commit/0c6b394b5427c1fc13eb51bd7255475a863c1774))
+* enhance IMVectorService with expert feedback filtering and search thresholding ([48847ab](https://github.com/cds-snc/ai-answers/commit/48847ab4a5df7a6debe161531637144b27fcbd4e))
+* implement findSimilarChats method for enhanced chat similarity search ([ff6e436](https://github.com/cds-snc/ai-answers/commit/ff6e43694e6256b91a66a9d5476da89001aa284c))
+* log embedding dimensions upon successful creation ([8a61bf1](https://github.com/cds-snc/ai-answers/commit/8a61bf17364dc5ad469cd4ca21a7143967560551))
+
+
+### Bug Fixes
+
+* change preCheck default to false and update vector validation queries ([c2cff84](https://github.com/cds-snc/ai-answers/commit/c2cff84bc7536dc7f5fa1864a046490744a57b81))
+* change preCheck default to true in DocDBVectorService constructor ([6aabca1](https://github.com/cds-snc/ai-answers/commit/6aabca134867874fe5d1601ac5e629b9f459fe9b))
+* update Azure OpenAI API version to 2024-02-01 ([2842c63](https://github.com/cds-snc/ai-answers/commit/2842c638aea975f6c4469230fada3cee86f2905b))
+* update dimensions for text-embedding models to 2000 ([80ca2fb](https://github.com/cds-snc/ai-answers/commit/80ca2fbcc9b08ae6d4202c153b63edb6465a9cb8))
+* update model configurations for createSearchAgent and improve logging in ContextService ([42bf9f5](https://github.com/cds-snc/ai-answers/commit/42bf9f5e1be04037ee83f99378f9dec91469029a))
+
+
+### Code Refactoring
+
+* enhance embedding handling and improve service structure ([b2217d2](https://github.com/cds-snc/ai-answers/commit/b2217d25ee53bfa48b7a77c637022a19904a63cc))
+* enhance logging and improve filterQuery default in DocDBVectorService constructor ([313266c](https://github.com/cds-snc/ai-answers/commit/313266c785e6a4672c417746c9419fe0f77399c5))
+* enhance precheck logic for vector types and dimensions in DocDBVectorService ([338c992](https://github.com/cds-snc/ai-answers/commit/338c9921b16b3c608f739448d80c769c8452acba))
+* improve error handling and response structure in vectorStatsHandler ([f8608ce](https://github.com/cds-snc/ai-answers/commit/f8608cecad13a65b68770079b0fd5b3c3e8e5c56))
+* optimize deleteEvaluations method to handle time filters and autoEval interactions ([3aa6a4e](https://github.com/cds-snc/ai-answers/commit/3aa6a4e24996da77ab147509c6576fc98a70af52))
+* optimize interaction logging and evaluation process based on deployment mode ([57258a5](https://github.com/cds-snc/ai-answers/commit/57258a522137391cbefaf3e94a3ed3a38eadf7f4))
+* remove filterQuery parameter from constructor and update base query to use interaction IDs with expert feedback ([67c85d0](https://github.com/cds-snc/ai-answers/commit/67c85d0d715f63e7431866f3091454a8a37a8e2f))
+* remove filterQuery parameter from constructor and update initialization logic to use interaction IDs ([d3ef832](https://github.com/cds-snc/ai-answers/commit/d3ef8328d73995253fb34fa5e5e051340a28f701))
+* remove legacy sentenceEmbeddings field from embedding schema ([8e46aae](https://github.com/cds-snc/ai-answers/commit/8e46aaed823bf6e9d874e25baef08fe1c19c8284))
+* remove unused filterQuery parameter from constructor ([d00e793](https://github.com/cds-snc/ai-answers/commit/d00e79330c3c8782d53e704ad10a3abfe0f2a359))
+* rename DocDBVectorService to IMVectorService and enhance embedding handling ([29716df](https://github.com/cds-snc/ai-answers/commit/29716dfbfaad43495a8c00b9e499ed98571067de))
+* rename IMVectorService to DocDBVectorService and enhance embedding handling ([136b5e5](https://github.com/cds-snc/ai-answers/commit/136b5e5b341852f86f3082b5669679c9d2ae86d9))
+* simplify search method by extracting sentence and QA search logic into separate functions ([7e596fd](https://github.com/cds-snc/ai-answers/commit/7e596fdc75a1c0b287b8be0df308e2fc35580a1c))
+* streamline search methods with enhanced logging and move stats calculations to getStats() ([62bb252](https://github.com/cds-snc/ai-answers/commit/62bb252285590c6b70e2810d666d6bb4ac140648))
+* streamline vector index creation and enhance search method ([f227bb4](https://github.com/cds-snc/ai-answers/commit/f227bb4cfe94fac50e8a6888472e2cb2b04673f6))
+
 ## [1.27.1](https://github.com/cds-snc/ai-answers/compare/v1.27.0...v1.27.1) (2025-08-07)
 
 
