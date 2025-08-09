@@ -524,6 +524,8 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         matchedCitationInteractionId,
         matchedCitationChatId
     });
+    // Save the evaluation and assign to savedEval
+    const savedEval = await newEval.save();
     await Interaction.findByIdAndUpdate(
         interaction._id,
         { autoEval: savedEval._id },
