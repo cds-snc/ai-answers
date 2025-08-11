@@ -8,6 +8,7 @@ AI Answers is a specialized AI chat application designed for Government of Canad
 
 For comprehensive system information, see:
 - **[SYSTEM_CARD.md](SYSTEM_CARD.md)** - Complete system card with technical architecture, safety measures, evaluation framework, and governance details
+- **[pipeline.md](pipeline.md)** - Processing pipeline flow and stages in ChatPipelineService.js
 
 ## Quick Start
 
