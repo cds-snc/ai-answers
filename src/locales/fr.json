@@ -38,8 +38,8 @@
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
-  "thankYou": "Merci d'avoir donné votre avis!",
-  "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
+      "thankYou": "Merci d'avoir donné votre avis!",
+      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
       "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
@@ -147,9 +147,9 @@
         "yourQuestionWas": "Votre question était :",
         "yourAnswerIs": "Votre réponse est :",
         "warning": "Avertissement :",
-        "shortQueryMessage": "Votre requête courte n'a pas été envoyée au service d'IA car elle ne contenait pas assez de détails.",
-        "shortQueryDetails": "Posez à nouveau avec plus de détails, ou pour rechercher, utilisez ce lien créé avec votre requête :",
-        "shortQuerySearch": " Recherche Canada.ca"
+        "shortQueryMessage": "Votre question était trop courte. Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer une recherche sur.",
+        "shortQueryDetails": " pour les mots que vous avez saisis.",
+        "shortQuerySearch": " Canada.ca"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
@@ -250,7 +250,6 @@
       }
     },
     "list": {
-      
       "title": "title",
       "columns": {
         "batchName": "Nom",
@@ -275,11 +274,11 @@
   },
   "admin": {
     "title": "Tableau de bord d'administration de Réponses IA",
-      "partnerTitle": "Tableau de bord partenaire Réponses IA",
+    "partnerTitle": "Tableau de bord partenaire Réponses IA",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
-  "partnerMenu": "Menu partenaire",
+      "partnerMenu": "Menu partenaire",
       "aiAnswers": "Utiliser Réponses IA avec les options de rétroaction d'expert",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
@@ -427,15 +426,13 @@
       "cds": "CDS (travailleur en arrière-plan)",
       "vercel": "Vercel (attendre la fin de l'évaluation)",
       "serverless": "Serverless (attendre la fin de l'évaluation)"
-    }
-    ,
+    },
     "vectorServiceTypeLabel": "Type de service de vecteurs",
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
-    }
-  ,
-  "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données"
+    },
+    "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données"
   },
   "outage": {
     "title": "Service indisponible",
@@ -488,7 +485,7 @@
         "description": "Évaluations automatisées par IA basées sur les évaluations d'experts de questions similaires",
         "total": "Total des questions évaluées",
         "correct": "Correct",
-        "needsImprovement": "Nécessite une amélioration",       
+        "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur"
       },
       "userScored": {
