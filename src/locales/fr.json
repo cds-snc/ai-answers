@@ -147,9 +147,9 @@
         "yourQuestionWas": "Votre question était :",
         "yourAnswerIs": "Votre réponse est :",
         "warning": "Avertissement :",
-        "shortQueryMessage": "Votre question était trop courte. Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer une recherche sur ",
+        "shortQueryMessage": "Votre question était trop courte. Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer ",
         "shortQueryDetails": " pour les mots que vous avez saisis.",
-        "shortQuerySearch": "Canada.ca"
+        "shortQuerySearch": "une recherche sur Canada.ca"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
