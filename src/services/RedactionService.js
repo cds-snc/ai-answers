@@ -15,7 +15,6 @@ import manipulationEn from './redactions/manipulation_en.json';
 import manipulationFr from './redactions/manipulation_fr.json';
 import threatsListEn from './redactions/threats_en.txt';
 import threatsListFr from './redactions/threats_fr.txt';
-import nlp from 'compromise';
 import LoggingService from './ClientLoggingService.js';
 
 class RedactionService {
@@ -23,9 +22,7 @@ class RedactionService {
     this.profanityPattern = null;
     this.manipulationPattern = null;
     this.threatPattern = null;
-    this.namePattern = null;
     this.isInitialized = false;
-    this.enableNameDetection = false; // Temporarily disabled name detection
     this.currentLang = null;
   }
 
@@ -37,14 +34,6 @@ class RedactionService {
     return this.isInitialized;
   }
 
-  /**
-   * Enable or disable name detection
-   * @param {boolean} enable Whether to enable name detection
-   */
-  setNameDetection(enable) {
-    this.enableNameDetection = enable;
-    console.log(`Name detection ${enable ? 'enabled' : 'disabled'}`);
-  }
 
   /**
    * Initialize patterns for the specified language
@@ -56,7 +45,6 @@ class RedactionService {
       await this.initializeProfanityPattern(lang);
       await this.initializeThreatPattern(lang);
       this.initializeManipulationPattern(lang);
-      this.initializeNamePattern();
       this.isInitialized = true;
     } catch (error) {
       await LoggingService.error("system", 'Failed to initialize RedactionService:', error);
@@ -161,103 +149,8 @@ class RedactionService {
     this.manipulationPattern = new RegExp(`(${wordPattern}|${urlPattern.source})`, 'gi');
   }
 
-  /**
-   * Initialize the name detection pattern
-   * This creates a regex-based fallback for when NLP processing isn't sufficient
-   */
-  initializeNamePattern() {
-    // Common name prefixes that often precede names
-    const namePrefixes = [
-      'Mr\\.?', 'Mrs\\.?', 'Ms\\.?', 'Miss', 'Dr\\.?', 'Prof\\.?', 'Sir', 'Madam', 'Lady',
-      'Monsieur', 'Madame', 'Mademoiselle', 'Docteur', 'Professeur'
-    ];
 
-    // Create a pattern that matches names after prefixes
-    // This is a fallback for the NLP-based name detection
-    const prefixPattern = namePrefixes.join('|');
-    this.namePattern = new RegExp(`\\b(${prefixPattern})\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*)\\b`, 'g');
-  }
 
-  /**
-   * Detect names in text using NLP and pattern matching
-   * @param {string} text Text to analyze for names
-   * @returns {Array<{start: number, end: number, text: string}>} Array of name matches with positions
-   */
-  detectNames(text) {
-    if (!text) return [];
-
-    const nameMatches = [];
-
-    // Use compromise NLP to find person names
-    const doc = nlp(text);
-    const people = doc.people().out('array');
-
-    // Find all person entities in the text
-    people.forEach(person => {
-      // Find all occurrences of this person's name in the text
-      let startIndex = 0;
-      while (startIndex < text.length) {
-        const index = text.indexOf(person, startIndex);
-        if (index === -1) break;
-
-        nameMatches.push({
-          start: index,
-          end: index + person.length,
-          text: person
-        });
-
-        startIndex = index + 1;
-      }
-    });
-
-    // Use regex fallback for names with prefixes
-    let match;
-    while ((match = this.namePattern.exec(text)) !== null) {
-      const fullMatch = match[0];
-
-      nameMatches.push({
-        start: match.index,
-        end: match.index + fullMatch.length,
-        text: fullMatch
-      });
-    }
-
-    // Sort matches by start position and remove overlaps
-    return this.removeOverlappingMatches(nameMatches);
-  }
-
-  /**
-   * Remove overlapping matches, keeping the longer ones
-   * @param {Array<{start: number, end: number, text: string}>} matches Array of matches
-   * @returns {Array<{start: number, end: number, text: string}>} Filtered matches
-   */
-  removeOverlappingMatches(matches) {
-    if (matches.length <= 1) return matches;
-
-    // Sort by start position
-    matches.sort((a, b) => a.start - b.start);
-
-    const result = [matches[0]];
-
-    for (let i = 1; i < matches.length; i++) {
-      const current = matches[i];
-      const previous = result[result.length - 1];
-
-      // Check if current overlaps with previous
-      if (current.start < previous.end) {
-        // If current is longer, replace previous
-        if (current.end - current.start > previous.end - previous.start) {
-          result[result.length - 1] = current;
-        }
-        // Otherwise keep previous (do nothing)
-      } else {
-        // No overlap, add current
-        result.push(current);
-      }
-    }
-
-    return result;
-  }
 
   /**
    * Get the list of private information patterns
@@ -277,18 +170,18 @@ class RedactionService {
         pattern: /([a-zA-Z0-9_\-.]+)\s*@([\sa-zA-Z0-9_\-.]+)[.,]([a-zA-Z]{1,5})/g,
         description: 'Email addresses (with flexible spacing and punctuation)'
       },
-      {
-        pattern: /\b([A-Za-z]{2}\s*\d{6})\b/g,
-        description: 'Passport Numbers'
-      },
+      // {
+      //   pattern: /\b([A-Za-z]{2}\s*\d{6})\b/g,
+      //   description: 'Passport Numbers'
+      // },
       // {
       //   pattern: /\b(?=[A-Z0-9-]*[0-9])(?=[A-Z0-9-]*[A-Z])(?!(?:GST\d{3}|RC\d{3}\b|RC\d+[A-Z-]*)\b)[A-Z0-9-]{6,}\b/gi,
       //   description: 'Alphanumeric sequences of 6+ chars that contain both letters and numbers (excluding CRA GST and RC forms)'REMOVED because it was catching too many FORM numbers that are entered in a variety of ways eg IMM1294f or imm 1294f or PPTC326 and pptc 326 etc. 
       // },
-      {
-        pattern: /\b(?<!\$)\d{6,}\b/g,
-        description: 'Long number sequences like credit card numbers with negative lookbehind to exclude dollar amounts'
-      },
+      // {
+      //   pattern: /\b(?<!\$)\d{6,}\b/g,
+      //   description: 'removed bc still catching form numbers Long number sequences like credit card numbers with negative lookbehind to exclude dollar amounts'
+      // },
       {
         pattern: /\d+\s+([A-Za-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|circle|cir|Loop)\b/gi,
         description: 'Street addresses'
@@ -392,30 +285,6 @@ class RedactionService {
     let redactedText = text;
     const redactedItems = [];
 
-    // Only perform name detection if enabled
-    if (this.enableNameDetection) {
-      // First, detect names using NLP
-      const nameMatches = this.detectNames(text);
-      
-      // Sort name matches in reverse order (to avoid index shifting when replacing)
-      const sortedNameMatches = [...nameMatches].sort((a, b) => b.start - a.start);
-      
-      // Replace names with XXX (treating them as private information)
-      let redactedForNames = text;
-      sortedNameMatches.forEach(match => {
-        const replacement = 'XXX';
-        redactedForNames =
-          redactedForNames.substring(0, match.start) +
-          replacement +
-          redactedForNames.substring(match.end);
-        
-        redactedItems.push({ value: match.text, type: 'private' });
-        console.log(`Name detected and redacted: "${match.text}"`);
-      });
-      
-      // Update redactedText with the name-redacted version
-      redactedText = redactedForNames;
-    }
 
     // Filter out patterns with null RegExp (in case initialization failed)
     const validPatterns = this.redactionPatterns.filter(({ pattern }) => pattern !== null);
