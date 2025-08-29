@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.33.0](https://github.com/cds-snc/ai-answers/compare/v1.32.0...v1.33.0) (2025-08-29)
+
+
+### Features
+
+* add adobe analytics to index ([6ab9391](https://github.com/cds-snc/ai-answers/commit/6ab93915966496d31a934a5c47e5076a904cf047))
+* implement PII check endpoint and integrate PII detection in workflows ([73929d6](https://github.com/cds-snc/ai-answers/commit/73929d685f4413ce50d4ea6fb487830f66330a11))
+
+
+### Code Refactoring
+
+* update batch handling to use _id instead of batchId for con… ([a32c202](https://github.com/cds-snc/ai-answers/commit/a32c202825bee5877371020058224c8fa630ca6e))
+* update batch handling to use _id instead of batchId for consistency ([d6fe2a2](https://github.com/cds-snc/ai-answers/commit/d6fe2a2e4a3be47adfeae355bae2121d2b32c8e4))
+
 ## [1.32.0](https://github.com/cds-snc/ai-answers/compare/v1.31.0...v1.32.0) (2025-08-28)
 
 
