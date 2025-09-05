@@ -45,10 +45,10 @@ const createTools = (chatId = 'system', agentType = 'openai') => {
 const createAzureOpenAIAgent = async (chatId = 'system') => {
   const modelConfig = getModelConfig('azure');
   const openai = new AzureChatOpenAI({
-    azureApiKey: process.env.AZURE_OPENAI_API_KEY,  
-    azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT, 
+    azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+    azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
     apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
-    azureOpenAIApiDeploymentName: modelConfig.name, 
+    azureOpenAIApiDeploymentName: modelConfig.name,
     temperature: modelConfig.temperature,
     maxTokens: modelConfig.maxTokens,
     timeout: modelConfig.timeoutMs,
@@ -257,10 +257,8 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
     default:
       throw new Error(`Unknown agent type for PII: ${agentType}`);
   }
-  const callbacks = [new ToolTrackingHandler(chatId)];
-  const agent = await createReactAgent({ llm, tools: [] });
-  agent.callbacks = callbacks;
-  return agent;
+  
+  return llm;
 };
 
 const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
@@ -293,10 +291,8 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
     default:
       throw new Error(`Unknown agent type for rewrite: ${agentType}`);
   }
-  const callbacks = [new ToolTrackingHandler(chatId)];
-  const agent = await createReactAgent({ llm, tools: [] });
-  agent.callbacks = callbacks;
-  return agent;
+  
+  return llm;
 };
 
 // Ranker agent: LLM-only agent that uses the reranker prompt. Supports 'openai' and 'azure'.
@@ -304,8 +300,8 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'openai': {
-  // Use the smaller 4.1-mini model for ranking to reduce latency/cost
-  const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      // Use the smaller 4.1-mini model for ranking to reduce latency/cost
+      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
       llm = new ChatOpenAI({
         openAIApiKey: process.env.OPENAI_API_KEY,
         modelName: cfg.name,
@@ -316,8 +312,8 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
       break;
     }
     case 'azure': {
-  // Use the Azure deployment mapped to the mini variant when available
-  const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      // Use the Azure deployment mapped to the mini variant when available
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
@@ -333,7 +329,7 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
       throw new Error(`Unknown agent type for ranker: ${agentType}`);
   }
 
- 
+
   return llm;
 };
 

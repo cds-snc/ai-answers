@@ -134,19 +134,30 @@ describe('ContextService', () => {
       const result = await ContextService.contextSearch('search query', 'google');
 
       expect(result).toEqual(mockSearchResults);
-      expect(fetch).toHaveBeenCalledWith(
-        getApiUrl('search-context'),
+
+      // Validate URL and options for the updated payload shape
+      const [calledUrl, calledOptions] = fetch.mock.calls[0];
+      expect(calledUrl).toEqual(getApiUrl('search-context'));
+      expect(calledOptions).toEqual(
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: 'search query',
-            lang: 'en',
-            searchService: 'google',
-            chatId: 'system',
-          }),
+          body: expect.any(String),
         })
       );
+
+      const body = JSON.parse(calledOptions.body);
+      expect(body).toEqual(
+        expect.objectContaining({
+          message: 'search query',
+          lang: 'en',
+          searchService: 'google',
+          chatId: 'system',
+        })
+      );
+      // Optional fields are included by implementation
+      expect(body.agentType).toBeDefined();
+      expect(body.referringUrl).toBeDefined();
     });
   });
 

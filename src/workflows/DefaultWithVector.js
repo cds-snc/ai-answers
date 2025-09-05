@@ -3,7 +3,7 @@ import AnswerService from '../services/AnswerService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import LoggingService from '../services/ClientLoggingService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import AuthService from '../services/AuthService.js';
+
 
 import { ChatWorkflowService, WorkflowStatus } from '../services/ChatWorkflowService.js';
 
@@ -108,7 +108,7 @@ export class DefaultWithVector {
 
     ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
-    await ChatWorkflowService.processRedaction(userMessage, lang);
+    await ChatWorkflowService.processRedaction(userMessage, lang, chatId, selectedAI);
 
     // Detect language via server endpoint and prefer that for downstream logic
     const detectedLang = await this.detectLanguage(chatId, userMessage, selectedAI, lang);

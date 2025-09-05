@@ -155,7 +155,7 @@ export const ChatWorkflowService = {
     await LoggingService.info(chatId, 'Validated URL:', validationResult);
     return validationResult;
   },
-  processRedaction: async (userMessage, lang) => {
+  processRedaction: async (userMessage, lang, chatId = 'system', selectedAI = 'openai') => {
     // Ensure RedactionService is initialized before using it
     await RedactionService.ensureInitialized(lang);
 
@@ -166,6 +166,11 @@ export const ChatWorkflowService = {
     if (hasBlockedContent) {
       throw new RedactionError('Blocked content detected', redactedText, redactedItems);
     }
+  // Run the PII agent check and throw if it detects PII or blocked content.
+  // Use the existing helper which calls the chat-pii-check API and throws RedactionError on issues.
+  await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
+  // Return the redacted text and items so callers can use the redacted string
+  return { redactedText, redactedItems };
   },
   // Expose the short-query validation helper so workflows can reuse the centralized logic
   validateShortQueryOrThrow: (conversationHistory, userMessage, lang, department, translationF) => {
@@ -174,6 +179,29 @@ export const ChatWorkflowService = {
   // Expose the status update filter helper so workflows can reuse the centralized display rules
   sendStatusUpdate: (onStatusUpdate, status) => {
     return sendStatusUpdate(onStatusUpdate, status);
+  }
+  ,
+  translateQuestion: async (text, desiredLanguage, selectedAI) => {
+    try {
+      
+      const url = getApiUrl('chat-translate');
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, desired_language: desiredLanguage, selectedAI })
+      });
+      if (!resp || !resp.ok) {
+        const errText = resp ? await resp.text() : 'no response';
+        await LoggingService.error(null, 'translateQuestion API error', { status: resp && resp.status, errText });
+        throw new Error(`translateQuestion API error: status=${resp && resp.status} message=${errText}`);
+      }
+  const json = await resp.json();
+  // The API endpoint now returns a normalized shape including originalText
+  return json;
+    } catch (err) {
+      await LoggingService.error(null, 'translateQuestion error', err);
+      throw err;
+    }
   }
 };
 

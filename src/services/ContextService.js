@@ -2,7 +2,7 @@
 import loadContextSystemPrompt from './contextSystemPrompt.js';
 import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
-import { RedactionError } from './ChatWorkflowService.js';
+
 
 
 const ContextService = {
@@ -80,7 +80,7 @@ const ContextService = {
     }
   },
 
-  contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai', referringUrl = '') => {
+  contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai', referringUrl = '', translationData = null) => {
     try {
       const searchResponse = await fetch(getApiUrl('search-context'), {
         method: 'POST',
@@ -94,6 +94,8 @@ const ContextService = {
           chatId,
           agentType,
           referringUrl,
+          translationData,
+          
         }),
       });
 
@@ -118,7 +120,7 @@ const ContextService = {
     searchProvider,
     conversationHistory = [],
     chatId = 'system',
-    
+    translationData = null,
   ) => {
     try {
       await LoggingService.info(
@@ -131,31 +133,26 @@ const ContextService = {
         lang,
         chatId,
         aiProvider,
-        referringUrl
+        referringUrl,
+        translationData
       );
       await LoggingService.info(
         chatId,
-        "Context Service: Agent Search completed:",searchResults
+        "Context Service: Agent Search completed:", searchResults
       );
-      // Extract agent values from searchResults
-      const { query: searchQuery, translatedQuestion, originalLang, pii = null, blocked = false } = searchResults;
 
-      // If the search agent returned blocked content, throw RedactionError to stop processing
-      if (blocked) {
-        await LoggingService.info(chatId, 'Context Service: Blocked content detected, throwing RedactionError');
-        throw new RedactionError('Blocked content detected in user message', "#############", null);
-      } else if (pii !== null) {
-        await LoggingService.info(chatId, 'Context Service: PII detected, redacting...');
-        throw new RedactionError('PII detected in user message', pii, null);
-      }
+      const { translatedText: translatedQuestion  } = translationData || {};
+      // Extract agent values from searchResults
+      const { query, results } = searchResults;
+
       const parsedContext = ContextService.parseContext(
         await ContextService.sendMessage(
           aiProvider,
-          question,
+          translatedQuestion,
           lang,
           department,
           referringUrl,
-          searchResults.results,
+          results,
           searchProvider,
           conversationHistory,
           chatId
@@ -164,9 +161,9 @@ const ContextService = {
       // Add agent values to context object
       return {
         ...parsedContext,
-        searchQuery,
+        query,
         translatedQuestion,
-        originalLang
+        lang
       };
     } catch (error) {
       await LoggingService.error(chatId, 'Error deriving context:', error);
@@ -191,7 +188,7 @@ const ContextService = {
       outputTokens: context.outputTokens,
     };
   },
-  
+
 };
 
 export default ContextService;

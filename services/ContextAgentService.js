@@ -9,7 +9,7 @@ const invokeContextAgent = async (agentType, request) => {
     const messages = [
       {
         role: "system",
-        content: `${systemPrompt}<searchResults>${searchResults.results}</searchResults>`,
+        content: `${systemPrompt}<searchResults>${searchResults}</searchResults>`,
       }
     ];
 
