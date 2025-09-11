@@ -24,7 +24,7 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.11.0",
+    "axios": "^1.12.0",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.0.0",
     "cohere-ai": "^2.3.0",
