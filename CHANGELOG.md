@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.36.1](https://github.com/cds-snc/ai-answers/compare/v1.36.0...v1.36.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* news-interac-service-name ([e30c6bb](https://github.com/cds-snc/ai-answers/commit/e30c6bbfa0026f98b538bcf75d97316b400fd366))
+* news-interac-service-name ([fbabaf8](https://github.com/cds-snc/ai-answers/commit/fbabaf819dfaf67e4f211739810d3020b891276a))
+
 ## [1.36.0](https://github.com/cds-snc/ai-answers/compare/v1.35.3...v1.36.0) (2025-09-11)
 
 
