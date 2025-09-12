@@ -19,21 +19,77 @@ import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 
-// Helper function to get alternate language path
+// Helper function to get alternate language path.
+// Rules:
+// - If the URL contains a site prefix ('ai-answers' or 'reponses-ia') we preserve
+//   that the prefix maps to a language: 'ai-answers' => 'en', 'reponses-ia' => 'fr'.
+//   When switching language we replace the prefix with the one matching the new
+//   language (so 'ai-answers' <-> 'reponses-ia').
+// - If the URL has no site prefix, we only toggle the leading language segment
+//   (or insert it) and keep the rest of the pathname unchanged.
 const getAlternatePath = (currentPath, currentLang) => {
   const newLang = currentLang === 'en' ? 'fr' : 'en';
-  if (currentPath === '/' || currentPath === '/fr') {
-    return `/${newLang}`;
+
+  // Split into segments. Leading slash produces an empty first segment.
+  const segments = currentPath.split('/'); // ['', 'ai-answers', 'en', 'page']
+  const prefixes = ['ai-answers', 'reponses-ia'];
+
+  const hadPrefix = segments[1] && prefixes.includes(segments[1]);
+
+  // Determine where the language would appear (after prefix if present, else first segment)
+  const langIndex = hadPrefix ? 2 : 1;
+  const hasLang = segments[langIndex] === 'en' || segments[langIndex] === 'fr';
+
+  // Compute the rest of path after the language (if present) or after the prefix/first
+  const restSegments = hasLang ? segments.slice(langIndex + 1) : segments.slice(langIndex);
+
+  // If original had a prefix, map the new language to its canonical prefix.
+  const langToPrefix = { en: 'ai-answers', fr: 'reponses-ia' };
+
+  const newSegments = [''];
+  if (hadPrefix) {
+    newSegments.push(langToPrefix[newLang]);
   }
-  // Remove leading language identifier if it exists and add new one
-  const pathWithoutLang = currentPath.replace(/^\/(en|fr)/, '');
-  return `/${newLang}${pathWithoutLang}`;
+
+  // Always include the language segment (when toggling we include it explicitly).
+  newSegments.push(newLang);
+
+  if (restSegments && restSegments.length) {
+    newSegments.push(...restSegments.filter(Boolean));
+  }
+
+  return newSegments.join('/') || `/${newLang}`;
+};
+
+// Compute both the current language and the alternate lang href (preserving search/hash).
+// Returns an object: { alternateLangHref, currentLang }
+const computeAlternateLangHref = (location) => {
+  const path = location.pathname || '/';
+  const pathSegments = path.split('/');
+  const prefixes = { 'ai-answers': 'en', 'reponses-ia': 'fr' };
+
+  let currentLang = 'en';
+  if (pathSegments[1] === 'en' || pathSegments[1] === 'fr') {
+    currentLang = pathSegments[1];
+  } else if (pathSegments[1] && prefixes[pathSegments[1]]) {
+    if (pathSegments[2] === 'en' || pathSegments[2] === 'fr') {
+      currentLang = pathSegments[2];
+    } else {
+      currentLang = prefixes[pathSegments[1]]; // infer from prefix
+    }
+  } else if (pathSegments[2] && (pathSegments[2] === 'en' || pathSegments[2] === 'fr')) {
+    currentLang = pathSegments[2];
+  }
+
+  const alternatePath = getAlternatePath(path, currentLang);
+  const alternateLangHref = `${alternatePath}${location.search || ''}${location.hash || ''}`;
+  return { alternateLangHref, currentLang };
 };
 
 const AppLayout = () => {
   const location = useLocation();
-  const currentLang = location.pathname.startsWith('/fr') ? 'fr' : 'en';
-  const alternateLangHref = getAlternatePath(location.pathname, currentLang);
+
+  const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
