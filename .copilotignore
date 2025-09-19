@@ -1,0 +1,8 @@
+﻿# Ignore environment files for Copilot
+.env
+.env.*
+*.env
+.env.local
+.env.development
+.env.production
+.env.test

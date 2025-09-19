@@ -1,6 +1,7 @@
 import  { useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
+import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import BatchPage from './pages/BatchPage.js';
 import ChatViewer from './pages/ChatViewer.js';
@@ -233,6 +234,8 @@ export default function App() {
     ];
 
     const protectedRoutes = [
+      { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/chat-dashboard', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin'] },

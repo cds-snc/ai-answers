@@ -79,7 +79,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
     if (sentences.length === 0) return null;
 
     return (
-        <GcdsDetails detailsTitle={t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert feedback'} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <GcdsDetails detailsTitle={t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert evaluation'} className="review-details" tabIndex="0" onGcdsClick={(e) => {
             // e.target should be the gcds-details web component; check its open property
             try {
                 // call load when panel is being opened
@@ -116,6 +116,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                         return (
                             <div>
                                 <div><strong>{t('reviewPanels.totalScore') || 'Total score'}:</strong> {totalVal !== null ? totalVal : (t('reviewPanels.notAvailable') || 'N/A')}</div>
+                                {/* Show expert email if available */}
+                                {efSource && (efSource.expertEmail || efSource.expert_email) ? (
+                                    <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
+                                ) : null}
                             </div>
                         );
                     })()}

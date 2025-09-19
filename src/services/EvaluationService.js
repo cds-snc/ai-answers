@@ -2,6 +2,47 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class EvaluationService {
+  static async getEvaluation({ interactionId }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('eval-get'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to fetch evaluation');
+    }
+    return response.json();
+  }
+
+  static async deleteEvaluation({ interactionId }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('eval-delete'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Failed to delete evaluation');
+    }
+    return data;
+  }
+
+  static async reEvaluate({ interactionId, forceFallbackEval = false }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('eval-run'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId, forceFallbackEval, replaceExisting: true })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to re-run evaluation');
+    }
+    return response.json();
+  }
   static async deleteExpertEval(chatId) {
     const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-expert-eval'), {
       method: 'POST',

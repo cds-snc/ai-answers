@@ -112,7 +112,7 @@ class EvaluationService {
         }
         return { deleted: 0, expertFeedbackDeleted: 0 };
     }
-    async evaluateInteraction(interaction, chatId) {
+    async evaluateInteraction(interaction, chatId, aiProvider = null, options = {}) {
         if (!interaction || !interaction._id) {
             ServerLoggingService.error('Invalid interaction object passed to evaluateInteraction', chatId,
                 { hasInteraction: !!interaction, hasId: !!interaction?._id });
@@ -133,13 +133,13 @@ class EvaluationService {
                         maxThreads: maxThreads,
                     });
                 }
-                return pool.run({ interactionId: interactionIdStr, chatId });
+                return pool.run({ interactionId: interactionIdStr, chatId, aiProvider, ...options });
             } else {
                 if (!directWorkerFn) {
                     const imported = await import('./evaluation.worker.js');
                     directWorkerFn = imported.default || imported;
                 }
-                return directWorkerFn({ interactionId: interactionIdStr, chatId });
+                return directWorkerFn({ interactionId: interactionIdStr, chatId, aiProvider, ...options });
             }
         } catch (error) {
             ServerLoggingService.error('Error during interaction evaluation dispatch', chatId, {
@@ -235,13 +235,14 @@ class EvaluationService {
                             interactions: interaction._id
                         });
                         const chatId = chats.length > 0 ? chats[0].chatId : null;
+                        const aiProvider = (chats.length > 0 && chats[0].aiProvider) ? chats[0].aiProvider : null;
                         if (!chatId) {
                             // Count as failed so stats reflect skipped interactions and loop cannot stall
                             failedCount++;
                             ServerLoggingService.warn(`No chat found for interaction ${interaction._id}`, 'eval-service');
                             return;
                         }
-                        await this.evaluateInteraction(interaction, chatId);
+                        await this.evaluateInteraction(interaction, chatId, aiProvider);
                         processedCount++;
                         ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
                     } catch (error) {
