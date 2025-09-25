@@ -132,7 +132,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // Clear saved table state so the DataTable resets to defaults.
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(TABLE_STORAGE_KEY);
+        window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY);
       }
     } catch (e) {
       // ignore
