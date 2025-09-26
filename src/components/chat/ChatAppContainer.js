@@ -7,6 +7,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../..
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import DataStoreService from '../../services/DataStoreService.js';
+import SessionService from '../../services/SessionService.js';
 // Utility functions go here, before the component
 const extractSentences = (paragraph) => {
   const sentenceRegex = /<s-?\d+>(.*?)<\/s-?\d+>/g;
@@ -22,19 +23,19 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
-  
+
   // Add safeT helper function
   const safeT = useCallback((key) => {
     const result = t(key);
     return typeof result === 'object' && result !== null ? result.text : result;
   }, [t]);
-  
+
   const { url: pageUrl, department: urlDepartment } = usePageContext();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [textareaKey, setTextareaKey] = useState(0);
-  
+
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
@@ -53,7 +54,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     } catch (e) {
       return 'google';
     }
-  }); 
+  });
   const [workflow, setWorkflow] = useState(() => {
     try {
       return localStorage.getItem(storageKey('workflow')) || 'Default';
@@ -97,9 +98,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     } else {
       // Reset the flag when loading completes
       setLoadingAnnounced(false);
-      
+
       const lastMessage = messages[messages.length - 1];
-      
+
       if (lastMessage) {
         if (lastMessage.sender === 'ai' && !lastMessage.error) {
           // AI response
@@ -318,9 +319,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           ...(referringUrl.trim() && { referringUrl: referringUrl.trim() })
         }
       ]);
+      let startMs;
       try {
-  const aiMessageId = messageIdCounter.current++;
-  const interaction = await ChatWorkflowService.processResponse(
+        const aiMessageId = messageIdCounter.current++;
+        startMs = Date.now();
+        const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
           aiMessageId,
@@ -329,13 +332,19 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           selectedDepartment,
           referringUrl,
           selectedAI,
-    t,
-    workflow,
-    updateStatusWithTimer,  // Pass our new status handler
-    selectedSearch  // Add this parameter
+          t,
+          workflow,
+          updateStatusWithTimer,  // Pass our new status handler
+          selectedSearch  // Add this parameter
         );
+        const latencyMs = Date.now() - startMs;
+
+  // Fire-and-forget report to server about latency (and success)
+  // fire-and-forget session report (no specific errorType for success)
+  SessionService.report(chatId, latencyMs, false, null);
+
         clearInput();
-        
+
         // Add the AI response to messages
         setMessages(prevMessages => [...prevMessages, {
           id: aiMessageId,
@@ -350,6 +359,25 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         setIsLoading(false);
 
       } catch (error) {
+        // attempt to record latency and error, including an errorType when we can
+        try {
+          const errLatency = Date.now() - (typeof startMs !== 'undefined' ? startMs : Date.now());
+          let errorType = null;
+          if (error instanceof RedactionError) {
+            errorType = 'redaction';
+          } else if (error instanceof ShortQueryValidation) {
+            errorType = 'shortQuery';
+          }
+          (async () => {
+            try {
+              await SessionService.report(chatId, errLatency, true, errorType);
+            } catch (e) {
+              if (console && console.error) console.error('session report failed', e);
+            }
+          })();
+        } catch (e) {
+          // ignore
+        }
         if (error instanceof RedactionError) {
           const userMessageId = messageIdCounter.current++;
           const blockedMessageId = messageIdCounter.current++;
@@ -365,7 +393,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             },
             {
               id: blockedMessageId,
-              text: error.redactedText.includes('XXX') 
+              text: error.redactedText.includes('XXX')
                 ? safeT('homepage.chat.messages.privateContent')
                 : safeT('homepage.chat.messages.blockedContent'),
               sender: 'system',
@@ -413,8 +441,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     inputText,
     referringUrl,
     selectedAI,
-  selectedSearch,  // Add this dependency
-  workflow,
+    selectedSearch,  // Add this dependency
+    workflow,
     lang,
     t,
     clearInput,
@@ -467,9 +495,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         })}
         <div className="mistake-disc">
           <p><FontAwesomeIcon icon="wand-magic-sparkles" />&nbsp;
-          {safeT('homepage.chat.input.loadingHint')}
-        </p>
-       </div>
+            {safeT('homepage.chat.input.loadingHint')}
+          </p>
+        </div>
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <div className="citation-container">
             {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
@@ -502,8 +530,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
         handleSearchToggle={handleSearchToggle} // Add this line
-  workflow={workflow}
-  handleWorkflowChange={handleWorkflowChange}
+        workflow={workflow}
+        handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
         selectedAI={selectedAI}
@@ -519,22 +547,22 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         getLabelForInput={() =>
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
-            : (typeof t('homepage.chat.input.followUp') === 'object' 
-               ? t('homepage.chat.input.followUp').text 
-               : t('homepage.chat.input.followUp'))
+            : (typeof t('homepage.chat.input.followUp') === 'object'
+              ? t('homepage.chat.input.followUp').text
+              : t('homepage.chat.input.followUp'))
         }
         ariaLabelForInput={
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
             : (typeof t('homepage.chat.input.followUp') === 'object'
-               ? t('homepage.chat.input.followUp').ariaLabel
-               : undefined)
+              ? t('homepage.chat.input.followUp').ariaLabel
+              : undefined)
         }
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
       />
-  {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
+      {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div
         aria-live="polite"
         aria-atomic="true"

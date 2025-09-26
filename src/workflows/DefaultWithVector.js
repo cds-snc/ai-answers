@@ -6,6 +6,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 
 
 import { ChatWorkflowService, WorkflowStatus } from '../services/ChatWorkflowService.js';
+import { getFingerprint } from '../utils/fingerprint.js';
 
 export class DefaultWithVector {
   constructor() { }
@@ -297,9 +298,10 @@ export class DefaultWithVector {
         })
         .filter(q => q);
       const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
+      const fp = await getFingerprint();
       const similarResp = await fetch(getApiUrl('chat-similar-answer'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-fp-id': fp },
         body: JSON.stringify({ chatId, questions, selectedAI, pageLanguage: pageLang || null, detectedLanguage: detectedLang || null })
       });
       if (similarResp && similarResp.ok) {

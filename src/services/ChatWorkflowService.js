@@ -2,6 +2,7 @@ import { urlToSearch } from '../utils/urlToSearch.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
 import RedactionService from './RedactionService.js';
 import LoggingService from './ClientLoggingService.js';
+import { getFingerprint } from '../utils/fingerprint.js';
 
 export const WorkflowStatus = {
   REDACTING: 'redacting',
@@ -110,10 +111,12 @@ export const ChatWorkflowService = {
   
   checkPIIOnNoContextOrThrow: async (chatId, userMessage, selectedAI) => {
     try {
+      // ensure fingerprint is available before sending header
+      const fp = await getFingerprint();
       const url = getApiUrl('chat-pii-check');
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-fp-id': fp },
         body: JSON.stringify({
           message: userMessage,
           chatId,
@@ -187,11 +190,12 @@ export const ChatWorkflowService = {
   ,
   translateQuestion: async (text, desiredLanguage, selectedAI) => {
     try {
-      
+      // ensure fingerprint is available before sending header
+      const fp = await getFingerprint();
       const url = getApiUrl('chat-translate');
       const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-fp-id': fp },
         body: JSON.stringify({ text, desired_language: desiredLanguage, selectedAI })
       });
       if (!resp || !resp.ok) {

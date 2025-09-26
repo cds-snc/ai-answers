@@ -1,7 +1,8 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { invokePIIAgent } from '../../services/PIIAgentService.js';
+import { withSession } from '../../middleware/session.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -26,4 +27,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+export default withSession(handler);
 

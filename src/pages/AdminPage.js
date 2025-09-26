@@ -73,6 +73,11 @@ const AdminPage = ({ lang = 'en' }) => {
                 {t('settings.title', 'Settings')}
               </GcdsLink>
             </li>
+            <li>
+              <GcdsLink href={`/${lang}/sessions`}>
+                {t('admin.navigation.sessions', 'Active Sessions')}
+              </GcdsLink>
+            </li>
           </RoleBasedContent>
 
           {/* Links for both roles */}

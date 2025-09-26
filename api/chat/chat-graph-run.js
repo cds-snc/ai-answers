@@ -1,4 +1,5 @@
 import { getGraphApp } from '../../agents/graphs/registry.js';
+import { withSession } from '../../middleware/session.js';
 
 const REQUIRED_METHOD = 'POST';
 
@@ -26,7 +27,7 @@ function traverseForUpdates(value, handlers) {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== REQUIRED_METHOD) {
     res.setHeader('Allow', [REQUIRED_METHOD]);
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
@@ -91,3 +92,5 @@ export default async function handler(req, res) {
     res.end();
   }
 }
+
+export default withSession(handler);

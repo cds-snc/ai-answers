@@ -3,6 +3,7 @@
 import loadSystemPrompt from './systemPrompt.js';
 import { getProviderApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
+import { getFingerprint } from '../utils/fingerprint.js';
 
 
 const AnswerService = {
@@ -53,10 +54,12 @@ const AnswerService = {
         chatId
       );
 
+      const fp = await getFingerprint();
       const response = await fetch(getProviderApiUrl(provider, 'message'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-fp-id': fp,
         },
         body: JSON.stringify(messagePayload),
       });

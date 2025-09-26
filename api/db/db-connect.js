@@ -35,6 +35,7 @@ async function dbConnect() {
       heartbeatFrequencyMS: 10000, // How often to check the connection
       maxPoolSize: 100, // Maximum number of connections
       minPoolSize: 1, // Minimum number of connections
+      directConnection: true,
     };
 
     const docDbOpts = {

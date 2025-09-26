@@ -19,6 +19,7 @@ import { AuthProvider } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
+import SessionPage from './pages/SessionPage.js';
 
 // Helper function to get alternate language path.
 // Rules:
@@ -257,6 +258,10 @@ export default function App() {
     { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
     { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
     ];
+
+  // Add sessions admin-only route
+  protectedRoutes.push({ path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] });
+  protectedRoutes.push({ path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] });
 
     return createBrowserRouter([
       {

@@ -8,9 +8,10 @@ import DataStoreService from '../services/DataStoreService.js';
 
 DataTable.use(DT);
 
-const PublicEvalPage = ({ lang = 'en' }) => {
-  const { t } = useTranslations(lang);
+const PublicEvalPage = ({ lang: propLang }) => {
   const { language } = usePageContext();
+  const lang = propLang || language || 'en';
+  const { t } = useTranslations(lang);
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ const PublicEvalPage = ({ lang = 'en' }) => {
           {
             title: t('admin.publicEval.chatId', 'Chat ID'),
             data: 'chatId',
-            render: (data) => `<a href="/${language}?chat=${data}&review=1">${data}</a>`
+            render: (data) => `<a href="/${lang}?chat=${data}&review=1">${data}</a>`
           },
           { title: t('admin.publicEval.department', 'Department'), data: 'department' },
           {

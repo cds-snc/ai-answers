@@ -117,7 +117,7 @@ const EvalPage = () => {
 
   return (
     <GcdsContainer size="xl" centered>
-      <h1>Evaluation Tools</h1>
+      <h1 className="mb-400">{t('admin.navigation.eval', 'Evaluation Administration')}</h1>
       
       <nav className="mb-400">
         <GcdsText>

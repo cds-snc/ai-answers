@@ -1,4 +1,4 @@
-﻿import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
+import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
@@ -27,6 +27,8 @@ import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
 import chatTranslateHandler from '../api/chat/chat-translate.js';
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
+import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
+import chatReportHandler from '../api/chat/chat-report.js';
 import dbVerifyChatSessionHandler from '../api/db/db-verify-chat-session.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import dbPersistInteraction from '../api/db/db-persist-interaction.js';
@@ -119,6 +121,8 @@ app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/db/db-persist-interaction', dbPersistInteraction);
 app.get('/api/chat/chat-session', chatSessionHandler);
+app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
+app.post('/api/chat/chat-report', chatReportHandler);
 app.get('/api/db/db-verify-chat-session', dbVerifyChatSessionHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
@@ -202,5 +206,6 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
+
 
 

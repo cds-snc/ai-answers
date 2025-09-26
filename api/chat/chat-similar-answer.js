@@ -7,9 +7,10 @@ import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.
 import { rankerStrategy } from '../../agents/strategies/rankerStrategy.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
 import { createRankerAgent, createTranslationAgent } from '../../agents/AgentFactory.js';
+import { withSession } from '../../middleware/session.js';
 
 // --- Main handler (composed of the helpers above) ---
-export default async function handler(req, res) {
+async function handler(req, res) {
     const validated = validateAndExtract(req);
     if (validated.error) {
         if (validated.error.headers) res.setHeader('Allow', validated.error.headers.Allow);
@@ -308,3 +309,5 @@ export default async function handler(req, res) {
     }
 
 }
+
+export default withSession(handler);

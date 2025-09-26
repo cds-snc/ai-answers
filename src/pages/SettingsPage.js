@@ -22,6 +22,18 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [logChats, setLogChats] = useState('no');
   const [savingLogChats, setSavingLogChats] = useState(false);
 
+  // Session-related settings
+  const [sessionTTL, setSessionTTL] = useState(60); // minutes
+  const [savingSessionTTL, setSavingSessionTTL] = useState(false);
+  const [cleanupInterval, setCleanupInterval] = useState(60); // seconds
+  const [savingCleanupInterval, setSavingCleanupInterval] = useState(false);
+  const [rateLimitCapacity, setRateLimitCapacity] = useState(60);
+  const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
+  const [rateLimitRefill, setRateLimitRefill] = useState(1);
+  const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
+  const [maxActiveSessions, setMaxActiveSessions] = useState('');
+  const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
+
   useEffect(() => {
     async function loadSettings() {
       const current = await DataStoreService.getSetting('siteStatus', 'available');
@@ -36,9 +48,80 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
       setLogChats(logChatsSetting);
+      // Load session settings
+      const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
+      setSessionTTL(Number(ttl));
+      const cleanup = await DataStoreService.getSetting('session.cleanupIntervalSeconds', '60');
+      setCleanupInterval(Number(cleanup));
+      const capacity = await DataStoreService.getSetting('session.rateLimitCapacity', '60');
+      setRateLimitCapacity(Number(capacity));
+  // Stored value is refill per second; display to admin as requests per minute
+  const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '1');
+  const refillPerSec = Number(refill);
+  setRateLimitRefill(Number((refillPerSec * 60).toFixed(2)));
+      const maxSessions = await DataStoreService.getSetting('session.maxActiveSessions', '');
+      setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
     }
     loadSettings();
   }, []);
+
+  // Session handlers
+  const handleSessionTTLChange = async (e) => {
+    const val = Number(e.target.value);
+    setSessionTTL(val);
+    setSavingSessionTTL(true);
+    try {
+      await DataStoreService.setSetting('session.defaultTTLMinutes', String(val));
+    } finally {
+      setSavingSessionTTL(false);
+    }
+  };
+
+  const handleCleanupIntervalChange = async (e) => {
+    const val = Number(e.target.value);
+    setCleanupInterval(val);
+    setSavingCleanupInterval(true);
+    try {
+      await DataStoreService.setSetting('session.cleanupIntervalSeconds', String(val));
+    } finally {
+      setSavingCleanupInterval(false);
+    }
+  };
+
+  const handleRateLimitCapacityChange = async (e) => {
+    const val = Number(e.target.value);
+    setRateLimitCapacity(val);
+    setSavingRateLimitCapacity(true);
+    try {
+      await DataStoreService.setSetting('session.rateLimitCapacity', String(val));
+    } finally {
+      setSavingRateLimitCapacity(false);
+    }
+  };
+
+  const handleRateLimitRefillChange = async (e) => {
+    const val = Number(e.target.value);
+    setRateLimitRefill(val);
+    setSavingRateLimitRefill(true);
+    try {
+      // Admin enters requests per minute; store as per-second for the service
+      const perSec = Number(val) / 60;
+      await DataStoreService.setSetting('session.rateLimitRefillPerSec', String(perSec));
+    } finally {
+      setSavingRateLimitRefill(false);
+    }
+  };
+
+  const handleMaxActiveSessionsChange = async (e) => {
+    const val = e.target.value;
+    setMaxActiveSessions(val);
+    setSavingMaxActiveSessions(true);
+    try {
+      await DataStoreService.setSetting('session.maxActiveSessions', val);
+    } finally {
+      setSavingMaxActiveSessions(false);
+    }
+  };
 
   const handleChange = async (e) => {
     const newStatus = e.target.value;
@@ -150,6 +233,33 @@ const SettingsPage = ({ lang = 'en' }) => {
         <option value="yes">{t('common.yes', 'Yes')}</option>
         <option value="no">{t('common.no', 'No')}</option>
       </select>
+
+      <h2 className="mt-600 mb-200">{t('settings.session.title', 'Session settings')}</h2>
+
+      <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
+        {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
+      </label>
+      <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
+
+      <label htmlFor="session-cleanup" className="mb-200 display-block mt-400">
+        {t('settings.session.cleanupSeconds', 'Session cleanup interval (seconds)')}
+      </label>
+      <input id="session-cleanup" type="number" min="5" value={cleanupInterval} onChange={handleCleanupIntervalChange} disabled={savingCleanupInterval} />
+
+      <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-400">
+        {t('settings.session.rateLimitCapacity', 'Rate limit capacity (tokens)')}
+      </label>
+      <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
+
+      <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
+        {t('settings.session.rateLimitRefill', 'Rate limit refill (tokens/sec)')}
+      </label>
+      <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
+
+      <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
+        {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}
+      </label>
+      <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
     </GcdsContainer>
   );
 };

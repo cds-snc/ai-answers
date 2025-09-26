@@ -2,8 +2,9 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { createTranslationAgent } from '../../agents/AgentFactory.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
+import { withSession } from '../../middleware/session.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).setHeader('Allow', ['POST']).end(`Method ${req.method} Not Allowed`);
 
   const text = typeof req.body?.text === 'string' ? req.body.text : '';
@@ -47,3 +48,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'internal error' });
   }
 }
+
+export default withSession(handler);

@@ -1,6 +1,7 @@
 // api/claude.js
 import { createClaudeAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
+import { withSession } from '../../middleware/session.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
@@ -86,7 +87,7 @@ async function invokeHandler(req, res) {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   let lastError;
 
   for (let attempt = 0; attempt < NUM_RETRIES; attempt++) {
@@ -109,3 +110,5 @@ export default async function handler(req, res) {
     details: lastError?.message
   });
 }
+
+export default withSession(handler);
