@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.45.0](https://github.com/cds-snc/ai-answers/compare/v1.44.0...v1.45.0) (2025-10-03)
+
+
+### Features
+
+* Add domain extraction and filtering script for programmable search ([9dc224e](https://github.com/cds-snc/ai-answers/commit/9dc224eed44a9789594bccf1f5bdcf70a9c8cda0))
+* Set default language based on hostname prefix for improved localization ([5827cfb](https://github.com/cds-snc/ai-answers/commit/5827cfbce525ce8f1508fabe232ba39cb423a1dd))
+
 ## [1.44.0](https://github.com/cds-snc/ai-answers/compare/v1.43.0...v1.44.0) (2025-10-02)
 
 
