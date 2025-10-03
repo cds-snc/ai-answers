@@ -4,7 +4,7 @@ const logsSchema = new mongoose.Schema({
     chatId: {
         type: String,
         required: false, // Optional since some logs might be system-wide
-        
+        index: true // Add an index to speed up queries by chatId
     },
     logLevel: {
         type: String,
