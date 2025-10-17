@@ -67,3 +67,10 @@ variable "google_search_engine_id" {
   sensitive   = true
   type        = string
 }
+
+# Temporary dummy variable to trigger workflow
+variable "dummy_trigger" {
+  type        = string
+  description = "Dummy variable for triggering CI"
+  default     = "trigger"
+}
