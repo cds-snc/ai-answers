@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.50.0](https://github.com/cds-snc/ai-answers/compare/v1.49.0...v1.50.0) (2025-10-17)
+
+
+### Features
+
+* add dummy variable to trigger CI workflow ([baba397](https://github.com/cds-snc/ai-answers/commit/baba397957394c9738a6318c54b92fbdac80ec8b))
+* add dummy variable to trigger CI workflow ([a241bdb](https://github.com/cds-snc/ai-answers/commit/a241bdbc6608fc8ee2eff6b793e29a0a4d61f11d))
+* add support for translation_context in translation requests ([724285a](https://github.com/cds-snc/ai-answers/commit/724285a71fe3f4210bc64eefc6aa86284a67c4f2))
+* enhance interaction retrieval to include expert feedback and never stale logic ([2dbe083](https://github.com/cds-snc/ai-answers/commit/2dbe083035f14c147367d90e0616c0ea42224bee))
+* enhance translation functionality with context support ([1302656](https://github.com/cds-snc/ai-answers/commit/1302656b1590fbddfabe5b3baa4ca82f30783895))
+* implement feedback expert never stale functionality with API integration and UI toggle ([7e470fc](https://github.com/cds-snc/ai-answers/commit/7e470fc759870b741d6d2f12466cd262b4b8af56))
+* integrate translation context and add request context management ([65312c6](https://github.com/cds-snc/ai-answers/commit/65312c69c19dd543d28a64b0f77ff011dfb93e16))
+
+
+### Bug Fixes
+
+* json labels ([5c03ad8](https://github.com/cds-snc/ai-answers/commit/5c03ad86e318ed81b166b92487e0d1c55086f086))
+* json labels ([61a2d3c](https://github.com/cds-snc/ai-answers/commit/61a2d3c4858a1cc99e435ac7b0937c2b8f905754))
+* missed one ([ce33a8f](https://github.com/cds-snc/ai-answers/commit/ce33a8f62a99ed898b494971d6039a96c96fd646))
+* prevent session reporting for unauthorized users ([a59b5b7](https://github.com/cds-snc/ai-answers/commit/a59b5b7cd2ad36196b205dd635d265e2f24c11ec))
+* remove unsupported department check from handler ([1c9d58b](https://github.com/cds-snc/ai-answers/commit/1c9d58b1e81b16414394e04f4280ed3e26c9738c))
+
 ## [1.49.0](https://github.com/cds-snc/ai-answers/compare/v1.48.2...v1.49.0) (2025-10-16)
 
 
