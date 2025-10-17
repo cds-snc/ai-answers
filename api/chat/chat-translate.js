@@ -9,6 +9,10 @@ async function handler(req, res) {
 
   const text = typeof req.body?.text === 'string' ? req.body.text : '';
   const desired_language = req.body?.desired_language || '';
+  // Accept either the new `translation_context` key or the older `conversation_history` for backwards compatibility
+  const translation_context = Array.isArray(req.body?.translation_context)
+    ? req.body.translation_context
+    : (Array.isArray(req.body?.conversation_history) ? req.body.conversation_history : []);
   const selectedAI = req.body?.selectedAI || 'openai';
 
   try {
@@ -20,7 +24,7 @@ async function handler(req, res) {
     const resp = await AgentOrchestratorService.invokeWithStrategy({
       chatId: 'translate',
       agentType: selectedAI,
-      request: { text, desired_language },
+      request: { text, desired_language, translation_context },
       createAgentFn,
       strategy: translationStrategy,
     });
@@ -36,9 +40,10 @@ async function handler(req, res) {
         translatedText: text,
         noTranslation: true,
         originalText: text,
+        translation_context: translation_context,
       };
     } else {
-      normalized = Object.assign({}, result || {}, { originalText: text });
+      normalized = Object.assign({}, result || {}, { originalText: text, translation_context });
     }
 
     ServerLoggingService.info('translate result', 'chat-translate', { result: normalized });

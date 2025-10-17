@@ -187,11 +187,20 @@ export const ChatWorkflowService = {
   validateShortQueryOrThrow: (conversationHistory, userMessage, lang, department, translationF) => {
     return validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
   },
+  // Build translation context: array of previous user messages (strings), excluding the most recent user message
+  buildTranslationContext: (conversationHistory = []) => {
+    if (!Array.isArray(conversationHistory)) return [];
+    const prevUserMessages = conversationHistory
+      .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string')
+      .map(m => m.text || '');
+    // Exclude the most recent user message (last in order)
+    return prevUserMessages;
+  },
   // Expose the status update filter helper so workflows can reuse the centralized display rules
   sendStatusUpdate: (onStatusUpdate, status) => {
     return sendStatusUpdate(onStatusUpdate, status);
   },
-  translateQuestion: async (text, desiredLanguage, selectedAI) => {
+  translateQuestion: async (text, desiredLanguage, selectedAI, translationContext = []) => {
     try {
       // ensure fingerprint is available before sending header
       const fp = await getFingerprint();
@@ -204,7 +213,7 @@ export const ChatWorkflowService = {
           'x-fp-id': fp,
           ...extraHeaders
         },
-        body: JSON.stringify({ text, desired_language: desiredLanguage, selectedAI })
+        body: JSON.stringify({ text, desired_language: desiredLanguage, selectedAI, translation_context: translationContext })
       });
       if (!resp || !resp.ok) {
         const errText = resp ? await resp.text() : 'no response';
