@@ -47,7 +47,9 @@ export class DefaultWithVector {
     await LoggingService.info(chatId, 'Redaction result', {
       redactedTextPreview: typeof redactedText === 'string' ? redactedText.slice(0, 400) : null
     });
-    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
+    const translationContext = ChatWorkflowService.buildTranslationContext(conversationHistory);
+
+    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI, translationContext);
     await LoggingService.info(chatId, 'Translation data', { translationData });
 
     // Decide context to use (existing or minimal) prior to short-circuit

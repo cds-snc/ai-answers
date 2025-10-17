@@ -1,13 +1,13 @@
 import { PROMPT as TRANSLATION_PROMPT } from '../prompts/translationPrompt.js';
 
 export const translationStrategy = {
-  // request: { text: string, desired_language: string }
+  // request: { text: string, desired_language: string, translation_context?: string[] }
   buildMessages: (request = {}) => {
-    const { text = '', desired_language = '' } = request;
+    const { text = '', desired_language = '', translation_context = [] } = request;
     const system = { role: 'system', content: TRANSLATION_PROMPT };
     const user = {
       role: 'user',
-      content: JSON.stringify({ text, desired_language })
+      content: JSON.stringify({ text, desired_language, translation_context })
     };
     return [system, user];
   },
