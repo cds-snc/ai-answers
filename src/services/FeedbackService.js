@@ -107,6 +107,20 @@ class FeedbackService {
     }
     return data;
   }
+
+  static async setExpertNeverStale({ interactionId, neverStale }) {
+    if (!interactionId || typeof neverStale === 'undefined') throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-expert-never-stale'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId, neverStale })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to update expert feedback neverStale');
+    }
+    return data;
+  }
 }
 
 export default FeedbackService;

@@ -8,6 +8,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [updatingNeverStale, setUpdatingNeverStale] = useState(false);
 
     const handleToggle = useCallback(async () => {
         try {
@@ -53,6 +54,45 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
             setDeleting(false);
         }
     }, [message]);
+
+    const handleNeverStaleToggle = useCallback(async (e) => {
+        try {
+            setError(null);
+            setUpdatingNeverStale(true);
+            const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
+            const currentEf = (data && data.expertFeedback) || (message.interaction && message.interaction.expertFeedback) || message.expertFeedback || {};
+            const currentVal = typeof currentEf.neverStale !== 'undefined' && currentEf.neverStale !== null ? currentEf.neverStale : false;
+            const newVal = !currentVal;
+            // Optimistic UI update: update local data/expert object
+            if (data && data.expertFeedback) {
+                setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: newVal } });
+            } else if (message.interaction && message.interaction.expertFeedback) {
+                message.interaction.expertFeedback.neverStale = newVal;
+            } else if (message.expertFeedback) {
+                message.expertFeedback.neverStale = newVal;
+            }
+
+            await FeedbackService.setExpertNeverStale({ interactionId, neverStale: newVal });
+            await ClientLoggingService.info(interactionId, 'Expert feedback neverStale toggled', { neverStale: newVal });
+        } catch (err) {
+            // Revert optimistic update on error
+            try {
+                const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
+                if (data && data.expertFeedback) {
+                    setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: !data.expertFeedback.neverStale } });
+                } else if (message.interaction && message.interaction.expertFeedback) {
+                    message.interaction.expertFeedback.neverStale = !message.interaction.expertFeedback.neverStale;
+                } else if (message.expertFeedback) {
+                    message.expertFeedback.neverStale = !message.expertFeedback.neverStale;
+                }
+            } catch (revertErr) {
+                // ignore
+            }
+            setError(err.message || String(err));
+        } finally {
+            setUpdatingNeverStale(false);
+        }
+    }, [data, message]);
 
     if (!message) return null;
 
@@ -119,6 +159,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
                                     <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
                                 ) : null}
+                                    {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>
                         );
                     })()}
@@ -163,16 +204,34 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                         })()}
                     </tbody>
                 </table>
-                <div className="mt-200">
-                    <GcdsButton
-                        onClick={handleDelete}
-                        variant="danger"
-                        disabled={deleting}
-                        className="hydrated"
-                    >
-                        {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
-                    </GcdsButton>
-                </div>
+                {(() => {
+                    const efSource = (data && data.expertFeedback) || expert || null;
+                    const hasEf = efSource && (efSource._id || efSource.id || efSource.expertFeedback);
+                    if (!hasEf) return null;
+                    return (
+                        <div className="mt-200">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <GcdsButton
+                                    onClick={handleDelete}
+                                    variant="danger"
+                                    disabled={deleting}
+                                    className="hydrated"
+                                >
+                                    {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
+                                </GcdsButton>
+                                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={!!(efSource && efSource.neverStale)}
+                                        onChange={handleNeverStaleToggle}
+                                        disabled={updatingNeverStale}
+                                    />
+                                    <span>{t('reviewPanels.neverStale') || 'Never Stale'}</span>
+                                </label>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         </GcdsDetails>
     );
