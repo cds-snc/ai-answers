@@ -56,13 +56,23 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       return 'google';
     }
   });
+  // workflow: prefer a user-set value in localStorage; if none exists, leave null
+  // so we can fetch the public default setting and avoid persisting it unless
+  // the user explicitly chooses a workflow in the UI.
   const [workflow, setWorkflow] = useState(() => {
     try {
-      return localStorage.getItem(storageKey('workflow')) || 'Default';
+      const val = localStorage.getItem(storageKey('workflow'));
+      return val !== null ? val : null;
     } catch (e) {
-      return 'Default';
+      return null;
     }
   });
+  // Track whether an initial value existed in localStorage and whether the user
+  // explicitly set the workflow during this session. We only persist when one
+  // of these is true so we don't overwrite the user's future changes to the
+  // public default unintentionally.
+  const initialWorkflowFromLocalStorage = useRef(false);
+  const userSetWorkflow = useRef(false);
   const [referringUrl, setReferringUrl] = useState(pageUrl || '');
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
@@ -235,15 +245,49 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [selectedSearch]);
 
+  // Record whether a workflow value existed in localStorage at mount. This
+  // helps us decide whether to persist later changes.
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey('workflow'), workflow);
+      const val = localStorage.getItem(storageKey('workflow'));
+      if (val !== null) initialWorkflowFromLocalStorage.current = true;
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // If there's no user-local workflow, load the public default workflow (does
+  // not mark it as user-set or persist it).
+  useEffect(() => {
+    let mounted = true;
+    const loadDefaultWorkflow = async () => {
+      if (workflow === null) {
+        try {
+          const defaultWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'Default');
+          if (mounted) setWorkflow(defaultWorkflow || 'Default');
+        } catch (err) {
+          if (mounted) setWorkflow('Default');
+        }
+      }
+    };
+    loadDefaultWorkflow();
+    return () => { mounted = false; };
+  }, [workflow]);
+
+  useEffect(() => {
+    try {
+      // Only persist workflow when it came from localStorage initially or the
+      // user explicitly changed it during this session.
+      if (workflow !== null && (initialWorkflowFromLocalStorage.current || userSetWorkflow.current)) {
+        localStorage.setItem(storageKey('workflow'), workflow);
+      }
     } catch (e) {
       // ignore storage errors
     }
   }, [workflow]);
 
   const handleWorkflowChange = (e) => {
+    userSetWorkflow.current = true;
     setWorkflow(e.target.value);
     console.log('Workflow changed to:', e.target.value);
   };
@@ -342,9 +386,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         );
         const latencyMs = Date.now() - startMs;
 
-  // Fire-and-forget report to server about latency (and success)
-  // fire-and-forget session report (no specific errorType for success)
-  SessionService.report(chatId, latencyMs, false, null);
+        // Fire-and-forget report to server about latency (and success)
+        // fire-and-forget session report (no specific errorType for success)
+        SessionService.report(chatId, latencyMs, false, null);
 
         clearInput();
 

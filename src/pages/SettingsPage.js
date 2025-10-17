@@ -18,6 +18,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [provider, setProvider] = useState('openai');
   const [savingProvider, setSavingProvider] = useState(false);
 
+  // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
+  const [defaultWorkflow, setDefaultWorkflow] = useState('Default');
+  const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
+
   // New state for logging chats to database
   const [logChats, setLogChats] = useState('no');
   const [savingLogChats, setSavingLogChats] = useState(false);
@@ -51,6 +55,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load provider setting
       const providerSetting = await DataStoreService.getSetting('provider', 'openai');
       setProvider(providerSetting);
+  // Load default workflow setting
+  const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
+  setDefaultWorkflow(defaultWorkflowSetting || 'Default');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
       setLogChats(logChatsSetting);
@@ -254,6 +261,28 @@ const SettingsPage = ({ lang = 'en' }) => {
       >
         <option value="openai">{t('settings.provider.openai', 'OpenAI')}</option>
         <option value="azure">{t('settings.provider.azure', 'Azure')}</option>
+      </select>
+      <label htmlFor="default-workflow" className="mb-200 display-block mt-400">
+        {t('settings.defaultWorkflow.label', 'Default workflow')}
+      </label>
+      <select
+        id="default-workflow"
+        value={defaultWorkflow}
+        onChange={async (e) => {
+          const v = e.target.value;
+          setDefaultWorkflow(v);
+          setSavingDefaultWorkflow(true);
+          try {
+            await DataStoreService.setSetting('workflow.default', v);
+          } finally {
+            setSavingDefaultWorkflow(false);
+          }
+        }}
+        disabled={savingDefaultWorkflow}
+      >
+        <option value="Default">Default</option>
+        <option value="DefaultWithVector">DefaultWithVector</option>
+        <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
       </select>
       <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
         {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}

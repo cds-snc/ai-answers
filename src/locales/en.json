@@ -505,6 +505,14 @@
   },
   "settings": {
     "title": "Settings",
+      "liveGraph": {
+        "title": "Live Graph",
+        "description": "Edit the workflow values used by the Live Graph visualization.",
+        "save": "Save Live Graph"
+      },
+      "defaultWorkflow": {
+        "label": "Default workflow"
+      },
     "statusLabel": "Service status",
     "statuses": {
       "available": "Available",
