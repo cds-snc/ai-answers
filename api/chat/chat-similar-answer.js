@@ -109,10 +109,11 @@ async function handler(req, res) {
         await dbConnect();
         const Interaction = mongoose.model('Interaction');
         const ids = Array.from(new Set(matches.map(m => m.interactionId).filter(Boolean)));
-        // Populate the answer and its nested citation so callers can access citation URLs
+        // Populate the answer and its nested citation and expertFeedback so callers can access citation URLs and neverStale
         const interactions = await Interaction.find({ _id: { $in: ids } })
             .populate({ path: 'answer', populate: { path: 'citation', model: 'Citation' } })
             .populate('question')
+            .populate('expertFeedback')
             .lean();
         const interactionById = interactions.reduce((acc, it) => { acc[it._id.toString()] = it; return acc; }, {});
         return { interactions, interactionById };
@@ -126,6 +127,15 @@ async function handler(req, res) {
             const it = interactionById[m.interactionId?.toString?.() || m.interactionId];
             if (!it || !it.answer) continue;
             const created = new Date(it.createdAt || it._id?.getTimestamp?.() || Date.now()).getTime();
+
+            // If the interaction has expertFeedback populated and neverStale is true, always treat it as recent
+            const ef = it.expertFeedback;
+            const hasNeverStale = ef && (ef.neverStale === true || String(ef.neverStale) === 'true');
+            if (hasNeverStale) {
+                recent.push({ match: m, interaction: it });
+                continue;
+            }
+
             if (created >= cutoff) recent.push({ match: m, interaction: it }); else older.push({ match: m, interaction: it });
         }
         return [...recent, ...older].slice(0, 5);
