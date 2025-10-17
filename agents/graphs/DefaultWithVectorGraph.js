@@ -75,7 +75,8 @@ graph.addNode('redact', async (state) => {
 });
 
 graph.addNode('translate', async (state) => {
-  const translationData = await workflow.translateQuestion(state.redactedText, state.lang, state.selectedAI);
+  const translationContext = workflow.buildTranslationContext(state.conversationHistory);
+  const translationData = await workflow.translateQuestion(state.redactedText, state.lang, state.selectedAI, translationContext);
   return { translationData };
 });
 
@@ -96,15 +97,15 @@ graph.addNode('contextNode', async (state) => {
   if (!usedExistingContext) {
     context = await workflow.deriveContext({
       selectedAI: state.selectedAI,
-      translatedQuestion: state.translationData.translatedText,
-      pageLang: state.lang,
+      translationData: state.translationData,
+      lang: state.lang,
       department: state.department,
       referringUrl: state.referringUrl,
       searchProvider: state.searchProvider,
       conversationHistory: cleanedHistory,
       overrideUserId: state.overrideUserId,
       chatId: state.chatId,
-      translationData: state.translationData,
+      userMessage: state.userMessage,
     });
   }
 
