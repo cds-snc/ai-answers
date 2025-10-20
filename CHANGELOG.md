@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.50.0](https://github.com/cds-snc/ai-answers/compare/v1.49.0...v1.50.0) (2025-10-20)
+
+
+### Features
+
+* add dummy variable to trigger CI workflow ([baba397](https://github.com/cds-snc/ai-answers/commit/baba397957394c9738a6318c54b92fbdac80ec8b))
+* add dummy variable to trigger CI workflow ([a241bdb](https://github.com/cds-snc/ai-answers/commit/a241bdbc6608fc8ee2eff6b793e29a0a4d61f11d))
+* add support for translation_context in translation requests ([724285a](https://github.com/cds-snc/ai-answers/commit/724285a71fe3f4210bc64eefc6aa86284a67c4f2))
+* enhance interaction retrieval to include expert feedback and never stale logic ([2dbe083](https://github.com/cds-snc/ai-answers/commit/2dbe083035f14c147367d90e0616c0ea42224bee))
+* enhance translation functionality with context support ([1302656](https://github.com/cds-snc/ai-answers/commit/1302656b1590fbddfabe5b3baa4ca82f30783895))
+* implement default workflow settings and update local storage ha… ([ddce375](https://github.com/cds-snc/ai-answers/commit/ddce3759918cd5216e65e1b1c69ae84e38eac9a5))
+* implement default workflow settings and update local storage handling ([ba0a9d0](https://github.com/cds-snc/ai-answers/commit/ba0a9d0503f30a01b74879aea630a928ba194189))
+* implement feedback expert never stale functionality with API integration and UI toggle ([7e470fc](https://github.com/cds-snc/ai-answers/commit/7e470fc759870b741d6d2f12466cd262b4b8af56))
+* integrate translation context and add request context management ([65312c6](https://github.com/cds-snc/ai-answers/commit/65312c69c19dd543d28a64b0f77ff011dfb93e16))
+
+
+### Bug Fixes
+
+* cra-scenario ([99dc3ba](https://github.com/cds-snc/ai-answers/commit/99dc3baf9d06bd05d2677d18fea713d2a313b2f4))
+* en version of legal advice ([d88bbc7](https://github.com/cds-snc/ai-answers/commit/d88bbc7fa598f836d82da131ffdd63b25bfe5aa4))
+* extra period ([30f89b7](https://github.com/cds-snc/ai-answers/commit/30f89b75c54278fa8d9402eaba0cabfc2fe9b025))
+* json labels ([5c03ad8](https://github.com/cds-snc/ai-answers/commit/5c03ad86e318ed81b166b92487e0d1c55086f086))
+* json labels ([61a2d3c](https://github.com/cds-snc/ai-answers/commit/61a2d3c4858a1cc99e435ac7b0937c2b8f905754))
+* legal advice ([afccce1](https://github.com/cds-snc/ai-answers/commit/afccce1f7c6500c1821f53341e74d4bd0a7c09d3))
+* missed one ([ce33a8f](https://github.com/cds-snc/ai-answers/commit/ce33a8f62a99ed898b494971d6039a96c96fd646))
+* not-gc ([c8656bb](https://github.com/cds-snc/ai-answers/commit/c8656bb69c700f132613633cc0dea0a0474cff20))
+* prevent session reporting for unauthorized users ([a59b5b7](https://github.com/cds-snc/ai-answers/commit/a59b5b7cd2ad36196b205dd635d265e2f24c11ec))
+* referring-confusion ([26bb20f](https://github.com/cds-snc/ai-answers/commit/26bb20fd5f415819457a69d76e5b31f1e8eda3ad))
+* remove unsupported department check from handler ([1c9d58b](https://github.com/cds-snc/ai-answers/commit/1c9d58b1e81b16414394e04f4280ed3e26c9738c))
+* search-prompt ([1768281](https://github.com/cds-snc/ai-answers/commit/1768281c5a84d284babe47d228d12645b9ebef1b))
+
 ## [1.49.0](https://github.com/cds-snc/ai-answers/compare/v1.48.2...v1.49.0) (2025-10-16)
 
 
