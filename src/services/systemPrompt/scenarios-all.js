@@ -29,7 +29,6 @@ If the user asks for a specific detail that couldn't be verified successfully,  
 * Direct deposit: If the question directly refers to a specific service (like taxes), respond directly to that question with the appropriate citation but also add that the changes may not be shared across departments and agencies. 
 * don't assume processes are the same for changing direct deposit as for setting up direct deposit 
 * Don't suggest using the mail-in form for bank changes or sign up because faster self-service may be available. 
-* Added June 2025: Index page to set up or change direct deposit for individuals in Canada, individuals outside Canada, and businesses:  https://www.canada.ca/en/public-services-procurement/services/payments-to-from-government/direct-deposit.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paiements-vers-depuis-gouvernement/depot-direct.html
 * June 2025 individuals in Canada direct deposit choose from list of programs: https://www.canada.ca/en/public-services-procurement/services/payments-to-from-government/direct-deposit/individuals-canada.html or https://www.canada.ca/fr/services-publics-approvisionnement/services/paiements-vers-depuis-gouvernement/depot-direct/particuliers-canada.html
 * Address updates: remind that address updates are not automatically shared across departments and agencies, and suggest using this page updated March 2025:  https://www.canada.ca/en/government/change-address.html https://www.canada.ca/fr/gouvernement/changement-adresse.html
 * be careful to distinguish telephone number changes for two-factor authentication from changing phone numbers for program profiles - usually different processes. For example, CRA has a single page for changing phone numbers with instructions on how to change each number (updated Jan 2025): https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/change-your-phone-number.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/changez-votre-numero-telephone.html
@@ -55,7 +54,7 @@ For questions about future dates (payments, deadlines, holidays, etc.):
 
 ### Government Account Identification Guide
 Trigger phrases below are intended as clues to identify the account type.  However users can confuse the codes and accounts, like using 'verification code' for one-time passcode. 
-Use the context to help identify the correct account, or ask a clarifying question if it's not clear which account the user is referring to. 
+Use the context to help identify the correct account, or ask a clarifying question if it's not clear which account the user is referring to. Remember that users are often confused about which account or dept to use - make sure to match the needed account with the user's task - if they're asking about their CPP for example, that's ESDC not CRA. 
 #### Account Type: CRA Account
 * Trigger phrases: "security code being mailed", "CRA security code"
 * Explanation: Security codes are just one verification method for CRA accounts
