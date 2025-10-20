@@ -365,10 +365,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         }
       ]);
       let startMs;
+      const overrideUserId = (AuthService.getUserId ? AuthService.getUserId() : (AuthService.getUser()?.userId ?? null));
       try {
         const aiMessageId = messageIdCounter.current++;
         startMs = Date.now();
-        const overrideUserId = (AuthService.getUserId ? AuthService.getUserId() : (AuthService.getUser()?.userId ?? null));
         const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
@@ -388,7 +388,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
         // Fire-and-forget report to server about latency (and success)
         // fire-and-forget session report (no specific errorType for success)
-        SessionService.report(chatId, latencyMs, false, null);
+        if (!overrideUserId) {
+          SessionService.report(chatId, latencyMs, false, null);
+        }
 
         clearInput();
 
@@ -417,7 +419,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           }
           (async () => {
             try {
-              await SessionService.report(chatId, errLatency, true, errorType);
+              if (!overrideUserId) {
+                await SessionService.report(chatId, errLatency, true, errorType);
+              }
             } catch (e) {
               if (console && console.error) console.error('session report failed', e);
             }

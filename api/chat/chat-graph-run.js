@@ -1,4 +1,5 @@
 import { getGraphApp } from '../../agents/graphs/registry.js';
+import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { withSession } from '../../middleware/session.js';
 
 const REQUIRED_METHOD = 'POST';
@@ -47,6 +48,8 @@ async function handler(req, res) {
     return res.status(404).json({ message: `Unknown graph: ${name}` });
   }
 
+  const forwardedHeaders = buildForwardedHeaders(req.headers || {});
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
@@ -72,13 +75,15 @@ async function handler(req, res) {
   };
 
   try {
-    const stream = await graphApp.stream(input, { streamMode: 'updates' });
-    for await (const update of stream) {
-      traverseForUpdates(update, handlers);
-      if (resultSent) {
-        break;
+    await graphRequestContext.run({ headers: forwardedHeaders }, async () => {
+      const stream = await graphApp.stream(input, { streamMode: 'updates' });
+      for await (const update of stream) {
+        traverseForUpdates(update, handlers);
+        if (resultSent) {
+          break;
+        }
       }
-    }
+    });
   } catch (err) {
     streamError = err;
     if (!resultSent) {
@@ -90,6 +95,34 @@ async function handler(req, res) {
       writeEvent(res, 'error', { message: 'Graph completed without result payload' });
     }
     res.end();
+  }
+
+  function buildForwardedHeaders(headers) {
+    const out = {};
+    if (!headers) return out;
+
+    const cookie = headers['cookie'];
+    if (cookie) out['Cookie'] = cookie;
+
+    const authorization = headers['authorization'];
+    if (authorization) out['Authorization'] = authorization;
+
+    const sessionToken = headers['x-session-token'];
+    if (sessionToken) out['x-session-token'] = sessionToken;
+
+    const fpId = headers['x-fp-id'];
+    if (fpId) out['x-fp-id'] = fpId;
+
+    const fpHash = headers['x-fp-hash'];
+    if (fpHash) out['x-fp-hash'] = fpHash;
+
+    const chatIdHeader = headers['x-chat-id'];
+    if (chatIdHeader) out['x-chat-id'] = chatIdHeader;
+
+    const bypass = headers['x-session-bypass'];
+    if (bypass) out['x-session-bypass'] = bypass;
+
+    return out;
   }
 }
 

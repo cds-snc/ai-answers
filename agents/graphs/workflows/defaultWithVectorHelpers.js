@@ -4,6 +4,7 @@ import { ScenarioOverrideService } from '../../../services/ScenarioOverrideServi
 import { checkPII } from '../services/piiService.js';
 import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
 import { translateQuestion } from '../services/translationService.js';
+import { graphRequestContext } from '../requestContext.js';
 
 const API_BASE = process.env.INTERNAL_API_URL || `http://127.0.0.1:${process.env.PORT || 3001}/api`;
 
@@ -135,8 +136,14 @@ function parseAnswerResponse(rawText = '') {
   };
 }
 async function fetchJson(url, options = {}) {
+  const ctx = graphRequestContext.getStore();
+  const forwardedHeaders = ctx?.headers || {};
   const resp = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...forwardedHeaders,
+      ...(options.headers || {}),
+    },
     ...options,
   });
   if (!resp.ok) {
@@ -164,8 +171,17 @@ export class DefaultWithVectorServerWorkflow {
     return { redactedText, redactedItems };
   }
 
-  async translateQuestion(text, lang, selectedAI) {
-    return translateQuestion({ text, desiredLanguage: lang, selectedAI });
+  async translateQuestion(text, lang, selectedAI, translationContext = []) {
+    return translateQuestion({ text, desiredLanguage: lang, selectedAI, translationContext });
+  }
+
+  // Build translation context for server workflows: previous user messages (strings), excluding the most recent
+  buildTranslationContext(conversationHistory = []) {
+    if (!Array.isArray(conversationHistory)) return [];
+    return (conversationHistory || [])
+      .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string')
+      .map(m => m.text || '');
+
   }
 
   determineOutputLang(pageLang, translationData) {
@@ -195,9 +211,11 @@ export class DefaultWithVectorServerWorkflow {
     return context;
   }
 
-  async deriveContext({ selectedAI, translationData, lang, department, referringUrl, searchProvider, conversationHistory, chatId, overrideUserId }) {
+  async deriveContext({ selectedAI, translationData, lang, department, referringUrl, searchProvider, conversationHistory, chatId, overrideUserId, userMessage }) {
+    const baseMessage = translationData?.translatedText || translationData?.originalText || userMessage || '';
+
     const searchPayload = {
-      message: translationData?.translatedText || translationData?.originalText || '',
+      message: baseMessage,
       chatId,
       searchService: searchProvider,
       agentType: selectedAI,
@@ -213,7 +231,7 @@ export class DefaultWithVectorServerWorkflow {
 
     const contextPayload = {
       chatId,
-      message: translationData?.translatedText || translationData?.originalText || '',
+      message: baseMessage,
       systemPrompt: searchResult.systemPrompt || '',
       conversationHistory,
       searchResults: searchResult.results || searchResult.searchResults || [],
@@ -241,7 +259,7 @@ export class DefaultWithVectorServerWorkflow {
       inputTokens: contextResponse.inputTokens,
       outputTokens: contextResponse.outputTokens,
       query: searchResult.query,
-      translatedQuestion: translationData.translatedText,
+      translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
       outputLang: this.determineOutputLang(lang, translationData),
       originalLang: translationData.originalLanguage,

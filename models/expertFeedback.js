@@ -21,7 +21,8 @@ const expertFeedbackSchema = new Schema({
     answerImprovement: { type: String, required: false, default: '' },
     expertCitationUrl: { type: String, required: false, default: '' },
     feedback: { type: String, required: false, default: '' },
-    expertEmail: { type: String, required: false, default: '' }
+    expertEmail: { type: String, required: false, default: '' },
+    neverStale: { type: Boolean, required: false, default: false }
 }, {
     timestamps: true, versionKey: false,
     id: false,

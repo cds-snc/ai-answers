@@ -49,7 +49,10 @@ export class DefaultWorkflow {
       redactedTextPreview: typeof redactedText === 'string' ? redactedText.slice(0, 400) : null
     });
 
-    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
+    // Build translationContext (previous user messages excluding the most recent)
+    const translationContext = ChatWorkflowService.buildTranslationContext(conversationHistory);
+
+    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI, translationContext);
     // Log translation details for diagnostics
     await LoggingService.info(chatId, 'Translation data', { translationData });
 

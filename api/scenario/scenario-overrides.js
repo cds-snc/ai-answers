@@ -59,9 +59,6 @@ async function handler(req, res) {
       const defaults = await loadDefaultScenarios(departmentKey);
 
       if (departmentKey) {
-        if (!defaults) {
-          return res.status(404).json({ message: 'Unsupported department' });
-        }
         const override = await ScenarioOverrideService.getActiveOverride(userId, departmentKey);
         return res.status(200).json({
           departmentKey,
