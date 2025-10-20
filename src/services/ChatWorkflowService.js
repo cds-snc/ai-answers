@@ -4,6 +4,7 @@ import RedactionService from './RedactionService.js';
 import LoggingService from './ClientLoggingService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
 import getSessionBypassHeaders from './sessionHeaders.js';
+import DataStoreService from './DataStoreService.js';
 
 export const WorkflowStatus = {
   REDACTING: 'redacting',
@@ -81,12 +82,24 @@ export const ChatWorkflowService = {
     searchProvider,
     overrideUserId = null
   ) => {
-    // Select workflow implementation based on the `workflow` parameter.
+    // If caller didn't provide a workflow (null/undefined/empty), load the
+    // public default workflow setting so clients that haven't selected a
+    // personal preference will follow the global default.
+    let resolvedWorkflow = workflow;
+    if (!resolvedWorkflow) {
+      try {
+        resolvedWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'Default');
+      } catch (err) {
+        resolvedWorkflow = 'Default';
+      }
+    }
+
+    // Select workflow implementation based on the resolved workflow.
     // Default to DefaultWorkflow when unknown.
     let mod;
-    if (workflow === 'DefaultWithVector') {
+    if (resolvedWorkflow === 'DefaultWithVector') {
       mod = await import('../workflows/DefaultWithVector.js');
-    } else if (workflow === 'DefaultWithVectorGraph') {
+    } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
       mod = await import('../workflows/DefaultWithVectorGraph.js');
     } else {
       mod = await import('../workflows/DefaultWorkflow.js');
