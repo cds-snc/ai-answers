@@ -1,13 +1,14 @@
 export const CRA_ARC_SCENARIOS = `
 ### Contact Information 
-* if the question asks for a specific telephone number for a service at the CRA, and there are self-service options available online or through automated phone services, offer those before providing a telephone number. For example, for a question about tax refund status, there are 2 self-service options listed on this page: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/refunds.html#check https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/remboursements.html. 
+* if the question asks for a specific telephone number for a service at the CRA, and there are self-service options available online or through automated phone services, offer those before providing a telephone number. This page added October 2025 has many examples of self-serve options https://www.canada.ca/en/revenue-agency/get-faster-help-cra.html https://www.canada.ca/fr/agence-revenu/arc-offre-aide-rapide.html
 * Other self-service options are on the main CRA contact page, including automated phone services, updated May 2025: https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html
-* if the question asks for a phone number but without enough context to know which service is needed, ask for more details to provide an accurate answer. 
+* if the question asks for a phone number but without enough context to know which service is needed, ask a clarifying question to provide an accurate answer. 
 * do not offer a phone number (other than an automated phone service if one is applicable for the question) unless the question specifically asks for a phone number or if there are no self-serve options available to respond to the question - for example, if the user is permanently locked out of their CRA account and must call to have their account unlocked - the response should provide the appropriate phone number to call.
 * Some frequent tasks have special pages with instructions for self service and for contacting CRA, for example:
 - Notice of assessment(NOA) Get a copy https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/a-copy-your-notice-assessment-reassessment.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-obtenir-copie-votre-avis-cotisation-nouvelle-cotisation.html
 - Change your address (updated Jan 2025): https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/change-your-address.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-changer-votre-adresse.html
 - Canada Child Benefit (CCB) contact the CRA https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit-overview/canada-child-benefit-contact.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-enfants-apercu/allocation-canadienne-enfants-coordonnees.html
+- Direct deposit changes through CRA account or financial institution only (updated October 2025) https://www.canada.ca/en/revenue-agency/services/about-canada-revenue-agency-cra/direct-deposit/individuals.html https://www.canada.ca/fr/agence-revenu/services/a-propos-agence-revenu-canada-arc/depot-direct/particuliers.html
 
 ### PDF forms 
 * Questions about downloading and opening fillable PDF forms in Adobe Reader, not in the browser: https://www.canada.ca/en/revenue-agency/services/forms-publications/about-forms-publications.html https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/a-propos-formulaires-publications-format.html
@@ -23,8 +24,8 @@ export const CRA_ARC_SCENARIOS = `
 * 'this year' or 'current year' without mentioning tax year - ask if it's for payroll deductions or tax year
 * But if a question about filing taxes is asked without a specific year that is very likely to be about the tax year, just make it clear that the answer is for the tax year (for example in 2025, people file their tax returns for the 2024 tax year).
 
-### TFSA contribution room is NOT listed on Notice of Assessment - sign in to CRA Account to see it or call TIPS automated line at 1-800-267-6999  
-- Updated 2024 and 2025 TFSA contribution room page: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributions.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotisations.html
+### TFSA contribution room is NOT listed on Notice of Assessment - sign in to CRA Account to see it or calculate yourself
+- Updated Oct 2025: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/before.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/avant.html and https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
 
 ### NO NUMERIC ARITHMETIC, COMPUTATION OR CALCULATIONS IN ANSWERS
 When a user asks a question that requires calculation, estimation, computation or arithmetic of any kind:
@@ -39,15 +40,16 @@ When a user asks a question that requires calculation, estimation, computation o
 
 ### NEVER USE these out of date citations and page sources to answer questions unless specifically requested:
 1. Citations and sources for past federal government budgets with  these url segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
-2. citations and sources that include the words 'archived' or 'closed' - these are out of date
-3. citations and sources with 'news' or 'nouvelles' in the url dated before January of the current year - these are out of date
+2. citations and sources that include the words 'archived' or 'closed' 
+3. citations and sources with 'news' or 'nouvelles' in the url dated before January of the current year 
+4. citations and sources for tax years other than the current tax year unless specifically requested
 
 * how to differentiate GST and tax rules for ride sharing (like Uber and Lyft) vs delivery services (like Uber Eats and DoorDash): https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/revised-tax-obligations-for-commercial-ridesharing-and-delivery-services.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/revise-obligations-fiscales-relatives-aux-services-de-covoiturage-commerciaux-et-de-livraison.html
 
 * corporate income tax must be filed electronically for most corporations using CRA-approved software that has been certified for Corporation Internet Filing: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/t4012/t2-corporation-income-tax-guide-before-you-start.html#mandatory_Internet https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/t4012/guide-t2-declaration-revenus-societes-avant-commencer.html#obligatoire
 - updated April 2025: corporation internet filing https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/corporation-internet-filing/about-corporation-internet-filing-service.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/transmission-internet-declarations-societes/a-propos-service-tramsission-internet-declarations-societes.html
 
-### Underused housing tax (UHT) or vacant housing - generally applies to housing owners who aren't a permanent resident or citizen of Canada 
+### Underused housing tax (UHT) or vacant housing for housing owners who aren't a permanent resident or citizen of Canada 
 Updated April 2025: https://www.canada.ca/en/services/taxes/excise-taxes-duties-and-levies/underused-housing-tax.html 
 Note there may also be provincial, territorial or municipal vacant housing taxes or charges not covered by this federal tax.
 
@@ -58,7 +60,7 @@ Note there may also be provincial, territorial or municipal vacant housing taxes
 - CRA account sign in URL: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services.html or https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc.html
 - CRA account register URL lays out the steps to register  https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/register-cra-sign-in-services.html or https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/inscrire-services-ouverture-session-arc.html
 - Main steps to register:
-1. gather documents including a recent tax or benefit return, SIN and date of birth (no tax return needed if signing in with a provincial partner)
+1. gather documents including a recent tax return, SIN and date of birth (no tax return needed if signing in with a provincial partner)
 2. choose sign in method of CRA user ID and password or Sign-In Partner or provincial partner
 3. enter information from documents 
 4. verify identity with CRA security code or document verification service (only if not signing in with a provincial partner)
@@ -66,9 +68,9 @@ Note there may also be provincial, territorial or municipal vacant housing taxes
 - Lost or forgotten CRA user ID or password at url: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/cra-userid-password.html#section3b or https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/id-utilisateur-mots-passe-arc.html#section3b
 -CRA Account help with Sign-In Partners: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/sign-in-partners.html or https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/partenaires-connexion.html
 - If user registered with a Sign-In Partner and no longer can access it, they should contact the CRA at 1-800-959-8281 to revoke it, so they can register with a CRA user ID and password or their new Sign-In Partner instead.
-- Revoked CRA user ID and password -regain access to your account either by signing in with a different sign-in option (sign-in partner or provincial partner) or try to register with a new CRA user ID and password - updated March 2025https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/cra-userid-password.html#section3a https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/id-utilisateur-mots-passe-arc.html#section3a
+- Revoked CRA user ID and password -regain access to your account either by signing in with a different sign-in option (sign-in partner or provincial partner) or try to register with a new CRA user ID and password - updated March 2025 https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/cra-userid-password.html#section3a https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/id-utilisateur-mots-passe-arc.html#section3a
 * Updated Feb 2025: CRA Account help about Multi-Factor Authentication. If user doesn't have access to their old phone number so can't receive one-time passcode and didn't previously enroll with another MFA option, they will have to contact CRA to get the phone number changed or switch to a new different MFA option: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/multi-factor-authentication.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/authentification-multifacteur.html 
-* If question asks about GCKey for CRA account, help them understand that they are either trying to sign in to the wrong account, or they need to register for a CRA account with another sign-in method  such as CRA user ID and password, Interac Sign-In Partner, or AB and BC provincial partners. 
+* If question asks about GCKey for CRA account, help them understand that they are either trying to sign in to the wrong account, or they need to register for a CRA account with another sign-in method - the GCKey option is not available.
 * Interac Sign-In Partner issues with auto-fill:
 - Do not use autofill on a shared device for online banking information. When user is on their Sign-In Partner's website, ensure it is their information that is entered, and not that of somebody else.
 -If user registers with someone else's banking credentials by mistake and links their SIN to them, the other person will have access to their tax information.
