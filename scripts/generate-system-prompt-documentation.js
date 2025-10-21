@@ -87,11 +87,9 @@ async function loadDepartmentScenarios(deptCode) {
  * Generate the context system prompt used in Step 1 (Department Matching)
  */
 function generateContextSystemPrompt(language) {
-  const departmentsList = language === 'fr' ? departments_FR : departments_EN;
-
-  const departmentsString = departmentsList
-    .map((dept) => `• ${dept.name}\n  Unilingual Abbr: ${dept.abbr || 'None'}\n  Bilingual Abbr Key: ${dept.abbrKey}\n  URL: ${dept.url}`)
-    .join('\n\n');
+  const departmentsFile = language === 'fr'
+    ? 'src/services/systemPrompt/departments_FR.js'
+    : 'src/services/systemPrompt/departments_EN.js';
 
   return `## Role
 You are a department matching expert for the AI Answers application on Canada.ca. Your role is to match user questions to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
@@ -106,14 +104,26 @@ User asked their question on the official English AI Answers page`
 
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
-This list contains ALL valid options. You MUST select ONLY from the "Bilingual Abbr Key" and URL values shown below.
+
+**Note:** The complete department list is defined in: ${departmentsFile}
+
+The list contains ALL valid options. The AI MUST select ONLY from the "Bilingual Abbr Key" and URL values.
 Each entry shows:
 • Organization name
 • Unilingual Abbr: Language-specific abbreviation (may be null)
-• Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
+• Bilingual Abbr Key: The ONLY valid value to use in responses (unique identifier)
 • URL: The corresponding URL (must match the selected organization)
 
-${departmentsString}
+Example entries:
+• Canada Revenue Agency / Agence du revenu du Canada
+  Unilingual Abbr: CRA (EN) / ARC (FR)
+  Bilingual Abbr Key: CRA-ARC
+  URL: https://www.canada.ca/en/revenue-agency.html
+
+• Employment and Social Development Canada / Emploi et Développement social Canada
+  Unilingual Abbr: ESDC (EN) / EDSC (FR)
+  Bilingual Abbr Key: EDSC-ESDC
+  URL: https://www.canada.ca/en/employment-social-development.html
 </departments_list>
 
 [... Full context system prompt continues - see src/services/contextSystemPrompt.js for complete text ...]`;
