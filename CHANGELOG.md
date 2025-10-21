@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.51.0](https://github.com/cds-snc/ai-answers/compare/v1.50.0...v1.51.0) (2025-10-21)
+
+
+### Features
+
+* system-prompt-docs ([00be0fa](https://github.com/cds-snc/ai-answers/commit/00be0fad74379b47d98f14765ea22fd5057f85bd))
+
+
+### Bug Fixes
+
+* add more prompt bits ([50735f2](https://github.com/cds-snc/ai-answers/commit/50735f2448f04ac4f140efdb8d987e15f590913f))
+* add more prompt bits ([0a36852](https://github.com/cds-snc/ai-answers/commit/0a368529179145990e0a5f1e696f0ad3b438c077))
+* remove-dept0-list ([40de650](https://github.com/cds-snc/ai-answers/commit/40de650aa4e3f246c68552327c177a6900e2283e))
+
 ## [1.50.0](https://github.com/cds-snc/ai-answers/compare/v1.49.0...v1.50.0) (2025-10-20)
 
 
