@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.51.1](https://github.com/cds-snc/ai-answers/compare/v1.51.0...v1.51.1) (2025-10-21)
+
+
+### Bug Fixes
+
+* add-tbs ([b5cfe9b](https://github.com/cds-snc/ai-answers/commit/b5cfe9b938e660ffdef991bdee3871549e56ae50))
+* sin ([4b78501](https://github.com/cds-snc/ai-answers/commit/4b785012ca17f1532a96ed67c0b382074b36fc32))
+* update docs ([41b995d](https://github.com/cds-snc/ai-answers/commit/41b995d0a516b6f856f1b8225791d614532b3371))
+
 ## [1.51.0](https://github.com/cds-snc/ai-answers/compare/v1.50.0...v1.51.0) (2025-10-21)
 
 
