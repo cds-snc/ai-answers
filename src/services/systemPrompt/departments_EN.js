@@ -1130,7 +1130,7 @@ export const departments_EN = [
     "name": "Registry of the Specific Claims Tribunal of Canada",
     "url": "https://www.sct-trp.ca/",
     "abbr": "SCT",
-    "abbrKey": "TBS-SCT"
+    "abbrKey": "SCT-TRP"
   },
   {
     "name": "Royal Canadian Air Force",

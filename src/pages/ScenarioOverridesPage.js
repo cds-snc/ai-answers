@@ -10,7 +10,7 @@ import { usePageContext } from '../hooks/usePageParam.js';
 // eslint-disable-next-line import/no-unresolved
 import { diffLines } from 'diff';
 
-const SUPPORTED_DEPARTMENTS = ['CRA-ARC', 'EDSC-ESDC', 'HC-SC', 'IRCC', 'PSPC-SPAC', 'SAC-ISC'];
+const SUPPORTED_DEPARTMENTS = ['CRA-ARC', 'EDSC-ESDC', 'HC-SC', 'IRCC', 'PSPC-SPAC', 'SAC-ISC', 'TBS-SCT'];
 
 // Render a simple column for diffs using the `diff` package's diffLines
 const renderDiffColumn = (oldText, newText, side = 'left') => {

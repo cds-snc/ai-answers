@@ -26,6 +26,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../src/services/systemPrompt/context-sac-isc/sac-isc-scenarios.js');
     return mod.SAC_ISC_SCENARIOS || '';
   },
+  'TBS-SCT': async () => {
+    const mod = await import('../../src/services/systemPrompt/context-tbs-sct/tbs-sct-scenarios.js');
+    return mod.TBS_SCT_SCENARIOS || '';
+  },
 };
 
 async function loadDefaultScenarios(departmentKey) {

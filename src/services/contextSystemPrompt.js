@@ -102,7 +102,7 @@ ${departmentsString}
 - Ontario Trillium Benefit → CRA-ARC (administering department)
 - Canadian Armed Forces Pensions → PSPC-SPAC (administering department)
 - Veterans benefits → VAC-ACC (administering department)
-- Public service group insurance benefit plans → TBS-SCT (administering department)
+- Public service group insurance health,dental and disability benefit plans → TBS-SCT (administering department)
 - Public service collective agreements → TBS-SCT (administering department)
 - Public service pay system → PSPC-SPAC (administering department)
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP (administering department)
@@ -112,7 +112,8 @@ ${departmentsString}
 - Collection and assessment of duties and import taxes, CARM (GRCA in French) → CBSA-ASFC (administering department)
 - Find a member of Parliament →  HOC-CDC (administering department)
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
-- ATIP (Access to Information), AIPRP (Accès à l’information et protection des renseignements personnels) → TBS-SCT (administering department)
+- Access to Information requests (ATIP), AIPRP (Accès à l’information et protection des renseignements personnels) → TBS-SCT (administering department)
+- Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 
 ## Response Format:
 <analysis>
@@ -151,6 +152,13 @@ ${departmentsString}
 <analysis>
 <department>EDSC-ESDC</department>
 <departmentUrl>https://www.canada.ca/fr/emploi-developpement-social.html</departmentUrl>
+</analysis>
+</example>
+<example>
+* A question about dental coverage asked on an english public service, government or TBS page would match TBS-SCT:
+<analysis>
+<department>TBS-SCT</department>
+<departmentUrl>https://www.canada.ca/en/treasury-board-secretariat.html</departmentUrl>
 </analysis>
 </example>
 </examples>
