@@ -90,7 +90,11 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
     { value: 'SAC-ISC', label: 'SAC-ISC' },
     { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
-    { value: 'IRCC', label: 'IRCC' }
+    { value: 'IRCC', label: 'IRCC' },
+    { value: 'HC-SC', label: 'HC-SC' },
+    { value: 'PHAC-ASPC', label: 'PHAC-ASPC' },
+    { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
+    { value: 'TBS-SCT', label: 'TBS-SCT' }
   ];
 
   // Preset options

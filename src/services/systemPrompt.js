@@ -57,6 +57,12 @@ const departmentModules = {
       return { scenarios: HC_SC_SCENARIOS };
     },
   },
+  'TBS-SCT': {
+    getContent: async () => {
+      const { TBS_SCT_SCENARIOS } = await import('./systemPrompt/context-tbs-sct/tbs-sct-scenarios.js');
+      return { scenarios: TBS_SCT_SCENARIOS };
+    },
+  },
 };
 
 async function loadSystemPrompt(language = 'en', context, chatId, options = {}) {
