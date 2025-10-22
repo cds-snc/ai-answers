@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.3](https://github.com/cds-snc/ai-answers/compare/v1.51.2...v1.51.3) (2025-10-22)
+
+
+### Bug Fixes
+
+* admin and AA ([be7ecc8](https://github.com/cds-snc/ai-answers/commit/be7ecc861983a912a96da078915aa4fe9f2b0620))
+
 ## [1.51.2](https://github.com/cds-snc/ai-answers/compare/v1.51.1...v1.51.2) (2025-10-22)
 
 
