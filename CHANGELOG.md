@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.51.2](https://github.com/cds-snc/ai-answers/compare/v1.51.1...v1.51.2) (2025-10-22)
+
+
+### Bug Fixes
+
+* add google searches ([3c5a7c9](https://github.com/cds-snc/ai-answers/commit/3c5a7c9f8b6278fa8c031dba3a096e435d66a06b))
+* prompt and doc ([5043128](https://github.com/cds-snc/ai-answers/commit/504312898dc3577f5aa4ef2dfcd1ab2a44bfca1f))
+* prompt script ([fc7a71d](https://github.com/cds-snc/ai-answers/commit/fc7a71dda9a8d2ef567fb25b76e524c1bdb0abfa))
+
 ## [1.51.1](https://github.com/cds-snc/ai-answers/compare/v1.51.0...v1.51.1) (2025-10-21)
 
 
