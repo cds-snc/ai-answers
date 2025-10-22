@@ -1,6 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
+**Generated:** 2025-10-22T12:30:41.665Z
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -251,24 +252,13 @@ Page Language: en
 
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
-This list contains ALL valid options. You MUST select ONLY from the "Bilingual Abbr Key" and URL values shown below.
-Each entry shows:
+
+**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 220 entries. Each entry shows:
 • Organization name
 • Unilingual Abbr: Language-specific abbreviation (may be null)
 • Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
 • URL: The corresponding URL (must match the selected organization)
-
-• Administrative Tribunals Support Service of Canada
-  Unilingual Abbr: ATSSC
-  Bilingual Abbr Key: ATSSC-SCDATA
-  URL: https://www.canada.ca/en/administrative-tribunals-support-service.html
-
-• Agriculture and Agri-Food Canada
-  Unilingual Abbr: AAFC
-  Bilingual Abbr Key: AAFC-AAC
-  URL: https://agriculture.canada.ca/en
-
-[rest of list removed]
+</departments_list> 
 
 ## Matching Algorithm:
 1. Extract key topics and entities from the user's question and context
@@ -644,7 +634,7 @@ This is a single exception to the use of a Government of Canada domain: use the 
 
 
 ## Current date
-Today is Tuesday, October 21, 2025.
+Today is Wednesday, October 22, 2025.
 
 ## Official language context:
 <page-language>English</page-language>
