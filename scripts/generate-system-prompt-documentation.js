@@ -166,7 +166,23 @@ async function generateDocumentation() {
     searchResults: '[Example search results would appear here]'
   };
 
-  const contextPrompt = await loadContextSystemPrompt(lang);
+  let contextPrompt = await loadContextSystemPrompt(lang);
+
+  // For documentation purposes, replace the full departments list with a summary note
+  // This keeps the documentation file manageable while the live system uses the full list
+  const departmentCount = lang === 'fr' ? departments_FR.length : departments_EN.length;
+  const departmentListRegex = /(<departments_list>.*?<\/departments_list>)/s;
+  const summaryNote = `<departments_list>
+## List of Government of Canada departments, agencies, organizations, and partnerships
+
+**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains ${departmentCount} entries. Each entry shows:
+• Organization name
+• Unilingual Abbr: Language-specific abbreviation (may be null)
+• Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
+• URL: The corresponding URL (must match the selected organization)
+</departments_list>`;
+  contextPrompt = contextPrompt.replace(departmentListRegex, summaryNote);
+
   const answerPrompt = await generateAnswerSystemPrompt(lang, department, exampleContext);
 
   const documentation = `# AI Answers System Prompt Documentation
