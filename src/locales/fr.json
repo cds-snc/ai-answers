@@ -167,6 +167,9 @@
         "confidence": "Niveau de confiance :",
         "ai": "IA :",
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
+      },
+      "review": {
+        "referringUrl": "URL de provenance :"
       }
     },
     "expertRating": {
