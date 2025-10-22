@@ -16,7 +16,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const [metrics, setMetrics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentFilters, setCurrentFilters] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -49,10 +48,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     setLoading(false);
   };
 
-  const handleGetMetrics = () => {
-    setShowFilterPanel(true);
-  };
-
   const handleApplyFilters = (filters) => {
     setCurrentFilters(filters);
     fetchMetrics(filters);
@@ -75,29 +70,13 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           Loading metrics: {totalCount} total records
         </div>
       )}
-      {!hasLoadedData && (
-        <div className="bg-white shadow rounded-lg p-4">
-          <p className="mb-4 text-gray-600">
-            {t('metrics.timeRangeTitle')}
-          </p>
-          <GcdsButton
-            onClick={handleGetMetrics}
-            disabled={loading}
-            className="me-400 hydrated"
-          >
-            {loading ? t('admin.chatLogs.loading') : 'Get Metrics'}
-          </GcdsButton>
-        </div>
-      )}
 
-      {showFilterPanel && (
-        <FilterPanel
-          onApplyFilters={handleApplyFilters}
-          onClearFilters={handleClearFilters}
-          isVisible={true}
-          filters={currentFilters}
-        />
-      )}
+      <FilterPanel
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        isVisible={true}
+        filters={currentFilters}
+      />
 
       {hasLoadedData && (
         <GcdsContainer size="xl" className="bg-white shadow rounded-lg mb-600">

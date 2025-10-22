@@ -160,6 +160,9 @@
         "confidence": "Confidence:",
         "ai": "AI:",
         "fallbackText": "Unable to find a citation - use canada.ca search"
+      },
+      "review": {
+        "referringUrl": "Referring URL:"
       }
     },
     "expertRating": {

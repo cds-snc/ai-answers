@@ -404,22 +404,47 @@ const ChatInterface = ({
                   message.sender === "ai" &&
                   !message.error &&
                   message.interaction && (
-                    <div
-                      className="inline-review-panels"
-                      style={{ marginTop: "0.25rem" }}
-                    >
-                      <ExpertFeedbackPanel
-                        message={message}
-                        extractSentences={extractSentences}
-                        t={t}
-                      />
-                      <PublicFeedbackPanel
-                        message={message}
-                        extractSentences={extractSentences}
-                        t={t}
-                      />
-                      <EvalPanel message={message} t={t} />
-                    </div>
+                    <>
+                      {/* Show referring URL only for the first AI message with review panels */}
+                      {messages.findIndex(m => m.sender === "ai" && !m.error && m.interaction) === messages.findIndex(m => m.id === message.id) && referringUrl && (
+                        <div
+                          style={{
+                            padding: "0.75rem",
+                            marginTop: "0.5rem",
+                            marginBottom: "0.5rem",
+                            backgroundColor: "#f5f5f5",
+                            borderLeft: "4px solid #26374a",
+                            fontSize: "0.9rem"
+                          }}
+                        >
+                          <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
+                          <a
+                            href={referringUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ wordBreak: "break-all" }}
+                          >
+                            {referringUrl}
+                          </a>
+                        </div>
+                      )}
+                      <div
+                        className="inline-review-panels"
+                        style={{ marginTop: "0.25rem" }}
+                      >
+                        <ExpertFeedbackPanel
+                          message={message}
+                          extractSentences={extractSentences}
+                          t={t}
+                        />
+                        <PublicFeedbackPanel
+                          message={message}
+                          extractSentences={extractSentences}
+                          t={t}
+                        />
+                        <EvalPanel message={message} t={t} />
+                      </div>
+                    </>
                   )}
 
                 {/* Only show feedback for the last message if not in review mode */}
