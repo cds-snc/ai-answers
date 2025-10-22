@@ -51,6 +51,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   const [presetValue, setPresetValue] = useState('1');
   const [department, setDepartment] = useState('');
   const [referringUrl, setReferringUrl] = useState('');
+  const [userType, setUserType] = useState('all');
 
   // Load saved state from localStorage (if available).
   // Run on next tick so it overrides initial default/preset effects.
@@ -71,6 +72,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
           if (parsed.presetValue) setPresetValue(parsed.presetValue);
           if (typeof parsed.department === 'string') setDepartment(parsed.department);
           if (typeof parsed.referringUrl === 'string') setReferringUrl(parsed.referringUrl);
+          if (typeof parsed.userType === 'string') setUserType(parsed.userType);
         } catch (e) {
           // ignore
         }
@@ -95,6 +97,13 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     { value: 'PHAC-ASPC', label: 'PHAC-ASPC' },
     { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
     { value: 'TBS-SCT', label: 'TBS-SCT' }
+  ];
+
+  // User type options
+  const userTypeOptions = [
+    { value: 'all', label: t('admin.filters.allUsers') || 'All' },
+    { value: 'public', label: t('admin.filters.publicUsers') || 'Public' },
+    { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin' }
   ];
 
   // Preset options
@@ -159,6 +168,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     let filters = {
       department,
       referringUrl,
+      userType,
       filterType
     };
     if (filterType === 'preset') {
@@ -191,7 +201,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
           filterType,
           presetValue,
           department,
-          referringUrl
+          referringUrl,
+          userType
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       }
@@ -208,6 +219,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     setPresetValue('1');
     setDepartment('');
     setReferringUrl('');
+    setUserType('all');
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -475,6 +487,26 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
                   placeholder={t('admin.filters.referringUrlPlaceholder')}
                   className="filter-input"
                 />
+              </div>
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="user-type" className="filter-label">
+                {t('admin.filters.users')}
+              </label>
+              <div className="filter-field">
+                <select
+                  id="user-type"
+                  value={userType}
+                  onChange={(e) => setUserType(e.target.value)}
+                  className="filter-select"
+                >
+                  {userTypeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

@@ -50,11 +50,12 @@ const AdminPage = ({ lang = 'en' }) => {
               {t('admin.navigation.metrics', 'View performance metrics')}
             </GcdsLink>
           </li>
-          <li>
+          {/* Commented out - now using Users filter in Chat Dashboard instead */}
+          {/* <li>
             <GcdsLink href={`/${lang}/public-eval`}>
               {t('admin.navigation.publicEval', 'Public Evaluation')}
             </GcdsLink>
-          </li>
+          </li> */}
           <li>
             <GcdsLink href={`/${lang}/scenario-overrides`}>
               {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}

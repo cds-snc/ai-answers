@@ -19,7 +19,7 @@ async function chatLogsHandler(req, res) {
     const {
       days, startDate, endDate,
       filterType, presetValue,
-      department, referringUrl,
+      department, referringUrl, userType,
        limit = 100, lastId, batchId,
     } = req.query;
 
@@ -32,6 +32,14 @@ async function chatLogsHandler(req, res) {
     if (lastId && lastId !== 'null' && lastId !== null) {
       dateFilter._id = { $gt: lastId };
     }
+
+    // Add userType filter
+    if (userType === 'public') {
+      dateFilter.user = { $exists: false };
+    } else if (userType === 'admin') {
+      dateFilter.user = { $exists: true };
+    }
+    // If userType is 'all' or undefined, no filter is applied
    
     const totalCount = await Chat.countDocuments(dateFilter);
 

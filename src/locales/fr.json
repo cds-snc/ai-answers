@@ -367,6 +367,10 @@
       "referringUrlPlaceholder": "Entrez l'URL de référence...",
       "department": "Département",
       "allDepartments": "Tous les départements",
+      "users": "Utilisateurs",
+      "allUsers": "Tous",
+      "publicUsers": "Public",
+      "adminUsers": "Administrateur",
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif"
     },
