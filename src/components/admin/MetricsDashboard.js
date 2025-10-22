@@ -124,6 +124,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                         frPercentage: metrics.totalConversations ? Math.round((metrics.totalConversationsFr / metrics.totalConversations) * 100) + '%' : '0%'
                       },
                       {
+                        metric: 'Google searches',
+                        count: metrics.totalGoogleSearches,
+                        percentage: metrics.totalConversations ? Math.round((metrics.totalGoogleSearches / metrics.totalConversations) * 100) + '%' : '0%',
+                        enCount: '-',
+                        enPercentage: '-',
+                        frCount: '-',
+                        frPercentage: '-'
+                      },
+                      {
                         metric: t('metrics.dashboard.inputTokens'),
                         count: metrics.totalInputTokens,
                         percentage: '100%',
