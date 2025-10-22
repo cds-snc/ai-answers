@@ -30,6 +30,7 @@ class MetricsService {
       totalConversations: 0,
       totalConversationsEn: 0,
       totalConversationsFr: 0,
+      totalGoogleSearches: 0,
       totalInputTokens: 0,
       totalInputTokensEn: 0,
       totalInputTokensFr: 0,
@@ -91,6 +92,11 @@ class MetricsService {
         uniqueChatIds.add(chat.chatId);
         if (chat.pageLanguage === 'en') uniqueChatIdsEn.add(chat.chatId);
         if (chat.pageLanguage === 'fr') uniqueChatIdsFr.add(chat.chatId);
+      }
+
+      // Count Google searches
+      if (chat.searchProvider === 'google') {
+        metrics.totalGoogleSearches++;
       }
 
       // Count questions for this session
