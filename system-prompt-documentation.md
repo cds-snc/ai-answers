@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2025-10-22T12:30:41.665Z
+**Generated:** 2025-10-23T18:52:35.146Z
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -13,21 +13,25 @@ This document provides a complete view of the system prompts used in the AI Answ
 
 ### Pipeline Steps
 
-1. **Short Query Validation** - Client-side check (no AI call)
-2. **PII Detection & Redaction** - AI-powered detection of personal information
-3. **Translation** - Language detection and translation
-4. **Search Query Generation** - Query rewriting for search
-5. **Context Derivation** - Department matching
-6. **Answer Generation** - Main answer with citation
+1. **Short Query Validation** - Client-side validation (no AI)
+2. **Stage 1: Pattern-Based Redaction** - Rule-based filtering for profanity, threats, manipulation, and common PI patterns (no AI)
+3. **Stage 2: AI PII Agent** - AI-powered detection of personal information that slipped through Stage 1
+4. **Translation AI Agent** - AI-powered language detection and translation
+5. **Search Query Generation AI Agent** - AI-powered query rewriting for search
+6. **Context Derivation AI Agent** - AI-powered department matching and search context
+7. **Answer Generation AI Agent** - AI-powered answer generation with citation
+8. **Citation Verification** - URL validation and accessibility checking
+9. **Display to User** - Final response rendering
 
 ---
 
-## Step 1: PII Detection & Redaction System Prompt
+## Step 3: AI PII Agent System Prompt
 
-**Purpose:** This prompt is used to detect and redact personal information (PI) from user questions to protect privacy.
+**Purpose:** This prompt is used to detect and redact personal information (PI) that slipped through Stage 1 pattern-based filtering. This is the second layer of privacy protection.
 
 **Service:** PIIAgentService / ChatWorkflowService.processRedaction()
 **File:** agents/prompts/piiAgentPrompt.js
+**Note:** Step 1 (Short Query Validation) and Step 2 (Pattern-Based Redaction) do not use AI and are not detailed here.
 
 ### PII Detection Prompt:
 
@@ -90,9 +94,9 @@ DETECT AND REDACT PI
 
 ---
 
-## Step 2: Translation System Prompt
+## Step 4: Translation AI Agent System Prompt
 
-**Purpose:** This prompt detects the original language and translates the user's question to English if needed.
+**Purpose:** This AI agent detects the original language and translates the user's question to English if needed.
 
 **Service:** chat-translate API
 **File:** agents/prompts/translationPrompt.js
@@ -164,9 +168,9 @@ Rules:
 
 ---
 
-## Step 3: Search Query Generation System Prompt
+## Step 5: Search Query Generation AI Agent System Prompt
 
-**Purpose:** This prompt crafts an effective search query based on the translated question.
+**Purpose:** This AI agent crafts an effective search query based on the translated question.
 
 **Service:** search-context API
 **File:** agents/prompts/queryRewriteAgentPrompt.js
@@ -223,11 +227,12 @@ Rules:
 
 ---
 
-## Step 4: Context System Prompt (Department Matching)
+## Step 6: Context Derivation AI Agent System Prompt
 
-**Purpose:** This prompt is used by the Context Service to:
+**Purpose:** This AI agent is used by the Context Service to:
 - Match the user's question to a Government of Canada department
 - Identify relevant topics and URLs
+- Execute search and gather relevant content
 - Provide search context for answer generation
 
 **Service:** ContextService.deriveContext()
@@ -369,11 +374,36 @@ Page Language: en
 
 ---
 
-## Step 5: Answer Generation System Prompt
+## Step 6.5: Department-Specific Scenarios (Optional Enhancement)
 
-**Purpose:** This prompt is used by the Answer Service to:
+**Purpose:** If the department identified in Step 6 has a partner scenario file, those department-specific instructions are added to the Answer Generation prompt.
+
+**How It Works:**
+- After the Context Derivation AI Agent identifies the department (e.g., "EDSC-ESDC", "CRA-ARC"), the system checks if that department has a custom scenario file
+- If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
+- If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
+
+**Partner Departments with Custom Scenario Files (as of October 2025):**
+- `context-cra-arc/` - Canada Revenue Agency (CRA-ARC)
+- `context-edsc-esdc/` - Employment and Social Development Canada (EDSC-ESDC)
+- `context-hc-sc/` - Health Canada (HC-SC) and Public Health Agency (PHAC-ASPC)
+- `context-ircc/` - Immigration, Refugees and Citizenship Canada (IRCC)
+- `context-pspc-spac/` - Public Services and Procurement Canada (PSPC-SPAC)
+- `context-sac-isc/` - Indigenous Services Canada (SAC-ISC) and Crown-Indigenous Relations (RCAANC-CIRNAC)
+- `context-tbs-sct/` - Treasury Board Secretariat (TBS-SCT)
+
+**Note:** This is a growing list as new departments become partners and their scenario files are added to the system. The example below uses **EDSC-ESDC** as the department, so you'll see the EDSC-ESDC-specific scenarios included in the prompt. If a different department had been matched (or no scenario file existed for that department), that section would be different or omitted entirely.
+
+**Files:** `src/services/systemPrompt/context-{department}/`
+
+---
+
+## Step 7: Answer Generation AI Agent System Prompt
+
+**Purpose:** This AI agent is used by the Answer Service to:
 - Generate a brief, accurate answer to the user's question
 - Perform preliminary checks (department, jurisdiction, etc.)
+- Use specialized tools (download web pages, validate URLs, generate context)
 - Select appropriate citations
 - Format the response with proper tags
 
@@ -568,6 +598,7 @@ This is a single exception to the use of a Government of Canada domain: use the 
    
 
 ## Department-Specific Scenarios and updates:
+**[EXAMPLE: EDSC-ESDC scenarios included below - see Step 6.5 for explanation]**
 
 ### Contact Information for ESDC programs
 * if the question asks for a specific telephone number for an ESDC program, or the answer suggests that the person contact Service Canada to resolve the issue, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it). 
@@ -632,9 +663,11 @@ This is a single exception to the use of a Government of Canada domain: use the 
     <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url> 
 </example>
 
+**[END OF EDSC-ESDC-SPECIFIC SCENARIOS]**
+
 
 ## Current date
-Today is Wednesday, October 22, 2025.
+Today is Thursday, October 23, 2025.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -935,12 +968,14 @@ Common scenarios applicable to all departments including:
 - Date-sensitive information
 - Sign-in help
 
-### 3. Department-Specific Scenarios
-Additional instructions specific to EDSC-ESDC, including:
+### 3. Department-Specific Scenarios (If Available)
+Additional instructions specific to the matched department (in this example: EDSC-ESDC):
 - Department-specific policies and processes
 - Common questions and their answers
 - Important URLs and resources
 - Special handling instructions
+
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Currently available for: CRA-ARC, EDSC-ESDC, HC-SC, IRCC, PSPC-SPAC, SAC-ISC, and TBS-SCT. Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:
@@ -963,7 +998,10 @@ Detailed rules for:
 
 ## Important Notes for Legal Review
 
-1. **No Personal Information Processing**: The system includes redaction steps (not shown here) that prevent personal information from reaching the AI service.
+1. **Two-Stage Personal Information Protection**:
+   - **Stage 1 (Pattern-Based)**: RedactionService blocks profanity, threats, manipulation attempts, and common PI patterns (phone numbers, emails, addresses, SIN numbers) before any AI processing
+   - **Stage 2 (AI-Powered)**: AI PII Agent detects and redacts personal information that slipped through Stage 1, especially names and personal identifiers
+   - Users are notified when PI is detected and asked to rephrase
 
 2. **No Calculations**: The prompts explicitly prohibit mathematical calculations to prevent inaccurate financial advice.
 
@@ -982,27 +1020,40 @@ Detailed rules for:
 ```
 User submits question
     ↓
-[Client] Short query validation
+[Step 1 - Client] Short query validation (no AI)
     ↓
-[Client] Redaction check (PII blocking)
+[Step 2 - Client] Pattern-Based Redaction (no AI)
+    ├─ Profanity filtering
+    ├─ Threat detection
+    ├─ Manipulation detection
+    └─ Common PI pattern blocking
     ↓
-[API] Translation (if needed)
+[Step 3 - API] AI PII Agent
+    └─ Detect and redact PI that slipped through
     ↓
-[API] Context Service - STEP 1 PROMPT
+[Step 4 - API] Translation AI Agent
+    └─ Language detection and translation
+    ↓
+[Step 5 - API] Search Query Generation AI Agent
+    └─ Craft optimized search query
+    ↓
+[Step 6 - API] Context Derivation AI Agent
     ├─ Department matching
     ├─ Search execution
     └─ Context assembly
     ↓
-[API] Answer Service - STEP 2 PROMPT
+[Step 7 - API] Answer Generation AI Agent
     ├─ Preliminary checks
     ├─ Information sufficiency
+    ├─ Download web pages (if needed)
     ├─ Answer generation
     ├─ Citation selection
     └─ Response formatting
     ↓
-[API] Citation verification
+[Step 8 - API] Citation verification
+    └─ URL validation and accessibility checking
     ↓
-[Client] Display to user
+[Step 9 - Client] Display to user
 ```
 
 ---
