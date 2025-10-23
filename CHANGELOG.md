@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.51.5](https://github.com/cds-snc/ai-answers/compare/v1.51.4...v1.51.5) (2025-10-23)
+
+
+### Bug Fixes
+
+* update to reflect CRA changes ([1db969f](https://github.com/cds-snc/ai-answers/commit/1db969fc68d2eee4f87a3054a8f6c28c50e5dfb4))
+* update to reflect CRA changes ([3e8041e](https://github.com/cds-snc/ai-answers/commit/3e8041e3e98ca99048edcbc625602e9418bc1ffa))
+
 ## [1.51.4](https://github.com/cds-snc/ai-answers/compare/v1.51.3...v1.51.4) (2025-10-23)
 
 
