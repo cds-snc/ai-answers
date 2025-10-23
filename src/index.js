@@ -14,6 +14,14 @@ import { initFingerprint } from './utils/fingerprint.js';
 // Add the icon packs to the library
 library.add(fas, far);
 
+// Load Adobe Analytics script dynamically based on environment
+if (process.env.REACT_APP_ADOBE_ANALYTICS_URL) {
+  const script = document.createElement('script');
+  script.src = process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+  script.async = false;
+  document.head.appendChild(script);
+}
+
 const renderApp = () => {
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(
