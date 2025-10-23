@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.51.4](https://github.com/cds-snc/ai-answers/compare/v1.51.3...v1.51.4) (2025-10-23)
+
+
+### Bug Fixes
+
+* fallback to creator email removed ([07b59ed](https://github.com/cds-snc/ai-answers/commit/07b59ed23ebaa84e741d35dcbb874b9164d4ab3e))
+* remove publicEval replace with filter ([e14a3fa](https://github.com/cds-snc/ai-answers/commit/e14a3fa82e721136ebb71dbff4642dc03e3d5ae3))
+
 ## [1.51.3](https://github.com/cds-snc/ai-answers/compare/v1.51.2...v1.51.3) (2025-10-22)
 
 
