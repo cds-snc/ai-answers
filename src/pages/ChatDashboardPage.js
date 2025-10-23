@@ -185,32 +185,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.expertEmail', 'Expert email'),
       data: 'expertEmail',
-      // Render email robustly: accept expertEmail but fall back to other
-      // common locations so the dashboard shows an email if present.
-      // DataTables' render signature: function(data, type, row, meta)
-      render: (value, _type, row) => {
-        try {
-          const email = value || (row && (row.email || row.userEmail || (row.user && row.user.email) || (row.expert && row.expert.email))) || '';
-          return escapeHtmlAttribute(email || '');
-        } catch (e) {
-          return '';
-        }
+      render: (value) => {
+        // Only show expert email (from expertFeedback), no fallback to creatorEmail
+        return escapeHtmlAttribute(value || '');
       }
     },
     {
       title: t('admin.chatDashboard.columns.creatorEmail', 'Creator email'),
       data: 'creatorEmail',
-      render: (value, _type, row) => {
-        try {
-          const expert = value || (row && (row.creatorEmail || row.userEmail || (row.user && row.user.email))) || '';
-          // Show both: creator (from chat) and expert if present
-          const creatorEmail = escapeHtmlAttribute(expert || '');
-          const expertEmail = escapeHtmlAttribute(row && (row.expertEmail || '') || '');
-          if (creatorEmail && expertEmail) return `${creatorEmail} / ${expertEmail}`;
-          return creatorEmail || expertEmail || '';
-        } catch (e) {
-          return '';
-        }
+      render: (value) => {
+        // Only show creator email (chat.user), no fallback to expertEmail
+        return escapeHtmlAttribute(value || '');
       }
     },
     {
