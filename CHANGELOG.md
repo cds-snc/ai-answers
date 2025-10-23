@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.51.6](https://github.com/cds-snc/ai-answers/compare/v1.51.5...v1.51.6) (2025-10-23)
+
+
+### Bug Fixes
+
+* update script and doc ([afc93d9](https://github.com/cds-snc/ai-answers/commit/afc93d9b094381bc595c6317fba201b4a1a996b5))
+* update script and doc ([ef46af4](https://github.com/cds-snc/ai-answers/commit/ef46af4682f940415249c108af9e08bbdc90c044))
+
 ## [1.51.5](https://github.com/cds-snc/ai-answers/compare/v1.51.4...v1.51.5) (2025-10-23)
 
 
