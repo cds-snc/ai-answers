@@ -20,7 +20,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [] }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -73,7 +73,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // public default unintentionally.
   const initialWorkflowFromLocalStorage = useRef(false);
   const userSetWorkflow = useRef(false);
-  const [referringUrl, setReferringUrl] = useState(pageUrl || '');
+  const [referringUrl, setReferringUrl] = useState(initialReferringUrl || pageUrl || '');
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);

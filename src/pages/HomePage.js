@@ -62,6 +62,7 @@ const HomePage = ({ lang = "en" }) => {
   });
   const [chatId, setChatId] = useState(reviewChatId || null);
   const [initialMessages, setInitialMessages] = useState([]);
+  const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
   // Removed unused isLoadingSiteStatus state
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
@@ -114,7 +115,12 @@ const HomePage = ({ lang = "en" }) => {
           const chat = data.chat;
           if (!chat || !Array.isArray(chat.interactions)) {
             setInitialMessages([]);
+            setReviewReferringUrl(null);
             return;
+          }
+          // Extract referring URL from chat data
+          if (chat.referringUrl) {
+            setReviewReferringUrl(chat.referringUrl);
           }
           const msgs = [];
           chat.interactions.forEach((inter) => {
@@ -138,6 +144,7 @@ const HomePage = ({ lang = "en" }) => {
         })
         .catch((err) => {
           setInitialMessages([]);
+          setReviewReferringUrl(null);
           console.error("Failed to load chat", err);
         });
     }
@@ -201,6 +208,7 @@ const HomePage = ({ lang = "en" }) => {
           chatId={chatId}
           readOnly={reviewMode}
           initialMessages={initialMessages}
+          initialReferringUrl={reviewReferringUrl}
         />
       </div>
       {!reviewMode && (

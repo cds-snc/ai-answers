@@ -322,6 +322,10 @@
       "referringUrlPlaceholder": "Enter referring URL...",
       "department": "Department",
       "allDepartments": "All departments",
+      "users": "Users",
+      "allUsers": "All",
+      "publicUsers": "Public",
+      "adminUsers": "Admin",
       "activeFilters": "Active filters",
       "noActiveFilters": "No active filters"
     },
