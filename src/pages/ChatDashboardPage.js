@@ -172,10 +172,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
       data: 'chatId',
-      render: (value) => {
+      render: (value, type, row) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
-        return `<a href="/${lang}?chat=${safeId}&review=1">${safeId}</a>`;
+        // Use the chat's original pageLanguage, fallback to 'en' if not available
+        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
+        return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
       }
     },
     {

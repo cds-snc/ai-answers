@@ -198,6 +198,9 @@ async function chatDashboardHandler(req, res) {
         },
         expertEmails: {
           $addToSet: '$interactions.expertEmail'
+        },
+        pageLanguages: {
+          $addToSet: '$interactions.context.pageLanguage'
         }
       }
     });
@@ -257,6 +260,31 @@ async function chatDashboardHandler(req, res) {
               ]
             }
           }
+        },
+        pageLanguage: {
+          $let: {
+            vars: {
+              filteredLangs: {
+                $filter: {
+                  input: '$pageLanguages',
+                  as: 'lang',
+                  cond: {
+                    $and: [
+                      { $ne: ['$$lang', null] },
+                      { $ne: ['$$lang', ''] }
+                    ]
+                  }
+                }
+              }
+            },
+            in: {
+              $cond: [
+                { $gt: [{ $size: '$$filteredLangs' }, 0] },
+                { $arrayElemAt: ['$$filteredLangs', 0] },
+                ''
+              ]
+            }
+          }
         }
       }
     });
@@ -304,7 +332,8 @@ async function chatDashboardHandler(req, res) {
       department: chat.department || '',
       expertEmail: chat.expertEmail || '',
       creatorEmail: chat.creatorEmail || '',
-      date: chat.createdAt ? chat.createdAt.toISOString() : null
+      date: chat.createdAt ? chat.createdAt.toISOString() : null,
+      pageLanguage: chat.pageLanguage || ''
     }));
 
     if (isDataTablesMode) {
