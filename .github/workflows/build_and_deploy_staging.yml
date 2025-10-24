@@ -44,6 +44,7 @@ jobs:
         working-directory: ./
         run: |
           docker build \
+          --build-arg REACT_APP_ADOBE_ANALYTICS_URL="//assets.adobedtm.com/be5dfd287373/0127575cd23a/launch-913b1beddf7a-staging.min.js" \
           -t $REGISTRY/ai-answers:$GITHUB_SHA-`date '+%Y-%m-%d'` \
           -t $REGISTRY/ai-answers:latest .
 

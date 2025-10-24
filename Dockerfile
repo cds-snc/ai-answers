@@ -12,6 +12,7 @@ RUN npm install --omit=dev
 COPY . .
 
 # Build the React app
+ARG REACT_APP_ADOBE_ANALYTICS_URL
 RUN npm run build
 
 # Use Node.js for the backend
