@@ -185,6 +185,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'department'
     },
     {
+      title: t('admin.chatDashboard.columns.pageLanguage', 'Page'),
+      data: 'pageLanguage',
+      render: (value) => {
+        if (!value) return '';
+        // Display just 'en' or 'fr' in uppercase for readability
+        const normalized = value.toLowerCase().includes('fr') ? 'FR' : 'EN';
+        return escapeHtmlAttribute(normalized);
+      }
+    },
+    {
       title: t('admin.chatDashboard.columns.expertEmail', 'Expert email'),
       data: 'expertEmail',
       render: (value) => {

@@ -394,6 +394,7 @@
       "columns": {
         "chatId": "Chat ID",
         "department": "Department",
+        "pageLanguage": "Page",
         "expertEmail": "Expert email",
         "creatorEmail": "Creator email",
         "language": "Language",
