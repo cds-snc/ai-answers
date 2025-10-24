@@ -46,6 +46,7 @@ async function chatDashboardHandler(req, res) {
     const {
       department = '',
       referringUrl = '',
+      userType = 'all',
       startDate,
       endDate,
       filterType,
@@ -160,6 +161,25 @@ async function chatDashboardHandler(req, res) {
   pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
 
     const andFilters = [];
+
+    // Filter by userType if specified
+    if (userType === 'public') {
+      // Public users: creatorEmail is null, empty, or doesn't exist
+      andFilters.push({
+        $or: [
+          { creatorEmail: { $exists: false } },
+          { creatorEmail: null },
+          { creatorEmail: '' }
+        ]
+      });
+    } else if (userType === 'admin') {
+      // Admin users: creatorEmail exists and is not empty
+      andFilters.push({
+        creatorEmail: { $exists: true, $ne: '', $ne: null }
+      });
+    }
+    // If userType === 'all' or undefined, no additional filtering
+
     if (department) {
       const escapedDepartment = escapeRegex(department);
       andFilters.push({
