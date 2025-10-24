@@ -14,6 +14,15 @@ import { initFingerprint } from './utils/fingerprint.js';
 // Add the icon packs to the library
 library.add(fas, far);
 
+// Load Adobe Analytics script synchronously BEFORE React renders
+// This ensures _satellite is available before any tracking calls
+if (process.env.REACT_APP_ADOBE_ANALYTICS_URL) {
+  const script = document.createElement('script');
+  script.src = process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+  script.async = false; // Load synchronously to ensure it's ready before React renders
+  document.head.insertBefore(script, document.head.firstChild); // Insert at the very top of head
+}
+
 const renderApp = () => {
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(

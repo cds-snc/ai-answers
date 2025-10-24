@@ -43,6 +43,10 @@ locals {
     {
       "name"      = "GOOGLE_SEARCH_ENGINE_ID"
       "valueFrom" = var.google_search_engine_id_arn
+    },
+    {
+      "name"      = "REACT_APP_ADOBE_ANALYTICS_URL"
+      "valueFrom" = var.adobe_analytics_url_arn
     }
   ]
 }

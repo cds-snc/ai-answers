@@ -127,3 +127,8 @@ variable "google_search_engine_id_arn" {
   description = "ARN of the Google Search Engine ID parameter"
   type        = string
 }
+
+variable "adobe_analytics_url_arn" {
+  description = "ARN of the Adobe Analytics URL parameter"
+  type        = string
+}

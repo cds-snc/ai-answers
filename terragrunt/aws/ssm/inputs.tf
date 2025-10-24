@@ -68,6 +68,12 @@ variable "google_search_engine_id" {
   type        = string
 }
 
+variable "adobe_analytics_url" {
+  description = "The Adobe Analytics script URL"
+  sensitive   = false
+  type        = string
+}
+
 # Temporary dummy variable to trigger workflow
 variable "dummy_trigger" {
   type        = string

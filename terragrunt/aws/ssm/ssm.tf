@@ -128,3 +128,14 @@ resource "aws_ssm_parameter" "google_search_engine_id" {
     Terraform  = true
   }
 }
+
+resource "aws_ssm_parameter" "adobe_analytics_url" {
+  name  = "adobe_analytics_url"
+  type  = "SecureString"
+  value = var.adobe_analytics_url
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
