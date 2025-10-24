@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.51.8](https://github.com/cds-snc/ai-answers/compare/v1.51.7...v1.51.8) (2025-10-24)
+
+
+### Bug Fixes
+
+* add page language column to datatable ([8ac3125](https://github.com/cds-snc/ai-answers/commit/8ac3125327fcf8660190764cac3218b70418ce79))
+* add page language column to datatable ([58e74b9](https://github.com/cds-snc/ai-answers/commit/58e74b91d792d8644e1a699d7edc58a1c0e7325b))
+* try again = get chat from chat model ([ddbbe66](https://github.com/cds-snc/ai-answers/commit/ddbbe660f0479341d5ec18373f97790747e3f297))
+* try again = get chat from chat model ([59f625d](https://github.com/cds-snc/ai-answers/commit/59f625dc5563ce7ca72d32c886d0138838f54116))
+
 ## [1.51.7](https://github.com/cds-snc/ai-answers/compare/v1.51.6...v1.51.7) (2025-10-24)
 
 
