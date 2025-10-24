@@ -213,14 +213,12 @@ async function chatDashboardHandler(req, res) {
         chatId: { $first: '$chatId' },
         createdAt: { $first: '$createdAt' },
         creatorEmail: { $first: '$creatorEmail' },
+        pageLanguage: { $first: '$pageLanguage' },
         departments: {
           $addToSet: '$interactions.context.department'
         },
         expertEmails: {
           $addToSet: '$interactions.expertEmail'
-        },
-        pageLanguages: {
-          $addToSet: '$interactions.context.pageLanguage'
         }
       }
     });
@@ -281,31 +279,7 @@ async function chatDashboardHandler(req, res) {
             }
           }
         },
-        pageLanguage: {
-          $let: {
-            vars: {
-              filteredLangs: {
-                $filter: {
-                  input: '$pageLanguages',
-                  as: 'lang',
-                  cond: {
-                    $and: [
-                      { $ne: ['$$lang', null] },
-                      { $ne: ['$$lang', ''] }
-                    ]
-                  }
-                }
-              }
-            },
-            in: {
-              $cond: [
-                { $gt: [{ $size: '$$filteredLangs' }, 0] },
-                { $arrayElemAt: ['$$filteredLangs', 0] },
-                ''
-              ]
-            }
-          }
-        }
+        pageLanguage: 1
       }
     });
 
