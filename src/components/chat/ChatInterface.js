@@ -406,7 +406,7 @@ const ChatInterface = ({
                   message.interaction && (
                     <>
                       {/* Show referring URL only for the first AI message with review panels */}
-                      {messages.findIndex(m => m.sender === "ai" && !m.error && m.interaction) === messages.findIndex(m => m.id === message.id) && referringUrl && (
+                      {readOnly && messages.findIndex(m => m.sender === "ai" && !m.error && m.interaction) === messages.findIndex(m => m.id === message.id) && (
                         <div
                           style={{
                             padding: "0.75rem",
@@ -418,14 +418,18 @@ const ChatInterface = ({
                           }}
                         >
                           <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
-                          <a
-                            href={referringUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ wordBreak: "break-all" }}
-                          >
-                            {referringUrl}
-                          </a>
+                          {referringUrl ? (
+                            <a
+                              href={referringUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ wordBreak: "break-all" }}
+                            >
+                              {referringUrl}
+                            </a>
+                          ) : (
+                            <span style={{ fontStyle: "italic", color: "#666" }}>none</span>
+                          )}
                         </div>
                       )}
                       <div

@@ -118,10 +118,10 @@ const HomePage = ({ lang = "en" }) => {
             setReviewReferringUrl(null);
             return;
           }
-          // Extract referring URL from chat data
-          if (chat.referringUrl) {
-            setReviewReferringUrl(chat.referringUrl);
-          }
+          // Extract referring URL from interactions (stored at interaction level, not chat level)
+          // Find the first non-empty referringUrl from any interaction
+          const foundReferringUrl = chat.interactions.find(inter => inter?.referringUrl)?.referringUrl;
+          setReviewReferringUrl(foundReferringUrl || null);
           const msgs = [];
           chat.interactions.forEach((inter) => {
             if (inter && inter.question) {
