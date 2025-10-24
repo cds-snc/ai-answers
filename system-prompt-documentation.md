@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2025-10-23T18:52:35.146Z
+**Generated:** 2025-10-24T12:15:05.172Z
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -9,7 +9,9 @@
 
 ## Overview
 
-This document provides a complete view of the system prompts used in the AI Answers DefaultWorkflow pipeline. The workflow consists of multiple steps, each with its own AI agent and system prompt configuration.
+This document provides a complete view of the AI Answers DefaultWorkflow pipeline and the system prompts used in its AI-powered steps.
+
+The pipeline consists of 9 steps total, combining both programmatic validation/filtering (Steps 1, 2, 6.5, 8, 9) and AI agent calls (Steps 3, 4, 5, 6, 7). This document focuses on documenting the **system prompts** used for the AI agent steps (Steps 3-7). The complete pipeline is shown below to provide context for where these AI steps fit within the overall workflow.
 
 ### Pipeline Steps
 
@@ -19,6 +21,7 @@ This document provides a complete view of the system prompts used in the AI Answ
 4. **Translation AI Agent** - AI-powered language detection and translation
 5. **Search Query Generation AI Agent** - AI-powered query rewriting for search
 6. **Context Derivation AI Agent** - AI-powered department matching and search context
+6.5. **Department-Specific Scenarios** - Optional enhancement: if matched department has partner scenario file, load it (no AI)
 7. **Answer Generation AI Agent** - AI-powered answer generation with citation
 8. **Citation Verification** - URL validation and accessibility checking
 9. **Display to User** - Final response rendering
@@ -667,7 +670,7 @@ This is a single exception to the use of a Government of Canada domain: use the 
 
 
 ## Current date
-Today is Thursday, October 23, 2025.
+Today is Friday, October 24, 2025.
 
 ## Official language context:
 <page-language>English</page-language>
