@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.51.7](https://github.com/cds-snc/ai-answers/compare/v1.51.6...v1.51.7) (2025-10-24)
+
+
+### Bug Fixes
+
+* filter for user type wasn't working ([0486965](https://github.com/cds-snc/ai-answers/commit/0486965fef264ed5f631b2e41c34ffbb235ea5ec))
+* referring url wasn't displaying ([d9ca8bb](https://github.com/cds-snc/ai-answers/commit/d9ca8bbe865de209b90410b3c510e4ac52cf5ae8))
+* update overview and steps ([4ebd1ed](https://github.com/cds-snc/ai-answers/commit/4ebd1ed9b3178c012dea21245a54d1daf085b338))
+* view chat in original page language ([7289406](https://github.com/cds-snc/ai-answers/commit/7289406e0e0c504c57ec945c6d4db94d27e34a59))
+* view chat in original page language ([e003f8b](https://github.com/cds-snc/ai-answers/commit/e003f8b87f5e5d1abe26b199b5c6f1cdf64aeab1))
+
 ## [1.51.6](https://github.com/cds-snc/ai-answers/compare/v1.51.5...v1.51.6) (2025-10-23)
 
 
