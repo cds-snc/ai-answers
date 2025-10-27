@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.51.10](https://github.com/cds-snc/ai-answers/compare/v1.51.9...v1.51.10) (2025-10-27)
+
+
+### Code Refactoring
+
+* enhance traceability by including chatId in logging and res… ([1ed0481](https://github.com/cds-snc/ai-answers/commit/1ed04813dbf3de6e22a5bf7d0e021eaf22fbeaac))
+* enhance traceability by including chatId in logging and response payloads ([2bd5120](https://github.com/cds-snc/ai-answers/commit/2bd51202317e10ea57beca5342c167889b035dc0))
+
 ## [1.51.9](https://github.com/cds-snc/ai-answers/compare/v1.51.8...v1.51.9) (2025-10-27)
 
 
