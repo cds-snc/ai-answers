@@ -66,3 +66,8 @@ output "google_search_engine_id_arn" {
   description = "ARN of the Google Search Engine ID parameter"
   value       = aws_ssm_parameter.google_search_engine_id.arn
 }
+
+output "adobe_analytics_url_arn" {
+  description = "ARN of the Adobe Analytics URL parameter"
+  value       = aws_ssm_parameter.adobe_analytics_url.arn
+}
