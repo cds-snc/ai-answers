@@ -89,13 +89,16 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
+    { value: 'ECCC', label: 'ECCC' },
     { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
-    { value: 'SAC-ISC', label: 'SAC-ISC' },
-    { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
-    { value: 'IRCC', label: 'IRCC' },
     { value: 'HC-SC', label: 'HC-SC' },
+    { value: 'IRCC', label: 'IRCC' },
+    { value: 'ISED-ISDE', label: 'ISED-ISDE' },
+    { value: 'NRCan-RNCan', label: 'NRCan-RNCan' },
     { value: 'PHAC-ASPC', label: 'PHAC-ASPC' },
+    { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
     { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
+    { value: 'SAC-ISC', label: 'SAC-ISC' },
     { value: 'TBS-SCT', label: 'TBS-SCT' }
   ];
 

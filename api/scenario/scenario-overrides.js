@@ -30,6 +30,18 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../src/services/systemPrompt/context-tbs-sct/tbs-sct-scenarios.js');
     return mod.TBS_SCT_SCENARIOS || '';
   },
+  'ISED-ISDE': async () => {
+    const mod = await import('../../src/services/systemPrompt/context-ised-isde/ised-isde-scenarios.js');
+    return mod.ISED_ISDE_SCENARIOS || '';
+  },
+  'ECCC': async () => {
+    const mod = await import('../../src/services/systemPrompt/context-eccc/eccc-scenarios.js');
+    return mod.ECCC_SCENARIOS || '';
+  },
+  'NRCan-RNCan': async () => {
+    const mod = await import('../../src/services/systemPrompt/context-nrcan-rncan/nrcan-rncan-scenarios.js');
+    return mod.NRCAN_RNCAN_SCENARIOS || '';
+  },
 };
 
 async function loadDefaultScenarios(departmentKey) {

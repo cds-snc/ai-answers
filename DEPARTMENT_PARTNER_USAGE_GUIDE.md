@@ -13,13 +13,16 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
 | `CRA-ARC` | Canada Revenue Agency | Agence du revenu du Canada |
+| `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
 | `EDSC-ESDC` | Employment and Social Development Canada | Emploi et Développement social Canada |
-| `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
-| `PSPC-SPAC` | Public Services and Procurement Canada | Services publics et Approvisionnement Canada |
 | `HC-SC` | Health Canada | Santé Canada |
-| `PHAC-ASPC` | Public Health Agency of Canada | Agence de la santé publique du Canada |
 | `IRCC` | Immigration, Refugees and Citizenship Canada | (bilingual name) |
+| `ISED-ISDE` | Innovation, Science and Economic Development Canada | Innovation, Sciences et Développement économique Canada |
+| `NRCan-RNCan` | Natural Resources Canada | Ressources naturelles Canada |
+| `PHAC-ASPC` | Public Health Agency of Canada | Agence de la santé publique du Canada |
+| `PSPC-SPAC` | Public Services and Procurement Canada | Services publics et Approvisionnement Canada |
 | `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada | Relations Couronne-Autochtones et Affaires du Nord Canada |
+| `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
 | `TBS-SCT` | Treasury Board of Canada Secretariat | Secrétariat du Conseil du Trésor du Canada |
 
 ---
@@ -61,16 +64,10 @@ Example: To add TBS, search for "Treasury Board" → find `abbrKey: "TBS-SCT"`
 
 Replace `{slug}` with the lowercase department key (e.g., `tbs-sct` for TBS-SCT).
 
+⚠️ **IMPORTANT:** Leave the scenario file **empty**. The department partner will add their own scenarios and URLs.
+
 ```javascript
-export const {UPPER_KEY}_SCENARIOS = `
-### Contact Information
-[Department-specific contact guidance]
-
-### [Department-specific topic]
-[Department-specific instructions]
-
-### NO NUMERIC ARITHMETIC, COMPUTATION OR CALCULATIONS IN ANSWERS
-`;
+export const {UPPER_KEY}_SCENARIOS = ``;
 ```
 
 ### Step 2: Update `systemPrompt.js`
