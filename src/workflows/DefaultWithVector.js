@@ -311,8 +311,11 @@ export class DefaultWithVector {
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
         if (similarJson && similarJson.answer) {
+          // Prefer exposing the source chatId for traceability; fall back to interactionId
+          const providedByChatId = similarJson.chatId || similarJson.interactionId || null;
           await LoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
-            similar: similarJson
+            similar: similarJson,
+            providedByChatId
           });
           ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
           // Build an answer object that matches the UI's expected shape so
@@ -326,7 +329,8 @@ export class DefaultWithVector {
               paragraphs: [answerText],
               sentences: [answerText],
               // expose metadata for potential UI display
-              providedByInteractionId: similarJson.interactionId || null,
+              // expose the source chat id (prefer chatId, fall back to interactionId)
+              providedByChatId: providedByChatId,
               similarity: similarJson.similarity || null
               ,
               citationHead: (similarJson.citation && similarJson.citation.citationHead) || null

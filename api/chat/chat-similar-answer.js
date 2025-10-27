@@ -66,11 +66,12 @@ async function handler(req, res) {
         // Translate the final answer if needed into the user's detected language
         await translateFinalAnswerIfNeeded(formatted, pageLanguage, detectedLanguage, selectedAI);
 
-        ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, sourceSimilarity: chosen.match?.similarity });
+        ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, chatId: formatted.chatId, sourceSimilarity: chosen.match?.similarity });
 
         return res.json({
             answer: formatted.text,
             interactionId: formatted.interactionId,
+            chatId: formatted.chatId || null,
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
             citation: formatted.citation || null,
@@ -175,7 +176,7 @@ async function handler(req, res) {
             }).filter(Boolean);
 
             const questionFlow = flowQuestions.length ? flowQuestions.join('\n\n') : null;
-            return { candidate: c, questionFlow, flowInteractions, pageLanguage: chat.pageLanguage || null };
+            return { candidate: c, questionFlow, flowInteractions, pageLanguage: chat.pageLanguage || null, chatId: chat.chatId || null };
         }));
 
         const validEntries = entries.filter(e => e.questionFlow);
@@ -241,7 +242,7 @@ async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-        return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null };
+        return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null, chatId: chosenEntry.chatId || null };
     }
 
     // Helper: translate the final answer when requested language is not English/French
