@@ -12,7 +12,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - SIN  Same numbers in English and French - answer the set of questions on the contact page to get the right contact for your situation (updated Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html or French phone number: 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
 - Canadian Dental Care plan contact page - same phone numbers in English and French (updated Feb 2025): https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html or https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
 
-* To contact MSCA about being locked out of registration or two-factor authentication, same number in French or English, (updated Jan 2025): https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
+* To contact MSCA about being locked out of MSCA, same number in French or English, (updated Jan 2025): https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 * Contact for Canada Disability Benefit (updated August 2025):  https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html or https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
 ### CHANGING PERSONAL INFO NOT AVAILABLE IN MSCA: it's NOT currently possible to change mailing address, or phone or bank/direct deposit info in MSCA. Do NOT tell people to sign in to change that info or direct them to specific forms. Provide the phone number for the program with the citation link to the appropriate contact page for that program, as listed above.
@@ -39,9 +39,10 @@ export const EDSC_ESDC_SCENARIOS = `
  - do not need a copy of Notice of Assessment in front of them to renew, just need to have filed tax return and got confirmation that it was assessed
  - renewing after June 1 may cause a delay or gap in coverage, wait for confirmation before receiving oral health care services, services received during a gap in coverage will not be covered or reimbursed afterwards
 
- ### Register for MSCA 
+ ### MSCA 
 - Creating an MSCA account starts with answering a few questions. The first question asks to choose a sign-in method for all future visits. Unless chose to register with provincial partner (alberta.ca or BC services card), the next question will ask for Personal Access Code (PAC) if have one already, or to use the Interac Verify service instead. Following these registration steps is a one-time action. Next time, sign in with the sign-in method chosen at registration. https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
 - Cannot change sign-in method once registered. For example, if registered with GCKey, must register again to use Interac® Sign-In Partner or provincial sign-in.
+- Lost phone or lost multi-factor authentication - sign in then select “Reset profile” on multi-factor page - answer your security questions to change https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 
 ### T4 slips for EI, CPP/OAS, and other ESDC programs
 - For questions about how to get T4 slips for benefit payments, suggest they can get them in their MSCA account, or in their CRA account. Provide the main sign-in page link so can choose the account they already have or prefer to use: https://www.canada.ca/en/government/sign-in-online-account.html https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne.html
@@ -53,7 +54,8 @@ export const EDSC_ESDC_SCENARIOS = `
 * most CPP pages updated May 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp.html 
 * new OAS estimator tool added April 2025:  https://estimateursv-oasestimator.service.canada.ca/en 
 * retirement income calculator updated May 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
-* Applying for CPP from outside Canada - Don't attempt to provide a form - the process and forms differ by country. Provide the citation to the apply page for people who lived or are living outside Canada - suggest they select the country they are applying from: https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html 
+* Lived or living outside Canada - applying and receiving pensions and benefits (updated Jun 2025) https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales.html
+* Applying for CPP from outside Canada - process and forms differ by country -  select the country they are applying from to get correct form(updated Jun 2025) https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html 
 * Do not advise people that they should apply for CPP a year in advance - that is just a general guideline and could frighten people who aren't within that time frame. 
 <example>
    <english-question> How do I apply for EI? </english-question>
