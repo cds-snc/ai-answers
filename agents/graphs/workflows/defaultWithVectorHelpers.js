@@ -215,7 +215,7 @@ export class DefaultWithVectorServerWorkflow {
     const baseMessage = translationData?.translatedText || translationData?.originalText || userMessage || '';
 
     const searchPayload = {
-      message: baseMessage,
+      providedByInteractionId: null,
       chatId,
       searchService: searchProvider,
       agentType: selectedAI,
@@ -383,13 +383,19 @@ export class DefaultWithVectorServerWorkflow {
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
+      // Prefer exposing the source chatId for traceability; fall back to interactionId
+      const providedByChatId = similarJson.chatId || similarJson.interactionId || null;
+      await ServerLoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
+        similar: similarJson,
+        providedByChatId
+      });
       return {
         answer: {
           answerType: 'normal',
           content: answerText,
           paragraphs: [answerText],
           sentences: [answerText],
-          providedByInteractionId: similarJson.interactionId || null,
+          providedByChatId: providedByChatId,
           similarity: similarJson.similarity || null,
           citationHead: similarJson.citation?.citationHead || null,
         },
