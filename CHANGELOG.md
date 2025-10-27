@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.51.9](https://github.com/cds-snc/ai-answers/compare/v1.51.8...v1.51.9) (2025-10-27)
+
+
+### Bug Fixes
+
+* add ISED NRCan ECCC partner departments ([cc9f6cf](https://github.com/cds-snc/ai-answers/commit/cc9f6cf387bb3c675bd6c6b15fc13cbf31a697f9))
+* prompts based on trial issues ([f28177f](https://github.com/cds-snc/ai-answers/commit/f28177f9ac9da07b1273ace8b97ca334e99d503a))
+* prompts based on trial issues ([2f07e32](https://github.com/cds-snc/ai-answers/commit/2f07e32bea616044e5696e1cf060cf54c4f32647))
+
 ## [1.51.8](https://github.com/cds-snc/ai-answers/compare/v1.51.7...v1.51.8) (2025-10-24)
 
 
