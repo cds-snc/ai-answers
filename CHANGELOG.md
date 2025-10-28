@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.51.11](https://github.com/cds-snc/ai-answers/compare/v1.51.10...v1.51.11) (2025-10-28)
+
+
+### Bug Fixes
+
+* html decode from answer ([a5cba6d](https://github.com/cds-snc/ai-answers/commit/a5cba6d72e68418ab093b89c483bf8c35cfb9239))
+* html decode from answer ([b667984](https://github.com/cds-snc/ai-answers/commit/b667984ebdbda1692bb67abdc322f6f7ef54379c))
+
 ## [1.51.10](https://github.com/cds-snc/ai-answers/compare/v1.51.9...v1.51.10) (2025-10-27)
 
 
