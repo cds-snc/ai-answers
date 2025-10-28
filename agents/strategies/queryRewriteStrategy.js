@@ -12,10 +12,10 @@ export const queryRewriteStrategy = {
     // Prefer explicit pageLanguage passed in the request, but fall back to translationData fields if needed
 
     // translationContext (if present) is expected to be an array of strings from the translation step.
-    // Map those strings into the 'history' shape the prompt expects: { sender: 'user'|'ai', text }
+    // Map those strings into the 'history' shape the prompt now expects: an array of prior user question strings.
     const translationContext = translationData.translationContext || translationData.translation_context || [];
     const history = Array.isArray(translationContext)
-      ? translationContext.map((t) => ({ sender: 'user', text: t }))
+      ? translationContext.map((t) => (typeof t === 'string' ? t : String(t)))
       : [];
 
     const userPayload = {

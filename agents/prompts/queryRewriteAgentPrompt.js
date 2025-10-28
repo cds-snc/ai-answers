@@ -6,8 +6,8 @@ INPUT (JSON):
   "translatedText": string,       // the user text already translated (or same as original when no translation)
   "pageLanguage": string,         // optional ISO-like indicator (e.g., 'fr' or 'eng')
   "referringUrl": string|null,    // optional
-  "history": [                    // OPTIONAL: recent conversation turns (user + ai). Each item: { sender: 'user'|'ai', text: string }
-    /* { sender: 'user'|'ai', text: '...' } */
+  "history": [                    // OPTIONAL: recent user questions (strings). Each item is a prior user question in chronological order, oldest first.
+    /* "Have you applied for citizenship?", "How do I check status?" */
   ],
 }
 
@@ -18,22 +18,18 @@ GOAL:
 - Apply good search query design - prefer keyword-based short queries rather than full sentences.
 - Consider the referringUrl when it helps disambiguate the topic (for example, if the user was on a passport page and asks "How do I apply?", include the word "passport").
 
-CLARIFICATION VS NEW QUESTION LOGIC (use history when present):
-- If 'history' is provided, examine the last AI turn and the last user turn.
-- If the last AI turn appears to be a clarifying question (for example it contains a question mark, begins with an interrogative word such as who/what/when/where/why/how, or explicitly asks to clarify a term) AND the latest user turn looks like an answer (short label, single word, or phrase that responds to the clarification), then the agent MUST synthesize a query by combining the original user's vague question/topic with the clarification answer. Example:
-  - User: "What about my application?"
-  - AI:   "What type of application are you asking about?"
-  - User: "citizenship"
-  -> Rewritten query: "citizenship application status"
-
-- Otherwise, if the latest user turn is a new, self-contained question (i.e., not clearly answering the last AI clarification), IGNORE prior turns and build the query only from the latest user message.
-  - Example:
-    - User: "What about my application?"
-    - AI:   "What type of application are you asking about?"
-    - User: "how cold is it in Ottawa?"
+HISTORY-BASED QUERY CONSTRUCTION (use history when present):
+- When 'history' is provided, it contains prior user questions (strings). Use this history as the primary source of intent when crafting the search query.
+- Synthesize the query from the history by combining the most relevant prior user questions into a short keyword query. Prefer content from the most recent entries but include earlier context if it disambiguates the topic.
+- If the last history entry is clearly a topic switch or a new, self-contained question on a different subject (for example it is a full sentence asking about a different place/topic than prior entries), then IGNORE earlier history and build the query only from the last history entry.
+  - Example (continue same topic):
+    - history: ["How do I apply for citizenship?", "How long does processing take?"]
+    -> Rewritten query: "citizenship application processing time"
+  - Example (topic switch):
+    - history: ["How do I apply for citizenship?", "How cold is it in Ottawa?"]
     -> Rewritten query: "temperature in Ottawa"
 
-- If 'history' is not provided or is empty, fall back to using 'translatedText' as the source of intent.
+If 'history' is not provided or is empty, fall back to using 'translatedText' as the source of intent.
 
 OUTPUT (JSON):
 Return a single JSON object only (no surrounding text) with the following fields:
