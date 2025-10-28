@@ -281,6 +281,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         disabled={savingDefaultWorkflow}
       >
         <option value="Default">Default</option>
+        <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
         <option value="DefaultWithVector">DefaultWithVector</option>
         <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
       </select>

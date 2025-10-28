@@ -1,7 +1,7 @@
 import { PROMPT as QUERY_REWRITE_PROMPT } from '../prompts/queryRewriteAgentPrompt.js';
 
 export const queryRewriteStrategy = {
-  // request: { translationData: { translatedText, translatedLanguage, originalText, noTranslation }, referringUrl, pageLanguage }
+  // request: { translationData: { translatedText, translatedLanguage, originalText, noTranslation, translationContext }, referringUrl, pageLanguage }
   buildMessages: (request = {}) => {
     const { translationData = {}, referringUrl = '', pageLanguage: pageLanguage = '' } = request;
     const system = { role: 'system', content: QUERY_REWRITE_PROMPT };
@@ -10,11 +10,19 @@ export const queryRewriteStrategy = {
     // Map common fields from the incoming translationData and fall back where appropriate.
     const translatedText = translationData.translatedText || translationData.originalText || '';
     // Prefer explicit pageLanguage passed in the request, but fall back to translationData fields if needed
-    
+
+    // translationContext (if present) is expected to be an array of strings from the translation step.
+    // Map those strings into the 'history' shape the prompt now expects: an array of prior user question strings.
+    const translationContext = translationData.translationContext || translationData.translation_context || [];
+    const history = Array.isArray(translationContext)
+      ? translationContext.map((t) => (typeof t === 'string' ? t : String(t)))
+      : [];
+
     const userPayload = {
       translatedText,
       pageLanguage,
       referringUrl: referringUrl || null,
+      history: history.length ? history : undefined,
     };
 
     const user = {

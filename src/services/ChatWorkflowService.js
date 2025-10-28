@@ -101,10 +101,12 @@ export const ChatWorkflowService = {
       mod = await import('../workflows/DefaultWithVector.js');
     } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
       mod = await import('../workflows/DefaultWithVectorGraph.js');
+    } else if (resolvedWorkflow === 'DefaultAlwaysContext') {
+      mod = await import('../workflows/DefaultAlwaysContext.js');
     } else {
       mod = await import('../workflows/DefaultWorkflow.js');
     }
-    const Impl = mod.DefaultWithVector || mod.DefaultWorkflow || mod.default;
+    const Impl = mod.DefaultWithVector || mod.DefaultWorkflow || mod.DefaultAlwaysContext || mod.default;
     const implInstance = new Impl();
     return implInstance.processResponse(
       chatId,
