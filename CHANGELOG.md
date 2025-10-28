@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.52.0](https://github.com/cds-snc/ai-answers/compare/v1.51.11...v1.52.0) (2025-10-28)
+
+
+### Features
+
+* add DefaultAlwaysContext workflow and update related components ([35bbd24](https://github.com/cds-snc/ai-answers/commit/35bbd24c4328e0afea8778877a089724349348fd))
+* add DefaultAlwaysContext workflow and update related components ([f83e086](https://github.com/cds-snc/ai-answers/commit/f83e0863c327671c844d8d77736146bddf074543))
+
+
+### Miscellaneous Chores
+
+* update query rewrite strategy for improved handling of translation data ([3841216](https://github.com/cds-snc/ai-answers/commit/38412165cbcdb2bbe3fa861318e53d9dd6961d49))
+
 ## [1.51.11](https://github.com/cds-snc/ai-answers/compare/v1.51.10...v1.51.11) (2025-10-28)
 
 
