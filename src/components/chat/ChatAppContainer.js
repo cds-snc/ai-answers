@@ -10,6 +10,24 @@ import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
 // Utility functions go here, before the component
+const decodeHTMLEntities = (text) => {
+  const entities = {
+    '&nbsp;': '\u00A0',  // Non-breaking space
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+  };
+
+  let decoded = text;
+  Object.entries(entities).forEach(([entity, char]) => {
+    decoded = decoded.split(entity).join(char);
+  });
+  return decoded;
+};
+
 const extractSentences = (paragraph) => {
   const sentenceRegex = /<s-?\d+>(.*?)<\/s-?\d+>/g;
   const sentences = [];
@@ -540,7 +558,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             : [content];
           return sentences.map((sentence, sentenceIndex) => (
             <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
-              {sentence}
+              {decodeHTMLEntities(sentence)}
             </p>
           ));
         })}
