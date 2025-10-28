@@ -325,6 +325,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   style={{ width: 'auto', display: 'inline-block' }}
                 >
                   <option value="Default">Default</option>
+                  <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
                   <option value="DefaultWithVector">DefaultWithVector</option>
                   <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                 </select>
