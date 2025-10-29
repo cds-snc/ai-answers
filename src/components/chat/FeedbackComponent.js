@@ -131,7 +131,7 @@ const FeedbackComponent = ({
         </span>
         <span className="feedback-buttons">
           <button
-            className="feedback-link button-as-link"
+            className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(true)}
             tabIndex="0"
           >
@@ -139,7 +139,7 @@ const FeedbackComponent = ({
           </button>
           <span className="feedback-separator">·</span>
           <button
-            className="feedback-link button-as-link"
+            className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(false)}
             tabIndex="0"
           >
