@@ -317,12 +317,19 @@ class DocDBVectorService {
       if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
       pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
       pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
+      // Populate expertFeedback so we can filter by its totalScore when requested
+      pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'inter.expertFeedback', foreignField: '_id', as: 'ef' } });
+      pipeline.push({ $unwind: { path: '$ef', preserveNullAndEmptyArrays: true } });
       pipeline.push({ $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } });
       pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
       pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
       pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
+      // If a desired expertFeedbackRating was provided, require the populated expert feedback totalScore to match
+      if (typeof expertFeedbackRating === 'number') {
+        pipeline.push({ $match: { 'ef.totalScore': expertFeedbackRating } });
+      }
       if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
-      pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead' } });
+      pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead', expertFeedbackScore: '$ef.totalScore' } });
       return pipeline;
     });
 

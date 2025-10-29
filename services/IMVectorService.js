@@ -99,11 +99,14 @@ class IMVectorService {
 
       // Load Interactions to get expertFeedbackId and answer.citation
       const interactionIds = [...new Set(qaDocs.map(d => d.interactionId?.toString()).filter(Boolean))];
+      // Populate expertFeedback so we can capture totalScore for runtime filtering
       const interactions = await Interaction.find({ _id: { $in: interactionIds } })
         .select('_id expertFeedback answer')
+        .populate('expertFeedback')
         .populate({ path: 'answer', populate: { path: 'citation', model: 'Citation' } })
         .lean();
-      const interactionToEF = new Map(interactions.map(i => [i._id.toString(), i.expertFeedback ? i.expertFeedback.toString() : null]));
+      const interactionToEF = new Map(interactions.map(i => [i._id.toString(), i.expertFeedback ? (i.expertFeedback._id?.toString?.() || i.expertFeedback.toString?.() || null) : null]));
+      const interactionToEFScore = new Map(interactions.map(i => [i._id.toString(), (i.expertFeedback && typeof i.expertFeedback.totalScore === 'number') ? Number(i.expertFeedback.totalScore) : null]));
       const interactionToCitation = new Map(interactions.map(i => [i._id.toString(), i.answer && i.answer.citation ? {
         providedCitationUrl: i.answer.citation.providedCitationUrl || null,
         aiCitationUrl: i.answer.citation.aiCitationUrl || null,
@@ -112,6 +115,7 @@ class IMVectorService {
       } : null]));
 
       // Filter out QA docs without expertFeedback
+      // Keep QA docs that have an expertFeedback id associated; we'll also track its score
       const qaDocsWithEF = qaDocs.filter(doc => {
         const efId = interactionToEF.get(doc.interactionId?.toString() || '');
         return !!efId;
@@ -134,6 +138,7 @@ class IMVectorService {
         this.qaMeta.set(id, {
           interactionId: doc.interactionId?.toString() || null,
           expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+          expertFeedbackScore: interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
           citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
         });
       }
@@ -147,6 +152,7 @@ class IMVectorService {
           this.qaMeta.set(qid, {
             interactionId: doc.interactionId?.toString() || null,
             expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+            expertFeedbackScore: interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
             citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
           });
         }
@@ -180,6 +186,7 @@ class IMVectorService {
           interactionId,
           sentenceIndex: row.sentenceIndex,
           expertFeedbackId,
+          expertFeedbackScore: interactionToEFScore.get(interactionId) ?? null,
           citation: interactionToCitation.get(interactionId) || null,
         });
       }
@@ -455,6 +462,16 @@ class IMVectorService {
           // no interaction ids -> no matches
           filtered = [];
         }
+      }
+
+      // If a specific expertFeedbackRating was requested, filter to only items
+      // whose stored expertFeedbackScore equals it. This enforces the totalScore
+      // requirement at runtime (e.g. 100).
+      if (typeof expertFeedbackRating === 'number') {
+        filtered = filtered.filter(m => {
+          const meta = this.qaMeta.get(m.id) || {};
+          return typeof meta.expertFeedbackScore === 'number' && meta.expertFeedbackScore === expertFeedbackRating;
+        });
       }
 
       // Promote the first expert-feedback-backed item, preserving the remaining order
