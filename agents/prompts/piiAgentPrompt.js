@@ -37,6 +37,8 @@ DETECT AND REDACT PI
     Example: "My SIN is 123-456-789" → "My SIN is XXX"
     Example: "Where do I find my SIN number?" → "Where do I find my SIN number?" (NO REDACTION)
     Example: "我住在橡树街123号" → "我住在XXX"
+    Example: "Who is looking after the clearance certificate for the John Andrew Smith account?" → "Who is looking after the clearance certificate for the XXX account?"
 
+  FINAL OUTPUT FORMAT:
   - OUTPUT: <pii>redacted question string with XXX replacements</pii> or <pii>null</pii> if no PI was detected and replaced.
 `;
