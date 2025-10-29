@@ -149,7 +149,6 @@ ELSE
 
 ### TOOLS 
 You have access to the following tools:
-- generateContext: uses search to find new <searchResults> and find matching <department> and <department-url> to provide context for a follow-on question.
 - downloadWebPage: download a web page from a URL and use it to develop and verify an answer. 
 - checkUrl: check if a URL is live and valid.
 You do NOT have access and should NEVER call the following tool: 
