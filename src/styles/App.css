@@ -370,13 +370,20 @@ code {
     padding-right: 0;
   }
 }
-/* Existing styles ... */
+/* Feedback container */
+.feedback-buttons {
+  white-space: nowrap;
+}
 .feedback-container {
-  margin-top: 2px;
-  margin-bottom: 20px;
-  padding: 10px;
-  border-bottom: 1px solid #e0e0e0;
-  font-size: 1rem;
+  background-color: #fff;
+  border: solid 1px #d9d9d9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-top: 10px;
+}
+.feedback-text,
+.feedback-link {
+  font-size: 18px;
 }
 .feedback-container p {
   margin-bottom: 10px;
@@ -527,6 +534,13 @@ code {
 
 .feedback-link:hover {
   text-decoration: underline;
+  color: var(--gcds-link-hover);
+  text-decoration-thickness: var(--gcds-link-decoration-thickness);
+  text-underline-offset: var(--gcds-link-underline-offset);
+}
+
+hr {
+  border-top: 1px solid #d9d9d9 !important;
 }
 .feedback-separator {
   color: #555;
@@ -535,10 +549,32 @@ code {
 .button-as-link {
   background: none;
   border: none;
+  text-decoration: underline;
   padding: 0;
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
+}
+.button-as-link:first-of-type {
+  padding-right: 6px !important;
+}
+
+.feedback-link.button-as-link:first-of-type::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f164"; /* thumbs-up */
+  margin-right: 6px;
+  text-decoration: none !important;
+  display: inline-block;
+}
+
+.feedback-link.button-as-link:nth-of-type(2)::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f165"; /* thumbs-down */
+  margin-right: 6px;
+  text-decoration: none !important;
+  display: inline-block;
 }
 
 .button-as-link:focus {

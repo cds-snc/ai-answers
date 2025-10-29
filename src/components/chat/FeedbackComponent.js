@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import ExpertFeedbackComponent from './ExpertFeedbackComponent.js';
-import PublicFeedbackComponent from './PublicFeedbackComponent.js';
-import { useHasAnyRole } from '../RoleBasedUI.js';
-import '../../styles/App.css';
-import { useTranslations } from '../../hooks/useTranslations.js';
-import FeedbackService from '../../services/FeedbackService.js';
+import React, { useState } from "react";
+import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
+import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
+import { useHasAnyRole } from "../RoleBasedUI.js";
+import "../../styles/App.css";
+import { useTranslations } from "../../hooks/useTranslations.js";
+import FeedbackService from "../../services/FeedbackService.js";
 
 const FeedbackComponent = ({
-  lang = 'en',
+  lang = "en",
   sentenceCount = 1,
   chatId,
   userMessageId,
   sentences = [],
   // Add these new props for the skip button
-  showSkipButton = false,  // Determines if skip button should be shown
-  onSkip = () => { },       // Function to call when skip button is clicked
-  skipButtonLabel = ''     // Accessible label for the skip button
+  showSkipButton = false, // Determines if skip button should be shown
+  onSkip = () => {}, // Function to call when skip button is clicked
+  skipButtonLabel = "", // Accessible label for the skip button
 }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
@@ -23,18 +23,22 @@ const FeedbackComponent = ({
   const [showExpertRating, setShowExpertRating] = useState(false);
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);
-  const hasExpertRole = useHasAnyRole(['admin', 'partner']);
+  const hasExpertRole = useHasAnyRole(["admin", "partner"]);
 
   const handleFeedback = (isPositive) => {
     let feedbackPayload = null;
     if (isPositive) {
       if (hasExpertRole) {
         feedbackPayload = {
-          type: 'expert',
-          feedback: 'positive',
+          type: "expert",
+          feedback: "positive",
           totalScore: 100,
         };
-        FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackPayload });
+        FeedbackService.persistExpertFeedback({
+          chatId,
+          interactionId: userMessageId,
+          expertFeedback: feedbackPayload,
+        });
         setFeedbackGiven(true);
       } else {
         setPublicPositive(true);
@@ -50,18 +54,26 @@ const FeedbackComponent = ({
     }
   };
   const handleExpertFeedback = (expertFeedback) => {
-    console.log('Expert feedback received:', expertFeedback);
+    console.log("Expert feedback received:", expertFeedback);
     const feedbackWithType = {
       ...expertFeedback,
-      type: 'expert'
+      type: "expert",
     };
     setShowExpertRating(false);
-    FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackWithType });
+    FeedbackService.persistExpertFeedback({
+      chatId,
+      interactionId: userMessageId,
+      expertFeedback: feedbackWithType,
+    });
     setFeedbackGiven(true);
   };
 
   const handlePublicFeedback = (publicFeedback) => {
-    FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback });
+    FeedbackService.persistPublicFeedback({
+      chatId,
+      interactionId: userMessageId,
+      publicFeedback,
+    });
     setFeedbackGiven(true);
     setShowPublicRating(false);
   };
@@ -70,14 +82,17 @@ const FeedbackComponent = ({
     return (
       <p className="thank-you">
         <span className="gcds-icon fa fa-solid fa-check-circle"></span>
-        {t('homepage.feedback.thankYou')}
+        {t("homepage.feedback.thankYou")}
       </p>
     );
   }
   if (feedbackError) {
     return (
       <p className="feedback-error">
-        <span className="gcds-icon fa fa-solid fa-exclamation-circle" style={{ color: 'red' }}></span>
+        <span
+          className="gcds-icon fa fa-solid fa-exclamation-circle"
+          style={{ color: "red" }}
+        ></span>
         Error submitting feedback, contact admin.
       </p>
     );
@@ -110,43 +125,64 @@ const FeedbackComponent = ({
   // Show public mode question: Was this helpful? Yes No
   if (!hasExpertRole) {
     return (
-      <div className="feedback-container">
-        <span className="feedback-text">{t('homepage.publicFeedback.question')}</span>
-        <button className="feedback-link button-as-link" onClick={() => handleFeedback(true)} tabIndex="0">
-          {t('common.yes', 'Yes')}
-        </button>
-        <span className="feedback-separator">·</span>
-        <button className="feedback-link button-as-link" onClick={() => handleFeedback(false)} tabIndex="0">
-          {t('common.no', 'No')}
-        </button>
-        {showSkipButton && (
-          <>
-            <span className="feedback-separator"></span>
+      <>
+        <div className="feedback-container">
+          <span className="feedback-text">
+            {t("homepage.publicFeedback.question")}
+          </span>
+          <span className="feedback-buttons">
             <button
-              className="wb-inv"
-              onClick={onSkip}
-              aria-label={skipButtonLabel}
+              className="feedback-link button-as-link"
+              onClick={() => handleFeedback(true)}
               tabIndex="0"
             >
-              {skipButtonLabel}
+              {t("common.yes", "Yes")}
             </button>
-          </>
-        )}
-      </div>
+            <button
+              className="feedback-link button-as-link"
+              onClick={() => handleFeedback(false)}
+              tabIndex="0"
+            >
+              {t("common.no", "No")}
+            </button>
+          </span>
+          {showSkipButton && (
+            <>
+              <button
+                className="wb-inv"
+                onClick={onSkip}
+                aria-label={skipButtonLabel}
+                tabIndex="0"
+              >
+                {skipButtonLabel}
+              </button>
+            </>
+          )}
+        </div>
+        <hr />
+      </>
     );
   }
 
   return (
     <div className="feedback-container">
-      <span className="feedback-text">{t('homepage.feedback.question')} </span>
-      <button className="feedback-link button-as-link" onClick={() => handleFeedback(true)} tabIndex="0">
-        {t('homepage.feedback.useful')}
+      <span className="feedback-text">{t("homepage.feedback.question")} </span>
+      <button
+        className="feedback-link button-as-link"
+        onClick={() => handleFeedback(true)}
+        tabIndex="0"
+      >
+        {t("homepage.feedback.useful")}
       </button>
       <span className="feedback-separator">·</span>
-      <span className="feedback-text">{t('homepage.feedback.or')}</span>
+      <span className="feedback-text">{t("homepage.feedback.or")}</span>
       <span className="feedback-separator">·</span>
-      <button className="feedback-link button-as-link" onClick={() => handleFeedback(false)} tabIndex="0">
-        {t('homepage.feedback.notUseful')}
+      <button
+        className="feedback-link button-as-link"
+        onClick={() => handleFeedback(false)}
+        tabIndex="0"
+      >
+        {t("homepage.feedback.notUseful")}
       </button>
 
       {/* Add the skip button after the other buttons, in the same line */}
