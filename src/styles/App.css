@@ -370,13 +370,23 @@ code {
     padding-right: 0;
   }
 }
-/* Existing styles ... */
+/* Feedback container */
+.feedback-buttons {
+  white-space: nowrap;
+  padding-right: 10px;
+}
 .feedback-container {
-  margin-top: 2px;
-  margin-bottom: 20px;
-  padding: 10px;
-  border-bottom: 1px solid #e0e0e0;
-  font-size: 1rem;
+  background-color: #fff;
+  border: solid 1px #d9d9d9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.feedback-text,
+.feedback-link {
+  font-size: 18px !important;
+  padding-right: 10px;
 }
 .feedback-container p {
   margin-bottom: 10px;
@@ -388,10 +398,15 @@ code {
   display: inline-block;
   margin-left: 10px;
   text-decoration: underline;
+  text-decoration-thickness: var(--gcds-link-decoration-thickness);
+  text-underline-offset: var(--gcds-link-underline-offset);
   color: #284162;
 }
 .feedback-survey-link:hover {
-  text-decoration: none;
+  text-decoration: underline;
+  color: var(--gcds-link-hover);
+  text-decoration-thickness: default;
+  text-underline-offset: default;
 }
 
 /* Review panels table styling */
@@ -520,14 +535,21 @@ code {
 }
 
 .feedback-link {
-  color: var(--gcds-color-blue-850);
-  margin-right: 4px;
-  margin-left: 4px;
+  color: #284162;
+  margin-right: 8px;
+  margin-left: 8px;
+  text-decoration-thickness: var(--gcds-link-decoration-thickness);
+  text-underline-offset: var(--gcds-link-underline-offset);
+  text-decoration: underline;
 }
 
 .feedback-link:hover {
   text-decoration: underline;
+  color: var(--gcds-color-blue-850);
+  text-decoration-thickness: default;
+  text-underline-offset: default;
 }
+
 .feedback-separator {
   color: #555;
   margin: 0 0.2rem;
@@ -539,6 +561,24 @@ code {
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
+}
+
+.feedback-link.button-as-link:first-of-type::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f164"; /* thumbs-up */
+  margin-right: 6px;
+  text-decoration: none !important;
+  display: inline-block;
+}
+
+.feedback-link.button-as-link:nth-of-type(2)::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f165"; /* thumbs-down */
+  margin-right: 6px;
+  text-decoration: none !important;
+  display: inline-block;
 }
 
 .button-as-link:focus {

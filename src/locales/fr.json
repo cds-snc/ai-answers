@@ -28,7 +28,8 @@
         "azure": "Service d'IA Azure : Microsoft Azure OpenAI"
       },
       "cdslink": "Service numérique canadien",
-      "contact": "Écrivez à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations."
+      "contact": "Écrivez à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations.",
+      "logChatsToDatabaseLabel": "Enregistrer les conversations dans la base de données"
     },
     "feedback": {
       "title": "",
@@ -522,18 +523,17 @@
     "form": {
       "submitting": "Connexion en cours...",
       "signupLink": "Créer un compte"
+    },
+    "2fa": {
+      "title": "Authentification à deux facteurs",
+      "code": "Code de vérification",
+      "verify": "Vérifier le code",
+      "resend": "Renvoyer le code",
+      "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
+      "send": "Envoyer le code de vérification",
+      "sendError": "Impossible d'envoyer le code de vérification",
+      "invalidCode": "Code de vérification invalide"
     }
-      ,
-  "2fa": {
-    "title": "Authentification à deux facteurs",
-    "code": "Code de vérification",
-    "verify": "Vérifier le code",
-    "resend": "Renvoyer le code",
-  "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
-    "send": "Envoyer le code de vérification",
-    "sendError": "Impossible d'envoyer le code de vérification",
-    "invalidCode": "Code de vérification invalide"
-  }
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",
@@ -558,14 +558,14 @@
   },
   "settings": {
     "title": "Paramètres",
-      "liveGraph": {
-        "title": "Live Graph",
-        "description": "Modifiez les valeurs de workflow utilisées par la visualisation Live Graph.",
-        "save": "Enregistrer Live Graph"
-      },
-      "defaultWorkflow": {
-        "label": "Workflow par défaut"
-      },
+    "liveGraph": {
+      "title": "Live Graph",
+      "description": "Modifiez les valeurs de workflow utilisées par la visualisation Live Graph.",
+      "save": "Enregistrer Live Graph"
+    },
+    "defaultWorkflow": {
+      "label": "Workflow par défaut"
+    },
     "statusLabel": "Statut du service",
     "statuses": {
       "available": "Disponible",
@@ -652,8 +652,7 @@
     "fallbackCompareRaw": "Données brutes de la comparaison de repli",
     "agentSelections": "Sélections de l'agent",
     "agentSelectedIndex": "Index sélectionné par l'agent",
-    "agentSelectionExplanation": "Explication de la sélection de l'agent"
-    ,
+    "agentSelectionExplanation": "Explication de la sélection de l'agent",
     "neverStale": "Toujours valide"
   },
   "metrics": {
@@ -743,13 +742,13 @@
     "loadingSimilarChats": "Chargement des chats similaires..."
   },
   "scenarioOverrides": {
-  "title": "Remplacements de scénarios",
-  "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester.",
-  "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO, copiez la version modifiée pour eux, et ils déploieront les changements dans le produit Réponses IA en direct.",
-      "sections": {
-        "editOverride": "Modifier le remplacement",
-        "visualDiff": "Différence visuelle (côte à côte)"
-      },
+    "title": "Remplacements de scénarios",
+    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester.",
+    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO, copiez la version modifiée pour eux, et ils déploieront les changements dans le produit Réponses IA en direct.",
+    "sections": {
+      "editOverride": "Modifier le remplacement",
+      "visualDiff": "Différence visuelle (côte à côte)"
+    },
     "table": {
       "department": "Ministère",
       "defaultLabel": "Texte du scénario par défaut",
@@ -758,7 +757,7 @@
       "showDiff": "Afficher la différence",
       "hideDiff": "Masquer la différence",
       "diffLabel": "Différence",
-  "lastUpdated": "Dernière mise à jour"
+      "lastUpdated": "Dernière mise à jour"
     },
     "status": {
       "saving": "Enregistrement...",

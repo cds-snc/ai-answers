@@ -21,6 +21,7 @@
         "azure": "AI service: Microsoft Azure OpenAI"
       },
       "cdslink": "Canadian Digital Service",
+      "contact": "Email us at cds.dto-btn.snc@servicecanada.gc.ca for more information.",
       "logChatsToDatabaseLabel": "Log chats to database"
     },
     "feedback": {
@@ -99,7 +100,7 @@
         "ariaLabel": {
           "first": "Ask a Canada dot CA question",
           "followon": "Ask a follow-on question or reply",
-          "skipfo": "Skip follow-on question"
+          "skipfo": "Skip to ask follow-on question"
         }
       },
       "buttons": {
@@ -456,18 +457,17 @@
     "form": {
       "submitting": "Signing in...",
       "signupLink": "Create an account"
+    },
+    "2fa": {
+      "title": "Two-factor authentication",
+      "code": "Verification code",
+      "verify": "Verify code",
+      "resend": "Resend code",
+      "sentToEmail": "A verification code has been sent to your email.",
+      "send": "Send verification code",
+      "sendError": "Failed to send verification code",
+      "invalidCode": "Invalid verification code"
     }
-      ,
-  "2fa": {
-    "title": "Two-factor authentication",
-    "code": "Verification code",
-    "verify": "Verify code",
-    "resend": "Resend code",
-  "sentToEmail": "A verification code has been sent to your email.",
-    "send": "Send verification code",
-    "sendError": "Failed to send verification code",
-    "invalidCode": "Invalid verification code"
-  }
   },
   "signup": {
     "title": "Create an account",
@@ -513,14 +513,14 @@
   },
   "settings": {
     "title": "Settings",
-      "liveGraph": {
-        "title": "Live Graph",
-        "description": "Edit the workflow values used by the Live Graph visualization.",
-        "save": "Save Live Graph"
-      },
-      "defaultWorkflow": {
-        "label": "Default workflow"
-      },
+    "liveGraph": {
+      "title": "Live Graph",
+      "description": "Edit the workflow values used by the Live Graph visualization.",
+      "save": "Save Live Graph"
+    },
+    "defaultWorkflow": {
+      "label": "Default workflow"
+    },
     "statusLabel": "Service status",
     "statuses": {
       "available": "Available",
@@ -643,8 +643,7 @@
     "fallbackCompareMeta": "Fallback compare meta",
     "agentSelections": "Agent selections",
     "agentSelectedIndex": "Agent selected index",
-    "agentSelectionExplanation": "Agent selection explanation"
-    ,
+    "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale"
   },
   "metrics": {
@@ -734,13 +733,13 @@
     "loadingSimilarChats": "Loading similar chats..."
   },
   "scenarioOverrides": {
-  "title": "Edit and test scenarios",
-  "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test.",
-  "description2": "If you're happy with the changes, alert the DTO team, copy the edited version for them, and they'll push the changes into the live AI Answers product.",
-      "sections": {
-        "editOverride": "Edit",
-        "visualDiff": "Visual diff (side-by-side)"
-      },
+    "title": "Edit and test scenarios",
+    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test.",
+    "description2": "If you're happy with the changes, alert the DTO team, copy the edited version for them, and they'll push the changes into the live AI Answers product.",
+    "sections": {
+      "editOverride": "Edit",
+      "visualDiff": "Visual diff (side-by-side)"
+    },
     "table": {
       "department": "Department",
       "defaultLabel": "Original scenario text",
@@ -749,7 +748,7 @@
       "showDiff": "Show diff",
       "hideDiff": "Hide diff",
       "diffLabel": "Diff",
-  "lastUpdated": "Last updated"
+      "lastUpdated": "Last updated"
     },
     "status": {
       "saving": "Saving...",
