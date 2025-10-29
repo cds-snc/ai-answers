@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.52.1](https://github.com/cds-snc/ai-answers/compare/v1.52.0...v1.52.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* calculation errors labels and data table ([d3731b8](https://github.com/cds-snc/ai-answers/commit/d3731b892e80fae5f033ce5d14adac7c48445586))
+* metrics dashboard - test in sandbox ([4e1e26c](https://github.com/cds-snc/ai-answers/commit/4e1e26c6f178068eca4026a2054d2c0c61eb2495))
+
 ## [1.52.0](https://github.com/cds-snc/ai-answers/compare/v1.51.11...v1.52.0) (2025-10-28)
 
 
