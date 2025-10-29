@@ -672,10 +672,10 @@
         "threeQuestions": "Sessions à trois questions"
       },
       "answerTypes": {
-        "normal": "Réponses normales",
+        "normal": "Réponses GC",
         "clarifyingQuestion": "Questions de clarification",
-        "ptMuni": "Provincial/Municipal",
-        "notGc": "Non gouvernement du Canada"
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Réponses hors du mandat du GC"
       },
       "metric": "Métrique",
       "count": "Nombre",
@@ -712,9 +712,9 @@
         "reason": "Raison"
       },
       "byDepartment": {
-        "title": "Répartition par département",
+        "title": "Répartition par département des évaluations d'experts",
         "department": "Département",
-        "totalQuestions": "Total des questions",
+        "totalQuestions": "Total des évaluations d'experts",
         "totalSessions": "Sessions totales",
         "expertTotal": "Évaluations d'experts"
       }
