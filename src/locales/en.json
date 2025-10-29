@@ -99,7 +99,7 @@
         "ariaLabel": {
           "first": "Ask a Canada dot CA question",
           "followon": "Ask a follow-on question or reply",
-          "skipfo": "Skip to follow-on question"
+          "skipfo": "Skip to ask follow-on question"
         }
       },
       "buttons": {
