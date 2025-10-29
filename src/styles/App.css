@@ -385,6 +385,7 @@ code {
 .feedback-text,
 .feedback-link {
   font-size: 18px;
+  padding-right: 10px;
 }
 .feedback-container p {
   margin-bottom: 10px;
@@ -560,9 +561,6 @@ code {
   font-family: inherit;
   font-size: inherit;
 }
-/* .button-as-link:first-of-type {
-  padding-right: 6px !important;
-} */
 
 .feedback-link.button-as-link:first-of-type::before {
   font-family: "Font Awesome 6 Free";
