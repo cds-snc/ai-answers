@@ -57,34 +57,24 @@ export class DefaultWorkflow {
     await LoggingService.info(chatId, 'Translation data', { translationData });
 
 
-    // move this to the context service
+    // Always derive a fresh context for each question (do not reuse previous AI context)
     let context = null;
     conversationHistory = conversationHistory.filter((message) => !message.error);
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
-    const usedExistingContext = (
-      conversationHistory.length > 0 &&
-      !conversationHistory[conversationHistory.length - 1].interaction.answer.answerType.includes('question')
-    );
+    
+    
 
-    if (usedExistingContext) {
-      const lastMessage = conversationHistory[conversationHistory.length - 1];
-      context = lastMessage.interaction.context;
-      context.translatedQuestion = translationData.translatedText;
-      context.originalLang = translationData.originalLanguage;
-      context.outputLang = ContextService.determineOutputLang(lang, translationData);
-    } else {
-      context = await ContextService.deriveContext(
-        selectedAI,
-        translationData.translatedText,
-        lang,
-        department,
-        referringUrl,
-        searchProvider,
-        conversationHistory,
-        chatId,
-        translationData
-      );
-    }
+    context = await ContextService.deriveContext(
+      selectedAI,
+      translationData.translatedText,
+      lang,
+      department,
+      referringUrl,
+      searchProvider,
+      conversationHistory,
+      chatId,
+      translationData
+    );
     await LoggingService.info(chatId, 'Derived context:', { context });
     
     this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
@@ -156,4 +146,3 @@ export class DefaultWorkflow {
     };
   }
 }
-
