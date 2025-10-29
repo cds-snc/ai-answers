@@ -373,6 +373,7 @@ code {
 /* Feedback container */
 .feedback-buttons {
   white-space: nowrap;
+  padding-left: 10px;
 }
 .feedback-container {
   background-color: #fff;
