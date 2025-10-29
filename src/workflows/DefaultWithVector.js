@@ -104,20 +104,17 @@ export class DefaultWithVector {
     }
 
     // Decide/derive context for the normal flow
-    let context = preContext;
-    if (!usedExistingContext) {
-      context = await ContextService.deriveContext(
-        selectedAI,
-        translationData.translatedText,
-        lang,
-        department,
-        referringUrl,
-        searchProvider,
-        cleanedHistory,
-        chatId,
-        translationData
-      );
-    }
+    const context = await ContextService.deriveContext(
+      selectedAI,
+      translationData.translatedText,
+      lang,
+      department,
+      referringUrl,
+      searchProvider,
+      cleanedHistory,
+      chatId,
+      translationData
+    );
     await LoggingService.info(chatId, 'Derived context:', { context });
 
     ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
