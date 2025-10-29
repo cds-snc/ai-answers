@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.53.0](https://github.com/cds-snc/ai-answers/compare/v1.52.1...v1.53.0) (2025-10-29)
+
+
+### Features
+
+* enhance expert feedback integration with totalScore filtering ([9b6bcc4](https://github.com/cds-snc/ai-answers/commit/9b6bcc435a903514de34066caaf0c4412ab69829))
+
+
+### Bug Fixes
+
+* remove generateContext from tools list ([ba273b1](https://github.com/cds-snc/ai-answers/commit/ba273b1b0a14a3f41def93be9fe3846699c33d7c))
+* remove generateContext tool call ([a44dd1d](https://github.com/cds-snc/ai-answers/commit/a44dd1d6751f719d54b9269b50782af1419e052e))
+
+
+### Miscellaneous Chores
+
+* clean up code structure and improve readability in DefaultWithVector ([303ffbe](https://github.com/cds-snc/ai-answers/commit/303ffbe418f5e7962bb9e583a063fd9997d5b763))
+* **deps:** bump playwright from 1.55.0 to 1.56.1 ([bbc8ab2](https://github.com/cds-snc/ai-answers/commit/bbc8ab2308aa37823e7e653fd99b14e33d61c207))
+
+
+### Code Refactoring
+
+* streamline context derivation logic in DefaultWorkflow ([676fdcc](https://github.com/cds-snc/ai-answers/commit/676fdcc87aa77a259f07b869d9f9d25a3dbe1d95))
+* streamline context derivation logic in DefaultWorkflow ([62ed32f](https://github.com/cds-snc/ai-answers/commit/62ed32fe12a8ad43e7aa904eb381385185ffaf4e))
+
 ## [1.52.1](https://github.com/cds-snc/ai-answers/compare/v1.52.0...v1.52.1) (2025-10-29)
 
 
