@@ -21,6 +21,7 @@
         "azure": "AI service: Microsoft Azure OpenAI"
       },
       "cdslink": "Canadian Digital Service",
+      "contact": "Email us at cds.dto-btn.snc@servicecanada.gc.ca for more information.",
       "logChatsToDatabaseLabel": "Log chats to database"
     },
     "feedback": {
