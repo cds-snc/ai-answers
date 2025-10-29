@@ -528,8 +528,8 @@ code {
 
 .feedback-link {
   color: var(--gcds-color-blue-850);
-  margin-right: 4px;
-  margin-left: 4px;
+  margin-right: 8px;
+  margin-left: 8px;
 }
 
 .feedback-link:hover {
@@ -555,9 +555,9 @@ hr {
   font-family: inherit;
   font-size: inherit;
 }
-.button-as-link:first-of-type {
+/* .button-as-link:first-of-type {
   padding-right: 6px !important;
-}
+} */
 
 .feedback-link.button-as-link:first-of-type::before {
   font-family: "Font Awesome 6 Free";

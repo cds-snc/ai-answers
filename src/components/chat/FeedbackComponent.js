@@ -125,42 +125,39 @@ const FeedbackComponent = ({
   // Show public mode question: Was this helpful? Yes No
   if (!hasExpertRole) {
     return (
-      <>
-        <div className="feedback-container">
-          <span className="feedback-text">
-            {t("homepage.publicFeedback.question")}
-          </span>
-          <span className="feedback-buttons">
+      <div className="feedback-container">
+        <span className="feedback-text">
+          {t("homepage.publicFeedback.question")}
+        </span>
+        <span className="feedback-buttons">
+          <button
+            className="feedback-link button-as-link"
+            onClick={() => handleFeedback(true)}
+            tabIndex="0"
+          >
+            {t("common.yes", "Yes")}
+          </button>
+          <button
+            className="feedback-link button-as-link"
+            onClick={() => handleFeedback(false)}
+            tabIndex="0"
+          >
+            {t("common.no", "No")}
+          </button>
+        </span>
+        {showSkipButton && (
+          <>
             <button
-              className="feedback-link button-as-link"
-              onClick={() => handleFeedback(true)}
+              className="wb-inv"
+              onClick={onSkip}
+              aria-label={skipButtonLabel}
               tabIndex="0"
             >
-              {t("common.yes", "Yes")}
+              {skipButtonLabel}
             </button>
-            <button
-              className="feedback-link button-as-link"
-              onClick={() => handleFeedback(false)}
-              tabIndex="0"
-            >
-              {t("common.no", "No")}
-            </button>
-          </span>
-          {showSkipButton && (
-            <>
-              <button
-                className="wb-inv"
-                onClick={onSkip}
-                aria-label={skipButtonLabel}
-                tabIndex="0"
-              >
-                {skipButtonLabel}
-              </button>
-            </>
-          )}
-        </div>
-        <hr />
-      </>
+          </>
+        )}
+      </div>
     );
   }
 
