@@ -652,28 +652,28 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
-      "usageMetrics": "Usage Metrics",
-      "totalSessions": "Total Sessions",
-      "inputTokens": "Input Tokens",
-      "outputTokens": "Output Tokens",
-      "totalQuestions": "Total Questions",
+      "usageMetrics": "Usage metrics",
+      "totalSessions": "Total sessions",
+      "inputTokens": "Input tokens",
+      "outputTokens": "Output tokens",
+      "totalQuestions": "Total questions",
       "sessionsByQuestionCount": {
-        "singleQuestion": "Single Question Sessions",
-        "twoQuestions": "Two Question Sessions",
-        "threeQuestions": "Three Question Sessions"
+        "singleQuestion": "Single question sessions",
+        "twoQuestions": "Two question sessions",
+        "threeQuestions": "Three question sessions"
       },
       "answerTypes": {
-        "normal": "Normal Answers",
-        "clarifyingQuestion": "Clarifying Questions",
-        "ptMuni": "Provincial/Municipal",
-        "notGc": "Not Government of Canada"
+        "normal": "GC answers",
+        "clarifyingQuestion": "Clarifying questions",
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Not in GC scope answers"
       },
       "metric": "Metric",
       "count": "Count",
       "percentage": "%",
-      "enCount": "EN Count",
+      "enCount": "EN count",
       "enPercentage": "EN %",
-      "frCount": "FR Count",
+      "frCount": "FR count",
       "frPercentage": "FR %",
       "expertScored": {
         "title": "Partner evaluations",
@@ -699,13 +699,13 @@
         "total": "Total questions with feedback",
         "helpful": "Helpful (yes)",
         "unhelpful": "Issue (no)",
-        "reasonTableTitle": "Public Feedback Reasons Breakdown",
+        "reasonTableTitle": "Public feedback reasons breakdown",
         "reason": "Reason"
       },
       "byDepartment": {
-        "title": "Department breakdown",
+        "title": "Department breakdown of expert evaluations",
         "department": "Department",
-        "totalQuestions": "Total questions",
+        "totalQuestions": "Total expert evaluations",
         "totalSessions": "Total sessions",
         "expertTotal": "Expert evaluations"
       }
