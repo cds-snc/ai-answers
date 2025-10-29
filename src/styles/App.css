@@ -384,7 +384,7 @@ code {
 }
 .feedback-text,
 .feedback-link {
-  font-size: 18px;
+  font-size: 18px !important;
   padding-right: 10px;
 }
 .feedback-container p {
@@ -534,20 +534,20 @@ code {
 }
 
 .feedback-link {
-  /* color: #284162; */
+  color: #284162;
   margin-right: 8px;
   margin-left: 8px;
-  /* text-decoration-thickness: var(--gcds-link-decoration-thickness);
+  text-decoration-thickness: var(--gcds-link-decoration-thickness);
   text-underline-offset: var(--gcds-link-underline-offset);
-  text-decoration: underline; */
+  text-decoration: underline;
 }
 
-/* .feedback-link:hover {
+.feedback-link:hover {
   text-decoration: underline;
   color: var(--gcds-color-blue-850);
   text-decoration-thickness: default;
   text-underline-offset: default;
-} */
+}
 
 .feedback-separator {
   color: #555;
