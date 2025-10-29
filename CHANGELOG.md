@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.54.0](https://github.com/cds-snc/ai-answers/compare/v1.53.0...v1.54.0) (2025-10-29)
+
+
+### Features
+
+* feedback ([6e922f6](https://github.com/cds-snc/ai-answers/commit/6e922f66f671a1702145f81e99cb52b25b6a16dc))
+* feedback ([666bddc](https://github.com/cds-snc/ai-answers/commit/666bddc2b24f543220e5e9e5b9b1db24b9bef913))
+* feedback ([2573de1](https://github.com/cds-snc/ai-answers/commit/2573de13ca9afae4eee2bb70fe2f8e9ed426deb9))
+* feedback ([e017906](https://github.com/cds-snc/ai-answers/commit/e0179067b545ddfd2382299ab13f3f3ae2f93039))
+* feedback ([b12aa24](https://github.com/cds-snc/ai-answers/commit/b12aa24625a1bed00d5b8d2e09ed0fa1e6eca29f))
+* feedback ([035cefc](https://github.com/cds-snc/ai-answers/commit/035cefc119a7bc6e4c4c0769d375e07968869bdf))
+* feedback ([1270276](https://github.com/cds-snc/ai-answers/commit/12702760a630cb30ba9e8f7f157b6555ea9db9c6))
+* feedback ([964717a](https://github.com/cds-snc/ai-answers/commit/964717a45dd876e9481fe87349de9cd6cb371909))
+* feedback ([5a179e6](https://github.com/cds-snc/ai-answers/commit/5a179e6c1760e209f341f3959b55825e2392c5f2))
+* feedback ([cad1669](https://github.com/cds-snc/ai-answers/commit/cad16695d4321fee707ecd492c1b444b13f7dbc4))
+* feedback ([1541cb8](https://github.com/cds-snc/ai-answers/commit/1541cb8f287c444b1ac469c73a6375116c0838aa))
+* feedback ([949d56c](https://github.com/cds-snc/ai-answers/commit/949d56ca5062e4ca3c059e656d17cefe889da66a))
+* fix missing translation ([5ddc559](https://github.com/cds-snc/ai-answers/commit/5ddc559d52c4fd4eb04ef6a29329cc836d653295))
+
+
+### Bug Fixes
+
+* feedback section ([2c33783](https://github.com/cds-snc/ai-answers/commit/2c337832f4762a6e9c20534263fefa855c59edf8))
+
 ## [1.53.0](https://github.com/cds-snc/ai-answers/compare/v1.52.1...v1.53.0) (2025-10-29)
 
 
