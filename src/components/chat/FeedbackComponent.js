@@ -137,6 +137,7 @@ const FeedbackComponent = ({
           >
             {t("common.yes", "Yes")}
           </button>
+          <span className="feedback-separator">·</span>
           <button
             className="feedback-link button-as-link"
             onClick={() => handleFeedback(false)}

@@ -380,6 +380,7 @@ code {
   padding: 1rem;
   border-radius: 0.5rem;
   margin-top: 10px;
+  margin-bottom: 10px;
 }
 .feedback-text,
 .feedback-link {
@@ -398,7 +399,10 @@ code {
   color: #284162;
 }
 .feedback-survey-link:hover {
-  text-decoration: none;
+  text-decoration: underline;
+  color: var(--gcds-link-hover);
+  text-decoration-thickness: var(--gcds-link-decoration-thickness);
+  text-underline-offset: var(--gcds-link-underline-offset);
 }
 
 /* Review panels table styling */
@@ -530,18 +534,15 @@ code {
   color: var(--gcds-color-blue-850);
   margin-right: 8px;
   margin-left: 8px;
+  text-decoration-thickness: var(--gcds-link-decoration-thickness);
+  text-underline-offset: var(--gcds-link-underline-offset);
 }
 
 .feedback-link:hover {
   text-decoration: underline;
   color: var(--gcds-link-hover);
-  text-decoration-thickness: var(--gcds-link-decoration-thickness);
-  text-underline-offset: var(--gcds-link-underline-offset);
 }
 
-hr {
-  border-top: 1px solid #d9d9d9 !important;
-}
 .feedback-separator {
   color: #555;
   margin: 0 0.2rem;
