@@ -138,6 +138,8 @@ const LoginPage = ({ lang = 'en' }) => {
           </form>
           <div className={styles['auth-links']}>
             <Link to={`/${lang}/signup`}>{t('login.form.signupLink')}</Link>
+            &nbsp;|&nbsp;
+            <Link to={`/${lang}/reset-request`}>{t('login.form.forgotPassword') || 'Forgot password?'}</Link>
           </div>
         </>
       )}

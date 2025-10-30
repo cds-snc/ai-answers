@@ -521,7 +521,9 @@
     "invalidCredentials": "Courriel ou mot de passe invalide",
     "form": {
       "submitting": "Connexion en cours...",
-      "signupLink": "Créer un compte"
+      "signupLink": "Créer un compte",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signinLink": "Se connecter"
     }
       ,
   "2fa": {
@@ -534,6 +536,40 @@
     "sendError": "Impossible d'envoyer le code de vérification",
     "invalidCode": "Code de vérification invalide"
   }
+  },
+  "reset": {
+    "request": {
+      "title": "Réinitialiser votre mot de passe",
+      "send": "Envoyer le courriel de réinitialisation",
+      "sending": "Envoi...",
+      "sent": "Si ce compte existe, nous avons envoyé un courriel de réinitialisation.",
+      "error": "Échec de la demande de réinitialisation"
+    },
+    "verify": {
+      "title": "Vérifier la réinitialisation",
+      "instructions": "Entrez un code de vérification depuis votre application d'authentification ou demandez un code à usage unique par courriel.",
+      "instructionsNoOtp": "Cliquez sur Continuer pour définir un nouveau mot de passe.",
+      "continue": "Continuer",
+      "code": "Code de vérification",
+      "sendOtp": "Envoyer le code par courriel",
+      "otpSent": "Un code de vérification a été envoyé à votre adresse courriel",
+      "otpSendError": "Échec de l'envoi du code de vérification",
+      "next": "Suivant",
+      "invalidLink": "Lien de réinitialisation invalide ou manquant"
+    },
+    "complete": {
+      "title": "Définir un nouveau mot de passe",
+      "code": "Code de vérification",
+      "password": "Nouveau mot de passe",
+      "confirm": "Confirmer le nouveau mot de passe",
+      "submit": "Définir le mot de passe",
+      "submitting": "Envoi...",
+      "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
+      "error": "Échec de la réinitialisation du mot de passe",
+      "invalid": "Lien de réinitialisation invalide",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
+    }
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",
@@ -592,6 +628,9 @@
       "title": "Authentification à deux facteurs",
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
       "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
+    },
+    "site": {
+      "baseUrl": "URL de base (frontend)"
     },
     "session": {
       "title": "Paramètres de session",

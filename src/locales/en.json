@@ -455,7 +455,9 @@
     "invalidCredentials": "Invalid email or password",
     "form": {
       "submitting": "Signing in...",
-      "signupLink": "Create an account"
+      "signupLink": "Create an account",
+      "forgotPassword": "Forgot password?",
+      "signinLink": "Sign in"
     }
       ,
   "2fa": {
@@ -468,6 +470,40 @@
     "sendError": "Failed to send verification code",
     "invalidCode": "Invalid verification code"
   }
+  },
+  "reset": {
+    "request": {
+      "title": "Reset your password",
+      "send": "Send reset email",
+      "sending": "Sending...",
+      "sent": "If that account exists, we sent a reset email.",
+      "error": "Failed to request reset"
+    },
+    "verify": {
+      "title": "Verify reset",
+      "instructions": "Enter a verification code from your authenticator app or request a one-time code to your email.",
+      "instructionsNoOtp": "Click continue to set a new password.",
+      "continue": "Continue",
+      "code": "Verification code",
+      "sendOtp": "Send OTP to email",
+      "otpSent": "A verification code has been sent to your email",
+      "otpSendError": "Failed to send verification code",
+      "next": "Next",
+      "invalidLink": "Invalid or missing reset link"
+    },
+    "complete": {
+      "title": "Set a new password",
+      "code": "Verification code",
+      "password": "New password",
+      "confirm": "Confirm new password",
+      "submit": "Set password",
+      "submitting": "Submitting...",
+      "success": "Password updated. Redirecting to sign in...",
+      "error": "Failed to reset password",
+      "invalid": "Invalid reset link",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordMismatch": "Passwords do not match"
+    }
   },
   "signup": {
     "title": "Create an account",
@@ -547,6 +583,9 @@
       "title": "Two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
       "templateLabel": "GC Notify template ID for 2FA emails"
+    },
+    "site": {
+      "baseUrl": "Base URL (frontend)"
     },
     "session": {
       "title": "Session settings",
