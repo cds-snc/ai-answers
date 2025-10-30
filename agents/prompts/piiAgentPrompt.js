@@ -6,7 +6,7 @@ DETECT AND REDACT PI
    used to identify or contact an individual:
 
   ALWAYS REDACT PERSONAL IDENTIFIERS:
-  - Names of people (e.g., "Hussein Hassan Baloula Adamini",  "Marie Dubois")
+  - ESSENTIAL: always redact names of people (e.g., "I am Hussein Adamini", "Je suis Marie Dubois", "Bob Smith's account)
   - Home addresses with street numbers (e.g.,
   "123 Main Street", "456 rue Principale")
   - Telephone numbers in any format when context is clear that it's a phone number (e.g. "Call me at 9054736")
