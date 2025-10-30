@@ -9,6 +9,9 @@ import ChatViewer from './pages/ChatViewer.js';
 import SignupPage from './pages/SignupPage.js';
 import LoginPage from './pages/LoginPage.js';
 import LogoutPage from './pages/LogoutPage.js';
+import ResetRequestPage from './pages/ResetRequestPage.js';
+import ResetVerifyPage from './pages/ResetVerifyPage.js';
+import ResetCompletePage from './pages/ResetCompletePage.js';
 import { GcdsHeader, GcdsBreadcrumbs, GcdsFooter } from '@cdssnc/gcds-components-react';
 import './styles/App.css';
 import UsersPage from './pages/UsersPage.js';
@@ -235,6 +238,12 @@ export default function App() {
       { path: '/fr', element: homeFr },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
       { path: '/fr/signin', element: <LoginPage lang="fr" /> },
+  { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },
+  { path: '/fr/reset-request', element: <ResetRequestPage lang="fr" /> },
+  { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" /> },
+  { path: '/fr/reset-verify', element: <ResetVerifyPage lang="fr" /> },
+  { path: '/en/reset-complete', element: <ResetCompletePage lang="en" /> },
+  { path: '/fr/reset-complete', element: <ResetCompletePage lang="fr" /> },
       { path: '/en/signup', element: <SignupPage lang="en" /> },
       { path: '/fr/signup', element: <SignupPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
