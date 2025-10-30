@@ -1,42 +1,37 @@
-export const PROMPT = `
-DETECT AND REDACT PI
+export const PROMPT = `Redact all personally identifiable information (PII) with XXX.
+
 - Determine the language internally only to perform accurate redaction, but do NOT output the language.
-- PI: detect personal information (PI) that identifies a specific
-  person so it can be redacted. ONLY detect information that could be
-   used to identify or contact an individual:
+- The content may be in any language (English, French, Arabic, Chinese, etc.)
 
-  ALWAYS REDACT PERSONAL IDENTIFIERS:
-  - ESSENTIAL: always redact names of people (e.g., "I am Hussein Adamini", "Je suis Marie Dubois", "Bob Smith's account)
-  - Home addresses with street numbers (e.g.,
-  "123 Main Street", "456 rue Principale")
-  - Telephone numbers in any format when context is clear that it's a phone number (e.g. "Call me at 9054736")
-  - Zip and international postal codes when part of an address
-  - Actual Social Insurance Numbers, social security numbers and similar identity number sequences (e.g., "my SIN is 123-456-789", "SIN: 123456789", "NAS 123 456 789")
-  - Actual personal account, file, passport or reference numbers when the user is sharing their specific number (e.g., "My CRA business number is 987654321", "My IRCC personal reference code is B7632", "Numero de passeport HB65321")
+DO redact (these are PII):
+- Person names in any context (descriptions, examples, accounts, etc.)
+- Personal account/reference/visa IDs/GST numbers that uniquely identify a person (V404228553, 679553, AB123456)
+- US ZIP codes (12345, 12345-6789)
 
-  NEVER REDACT:
-  - Government form numbers (e.g., "Form T1","IMM 5257", "I filled out RC4")
-  - Product serial numbers or model numbers  (e.g., "Serial number ABC123", "Model XYZ-789")
-  - Codes for occupations, businesses, taxes etc. (e.g. "I used NOC code 1234")
-  - Dollar amounts (e.g., "$1,500", "I paid 1500 dollars")
-  - General numeric identifiers that aren't associated with a specific person
-  - Years and dates with or without personal context (e.g., "tax year 2024", "I sent it on December 15")
-  - Mentions of document types or identifier types WITHOUT the actual number (e.g., "where to get a SIN number", "how to apply for a SIN", "where do I get my SIN", "I need my passport", "what is a business number")
-  - Questions asking about how to obtain, apply for, or find documents or identifier numbers (e.g., "how do I get a SIN", "where can I find my account number", "how to apply for passport")
+Do NOT redact (these are not PII):
+- Form/file references (T2202, GST524, RC7524-ON, IMM 0008 SCH2)
+- Dollar amounts ($1570, under $20,000)
+- Product serial numbers
+- General numeric identifiers not associated with a specific person
 
-  CRITICAL DISTINCTION:
-  - "where is my SIN number" → DO NOT REDACT (asking where to find it, no actual number provided)
-  - "my SIN is 123-456-789" → REDACT to "my SIN is XXX" (actual number provided)
-  - "I need to get my SIN" → DO NOT REDACT (just mentioning the document type)
-  - "SIN 123456789" → REDACT to "SIN XXX" (actual number provided)
-  - "how do I apply for a passport" → DO NOT REDACT (asking how to apply)
-  - "my passport number is HB65321" → REDACT to "my passport number is XXX" (actual number provided)
+Examples (English):
+- "I got divorced and changed my name back from Jane Smith to Jane Poirier. How do I get a new SIN card?" → "I got divorced and changed my name back from XXX to XXX. How do I get a new SIN card?"
+- "Who is looking after the clearance certificate for the Ramon Santos Villanueva account?" → "Who is looking after the clearance certificate for the XXX account?"
+- "Looking for status update on visa application with id V404228553" → "Looking for status update on visa application with id XXX" (REDACT - personal visa ID)
+- "My code is 679553 for verification. It didn't work." → "My code is XXX for verification. It didn't work." (REDACT - personal reference code)
+- "Passport AB123456 issued in 2020" → "Passport XXX issued in 2020" (REDACT - personal passport number)
+- "I need a SIN for my baby" → NO CHANGE (just mentioning the document type, no actual number)
+- "Form T2202 for $1570" → NO CHANGE (form number and dollar amount, not personal PII)
 
-  - PERFORM THE REDACTION: in the original language of the question, replace detected PI with literal string "XXX" keeping everything else unchanged.
-    Example: "I am John Smith, please help me." → "I am XXX, please help me"
-    Example: "My SIN is 123-456-789" → "My SIN is XXX"
-    Example: "Where do I find my SIN number?" → "Where do I find my SIN number?" (NO REDACTION)
-    Example: "我住在橡树街123号" → "我住在XXX"
+Examples (French):
+- "Je m'appelle Marie Dubois et j'ai besoin d'aide avec ma demande de SIN" → "Je m'appelle XXX et j'ai besoin d'aide avec ma demande de SIN" (REDACT - person name)
+- "Mon numéro de référence est 679553" → "Mon numéro de référence est XXX" (REDACT - reference code)
+- "Formulaire T2202 pour $1570" → NO CHANGE (form number and dollar amount)
 
-  - OUTPUT: <pii>redacted question string with XXX replacements</pii> or <pii>null</pii> if no PI was detected and replaced.
+Examples (Other languages):
+- Arabic: "أنا أحمد محمود وأحتاج إلى مساعدة" → "أنا XXX وأحتاج إلى مساعدة" (REDACT - person name)
+- Chinese: "我的申请编号是V404228553" → "我的申请编号是XXX" (REDACT - application ID)
+- Spanish: "Mi código de verificación es 679553" → "Mi código de verificación es XXX" (REDACT - verification code)
+
+Output: <pii>redacted text with XXX for all PII</pii> or <pii>null</pii> if no PII found.
 `;
