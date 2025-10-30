@@ -27,9 +27,7 @@ const sendResetHandler = async (req, res) => {
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   user.resetPasswordToken = tokenHash;
   user.resetPasswordExpires = expires;
-    // Clear any previous reset OTP
-    user.resetOTP = null;
-    user.resetOTPExpires = null;
+  // Legacy: no email OTP fallback anymore; no per-reset OTP to clear
     await user.save();
 
     // Compose reset link (client will have a route to handle verification)

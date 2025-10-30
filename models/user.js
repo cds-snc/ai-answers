@@ -47,14 +47,7 @@ const userSchema = new mongoose.Schema({
     default: null,
   },
   // Fallback email OTP for password reset (if user doesn't use TOTP/WebAuthn)
-  resetOTP: {
-    type: String,
-    default: null,
-  },
-  resetOTPExpires: {
-    type: Date,
-    default: null,
-  }
+  // (legacy) email OTP fields removed — email OTP fallback is no longer used
 }, {
   timestamps: true,
   versionKey: false,

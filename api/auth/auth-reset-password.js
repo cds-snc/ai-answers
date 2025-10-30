@@ -39,11 +39,9 @@ const resetPasswordHandler = async (req, res) => {
 
     // Rotate password (User pre-save hashes password)
     user.password = password;
-    // Clear reset artifacts
-    user.resetPasswordToken = null;
-    user.resetPasswordExpires = null;
-    user.resetOTP = null;
-    user.resetOTPExpires = null;
+  // Clear reset artifacts
+  user.resetPasswordToken = null;
+  user.resetPasswordExpires = null;
     await user.save();
 
     // Optionally: revoke sessions — not fully implemented because sessions are in-memory/service-scoped
