@@ -40,8 +40,8 @@ Mixed PII,Address and Contact,Jane Doe lives at 123 Maple Street, Apt. 456, with
 Mixed PII,Business Information,Contact Dr. Robert Johnson at P.O. Box 1234, via robert.johnson@company.org or (123) 456-7890 ext. 123.,Redact
 Mixed PII,Online Identifiers,User ABC123XYZ with IP 192.168.1.1 accessed https://secure.example.com/account#profile.,Redact
 Mixed PII,Complete Profile,Mrs. Sarah Williams, SIN 123-456-789, passport AB123456, residing at 456 Oak Avenue, Unit 101, ZIP 12345-6789.,Redact
-Government drop-off,Partial Address,I filed my tax return, with my payment, directly at the Laval office on May 31 in the drop box. My cheque payment still hasn't cleared as of June 25, 2025.,Do not redact
-Organization Name,First Nation Name,In Peguis nation, eligible for treaty annuity payments?,Do Not Redact
+Government drop-off,Partial Address,"I filed my tax return, with my payment, directly at the Laval office on May 31 in the drop box. My cheque payment still hasn't cleared as of June 25, 2025.",Do not redact
+Organization Name,First Nation Name,"In Peguis nation, eligible for treaty annuity payments?",Do Not Redact
 Organization Name,Band Name,How much is the treaty payment every year for Obashkaandagaang band?,Do Not Redact
 Organization Name,First Nation - Proper Name,Alexander First Nation Cow and Plow?,Do Not Redact
 Building Name,Government Building,What kind of RFP was used to construct the James Michael Flaherty Building in Ottawa?,Do Not Redact
