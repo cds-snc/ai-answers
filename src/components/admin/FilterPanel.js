@@ -88,9 +88,11 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   // Department options based on systemPrompt modules
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') },
+    { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
     { value: 'ECCC', label: 'ECCC' },
     { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
+    { value: 'FIN', label: 'FIN' },
     { value: 'HC-SC', label: 'HC-SC' },
     { value: 'IRCC', label: 'IRCC' },
     { value: 'ISED-ISDE', label: 'ISED-ISDE' },

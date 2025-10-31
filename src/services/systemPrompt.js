@@ -69,10 +69,22 @@ const departmentModules = {
       return { scenarios: ISED_ISDE_SCENARIOS };
     },
   },
+  'CDS-SNC': {
+    getContent: async () => {
+      const { CDS_SNC_SCENARIOS } = await import('./systemPrompt/context-cds-snc/cds-snc-scenarios.js');
+      return { scenarios: CDS_SNC_SCENARIOS };
+    },
+  },
   'ECCC': {
     getContent: async () => {
       const { ECCC_SCENARIOS } = await import('./systemPrompt/context-eccc/eccc-scenarios.js');
       return { scenarios: ECCC_SCENARIOS };
+    },
+  },
+  'FIN': {
+    getContent: async () => {
+      const { FIN_SCENARIOS } = await import('./systemPrompt/context-fin/fin-scenarios.js');
+      return { scenarios: FIN_SCENARIOS };
     },
   },
   'NRCan-RNCan': {

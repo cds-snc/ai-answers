@@ -73,8 +73,8 @@
     "privacy": {
       "title": "Confidentialité et conditions d'utilisation de l'IA",
       "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
-      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
-      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques. Votre utilisation de ce système et de toute information générée est également soumise aux",
+      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.\n\nNous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
+      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.\n\nVotre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
     },
     "errors": {

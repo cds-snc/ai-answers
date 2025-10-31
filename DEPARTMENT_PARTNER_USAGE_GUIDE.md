@@ -12,9 +12,11 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
+| `CDS-SNC` | Canadian Digital Service | Service numérique canadien |
 | `CRA-ARC` | Canada Revenue Agency | Agence du revenu du Canada |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
 | `EDSC-ESDC` | Employment and Social Development Canada | Emploi et Développement social Canada |
+| `FIN` | Finance Canada | Finances Canada |
 | `HC-SC` | Health Canada | Santé Canada |
 | `IRCC` | Immigration, Refugees and Citizenship Canada | (bilingual name) |
 | `ISED-ISDE` | Innovation, Science and Economic Development Canada | Innovation, Sciences et Développement économique Canada |
@@ -104,7 +106,7 @@ Add to `SUPPORTED_DEPARTMENTS` object:
 
 ### Step 5: Update `ScenarioOverridesPage.js`
 
-Add to `SUPPORTED_DEPARTMENTS` array:
+Add to `SUPPORTED_DEPARTMENTS` array in **alphabetical order**:
 
 ```javascript
 '{ABBR_KEY}'
