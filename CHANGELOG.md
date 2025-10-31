@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.55.0](https://github.com/cds-snc/ai-answers/compare/v1.54.0...v1.55.0) (2025-10-31)
+
+
+### Features
+
+* implement password reset functionality with email verification ([3667079](https://github.com/cds-snc/ai-answers/commit/3667079da216b9c70ebec70793775b226c8c94d2))
+* implement password reset functionality with email verification ([884852b](https://github.com/cds-snc/ai-answers/commit/884852b51ba564f4158fb41db61b4841e1f1c9e8))
+
+
+### Bug Fixes
+
+* add account number ([8d99b09](https://github.com/cds-snc/ai-answers/commit/8d99b098bd6147138cf39a8f4f3316b1a2cafc3c))
+* add first nation and building name exclusions ([60ff003](https://github.com/cds-snc/ai-answers/commit/60ff003ffc1a0d27cd94274da22b2ad7748ba27c))
+* cut again and simplify ([e12f8c3](https://github.com/cds-snc/ai-answers/commit/e12f8c33c869f356b7135a4ac68db56c09611662))
+* let verification code go through ([ca6062d](https://github.com/cds-snc/ai-answers/commit/ca6062d438a585194c6db1e28930c844e4474f41))
+* PII name elected officials news ([741056c](https://github.com/cds-snc/ai-answers/commit/741056cd68745c779eef874f4886befd8c1b8194))
+* simplify PII Agent prompt for MINI ([3d01f5a](https://github.com/cds-snc/ai-answers/commit/3d01f5a70cf04783d1e3fb1b78286bd9cb0aed6c))
+* simplify PII Agent prompt for MINI ([9b87890](https://github.com/cds-snc/ai-answers/commit/9b87890c82b065c72559cee513cddcc301ae9c1b))
+* test set for redactions ([435719e](https://github.com/cds-snc/ai-answers/commit/435719e80d18a6811ca5b0f5b74d55abb98cbccb))
+
+
+### Code Refactoring
+
+* remove legacy email OTP fields and cleanup reset artifacts ([703dcc3](https://github.com/cds-snc/ai-answers/commit/703dcc3b8a183707f80b393795e7a74c20df7207))
+
 ## [1.54.0](https://github.com/cds-snc/ai-answers/compare/v1.53.0...v1.54.0) (2025-10-29)
 
 
