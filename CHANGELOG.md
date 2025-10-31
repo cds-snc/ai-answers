@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.55.1](https://github.com/cds-snc/ai-answers/compare/v1.55.0...v1.55.1) (2025-10-31)
+
+
+### Bug Fixes
+
+* add partners and update all docs to reflect ([b11f282](https://github.com/cds-snc/ai-answers/commit/b11f282bafe198fd4750f405c3eead9efc773077))
+* add partners and update all docs to reflect - merge to test in sandbox ([7259e12](https://github.com/cds-snc/ai-answers/commit/7259e12d57463297c0b9037d8c4b6959c94655c8))
+* instruct to use download tool ([a223364](https://github.com/cds-snc/ai-answers/commit/a223364068ec9908db053fc777ae31d1961cac49))
+* tweak fin scenario ([ae93f75](https://github.com/cds-snc/ai-answers/commit/ae93f7597d84ff067100b51b40dc4f23b1a172c4))
+
 ## [1.55.0](https://github.com/cds-snc/ai-answers/compare/v1.54.0...v1.55.0) (2025-10-31)
 
 
