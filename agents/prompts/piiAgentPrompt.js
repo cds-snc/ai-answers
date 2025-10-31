@@ -22,6 +22,8 @@ Examples (English):
 - "My account number is ACC456789Z" → "My account number is XXX" (REDACT - personal account number)
 - "Passport AB123456 issued in 2020" → "Passport XXX issued in 2020" (REDACT - personal passport number)
 - "I need a SIN for my baby" → NO CHANGE (just mentioning the document type, no actual number)
+- "Alexander First Nation Cows and Plows" → NO CHANGE (indigenous nation/organization name, not a person)
+- "What kind of RFP was used to construct the James Michael Flaherty Building in Ottawa?" → NO CHANGE (building/location name, not a person reference)
 - "Form T2202 for $1570" → NO CHANGE (form number and dollar amount, not personal PII)
 
 Examples in other languages:
