@@ -13,13 +13,14 @@ Do NOT redact (these look like PII but don't identify a specific person):
 - First Nation/Indigenous nation names (e.g., "Alexander First Nation", "Peguis nation")
 - Form/file references (T2202, GST524, RC7524-ON, IMM 0022 SCH2)
 - Dollar amounts ($20,000, $1570)
-- Verification codes mentioned in context of account signup (not as personal ID)
+- Only mentioning the concept of a verification code without an actual code value (e.g., "Haven't received a verification code")
 
 Examples:
 REDACT: "I changed my name from Jane Smith to Jane Poirier. How do I get a new SIN card?" → "I changed my name from XXX to XXX. How do I get a new SIN card?"
 REDACT: "Clearance for the Ramon Santos Villanueva account?" → "Clearance for the XXX account?"
 REDACT: "Visa id V404228553 - what is the status?" → "Visa id XXX - what is the status?"
 REDACT: "My account number is ACC456789Z" → "My account number is XXX"
+REDACT: "I used code 679553 as my personal access code. Need help with next step." → "I used code XXX as my personal access code. Need help with next step."
 DO NOT: "James Michael Flaherty Building in Ottawa?" → NO CHANGE
 DO NOT: "Alexander First Nation Cows and Plows" → NO CHANGE
 DO NOT: "Peguis nation, eligible for treaty annuity payments?" → NO CHANGE
