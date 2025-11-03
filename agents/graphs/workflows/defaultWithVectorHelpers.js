@@ -383,11 +383,14 @@ export class DefaultWithVectorServerWorkflow {
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
-      // Prefer exposing the source chatId for traceability; fall back to interactionId
-      const providedByChatId = similarJson.chatId || similarJson.interactionId || null;
+      // Extract the instant-match ids returned by the API
+  // Accept either the new instantAnswer* fields or legacy names
+  const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
+  const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || similarJson.providedByInteractionId || null;
       await ServerLoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
         similar: similarJson,
-        providedByChatId
+        instantAnswerChatId,
+        instantAnswerInteractionId
       });
       return {
         answer: {
@@ -395,7 +398,8 @@ export class DefaultWithVectorServerWorkflow {
           content: answerText,
           paragraphs: [answerText],
           sentences: [answerText],
-          providedByChatId: providedByChatId,
+          instantAnswerChatId: instantAnswerChatId,
+          instantAnswerInteractionId: instantAnswerInteractionId,
           similarity: similarJson.similarity || null,
           citationHead: similarJson.citation?.citationHead || null,
         },
