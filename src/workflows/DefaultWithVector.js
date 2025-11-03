@@ -208,6 +208,10 @@ export class DefaultWithVector {
       || null;
 
     const contentText = (similarShortCircuit.answer && (similarShortCircuit.answer.content || (Array.isArray(similarShortCircuit.answer.paragraphs) ? similarShortCircuit.answer.paragraphs.join('\n\n') : ''))) || '';
+    const englishAnswerText = (similarShortCircuit.answer && (similarShortCircuit.answer.englishAnswer || similarShortCircuit.answer.content))
+      || similarShortCircuit.englishAnswer
+      || contentText
+      || '';
     const parsedSentences = AnswerService.parseSentences(contentText || '');
 
     const payload = {
@@ -220,6 +224,7 @@ export class DefaultWithVector {
         content: similarShortCircuit.answer && similarShortCircuit.answer.content,
         paragraphs: (similarShortCircuit.answer && similarShortCircuit.answer.paragraphs) || [],
         sentences: parsedSentences,
+  englishAnswer: englishAnswerText,
         citationHead: citationHead,
         questionLanguage: (translationData && translationData.originalLanguage) || lang,
         englishQuestion: (translationData && translationData.translatedText) || userMessage,
@@ -326,12 +331,14 @@ export class DefaultWithVector {
           // the message content is displayed. Prefer `paragraphs` (rendered
           // first), but also include `sentences` and `content` for safety.
           const answerText = similarJson.answer;
+          const englishAnswerText = similarJson.englishAnswer || answerText;
           return {
             answer: {
               answerType: 'normal',
               content: answerText,
               paragraphs: [answerText],
               sentences: [answerText],
+              englishAnswer: englishAnswerText,
               // expose metadata for potential UI display
               // expose the source chat/interaction ids returned by the matcher
               instantAnswerChatId: instantAnswerChatId,

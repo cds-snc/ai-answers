@@ -329,6 +329,11 @@ export class DefaultWithVectorServerWorkflow {
     const citationHead = similarShortCircuit.answer?.citationHead || similarShortCircuit.sourceCitation?.citationHead || null;
 
     const contentText = similarShortCircuit.answer?.content || (Array.isArray(similarShortCircuit.answer?.paragraphs) ? similarShortCircuit.answer.paragraphs.join('\n\n') : '') || '';
+    const englishAnswerText = similarShortCircuit.answer?.englishAnswer
+      || similarShortCircuit.englishAnswer
+      || similarShortCircuit.answer?.content
+      || contentText
+      || '';
     const parsedSentences = parseSentences(contentText || '');
 
     return {
@@ -341,6 +346,7 @@ export class DefaultWithVectorServerWorkflow {
         content: similarShortCircuit.answer?.content,
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
+  englishAnswer: englishAnswerText,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -383,6 +389,7 @@ export class DefaultWithVectorServerWorkflow {
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
+      const englishAnswerText = similarJson.englishAnswer || answerText;
       // Extract the instant-match ids returned by the API
   // Accept either the new instantAnswer* fields or legacy names
   const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
@@ -398,6 +405,7 @@ export class DefaultWithVectorServerWorkflow {
           content: answerText,
           paragraphs: [answerText],
           sentences: [answerText],
+          englishAnswer: englishAnswerText,
           instantAnswerChatId: instantAnswerChatId,
           instantAnswerInteractionId: instantAnswerInteractionId,
           similarity: similarJson.similarity || null,
