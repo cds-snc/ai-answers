@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.0](https://github.com/cds-snc/ai-answers/compare/v1.55.1...v1.56.0) (2025-11-03)
+
+
+### Features
+
+* add support for instant-match identifiers in chat interactions and responses ([459bc93](https://github.com/cds-snc/ai-answers/commit/459bc93f85f454181bb5158bc0c435dd8d5aafd1))
+
 ## [1.55.1](https://github.com/cds-snc/ai-answers/compare/v1.55.0...v1.55.1) (2025-10-31)
 
 
