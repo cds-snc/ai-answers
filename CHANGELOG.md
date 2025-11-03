@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.57.0](https://github.com/cds-snc/ai-answers/compare/v1.56.1...v1.57.0) (2025-11-03)
+
+
+### Features
+
+* pass englishAnswer to log file ([4750a56](https://github.com/cds-snc/ai-answers/commit/4750a56b050e313f5ed0719d84c9a9d83b307cbc))
+* pass englishAnswer to log file ([be5cccd](https://github.com/cds-snc/ai-answers/commit/be5cccd9e2cf309de67b8ad276b89a0e03a77893))
+
+
+### Bug Fixes
+
+* serve Adobe Analytics URL via runtime config endpoint ([2502e27](https://github.com/cds-snc/ai-answers/commit/2502e27334ac4a7fe8b23ed483b2d8da178a9880))
+* serve Adobe Analytics URL via runtime config endpoint ([b6b1b62](https://github.com/cds-snc/ai-answers/commit/b6b1b62f67695b9d6dacf417cb105946a52c14f3))
+
 ## [1.56.1](https://github.com/cds-snc/ai-answers/compare/v1.56.0...v1.56.1) (2025-11-03)
 
 
