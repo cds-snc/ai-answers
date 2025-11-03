@@ -70,6 +70,7 @@ async function handler(req, res) {
 
         return res.json({
             answer: formatted.text,
+            englishAnswer: formatted.englishAnswer || null,
             interactionId: formatted.interactionId || null,
             chatId: formatted.chatId || null,
             reRanked: true,

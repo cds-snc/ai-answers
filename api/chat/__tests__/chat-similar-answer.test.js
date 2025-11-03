@@ -121,6 +121,7 @@ describe('chat-similar-answer handler', () => {
     const responseBody = res.json.mock.calls[0][0];
     expect(responseBody).toBeDefined();
     expect(responseBody.answer).toContain('Answer 1');
+    expect(responseBody.englishAnswer).toBe('Answer 1');
     expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000001');
     expect(responseBody.reRanked).toBe(true);
   });
