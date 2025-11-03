@@ -66,11 +66,12 @@ async function handler(req, res) {
         // Translate the final answer if needed into the user's detected language
         await translateFinalAnswerIfNeeded(formatted, pageLanguage, detectedLanguage, selectedAI);
 
+        // Return the selected answer and include the persisted `interactionId` string (if present)
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, chatId: formatted.chatId, sourceSimilarity: chosen.match?.similarity });
 
         return res.json({
             answer: formatted.text,
-            interactionId: formatted.interactionId,
+            interactionId: formatted.interactionId || null,
             chatId: formatted.chatId || null,
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
@@ -242,7 +243,9 @@ async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-        return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null, chatId: chosenEntry.chatId || null };
+    // Prefer the stored `interactionId` field (userMessageId) when available
+    const returnedInteractionId = selected.interactionId || (selected._id ? selected._id.toString() : null);
+    return { text, englishAnswer, interactionId: returnedInteractionId, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null, chatId: chosenEntry.chatId || null };
     }
 
     // Helper: translate the final answer when requested language is not English/French

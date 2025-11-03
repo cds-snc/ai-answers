@@ -45,6 +45,9 @@ async function handler(req, res) {
     dbInteraction.interactionId = interaction.userMessageId;
     dbInteraction.responseTime = interaction.responseTime;
     dbInteraction.referringUrl = interaction.referringUrl;
+    // Persist optional instant-match identifiers from short-circuit flow
+    dbInteraction.instantAnswerChatId = interaction.instantAnswerChatId || '';
+    dbInteraction.instantAnswerInteractionId = interaction.instantAnswerInteractionId || '';
 
     const context = new Context();
     Object.assign(context, interaction.context);
@@ -116,7 +119,7 @@ async function handler(req, res) {
     } catch (e) {
       ServerLoggingService.error('Failed to read deploymentMode setting', chatId, e);
     }
-        // 6. Perform evaluation on the saved interaction
+    // 6. Perform evaluation on the saved interaction
     ServerLoggingService.info('Evaluation starting', chatId, {});
 
     ServerLoggingService.info('Deployment mode', chatId, { deploymentMode });

@@ -233,6 +233,10 @@ export class DefaultWithVector {
       pageLanguage: lang,
       responseTime: totalResponseTimeSC,
       searchProvider: searchProvider
+      ,
+      // Optional: the matched chat and interaction identifiers (if available)
+      instantAnswerChatId: similarShortCircuit.instantAnswerChatId || null,
+      instantAnswerInteractionId: similarShortCircuit.instantAnswerInteractionId || null
     };
 
     return payload;
@@ -308,11 +312,14 @@ export class DefaultWithVector {
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
         if (similarJson && similarJson.answer) {
-          // Prefer exposing the source chatId for traceability; fall back to interactionId
-          const providedByChatId = similarJson.chatId || similarJson.interactionId || null;
+          // Extract the instant-match ids returned by the API
+          // Accept either the new instantAnswer* fields or legacy fields from the API
+          const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
+          const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || similarJson.providedByInteractionId || null;
           await LoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
             similar: similarJson,
-            providedByChatId
+            instantAnswerChatId,
+            instantAnswerInteractionId
           });
           ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
           // Build an answer object that matches the UI's expected shape so
@@ -326,8 +333,9 @@ export class DefaultWithVector {
               paragraphs: [answerText],
               sentences: [answerText],
               // expose metadata for potential UI display
-              // expose the source chat id (prefer chatId, fall back to interactionId)
-              providedByChatId: providedByChatId,
+              // expose the source chat/interaction ids returned by the matcher
+              instantAnswerChatId: instantAnswerChatId,
+              instantAnswerInteractionId: instantAnswerInteractionId,
               similarity: similarJson.similarity || null
               ,
               citationHead: (similarJson.citation && similarJson.citation.citationHead) || null
@@ -337,7 +345,10 @@ export class DefaultWithVector {
             citationUrl: (similarJson.citation && (similarJson.citation.providedCitationUrl || similarJson.citation.aiCitationUrl)) || null,
             confidenceRating: similarJson.similarity || null,
             // include full citation info for persistence contract
-            sourceCitation: similarJson.citation || null
+            sourceCitation: similarJson.citation || null,
+            // expose matched ids for persistence/traceability (from API)
+            instantAnswerChatId: instantAnswerChatId,
+            instantAnswerInteractionId: instantAnswerInteractionId
           };
         }
       } else {

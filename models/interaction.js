@@ -12,6 +12,18 @@ const InteractionSchema = new mongoose.Schema({
     required: false,
     default: ''
   },
+  // If a short-circuit instant answer matched an existing chat/interaction,
+  // store those optional IDs for traceability.
+  instantAnswerChatId: {
+    type: String,
+    required: false,
+    default: ''
+  },
+  instantAnswerInteractionId: {
+    type: String,
+    required: false,
+    default: ''
+  },
   answer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Answer',
