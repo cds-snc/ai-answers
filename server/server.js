@@ -102,6 +102,11 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "Healthy" });
 });
 
+// Serve runtime config for frontend
+app.get("/config.js", (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL||'')}};`);
+});
 
 app.get("*", (req, res, next) => {
   if (req.url.startsWith("/api")) {
