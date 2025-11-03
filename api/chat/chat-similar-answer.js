@@ -54,10 +54,9 @@ async function handler(req, res) {
         const topRankerItem = (rankResult && Array.isArray(rankResult.results) && rankResult.results.length) ? rankResult.results[0] : null;
         const topChecks = (topRankerItem && typeof topRankerItem === 'object' && topRankerItem.checks) ? topRankerItem.checks : null;
 
-        const targetTurnIndex = Math.max(0, (questions?.length || 1) - 1);
         // Choose the top-ranked entry from the ranker results. fall back to the first ordered entry or finalCandidates[0]
         const chosen = orderedEntries[topIndex];
-        const formatted = formatAnswerFromChosen(chosen, targetTurnIndex);
+        const formatted = formatAnswerFromChosen(chosen);
         if (!formatted) {
             ServerLoggingService.info('No final chosen interaction', 'chat-similar-answer');
             return res.json({});
@@ -219,15 +218,24 @@ async function handler(req, res) {
     }
     // Note: selection simplified to use topIndex directly; previous re-ranking helpers removed.
 
-    function formatAnswerFromChosen(chosenEntry, targetTurnIndex) {
+    function formatAnswerFromChosen(chosenEntry) {
         if (!chosenEntry) return null;
         const flow = chosenEntry.flowInteractions;
         let selected = null;
-        if (Array.isArray(flow) && flow.length) {
-            const idx = Math.min(Math.max(0, targetTurnIndex), flow.length - 1);
-            selected = flow[idx];
+        // Prefer the exact interaction that produced the vector match (candidate.interaction).
+        // Previously we indexed into the chat flow by targetTurnIndex which could pick
+        // the wrong turn when the matched interaction appears at a different position
+        // in the conversation (e.g. clarifying questions). Using the matched interaction
+        // ensures the returned answer and interactionId correspond to the match.
+        // Require the exact interaction that produced the vector match.
+        // If the matched interaction document is not present on the candidate,
+        // treat this as no usable match and return null so upstream can continue
+        // with normal flow instead of returning an incorrect/offset answer.
+        if (chosenEntry.candidate && chosenEntry.candidate.interaction) {
+            selected = chosenEntry.candidate.interaction;
+        } else {
+            return null;
         }
-        if (!selected) selected = chosenEntry.candidate?.interaction;
         if (!selected || !selected.answer) return null;
         const ans = selected.answer;
         // Prefer englishAnswer when present; fall back to paragraphs or content
@@ -243,8 +251,9 @@ async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-    // Prefer the stored `interactionId` field (userMessageId) when available
-    const returnedInteractionId = selected.interactionId || (selected._id ? selected._id.toString() : null);
+    // Prefer the stored `interactionId` field when available (legacy or business id),
+    // otherwise fall back to the Mongo `_id` string.
+    const returnedInteractionId = (selected.interactionId && String(selected.interactionId).trim()) ? selected.interactionId : (selected._id ? selected._id.toString() : null);
     return { text, englishAnswer, interactionId: returnedInteractionId, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null, chatId: chosenEntry.chatId || null };
     }
 
