@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.56.1](https://github.com/cds-snc/ai-answers/compare/v1.56.0...v1.56.1) (2025-11-03)
+
+
+### Bug Fixes
+
+* simplify answer formatting logic by removing targetTurnIndex and ensuring correct interaction selection ([56f762a](https://github.com/cds-snc/ai-answers/commit/56f762aa7004775356b5350f00d15f8c18a4bf00))
+* simplify answer formatting logic by removing targetTurnIndex and… ([2cc81b1](https://github.com/cds-snc/ai-answers/commit/2cc81b148021137d39ffa4c88ecc18eab0498c55))
+
 ## [1.56.0](https://github.com/cds-snc/ai-answers/compare/v1.55.1...v1.56.0) (2025-11-03)
 
 
