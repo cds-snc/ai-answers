@@ -16,9 +16,10 @@ library.add(fas, far);
 
 // Load Adobe Analytics script synchronously BEFORE React renders
 // This ensures _satellite is available before any tracking calls
-if (process.env.REACT_APP_ADOBE_ANALYTICS_URL) {
+const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+if (adobeUrl) {
   const script = document.createElement('script');
-  script.src = process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+  script.src = adobeUrl;
   script.async = false; // Load synchronously to ensure it's ready before React renders
   document.head.insertBefore(script, document.head.firstChild); // Insert at the very top of head
 }
