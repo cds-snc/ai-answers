@@ -258,6 +258,40 @@ class AuthService {
     return data;
   }
 
+  // Password reset: request reset link (generic response)
+  static async sendReset(email) {
+    if (!email) throw new Error('Email required');
+    const url = getApiUrl('auth-send-reset');
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!resp.ok) {
+      const json = await resp.json().catch(() => ({}));
+      throw new Error(json.message || 'Failed to send reset');
+    }
+    return await resp.json();
+  }
+
+  // Request an OTP to be sent for a given reset token
+  // Deprecated: OTP fallback removed. Use sendReset to request a link and reset via the link.
+
+  // Finalize password reset: provide token (from link), verification code (TOTP or email OTP), and new password
+  static async resetPassword({ email, token, password }) {
+    const url = getApiUrl('auth-reset-password');
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, token, password })
+    });
+    if (!resp.ok) {
+      const json = await resp.json().catch(() => ({}));
+      throw new Error(json.message || 'Failed to reset password');
+    }
+    return await resp.json();
+  }
+
   // Send a 2FA code to the user's email using the canonical endpoint only.
   static async send2FA(email) {
     if (!email) throw new Error('Email required');

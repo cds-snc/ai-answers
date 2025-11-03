@@ -45,6 +45,8 @@ import loginHandler from '../api/auth/auth-login.js';
 import logoutHandler from '../api/auth/auth-logout.js';
 import verify2FAHandler from '../api/auth/auth-verify-2fa.js';
 import userSend2FAHandler from '../api/auth/auth-send-2fa.js';
+import sendResetHandler from '../api/auth/auth-send-reset.js';
+import resetPasswordHandler from '../api/auth/auth-reset-password.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/db/db-users.js';
 import deleteChatHandler from '../api/chat/chat-delete.js';
@@ -169,6 +171,9 @@ app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
 app.post('/api/auth/auth-send-2fa', userSend2FAHandler);
 // Keep canonical verify alias
 app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
+// Password reset endpoints
+app.post('/api/auth/auth-send-reset', sendResetHandler);
+app.post('/api/auth/auth-reset-password', resetPasswordHandler);
 // Keep the public users endpoints for compatibility if external callers want
 // Compatibility endpoints (public) - also available under /api/auth-send and /api/auth-verify
 // Removed legacy user/send endpoints. 2FA is now served via the /api/auth/* endpoints only.

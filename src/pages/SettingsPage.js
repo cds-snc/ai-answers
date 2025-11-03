@@ -31,6 +31,12 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingTwoFAEnabled, setSavingTwoFAEnabled] = useState(false);
   const [twoFATemplateId, setTwoFATemplateId] = useState('');
   const [savingTwoFATemplateId, setSavingTwoFATemplateId] = useState(false);
+  // GC Notify template ID for password reset link emails
+  const [resetTemplateId, setResetTemplateId] = useState('');
+  const [savingResetTemplateId, setSavingResetTemplateId] = useState(false);
+  // Base URL for frontend links (used to prefix reset_link in emails)
+  const [baseUrl, setBaseUrl] = useState('');
+  const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // Session-related settings
   const [sessionTTL, setSessionTTL] = useState(60); // minutes
@@ -65,6 +71,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
       const twoFATemplateSetting = await DataStoreService.getSetting('twoFA.templateId', '');
       setTwoFATemplateId(twoFATemplateSetting ?? '');
+  const resetTpl = await DataStoreService.getSetting('notify.resetTemplateId', '');
+  setResetTemplateId(resetTpl ?? '');
+    const base = await DataStoreService.getSetting('site.baseUrl', '');
+    setBaseUrl(base ?? '');
       // Load session settings
       const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
       setSessionTTL(Number(ttl));
@@ -210,6 +220,32 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleResetTemplateIdChange = (e) => {
+    setResetTemplateId(e.target.value);
+  };
+
+  const handleResetTemplateIdBlur = async () => {
+    setSavingResetTemplateId(true);
+    try {
+      await DataStoreService.setSetting('notify.resetTemplateId', resetTemplateId);
+    } finally {
+      setSavingResetTemplateId(false);
+    }
+  };
+
+  const handleBaseUrlChange = (e) => {
+    setBaseUrl(e.target.value);
+  };
+
+  const handleBaseUrlBlur = async () => {
+    setSavingBaseUrl(true);
+    try {
+      await DataStoreService.setSetting('site.baseUrl', baseUrl);
+    } finally {
+      setSavingBaseUrl(false);
+    }
+  };
+
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title', 'Settings')}</h1>
@@ -323,6 +359,30 @@ const SettingsPage = ({ lang = 'en' }) => {
         onChange={handleTwoFATemplateIdChange}
         onBlur={handleTwoFATemplateIdBlur}
         disabled={savingTwoFATemplateId}
+      />
+
+      <label htmlFor="reset-template" className="mb-200 display-block mt-400">
+        {t('settings.notify.resetTemplateLabel', 'Reset Link Template ID')}
+      </label>
+      <input
+        id="reset-template"
+        type="text"
+        value={resetTemplateId}
+        onChange={handleResetTemplateIdChange}
+        onBlur={handleResetTemplateIdBlur}
+        disabled={savingResetTemplateId}
+      />
+
+      <label htmlFor="base-url" className="mb-200 display-block mt-200">
+        {t('settings.site.baseUrl', 'Base URL (frontend)')}
+      </label>
+      <input
+        id="base-url"
+        type="text"
+        value={baseUrl}
+        onChange={handleBaseUrlChange}
+        onBlur={handleBaseUrlBlur}
+        disabled={savingBaseUrl}
       />
 
       <h2 className="mt-600 mb-200">{t('settings.session.title', 'Session settings')}</h2>

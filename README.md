@@ -105,10 +105,11 @@ For comprehensive system information, see:
 - **LangChain React agents** for both context and answer generation with tool integration
 - **Chain of thought** - the system uses multiple AI agents in sequence for processing:
   - **Query Rewrite Agent**: Translates questions and crafts optimized search queries (keeps French questions in French for French page searches)
-  - **Context Agent**: Gathers relevant government content and identifies departments
+  - **Context Agent**: Gathers relevant government content and identifies departments (called for **every question**, including follow-on questions, to ensure fresh context derivation)
   - **Answer Agent**: Generates responses with preliminary checks including department analysis and content verification
 - **Agentic tool usage** - AI agents can autonomously use specialized tools for enhanced responses
 - **Multi-provider support** - Azure OpenAI (production), OpenAI, and Anthropic Claude models
+- **Context Derivation**: Fresh context is derived for each question using the `DefaultAlwaysContext` workflow, ensuring follow-on questions have updated context based on conversation history
 
 ### Agentic Tool Use
 The application uses LangChain React Agents with specialized tools to enhance AI interactions:

@@ -62,21 +62,22 @@ Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouve
   - URLs inconnues non dans les données d'entraînement
   - Détails spécifiques comme numéros, codes, dates, montants en dollars
 - **Validation d'URL** : Vérifie automatiquement si les URLs de citation sont actives et accessibles
-- **Génération de contexte** : Crée un nouveau contexte pour les questions de suivi quand nécessaire
+- **Génération de contexte** : Dérive un contexte frais pour **chaque question**, y compris les questions de suivi, pour assurer une identification précise du département et un contenu pertinent
 - **Vérification de contenu** : Priorise le contenu fraîchement téléchargé sur les données d'entraînement
+- **Flux de travail DefaultAlwaysContext** : Assure que la dérivation de contexte est effectuée pour toutes les questions d'une conversation, pas seulement les questions initiales
 
 ### Flux de données
 1. L'utilisateur soumet une question par l'interface de clavardage
 2. **Étape 1** : RedactionService applique le filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants
 3. **Étape 2** : L'agent de renseignements personnels effectue une détection alimentée par IA de tout renseignement personnel qui a échappé au premier filtrage
-4. Le service de contexte détermine le département pertinent
-5. Les outils de recherche rassemblent le contenu gouvernemental pertinent
-6. **Comportement IA agentique** : L'IA peut utiliser des outils spécialisés incluant :
-- **Outil downloadWebPage** : Télécharge et lit les pages Web pour vérifier les informations actuelles, surtout pour les URLs nouvelles/mises à jour ou le contenu sensible au temps
-- **Outil de validation d'URL** : Vérifie si les URLs de citation sont actives et accessibles
-- **Outil de génération de contexte** : Génère un nouveau contexte pour les questions de suivi
-7. Le service de réponse génère une réponse avec citations
-8. Réponse enregistrée dans la base de données avec commentaires utilisateur
+4. **Agent de réécriture de requête** : Traduit les questions et crée des requêtes de recherche optimisées (les questions françaises restent en français pour les recherches de pages françaises)
+5. Les outils de recherche rassemblent le contenu gouvernemental pertinent en utilisant des requêtes optimisées
+6. **Le service de contexte détermine le département pertinent** (effectué pour **chaque question**, y compris les questions de suivi, via le flux de travail DefaultAlwaysContext)
+7. **Comportement IA agentique** : L'IA peut utiliser des outils spécialisés incluant :
+   - **Outil downloadWebPage** : Télécharge et lit les pages Web pour vérifier les informations actuelles, surtout pour les URLs nouvelles/mises à jour ou le contenu sensible au temps
+   - **Outil de validation d'URL** : Vérifie si les URLs de citation sont actives et accessibles
+8. Le service de réponse génère une réponse avec citations
+9. Réponse enregistrée dans la base de données avec commentaires utilisateur
 
 ## Évaluation des risques et mesures de sécurité
 

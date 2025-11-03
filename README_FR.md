@@ -105,10 +105,11 @@ Pour des informations complètes sur le système, voir :
 - **Agents LangChain React** pour la génération de contexte et de réponses avec intégration d'outils
 - **Chaîne de pensée** - le système utilise plusieurs agents IA en séquence pour le traitement :
   - **Agent de réécriture de requête** : Traduit les questions et crée des requêtes de recherche optimisées (garde les questions françaises en français pour les recherches de pages françaises)
-  - **Agent de contexte** : Rassemble le contenu gouvernemental pertinent et identifie les départements
+  - **Agent de contexte** : Rassemble le contenu gouvernemental pertinent et identifie les départements (appelé pour **chaque question**, y compris les questions de suivi, pour assurer une dérivation de contexte à jour)
   - **Agent de réponse** : Génère des réponses avec vérifications préliminaires incluant l'analyse de département et la vérification de contenu
 - **Utilisation d'outils agentiques** - Les agents IA peuvent utiliser de manière autonome des outils spécialisés pour améliorer les réponses
 - **Support multi-fournisseur** - Modèles Azure OpenAI (production), OpenAI et Anthropic Claude
+- **Dérivation de contexte** : Un contexte frais est dérivé pour chaque question en utilisant le flux de travail `DefaultAlwaysContext`, garantissant que les questions de suivi ont un contexte mis à jour basé sur l'historique de conversation
 
 ### Utilisation d'outils agentiques
 L'application utilise des agents LangChain React avec des outils spécialisés pour améliorer les interactions IA :

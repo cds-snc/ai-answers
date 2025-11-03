@@ -73,8 +73,8 @@
     "privacy": {
       "title": "Confidentialité et conditions d'utilisation de l'IA",
       "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
-      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
-      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques. Votre utilisation de ce système et de toute information générée est également soumise aux",
+      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.\n\nNous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
+      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.\n\nVotre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
     },
     "errors": {
@@ -522,17 +522,54 @@
     "invalidCredentials": "Courriel ou mot de passe invalide",
     "form": {
       "submitting": "Connexion en cours...",
-      "signupLink": "Créer un compte"
+      "signupLink": "Créer un compte",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signinLink": "Se connecter"
+    }
+      ,
+  "2fa": {
+    "title": "Authentification à deux facteurs",
+    "code": "Code de vérification",
+    "verify": "Vérifier le code",
+    "resend": "Renvoyer le code",
+  "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
+    "send": "Envoyer le code de vérification",
+    "sendError": "Impossible d'envoyer le code de vérification",
+    "invalidCode": "Code de vérification invalide"
+  }
+  },
+  "reset": {
+    "request": {
+      "title": "Réinitialiser votre mot de passe",
+      "send": "Envoyer le courriel de réinitialisation",
+      "sending": "Envoi...",
+      "sent": "Si ce compte existe, nous avons envoyé un courriel de réinitialisation.",
+      "error": "Échec de la demande de réinitialisation"
     },
-    "2fa": {
-      "title": "Authentification à deux facteurs",
+    "verify": {
+      "title": "Vérifier la réinitialisation",
+      "instructions": "Entrez un code de vérification depuis votre application d'authentification ou demandez un code à usage unique par courriel.",
+      "instructionsNoOtp": "Cliquez sur Continuer pour définir un nouveau mot de passe.",
+      "continue": "Continuer",
       "code": "Code de vérification",
-      "verify": "Vérifier le code",
-      "resend": "Renvoyer le code",
-      "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
-      "send": "Envoyer le code de vérification",
-      "sendError": "Impossible d'envoyer le code de vérification",
-      "invalidCode": "Code de vérification invalide"
+      "sendOtp": "Envoyer le code par courriel",
+      "otpSent": "Un code de vérification a été envoyé à votre adresse courriel",
+      "otpSendError": "Échec de l'envoi du code de vérification",
+      "next": "Suivant",
+      "invalidLink": "Lien de réinitialisation invalide ou manquant"
+    },
+    "complete": {
+      "title": "Définir un nouveau mot de passe",
+      "code": "Code de vérification",
+      "password": "Nouveau mot de passe",
+      "confirm": "Confirmer le nouveau mot de passe",
+      "submit": "Définir le mot de passe",
+      "submitting": "Envoi...",
+      "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
+      "error": "Échec de la réinitialisation du mot de passe",
+      "invalid": "Lien de réinitialisation invalide",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
     }
   },
   "users": {
@@ -592,6 +629,9 @@
       "title": "Authentification à deux facteurs",
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
       "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
+    },
+    "site": {
+      "baseUrl": "URL de base (frontend)"
     },
     "session": {
       "title": "Paramètres de session",
