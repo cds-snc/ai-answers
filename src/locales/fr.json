@@ -234,6 +234,54 @@
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
     }
   },
+  "aboutPage": {
+    "title": "À propos de Réponses IA",
+    "overview": {
+      "title": "Aperçu",
+      "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
+      "aiServices": "Service d'IA : Microsoft Azure OpenAI",
+      "contact": "Écrivez-nous à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations.",
+      "cdslink": "Service numérique canadien"
+    },
+    "privacy": {
+      "title": "Confidentialité et conditions d'utilisation de l'IA",
+      "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
+      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.\n\nNous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
+      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.\n\nVotre utilisation de ce système et de toute information générée est également soumise aux",
+      "termsLink": "Conditions d'utilisation de Canada.ca."
+    },
+    "howItWorks": {
+      "title": "Comment ça fonctionne",
+      "description": "Réponses IA utilise la technologie d'IA avancée pour rechercher les sites Web du gouvernement du Canada et fournir des réponses précises à vos questions.",
+      "architecture": "Architecture du système",
+      "architectureDescription": "Le système utilise un processus multi-étapes : votre question est traduite et optimisée pour la recherche, le contenu gouvernemental pertinent est rassemblé, le département approprié est identifié, puis une réponse est générée avec un lien de citation vérifié.",
+      "agentic": "Gestion intelligente du contexte",
+      "agenticDescription": "Pour chaque question, y compris les questions de suivi, le système dérive un contexte frais pour assurer une identification précise du département. L'IA peut utiliser de manière autonome des outils spécialisés comme télécharger et lire les pages Web pour vérifier les informations actuelles, surtout pour les pages gouvernementales nouvelles ou mises à jour.",
+      "contentFreshness": "Fraîcheur et exactitude du contenu",
+      "contentFreshnessDescription": "Le système priorise le contenu gouvernemental récemment publié par rapport aux données d'entraînement. Lorsqu'il rencontre des URL gouvernementales nouvelles, mises à jour ou inconnues, l'IA télécharge et lit automatiquement les pages réelles pour fournir les informations les plus actuelles."
+    },
+    "safetyAccuracy": {
+      "title": "Sécurité et exactitude",
+      "privacy": "La vie privée est protégée par un processus à deux étapes : premièrement, les modèles d'informations personnelles connus (numéros de téléphone, courriels, adresses) sont automatiquement bloqués. Deuxièmement, la détection avancée par IA identifie les noms et les identifiants personnels qui auraient pu passer au travers. Lorsque des informations personnelles sont détectées, vous êtes alerté et votre question est bloquée.",
+      "evaluation": "La qualité des réponses est continuellement surveillée par l'évaluation d'experts. Chaque phrase de la réponse est évaluée par des experts gouvernementaux, et les commentaires du public (C'était utile ?) sont collectés auprès de tous les utilisateurs. Ces données d'évaluation améliorent le système au fil du temps.",
+      "contentFiltering": "Le filtrage du contenu bloque la profanité, les menaces, les tentatives de manipulation et autres contenus inappropriés. La limitation de débit prévient les abus, avec une limite de 3 questions par session."
+    },
+    "scopeLimitations": {
+      "title": "Portée et limitations",
+      "inScope": "Portée",
+      "inScopeDescription": "Réponses IA fournit des informations sur les services, programmes, avantages, règlements et informations officielles du gouvernement du Canada. Il vous aide à comprendre les services gouvernementaux et vous dirige vers les ressources appropriées et les prochaines étapes.",
+      "outOfScope": "Hors de la portée",
+      "outOfScopeDescription": "Le système ne fournit pas d'informations sur les services provinciaux, territoriaux ou municipaux. Il ne peut pas fournir de conseils personnels, juridiques, médicaux ou d'informations sur des sujets non gouvernementaux.",
+      "languages": "Langues",
+      "languagesDescription": "Un soutien bilingue complet est disponible en anglais et en français. Les utilisateurs peuvent poser des questions dans de nombreuses autres langues et recevoir des réponses dans cette langue, avec des citations adaptées à la langue de la page qu'ils consultent."
+    },
+    "accessibility": {
+      "title": "Accessibilité",
+      "description": "Réponses IA est conçu pour être accessible à tous.",
+      "screenReaders": "Le système a été testé avec des utilisateurs de lecteurs d'écran pour assurer la compatibilité avec les technologies d'assistance.",
+      "wcag": "Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web."
+    }
+  },
   "batch": {
     "title": "Lots",
     "navigation": {

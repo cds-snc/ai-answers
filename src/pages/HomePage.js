@@ -243,6 +243,13 @@ const HomePage = ({ lang = "en" }) => {
                 {t("homepage.about.cdslink")}
               </GcdsLink>
             </GcdsText>
+            <GcdsText className="mt-300">
+              <GcdsLink
+                href={lang === "fr" ? "/fr/about" : "/en/about"}
+              >
+                {lang === "fr" ? "Lire plus sur Réponses IA" : "Learn more about AI Answers"}
+              </GcdsLink>
+            </GcdsText>
           </GcdsDetails>
         </div>
       )}
