@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.58.1](https://github.com/cds-snc/ai-answers/compare/v1.58.0...v1.58.1) (2025-11-04)
+
+
+### Bug Fixes
+
+* urls ([02bfc15](https://github.com/cds-snc/ai-answers/commit/02bfc15bc3bed579f00d653c7e92e3a94eed3cac))
+
 ## [1.58.0](https://github.com/cds-snc/ai-answers/compare/v1.57.0...v1.58.0) (2025-11-04)
 
 
