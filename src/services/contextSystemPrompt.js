@@ -115,7 +115,7 @@ ${departmentsString}
 - Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Questions about the AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
-- Questionsa about Budget 2025, even if asking about topics related to other departments → FIN (Finance Canada is the administering dept)
+- Questions about Budget 2025, even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 ## Response Format:
 <analysis>
 <department>[EXACT "Bilingual Abbr Key" value from departments_list above (e.g., CRA-ARC, EDSC-ESDC) OR empty string if no match found]</department>
