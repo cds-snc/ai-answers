@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
+import AboutPage from './pages/AboutPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
@@ -212,7 +213,12 @@ const AppLayout = () => {
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Add breadcrumb items as needed */}
+          {/* Show AI Answers breadcrumb on About page */}
+          {(location.pathname.includes('/about')) && (
+            <a href={currentLang === 'fr' ? '/fr' : '/en'}>
+              {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
+            </a>
+          )}
         </GcdsBreadcrumbs>
       </GcdsHeader>
       <main id="main-content">
@@ -236,6 +242,8 @@ export default function App() {
       { path: '/', element: homeDefault },
       { path: '/en', element: homeEn },
       { path: '/fr', element: homeFr },
+      { path: '/en/about', element: <AboutPage lang="en" /> },
+      { path: '/fr/about', element: <AboutPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
       { path: '/fr/signin', element: <LoginPage lang="fr" /> },
   { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },

@@ -25,7 +25,7 @@
       "aiServices": {
         "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
         "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
-        "azure": "Service d'IA Azure : Microsoft Azure OpenAI"
+        "azure": "Modèle d'IA actuel : Microsoft Azure OpenAI"
       },
       "cdslink": "Service numérique canadien",
       "contact": "Écrivez à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations.",
@@ -232,6 +232,31 @@
         "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
       },
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+    }
+  },
+  "aboutPage": {
+    "title": "À propos de Réponses IA",
+    "overview": {
+      "title": "Aperçu",
+      "description": "Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouvernement du Canada. Il fournit des réponses précises et brèves aux questions des utilisateurs sur les services, programmes et informations gouvernementaux, avec une citation appropriée unique. Réponses IA est indépendant du modèle, avec un système d'évaluation innovant qui utilise des évaluations détaillées d'experts humains pour alimenter les évaluations IA automatisées et des réponses précises. Le système est construit avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres."
+    },
+    "systemCard": {
+      "title": "Documentation de la fiche système",
+      "description": "Pour des informations détaillées sur le fonctionnement de Réponses IA, nos mesures de sécurité, nos méthodes d'évaluation et notre architecture technique, voir notre",
+      "onThisPageTitle": "Sections clés :",
+      "currentStatus": "État actuel",
+      "purposeScope": "Objectif et portée du système",
+      "architecture": "Architecture technique",
+      "riskAssessment": "Évaluation des risques et mesures de sécurité",
+      "performance": "Performance et évaluation",
+      "limitations": "Limitations et contraintes",
+      "responsibleAI": "Principes d'IA responsable et gouvernance"
+    },
+    "accessibilityUsability": {
+      "title": "Accessibilité et convivialité",
+      "designRationale": "Les utilisateurs sont submergés par les longues pages contenant plusieurs instructions et ont de la difficulté à choisir entre les liens. Beaucoup visitent les sites Web gouvernementaux depuis des téléphones mobiles. Réponses IA produit un maximum de quatre phrases par réponse, soigneusement conçues pour être aussi claires que possible. Un seul lien de citation est fourni pour vous permettre de passer à l'étape suivante et de vérifier la réponse, réduisant la surcharge de choix.",
+      "testing": "Ces choix de conception sont basés sur des données provenant de plus de 50 tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.",
+      "wcag": "Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web."
     }
   },
   "batch": {
