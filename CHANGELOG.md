@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.58.0](https://github.com/cds-snc/ai-answers/compare/v1.57.0...v1.58.0) (2025-11-04)
+
+
+### Features
+
+* make about page ([ae89ec0](https://github.com/cds-snc/ai-answers/commit/ae89ec0cb76df37a75a444dff94d2d0d83d4e442))
+* make about page ([f6b6b02](https://github.com/cds-snc/ai-answers/commit/f6b6b0221539650fe20e108f23ea6007a4d3faa8))
+
+
+### Bug Fixes
+
+* aboutpage ([75dab38](https://github.com/cds-snc/ai-answers/commit/75dab3860b56389e4bbad78900a924885ef5b05a))
+* add breadcrumb ([d0f4a8d](https://github.com/cds-snc/ai-answers/commit/d0f4a8d532f0999b8e961cf412291f62bcce5b53))
+* budget ([c135d2a](https://github.com/cds-snc/ai-answers/commit/c135d2a66f808c6ca21d89f3e595ec30de397425))
+* budget ([4f2ea95](https://github.com/cds-snc/ai-answers/commit/4f2ea95d97eecd4dc11cdcefe8906758535c893e))
+* more renovation ([7050e83](https://github.com/cds-snc/ai-answers/commit/7050e8394f2c0b55a06c9fc6324329ed3adda560))
+
 ## [1.57.0](https://github.com/cds-snc/ai-answers/compare/v1.56.1...v1.57.0) (2025-11-03)
 
 
