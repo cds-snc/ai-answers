@@ -17,17 +17,12 @@ const AboutPage = ({ lang = 'en' }) => {
       <GcdsContainer size="xl" mainContainer centered tag="main">
         <h1 className="mb-400">{t('aboutPage.title')}</h1>
 
-        {/* Overview Section */}
-        <GcdsDetails
-          detailsTitle={t('aboutPage.overview.title')}
-          className="mb-400"
-          tabIndex={0}
-        >
-          <GcdsText>{t('aboutPage.overview.builtBy')}</GcdsText>
-          <GcdsText>{t('aboutPage.overview.aiServices')}</GcdsText>
-          <GcdsText>
-            {t('aboutPage.overview.contact')}
-          </GcdsText>
+        {/* Overview Section - Not collapsible */}
+        <section className="mb-400">
+          <h2 className="mb-300">{t('aboutPage.overview.title')}</h2>
+          <GcdsText className="mb-200">{t('aboutPage.overview.description')}</GcdsText>
+          <GcdsText className="mb-200">{t('homepage.about.builtBy')}</GcdsText>
+          <GcdsText className="mb-200">{t('homepage.about.aiServices.azure')}</GcdsText>
           <GcdsText>
             <GcdsLink
               href={
@@ -36,21 +31,21 @@ const AboutPage = ({ lang = 'en' }) => {
                   : 'https://digital.canada.ca/'
               }
             >
-              {t('aboutPage.overview.cdslink')}
+              {t('homepage.about.cdslink')}
             </GcdsLink>
           </GcdsText>
-        </GcdsDetails>
+        </section>
 
         {/* Privacy & Terms Section */}
         <GcdsDetails
-          detailsTitle={t('aboutPage.privacy.title')}
+          detailsTitle={t('homepage.privacy.title')}
           className="mb-400"
           tabIndex={0}
         >
-          <GcdsText>{t('aboutPage.privacy.storage')}</GcdsText>
-          <GcdsText>{t('aboutPage.privacy.disclaimer')}</GcdsText>
+          <GcdsText>{t('homepage.privacy.storage')}</GcdsText>
+          <GcdsText>{t('homepage.privacy.disclaimer')}</GcdsText>
           <GcdsText>
-            {t('aboutPage.privacy.terms')}{' '}
+            {t('homepage.privacy.terms')}{' '}
             <GcdsLink
               href={
                 lang === 'fr'
@@ -58,61 +53,53 @@ const AboutPage = ({ lang = 'en' }) => {
                   : 'https://www.canada.ca/en/transparency/terms.html'
               }
             >
-              {t('aboutPage.privacy.termsLink')}
+              {t('homepage.privacy.termsLink')}
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
 
-        {/* How It Works Section */}
+        {/* System Card Documentation Section */}
+        <section className="mb-400">
+          <h2 className="mb-300">{t('aboutPage.systemCard.title')}</h2>
+          <GcdsText className="mb-300">
+            {t('aboutPage.systemCard.description')}
+            {' '}
+            <GcdsLink
+              href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md'}
+            >
+              {lang === 'fr' ? 'Fiche système complète' : 'Complete System Card'}
+            </GcdsLink>
+          </GcdsText>
+
+          <h3 className="mb-200">{t('aboutPage.systemCard.onThisPageTitle')}</h3>
+          {/* Note: Anchor links (#section-name) will work once documentation is hosted on GitHub Pages or similar.
+              For now, they link to the top of the document. Users can search within the page using Ctrl+F / Cmd+F. */}
+          <ul className="mb-400">
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#état-actuel' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#current-status'}>{t('aboutPage.systemCard.currentStatus')}</GcdsLink></li>
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#objectif-et-portée-du-système' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#system-purpose-and-scope'}>{t('aboutPage.systemCard.purposeScope')}</GcdsLink></li>
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#architecture-technique' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#technical-architecture'}>{t('aboutPage.systemCard.architecture')}</GcdsLink></li>
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#évaluation-des-risques-et-mesures-de-sécurité' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#risk-assessment-and-safety-measures'}>{t('aboutPage.systemCard.riskAssessment')}</GcdsLink></li>
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#performance-et-évaluation' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#performance-and-evaluation'}>{t('aboutPage.systemCard.performance')}</GcdsLink></li>
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#limitations-et-contraintes' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#limitations-and-constraints'}>{t('aboutPage.systemCard.limitations')}</GcdsLink></li>
+            <li><GcdsLink href={lang === 'fr' ? 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#principes-dia-responsable-et-gouvernance' : 'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#responsible-ai-principles-and-governance'}>{t('aboutPage.systemCard.responsibleAI')}</GcdsLink></li>
+          </ul>
+        </section>
+
+        {/* Accessibility and Usability Section */}
         <GcdsDetails
-          detailsTitle={t('aboutPage.howItWorks.title')}
+          detailsTitle={t('aboutPage.accessibilityUsability.title')}
           className="mb-400"
           tabIndex={0}
         >
-          <GcdsText>{t('aboutPage.howItWorks.description')}</GcdsText>
-          <h3 className="mb-200">{t('aboutPage.howItWorks.architecture')}</h3>
-          <GcdsText>{t('aboutPage.howItWorks.architectureDescription')}</GcdsText>
-          <h3 className="mb-200 mt-300">{t('aboutPage.howItWorks.agentic')}</h3>
-          <GcdsText>{t('aboutPage.howItWorks.agenticDescription')}</GcdsText>
-          <h3 className="mb-200 mt-300">{t('aboutPage.howItWorks.contentFreshness')}</h3>
-          <GcdsText>{t('aboutPage.howItWorks.contentFreshnessDescription')}</GcdsText>
+          <GcdsText>{t('aboutPage.accessibilityUsability.designRationale')}</GcdsText>
+          <GcdsText>{t('aboutPage.accessibilityUsability.testing')}</GcdsText>
+          <GcdsText>{t('aboutPage.accessibilityUsability.wcag')}</GcdsText>
         </GcdsDetails>
 
-        {/* Safety & Accuracy Section */}
-        <GcdsDetails
-          detailsTitle={t('aboutPage.safetyAccuracy.title')}
-          className="mb-400"
-          tabIndex={0}
-        >
-          <GcdsText>{t('aboutPage.safetyAccuracy.privacy')}</GcdsText>
-          <GcdsText>{t('aboutPage.safetyAccuracy.evaluation')}</GcdsText>
-          <GcdsText>{t('aboutPage.safetyAccuracy.contentFiltering')}</GcdsText>
-        </GcdsDetails>
-
-        {/* Scope & Limitations Section */}
-        <GcdsDetails
-          detailsTitle={t('aboutPage.scopeLimitations.title')}
-          className="mb-400"
-          tabIndex={0}
-        >
-          <h3 className="mb-200">{t('aboutPage.scopeLimitations.inScope')}</h3>
-          <GcdsText>{t('aboutPage.scopeLimitations.inScopeDescription')}</GcdsText>
-          <h3 className="mb-200 mt-300">{t('aboutPage.scopeLimitations.outOfScope')}</h3>
-          <GcdsText>{t('aboutPage.scopeLimitations.outOfScopeDescription')}</GcdsText>
-          <h3 className="mb-200 mt-300">{t('aboutPage.scopeLimitations.languages')}</h3>
-          <GcdsText>{t('aboutPage.scopeLimitations.languagesDescription')}</GcdsText>
-        </GcdsDetails>
-
-        {/* Accessibility Section */}
-        <GcdsDetails
-          detailsTitle={t('aboutPage.accessibility.title')}
-          className="mb-400"
-          tabIndex={0}
-        >
-          <GcdsText>{t('aboutPage.accessibility.description')}</GcdsText>
-          <GcdsText>{t('aboutPage.accessibility.screenReaders')}</GcdsText>
-          <GcdsText>{t('aboutPage.accessibility.wcag')}</GcdsText>
-        </GcdsDetails>
+        {/* Contact Section */}
+        <GcdsText className="mb-400">
+          {t('homepage.about.contact')}
+        </GcdsText>
       </GcdsContainer>
     </div>
   );
