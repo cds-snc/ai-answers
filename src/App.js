@@ -213,7 +213,12 @@ const AppLayout = () => {
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Add breadcrumb items as needed */}
+          {/* Show AI Answers breadcrumb on About page */}
+          {(location.pathname.includes('/about')) && (
+            <a href={currentLang === 'fr' ? '/fr' : '/en'}>
+              {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
+            </a>
+          )}
         </GcdsBreadcrumbs>
       </GcdsHeader>
       <main id="main-content">
