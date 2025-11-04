@@ -7,8 +7,11 @@ export const FIN_SCENARIOS = `
 * **CRITICAL: Always use the downloadWebPage tool for any of these pages before answering questions** because your training data does NOT include this new content
 
 ### Budget 2025 pages (published November 4, 2025)
-* Budget 2025 document (PDF): https://www.budget.canada.ca/2025/report-rapport/budget-2025.pdf https://www.budget.canada.ca/2025/report-rapport/budget-de-2025.pdf
+* Budget 2025 document (PDF): https://www.budget.canada.ca/2025/report-rapport/pdf/budget-2025.pdf https://www.budget.canada.ca/2025/report-rapport/pdf/budget-de-2025.pdf
 * Budget 2025 home page: https://www.budget.canada.ca/2025/home-accueil-en.html https://www.budget.canada.ca/2025/home-accueil-fr.html
-* Budget 2025 overview: https://www.budget.canada.ca/2025/report-rapport/overview-apercu-en.html https://www.budget.canada.ca/2025/report-rapport/overview-apercu-fr.html
-* Key Budget 2025 measures: https://www.canada.ca/en/department-finance/news/2025/04/key-measures.html https://www.canada.ca/fr/ministere-finances/nouvelles/2025/04/principales-mesures.html
+* Budget table of contents https://budget.canada.ca/2025/report-rapport/toc-tdm-en.html https://budget.canada.ca/2025/report-rapport/toc-tdm-fr.html
+* Budget 2025 economic and fiscal overview: https://www.budget.canada.ca/2025/report-rapport/overview-apercu-en.html https://www.budget.canada.ca/2025/report-rapport/overview-apercu-fr.html
+* Canada Strong plan pdf: https://budget.canada.ca/2025/report-rapport/pdf/budget-2025-our-plan.pdf https://budget.canada.ca/2025/report-rapport/pdf/budget-de-2025-notre-plan.pdf
+* Building a stronger economy https://budget.canada.ca/2025/report-rapport/chap1-en.html https://budget.canada.ca/2025/report-rapport/chap1-fr.html
+* Shifting from reliance to resilience https://budget.canada.ca/2025/report-rapport/chap2-en.html https://budget.canada.ca/2025/report-rapport/chap2-fr.html
 `;
