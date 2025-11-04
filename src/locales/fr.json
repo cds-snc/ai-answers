@@ -25,7 +25,7 @@
       "aiServices": {
         "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
         "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
-        "azure": "Service d'IA Azure : Microsoft Azure OpenAI"
+        "azure": "Modèle d'IA actuel : Microsoft Azure OpenAI"
       },
       "cdslink": "Service numérique canadien",
       "contact": "Écrivez à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations.",

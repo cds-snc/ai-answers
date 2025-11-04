@@ -18,7 +18,7 @@
       "aiServices": {
         "claude": "AI service Claude: Anthropic Claude Sonnet 3.7, knowledge to February 2025",
         "chatgpt": "AI service ChatGPT: OpenAI 4.1, knowledge to May 31 2025",
-        "azure": "AI service: Microsoft Azure OpenAI"
+        "azure": "Current AI model: Microsoft Azure OpenAI"
       },
       "cdslink": "Canadian Digital Service",
       "contact": "Email us at cds.dto-btn.snc@servicecanada.gc.ca for more information.",

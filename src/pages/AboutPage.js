@@ -23,18 +23,18 @@ const AboutPage = ({ lang = 'en' }) => {
           <GcdsText className="mb-200">{t('aboutPage.overview.description')}</GcdsText>
           <GcdsText className="mb-200">{t('homepage.about.builtBy')}</GcdsText>
           <GcdsText className="mb-200">{t('homepage.about.aiServices.azure')}</GcdsText>
-          <GcdsText>
-            <GcdsLink
-              href={
-                lang === 'fr'
-                  ? 'https://numerique.canada.ca/'
-                  : 'https://digital.canada.ca/'
-              }
-            >
-              {t('homepage.about.cdslink')}
-            </GcdsLink>
-          </GcdsText>
         </section>
+
+        {/* Accessibility and Usability Section */}
+        <GcdsDetails
+          detailsTitle={t('aboutPage.accessibilityUsability.title')}
+          className="mb-400"
+          tabIndex={0}
+        >
+          <GcdsText>{t('aboutPage.accessibilityUsability.designRationale')}</GcdsText>
+          <GcdsText>{t('aboutPage.accessibilityUsability.testing')}</GcdsText>
+          <GcdsText>{t('aboutPage.accessibilityUsability.wcag')}</GcdsText>
+        </GcdsDetails>
 
         {/* Privacy & Terms Section */}
         <GcdsDetails
@@ -85,20 +85,22 @@ const AboutPage = ({ lang = 'en' }) => {
           </ul>
         </section>
 
-        {/* Accessibility and Usability Section */}
-        <GcdsDetails
-          detailsTitle={t('aboutPage.accessibilityUsability.title')}
-          className="mb-400"
-          tabIndex={0}
-        >
-          <GcdsText>{t('aboutPage.accessibilityUsability.designRationale')}</GcdsText>
-          <GcdsText>{t('aboutPage.accessibilityUsability.testing')}</GcdsText>
-          <GcdsText>{t('aboutPage.accessibilityUsability.wcag')}</GcdsText>
-        </GcdsDetails>
-
         {/* Contact Section */}
         <GcdsText className="mb-400">
           {t('homepage.about.contact')}
+        </GcdsText>
+
+        {/* CDS Link */}
+        <GcdsText>
+          <GcdsLink
+            href={
+              lang === 'fr'
+                ? 'https://numerique.canada.ca/'
+                : 'https://digital.canada.ca/'
+            }
+          >
+            {t('homepage.about.cdslink')}
+          </GcdsLink>
         </GcdsText>
       </GcdsContainer>
     </div>
