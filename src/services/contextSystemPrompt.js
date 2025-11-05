@@ -1,5 +1,4 @@
-// import { menuStructure_EN } from './systemPrompt/menuStructure_EN.js';
-// import { menuStructure_FR } from './systemPrompt/menuStructure_FR.js';
+
 import { departments_EN } from './systemPrompt/departments_EN.js';
 import { departments_FR } from './systemPrompt/departments_FR.js';
 import LoggingService from './ClientLoggingService.js';
@@ -12,37 +11,12 @@ async function loadContextSystemPrompt(language = 'en') {
     }
 
     // Select language-specific content
-    // const menuStructure = language === 'fr' ? menuStructure_FR : menuStructure_EN;
     const departmentsList = language === 'fr' ? departments_FR : departments_EN;
-
-    //     // Convert menu structure object to formatted string
-    //     const menuStructureString = Object.entries(menuStructure)
-    //       .map(([category, data]) => {
-    //         const topics = Object.entries(data.topics || {})
-    //           .map(([name, url]) => `    ${name}: ${url}`)
-    //           .join('\n');
-
-    //         const mostRequested = Object.entries(data.mostRequested || {})
-    //           .map(([name, url]) => `    ${name}: ${url}`)
-    //           .join('\n');
-
-    //         return `
-    // ${category} (${data.url})
-    //   Topics:
-    // ${topics}
-    //   Most Requested:
-    // ${mostRequested}`;
-    //       })
-    //       .join('\n\n');
 
     // Convert departments array to formatted string with clear structure
     const departmentsString = departmentsList
       .map((dept) => `• ${dept.name}\n  Unilingual Abbr: ${dept.abbr || 'None'}\n  Bilingual Abbr Key: ${dept.abbrKey}\n  URL: ${dept.url}`)
       .join('\n\n');
-
-    // // Add debug logging
-    // console.log('Menu Structure:', menuStructureString.substring(0, 200) + '...');
-    // console.log('Departments String:', departmentsString.substring(0, 200) + '...');
 
     const fullPrompt = `
       ## Role
@@ -115,7 +89,8 @@ ${departmentsString}
 - Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Questions about the AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
-- Questions about Budget 2025, even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
+- Questions about Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
+
 ## Response Format:
 <analysis>
 <department>[EXACT "Bilingual Abbr Key" value from departments_list above (e.g., CRA-ARC, EDSC-ESDC) OR empty string if no match found]</department>
