@@ -232,17 +232,6 @@ const HomePage = ({ lang = "en" }) => {
             <GcdsText>{t("homepage.about.builtBy")}</GcdsText>
             <GcdsText>{t("homepage.about.aiServices.azure")}</GcdsText>
             <GcdsText>{t("homepage.about.contact")}</GcdsText>
-            <GcdsText>
-              <GcdsLink
-                href={
-                  lang === "fr"
-                    ? "https://numerique.canada.ca/"
-                    : "https://digital.canada.ca/"
-                }
-              >
-                {t("homepage.about.cdslink")}
-              </GcdsLink>
-            </GcdsText>
             <GcdsText className="mt-300">
               <GcdsLink
                 href={lang === "fr" ? "/fr/about" : "/en/about"}

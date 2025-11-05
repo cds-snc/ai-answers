@@ -235,10 +235,10 @@
     }
   },
   "aboutPage": {
-    "title": "À propos de Réponses IA",
+    "title": "À propos de Canada.ca Réponses IA",
     "overview": {
       "title": "Aperçu",
-      "description": "Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouvernement du Canada. Il fournit des réponses précises et brèves aux questions des utilisateurs sur les services, programmes et informations gouvernementaux, avec une citation appropriée unique. Réponses IA est indépendant du modèle, avec un système d'évaluation innovant qui utilise des évaluations détaillées d'experts humains pour alimenter les évaluations IA automatisées et des réponses précises. Le système est construit avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres."
+      "description": "Réponses IA est un assistant IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Il fournit des réponses précises et brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations gouvernementaux, avec une citation appropriée unique. Lors des essais publics sur Canada.ca, le service a puisé dans le contenu de plus de 50 institutions pour répondre à un large éventail de questions gouvernementales.\n\nCanada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Réponses IA a été initialement conçue et testée pour être indépendante du modèle d'IA, bien qu'elle ait actuellement accès à une seule famille de modèles GPT. Un système d'évaluation innovant applique les évaluations d'experts gouvernementaux pour alimenter les évaluations IA automatisées et des réponses précises."
     },
     "systemCard": {
       "title": "Documentation de la fiche système",
