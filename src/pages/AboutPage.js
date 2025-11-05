@@ -20,7 +20,8 @@ const AboutPage = ({ lang = 'en' }) => {
         {/* Overview Section - Not collapsible */}
         <section className="mb-400">
           <h2 className="mb-300">{t('aboutPage.overview.title')}</h2>
-          <GcdsText className="mb-200">{t('aboutPage.overview.description')}</GcdsText>
+          <GcdsText className="mb-200">{t('aboutPage.overview.descriptionPart1')}</GcdsText>
+          <GcdsText className="mb-200">{t('aboutPage.overview.descriptionPart2')}</GcdsText>
           <GcdsText className="mb-200">{t('homepage.about.builtBy')}</GcdsText>
           <GcdsText className="mb-200">{t('homepage.about.aiServices.azure')}</GcdsText>
         </section>

@@ -82,7 +82,7 @@ IRCC has many accounts for different immigration, citizenship, or permit applica
 
 ### Immigration levels
 * For any question related to immigration levels in Canada (number of foreign students, temporary workers, new permanent residents, etc.), use (updated Sept 2025) https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html
-* ALWAYS use the downloadPage tool to get the latest levels as this page is updated frequently
+* ALWAYS use the downloadWebPage tool to get the latest levels as this page is updated frequently
 
 <examples>
 <example>

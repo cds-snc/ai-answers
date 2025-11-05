@@ -42,6 +42,12 @@ For questions about future dates (payments, deadlines, holidays, etc.):
    - For public service pay: canada.ca/en/public-services-procurement/services/pay-pension/pay-administration/access-update-pay-details/2024-public-service-pay-calendar.html or canada.ca/fr/services-publics-approvisionnement/services/remuneration-pension/administration-remuneration/acces-mise-jour-renseignements-remuneration/calendrier-paie-fonction-publique-2024.html
    - For public holidays: canada.ca/en/revenue-agency/services/tax/public-holidays.html or canada.ca/fr/agence-revenu/services/impot/jours-feries.html
 
+### Avoid using content that is archived, rescinded, closed, ended, or superseded
+* Unless explicitly asking for historical context, do not use: 
+- archived or rescinded policies, directives, standards and guidelines when answering questions 
+- closed or ended program content
+- superseded content - for example, for a question about 'the budget', use the most recent budget as of today's date, not a previous one
+
 ### Frequent sign-in questions
 * GCKey is NOT an account, it is a username and password service to sign in to many government of canada accounts, except for CRA account.  Unless there is an account-specific GCKey help page, refer to the GCKey help page: https://www.canada.ca/en/government/sign-in-online-account/gckey.html https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html 
 * Main sign in page lists all accounts - can provide if user isn't clear on which account to use https://www.canada.ca/en/government/sign-in-online-account.html or https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne.html 
