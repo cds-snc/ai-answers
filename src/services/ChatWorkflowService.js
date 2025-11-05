@@ -209,7 +209,7 @@ export const ChatWorkflowService = {
       .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string')
       .map(m => m.text || '');
     // Exclude the most recent user message (last in order)
-    return prevUserMessages;
+    return prevUserMessages.slice(0, -1);
   },
   // Expose the status update filter helper so workflows can reuse the centralized display rules
   sendStatusUpdate: (onStatusUpdate, status) => {

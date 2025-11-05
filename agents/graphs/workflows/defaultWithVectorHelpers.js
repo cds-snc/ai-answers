@@ -178,10 +178,11 @@ export class DefaultWithVectorServerWorkflow {
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent
   buildTranslationContext(conversationHistory = []) {
     if (!Array.isArray(conversationHistory)) return [];
-    return (conversationHistory || [])
+    const prevUserMessages = (conversationHistory || [])
       .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string')
       .map(m => m.text || '');
-
+    // Exclude the most recent user message (last in order)
+    return prevUserMessages.slice(0, -1);
   }
 
   determineOutputLang(pageLang, translationData) {
