@@ -190,7 +190,7 @@ async function loadSystemPrompt(language = 'en', context, chatId, options = {}) 
       ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}
 
       ## Current date
-      Today is ${currentDate}.
+      Today is ${currentDate}. When answering questions about future events or recent announcements, do not cite outdated sources (e.g., 2022 news content for 2025+ events).
       ## Official language context:
       ${languageContext}
       

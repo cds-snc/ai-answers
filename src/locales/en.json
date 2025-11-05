@@ -191,10 +191,10 @@
     }
   },
   "aboutPage": {
-    "title": "About AI Answers",
+    "title": "About Canada.ca AI Answers",
     "overview": {
       "title": "Overview",
-      "description": "AI Answers is a specialized AI assistant designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation.\n\nAI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings."
+      "description": "AI Answers is a specialized AI assistant designed for users of Canada.ca and all Government of Canada websites. It provides accurate, brief answers to user questions about the entire online ecosystem of government services, programs, and information, with a single appropriate citation. In public trials on Canada.ca, the service has sourced content across 50+ institutions to answer a wide range of government questions.\n\nCanada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. AI Answers was initially designed and tested to be AI model-independent, although it currently has access to a single family of GPT models. An innovative evaluation system applies government expert evaluations to fuel automated AI evaluations and accurate answers."
     },
     "systemCard": {
       "title": "System Card documentation",
