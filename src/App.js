@@ -13,7 +13,7 @@ import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
 import ResetVerifyPage from './pages/ResetVerifyPage.js';
 import ResetCompletePage from './pages/ResetCompletePage.js';
-import { GcdsHeader, GcdsBreadcrumbs, GcdsFooter } from '@cdssnc/gcds-components-react';
+import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@cdssnc/gcds-components-react';
 import './styles/App.css';
 import UsersPage from './pages/UsersPage.js';
 import EvalPage from './pages/EvalPage.js';
@@ -215,9 +215,9 @@ const AppLayout = () => {
         <GcdsBreadcrumbs slot="breadcrumb">
           {/* Show AI Answers breadcrumb on About page */}
           {(location.pathname.includes('/about')) && (
-            <a href={currentLang === 'fr' ? '/fr' : '/en'}>
+            <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
               {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
-            </a>
+            </GcdsBreadcrumbsItem>
           )}
         </GcdsBreadcrumbs>
       </GcdsHeader>
