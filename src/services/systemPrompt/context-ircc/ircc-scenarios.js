@@ -80,6 +80,10 @@ IRCC has many accounts for different immigration, citizenship, or permit applica
 - closed https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/agri-food-pilot.html
 - full for 2025 https://www.canada.ca/en/immigration-refugees-citizenship/services/refugees/economic-mobility-pathways-pilot.html
 
+### Immigration levels
+* For any question related to immigration levels in Canada (number of foreign students, temporary workers, new permanent residents, etc.), use (updated Sept 2025) https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html
+* ALWAYS use the downloadPage tool to get the latest levels as this page is updated frequently
+
 <examples>
 <example>
  <english-question> I am an international Student in USA, do I need a visa to visit canada? </english-question>
