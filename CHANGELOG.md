@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.58.4](https://github.com/cds-snc/ai-answers/compare/v1.58.3...v1.58.4) (2025-11-05)
+
+
+### Bug Fixes
+
+* about and date ([370ca19](https://github.com/cds-snc/ai-answers/commit/370ca1904ff808272f95ca3790a4ce54e4890142))
+* about and date ([32a8242](https://github.com/cds-snc/ai-answers/commit/32a824280ef143e6f445fc523f2c6a275df7afde))
+* blocking incorrectly ([133e2cb](https://github.com/cds-snc/ai-answers/commit/133e2cb6336d28a1c5feaa9fc686148571f8983d))
+* blocking incorrectly ([b516d2b](https://github.com/cds-snc/ai-answers/commit/b516d2bf6a7837ae32589fbdd48ba52468d2d70e))
+* levels ([ded7737](https://github.com/cds-snc/ai-answers/commit/ded7737dd4cc220d83a3b811e5a8607e4e45ea53))
+* levels ([63a0219](https://github.com/cds-snc/ai-answers/commit/63a0219cbcbbd4037df398618468b2effdfe1487))
+* many tweaks and a typo ([6e8c55d](https://github.com/cds-snc/ai-answers/commit/6e8c55d254499ba57374dacd3533b8b7354afb31))
+* many tweaks and a typo ([bf31b45](https://github.com/cds-snc/ai-answers/commit/bf31b45430fb856fe5ba01e2fa2d123c24321dd0))
+* typo ([9c1137b](https://github.com/cds-snc/ai-answers/commit/9c1137b35bb6052498c194dbe11473dbbab7f0a3))
+* typo paragraph break ([ef52ba5](https://github.com/cds-snc/ai-answers/commit/ef52ba5ab339e3721e7cd75b469a4227c4aa6eff))
+
 ## [1.58.3](https://github.com/cds-snc/ai-answers/compare/v1.58.2...v1.58.3) (2025-11-04)
 
 
