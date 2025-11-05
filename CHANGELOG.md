@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.58.3](https://github.com/cds-snc/ai-answers/compare/v1.58.2...v1.58.3) (2025-11-04)
+
+
+### Bug Fixes
+
+* add budget to scenarios all ([e9b59ac](https://github.com/cds-snc/ai-answers/commit/e9b59ac4a72696f92426e96955a6e126e43021e4))
+* change to past tense ([b0e01bd](https://github.com/cds-snc/ai-answers/commit/b0e01bdf60d8dc5cccb72ca34e1113db6a8ac459))
+
 ## [1.58.2](https://github.com/cds-snc/ai-answers/compare/v1.58.1...v1.58.2) (2025-11-04)
 
 
