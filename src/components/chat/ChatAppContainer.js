@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
+import { usePageContext, DEPARTMENT_MAPPINGS, getAzureReferralUri } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -91,7 +91,31 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // public default unintentionally.
   const initialWorkflowFromLocalStorage = useRef(false);
   const userSetWorkflow = useRef(false);
-  const [referringUrl, setReferringUrl] = useState(initialReferringUrl || pageUrl || '');
+
+  // Initialize referringUrl with fallback chain:
+  // 1. initialReferringUrl prop (passed in)
+  // 2. Query string 'ref' parameter (existing behavior)
+  // 3. Azure referral_uri from cloud context (new, if available and no query string)
+  // 4. pageUrl (current page)
+  // 5. Empty string (fallback)
+  const [referringUrl, setReferringUrl] = useState(() => {
+    if (initialReferringUrl) {
+      return initialReferringUrl;
+    }
+
+    const queryStringRef = new URLSearchParams(window.location.search).get('ref') || '';
+    if (queryStringRef) {
+      return queryStringRef;
+    }
+
+    const azureReferralUri = getAzureReferralUri();
+    if (azureReferralUri) {
+      console.log('Using Azure referral_uri:', azureReferralUri);
+      return azureReferralUri;
+    }
+
+    return pageUrl || '';
+  });
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);

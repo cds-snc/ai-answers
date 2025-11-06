@@ -105,7 +105,20 @@ app.get("/health", (req, res) => {
 // Serve runtime config for frontend
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL||'')}};`);
+
+  // Extract referral_uri from Azure cloud context (if available)
+  // Check common Azure headers/parameters in order of priority:
+  // 1. Custom header set by Azure gateway (e.g., X-Referral-Uri)
+  // 2. Query parameter
+  // 3. Falls back to empty string if not provided
+  const referralUri = (
+    req.headers['x-referral-uri'] ||
+    req.headers['referral-uri'] ||
+    req.query.referral_uri ||
+    ''
+  ).trim();
+
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL||'')},AZURE_REFERRAL_URI:${JSON.stringify(referralUri)}};`);
 });
 
 app.get("*", (req, res, next) => {

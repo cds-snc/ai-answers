@@ -59,6 +59,19 @@ const THEME_MAPPINGS = {
   // Add more theme mappings as needed
 };
 
+/**
+ * Get the Azure referral_uri from the window config (if available)
+ * This is injected by the Express server from Azure cloud context
+ * @returns {string} The referral_uri from Azure, or empty string if not available
+ */
+export function getAzureReferralUri() {
+  try {
+    return (window?.RUNTIME_CONFIG?.AZURE_REFERRAL_URI || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
 export function usePageContext() {
   const [searchParams] = useSearchParams();
 
