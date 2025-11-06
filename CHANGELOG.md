@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.58.5](https://github.com/cds-snc/ai-answers/compare/v1.58.4...v1.58.5) (2025-11-06)
+
+
+### Bug Fixes
+
+* isc ([3bed3f6](https://github.com/cds-snc/ai-answers/commit/3bed3f6343f75f8bbff7d5caecf64d4df64f33df))
+* isc-scenario ([fad78e8](https://github.com/cds-snc/ai-answers/commit/fad78e812ba02fc72eca50dc7c333318d8536505))
+
 ## [1.58.4](https://github.com/cds-snc/ai-answers/compare/v1.58.3...v1.58.4) (2025-11-05)
 
 
