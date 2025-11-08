@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.58.6](https://github.com/cds-snc/ai-answers/compare/v1.58.5...v1.58.6) (2025-11-08)
+
+
+### Miscellaneous Chores
+
+* update database connection options for improved performance ([f980ade](https://github.com/cds-snc/ai-answers/commit/f980adebef7a357a63b326038b29e6b8921f2b32))
+
+
+### Code Refactoring
+
+* add export limit state to DatabasePage for better control over data exports ([ddcebe2](https://github.com/cds-snc/ai-answers/commit/ddcebe22c168f158a039b9bc2ea7d37cc1aae17d))
+* simplify table counts retrieval by using mongoose.models instead of hard-coded model list ([f9aa2ce](https://github.com/cds-snc/ai-answers/commit/f9aa2ceee6979449470ca08da2122686f03e0107))
+
 ## [1.58.5](https://github.com/cds-snc/ai-answers/compare/v1.58.4...v1.58.5) (2025-11-06)
 
 
