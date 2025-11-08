@@ -25,6 +25,9 @@ const DatabasePage = ({ lang }) => {
   const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
   const [tableCounts, setTableCounts] = useState(null);
   const [countsError, setCountsError] = useState('');
+  // Import controls: chunk size in MB and optional throttle between chunk uploads (ms)
+  const [importChunkMB, setImportChunkMB] = useState(2); // default 2 MB per file slice
+  const [importThrottleMs, setImportThrottleMs] = useState(0); // default no extra delay between chunk POSTs
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -62,15 +65,24 @@ const DatabasePage = ({ lang }) => {
 
       // Use selectedCollection for export
       let collectionsToExport = collections;
-      if (selectedCollection && selectedCollection !== 'All') {
+      if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
         collectionsToExport = [selectedCollection];
+      } else if (selectedCollection === 'AllButLogs') {
+        // filter out collections whose names end with 'log' or 'logs'
+        collectionsToExport = (collections || []).filter(col => {
+          const n = String(col || '').toLowerCase();
+          return !(n.endsWith('log') || n.endsWith('logs'));
+        });
       }
       if (!collectionsToExport || !Array.isArray(collectionsToExport) || collectionsToExport.length === 0) {
         throw new Error('No collections found');
       }
 
       // Step 2: Stream each collection as it is fetched (JSONL format)
-      const filename = `database-backup-${selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : ''}${new Date().toISOString()}.jsonl`;
+      const collectionTag = selectedCollection === 'AllButLogs'
+        ? 'all-but-logs-'
+        : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : '');
+      const filename = `database-backup-${collectionTag}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
@@ -160,12 +172,57 @@ const DatabasePage = ({ lang }) => {
     let accumulatedStats = { inserted: 0, failed: 0 };
 
     try {
-      const chunkSize = 2 * 1024 * 1024; 
+      // Compute chunk size from UI (MB -> bytes). Minimum 64KB to avoid extremely small slices.
+      const requestedChunkSize = Number(importChunkMB) > 0 ? Number(importChunkMB) * 1024 * 1024 : 2 * 1024 * 1024;
+      const chunkSize = Math.max(requestedChunkSize, 64 * 1024);
       const totalChunks = Math.ceil(file.size / chunkSize);
       const fileName = file.name;
       let lineBuffer = '';
       let chunkIndex = 0;
       let offset = 0;
+      // helper: sleep and send with retries (exponential backoff)
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const sendChunkWithRetry = async (bodyObj, attemptLimit = 5) => {
+        let delay = 500; // start 500ms
+        let lastErr = null;
+        for (let attempt = 0; attempt < attemptLimit; attempt++) {
+          try {
+            const response = await fetch(getApiUrl('db-database-management'), {
+              method: 'POST',
+              headers: {
+                ...AuthService.getAuthHeader(),
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(bodyObj),
+            });
+            if (!response.ok) {
+              // try to read error body if any
+              let errorMsg = response.statusText || 'Server error';
+              try {
+                const errJson = await response.json();
+                if (errJson && errJson.message) errorMsg = errJson.message;
+              } catch (e) {
+                // ignore JSON parse errors
+              }
+              throw new Error(errorMsg);
+            }
+            const result = await response.json();
+            return result;
+          } catch (err) {
+            lastErr = err;
+            if (attempt === attemptLimit - 1) {
+              // last attempt, rethrow
+              throw err;
+            }
+            // exponential backoff before next retry
+            // eslint-disable-next-line no-await-in-loop
+            await sleep(delay);
+            delay *= 2;
+          }
+        }
+        // Shouldn't reach here, but throw the last error if it does
+        throw lastErr || new Error('Unknown error during chunk upload');
+      };
       while (offset < file.size) {
         const end = Math.min(offset + chunkSize, file.size);
         const fileSlice = file.slice(offset, end);
@@ -178,58 +235,45 @@ const DatabasePage = ({ lang }) => {
         lineBuffer = lines[lines.length - 1]; // May be incomplete
         const payload = completeLines.join('\n');
         if (payload.trim().length > 0) {
-          const response = await fetch(getApiUrl('db-database-management'), {
-            method: 'POST',
-            headers: {
-              ...AuthService.getAuthHeader(),
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              chunkIndex,
-              totalChunks, // This is still the total number of file chunks, not payload chunks
-              fileName,
-              chunkPayload: payload
-            }),
-          });
-          if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(`Server error on chunk ${chunkIndex + 1}: ${errorResult.message || response.statusText}`);
-          }
-          const result = await response.json();
-          if (result.stats) {
+          const bodyObj = {
+            chunkIndex,
+            totalChunks, // This is still the total number of file chunks, not payload chunks
+            fileName,
+            chunkPayload: payload
+          };
+          const result = await sendChunkWithRetry(bodyObj, 5).catch(err => { throw new Error(`Server error on chunk ${chunkIndex + 1}: ${err.message}`); });
+          if (result && result.stats) {
             accumulatedStats.inserted += result.stats.inserted;
             accumulatedStats.failed += result.stats.failed;
           }
           setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}`);
+          // Optional throttle between chunk uploads to avoid flooding the server
+          if (Number(importThrottleMs) > 0) {
+            // eslint-disable-next-line no-await-in-loop
+            await sleep(Number(importThrottleMs));
+          }
         }
         offset = end;
         chunkIndex++;
       }
       // Send any remaining buffered line as the last chunk
       if (lineBuffer.trim().length > 0) {
-        const response = await fetch(getApiUrl('db-database-management'), {
-          method: 'POST',
-          headers: {
-            ...AuthService.getAuthHeader(),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chunkIndex,
-            totalChunks,
-            fileName,
-            chunkPayload: lineBuffer
-          }),
-        });
-        if (!response.ok) {
-          const errorResult = await response.json();
-          throw new Error(`Server error on chunk ${chunkIndex + 1}: ${errorResult.message || response.statusText}`);
-        }
-        const result = await response.json();
-        if (result.stats) {
+        const bodyObj = {
+          chunkIndex,
+          totalChunks,
+          fileName,
+          chunkPayload: lineBuffer
+        };
+        const result = await sendChunkWithRetry(bodyObj, 5).catch(err => { throw new Error(`Server error on chunk ${chunkIndex + 1}: ${err.message}`); });
+        if (result && result.stats) {
           accumulatedStats.inserted += result.stats.inserted;
           accumulatedStats.failed += result.stats.failed;
         }
         setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}`);
+        if (Number(importThrottleMs) > 0) {
+          // eslint-disable-next-line no-await-in-loop
+          await sleep(Number(importThrottleMs));
+        }
       }
 
       setMessage(`Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`);
@@ -467,6 +511,7 @@ const DatabasePage = ({ lang }) => {
             disabled={isExporting || collections.length === 0}
           >
             <option value="All">All</option>
+            <option value="AllButLogs">All but logs</option>
             {collections.map((col) => (
               <option key={col} value={col}>{col}</option>
             ))}
@@ -504,6 +549,32 @@ const DatabasePage = ({ lang }) => {
           <div style={{ margin: '12px 0', color: 'blue' }}>{message}</div>
         )}
         <form onSubmit={handleImport} className="mb-200">
+          <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <label>
+              Chunk size (MB):&nbsp;
+              <input
+                type="number"
+                min="0.0625"
+                step="0.0625"
+                value={importChunkMB}
+                onChange={e => setImportChunkMB(e.target.value)}
+                style={{ width: 100 }}
+                disabled={isImporting}
+              />
+            </label>
+            <label>
+              Throttle (ms):&nbsp;
+              <input
+                type="number"
+                min="0"
+                step="50"
+                value={importThrottleMs}
+                onChange={e => setImportThrottleMs(e.target.value)}
+                style={{ width: 100 }}
+                disabled={isImporting}
+              />
+            </label>
+          </div>
           <input
             type="file"
             accept=".jsonl"

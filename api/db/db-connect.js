@@ -8,12 +8,15 @@ import "../../models/publicFeedback.js";
 import "../../models/context.js";
 import "../../models/chat.js";
 import "../../models/batch.js";
+import "../../models/scenarioOverride.js";
 import "../../models/tool.js";
 import "../../models/eval.js";
 import "../../models/user.js";
 import "../../models/logs.js";
 import "../../models/embedding.js";
 import "../../models/setting.js";
+import "../../models/batchItem.js";
+import "../../models/sentenceEmbedding.js";
 
 let cached = global.mongoose;
 
