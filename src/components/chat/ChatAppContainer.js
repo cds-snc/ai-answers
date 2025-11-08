@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -91,7 +91,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // public default unintentionally.
   const initialWorkflowFromLocalStorage = useRef(false);
   const userSetWorkflow = useRef(false);
-  const [referringUrl, setReferringUrl] = useState(initialReferringUrl || pageUrl || '');
+  // Precedence for initial referring URL:
+  // 1) saved review value (initialReferringUrl)
+  // 2) pageUrl (from usePageContext)
+  // 3) clientReferrer (document.referrer passed from HomePage)
+  const [referringUrl, setReferringUrl] = useState(() => {
+    return initialReferringUrl || pageUrl || clientReferrer || '';
+  });
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
@@ -522,14 +528,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     safeT
   ]);
 
+  // If a pageUrl becomes available later and there was no saved review value,
+  // prefer pageUrl over a clientReferrer. Do not override an explicit saved
+  // initialReferringUrl.
   useEffect(() => {
-    if (pageUrl && !referringUrl) {
+    // If pageUrl becomes available later and there was no saved review value,
+    // prefer pageUrl over a clientReferrer — but don't override an explicit
+    // initialReferringUrl or a user-edited referringUrl.
+    if (pageUrl && !initialReferringUrl && (!referringUrl || referringUrl === '')) {
       setReferringUrl(pageUrl);
     }
     if (urlDepartment && !selectedDepartment) {
       setSelectedDepartment(urlDepartment);
     }
-  }, [pageUrl, urlDepartment, referringUrl, selectedDepartment]);
+  }, [pageUrl, urlDepartment, initialReferringUrl, selectedDepartment, referringUrl]);
 
   const formatAIResponse = useCallback((aiService, message) => {
     const messageId = message.id;
