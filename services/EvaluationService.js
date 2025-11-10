@@ -70,10 +70,16 @@ class EvaluationService {
         let evalQuery = {};
 
         if (timeFilter && Object.keys(timeFilter).length > 0) {
-            // Find interactions in the date range
-            let interactionQuery = { ...timeFilter, autoEval: { $exists: true } };
-            const interactions = await Interaction.find(interactionQuery).select('autoEval');
-            const evalIdsToDelete = interactions.map(i => i.autoEval).filter(Boolean);
+            // Find interactions in the date range and get the DISTINCT autoEval ids
+            // Use `distinct` so we get the unique eval ids directly from the DB (faster and avoids accidental truncation/limits)
+            // Only consider interactions that actually reference an eval (not null)
+            const interactionQuery = { ...timeFilter, autoEval: { $ne: null } };
+            let evalIdsToDelete = await Interaction.distinct('autoEval', interactionQuery);
+            evalIdsToDelete = (Array.isArray(evalIdsToDelete) ? evalIdsToDelete : []).filter(Boolean);
+            // If there are no eval ids, return quickly
+            if (!evalIdsToDelete.length) {
+                return { deleted: 0, expertFeedbackDeleted: 0 };
+            }
             evalQuery = { _id: { $in: evalIdsToDelete } };
         } else {
             // No time filter: operate on all evals
@@ -86,7 +92,6 @@ class EvaluationService {
                 ...evalQuery,
                 processed: true,
                 hasMatches: false,
-                noMatchReasonType: { $exists: true, $ne: null, $ne: '' },
                 expertFeedback: { $exists: false }
             };
         }
@@ -100,14 +105,17 @@ class EvaluationService {
             if (timeFilter && Object.keys(timeFilter).length > 0) {
                 await Interaction.updateMany({ autoEval: { $in: evalIds } }, { $unset: { autoEval: "" } });
             }
+
             // Delete evals
             await Eval.deleteMany({ _id: { $in: evalIds } });
+
             // Delete associated expert feedback
             const expertFeedbackIds = evalsToDelete.map(e => e.expertFeedback).filter(Boolean);
             if (expertFeedbackIds.length > 0) {
                 const deletedExpertFeedback = await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
                 expertFeedbackDeleted = deletedExpertFeedback.deletedCount || 0;
             }
+
             return { deleted: evalIds.length, expertFeedbackDeleted };
         }
         return { deleted: 0, expertFeedbackDeleted: 0 };
@@ -194,11 +202,9 @@ class EvaluationService {
     async processEvaluationsForDuration(duration, lastProcessedId = null, extraFilter = {}) {
         const startTime = Date.now();
         let lastId = lastProcessedId;
-        // Fetch deploymentMode and vectorServiceType from SettingsService
-    const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
-    const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
-    const concurrency = (deploymentMode === 'CDS' && vectorServiceType === 'documentdb') ? (config.evalConcurrency || 8) : 1;
-    await ServerLoggingService.info(`Evaluation concurrency: ${concurrency}, numCPUs: ${typeof numCPUs !== 'undefined' ? numCPUs : 'unknown'}`);
+        const concurrency = config.evalConcurrency;
+        await ServerLoggingService.info(`Evaluation concurrency: ${concurrency}, numCPUs: ${typeof numCPUs !== 'undefined' ? numCPUs : 'unknown'}`);
+
 
         try {
             await dbConnect();
@@ -207,7 +213,9 @@ class EvaluationService {
             const query = {
                 question: { $exists: true, $ne: null },
                 answer: { $exists: true, $ne: null },
-                autoEval: { $exists: false },
+                // Because `autoEval` has a default of `null` on the schema, use `null` here
+                // to match interactions that do not have an associated evaluation.
+                autoEval: null,
                 ...extraFilter
             };
 
@@ -235,7 +243,9 @@ class EvaluationService {
                             interactions: interaction._id
                         });
                         const chatId = chats.length > 0 ? chats[0].chatId : null;
-                        const aiProvider = (chats.length > 0 && chats[0].aiProvider) ? chats[0].aiProvider : null;
+                        // Use the admin-configured provider directly from SettingsService.
+                        // Do not fall back to per-Chat provider here.
+                        const aiProvider = await SettingsService.get('provider') || null;
                         if (!chatId) {
                             // Count as failed so stats reflect skipped interactions and loop cannot stall
                             failedCount++;
