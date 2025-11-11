@@ -224,21 +224,14 @@ const HomePage = ({ lang = "en" }) => {
               {t("homepage.feedback.surveyLink")}
             </a>
           </GcdsText>
-          <GcdsDetails
-            detailsTitle={t("homepage.about.title")}
-            className="mb-400"
-            tabIndex={0}
-          >
-            <GcdsText>{t("homepage.about.builtBy")}</GcdsText>
-            <GcdsText>{t("homepage.about.aiServices.azure")}</GcdsText>
-            <GcdsText className="mt-300">
-              <GcdsLink
-                href={lang === "fr" ? "/fr/about" : "/en/about"}
-              >
-                {lang === "fr" ? "Lire plus sur Réponses IA" : "Learn more about AI Answers"}
-              </GcdsLink>
-            </GcdsText>
-          </GcdsDetails>
+          <GcdsText>
+            {t("homepage.about.builtBy")}{" "}
+            <GcdsLink
+              href={lang === "fr" ? "/fr/about" : "/en/about"}
+            >
+              {lang === "fr" ? "Lire plus sur Réponses IA" : "Learn more about AI Answers"}
+            </GcdsLink>
+          </GcdsText>
         </div>
       )}
     </WrappedErrorBoundary>
