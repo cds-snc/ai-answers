@@ -224,8 +224,8 @@ const HomePage = ({ lang = "en" }) => {
               {t("homepage.feedback.surveyLink")}
             </a>
           </GcdsText>
-          <GcdsText>{t("homepage.about.builtBy")}</GcdsText>
-          <GcdsText className="mt-300">
+          <GcdsText>
+            {t("homepage.about.builtBy")}{" "}
             <GcdsLink
               href={lang === "fr" ? "/fr/about" : "/en/about"}
             >
