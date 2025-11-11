@@ -79,6 +79,7 @@ IRCC has many accounts for different immigration, citizenship, or permit applica
 - closed https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/caregivers/child-care-home-support-worker.html
 - closed https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/agri-food-pilot.html
 - full for 2025 https://www.canada.ca/en/immigration-refugees-citizenship/services/refugees/economic-mobility-pathways-pilot.html
+- pools for 2025 are closed -  https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/iec.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/eic.html
 
 ### Immigration levels
 * For any question related to immigration levels in Canada (number of foreign students, temporary workers, new permanent residents, etc.), use (updated Sept 2025) https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html

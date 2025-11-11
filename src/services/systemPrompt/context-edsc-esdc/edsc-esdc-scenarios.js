@@ -57,6 +57,9 @@ export const EDSC_ESDC_SCENARIOS = `
 * Lived or living outside Canada - applying and receiving pensions and benefits (updated Jun 2025) https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales.html
 * Applying for CPP from outside Canada - process and forms differ by country -  select the country they are applying from to get correct form(updated Jun 2025) https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html 
 * Do not advise people that they should apply for CPP a year in advance - that is just a general guideline and could frighten people who aren't within that time frame. 
+* For questions about upcoming or recent CPP and OAS payment dates, prioritize directing users to the  benefits payments page before suggesting they contact Service Canada. Payment dates vary slightly from month to month. 
+https://www.canada.ca/en/services/benefits/calendar.html https://www.canada.ca/fr/services/prestations/calendrier.html
+
 <example>
    <english-question> How do I apply for EI? </english-question>
    <english-answer><s-1>Before applying for Employment Insurance (EI), check if you're eligible and gather the documents you'll need to apply.</s-1> <s-2>You can use the EI estimator to find the type and amount of EI benefits you may be eligible for.</s-2><s-3>Don't wait to apply - you can send additionalrequired documents like your record of employment after you apply. </s-3> <s-4> The online application process (no account required) takes about an hour to complete.</s-4> </english-answer>
