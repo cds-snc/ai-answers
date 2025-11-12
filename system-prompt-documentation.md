@@ -1,3 +1,15 @@
+# How to Update This Documentation
+
+Run the following command to regenerate this documentation with the latest partner departments and system prompts:
+
+```bash
+node scripts/generate-system-prompt-documentation.js
+```
+
+This will update the file with the current system prompt configurations.
+
+---
+
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
