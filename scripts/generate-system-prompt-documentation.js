@@ -25,6 +25,7 @@ import { PROMPT as QUERY_REWRITE_PROMPT } from '../agents/prompts/queryRewriteAg
 import loadContextSystemPrompt from '../src/services/contextSystemPrompt.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -38,57 +39,64 @@ const department = getArg('--department', 'EDSC-ESDC');
 const outputFile = getArg('--output', './system-prompt-documentation.md');
 
 /**
+ * Dynamically discover available department context folders
+ */
+async function discoverDepartmentContexts() {
+  const contextDir = path.join(path.dirname(import.meta.url.replace('file://', '')), '../src/services/systemPrompt');
+  const entries = await fs.readdir(contextDir, { withFileTypes: true });
+
+  const contexts = {};
+  for (const entry of entries) {
+    if (entry.isDirectory() && entry.name.startsWith('context-')) {
+      const folderName = entry.name;
+      const contextCode = folderName.replace('context-', '').toUpperCase();
+      contexts[folderName] = contextCode;
+    }
+  }
+
+  return contexts;
+}
+
+/**
+ * Convert folder name to department display name
+ */
+function getDepartmentDisplayName(contextCode) {
+  const nameMap = {
+    'CRA-ARC': 'Canada Revenue Agency (CRA-ARC)',
+    'CDS-SNC': 'Canadian Digital Service (CDS-SNC)',
+    'EDSC-ESDC': 'Employment and Social Development Canada (EDSC-ESDC)',
+    'FIN': 'Department of Finance Canada (FIN)',
+    'HC-SC': 'Health Canada (HC-SC) and Public Health Agency (PHAC-ASPC)',
+    'IRCC': 'Immigration, Refugees and Citizenship Canada (IRCC)',
+    'PSPC-SPAC': 'Public Services and Procurement Canada (PSPC-SPAC)',
+    'SAC-ISC': 'Indigenous Services Canada (SAC-ISC) and Crown-Indigenous Relations (RCAANC-CIRNAC)',
+    'TBS-SCT': 'Treasury Board Secretariat (TBS-SCT)',
+    'ECCC': 'Environment and Climate Change Canada (ECCC)',
+    'ISED-ISDE': 'Innovation, Science and Economic Development Canada (ISED-ISDE)',
+    'NRCAN-RNCAN': 'Natural Resources Canada (NRCAN-RNCAN)',
+  };
+  return nameMap[contextCode] || contextCode;
+}
+
+/**
  * Load department-specific scenarios based on department code
  */
 async function loadDepartmentScenarios(deptCode) {
-  const departmentModules = {
-    'CRA-ARC': async () => {
-      const { CRA_ARC_SCENARIOS } = await import('../src/services/systemPrompt/context-cra-arc/cra-arc-scenarios.js');
-      return CRA_ARC_SCENARIOS;
-    },
-    'EDSC-ESDC': async () => {
-      const { EDSC_ESDC_SCENARIOS } = await import('../src/services/systemPrompt/context-edsc-esdc/edsc-esdc-scenarios.js');
-      return EDSC_ESDC_SCENARIOS;
-    },
-    'SAC-ISC': async () => {
-      const { SAC_ISC_SCENARIOS } = await import('../src/services/systemPrompt/context-sac-isc/sac-isc-scenarios.js');
-      return SAC_ISC_SCENARIOS;
-    },
-    'RCAANC-CIRNAC': async () => {
-      const { SAC_ISC_SCENARIOS } = await import('../src/services/systemPrompt/context-sac-isc/sac-isc-scenarios.js');
-      return SAC_ISC_SCENARIOS;
-    },
-    'PSPC-SPAC': async () => {
-      const { PSPC_SPAC_SCENARIOS } = await import('../src/services/systemPrompt/context-pspc-spac/pspc-spac-scenarios.js');
-      return PSPC_SPAC_SCENARIOS;
-    },
-    'IRCC': async () => {
-      const { IRCC_SCENARIOS } = await import('../src/services/systemPrompt/context-ircc/ircc-scenarios.js');
-      return IRCC_SCENARIOS;
-    },
-    'HC-SC': async () => {
-      const { HC_SC_SCENARIOS } = await import('../src/services/systemPrompt/context-hc-sc/hc-sc-scenarios.js');
-      return HC_SC_SCENARIOS;
-    },
-    'PHAC-ASPC': async () => {
-      const { HC_SC_SCENARIOS } = await import('../src/services/systemPrompt/context-hc-sc/hc-sc-scenarios.js');
-      return HC_SC_SCENARIOS;
-    },
-    'TBS-SCT': async () => {
-      const { TBS_SCT_SCENARIOS } = await import('../src/services/systemPrompt/context-tbs-sct/tbs-sct-scenarios.js');
-      return TBS_SCT_SCENARIOS;
-    },
-  };
+  try {
+    // Convert department code to folder/file naming convention
+    const deptLower = deptCode.toLowerCase();
+    const deptDashed = deptLower.replace(/\s+/g, '-');
 
-  if (departmentModules[deptCode]) {
-    try {
-      return await departmentModules[deptCode]();
-    } catch (error) {
-      console.warn(`Could not load scenarios for ${deptCode}:`, error.message);
-      return '';
-    }
+    // Try to import from the discovered context folder
+    const module = await import(`../src/services/systemPrompt/context-${deptDashed}/${deptDashed}-scenarios.js`, { assert: { type: 'module' } });
+
+    // Get the first exported scenarios object (they all follow the pattern of exporting a single scenarios constant)
+    const scenarios = Object.values(module).find(v => typeof v === 'string');
+    return scenarios || '';
+  } catch (error) {
+    console.warn(`Could not load scenarios for ${deptCode}:`, error.message);
+    return '';
   }
-  return '';
 }
 
 
@@ -156,6 +164,15 @@ async function generateDocumentation() {
   console.log(`Language: ${lang}`);
   console.log(`Department: ${department}`);
   console.log(`Output: ${outputFile}`);
+
+  // Dynamically discover partner departments
+  const partnerContexts = await discoverDepartmentContexts();
+  const partnersList = Object.entries(partnerContexts)
+    .sort(([, codeA], [, codeB]) => codeA.localeCompare(codeB))
+    .map(([folderName, contextCode]) =>
+      `- \`${folderName}/\` - ${getDepartmentDisplayName(contextCode)}`
+    )
+    .join('\n');
 
   // Example context data (would normally come from ContextService)
   const exampleContext = {
@@ -362,13 +379,7 @@ ${contextPrompt}
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
 **Partner Departments with Custom Scenario Files (as of ${new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long' })}):**
-- \`context-cra-arc/\` - Canada Revenue Agency (CRA-ARC)
-- \`context-edsc-esdc/\` - Employment and Social Development Canada (EDSC-ESDC)
-- \`context-hc-sc/\` - Health Canada (HC-SC) and Public Health Agency (PHAC-ASPC)
-- \`context-ircc/\` - Immigration, Refugees and Citizenship Canada (IRCC)
-- \`context-pspc-spac/\` - Public Services and Procurement Canada (PSPC-SPAC)
-- \`context-sac-isc/\` - Indigenous Services Canada (SAC-ISC) and Crown-Indigenous Relations (RCAANC-CIRNAC)
-- \`context-tbs-sct/\` - Treasury Board Secretariat (TBS-SCT)
+${partnersList}
 
 **Note:** This is a growing list as new departments become partners and their scenario files are added to the system. The example below uses **EDSC-ESDC** as the department, so you'll see the EDSC-ESDC-specific scenarios included in the prompt. If a different department had been matched (or no scenario file existed for that department), that section would be different or omitted entirely.
 
