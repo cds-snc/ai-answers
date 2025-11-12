@@ -23,6 +23,7 @@ const AboutPage = ({ lang = 'en' }) => {
           <GcdsText className="mb-200">{t('aboutPage.overview.descriptionPart1')}</GcdsText>
           <GcdsText className="mb-200">{t('aboutPage.overview.descriptionPart2')}</GcdsText>
           <GcdsText className="mb-200">{t('homepage.about.builtBy')}</GcdsText>
+          <GcdsText className="mb-200">{t('homepage.about.status')}</GcdsText>
           <GcdsText className="mb-200">{t('homepage.about.aiServices.azure')}</GcdsText>
         </section>
 
@@ -87,22 +88,16 @@ const AboutPage = ({ lang = 'en' }) => {
         </section>
 
         {/* Contact Section */}
-        <GcdsText className="mb-400">
-          {t('homepage.about.contact')}
-        </GcdsText>
-
-        {/* CDS Link */}
-        <GcdsText>
-          <GcdsLink
-            href={
-              lang === 'fr'
-                ? 'https://numerique.canada.ca/'
-                : 'https://digital.canada.ca/'
-            }
-          >
-            {t('homepage.about.cdslink')}
-          </GcdsLink>
-        </GcdsText>
+        <section className="mb-400">
+          <h2 className="mb-300">{t('homepage.about.contactTitle')}</h2>
+          <GcdsText>
+            <GcdsLink
+              href={t('homepage.about.contactUrl')}
+            >
+              {t('homepage.about.contactFormLink')}
+            </GcdsLink>
+          </GcdsText>
+        </section>
       </GcdsContainer>
     </div>
   );
