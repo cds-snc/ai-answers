@@ -14,7 +14,7 @@
     },
     "about": {
       "title": "About AI Answers",
-      "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service. The service began as an experiment in late 2024 and currently is being tested and improveed via links posted on selected Canada.ca pages.",
+      "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service. The service began as an experiment in late 2024 and currently is being tested and improved via links posted on selected Canada.ca pages.",
       "aiServices": {
         "claude": "AI service Claude: Anthropic Claude Sonnet 3.7, knowledge to February 2025",
         "chatgpt": "AI service ChatGPT: OpenAI 4.1, knowledge to May 31 2025",
