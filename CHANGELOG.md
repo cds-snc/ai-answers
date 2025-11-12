@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.58.7](https://github.com/cds-snc/ai-answers/compare/v1.58.6...v1.58.7) (2025-11-11)
+
+
+### Bug Fixes
+
+* add docs about tool usage ([bcae53e](https://github.com/cds-snc/ai-answers/commit/bcae53e3886a102e02349037629e8eaf012aaead))
+* scenario tweaks and about link ([d551a28](https://github.com/cds-snc/ai-answers/commit/d551a28f33f9b81aa92be4c304acb6fc19398929))
+* scenario tweaks and about link ([6ee2b16](https://github.com/cds-snc/ai-answers/commit/6ee2b161e81e2215184c011dfc6105c557ee941f))
+* tighten up spacing ([866906f](https://github.com/cds-snc/ai-answers/commit/866906f5a90b54750da0ede63baca2500c11b1d7))
+
 ## [1.58.6](https://github.com/cds-snc/ai-answers/compare/v1.58.5...v1.58.6) (2025-11-08)
 
 
