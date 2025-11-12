@@ -209,7 +209,7 @@ async function generateDocumentation() {
   const documentation = `# AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** ${new Date().toISOString()}
+**Generated:** ${new Date().toISOString().split('T')[0]}
 **Language:** ${lang}
 **Example Department:** ${department}
 

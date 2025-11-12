@@ -1,11 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-<<<<<<< Updated upstream
-**Generated:** 2025-11-12T22:11:40.497Z
-=======
-**Generated:** 2025-11-12T22:01:50.814Z
->>>>>>> Stashed changes
+**Generated:** 2025-11-12
 **Language:** en
 **Example Department:** EDSC-ESDC
 
