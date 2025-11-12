@@ -1,6 +1,7 @@
 export const SAC_ISC_SCENARIOS = `
 ### Questions about Indian status and secure status card processing time 
 * Indian status is the legal standing of a person who is registered under the Indian Act. People can apply for registration and a secure status card at the same time.
+* Questions about eligibility to register should be directed to the Find out if you are entitled to be registered under the Indian Act page: https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 https://www.sac-isc.gc.ca/fra/1710868412176/1710868541374
 * Processing time for registration can take from 6 months to 2 years, depending on the complexity of the application.
 * For people who are already registered under the Indian Act, it usually takes from 8 to 12 weeks to process a complete application for a secure status card. 
 * If the question isn't clear about processing time for registration vs status card, ask a clarifying question so you can provide a helpful answer.
@@ -48,23 +49,24 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * If a user asks about dental benefits, ask clarifying question about whether they are referring to NIHB Program dental benefits for eligible First Nations and Inuit or the Canadian Dental Care Plan (CDCP). Si un utilisateur pose des questions sur les prestations dentaires, posez une question de clarification pour savoir s'il fait référence aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles ou au Régime canadien de soins dentaires (RCDC). https://www.sac-isc.gc.ca/eng/1574192221735/1574192306943 https://www.sac-isc.gc.ca/fra/1574192221735/1574192306943
 * If a user asks about dentists enrolled in the NIHB Program dental benefits for eligible First Nations and Inuit, direct them to contact their FNIHB regional office. Si un utilisateur pose des questions sur les dentistes inscrits aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles, demandez-lui de contacter son bureau régional des SSNA. https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
-### Regional offices by province
-* Regional offices are listed on each province's Regional Office page. Use the question to identify the appropriate province. If province or location is not clear, ask a clarifying question to determine the correct province or regional office within the province or area.
-* Do not assume that a person asking a question in French is automatically in the Quebec region. Ne présumez pas qu'une personne qui pose une question en français se trouve automatiquement dans la région du Québec.
-* This is the current list of provincial regional office pages updated frequently - no others exist:
-British Columbia region: https://www.sac-isc.gc.ca/eng/1100100021003/1612465942223 https://www.sac-isc.gc.ca/fra/1100100021003/1612465942223
-Alberta region: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889 https://www.sac-isc.gc.ca/fra/1100100020655/1614278941889
-Saskatchewan region: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258 https://www.sac-isc.gc.ca/fra/1601918257851/1601918278258
-Manitoba region: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423 https://www.sac-isc.gc.ca/fra/1100100020394/1616069948423
-Ontario region: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408 https://www.sac-isc.gc.ca/fra/1603370021929/1603370103408
-Quebec region: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791 https://www.sac-isc.gc.ca/fra/1100100019255/1582306532791
-Atlantic region: https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064 https://www.sac-isc.gc.ca/fra/1100100016942/1617145511064
-Yukon region: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203 https://www.rcaanc-cirnac.gc.ca/fra/1100100028326/1615402391203
-Northwest Territories region: https://www.rcaanc-cirnac.gc.ca/eng/1100100022857/1617205117407 https://www.rcaanc-cirnac.gc.ca/fra/1100100022857/1617205117407
-Nunavut region: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659 https://www.rcaanc-cirnac.gc.ca/fra/1100100027774/1613925314659
-* ALWAYS use the downloadWebPage tool to read the relevant provincial regional office page to provide accurate office hours, address, in-person advice or telephone numbers in your answer. Never provide a phone number or address unless it has been verified. Provide that provincial regional office page as the citation. 
-* Before providing office details, remember that the nearest office may be listed under a different province—for example, people in Ottawa, Ontario are closest to the National Capital Region office in Gatineau, Quebec, which is listed on the Quebec regional page.
-* Most regions have more than one office listed on their page. Regional office locations change over time, politely correct misunderstandings about locations, eg. there is no longer an office in Saskatoon.
+### Regional offices
+* See list of Regional Offices pages below - always use downloadWebPage tool for these pages. Use the question to identify the appropriate page for the closest office. If province or location is not clear, ask a clarifying question to find the best page.
+* Do not assume that a person asking a question in French is automatically in the Quebec region. 
+* This is the current list of regional offices pages (updated November 2925) :
+British Columbia: https://www.sac-isc.gc.ca/eng/1100100021003/1612465942223 https://www.sac-isc.gc.ca/fra/1100100021003/1612465942223
+Alberta: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889 https://www.sac-isc.gc.ca/fra/1100100020655/1614278941889
+Saskatchewan: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258 https://www.sac-isc.gc.ca/fra/1601918257851/1601918278258
+Manitoba: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423 https://www.sac-isc.gc.ca/fra/1100100020394/1616069948423
+Ontario: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408 https://www.sac-isc.gc.ca/fra/1603370021929/1603370103408
+Quebec: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791 https://www.sac-isc.gc.ca/fra/1100100019255/1582306532791
+Atlantic (NS,NB,PEI,NFL and Labrador): https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064 https://www.sac-isc.gc.ca/fra/1100100016942/1617145511064
+Yukon: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203 https://www.rcaanc-cirnac.gc.ca/fra/1100100028326/1615402391203
+Northwest Territories: https://www.rcaanc-cirnac.gc.ca/eng/1100100022857/1617205117407 https://www.rcaanc-cirnac.gc.ca/fra/1100100022857/1617205117407
+Nunavut: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659 https://www.rcaanc-cirnac.gc.ca/fra/1100100027774/1613925314659
+* ALWAYS use the downloadWebPage tool to read the relevant regional offices page to provide accurate locations, office hours, address, in-person advice or telephone numbers in your answer. NEVER provide a phone number or address unless it has been verified. Provide the regional offices page as the citation. 
+* Before providing office details, remember that the nearest/closest office may be listed under a different province—for example, people in Ottawa, Ontario are closest to the National Capital Region office in Gatineau, Quebec, which is listed on the Quebec regional page.
+* Some provinces have a single office listed on their provincial page (e.g BC, NS, AB, Atlantic), some have several (e.g. SK, QC, ON) - verify in the downloaded content before responding.
+* Office locations change over time, correct misunderstandings about locations, eg. there is no longer an office in Saskatoon.
 * Some offices provide in-person and front counter service, some do not, some require pre-booking an appointment. Verify from the downloaded content before providing it.
 
 ### Contact information

@@ -88,7 +88,11 @@ const AboutPage = ({ lang = 'en' }) => {
 
         {/* Contact Section */}
         <GcdsText className="mb-400">
-          {t('homepage.about.contact')}
+          <GcdsLink
+            href={t('homepage.about.contactUrl')}
+          >
+            {t('homepage.about.contact')}
+          </GcdsLink>
         </GcdsText>
 
         {/* CDS Link */}
