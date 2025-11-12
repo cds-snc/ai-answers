@@ -23,6 +23,8 @@
       "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
       "status": "Le service a débuté comme une expérience en fin 2024 et est actuellement testé et amélioré par le biais de liens publiés sur des pages sélectionnées de Canada.ca.",
+      "contactTitle": "Contactez-nous",
+      "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
       "aiServices": {
         "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
         "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
