@@ -595,13 +595,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   onClick={() => {
                     try {
                       if (window && window.adobeDataLayer) {
-                        console.log('Pushing citationClick to Adobe Data Layer:', {
-                          citationUrl: displayUrl,
-                          interactionId: interactionId,
-                          chatId: chatId,
-                        });
+                        // Build customCall using the required structure:
+                        // Dept. Abbreviation:Custom Variable Name:Custom Value
+                        // Use department abbreviation ESDC-EDSC and describe this as a Citation Click.
+                        var customCallValue = `ESDC-EDSC:Citation Click:${displayUrl}`;
+                        console.log('Pushing customTracking to Adobe Data Layer (customCall):', customCallValue);
                         var result = window.adobeDataLayer.push({
-                          event: 'citationClick',
+                          event: 'customTracking',
+                          link: {
+                            customCall: customCallValue
+                          },
+                          // Keep contextual fields for debugging (non-breaking extra data)
                           citationUrl: displayUrl,
                           interactionId: interactionId,
                           chatId: chatId,
