@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.58.9](https://github.com/cds-snc/ai-answers/compare/v1.58.8...v1.58.9) (2025-11-13)
+
+
+### Code Refactoring
+
+* remove unused isLoadingSiteStatus state from HomePage compo… ([ca408e7](https://github.com/cds-snc/ai-answers/commit/ca408e7459b561cc661589af122804e1505cc2ad))
+
 ## [1.58.8](https://github.com/cds-snc/ai-answers/compare/v1.58.7...v1.58.8) (2025-11-12)
 
 
