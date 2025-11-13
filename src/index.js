@@ -22,6 +22,29 @@ if (adobeUrl) {
   script.src = adobeUrl;
   script.async = false; // Load synchronously to ensure it's ready before React renders
   document.head.insertBefore(script, document.head.firstChild); // Insert at the very top of head
+  // Also add a small inline script at the bottom of the body that calls
+  // _satellite.pageBottom() once the window has finished loading. We wait
+  // for the load event to ensure document.body exists and the Adobe
+  // library has been executed.
+  try {
+    const bottomScript = document.createElement('script');
+    bottomScript.type = 'text/javascript';
+    bottomScript.text = '_satellite.pageBottom();';
+    // Append at load so body is present and _satellite is ready
+    window.addEventListener('load', () => {
+      try {
+        if (document.body) {
+          document.body.appendChild(bottomScript);
+        }
+      } catch (e) {
+        // swallow errors to avoid breaking bootstrap
+        console.warn('Failed to append Adobe pageBottom script to body', e);
+      }
+    });
+  } catch (e) {
+    // swallow errors during bootstrap so they don't prevent app render
+    console.warn('Failed to prepare Adobe pageBottom script', e);
+  }
 }
 
 const renderApp = () => {
