@@ -560,7 +560,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const answer = message.interaction?.answer || {};
     const citation = answer.citation || {};
     const citationHead = answer.citationHead || citation.citationHead || '';
+    // displayUrl is the citation URL to show and use for analytics
     const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    // interactionId is the message id (client-side userMessageId)
+    const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
     return (
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
@@ -584,7 +587,33 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
             {displayUrl && (
               <p key={`${messageId}-link`} className="citation-link">
-                <a href={displayUrl} target="_blank" rel="noopener noreferrer" tabIndex="0">
+                <a
+                  href={displayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  tabIndex="0"
+                  onClick={() => {
+                    try {
+                      if (window && window.adobeDataLayer) {
+                        console.log('Pushing citationClick to Adobe Data Layer:', {
+                          citationUrl: displayUrl,
+                          interactionId: interactionId,
+                          chatId: chatId,
+                        });
+                        var result = window.adobeDataLayer.push({
+                          event: 'citationClick',
+                          citationUrl: displayUrl,
+                          interactionId: interactionId,
+                          chatId: chatId,
+                        });
+                        console.log('Adobe Data Layer push result:', result);
+                      }
+                    } catch (e) {
+                      // swallow analytics errors — should not block navigation
+                      console.error('Error pushing to Adobe Data Layer:', e);
+                    }
+                  }}
+                >
                   {displayUrl}
                 </a>
               </p>
@@ -593,7 +622,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         )}
       </div>
     );
-  }, [safeT]);
+  }, [safeT, chatId]);
 
   // Add handler for department changes
 
