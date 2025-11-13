@@ -63,6 +63,19 @@ const HomePage = ({ lang = "en" }) => {
   const [chatId, setChatId] = useState(reviewChatId || null);
   const [initialMessages, setInitialMessages] = useState([]);
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
+  // Capture client-side referrer (if available) so we can pass it into the
+  // chat component for new chats. Keep this safe for SSR/tests by guarding
+  // access to `document`.
+  const clientReferrer = (() => {
+    try {
+      if (typeof document !== 'undefined' && document.referrer) {
+        return document.referrer;
+      }
+    } catch (e) {
+      // no-op: tests or SSR may not have document
+    }
+    return null;
+  })();
   // Removed unused isLoadingSiteStatus state
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
@@ -208,7 +221,10 @@ const HomePage = ({ lang = "en" }) => {
           chatId={chatId}
           readOnly={reviewMode}
           initialMessages={initialMessages}
+          // Pass saved review value separately, and clientReferrer separately.
+          // ChatAppContainer will prefer pageUrl when present and ignore clientReferrer.
           initialReferringUrl={reviewReferringUrl}
+          clientReferrer={clientReferrer}
         />
       </div>
       {!reviewMode && (

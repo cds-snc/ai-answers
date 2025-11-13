@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.58.9](https://github.com/cds-snc/ai-answers/compare/v1.58.8...v1.58.9) (2025-11-13)
+
+
+### Code Refactoring
+
+* remove unused isLoadingSiteStatus state from HomePage compo… ([ca408e7](https://github.com/cds-snc/ai-answers/commit/ca408e7459b561cc661589af122804e1505cc2ad))
+
+## [1.58.8](https://github.com/cds-snc/ai-answers/compare/v1.58.7...v1.58.8) (2025-11-12)
+
+
+### Bug Fixes
+
+* about and isc ([3edc440](https://github.com/cds-snc/ai-answers/commit/3edc440ee04de4fd38525a9b83ba81d9c1411626))
+* about and isc ([7275db5](https://github.com/cds-snc/ai-answers/commit/7275db552911f83de658567d1868ddf9e2412622))
+* contact section ([f0c1ac2](https://github.com/cds-snc/ai-answers/commit/f0c1ac27918fb73cf42eb9a04dae1d15bb5d3090))
+* needed separate sentence ([0c058e5](https://github.com/cds-snc/ai-answers/commit/0c058e5ad18e752c825009144a0c338e4a4b5d42))
+* typo ([66f1e8c](https://github.com/cds-snc/ai-answers/commit/66f1e8cb5b418c21f80a768af81eecbb8ba1d65a))
+
 ## [1.58.7](https://github.com/cds-snc/ai-answers/compare/v1.58.6...v1.58.7) (2025-11-11)
 
 

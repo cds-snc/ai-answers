@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -91,7 +91,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // public default unintentionally.
   const initialWorkflowFromLocalStorage = useRef(false);
   const userSetWorkflow = useRef(false);
-  const [referringUrl, setReferringUrl] = useState(initialReferringUrl || pageUrl || '');
+  // Precedence for initial referring URL:
+  // 1) saved review value (initialReferringUrl)
+  // 2) pageUrl (from usePageContext)
+  // 3) clientReferrer (document.referrer passed from HomePage)
+  const [referringUrl, setReferringUrl] = useState(() => {
+    return initialReferringUrl || pageUrl || clientReferrer || '';
+  });
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
@@ -522,14 +528,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     safeT
   ]);
 
+  // If a pageUrl becomes available later and there was no saved review value,
+  // prefer pageUrl over a clientReferrer. Do not override an explicit saved
+  // initialReferringUrl.
   useEffect(() => {
-    if (pageUrl && !referringUrl) {
+    // If pageUrl becomes available later and there was no saved review value,
+    // prefer pageUrl over a clientReferrer — but don't override an explicit
+    // initialReferringUrl or a user-edited referringUrl.
+    if (pageUrl && !initialReferringUrl && (!referringUrl || referringUrl === '')) {
       setReferringUrl(pageUrl);
     }
     if (urlDepartment && !selectedDepartment) {
       setSelectedDepartment(urlDepartment);
     }
-  }, [pageUrl, urlDepartment, referringUrl, selectedDepartment]);
+  }, [pageUrl, urlDepartment, initialReferringUrl, selectedDepartment, referringUrl]);
 
   const formatAIResponse = useCallback((aiService, message) => {
     const messageId = message.id;
@@ -548,7 +560,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const answer = message.interaction?.answer || {};
     const citation = answer.citation || {};
     const citationHead = answer.citationHead || citation.citationHead || '';
+    // displayUrl is the citation URL to show and use for analytics
     const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    // interactionId is the message id (client-side userMessageId)
+    const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
     return (
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
@@ -572,7 +587,37 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
             {displayUrl && (
               <p key={`${messageId}-link`} className="citation-link">
-                <a href={displayUrl} target="_blank" rel="noopener noreferrer" tabIndex="0">
+                <a
+                  href={displayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  tabIndex="0"
+                  onClick={() => {
+                    try {
+                      if (window && window.adobeDataLayer) {
+                        // Build customCall using the required structure:
+                        // Dept. Abbreviation:Custom Variable Name:Custom Value
+                        // Use department abbreviation ESDC-EDSC and describe this as a Citation Click.
+                        var customCallValue = `ESDC-EDSC:Citation Click:${displayUrl}`;
+                        console.log('Pushing customTracking to Adobe Data Layer (customCall):', customCallValue);
+                        var result = window.adobeDataLayer.push({
+                          event: 'customTracking',
+                          link: {
+                            customCall: customCallValue
+                          },
+                          // Keep contextual fields for debugging (non-breaking extra data)
+                          citationUrl: displayUrl,
+                          interactionId: interactionId,
+                          chatId: chatId,
+                        });
+                        console.log('Adobe Data Layer push result:', result);
+                      }
+                    } catch (e) {
+                      // swallow analytics errors — should not block navigation
+                      console.error('Error pushing to Adobe Data Layer:', e);
+                    }
+                  }}
+                >
                   {displayUrl}
                 </a>
               </p>
@@ -581,7 +626,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         )}
       </div>
     );
-  }, [safeT]);
+  }, [safeT, chatId]);
 
   // Add handler for department changes
 

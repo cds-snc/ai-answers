@@ -407,10 +407,15 @@ Page Language: en
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
 **Partner Departments with Custom Scenario Files (as of November 2025):**
+- `context-cds-snc/` - Canadian Digital Service (CDS-SNC)
 - `context-cra-arc/` - Canada Revenue Agency (CRA-ARC)
+- `context-eccc/` - Environment and Climate Change Canada (ECCC)
 - `context-edsc-esdc/` - Employment and Social Development Canada (EDSC-ESDC)
+- `context-fin/` - Department of Finance Canada (FIN)
 - `context-hc-sc/` - Health Canada (HC-SC) and Public Health Agency (PHAC-ASPC)
 - `context-ircc/` - Immigration, Refugees and Citizenship Canada (IRCC)
+- `context-ised-isde/` - Innovation, Science and Economic Development Canada (ISED-ISDE)
+- `context-nrcan-rncan/` - Natural Resources Canada (NRCAN-RNCAN)
 - `context-pspc-spac/` - Public Services and Procurement Canada (PSPC-SPAC)
 - `context-sac-isc/` - Indigenous Services Canada (SAC-ISC) and Crown-Indigenous Relations (RCAANC-CIRNAC)
 - `context-tbs-sct/` - Treasury Board Secretariat (TBS-SCT)
