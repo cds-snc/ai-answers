@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.59.0](https://github.com/cds-snc/ai-answers/compare/v1.58.9...v1.59.0) (2025-11-13)
+
+
+### Features
+
+* enhance citation handling and analytics integration in ChatAppC… ([d559250](https://github.com/cds-snc/ai-answers/commit/d55925009bd705d5f494cc4e436d63d7c6ac43a2))
+* enhance citation handling and analytics integration in ChatAppContainer ([7f7408f](https://github.com/cds-snc/ai-answers/commit/7f7408fab57cf45acb86f287cb1c84e291d6571f))
+* update Adobe Analytics integration to append pageBottom script … ([aca1046](https://github.com/cds-snc/ai-answers/commit/aca1046462f6c55f8d241986688a7ce88ea27039))
+* update Adobe Analytics integration to append pageBottom script after load event ([4e264f4](https://github.com/cds-snc/ai-answers/commit/4e264f4585fe31671d9c34a0ca7a26bb07f1f876))
+* update Adobe Data Layer tracking for citation clicks with custom structure ([94332fa](https://github.com/cds-snc/ai-answers/commit/94332fa0484506a5c924992d50b87062eb30892d))
+
+
+### Bug Fixes
+
+* restore Adobe Analytics script in index.html ([f39640b](https://github.com/cds-snc/ai-answers/commit/f39640b7a44e7a8b6a421e0ccee9aa0a63424f87))
+* update system prompt for new partners ([49e9bf1](https://github.com/cds-snc/ai-answers/commit/49e9bf134e5273880766ddef36eb47837802d9f6))
+
 ## [1.58.9](https://github.com/cds-snc/ai-answers/compare/v1.58.8...v1.58.9) (2025-11-13)
 
 
