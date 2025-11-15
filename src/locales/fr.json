@@ -22,7 +22,7 @@
     "about": {
       "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
-      "status": "Le service a débuté comme une expérience en fin 2024 et est actuellement testé et amélioré par le biais de liens publiés sur des pages sélectionnées de Canada.ca.",
+      "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
       "contactTitle": "Contactez-nous",
       "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
       "aiServices": {
@@ -242,8 +242,9 @@
     "title": "À propos de Canada.ca Réponses IA",
     "overview": {
       "title": "Aperçu",
-      "descriptionPart1": "Réponses IA est un assistant IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Il fournit des réponses précises et brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations gouvernementaux, avec une citation appropriée unique. Lors d'essais publics sur les pages sélectionnées de Canada.ca, les premières versions du service ont puisé avec précision dans le contenu de plus de 50 institutions pour répondre à des milliers de questions.",
-      "descriptionPart2": "Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Réponses IA a été initialement conçue pour être indépendante du modèle d'IA, bien qu'elle ait actuellement accès à une seule famille de modèles GPT. Un système d'évaluation innovant applique les évaluations d'experts gouvernementaux pour alimenter les évaluations IA automatisées et des réponses précises."
+      "descriptionPara1": "Réponses IA est un assistant IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent qu'elles ne trouvent pas ce dont elles ont besoin sur Canada.ca. Réponses IA fournira des réponses brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations du gouvernement fédéral.",
+      "descriptionPara2": "Lors d'essais sur invitation sur les pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre aux questions de plus de 4 000 utilisateurs. Les évaluations effectuées par les experts des institutions partenaires sur des échantillons de réponses ont identifié des erreurs dans moins de 10 % des réponses - dépassant l'objectif de taux de précision de 90 %. 82 % des commentaires de plus de 250 utilisateurs des essais étaient positifs, et soulignaient les économies de temps et d'efforts, ainsi que l'évitement des appels et des visites au bureau.",
+      "descriptionPara3": "Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts humains sur la précision et les améliorations possibles pour améliorer les évaluations IA automatisées et la qualité des réponses."
     },
     "systemCard": {
       "title": "Documentation de la fiche système",
