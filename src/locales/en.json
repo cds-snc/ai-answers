@@ -15,7 +15,7 @@
     "about": {
       "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service.",
-      "status": "The service began as an experiment in late 2024 and currently is being tested and improved via links posted on selected Canada.ca pages.",
+      "status": "The service began as an experiment in late 2024 by the Canada.ca design team. AI Answers is currently undergoing invitation-only trials on high-traffic Canada.ca pages. We analyze results after each trial to improve both product and processes with our partner institutions. An expanded rollout is planned for 2026.",
       "contactTitle": "Contact us",
       "contactFormLink": "Use the Canadian Digital Service contact form",
       "aiServices": {
@@ -198,8 +198,9 @@
     "title": "About Canada.ca AI Answers",
     "overview": {
       "title": "Overview",
-      "descriptionPart1": "AI Answers is a specialized AI assistant designed for users of Canada.ca and all Government of Canada websites. It provides accurate, brief answers to user questions about the entire online ecosystem of government services, programs, and information, with a single appropriate citation. In invited trials on selected Canada.ca pages, early versions of the service accurately sourced content across 50+ institutions to answer thousands of questions.",
-      "descriptionPart2": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. AI Answers was initially designed to be AI model-independent, although it currently has access to a single family of GPT models. An innovative evaluation system applies government expert evaluations to fuel automated AI evaluations and accurate answers."
+      "descriptionPara1": "AI Answers is a specialized AI assistant designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.",
+      "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer questions from over 4,000 users. Evaluations by partner institution experts of samples of answers identified errors in less than 10% of answers - exceeding the objective of 90% accuracy rates. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
+      "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations of accuracy and potential improvements to improve automated AI evaluations and answer quality."
     },
     "systemCard": {
       "title": "System Card documentation",
