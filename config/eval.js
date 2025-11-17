@@ -19,7 +19,7 @@ const config = {
     evalBatchProcessingDuration: 30, // Duration in seconds to process evaluations
     // Timeout in seconds for finding similar embeddings before giving up (10 minutes)
     similarEmbeddingsTimeLimit: 600,
-    evalConcurrency: 8
+    evalConcurrency: 1
 };
 
 export default config;

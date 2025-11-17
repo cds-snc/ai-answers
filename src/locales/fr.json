@@ -608,6 +608,7 @@
       "totalCount": "Total des lignes d'évaluation dans la plage : {total}",
       "searchLabel": "Rechercher par ID de chat ou d'interaction :",
       "searchPlaceholder": "Entrez l'ID...",
+      "columnFilterPlaceholder": "Filtrer",
       "columns": {
         "chatId": "ID de chat",
         "interactionId": "ID d'interaction",
@@ -619,6 +620,7 @@
         "processed": "Traité",
         "matches": "Correspondances trouvées",
         "fallback": "Repli",
+        "any": "Tous",
         "reason": "Raison de non-correspondance",
         "date": "Date"
       }

@@ -538,8 +538,9 @@
       "error": "Unable to load chat data.",
       "noResults": "Apply filters to load chat interactions.",
       "resultsSummary": "Showing {count} chats",
-      "totalCount": "Total matching chats: {total}",
-      "searchLabel": "Search by Chat ID:",
+      "searchLabel": "Search by Chat or Interaction ID:",
+      "searchPlaceholder": "Enter id...",
+      "columnFilterPlaceholder": "Filter",
       "searchPlaceholder": "Enter chat ID...",
       "columns": {
         "chatId": "Chat ID",
@@ -563,6 +564,7 @@
       "totalCount": "Total eval rows in range: {total}",
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
+      "columnFilterPlaceholder": "Filter",
       "columns": {
         "chatId": "Chat ID",
         "interactionId": "Interaction ID",
@@ -574,6 +576,7 @@
         "processed": "Processed",
         "matches": "Has matches",
         "fallback": "Fallback",
+        "any": "Any",
         "reason": "No-match reason",
         "date": "Date"
       }

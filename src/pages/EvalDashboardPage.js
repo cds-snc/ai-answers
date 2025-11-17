@@ -153,7 +153,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   const prefixed = interactionId ? `interactionId${interactionId}` : '';
   const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
         return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
-      }
+      },
+      searchable: true,
+      orderable: true
     },
     {
       title: t('admin.evalDashboard.columns.interactionId', 'Interaction ID'),
@@ -169,18 +171,20 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // If we have a chatId, link to review page with chat + interaction hash, otherwise just show the id
         if (safeChat) return `<a href="/${chatLang}?chat=${safeChat}&review=1${hash}">${escapeHtmlAttribute(id)}</a>`;
         return escapeHtmlAttribute(id);
-      }
+      },
+      searchable: true,
+      orderable: true
     },
-    { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department' },
-    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '' },
-    { title: t('admin.evalDashboard.columns.autoEval', 'AutoEval'), data: 'hasAutoEval', render: v => v ? 'Yes' : 'No' },
-    { title: t('admin.evalDashboard.columns.expertEval', 'ExpertEval'), data: 'hasExpertEval', render: v => v ? 'Yes' : 'No' },
-    { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => v ? escapeHtmlAttribute(v) : '' },
-    { title: t('admin.evalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? 'Yes' : 'No' },
-    { title: t('admin.evalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? 'Yes' : 'No' },
-    { title: t('admin.evalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType' },
-    { title: t('admin.evalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType' },
-    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v) }
+    { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.autoEval', 'AutoEval'), data: 'hasAutoEval', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.expertEval', 'ExpertEval'), data: 'hasExpertEval', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => v ? escapeHtmlAttribute(v) : '', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
   ]), [formatDate, lang, t]);
 
   return (
@@ -216,16 +220,63 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
               order: [[11, 'desc']],
               stateSave: true,
               language: {
-                search: t('admin.evalDashboard.searchLabel', 'Search by Chat or Interaction ID:'),
-                searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter id...')
+                search: t('admin.evalDashboard.searchLabel', 'Search'),
+                searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter search term...')
               },
-              stateSaveCallback: function (settings, data) {
-                try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data)); } catch (e) { void e; }
+              // Add per-column header inputs
+              initComplete: function () {
+                try {
+                  const api = this.api();
+                  tableApiRef.current = api;
+                  const debounce = (fn, wait = 300) => {
+                    let t = null;
+                    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+                  };
+                  api.columns().every(function (idx) {
+                    const column = this;
+                    const colInfo = column.settings()[0].aoColumns[idx] || {};
+                    const colData = colInfo.data || '';
+                    if (!colInfo.searchable) return;
+                    const headerEl = column.header(); // DOM element
+                    if (!headerEl) return;
+                    const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
+                    if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
+                    const filterContainer = document.createElement('div');
+                    filterContainer.className = 'dt-col-filter-container';
+                    filterContainer.style.marginTop = '4px';
+                    const booleanCols = ['hasAutoEval', 'hasExpertEval', 'processed', 'hasMatches'];
+                    if (booleanCols.includes(colData)) {
+                      const sel = document.createElement('select');
+                      sel.className = 'dt-col-search';
+                      const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.evalDashboard.columns.any','Any'); sel.appendChild(optAny);
+                      const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes','Yes'); sel.appendChild(optYes);
+                      const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no','No'); sel.appendChild(optNo);
+                      sel.addEventListener('change', function () {
+                        column.search(this.value).draw();
+                      });
+                      filterContainer.appendChild(sel);
+                    } else {
+                      const input = document.createElement('input');
+                      input.type = 'search';
+                      input.className = 'dt-col-search';
+                      input.placeholder = t('admin.evalDashboard.columnFilterPlaceholder','Filter');
+                      input.addEventListener('input', debounce(function (e) {
+                        column.search(e.target.value).draw();
+                      }, 350));
+                      filterContainer.appendChild(input);
+                    }
+                    // prevent clicks inside the filter container from sorting the column
+                    const stopSort = (event) => event.stopPropagation();
+                    filterContainer.addEventListener('click', stopSort);
+                    filterContainer.addEventListener('mousedown', stopSort);
+                    headerEl.appendChild(filterContainer);
+                  });
+                  api.on('xhr.dt', function (_e, _settings, json) {
+                    try { setRecordsTotal((json && json.recordsTotal) || 0); setRecordsFiltered((json && json.recordsFiltered) || 0); } catch (e) { /* ignore */ }
+                  });
+                } catch (e) { /* ignore initComplete errors */ }
               },
-              stateLoadCallback: function () {
-                try { if (typeof window !== 'undefined' && window.localStorage) return JSON.parse(window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY)); } catch (e) { void e; }
-                return null;
-              },
+              // ajax collects per-column searches and sends them to backend
               ajax: async (dtParams, callback) => {
                 try {
                   setLoading(true);
@@ -235,7 +286,16 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                   const orderDir = dtOrder.dir || 'desc';
                   const searchValue = (dtParams.search && dtParams.search.value) || '';
-
+                  const columnSearches = {};
+                  if (Array.isArray(dtParams.columns)) {
+                    dtParams.columns.forEach((col) => {
+                      const val = col && col.search && String(col.search.value || '').trim();
+                      if (val) {
+                        const colName = col.data || null;
+                        if (colName) columnSearches[colName] = val;
+                      }
+                    });
+                  }
                   const query = {
                     ...filtersRef.current,
                     start: dtParams.start || 0,
@@ -245,7 +305,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     draw: dtParams.draw || 0
                   };
                   if (searchValue) query.search = searchValue;
-
+                  if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
                   const result = await EvaluationService.getEvalDashboard(query);
                   setRecordsTotal(result?.recordsTotal || 0);
                   setRecordsFiltered(result?.recordsFiltered || 0);
@@ -258,14 +318,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   setLoading(false);
                 }
               },
-              initComplete: function () {
-                try {
-                  const api = this.api();
-                  tableApiRef.current = api;
-                  api.on('xhr.dt', function (_e, _settings, json) {
-                    try { setRecordsTotal((json && json.recordsTotal) || 0); setRecordsFiltered((json && json.recordsFiltered) || 0); } catch (e) { /* ignore */ }
-                  });
-                } catch (e) { /* ignore */ }
+              stateSaveCallback: function (settings, data) {
+                try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data)); } catch (e) { void e; }
+              },
+              stateLoadCallback: function () {
+                try { if (typeof window !== 'undefined' && window.localStorage) return JSON.parse(window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY)); } catch (e) { void e; }
+                return null;
               }
             }}
           />

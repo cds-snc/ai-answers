@@ -155,11 +155,9 @@ async function evalDashboardHandler(req, res) {
 
     if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });
 
-    // Apply search on chatId or interactionId
-    if (searchParam) {
-      const esc = escapeRegex(searchParam);
-      pipeline.push({ $match: { $or: [ { 'chat.chatId': { $regex: esc, $options: 'i' } }, { interactionId: { $regex: esc, $options: 'i' } } ] } });
-    }
+    // NOTE: search must run after projection so we can match on the projected
+    // top-level fields (chatId, pageLanguage, department, etc.). We'll add
+    // the search match after the $project stage below.
 
     // Project fields for the UI
     pipeline.push({
@@ -178,12 +176,68 @@ async function evalDashboardHandler(req, res) {
         hasExpertEval: { $cond: [{ $ifNull: ['$interactionExpert', false] }, true, false] },
         // Take the expert email from the interaction's expert feedback only
         expertEmail: { $ifNull: ['$interactionExpert.expertEmail', ''] },
-        evalProcessed: '$eval.processed',
-        evalHasMatches: '$eval.hasMatches',
+        processed: '$eval.processed',
+        hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
         noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] }
       }
     });
+
+    // Apply search on the projected, top-level fields (so column names align)
+    if (searchParam) {
+      const esc = escapeRegex(searchParam);
+      const norm = String(searchParam).trim().toLowerCase();
+      // Interpret common boolean search terms
+      let boolSearch = null;
+      if (['yes', 'true', '1', 'y'].includes(norm)) boolSearch = true;
+      else if (['no', 'false', '0', 'n'].includes(norm)) boolSearch = false;
+
+      const orClauses = [
+        { chatId: { $regex: esc, $options: 'i' } },
+        { interactionId: { $regex: esc, $options: 'i' } },
+        { department: { $regex: esc, $options: 'i' } },
+        { pageLanguage: { $regex: esc, $options: 'i' } },
+        { expertEmail: { $regex: esc, $options: 'i' } },
+        { fallbackType: { $regex: esc, $options: 'i' } },
+        { noMatchReasonType: { $regex: esc, $options: 'i' } }
+      ];
+
+      // If the user searched a boolean-like term, also match boolean columns directly
+      if (boolSearch !== null) {
+        orClauses.push({ hasAutoEval: boolSearch });
+        orClauses.push({ hasExpertEval: boolSearch });
+        orClauses.push({ processed: boolSearch });
+        orClauses.push({ hasMatches: boolSearch });
+      }
+
+      pipeline.push({ $match: { $or: orClauses } });
+    }
+
+    // Handle per-column searches from frontend
+    let columnSearch = req.query.columnSearch || null;
+    if (typeof columnSearch === 'string' && columnSearch.trim()) {
+      try {
+        columnSearch = JSON.parse(columnSearch);
+      } catch (err) {
+        console.warn('Failed to parse columnSearch filter', err);
+        columnSearch = null;
+      }
+    }
+    if (columnSearch && typeof columnSearch === 'object' && Object.keys(columnSearch).length) {
+      const andClauses = [];
+      for (const [col, val] of Object.entries(columnSearch)) {
+        const v = String(val || '').trim();
+        if (!v) continue;
+        const low = v.toLowerCase();
+        if (['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
+          const boolVal = ['true', '1', 'yes', 'y'].includes(low);
+          andClauses.push({ [col]: boolVal });
+        } else {
+          andClauses.push({ [col]: { $regex: escapeRegex(v), $options: 'i' } });
+        }
+      }
+      if (andClauses.length) pipeline.push({ $match: { $and: andClauses } });
+    }
 
     // Sorting
     const sortFieldMap = {
@@ -227,8 +281,8 @@ async function evalDashboardHandler(req, res) {
       hasAutoEval: !!r.hasAutoEval,
       hasExpertEval: !!r.hasExpertEval,
       expertEmail: r.expertEmail || '',
-      processed: typeof r.evalProcessed === 'boolean' ? r.evalProcessed : false,
-      hasMatches: typeof r.evalHasMatches === 'boolean' ? r.evalHasMatches : false,
+      processed: typeof r.processed === 'boolean' ? r.processed : false,
+      hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
       date: r.createdAt ? r.createdAt.toISOString() : null

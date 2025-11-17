@@ -138,7 +138,8 @@ class EvaluationService {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return;
-        params.append(key, value);
+        const normalizedValue = typeof value === 'object' ? JSON.stringify(value) : value;
+        params.append(key, normalizedValue);
       });
       const query = params.toString();
       // Use the short endpoint name so getApiUrl constructs /api/eval/eval-dashboard
