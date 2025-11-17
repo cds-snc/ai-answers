@@ -117,6 +117,17 @@ class EvaluationService {
       throw error;
     }
   }
+
+  static async getEvalMetrics() {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-eval-metrics'));
+      if (!response.ok) throw new Error('Failed to get eval metrics');
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting eval metrics:', error);
+      return { total: 0, processed: 0, hasMatches: 0, noMatchByReason: {}, fallbackByType: {} };
+    }
+  }
 }
 
 export default EvaluationService;

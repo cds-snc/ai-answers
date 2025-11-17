@@ -85,8 +85,7 @@ class LogQueue {
     }
 
     async processLogEntry({ level, message, chatId, data }) {
-        console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
-
+       
         // Only save to DB if chatId is present and not "system"
         if (!chatId || chatId === 'system') {
             // Do not save to DB, just log to console

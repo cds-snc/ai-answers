@@ -1,3 +1,4 @@
+import bodyParser from 'body-parser';
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
@@ -81,7 +82,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(bodyParser.json({ limit: '100mb' }));
+app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
 
 // Set higher timeout limits for all routes

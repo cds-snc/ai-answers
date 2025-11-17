@@ -47,6 +47,14 @@ const evalSchema = new Schema({
         citation: { type: Number, required: false, default: 0 } // Added citation similarity
     },
     sentenceMatchTrace: [sentenceMatchTraceSchema], // Added traceability field
+    stageTimeline: [{
+        stage: { type: String, required: true },
+        status: { type: String, required: false, default: '' },
+        code: { type: String, required: false, default: '' },
+        message: { type: String, required: false, default: '' },
+        details: { type: Schema.Types.Mixed, required: false, default: null },
+        timestamp: { type: Date, required: false }
+    }],
     processed: { type: Boolean, required: true, default: true }, // Flag to track if interaction has been processed
     hasMatches: { type: Boolean, required: true, default: false }, // Flag to track if matches were found
     // Top-level reason for no-match evaluations (optional)

@@ -69,7 +69,7 @@ async function databaseManagementHandler(req, res) {
       });
     } else if (req.method === 'POST') {
       // Support chunked upload via req.body.chunkPayload
-      const { chunkIndex, totalChunks, fileName, chunkPayload } = req.body;
+      const { chunkIndex, totalChunks, fileName, chunkPayload, collection: requestedCollection } = req.body;
       if (!chunkPayload || typeof chunkPayload !== 'string' || chunkIndex === undefined || totalChunks === undefined || !fileName) {
         return res.status(400).json({ message: 'Chunked upload required. Missing chunkPayload, chunkIndex, totalChunks, or fileName.' });
       }
@@ -79,10 +79,30 @@ async function databaseManagementHandler(req, res) {
         const lines = chunkText.split(/\r?\n/).filter(line => line.trim().startsWith('{'));
 
         // Initialize stats for this chunk
-        let stats = { inserted: 0, failed: 0 };
+        // support skipped count when client asks to import only a subset of collections
+        let stats = { inserted: 0, failed: 0, skipped: 0 };
 
-        // Process all complete lines in this chunk
-        await processLines(lines, collections, stats);
+        // Build a collection filter based on requestedCollection: All (default) | AllButLogs | specific collection or array of collections
+        let collectionFilter = () => true;
+        if (requestedCollection && requestedCollection !== 'All') {
+          if (requestedCollection === 'AllButLogs') {
+            collectionFilter = (name) => {
+              const n = String(name || '').toLowerCase();
+              return !(n.endsWith('log') || n.endsWith('logs'));
+            };
+          } else if (Array.isArray(requestedCollection)) {
+            const set = new Set(requestedCollection.map(s => String(s).toLowerCase()));
+            collectionFilter = (name) => set.has(String(name || '').toLowerCase());
+          } else {
+            const rc = String(requestedCollection).toLowerCase();
+            collectionFilter = (name) => String(name || '').toLowerCase() === rc;
+          }
+        }
+
+        // Initialize skipped examples container (up to 10)
+        if (!stats.skippedExamples) stats.skippedExamples = [];
+      // Process all complete lines in this chunk, applying the optional collectionFilter
+      await processLines(lines, collections, stats, collectionFilter);
 
         // If this is the last chunk, the client should have sent any remaining incomplete line as a complete line
         const responsePayload = {
@@ -93,7 +113,7 @@ async function databaseManagementHandler(req, res) {
         if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
           responsePayload.message = 'Database import completed.';
         }
-        return res.status(200).json(responsePayload);
+  return res.status(200).json(responsePayload);
       } catch (err) {
         console.error('Error processing chunk:', err);
         return res.status(500).json({ message: 'Error processing upload chunk', error: err.message });
@@ -133,7 +153,7 @@ async function databaseManagementHandler(req, res) {
   }
 }
 
-async function processLines(lines, collections, stats) {
+async function processLines(lines, collections, stats, collectionFilter = () => true) {
   // Group operations by collection for bulk processing
   const operationsByCollection = {};
   
@@ -143,8 +163,25 @@ async function processLines(lines, collections, stats) {
     
     try {
       const { collection, doc } = JSON.parse(line);
-      const collectionName = collection.toLowerCase();
-      
+      if (!collection) {
+        stats.failed++;
+        continue;
+      }
+      const collectionName = String(collection).toLowerCase();
+
+      // If client requested a subset of collections, skip others
+      if (!collectionFilter(collectionName)) {
+        stats.skipped++;
+        try {
+          if (stats.skippedExamples && stats.skippedExamples.length < 10) {
+            stats.skippedExamples.push(line.trim());
+          }
+        } catch (e) {
+          // ignore push errors
+        }
+        continue;
+      }
+
       if (!collections[collectionName]) {
         stats.failed++;
         continue;

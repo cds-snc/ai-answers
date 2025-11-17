@@ -14,6 +14,7 @@ const EvalPage = () => {
   const [isEvalRequestInProgress, setIsEvalRequestInProgress] = useState(false);
   const [expertFeedbackCount, setExpertFeedbackCount] = useState(null);
   const [nonEmptyEvalCount, setNonEmptyEvalCount] = useState(null);
+  const [evalMetrics, setEvalMetrics] = useState(null);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
@@ -24,6 +25,10 @@ const EvalPage = () => {
     EvaluationService.getEvalNonEmptyCount()
       .then(setNonEmptyEvalCount)
       .catch(() => setNonEmptyEvalCount('Error'));
+    // load aggregated eval metrics
+    EvaluationService.getEvalMetrics()
+      .then(setEvalMetrics)
+      .catch(() => setEvalMetrics(null));
   }, []);
 
   const handleGenerateEvals = async (isAutoProcess = false, lastId = null) => {
@@ -181,6 +186,74 @@ const EvalPage = () => {
           </ol>
         </GcdsDetails>
         <br/>
+        {/* Evaluation metrics summary */}
+        <div className="mt-400">
+          <h3>Evaluation metrics</h3>
+          {evalMetrics ? (
+            <div>
+              <table className="table">
+                <tbody>
+                  <tr>
+                    <td>Total evaluations</td>
+                    <td>{evalMetrics.total}</td>
+                  </tr>
+                  <tr>
+                    <td>Processed evaluations</td>
+                    <td>{evalMetrics.processed}</td>
+                  </tr>
+                  <tr>
+                    <td>Evaluations with matches</td>
+                    <td>{evalMetrics.hasMatches}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="mt-200">
+                <h4>No-match reasons</h4>
+                {evalMetrics.noMatchByReason && Object.keys(evalMetrics.noMatchByReason).length > 0 ? (
+                  <table className="table">
+                    <thead>
+                      <tr><th>Reason</th><th>Count</th></tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(evalMetrics.noMatchByReason).map(([k, v]) => (
+                        <tr key={`nm-${k}`}><td>{k || 'unknown'}</td><td>{v}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div>No no-match reason data available.</div>
+                )}
+              </div>
+
+              <div className="mt-200">
+                <h4>Fallback types</h4>
+                {evalMetrics.fallbackByType && Object.keys(evalMetrics.fallbackByType).length > 0 ? (
+                  <table className="table">
+                    <thead>
+                      <tr><th>Fallback</th><th>Count</th></tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(evalMetrics.fallbackByType).map(([k, v]) => (
+                        <tr key={`fb-${k}`}><td>{k || 'unknown'}</td><td>{v}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div>No fallback usage data available.</div>
+                )}
+              </div>
+
+              <div className="mt-200">
+                <button onClick={() => {
+                  EvaluationService.getEvalMetrics().then(setEvalMetrics).catch(() => {});
+                }}>Refresh metrics</button>
+              </div>
+            </div>
+          ) : (
+            <div>Loading metrics...</div>
+          )}
+        </div>
         <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>
           <label>
             Start Date:
