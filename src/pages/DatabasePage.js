@@ -30,6 +30,8 @@ const DatabasePage = ({ lang }) => {
   const [importChunkMB, setImportChunkMB] = useState(90); // default 90 MB per file slice
   const [importThrottleMs, setImportThrottleMs] = useState(0); // default no extra delay between chunk POSTs
   const fileInputRef = useRef(null);
+  const [checksRunning, setChecksRunning] = useState({});
+  const [checksResults, setChecksResults] = useState({});
 
   useEffect(() => {
     let isMounted = true;
@@ -577,7 +579,81 @@ const DatabasePage = ({ lang }) => {
           {isExporting ? 'Exporting...' : 'Export Database'}
         </GcdsButton>
       </div>
+      {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
+                <GcdsHeading tag="h2">Integrity Checks</GcdsHeading>
+                <GcdsText>
+                  Run read-only checks to find orphaned documents and parent records that reference missing children.
+                </GcdsText>
+                <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: '600' }}>Core orphan & parent-reference checks</summary>
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[
+                      { id: 'orphanCitations', label: 'Orphaned Citations (not referenced by any Answer)' },
+                      { id: 'orphanTools', label: 'Orphaned Tools (not referenced by any Answer)' },
+                      { id: 'orphanAnswers', label: 'Orphaned Answers (not referenced by any Interaction or Embedding)' },
+                      { id: 'orphanQuestions', label: 'Orphaned Questions (not referenced by any Interaction or Embedding)' },
+                      { id: 'orphanInteractions', label: 'Orphaned Interactions (not referenced by any Chat)' },
+                      { id: 'interactionMissingChildren', label: 'Interactions referencing missing children (question/answer/feedback/context/eval)' },
+                      { id: 'embeddingsMissingRefs', label: 'Embeddings with missing Chat/Interaction/Question/Answer refs' },
+                      { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
+                      { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
+                      { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
+                      { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' }
+                    ].map(check => (
+                      <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ flex: 1 }}>{check.label}</div>
+                        <GcdsButton
+                          onClick={async () => {
+                            try {
+                              setChecksRunning(prev => ({ ...prev, [check.id]: true }));
+                              setMessage('');
+                              const res = await fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                                method: 'GET',
+                                headers: AuthService.getAuthHeader()
+                              });
+                              const json = await res.json();
+                              if (!res.ok) throw new Error(json.message || 'Check failed');
+                              setChecksResults(prev => ({ ...prev, [check.id]: json }));
+                            } catch (err) {
+                              setMessage(`Check ${check.id} failed: ${err.message}`);
+                            } finally {
+                              setChecksRunning(prev => ({ ...prev, [check.id]: false }));
+                            }
+                          }}
+                          disabled={!!checksRunning[check.id]}
+                          variant="secondary"
+                        >
+                          {checksRunning[check.id] ? 'Running...' : 'Run check'}
+                        </GcdsButton>
+                        <div style={{ minWidth: 220, textAlign: 'right' }}>
+                          {checksResults[check.id] ? (
+                            <div style={{ fontSize: 13 }}>
+                              Count: <strong>{checksResults[check.id].count}</strong>
+                              {checksResults[check.id].breakdown ? (
+                                <div style={{ marginTop: 6, textAlign: 'right' }}>
+                                  <div style={{ fontSize: 12 }}>Missing — Chat: <strong>{checksResults[check.id].breakdown.missingChat}</strong>, Interaction: <strong>{checksResults[check.id].breakdown.missingInteraction}</strong>, Question: <strong>{checksResults[check.id].breakdown.missingQuestion}</strong>, Answer: <strong>{checksResults[check.id].breakdown.missingAnswer}</strong></div>
+                                  {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                                    <div style={{ marginTop: 6 }}>
+                                      Samples: {checksResults[check.id].samples.slice(0,5).map(s => (s._id || s)).join(', ')}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                                <div style={{ marginTop: 6 }}>
+                                  Samples: {checksResults[check.id].samples.slice(0,5).map(s => (s._id || s)).join(', ')}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+
+              <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Import Database' : 'Importer la base de données'}</GcdsHeading>
         <GcdsText>
           {lang === 'en'
