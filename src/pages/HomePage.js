@@ -54,6 +54,19 @@ const HomePage = ({ lang = "en" }) => {
   const [searchParams] = useSearchParams();
   const reviewChatId = searchParams.get("chat");
   const reviewMode = searchParams.get("review") === "1";
+  // Parse interaction from hash (e.g. #interaction=interactionId5abcd)
+  const getInteractionFromHash = () => {
+    try {
+      if (typeof window === 'undefined' || !window.location) return null;
+      const raw = window.location.hash || '';
+      if (!raw) return null;
+      const params = new URLSearchParams(raw.replace(/^#/, ''));
+      return params.get('interaction');
+    } catch (e) {
+      return null;
+    }
+  };
+  const [targetInteractionId, setTargetInteractionId] = useState(getInteractionFromHash());
   const isPrivileged = useHasAnyRole(["admin", "partner"]);
   const [serviceStatus, setServiceStatus] = useState({
     isAvailable: null,
@@ -160,6 +173,11 @@ const HomePage = ({ lang = "en" }) => {
           setReviewReferringUrl(null);
           console.error("Failed to load chat", err);
         });
+      // capture any interaction id from the hash so the chat can scroll to it
+      try {
+        const interactionFromHash = getInteractionFromHash();
+        if (interactionFromHash) setTargetInteractionId(interactionFromHash);
+      } catch (e) { /* ignore */ }
     }
   }, [reviewChatId]);
 
@@ -225,6 +243,7 @@ const HomePage = ({ lang = "en" }) => {
           // ChatAppContainer will prefer pageUrl when present and ignore clientReferrer.
           initialReferringUrl={reviewReferringUrl}
           clientReferrer={clientReferrer}
+          targetInteractionId={targetInteractionId}
         />
       </div>
       {!reviewMode && (

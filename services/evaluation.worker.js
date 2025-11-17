@@ -12,6 +12,47 @@ import { fallbackCompareStrategy } from '../agents/strategies/fallbackCompareStr
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
+import { isMainThread, threadId } from 'worker_threads';
+
+// Log module load with PID/thread info so we can distinguish main-thread vs
+// worker-thread module evaluation. This helps diagnose unexpected duplicate
+// module loads or doubled workers.
+try {
+    ServerLoggingService.info('evaluation.worker module loaded', null, { pid: process.pid, isMainThread, threadId });
+} catch (e) {
+    // best-effort logging - ignore failures to avoid crashing workers
+}
+
+// Module-scoped promise to ensure VectorService is initialized only once per
+// worker process/thread. Using a promise avoids races if the worker receives
+// multiple tasks concurrently during warmup.
+let _vectorServiceInitPromise = null;
+
+const EvaluationStages = {
+    FETCH_INTERACTION: 'fetch_interaction',
+    VALIDATE_INTERACTION: 'validate_interaction',
+    FETCH_EMBEDDING: 'fetch_embedding',
+    FIND_QA_MATCHES: 'find_similar_embeddings',
+    SENTENCE_MATCH: 'sentence_match',
+    FALLBACK_QA_HIGH: 'fallback_qa_high_score',
+    CITATION_MATCH: 'citation_match',
+    SAVE_EVALUATION: 'save_evaluation'
+};
+
+function createStageRecorder(target) {
+    const recorder = (stage, status, code, message = '', details = null) => {
+        target.push({
+            stage,
+            status,
+            code,
+            message,
+            details: details || null,
+            timestamp: new Date().toISOString()
+        });
+    };
+    recorder.timeline = target;
+    return recorder;
+}
 
 // Helper: resolve chatId for an interaction. Prefer the embedding's chatId when provided
 // to avoid extra Chat lookups. Falls back to querying Chat collection.
@@ -148,8 +189,12 @@ async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction,
 }
 
 
-async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, failedSentenceTraces = [], aiProvider = 'openai') {
+async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, failedSentenceTraces = [], aiProvider = 'openai', stageRecorder = null, stageTimeline = []) {
+    const timeline = stageRecorder?.timeline || stageTimeline || [];
     try {
+        stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'started', 'fallback_started', 'QA high score fallback started', {
+            candidateLimit: config.searchLimits.topQAMatchesForHighScoreFallback
+        });
         const topQAMatches = similarEmbeddings.slice(0, config.searchLimits.topQAMatchesForHighScoreFallback);
         const highScoreMatches = [];
         const chatIdMap = new Map();
@@ -165,12 +210,15 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
             }
         }
         if (!highScoreMatches.length) {
-            return false;
+            stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'no_high_score_candidates', 'No high-score fallback candidates available');
+            return null;
         }
 
         const sourceQuestionFlow = await buildQuestionFlowForInteraction(interaction);
         const fallbackFlowCache = new Map();
         const candidateQueue = [...highScoreMatches];
+        // Track candidate-level attempt details so we can surface why fallback was exhausted
+        const candidateAttempts = [];
         while (candidateQueue.length) {
             const candidateMatch = candidateQueue.shift();
 
@@ -184,6 +232,17 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                     sourceUrl: interaction.answer?.citation?.providedCitationUrl,
                     attemptedMatchUrl: bestCitationMatch.url || '',
                 });
+                try {
+                    candidateAttempts.push({
+                        candidateInteractionId: candidateMatch.embedding.interactionId._id?.toString?.() || null,
+                        reason: 'citation_mismatch',
+                        sourceUrl: interaction.answer?.citation?.providedCitationUrl || '',
+                        attemptedMatchUrl: bestCitationMatch.url || '',
+                        attemptedMatchSimilarity: bestCitationMatch.similarity || null
+                    });
+                } catch (e) {
+                    /* best-effort; swallow errors */
+                }
                 continue;
             }
 
@@ -197,6 +256,12 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                 ServerLoggingService.warn('Fallback interaction not found for QA high score match (worker)', chatId, {
                     fallbackInteractionId: candidateMatch.embedding.interactionId._id.toString()
                 });
+                try {
+                    candidateAttempts.push({
+                        candidateInteractionId: candidateMatch.embedding.interactionId._id?.toString?.() || null,
+                        reason: 'fallback_interaction_not_found'
+                    });
+                } catch (e) { }
                 continue;
             }
 
@@ -235,8 +300,20 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                     compareUsed,
                     fallbackCompareChecks: fallbackCompareChecks || null
                 });
+                try {
+                    candidateAttempts.push({
+                        candidateInteractionId: candidateInteractionIdStr,
+                        reason: 'fallback_compare_rejected',
+                        compareUsed: !!compareUsed,
+                        compareChecks: fallbackCompareChecks || null
+                    });
+                } catch (e) { }
                 continue;
             }
+
+            stageRecorder?.(EvaluationStages.SAVE_EVALUATION, 'started', 'save_fallback', 'Saving evaluation generated by QA high score fallback', {
+                candidateInteractionId: candidateInteractionIdStr
+            });
 
             const newExpertFeedback = new ExpertFeedback({
                 totalScore: null,
@@ -294,12 +371,24 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                 fallbackCompareChecks: fallbackCompareChecks || undefined,
                 fallbackCompareRaw: fallbackCompareRaw || undefined
             });
+            newEval.stageTimeline = Array.isArray(timeline) ? timeline : [];
             const savedEval = await newEval.save();
             await Interaction.findByIdAndUpdate(
                 interaction._id,
                 { autoEval: savedEval._id },
                 { new: true }
             );
+            stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'success', 'fallback_match_applied', 'QA high score fallback evaluation created', {
+                evaluationId: savedEval._id.toString(),
+                feedbackId: savedFeedback._id.toString()
+            });
+            stageRecorder?.(EvaluationStages.SAVE_EVALUATION, 'success', 'evaluation_saved_fallback', 'Evaluation saved via QA high score fallback', {
+                evaluationId: savedEval._id.toString(),
+                via: 'qa_high_score_fallback'
+            });
+            if (Array.isArray(timeline)) {
+                await Eval.updateOne({ _id: savedEval._id }, { stageTimeline: timeline });
+            }
             ServerLoggingService.info('Created evaluation with QA high score fallback (worker)', chatId, {
                 evaluationId: savedEval._id,
                 feedbackId: savedFeedback._id,
@@ -308,16 +397,26 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                 traceCount: Array.isArray(failedSentenceTraces) ? failedSentenceTraces.length : 0,
                 fallbackCompareMeta: fallbackCompareMeta || null
             });
-            return true;
+            try {
+                return typeof savedEval.toObject === 'function' ? savedEval.toObject() : savedEval;
+            } catch (e) {
+                return savedEval;
+            }
         }
 
         ServerLoggingService.info('QA high score fallback exhausted all candidates without passing fallback compare (worker)', chatId, {
             candidateCountTried: highScoreMatches.length
         });
-        return false;
+        // Record candidate attempts into the stage timeline for traceability
+        stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'candidates_exhausted', 'All fallback candidates were rejected by fallback compare', {
+            candidateCount: highScoreMatches.length,
+            candidateAttempts: Array.isArray(candidateAttempts) ? candidateAttempts : undefined
+        });
+        return null;
     } catch (error) {
         ServerLoggingService.error('Error in tryQAMatchHighScoreFallback', chatId, error);
-        return false;
+        stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'fallback_exception', error?.message || 'Unknown fallback error');
+        return null;
     }
 }
 
@@ -338,7 +437,14 @@ async function validateInteractionAndCheckExisting(interaction, chatId) {
         ServerLoggingService.info('Evaluation already exists for interaction (worker)', chatId, {
             evaluationId: existingInteraction.autoEval._id
         });
-        return existingInteraction.autoEval;
+        // Return a plain serializable object to avoid DataCloneError when returning from worker
+        try {
+            return typeof existingInteraction.autoEval.toObject === 'function'
+                ? existingInteraction.autoEval.toObject()
+                : existingInteraction.autoEval;
+        } catch (e) {
+            return existingInteraction.autoEval;
+        }
     }
 
     ServerLoggingService.debug('Interaction validation successful (worker)', chatId);
@@ -380,7 +486,7 @@ async function getEmbeddingForInteraction(interaction) {
     return embedding;
 }
 
-async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThreshold = 0.85, limit = 20) {
+async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThreshold = 0.85, limit = 20, stageRecorder = null, sourceChatId = null) {
     ServerLoggingService.debug('Starting findSimilarEmbeddingsWithFeedback using VectorService (worker)', 'system', {
         threshold: similarityThreshold,
         limit
@@ -410,6 +516,9 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
 
     // Get the current interaction's createdAt timestamp
     const sourceInteractionCreatedAt = sourceEmbedding.createdAt;
+    const matchedInteractionIds = [];
+    const matchedChatIds = [];
+    
     for (const neighbor of similarNeighbors) {
         if (neighbor.interactionId.toString() === sourceEmbedding.interactionId.toString()) continue;
 
@@ -455,6 +564,8 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
             },
             similarity: neighbor.similarity
         });
+        matchedInteractionIds.push(neighbor.interactionId.toString());
+        matchedChatIds.push(neighborChatId);
         if (similarEmbeddings.length >= limit) break;
     }
 
@@ -470,6 +581,15 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
             ? similarEmbeddings.reduce((sum, item) => sum + item.similarity, 0) / similarEmbeddings.length
             : 0
     });
+
+    // Record the matched interaction IDs and chat IDs in the stage timeline
+    if (stageRecorder && matchedInteractionIds.length > 0) {
+        stageRecorder(EvaluationStages.FIND_QA_MATCHES, 'info', 'qa_matches_recorded', 'QA matches recorded for stage timeline', {
+            matchedInteractionIds: matchedInteractionIds,
+            matchedChatIds: matchedChatIds,
+            sourceChatId: sourceChatId
+        });
+    }
 
     return similarEmbeddings;
 }
@@ -622,8 +742,12 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider =
                         continue;
                     }
                 } catch (e) {
-                    ServerLoggingService.warn('Sentence compare agent failed; falling back to top candidate (worker)', 'system', e);
-                    // fall through to pick top candidate below
+                    // Treat sentence-compare (reranker) failures as fatal for this evaluation.
+                    // Previously we logged and fell back to the top candidate; change that
+                    // behaviour so the error bubbles up to the outer try/catch in the worker
+                    // and prevents creating an Eval for this interaction.
+                    ServerLoggingService.error('Sentence compare agent failed - aborting evaluation (worker)', 'system', e);
+                    throw e;
                 }
             }
 
@@ -711,9 +835,13 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
             }
         });
         const matchUrl = matchInteraction?.answer?.citation?.providedCitationUrl;
+        // Normalize both URLs to allow comparison and treat empty==empty as a match.
+        const sourceUrlNorm = (sourceUrl || '').trim().toLowerCase();
+        const matchUrlNorm = (matchUrl || '').trim().toLowerCase();
+        // Match if both are empty (no citation provided) OR if they are equal non-empty URLs
         if (
-            matchUrl &&
-            sourceUrl.toLowerCase() === matchUrl.toLowerCase()
+            (sourceUrlNorm === '' && matchUrlNorm === '') ||
+            (matchUrlNorm && sourceUrlNorm === matchUrlNorm)
         ) {
             bestCitationMatch.score = (expertFeedback?.citationScore !== null && expertFeedback?.citationScore !== undefined) ? expertFeedback.citationScore : 25;
             bestCitationMatch.explanation = expertFeedback?.citationExplanation;
@@ -763,7 +891,7 @@ function computeTotalScore(feedback, sentenceCount) {
     return Math.round(totalScore * 100) / 100;
 }
 
-async function createEvaluation(interaction, sentenceMatches, chatId, bestCitationMatch, sentenceCompareTelemetry = null) {
+async function createEvaluation(interaction, sentenceMatches, chatId, bestCitationMatch, sentenceCompareTelemetry = null, stageTimeline = [], stageRecorder = null) {
     const sourceInteraction = await Interaction.findById(interaction._id)
         .populate({
             path: 'answer',
@@ -856,10 +984,19 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
             inputTokens: sentenceCompareTelemetry.inputTokens ?? null,
             outputTokens: sentenceCompareTelemetry.outputTokens ?? null,
             latencyMs: sentenceCompareTelemetry.latencyMs ?? null
-        } : undefined
+        } : undefined,
+        stageTimeline: Array.isArray(stageTimeline) ? stageTimeline : []
     });
     // Save the evaluation and assign to savedEval
     const savedEval = await newEval.save();
+    if (stageRecorder) {
+        stageRecorder(EvaluationStages.SAVE_EVALUATION, 'success', 'evaluation_saved', 'Evaluation saved successfully', {
+            evaluationId: savedEval._id.toString()
+        });
+        if (Array.isArray(stageTimeline)) {
+            await Eval.updateOne({ _id: savedEval._id }, { stageTimeline });
+        }
+    }
     await Interaction.findByIdAndUpdate(
         interaction._id,
         { autoEval: savedEval._id },
@@ -872,11 +1009,15 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         similarityScores: newEval.similarityScores,
         traceCount: sentenceTrace.length
     });
-    return savedEval;
+    try {
+        return typeof savedEval.toObject === 'function' ? savedEval.toObject() : savedEval;
+    } catch (e) {
+        return savedEval;
+    }
 }
 
 // Create an evaluation record to mark that an interaction has been processed but no matches were found
-async function createNoMatchEvaluation(interaction, chatId, reason) {
+async function createNoMatchEvaluation(interaction, chatId, reason, stageTimeline = [], stageRecorder = null) {
     // Accept reasonType and reason
     let noMatchReasonType = 'unknown';
     let noMatchReasonMsg = '';
@@ -960,10 +1101,21 @@ async function createNoMatchEvaluation(interaction, chatId, reason) {
         },
         sentenceMatchTrace,
         noMatchReasonType,
-        noMatchReasonMsg
+        noMatchReasonMsg,
+        stageTimeline: Array.isArray(stageTimeline) ? stageTimeline : []
     });
 
     const savedEval = await newEval.save();
+    if (stageRecorder) {
+        stageRecorder(EvaluationStages.SAVE_EVALUATION, 'success', 'no_match_saved', 'No-match evaluation saved', {
+            evaluationId: savedEval._id.toString(),
+            reasonType: noMatchReasonType,
+            reasonMsg: noMatchReasonMsg
+        });
+        if (Array.isArray(stageTimeline)) {
+            await Eval.updateOne({ _id: savedEval._id }, { stageTimeline });
+        }
+    }
 
     await Interaction.findByIdAndUpdate(
         interaction._id,
@@ -979,27 +1131,43 @@ async function createNoMatchEvaluation(interaction, chatId, reason) {
         noMatchReasonMsg
     });
 
-    return savedEval;
+    try {
+        return typeof savedEval.toObject === 'function' ? savedEval.toObject() : savedEval;
+    } catch (e) {
+        return savedEval;
+    }
 }
 
 
 export { runFallbackCompareCheck };
 export default async function ({ interactionId, chatId, aiProvider = 'openai', forceFallbackEval = false }) {
     await dbConnect();
+    const stageTimeline = [];
+    const recordStage = createStageRecorder(stageTimeline);
     // Ensure each worker process/thread has a ready VectorService instance.
-    // `initVectorService` is idempotent and will create + initialize the correct
-    // implementation (DocDB or IM) for this worker if it hasn't been set yet.
+    // Use a module-scoped promise so initialization runs once per worker and
+    // subsequent tasks wait for the same promise instead of re-invoking init.
     try {
-        if (!VectorService) {
+        if (!_vectorServiceInitPromise) {
             ServerLoggingService.info('VectorService not found in worker, initializing...', chatId);
-            await initVectorService();
-            ServerLoggingService.info('VectorService initialized in worker', chatId);
+            _vectorServiceInitPromise = initVectorService()
+                .then((svc) => {
+                    ServerLoggingService.info('VectorService initialized in worker', chatId);
+                    return svc;
+                })
+                .catch((err) => {
+                    // Reset the promise so future attempts can retry initialization
+                    _vectorServiceInitPromise = null;
+                    throw err;
+                });
         }
+        await _vectorServiceInitPromise;
     } catch (err) {
         ServerLoggingService.error('Failed to initialize VectorService in worker', chatId, err);
         throw err;
     }
     try {
+        recordStage(EvaluationStages.FETCH_INTERACTION, 'started', 'fetch_interaction', 'Fetching interaction document', { interactionId });
         const interaction = await Interaction.findById(interactionId)
             .populate('question')
             .populate({
@@ -1010,73 +1178,138 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
                 ]
             });
         if (!interaction) {
+            recordStage(EvaluationStages.FETCH_INTERACTION, 'failure', 'interaction_not_found', 'Interaction not found', { interactionId });
             ServerLoggingService.warn('Interaction not found (worker)', chatId, { interactionId });
-            return null;
+            return { status: 'not_found', stageTimeline };
         }
+        recordStage(EvaluationStages.FETCH_INTERACTION, 'success', 'interaction_loaded', 'Interaction loaded', { interactionId: interaction._id.toString() });
+
         const validationResult = await validateInteractionAndCheckExisting(interaction, chatId);
-        if (validationResult !== true) return validationResult;
+        if (validationResult === true) {
+            recordStage(EvaluationStages.VALIDATE_INTERACTION, 'success', 'validation_passed', 'Interaction validated for evaluation', { interactionId: interaction._id.toString() });
+        } else if (validationResult === null) {
+            recordStage(EvaluationStages.VALIDATE_INTERACTION, 'failure', 'invalid_interaction', 'Interaction missing required question or answer', { interactionId: interaction._id.toString() });
+            return { status: 'invalid', stageTimeline };
+        } else {
+            recordStage(EvaluationStages.VALIDATE_INTERACTION, 'skipped', 'existing_evaluation', 'Interaction already has an evaluation', {
+                evaluationId: validationResult._id?.toString?.() || ''
+            });
+            return validationResult;
+        }
+
+        recordStage(EvaluationStages.FETCH_EMBEDDING, 'started', 'embedding_fetch', 'Fetching embeddings for interaction', { interactionId: interaction._id.toString() });
         const sourceEmbedding = await getEmbeddingForInteraction(interaction);
         if (!sourceEmbedding) {
-            await createNoMatchEvaluation(interaction, chatId, { type: 'no_embeddings', msg: 'no embeddings found' });
-            return null;
+            recordStage(EvaluationStages.FETCH_EMBEDDING, 'failure', 'no_embeddings', 'No embeddings found for interaction', { interactionId: interaction._id.toString() });
+            recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_embeddings' });
+            const noEmbEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_embeddings', msg: 'no embeddings found', perSentenceReasons: [] }, stageTimeline, recordStage);
+            return noEmbEval;
         }
+        recordStage(EvaluationStages.FETCH_EMBEDDING, 'success', 'embedding_loaded', 'Embeddings loaded', {
+            sentenceCount: sourceEmbedding.sentenceEmbeddings?.length || 0
+        });
+
+        recordStage(EvaluationStages.FIND_QA_MATCHES, 'started', 'qa_search', 'Searching similar QA embeddings', {
+            limit: config.searchLimits.similarEmbeddings,
+            threshold: config.thresholds.questionAnswerSimilarity
+        });
+        // Pass the stage recorder to record chat IDs and interaction IDs
         const similarEmbeddings = await findSimilarEmbeddingsWithFeedback(
             sourceEmbedding,
             config.thresholds.questionAnswerSimilarity,
-            config.searchLimits.similarEmbeddings
+            config.searchLimits.similarEmbeddings,
+            recordStage,
+            chatId
         );
         if (!similarEmbeddings.length) {
-            await createNoMatchEvaluation(interaction, chatId, { type: 'no_qa_match', msg: 'no similar embeddings found' });
-            return null;
+            recordStage(EvaluationStages.FIND_QA_MATCHES, 'failure', 'no_qa_match', 'No similar embeddings found for interaction');
+            recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_qa_match' });
+            const noQaEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_qa_match', msg: 'no similar embeddings found', perSentenceReasons: [] }, stageTimeline, recordStage);
+            return noQaEval;
         }
+        recordStage(EvaluationStages.FIND_QA_MATCHES, 'success', 'qa_matches_found', 'Similar embeddings located', {
+            matchCount: similarEmbeddings.length
+        });
 
         if (forceFallbackEval) {
-            ServerLoggingService.info('Force fallback evaluation enabled; skipping sentence matching (worker)', chatId, { interactionId: interaction._id.toString() });
-            const forcedFallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, [], aiProvider);
-            if (forcedFallbackSuccess) {
-                return true;
+            recordStage(EvaluationStages.SENTENCE_MATCH, 'skipped', 'force_fallback', 'Sentence matching skipped due to forceFallbackEval flag');
+            const forcedFallbackEval = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, [], aiProvider, recordStage, stageTimeline);
+            if (forcedFallbackEval) {
+                return forcedFallbackEval;
             }
-            await createNoMatchEvaluation(interaction, chatId, { type: 'forced_fallback_no_match', msg: 'forced fallback did not find a passing candidate' });
-            return null;
+            recordStage(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'forced_fallback_failed', 'Forced fallback did not produce an evaluation');
+            recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'forced_fallback_no_match' });
+            const forcedNoMatchEval = await createNoMatchEvaluation(interaction, chatId, { type: 'forced_fallback_no_match', msg: 'forced fallback did not find a passing candidate', perSentenceReasons: [] }, stageTimeline, recordStage);
+            return forcedNoMatchEval;
         }
-        // Use the top 20 QA matches directly for sentence matching
+
+        recordStage(EvaluationStages.SENTENCE_MATCH, 'started', 'sentence_match', 'Performing sentence-level similarity checks', {
+            sentenceCount: sourceEmbedding.sentenceEmbeddings.length
+        });
         const bestSentenceMatches = await findBestSentenceMatches(
             sourceEmbedding,
             similarEmbeddings,
             aiProvider
         );
-        // All sentences must have a real match (matchStatus === 'matched')
+        const matchedCount = bestSentenceMatches.filter(m => m.matchStatus === 'matched').length;
         const allSentencesMatched = bestSentenceMatches.length === sourceEmbedding.sentenceEmbeddings.length &&
-            bestSentenceMatches.every(m => m.matchStatus === 'matched');
+            matchedCount === sourceEmbedding.sentenceEmbeddings.length;
         if (!allSentencesMatched) {
-            // Fallback: try QA high score method, pass failed sentence traces
-            const fallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, bestSentenceMatches, aiProvider);
-            if (fallbackSuccess) {
-                return true;
-            } else {
-                // Pass bestSentenceMatches as the reason object for per-sentence explanations
-                await createNoMatchEvaluation(interaction, chatId, { type: 'no_sentence_match', msg: 'not all sentences matched', perSentenceReasons: bestSentenceMatches });
-                return null;
+            recordStage(EvaluationStages.SENTENCE_MATCH, 'failure', 'sentence_mismatch', 'Not all sentences matched', {
+                expectedSentenceCount: sourceEmbedding.sentenceEmbeddings.length,
+                matchedCount
+            });
+            const fallbackEval = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, bestSentenceMatches, aiProvider, recordStage, stageTimeline);
+            if (fallbackEval) {
+                return fallbackEval;
             }
+            recordStage(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'fallback_no_match', 'QA high score fallback did not produce an evaluation');
+            recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_sentence_match' });
+            const noSentenceEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_sentence_match', msg: 'not all sentences matched', perSentenceReasons: bestSentenceMatches }, stageTimeline, recordStage);
+            return noSentenceEval;
         }
+        recordStage(EvaluationStages.SENTENCE_MATCH, 'success', 'sentence_match_complete', 'Sentence matches identified', {
+            matchedCount
+        });
+
+        recordStage(EvaluationStages.CITATION_MATCH, 'started', 'citation_match', 'Validating citation alignment');
         const bestCitationMatch = await findBestCitationMatch(
             interaction,
-            similarEmbeddings // pass the same as bestAnswerMatches
+            similarEmbeddings
         );
         if (!bestCitationMatch.url || bestCitationMatch.similarity !== 1) {
-            await createNoMatchEvaluation(interaction, chatId, { type: 'no_citation_match', msg: 'no matching citation found' });
-
-            return null;
+            recordStage(EvaluationStages.CITATION_MATCH, 'failure', 'citation_mismatch', 'No matching citation found', {
+                sourceCitation: interaction.answer?.citation?.providedCitationUrl || ''
+            });
+            recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_citation_match' });
+            // Include sentence-level match trace when available so UI panels can show what was attempted
+            const noCitationEval = await createNoMatchEvaluation(
+                interaction,
+                chatId,
+                { type: 'no_citation_match', msg: 'no matching citation found', perSentenceReasons: Array.isArray(bestSentenceMatches) ? bestSentenceMatches : undefined },
+                stageTimeline,
+                recordStage
+            );
+            return noCitationEval;
         }
-        await createEvaluation(
+        recordStage(EvaluationStages.CITATION_MATCH, 'success', 'citation_match_complete', 'Citation match confirmed', {
+            matchedCitationInteractionId: bestCitationMatch.matchedCitationInteractionId,
+            matchedCitationChatId: bestCitationMatch.matchedCitationChatId
+        });
+
+        recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_match_eval', 'Saving evaluation with matched feedback');
+        const savedEvaluation = await createEvaluation(
             interaction,
             bestSentenceMatches,
             chatId,
             bestCitationMatch,
-            bestSentenceMatches.__agentTelemetry || null
+            bestSentenceMatches.__agentTelemetry || null,
+            stageTimeline,
+            recordStage
         );
-        return true;
+        return savedEvaluation;
     } catch (error) {
+        recordStage(EvaluationStages.SAVE_EVALUATION, 'failure', 'unexpected_exception', error?.message || 'Unexpected evaluation error');
         ServerLoggingService.error('Error during interaction evaluation (worker)', chatId, error);
         throw error; // Rethrow the error to be handled by the worker
     }

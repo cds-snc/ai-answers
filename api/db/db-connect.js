@@ -18,11 +18,11 @@ import "../../models/setting.js";
 import "../../models/batchItem.js";
 import "../../models/sentenceEmbedding.js";
 
-let cached = global.mongoose;
+// api/db/db-connect.js
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+// Cache the connection and promise at the module level. This is safe for
+// worker threads, as each thread gets its own module instance.
+let cached = { conn: null, promise: null };
 
 async function dbConnect() {
   if (cached.conn) {

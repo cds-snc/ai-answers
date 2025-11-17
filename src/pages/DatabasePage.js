@@ -13,6 +13,7 @@ const DatabasePage = ({ lang }) => {
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
+  const [importSelectedCollections, setImportSelectedCollections] = useState(['All']);
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
   const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
   const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
@@ -26,7 +27,7 @@ const DatabasePage = ({ lang }) => {
   const [tableCounts, setTableCounts] = useState(null);
   const [countsError, setCountsError] = useState('');
   // Import controls: chunk size in MB and optional throttle between chunk uploads (ms)
-  const [importChunkMB, setImportChunkMB] = useState(2); // default 2 MB per file slice
+  const [importChunkMB, setImportChunkMB] = useState(90); // default 90 MB per file slice
   const [importThrottleMs, setImportThrottleMs] = useState(0); // default no extra delay between chunk POSTs
   const fileInputRef = useRef(null);
 
@@ -166,10 +167,10 @@ const DatabasePage = ({ lang }) => {
       return;
     }
 
-    setIsImporting(true);
-    setMessage('Starting import...');
-    // lineBuffer is managed inside the try block per chunk
-    let accumulatedStats = { inserted: 0, failed: 0 };
+  setIsImporting(true);
+  setMessage('Starting import...');
+  // lineBuffer is managed inside the try block per chunk
+  let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
 
     try {
       // Compute chunk size from UI (MB -> bytes). Minimum 64KB to avoid extremely small slices.
@@ -182,6 +183,13 @@ const DatabasePage = ({ lang }) => {
       let offset = 0;
       // helper: sleep and send with retries (exponential backoff)
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      // build collection payload for POST: 'All' | 'AllButLogs' | [list]
+      const buildCollectionPayload = () => {
+        const sel = Array.isArray(importSelectedCollections) ? importSelectedCollections : [importSelectedCollections];
+        if (sel.includes('All')) return 'All';
+        if (sel.includes('AllButLogs') && sel.length === 1) return 'AllButLogs';
+        return sel.filter(s => s !== 'All' && s !== 'AllButLogs');
+      };
       const sendChunkWithRetry = async (bodyObj, attemptLimit = 5) => {
         let delay = 500; // start 500ms
         let lastErr = null;
@@ -239,18 +247,31 @@ const DatabasePage = ({ lang }) => {
             chunkIndex,
             totalChunks, // This is still the total number of file chunks, not payload chunks
             fileName,
-            chunkPayload: payload
+            chunkPayload: payload,
+            collection: buildCollectionPayload()
           };
           const result = await sendChunkWithRetry(bodyObj, 5).catch(err => { throw new Error(`Server error on chunk ${chunkIndex + 1}: ${err.message}`); });
           if (result && result.stats) {
-            accumulatedStats.inserted += result.stats.inserted;
-            accumulatedStats.failed += result.stats.failed;
+            accumulatedStats.inserted += result.stats.inserted || 0;
+            accumulatedStats.failed += result.stats.failed || 0;
+            accumulatedStats.skipped += result.stats.skipped || 0;
+            if (result.stats.skippedExamples && Array.isArray(result.stats.skippedExamples)) {
+              accumulatedStats.skippedExamples = accumulatedStats.skippedExamples || [];
+              for (const ex of result.stats.skippedExamples) {
+                if (accumulatedStats.skippedExamples.length >= 10) break;
+                accumulatedStats.skippedExamples.push(ex);
+              }
+            }
           }
-          setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}`);
+          setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
           // Optional throttle between chunk uploads to avoid flooding the server
+          // Only apply throttle delay if the server performed upserts for this chunk
           if (Number(importThrottleMs) > 0) {
-            // eslint-disable-next-line no-await-in-loop
-            await sleep(Number(importThrottleMs));
+            const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
+            if (didUpsert) {
+              // eslint-disable-next-line no-await-in-loop
+              await sleep(Number(importThrottleMs));
+            }
           }
         }
         offset = end;
@@ -262,21 +283,40 @@ const DatabasePage = ({ lang }) => {
           chunkIndex,
           totalChunks,
           fileName,
-          chunkPayload: lineBuffer
+          chunkPayload: lineBuffer,
+          collection: buildCollectionPayload()
         };
         const result = await sendChunkWithRetry(bodyObj, 5).catch(err => { throw new Error(`Server error on chunk ${chunkIndex + 1}: ${err.message}`); });
         if (result && result.stats) {
-          accumulatedStats.inserted += result.stats.inserted;
-          accumulatedStats.failed += result.stats.failed;
+          accumulatedStats.inserted += result.stats.inserted || 0;
+          accumulatedStats.failed += result.stats.failed || 0;
+          accumulatedStats.skipped += result.stats.skipped || 0;
+          if (result.stats.skippedExamples && Array.isArray(result.stats.skippedExamples)) {
+            accumulatedStats.skippedExamples = accumulatedStats.skippedExamples || [];
+            for (const ex of result.stats.skippedExamples) {
+              if (accumulatedStats.skippedExamples.length >= 10) break;
+              accumulatedStats.skippedExamples.push(ex);
+            }
+          }
         }
-        setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}`);
+        setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+        // Only apply throttle delay if the server performed upserts for this chunk
         if (Number(importThrottleMs) > 0) {
-          // eslint-disable-next-line no-await-in-loop
-          await sleep(Number(importThrottleMs));
+          const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
+          if (didUpsert) {
+            // eslint-disable-next-line no-await-in-loop
+            await sleep(Number(importThrottleMs));
+          }
         }
       }
 
-      setMessage(`Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`);
+      // Build final completion message, optionally include skipped example snippets
+      let finalMsg = `Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`;
+      if (accumulatedStats.skipped) finalMsg += `, Skipped: ${accumulatedStats.skipped}`;
+      if (accumulatedStats.skippedExamples && accumulatedStats.skippedExamples.length) {
+        finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0,10).join('\n')}`;
+      }
+      setMessage(finalMsg);
       if (fileInputRef.current) {
         fileInputRef.current.value = ''; // Reset file input
       }
@@ -573,6 +613,27 @@ const DatabasePage = ({ lang }) => {
                 style={{ width: 100 }}
                 disabled={isImporting}
               />
+            </label>
+            <label>
+              Table (hold Ctrl/Cmd to multi-select):&nbsp;
+              <select
+                value={importSelectedCollections}
+                onChange={e => {
+                  const options = Array.from(e.target.options);
+                  const vals = options.filter(o => o.selected).map(o => o.value);
+                  // If nothing selected, default to All
+                  setImportSelectedCollections(vals.length ? vals : ['All']);
+                }}
+                style={{ minWidth: 200, minHeight: 100 }}
+                multiple
+                disabled={isImporting || collections.length === 0}
+              >
+                <option value="All">All</option>
+                <option value="AllButLogs">All but logs</option>
+                {collections.map((col) => (
+                  <option key={col} value={col}>{col}</option>
+                ))}
+              </select>
             </label>
           </div>
           <input

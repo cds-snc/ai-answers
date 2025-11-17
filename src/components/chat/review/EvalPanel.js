@@ -112,6 +112,8 @@ const EvalPanel = ({ message, t }) => {
   const evalObj = data || message.interaction?.eval || message.eval || null;
   const sentenceTrace = Array.isArray(evalObj?.sentenceMatchTrace) ? evalObj.sentenceMatchTrace : [];
   const sim = evalObj?.similarityScores || {};
+  const noMatch = evalObj?.hasMatches === false;
+  const noMatchReason = noMatch ? (evalObj.noMatchReasonMsg || 'No reason provided') : '';
 
   const fmt = (v) => {
     if (v === null || typeof v === 'undefined' || v === '') return v;
@@ -128,37 +130,145 @@ const EvalPanel = ({ message, t }) => {
       onGcdsClick={handleToggle}
     >
       <div className="review-panel eval-panel">
+        <div className="actions" style={{ marginBottom: '1rem' }}>
+          <GcdsButton onClick={handleReRun} disabled={reRunning || deleting} className="hydrated">
+            {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
+          </GcdsButton>
+          <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated" style={{ marginLeft: '0.5rem' }}>
+            {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteEvaluation') || 'Delete Evaluation')}
+          </GcdsButton>
+        </div>
         {loading && <div>{t('common.loading') || 'Loading...'}</div>}
         {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
 
         {evalObj ? (
           <>
             <div className="eval-summary">
-              <div><strong>{t('reviewPanels.processed') || 'Processed'}:</strong> {evalObj.processed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</div>
-              <div><strong>{t('reviewPanels.hasMatches') || 'Has matches'}:</strong> {evalObj.hasMatches ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</div>
-              <div><strong>{t('reviewPanels.fallback') || 'Fallback'}:</strong> {evalObj.fallbackType || (t('reviewPanels.none') || 'none')}</div>
-              {evalObj.expertFeedback ? (
-                <div><strong>{t('reviewPanels.expertFeedbackId') || 'Expert feedback id'}:</strong> {String(evalObj.expertFeedback)}</div>
-              ) : null}
-              {evalObj.noMatchReasonType || evalObj.noMatchReasonMsg ? (
-                <div><strong>{t('reviewPanels.noMatchReason') || 'No-match reason'}:</strong> {evalObj.noMatchReasonType || ''} {evalObj.noMatchReasonMsg ? `- ${evalObj.noMatchReasonMsg}` : ''}</div>
-              ) : null}
-              {evalObj.fallbackSourceChatId ? (<div><strong>{t('reviewPanels.fallbackSourceChatId') || 'Fallback source chatId'}:</strong> {renderChatLink(evalObj.fallbackSourceChatId)}</div>) : null}
-              {evalObj.matchedCitationInteractionId ? (<div><strong>{t('reviewPanels.matchedCitationInteractionId') || 'Matched citation interactionId'}:</strong> {evalObj.matchedCitationInteractionId}</div>) : null}
-              {evalObj.matchedCitationChatId ? (<div><strong>{t('reviewPanels.matchedCitationChatId') || 'Matched citation chatId'}:</strong> {renderChatLink(evalObj.matchedCitationChatId)}</div>) : null}
-              <div><strong>{t('reviewPanels.createdAt') || 'Created at'}:</strong> {formatDate(evalObj.createdAt)}</div>
-              <div><strong>{t('reviewPanels.updatedAt') || 'Updated at'}:</strong> {formatDate(evalObj.updatedAt)}</div>
+        {noMatch ? (
+          <p>
+            <strong>{t('eval.noMatch', 'No match found for this interaction.')}</strong>
+            <br />
+            {noMatchReason && (
+              <>
+                <em>{t('eval.reason', 'Reason')}:</em> {noMatchReason}
+              </>
+            )}
+          </p>
+        ) : (
+          <>
+            <p>
+              <strong>{t('eval.eval', 'Evaluation')}:</strong>
+            </p>
+            <table className="table">
+              <tbody>
+                <tr>
+                  <td>{t('eval.processed', 'Processed')}:</td>
+                  <td>{evalObj.processed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</td>
+                </tr>
+                <tr>
+                  <td>{t('eval.hasMatches', 'Has matches')}:</td>
+                  <td>{evalObj.hasMatches ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</td>
+                </tr>
+                <tr>
+                  <td>{t('eval.fallback', 'Fallback')}:</td>
+                  <td>{evalObj.fallbackType || (t('reviewPanels.none') || 'none')}</td>
+                </tr>
+                {evalObj.expertFeedback ? (
+                  <tr>
+                    <td>{t('eval.expertFeedbackId', 'Expert feedback id')}:</td>
+                    <td>{String(evalObj.expertFeedback)}</td>
+                  </tr>
+                ) : null}
+                {evalObj.noMatchReasonType || evalObj.noMatchReasonMsg ? (
+                  <tr>
+                    <td>{t('eval.noMatchReason', 'No-match reason')}:</td>
+                    <td>{evalObj.noMatchReasonType || ''} {evalObj.noMatchReasonMsg ? `- ${evalObj.noMatchReasonMsg}` : ''}</td>
+                  </tr>
+                ) : null}
+                {evalObj.fallbackSourceChatId ? (
+                  <tr>
+                    <td>{t('eval.fallbackSourceChatId', 'Fallback source chatId')}:</td>
+                    <td>{renderChatLink(evalObj.fallbackSourceChatId)}</td>
+                  </tr>
+                ) : null}
+                {evalObj.matchedCitationInteractionId ? (
+                  <tr>
+                    <td>{t('eval.matchedCitationInteractionId', 'Matched citation interactionId')}:</td>
+                    <td>{evalObj.matchedCitationInteractionId}</td>
+                  </tr>
+                ) : null}
+                {evalObj.matchedCitationChatId ? (
+                  <tr>
+                    <td>{t('eval.matchedCitationChatId', 'Matched citation chatId')}:</td>
+                    <td>{renderChatLink(evalObj.matchedCitationChatId)}</td>
+                  </tr>
+                ) : null}
+                <tr>
+                  <td>{t('eval.createdAt', 'Created at')}:</td>
+                  <td>{formatDate(evalObj.createdAt)}</td>
+                </tr>
+                <tr>
+                  <td>{t('eval.updatedAt', 'Updated at')}:</td>
+                  <td>{formatDate(evalObj.updatedAt)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </>
+        )}
+      </div>
+      {/* Stage timeline - collapsible */}
+      <GcdsDetails detailsTitle={t('reviewPanels.stageTimeline') || 'Stage timeline'} className="mt-200">
+        {Array.isArray(evalObj?.stageTimeline) && evalObj.stageTimeline.length > 0 ? (
+          <div>
+            <table className="review-table">
+              <thead>
+                <tr>
+                  <th>{t('reviewPanels.timestamp') || 'Timestamp'}</th>
+                  <th>{t('reviewPanels.stage') || 'Stage'}</th>
+                  <th>{t('reviewPanels.status') || 'Status'}</th>
+                  <th>{t('reviewPanels.code') || 'Code'}</th>
+                  <th>{t('reviewPanels.message') || 'Message'}</th>
+                  <th>{t('reviewPanels.details') || 'Details'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evalObj.stageTimeline.map((s, i) => (
+                  <tr key={`stage-${i}`}>
+                    <td>{formatDate(s.timestamp)}</td>
+                    <td>{s.stage || ''}</td>
+                    <td>{s.status || ''}</td>
+                    <td>{s.code || ''}</td>
+                    <td style={{ whiteSpace: 'pre-wrap' }}>{s.message || ''}</td>
+                    <td style={{ whiteSpace: 'pre-wrap' }}>
+                      <pre style={{ margin: 0, maxHeight: '200px', overflow: 'auto', background: 'transparent', padding: 0 }}>{JSON.stringify(s.details || {}, null, 2)}</pre>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-100">
+              <strong>{t('reviewPanels.rawTimeline') || 'Raw timeline (JSON)'}:</strong>
+              <pre style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
             </div>
-            {/* Actions below timestamps */}
-            {/* Actions below timestamps */}
-            <div className="mt-200" style={{ display: 'flex', gap: '0.5rem' }}>
-              <GcdsButton onClick={handleReRun} disabled={reRunning} className="hydrated">
-                {reRunning ? (t('common.processing') || 'Processing...') : (t('reviewPanels.reEvaluate') || 'Re-evaluate')}
-              </GcdsButton>
-              <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated">
-                {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteEvaluation') || 'Delete Evaluation')}
-              </GcdsButton>
-            </div>
+          </div>
+        ) : (
+          <div>{t('reviewPanels.noStageTimeline') || 'No stage timeline available.'}</div>
+        )}
+      </GcdsDetails>
+      <div className="eval-details">
+        <table className="table">
+          <tbody>
+            {Object.entries(evalObj.details || {}).map(([key, value]) => (
+              <tr key={key}>
+                <td>{t(`eval.metrics.${key}`, key)}</td>
+                <td>{String(value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* sentenceTrace table removed — replaced by the collapsible "Sentence match trace" panel below to avoid duplication */}
+      
 
             {/* Sentence match trace - collapsible */}
             <GcdsDetails detailsTitle={t('reviewPanels.sentenceMatchTrace') || 'Sentence match trace'} className="mt-200">

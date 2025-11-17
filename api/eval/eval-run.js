@@ -21,19 +21,9 @@ async function handler(req, res) {
       return res.status(404).json({ message: 'Interaction not found' });
     }
 
-    // Resolve chatId and aiProvider (fall back to global provider setting)
+    // Resolve chatId (provider is resolved centrally in EvaluationService)
     const chat = await Chat.findOne({ interactions: interaction._id });
     const chatId = chat ? chat.chatId : null;
-    let aiProvider = chat ? chat.aiProvider : null;
-    if (!aiProvider) {
-      // read provider from settings; default to 'openai' if unset
-      try {
-        const providerSetting = await SettingsService.get('provider');
-        aiProvider = providerSetting || 'openai';
-      } catch (e) {
-        aiProvider = 'openai';
-      }
-    }
 
     if (!chatId) {
       return res.status(400).json({ message: 'Unable to resolve chatId for interaction' });
@@ -60,7 +50,7 @@ async function handler(req, res) {
       }
     }
 
-    const evaluation = await EvaluationService.evaluateInteraction(interaction, chatId, aiProvider, { forceFallbackEval });
+  const evaluation = await EvaluationService.evaluateInteraction(interaction, chatId, { forceFallbackEval });
     const evalObj = evaluation?.toObject ? evaluation.toObject() : evaluation;
     return res.status(200).json({ message: 'Re-evaluation completed', evaluation: evalObj });
   } catch (err) {

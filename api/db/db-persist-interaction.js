@@ -125,8 +125,8 @@ async function handler(req, res) {
     ServerLoggingService.info('Deployment mode', chatId, { deploymentMode });
     if (deploymentMode === 'Vercel') {
       try {
-        // Pass deploymentMode to evaluateInteraction
-        await EvaluationService.evaluateInteraction(dbInteraction, chatId, interaction.selectedAI, { forceFallbackEval });
+        // Trigger evaluation (provider resolved centrally inside EvaluationService)
+        await EvaluationService.evaluateInteraction(dbInteraction, chatId, { forceFallbackEval });
         ServerLoggingService.info('Evaluation completed successfully (Vercel mode)', chat.chatId, {});
       } catch (evalError) {
         ServerLoggingService.error('Evaluation failed (Vercel mode)', chat.chatId, evalError);
@@ -135,8 +135,8 @@ async function handler(req, res) {
     } else {
       // CDS mode (or default)
       res.status(200).json({ message: 'Interaction logged successfully' });
-      // Pass selectedAI to evaluateInteraction for background processing
-      EvaluationService.evaluateInteraction(dbInteraction, chatId, interaction.selectedAI, { forceFallbackEval })
+      // Trigger background evaluation (provider resolved centrally inside EvaluationService)
+      EvaluationService.evaluateInteraction(dbInteraction, chatId, { forceFallbackEval })
         .then(() => {
           ServerLoggingService.info('Evaluation completed successfully (CDS mode background)', chat.chatId, {});
         })

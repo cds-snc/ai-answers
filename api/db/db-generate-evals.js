@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const duration = config.evalBatchProcessingDuration;
 
     try {
-    await dbConnect();
+        await dbConnect();
 
         // Build a time filter for interaction createdAt if provided
         let timeFilter = {};

@@ -1,3 +1,4 @@
+import bodyParser from 'body-parser';
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
@@ -60,9 +61,11 @@ import dbPublicEvalListHandler from '../api/db/db-public-eval-list.js';
 import evalGetHandler from '../api/eval/eval-get.js';
 import evalDeleteHandler from '../api/eval/eval-delete.js';
 import evalRunHandler from '../api/eval/eval-run.js';
+import evalDashboardHandler from '../api/eval/eval-dashboard.js';
 import dbChatHandler from '../api/db/db-chat.js';
 import dbExpertFeedbackCountHandler from '../api/db/db-expert-feedback-count.js';
 import dbEvalNonEmptyCountHandler from '../api/db/db-eval-non-empty-count.js';
+import dbEvalMetricsHandler from '../api/db/db-eval-metrics.js';
 import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
@@ -81,7 +84,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(bodyParser.json({ limit: '100mb' }));
+app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
 
 // Set higher timeout limits for all routes
@@ -124,6 +128,7 @@ app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);
 app.post('/api/eval/eval-run', evalRunHandler);
+app.get('/api/eval/eval-dashboard', evalDashboardHandler);
 app.get('/api/db/db-chat', dbChatHandler);
 app.post('/api/feedback/feedback-persist-expert', feedbackPersistExpertHandler);
 app.post('/api/feedback/feedback-persist-public', feedbackPersistPublicHandler);
@@ -192,6 +197,7 @@ app.delete('/api/db/db-delete-system-logs', dbDeleteSystemLogsHandler);
 app.all('/api/setting/setting-handler', settingHandler);
 app.get('/api/setting/setting-public-handler', settingPublicHandler);
 app.get('/api/db/db-expert-feedback-count', dbExpertFeedbackCountHandler);
+app.get('/api/db/db-eval-metrics', dbEvalMetricsHandler);
 app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
 app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
