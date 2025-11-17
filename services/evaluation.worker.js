@@ -486,7 +486,7 @@ async function getEmbeddingForInteraction(interaction) {
     return embedding;
 }
 
-async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThreshold = 0.85, limit = 20) {
+async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThreshold = 0.85, limit = 20, stageRecorder = null, sourceChatId = null) {
     ServerLoggingService.debug('Starting findSimilarEmbeddingsWithFeedback using VectorService (worker)', 'system', {
         threshold: similarityThreshold,
         limit
@@ -516,6 +516,9 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
 
     // Get the current interaction's createdAt timestamp
     const sourceInteractionCreatedAt = sourceEmbedding.createdAt;
+    const matchedInteractionIds = [];
+    const matchedChatIds = [];
+    
     for (const neighbor of similarNeighbors) {
         if (neighbor.interactionId.toString() === sourceEmbedding.interactionId.toString()) continue;
 
@@ -561,6 +564,8 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
             },
             similarity: neighbor.similarity
         });
+        matchedInteractionIds.push(neighbor.interactionId.toString());
+        matchedChatIds.push(neighborChatId);
         if (similarEmbeddings.length >= limit) break;
     }
 
@@ -576,6 +581,15 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
             ? similarEmbeddings.reduce((sum, item) => sum + item.similarity, 0) / similarEmbeddings.length
             : 0
     });
+
+    // Record the matched interaction IDs and chat IDs in the stage timeline
+    if (stageRecorder && matchedInteractionIds.length > 0) {
+        stageRecorder(EvaluationStages.FIND_QA_MATCHES, 'info', 'qa_matches_recorded', 'QA matches recorded for stage timeline', {
+            matchedInteractionIds: matchedInteractionIds,
+            matchedChatIds: matchedChatIds,
+            sourceChatId: sourceChatId
+        });
+    }
 
     return similarEmbeddings;
 }
@@ -1199,10 +1213,13 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
             limit: config.searchLimits.similarEmbeddings,
             threshold: config.thresholds.questionAnswerSimilarity
         });
+        // Pass the stage recorder to record chat IDs and interaction IDs
         const similarEmbeddings = await findSimilarEmbeddingsWithFeedback(
             sourceEmbedding,
             config.thresholds.questionAnswerSimilarity,
-            config.searchLimits.similarEmbeddings
+            config.searchLimits.similarEmbeddings,
+            recordStage,
+            chatId
         );
         if (!similarEmbeddings.length) {
             recordStage(EvaluationStages.FIND_QA_MATCHES, 'failure', 'no_qa_match', 'No similar embeddings found for interaction');
