@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.59.1](https://github.com/cds-snc/ai-answers/compare/v1.59.0...v1.59.1) (2025-11-16)
+
+
+### Bug Fixes
+
+* add another paragraph ([824b055](https://github.com/cds-snc/ai-answers/commit/824b0559f6151f84100983021fc1f3cf731e045d))
+* more edits ([29558e4](https://github.com/cds-snc/ai-answers/commit/29558e47fcd3a80875a8143f76b0758dcd1432a8))
+
 ## [1.59.0](https://github.com/cds-snc/ai-answers/compare/v1.58.9...v1.59.0) (2025-11-13)
 
 
