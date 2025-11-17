@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.60.0](https://github.com/cds-snc/ai-answers/compare/v1.59.1...v1.60.0) (2025-11-17)
+
+
+### Features
+
+* Add Evaluation Dashboard and Admin Navigation Link ([828dbd4](https://github.com/cds-snc/ai-answers/commit/828dbd47d16e4e11a6757ea7b1f63b4e9d22d40f))
+* **database:** update import functionality to support multi-collection selection and improved chunk handling ([22227f4](https://github.com/cds-snc/ai-answers/commit/22227f439770ceb2aaf80e66dd2f4c49f8a4740f))
+* enhance findSimilarEmbeddingsWithFeedback to record matched interaction and chat IDs ([caa1b77](https://github.com/cds-snc/ai-answers/commit/caa1b77773eb4741789eeb2dc807c52fe56feadd))
+* **eval-dashboard:** enhance search functionality and add column filters ([9cb3151](https://github.com/cds-snc/ai-answers/commit/9cb3151e6730d8980d4c3c7f9e23f1283d9099eb))
+* **eval-page:** add evaluation metrics summary and refresh functionality ([22227f4](https://github.com/cds-snc/ai-answers/commit/22227f439770ceb2aaf80e66dd2f4c49f8a4740f))
+* **evaluation:** enhance evaluation process with detailed stage tracking and metrics ([22227f4](https://github.com/cds-snc/ai-answers/commit/22227f439770ceb2aaf80e66dd2f4c49f8a4740f))
+* **integrity-checks:** add API endpoint and UI for database integrit… ([04ff4d4](https://github.com/cds-snc/ai-answers/commit/04ff4d448a89e934bc9fcc0326c50109dd5199bb))
+* **integrity-checks:** add API endpoint and UI for database integrity checks ([518d71b](https://github.com/cds-snc/ai-answers/commit/518d71bf91022137332faf789b04deb2aa2b28c8))
+* **logging:** improve logging structure and add stage recording for evaluations ([22227f4](https://github.com/cds-snc/ai-answers/commit/22227f439770ceb2aaf80e66dd2f4c49f8a4740f))
+
+
+### Bug Fixes
+
+* **eval-panel:** display no-match reasons and stage timeline in evaluation results ([22227f4](https://github.com/cds-snc/ai-answers/commit/22227f439770ceb2aaf80e66dd2f4c49f8a4740f))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump js-yaml from 3.14.1 to 3.14.2 ([47481ad](https://github.com/cds-snc/ai-answers/commit/47481adf25790c37edcb3a0266c0c314fb36d5be))
+* **deps:** bump js-yaml from 3.14.1 to 3.14.2 ([739541e](https://github.com/cds-snc/ai-answers/commit/739541e16f922a3bd1b80bee54c314f556d9b5dc))
+
 ## [1.59.1](https://github.com/cds-snc/ai-answers/compare/v1.59.0...v1.59.1) (2025-11-16)
 
 
