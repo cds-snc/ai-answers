@@ -12,6 +12,21 @@ import { fallbackCompareStrategy } from '../agents/strategies/fallbackCompareStr
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
+import { isMainThread, threadId } from 'worker_threads';
+
+// Log module load with PID/thread info so we can distinguish main-thread vs
+// worker-thread module evaluation. This helps diagnose unexpected duplicate
+// module loads or doubled workers.
+try {
+    ServerLoggingService.info('evaluation.worker module loaded', null, { pid: process.pid, isMainThread, threadId });
+} catch (e) {
+    // best-effort logging - ignore failures to avoid crashing workers
+}
+
+// Module-scoped promise to ensure VectorService is initialized only once per
+// worker process/thread. Using a promise avoids races if the worker receives
+// multiple tasks concurrently during warmup.
+let _vectorServiceInitPromise = null;
 
 const EvaluationStages = {
     FETCH_INTERACTION: 'fetch_interaction',
@@ -202,6 +217,8 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
         const sourceQuestionFlow = await buildQuestionFlowForInteraction(interaction);
         const fallbackFlowCache = new Map();
         const candidateQueue = [...highScoreMatches];
+        // Track candidate-level attempt details so we can surface why fallback was exhausted
+        const candidateAttempts = [];
         while (candidateQueue.length) {
             const candidateMatch = candidateQueue.shift();
 
@@ -215,6 +232,17 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                     sourceUrl: interaction.answer?.citation?.providedCitationUrl,
                     attemptedMatchUrl: bestCitationMatch.url || '',
                 });
+                try {
+                    candidateAttempts.push({
+                        candidateInteractionId: candidateMatch.embedding.interactionId._id?.toString?.() || null,
+                        reason: 'citation_mismatch',
+                        sourceUrl: interaction.answer?.citation?.providedCitationUrl || '',
+                        attemptedMatchUrl: bestCitationMatch.url || '',
+                        attemptedMatchSimilarity: bestCitationMatch.similarity || null
+                    });
+                } catch (e) {
+                    /* best-effort; swallow errors */
+                }
                 continue;
             }
 
@@ -228,6 +256,12 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                 ServerLoggingService.warn('Fallback interaction not found for QA high score match (worker)', chatId, {
                     fallbackInteractionId: candidateMatch.embedding.interactionId._id.toString()
                 });
+                try {
+                    candidateAttempts.push({
+                        candidateInteractionId: candidateMatch.embedding.interactionId._id?.toString?.() || null,
+                        reason: 'fallback_interaction_not_found'
+                    });
+                } catch (e) { }
                 continue;
             }
 
@@ -266,6 +300,14 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                     compareUsed,
                     fallbackCompareChecks: fallbackCompareChecks || null
                 });
+                try {
+                    candidateAttempts.push({
+                        candidateInteractionId: candidateInteractionIdStr,
+                        reason: 'fallback_compare_rejected',
+                        compareUsed: !!compareUsed,
+                        compareChecks: fallbackCompareChecks || null
+                    });
+                } catch (e) { }
                 continue;
             }
 
@@ -355,14 +397,20 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                 traceCount: Array.isArray(failedSentenceTraces) ? failedSentenceTraces.length : 0,
                 fallbackCompareMeta: fallbackCompareMeta || null
             });
-            return savedEval;
+            try {
+                return typeof savedEval.toObject === 'function' ? savedEval.toObject() : savedEval;
+            } catch (e) {
+                return savedEval;
+            }
         }
 
         ServerLoggingService.info('QA high score fallback exhausted all candidates without passing fallback compare (worker)', chatId, {
             candidateCountTried: highScoreMatches.length
         });
+        // Record candidate attempts into the stage timeline for traceability
         stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'candidates_exhausted', 'All fallback candidates were rejected by fallback compare', {
-            candidateCount: highScoreMatches.length
+            candidateCount: highScoreMatches.length,
+            candidateAttempts: Array.isArray(candidateAttempts) ? candidateAttempts : undefined
         });
         return null;
     } catch (error) {
@@ -389,7 +437,14 @@ async function validateInteractionAndCheckExisting(interaction, chatId) {
         ServerLoggingService.info('Evaluation already exists for interaction (worker)', chatId, {
             evaluationId: existingInteraction.autoEval._id
         });
-        return existingInteraction.autoEval;
+        // Return a plain serializable object to avoid DataCloneError when returning from worker
+        try {
+            return typeof existingInteraction.autoEval.toObject === 'function'
+                ? existingInteraction.autoEval.toObject()
+                : existingInteraction.autoEval;
+        } catch (e) {
+            return existingInteraction.autoEval;
+        }
     }
 
     ServerLoggingService.debug('Interaction validation successful (worker)', chatId);
@@ -673,8 +728,12 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider =
                         continue;
                     }
                 } catch (e) {
-                    ServerLoggingService.warn('Sentence compare agent failed; falling back to top candidate (worker)', 'system', e);
-                    // fall through to pick top candidate below
+                    // Treat sentence-compare (reranker) failures as fatal for this evaluation.
+                    // Previously we logged and fell back to the top candidate; change that
+                    // behaviour so the error bubbles up to the outer try/catch in the worker
+                    // and prevents creating an Eval for this interaction.
+                    ServerLoggingService.error('Sentence compare agent failed - aborting evaluation (worker)', 'system', e);
+                    throw e;
                 }
             }
 
@@ -762,9 +821,13 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
             }
         });
         const matchUrl = matchInteraction?.answer?.citation?.providedCitationUrl;
+        // Normalize both URLs to allow comparison and treat empty==empty as a match.
+        const sourceUrlNorm = (sourceUrl || '').trim().toLowerCase();
+        const matchUrlNorm = (matchUrl || '').trim().toLowerCase();
+        // Match if both are empty (no citation provided) OR if they are equal non-empty URLs
         if (
-            matchUrl &&
-            sourceUrl.toLowerCase() === matchUrl.toLowerCase()
+            (sourceUrlNorm === '' && matchUrlNorm === '') ||
+            (matchUrlNorm && sourceUrlNorm === matchUrlNorm)
         ) {
             bestCitationMatch.score = (expertFeedback?.citationScore !== null && expertFeedback?.citationScore !== undefined) ? expertFeedback.citationScore : 25;
             bestCitationMatch.explanation = expertFeedback?.citationExplanation;
@@ -932,7 +995,11 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         similarityScores: newEval.similarityScores,
         traceCount: sentenceTrace.length
     });
-    return savedEval;
+    try {
+        return typeof savedEval.toObject === 'function' ? savedEval.toObject() : savedEval;
+    } catch (e) {
+        return savedEval;
+    }
 }
 
 // Create an evaluation record to mark that an interaction has been processed but no matches were found
@@ -1050,7 +1117,11 @@ async function createNoMatchEvaluation(interaction, chatId, reason, stageTimelin
         noMatchReasonMsg
     });
 
-    return savedEval;
+    try {
+        return typeof savedEval.toObject === 'function' ? savedEval.toObject() : savedEval;
+    } catch (e) {
+        return savedEval;
+    }
 }
 
 
@@ -1060,14 +1131,23 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
     const stageTimeline = [];
     const recordStage = createStageRecorder(stageTimeline);
     // Ensure each worker process/thread has a ready VectorService instance.
-    // `initVectorService` is idempotent and will create + initialize the correct
-    // implementation (DocDB or IM) for this worker if it hasn't been set yet.
+    // Use a module-scoped promise so initialization runs once per worker and
+    // subsequent tasks wait for the same promise instead of re-invoking init.
     try {
-        if (!VectorService) {
+        if (!_vectorServiceInitPromise) {
             ServerLoggingService.info('VectorService not found in worker, initializing...', chatId);
-            await initVectorService();
-            ServerLoggingService.info('VectorService initialized in worker', chatId);
+            _vectorServiceInitPromise = initVectorService()
+                .then((svc) => {
+                    ServerLoggingService.info('VectorService initialized in worker', chatId);
+                    return svc;
+                })
+                .catch((err) => {
+                    // Reset the promise so future attempts can retry initialization
+                    _vectorServiceInitPromise = null;
+                    throw err;
+                });
         }
+        await _vectorServiceInitPromise;
     } catch (err) {
         ServerLoggingService.error('Failed to initialize VectorService in worker', chatId, err);
         throw err;
@@ -1108,7 +1188,7 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
         if (!sourceEmbedding) {
             recordStage(EvaluationStages.FETCH_EMBEDDING, 'failure', 'no_embeddings', 'No embeddings found for interaction', { interactionId: interaction._id.toString() });
             recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_embeddings' });
-            const noEmbEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_embeddings', msg: 'no embeddings found' }, stageTimeline, recordStage);
+            const noEmbEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_embeddings', msg: 'no embeddings found', perSentenceReasons: [] }, stageTimeline, recordStage);
             return noEmbEval;
         }
         recordStage(EvaluationStages.FETCH_EMBEDDING, 'success', 'embedding_loaded', 'Embeddings loaded', {
@@ -1127,7 +1207,7 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
         if (!similarEmbeddings.length) {
             recordStage(EvaluationStages.FIND_QA_MATCHES, 'failure', 'no_qa_match', 'No similar embeddings found for interaction');
             recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_qa_match' });
-            const noQaEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_qa_match', msg: 'no similar embeddings found' }, stageTimeline, recordStage);
+            const noQaEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_qa_match', msg: 'no similar embeddings found', perSentenceReasons: [] }, stageTimeline, recordStage);
             return noQaEval;
         }
         recordStage(EvaluationStages.FIND_QA_MATCHES, 'success', 'qa_matches_found', 'Similar embeddings located', {
@@ -1142,7 +1222,7 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
             }
             recordStage(EvaluationStages.FALLBACK_QA_HIGH, 'failure', 'forced_fallback_failed', 'Forced fallback did not produce an evaluation');
             recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'forced_fallback_no_match' });
-            const forcedNoMatchEval = await createNoMatchEvaluation(interaction, chatId, { type: 'forced_fallback_no_match', msg: 'forced fallback did not find a passing candidate' }, stageTimeline, recordStage);
+            const forcedNoMatchEval = await createNoMatchEvaluation(interaction, chatId, { type: 'forced_fallback_no_match', msg: 'forced fallback did not find a passing candidate', perSentenceReasons: [] }, stageTimeline, recordStage);
             return forcedNoMatchEval;
         }
 
@@ -1185,7 +1265,14 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
                 sourceCitation: interaction.answer?.citation?.providedCitationUrl || ''
             });
             recordStage(EvaluationStages.SAVE_EVALUATION, 'started', 'save_no_match', 'Saving no-match evaluation record', { reasonType: 'no_citation_match' });
-            const noCitationEval = await createNoMatchEvaluation(interaction, chatId, { type: 'no_citation_match', msg: 'no matching citation found' }, stageTimeline, recordStage);
+            // Include sentence-level match trace when available so UI panels can show what was attempted
+            const noCitationEval = await createNoMatchEvaluation(
+                interaction,
+                chatId,
+                { type: 'no_citation_match', msg: 'no matching citation found', perSentenceReasons: Array.isArray(bestSentenceMatches) ? bestSentenceMatches : undefined },
+                stageTimeline,
+                recordStage
+            );
             return noCitationEval;
         }
         recordStage(EvaluationStages.CITATION_MATCH, 'success', 'citation_match_complete', 'Citation match confirmed', {

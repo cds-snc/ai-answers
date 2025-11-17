@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 
-const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
+const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storageKey = 'chatFilterPanelState_v1' }) => {
   const { t } = useTranslations();
   
   // Helper function to format date for datetime-local input
@@ -34,7 +34,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
-  const STORAGE_KEY = 'chatFilterPanelState_v1';
+  const STORAGE_KEY = storageKey;
 
   // Default to last 24 hours
   const getDefaultDates = useCallback(() => {

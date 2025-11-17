@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    #environment:
+      # Change these for production; consider using an .env file or Docker secrets
+      #MONGO_INITDB_ROOT_USERNAME: root
+      #MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      # Bind mount the host folder C:\\mongodb data into the container so
+      # MongoDB files persist on the Windows host between container restarts.
+      # Note: quote the path because it contains a space. Use forward slashes
+      # for compatibility with Docker on Windows.
+      - 'C:/mongodb data:/data/db'
+
+# We're using a host bind mount (no named Docker volume). Make sure the
+# C: drive (or the specific host path) is shared with Docker Desktop
+# (Settings > Resources > File Sharing) and that permissions allow Docker
+# to write to the folder. You can create the folder manually if needed.

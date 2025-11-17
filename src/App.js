@@ -17,6 +17,7 @@ import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@c
 import './styles/App.css';
 import UsersPage from './pages/UsersPage.js';
 import EvalPage from './pages/EvalPage.js';
+import EvalDashboardPage from './pages/EvalDashboardPage.js';
 import DatabasePage from './pages/DatabasePage.js';
 import SettingsPage from './pages/SettingsPage.js';
 import VectorPage from './pages/VectorPage.js';
@@ -271,6 +272,8 @@ export default function App() {
       { path: '/fr/users', element: <UsersPage lang="fr" />, roles: ['admin'] },
       { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'] },
       { path: '/fr/eval', element: <EvalPage lang="fr" />, roles: ['admin'] },
+  { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin'] },
+  { path: '/fr/eval-dashboard', element: <EvalDashboardPage lang="fr" />, roles: ['admin'] },
       { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },

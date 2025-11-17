@@ -333,6 +333,7 @@
       "chatViewer": "View full trace for a chat",
       "database": "Manage the database",
       "eval": "Evaluation administration",
+      "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
       "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
@@ -340,6 +341,124 @@
       "logout": "Sign out",
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios"
+    },
+    "evalPage": {
+      "similarityTitle": "Similarity-Based Expert Feedback Transfer",
+      "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
+      "label": {
+        "expertEvaluations": "Expert Evaluations in System:",
+        "nonEmptyEvaluations": "Non-Empty Evaluations in System:"
+      },
+      "detailsTitle": "Detailed Evaluation Process",
+      "step": {
+        "initialValidation": {
+          "title": "Initial Validation",
+          "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
+        },
+        "embeddingRetrieval": {
+          "title": "Embedding Retrieval",
+          "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
+        },
+        "findingSimilar": {
+          "title": "Finding Similar Content",
+          "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
+          "item": {
+            "expertFeedback": "Existing expert feedback",
+            "qaSimilarity": "Question(s)+answer similarity above threshold (e.g., 0.85)",
+            "maxMatches": "Returns up to 20 closest matches (candidates are re-sorted by similarity)"
+          }
+        },
+        "sentenceMatching": {
+          "title": "Sentence-Level Matching",
+          "item": {
+            "findMostSimilar": "For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)",
+            "threshold": "Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors",
+            "transfer": "If all or a sufficient number of sentences are matched, transfer sentence-level feedback and create a detailed evaluation",
+            "telemetry": "Optionally run a sentence-compare agent for extra verification and capture telemetry (provider/model/latency/tokens)"
+          }
+        },
+        "citationMatch": {
+          "title": "Citation Matching",
+          "item": {
+            "compare": "Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match",
+            "score": "Score and record a citation match (score, explanation, matched interaction/chat ids)",
+            "searchPage": "Search page citations may be handled specially and scored zero"
+          }
+        },
+        "qaFallback": {
+          "title": "QA High Score Fallback",
+          "item": {
+            "checkTop": "If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores",
+            "citationCheck": "For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source",
+            "useQaOnly": "If a candidate passes checks, create an evaluation using the QA match (QA-high-score fallback) and record fallback metadata and candidate traces"
+          }
+        },
+        "fallbackCompare": {
+          "title": "Fallback Compare Checks",
+          "item": {
+            "agent": "A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded",
+            "record": "Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability"
+          }
+        },
+        "creation": {
+          "title": "Evaluation Creation & Scoring",
+          "item": {
+            "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
+            "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
+            "mapFeedback": "Map feedback to the new interaction (sentence-level or QA-only) and save sentence match trace and similarity scores",
+            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing",
+            "updateInteraction": "Update the interaction with the new evaluation reference (autoEval)"
+          }
+        },
+        "noMatch": {
+          "title": "No Match / Rejection Cases",
+          "item": {
+            "recordNoMatch": "If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes",
+            "trace": "No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected"
+          }
+        },
+        "timeline": {
+          "title": "Stage Timeline & Telemetry",
+          "item": {
+            "record": "The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics",
+            "telemetry": "Agent and VectorService telemetry (latency, tokens, model) are captured where applicable"
+          }
+        }
+      },
+      "metrics": {
+        "title": "Evaluation metrics",
+        "total": "Total evaluations",
+        "processed": "Processed evaluations",
+        "hasMatches": "Evaluations with matches",
+        "noMatchReasons": "No-match reasons",
+        "reasonLabel": "Reason",
+        "countLabel": "Count",
+        "unknown": "unknown",
+        "noMatchNone": "No no-match reason data available.",
+        "fallbackTypes": "Fallback types",
+        "fallbackLabel": "Fallback",
+        "fallbackNone": "No fallback usage data available.",
+        "refresh": "Refresh metrics",
+        "loading": "Loading metrics..."
+      },
+      "date": {
+        "startLabel": "Start Date",
+        "endLabel": "End Date"
+      },
+      "button": {
+        "processing": "Processing...",
+        "generate": "Generate Evaluations",
+        "deleteAll": "Delete Evaluations",
+        "deleteEmpty": "Delete Empty Evaluations"
+      },
+      "progress": {
+        "processed": "Processed",
+        "failed": "Failed",
+        "remaining": "Remaining",
+        "duration": "Duration",
+        "autoProcessing": "Auto-processing active",
+        "regeneratingAll": "Regenerating all evaluations"
+      }
     },
     "filters": {
       "title": "Filters - select then Apply to view",
@@ -435,6 +554,30 @@
         "date": "Date"
       }
     },
+    "evalDashboard": {
+      "title": "Evaluation dashboard",
+      "description": "Filter evaluations and explore details in the table below.",
+      "loading": "Loading evaluations...",
+      "error": "Unable to load evaluation data.",
+      "resultsSummary": "Total matching evaluations: {count}",
+      "totalCount": "Total eval rows in range: {total}",
+      "searchLabel": "Search by Chat or Interaction ID:",
+      "searchPlaceholder": "Enter id...",
+      "columns": {
+        "chatId": "Chat ID",
+        "interactionId": "Interaction ID",
+        "department": "Department",
+        "pageLanguage": "Page",
+        "autoEval": "AutoEval",
+        "expertEval": "ExpertEval",
+        "expertEmail": "Expert email",
+        "processed": "Processed",
+        "matches": "Has matches",
+        "fallback": "Fallback",
+        "reason": "No-match reason",
+        "date": "Date"
+      }
+    },
     "chatLogs": {
       "title": "Download chat logs",
       "timeRange": "Time range",
@@ -489,18 +632,17 @@
       "signupLink": "Create an account",
       "forgotPassword": "Forgot password?",
       "signinLink": "Sign in"
+    },
+    "2fa": {
+      "title": "Two-factor authentication",
+      "code": "Verification code",
+      "verify": "Verify code",
+      "resend": "Resend code",
+      "sentToEmail": "A verification code has been sent to your email.",
+      "send": "Send verification code",
+      "sendError": "Failed to send verification code",
+      "invalidCode": "Invalid verification code"
     }
-      ,
-  "2fa": {
-    "title": "Two-factor authentication",
-    "code": "Verification code",
-    "verify": "Verify code",
-    "resend": "Resend code",
-  "sentToEmail": "A verification code has been sent to your email.",
-    "send": "Send verification code",
-    "sendError": "Failed to send verification code",
-    "invalidCode": "Invalid verification code"
-  }
   },
   "reset": {
     "request": {
@@ -640,6 +782,33 @@
     "yes": "Yes",
     "no": "No"
   },
+  "eval": {
+    "metric": "Metric",
+    "value": "Value",
+    "metrics": {},
+    "sentenceTrace": "Sentence Trace",
+    "sourceSentence": "Source Sentence",
+    "matchStatus": "Match Status",
+    "matchedSentence": "Matched Sentence",
+    "similarity": "Similarity",
+    "explanation": "Explanation",
+    "eval": "Evaluation",
+    "details": "Details",
+    "reRun": "Re-run",
+    "reRunning": "Re-running...",
+    "noMatch": "No match found for this interaction.",
+    "reason": "Reason",
+    "processed": "Processed",
+    "hasMatches": "Has matches",
+    "fallback": "Fallback",
+    "expertFeedbackId": "Expert feedback id",
+    "noMatchReason": "No-match reason",
+    "fallbackSourceChatId": "Fallback source chatId",
+    "matchedCitationInteractionId": "Matched citation interactionId",
+    "matchedCitationChatId": "Matched citation chatId",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at"
+  },
   "reviewPanels": {
     "sentence": "Sentence",
     "expertScore": "Expert score",
@@ -664,6 +833,9 @@
     "createdAt": "Created at",
     "updatedAt": "Updated at",
     "sourceSentenceIndex": "Source sentence index",
+    "stageTimeline": "Stage timeline",
+    "rawTimeline": "Raw timeline (JSON)",
+    "noStageTimeline": "No stage timeline available.",
     "sourceText": "Source text",
     "matchedChatId": "Matched chatId",
     "matchedSentenceIndex": "Matched sentence index",
@@ -708,6 +880,11 @@
     "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
     "fallbackType": "Fallback type",
+    "timestamp": "Timestamp",
+    "stage": "Stage",
+    "status": "Status",
+    "code": "Code",
+    "message": "Message",
     "fallbackCandidateAnswer": "Fallback candidate answer",
     "fallbackCandidateCitation": "Candidate citation",
     "fallbackCompareMeta": "Fallback compare meta",

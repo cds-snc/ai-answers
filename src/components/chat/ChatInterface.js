@@ -253,9 +253,10 @@ const ChatInterface = ({
       <div className="message-list">
         {messages.map((message) => (
           <div
-            key={`message-${message.id}`}
-            className={`message ${message.sender}`}
-          >
+              key={`message-${message.id}`}
+              id={message.id ? `interactionId${message.id}` : undefined}
+              className={`message ${message.sender}`}
+            >
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${

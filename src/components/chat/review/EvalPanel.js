@@ -130,6 +130,14 @@ const EvalPanel = ({ message, t }) => {
       onGcdsClick={handleToggle}
     >
       <div className="review-panel eval-panel">
+        <div className="actions" style={{ marginBottom: '1rem' }}>
+          <GcdsButton onClick={handleReRun} disabled={reRunning || deleting} className="hydrated">
+            {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
+          </GcdsButton>
+          <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated" style={{ marginLeft: '0.5rem' }}>
+            {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteEvaluation') || 'Delete Evaluation')}
+          </GcdsButton>
+        </div>
         {loading && <div>{t('common.loading') || 'Loading...'}</div>}
         {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
 
@@ -220,6 +228,7 @@ const EvalPanel = ({ message, t }) => {
                   <th>{t('reviewPanels.status') || 'Status'}</th>
                   <th>{t('reviewPanels.code') || 'Code'}</th>
                   <th>{t('reviewPanels.message') || 'Message'}</th>
+                  <th>{t('reviewPanels.details') || 'Details'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -230,6 +239,9 @@ const EvalPanel = ({ message, t }) => {
                     <td>{s.status || ''}</td>
                     <td>{s.code || ''}</td>
                     <td style={{ whiteSpace: 'pre-wrap' }}>{s.message || ''}</td>
+                    <td style={{ whiteSpace: 'pre-wrap' }}>
+                      <pre style={{ margin: 0, maxHeight: '200px', overflow: 'auto', background: 'transparent', padding: 0 }}>{JSON.stringify(s.details || {}, null, 2)}</pre>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -244,16 +256,7 @@ const EvalPanel = ({ message, t }) => {
         )}
       </GcdsDetails>
       <div className="eval-details">
-        <p>
-          <strong>{t('eval.details', 'Details')}:</strong>
-        </p>
         <table className="table">
-          <thead>
-            <tr>
-              <th>{t('eval.metric', 'Metric')}</th>
-              <th>{t('eval.value', 'Value')}</th>
-            </tr>
-          </thead>
           <tbody>
             {Object.entries(evalObj.details || {}).map(([key, value]) => (
               <tr key={key}>
@@ -264,53 +267,8 @@ const EvalPanel = ({ message, t }) => {
           </tbody>
         </table>
       </div>
-      {sentenceTrace.length > 0 && (
-        <div className="sentence-trace">
-          <p>
-            <strong>{t('eval.sentenceTrace', 'Sentence Trace')}:</strong>
-          </p>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t('eval.sourceSentence', 'Source Sentence')}</th>
-                <th>{t('eval.matchStatus', 'Match Status')}</th>
-                <th>{t('eval.matchedSentence', 'Matched Sentence')}</th>
-                <th>{t('eval.similarity', 'Similarity')}</th>
-                <th>{t('eval.explanation', 'Explanation')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sentenceTrace.map((trace, index) => (
-                <tr key={index}>
-                  <td>{trace.sourceSentenceText}</td>
-                  <td>{trace.matchStatus}</td>
-                  <td>
-                    {trace.matchedSentenceText && (
-                      <a
-                        href={`/en?chat=${encodeURIComponent(trace.matchedChatId)}&interaction=${encodeURIComponent(trace.matchedInteractionId)}&review=1`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {trace.matchedSentenceText}
-                      </a>
-                    )}
-                  </td>
-                  <td>{fmt(trace.similarity)}</td>
-                  <td>{trace.matchExplanation}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <div className="actions">
-        <button onClick={handleReRun} disabled={reRunning || deleting}>
-          {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
-        </button>
-        <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated">
-          {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteEvaluation') || 'Delete Evaluation')}
-        </GcdsButton>
-      </div>
+      {/* sentenceTrace table removed — replaced by the collapsible "Sentence match trace" panel below to avoid duplication */}
+      
 
             {/* Sentence match trace - collapsible */}
             <GcdsDetails detailsTitle={t('reviewPanels.sentenceMatchTrace') || 'Sentence match trace'} className="mt-200">

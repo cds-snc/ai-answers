@@ -378,6 +378,7 @@
       "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
+  "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
@@ -385,6 +386,124 @@
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios"
+    },
+    "evalPage": {
+      "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
+      "similarityDescription": "Cette approche évalue automatiquement les nouvelles interactions en trouvant des interactions évaluées par des experts similaires et en transférant les notes et explications. Si la correspondance au niveau des phrases échoue, le système utilisera un repli basé sur une correspondance question+réponse très similaire avec une note élevée.",
+      "label": {
+        "expertEvaluations": "Évaluations d'experts dans le système :",
+        "nonEmptyEvaluations": "Évaluations non vides dans le système :"
+      },
+      "detailsTitle": "Processus détaillé d'évaluation",
+      "step": {
+        "initialValidation": {
+          "title": "Validation initiale",
+          "description": "Valider que l'interaction contient une question et une réponse et vérifier si une évaluation existe déjà."
+        },
+        "embeddingRetrieval": {
+          "title": "Récupération des embeddings",
+          "description": "Récupérer les embeddings vectoriels pour question+réponse, réponse seule et au niveau des phrases."
+        },
+        "findingSimilar": {
+          "title": "Recherche de contenu similaire",
+          "description": "Rechercher des interactions avec une rétroaction experte existante et une forte similarité QA; filtrer les résultats du même chat et s'assurer que des embeddings de phrases existent pour les candidats.",
+          "item": {
+            "expertFeedback": "Rétroaction experte existante",
+            "qaSimilarity": "Similarité question(s)+réponse au-dessus du seuil (p. ex. 0,85)",
+            "maxMatches": "Renvoie jusqu'à 20 correspondances (les candidats sont réordonnés par similarité)"
+          }
+        },
+        "sentenceMatching": {
+          "title": "Correspondance au niveau des phrases",
+          "item": {
+            "findMostSimilar": "Pour chaque phrase de la nouvelle interaction, trouver la phrase la plus similaire dans chaque correspondance potentielle (recherche vectorielle avec seuil par phrase)",
+            "threshold": "Conserver les correspondances au-dessus du seuil de similarité des phrases et privilégier les voisins de plus haute similarité",
+            "transfer": "Si toutes ou un nombre suffisant de phrases sont appariées, transférer la rétroaction par phrase et créer une évaluation détaillée",
+            "telemetry": "Exécuter éventuellement un agent de comparaison de phrases pour une vérification supplémentaire et capturer la télémétrie (fournisseur/modèle/latence/jetons)"
+          }
+        },
+        "citationMatch": {
+          "title": "Appariement de citation",
+          "item": {
+            "compare": "Comparer l'URL de citation source avec les interactions candidates pour trouver une correspondance exacte ou de haute confiance",
+            "score": "Noter et enregistrer une correspondance de citation (score, explication, IDs d'interaction/chat appariés)",
+            "searchPage": "Les citations de page de recherche peuvent être traitées spécialement et notées zéro"
+          }
+        },
+        "qaFallback": {
+          "title": "Repli QA à note élevée",
+          "item": {
+            "checkTop": "Si la correspondance au niveau des phrases échoue, vérifier les meilleures correspondances QA (top-N configurable) pour celles ayant de bonnes notes d'expert",
+            "citationCheck": "Pour les candidats, effectuer un appariement de citation et éventuellement exécuter un agent de comparaison de repli pour s'assurer que la réponse candidate couvre suffisamment la source",
+            "useQaOnly": "Si un candidat passe les vérifications, créer une évaluation en utilisant la correspondance QA (repli QA à note élevée) et enregistrer les métadonnées de repli et les traces candidates"
+          }
+        },
+        "fallbackCompare": {
+          "title": "Vérifications de comparaison de repli",
+          "item": {
+            "agent": "Un petit agent de comparaison peut être invoqué pour vérifier qu'une candidate de repli correspond suffisamment à la réponse source; les résultats, la sortie brute et les vérifications analysées sont enregistrés",
+            "record": "L'utilisation de la comparaison et ses métadonnées (fournisseur/modèle/latence/jetons) sont stockées sur l'évaluation pour la traçabilité"
+          }
+        },
+        "creation": {
+          "title": "Création de l'évaluation et notation",
+          "item": {
+            "createFeedback": "Créer un nouvel objet de rétroaction d'expert basé sur la rétroaction de l'interaction appariée ou une rétroaction de repli générée (type 'ai')",
+            "computeScore": "Calculer le score total à partir des scores par phrase et du score de citation (pondérations par défaut). Si aucune note n'existe, totalScore peut être null.",
+            "mapFeedback": "Mapper la rétroaction à la nouvelle interaction (niveau phrase ou QA uniquement) et enregistrer la trace de correspondance des phrases et les scores de similarité",
+            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit",
+            "updateInteraction": "Mettre à jour l'interaction avec la nouvelle référence d'évaluation (autoEval)"
+          }
+        },
+        "noMatch": {
+          "title": "Aucun appariement / Cas de rejet",
+          "item": {
+            "recordNoMatch": "Si aucune correspondance ni répli accepted, créer une évaluation de non-correspondance enregistrant les types de raisons et les causes de rejet par phrase",
+            "trace": "Les évaluations de non-correspondance incluent une trace par phrase et une chronologie pour que les opérateurs puissent inspecter pourquoi les candidats ont été rejetés"
+          }
+        },
+        "timeline": {
+          "title": "Chronologie des étapes et télémétrie",
+          "item": {
+            "record": "Le worker enregistre une chronologie étape par étape (étape, statut, code, message, horodatage) dans l'évaluation pour le diagnostic",
+            "telemetry": "La télémétrie des agents et du VectorService (latence, jetons, modèle) est capturée lorsque cela est applicable"
+          }
+        }
+      },
+      "metrics": {
+        "title": "Métriques d'évaluation",
+        "total": "Total des évaluations",
+        "processed": "Évaluations traitées",
+        "hasMatches": "Évaluations avec correspondances",
+        "noMatchReasons": "Raisons de non-correspondance",
+        "reasonLabel": "Raison",
+        "countLabel": "Nombre",
+        "unknown": "inconnu",
+        "noMatchNone": "Aucune donnée de raison de non-correspondance disponible.",
+        "fallbackTypes": "Types de repli",
+        "fallbackLabel": "Repli",
+        "fallbackNone": "Aucune donnée d'utilisation de repli disponible.",
+        "refresh": "Actualiser les métriques",
+        "loading": "Chargement des métriques..."
+      },
+      "date": {
+        "startLabel": "Date de début",
+        "endLabel": "Date de fin"
+      },
+      "button": {
+        "processing": "Traitement...",
+        "generate": "Générer des évaluations",
+        "deleteAll": "Supprimer les évaluations",
+        "deleteEmpty": "Supprimer les évaluations vides"
+      },
+      "progress": {
+        "processed": "Traité",
+        "failed": "Échouées",
+        "remaining": "Restant",
+        "duration": "Durée",
+        "autoProcessing": "Traitement automatique actif",
+        "regeneratingAll": "Régénération de toutes les évaluations"
+      }
     },
     "filters": {
       "title": "Filtres - sélectionnez puis Appliquer pour voir",
@@ -478,6 +597,30 @@
         "createdAt": "Créé",
         "referringUrl": "URL de référence",
         "date": "Date et heure"
+      }
+    },
+    "evalDashboard": {
+      "title": "Tableau de bord des évaluations",
+      "description": "Filtrez les évaluations et explorez les détails dans le tableau ci-dessous.",
+      "loading": "Chargement des évaluations...",
+      "error": "Impossible de charger les données d'évaluation.",
+      "resultsSummary": "Total des évaluations correspondantes : {count}",
+      "totalCount": "Total des lignes d'évaluation dans la plage : {total}",
+      "searchLabel": "Rechercher par ID de chat ou d'interaction :",
+      "searchPlaceholder": "Entrez l'ID...",
+      "columns": {
+        "chatId": "ID de chat",
+        "interactionId": "ID d'interaction",
+        "department": "Ministère",
+        "pageLanguage": "Page",
+        "autoEval": "Éval. automatique",
+        "expertEval": "Éval. expert",
+        "expertEmail": "Courriel de l'expert",
+        "processed": "Traité",
+        "matches": "Correspondances trouvées",
+        "fallback": "Repli",
+        "reason": "Raison de non-correspondance",
+        "date": "Date"
       }
     },
     "deleteChat": {
@@ -685,6 +828,36 @@
     "yes": "Oui",
     "no": "Non"
   },
+  "eval": {
+    "metric": "Métrique",
+    "value": "Valeur",
+    "metrics": {},
+    "sentenceTrace": "Trace de phrases",
+    "sourceSentence": "Phrase source",
+    "matchStatus": "Statut d'appariement",
+    "matchedSentence": "Phrase appariée",
+    "similarity": "Similarité",
+    "explanation": "Explication",
+    "eval": "Évaluation",
+    "details": "Détails",
+    "reRun": "Relancer",
+    "reRunning": "Relance en cours...",
+    "noMatch": "Aucune correspondance trouvée pour cette interaction.",
+    "reason": "Raison",
+    "processed": "Traité",
+    "hasMatches": "Correspondances trouvées",
+    "fallback": "Repli",
+    "expertFeedbackId": "ID de rétroaction d'expert",
+    "noMatchReason": "Raison de non-correspondance",
+    "fallbackSourceChatId": "ID de chat source pour le repli",
+    "matchedCitationInteractionId": "ID d'interaction de citation appariée",
+  "matchedCitationChatId": "ID de chat de citation appariée",
+  "stageTimeline": "Chronologie des étapes",
+  "rawTimeline": "Chronologie brute (JSON)",
+  "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "createdAt": "Créé le",
+    "updatedAt": "Mis à jour le"
+  },
   "reviewPanels": {
     "sentence": "Phrase",
     "expertScore": "Note de l'expert",
@@ -716,6 +889,11 @@
     "suggestedCitation": "URL de citation suggérée",
     "fallbackDetails": "Détails du repli",
     "fallbackType": "Type de repli",
+  "timestamp": "Horodatage",
+  "stage": "Étape",
+  "status": "Statut",
+  "code": "Code",
+  "message": "Message",
     "fallbackCandidateAnswer": "Réponse candidate de repli",
     "fallbackCandidateCitation": "Citation du candidat",
     "fallbackCompareMeta": "Métadonnées de la comparaison de repli",

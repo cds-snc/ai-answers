@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, targetInteractionId = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -116,6 +116,26 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       const userTurns = initialMessages.filter(m => m.sender === 'user').length;
       setTurnCount(userTurns);
       setShowFeedback(true);
+    }
+    // If a targetInteractionId was provided, attempt to scroll to it after initial messages render
+    if (targetInteractionId) {
+      setTimeout(() => {
+        try {
+          // Try exact id first
+          let el = document.getElementById(targetInteractionId);
+          // If not found and the provided id doesn't already include the prefix, try prefixed version
+          if (!el && !String(targetInteractionId).startsWith('interactionId')) {
+            el = document.getElementById(`interactionId${targetInteractionId}`);
+          }
+          if (el && typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // also focus for accessibility
+            try { if (typeof el.focus === 'function') el.focus(); } catch(e) { /* ignore */ }
+          }
+        } catch (e) {
+          // ignore scroll errors
+        }
+      }, 200);
     }
   }, [initialMessages]);
 

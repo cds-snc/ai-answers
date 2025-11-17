@@ -50,7 +50,7 @@ async function handler(req, res) {
       }
     }
 
-    const evaluation = await EvaluationService.evaluateInteraction(interaction, chatId, aiProvider, { forceFallbackEval });
+  const evaluation = await EvaluationService.evaluateInteraction(interaction, chatId, { forceFallbackEval });
     const evalObj = evaluation?.toObject ? evaluation.toObject() : evaluation;
     return res.status(200).json({ message: 'Re-evaluation completed', evaluation: evalObj });
   } catch (err) {

@@ -128,6 +128,32 @@ class EvaluationService {
       return { total: 0, processed: 0, hasMatches: 0, noMatchByReason: {}, fallbackByType: {} };
     }
   }
+
+  /**
+   * Fetch evaluation dashboard results with optional filters.
+   * Accepts same style query params as the chat dashboard (start/length/orderBy/orderDir/search etc.)
+   */
+  static async getEvalDashboard(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        params.append(key, value);
+      });
+      const query = params.toString();
+      // Use the short endpoint name so getApiUrl constructs /api/eval/eval-dashboard
+      const url = getApiUrl(`eval-dashboard${query ? `?${query}` : ''}`);
+      const response = await AuthService.fetchWithAuth(url);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Failed to fetch eval dashboard');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching eval dashboard:', error);
+      throw error;
+    }
+  }
 }
 
 export default EvaluationService;

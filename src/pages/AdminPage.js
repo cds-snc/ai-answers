@@ -90,6 +90,11 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
+              <GcdsLink href={`/${lang}/eval-dashboard`}>
+                {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
+              </GcdsLink>
+            </li>
+            <li>
               <GcdsLink href={`/${lang}/vector`}>
                 {t('admin.navigation.vector', 'Vector Administration')}
               </GcdsLink>
