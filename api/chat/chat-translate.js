@@ -50,6 +50,21 @@ async function handler(req, res) {
     return res.json(normalized);
   } catch (err) {
     ServerLoggingService.error('Error in chat-translate', 'chat-translate', err);
+
+    // Detect content-safety / provider content-filter errors (e.g., Azure OpenAI filtering)
+    try {
+      const msg = ((err && err.response && err.response.data && err.response.data.error && err.response.data.error.message) || err?.message || '').toString().toLowerCase();
+      const code = ((err && err.response && err.response.data && err.response.data.error && err.response.data.error.code) || err?.code || '').toString().toLowerCase();
+      const isContentFilter = msg.includes('filtered') || msg.includes('content policy') || msg.includes('safety') || code.includes('content_filter') || code.includes('content_policy') || /response was filtered due to the prompt triggering/i.test(msg);
+      if (isContentFilter) {
+        const blockedResp = { blocked: true };
+        ServerLoggingService.info('translate blocked - returning minimal blocked response', 'chat-translate', { blockedResp });
+        return res.json(blockedResp);
+      }
+    } catch (innerErr) {
+      ServerLoggingService.error('Error detecting content-filter in chat-translate catch', 'chat-translate', innerErr);
+    }
+
     return res.status(500).json({ error: 'internal error' });
   }
 }
