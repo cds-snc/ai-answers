@@ -237,6 +237,12 @@ export const ChatWorkflowService = {
       }
       const json = await resp.json();
       // The API endpoint now returns a normalized shape including originalText
+      // If the translation endpoint indicates the content was blocked (safety filter),
+      // throw a RedactionError so callers reuse the existing redaction handling flow.
+      if (json && json.blocked === true) {
+        await LoggingService.info(null, 'translateQuestion blocked response from API', json);
+        throw new RedactionError('Blocked content detected in translation', '#############', null);
+      }
       return json;
     } catch (err) {
       await LoggingService.error(null, 'translateQuestion error', err);
