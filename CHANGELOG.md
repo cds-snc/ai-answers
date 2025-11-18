@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.60.1](https://github.com/cds-snc/ai-answers/compare/v1.60.0...v1.60.1) (2025-11-18)
+
+
+### Bug Fixes
+
+* cds repo ([6433604](https://github.com/cds-snc/ai-answers/commit/64336041a2c5675693c728b8967d490f8c426208))
+* remove feedback survey links ([0128106](https://github.com/cds-snc/ai-answers/commit/0128106417a664d89188dd830bc637525f02007a))
+* remove feedback survey links ([a70fe73](https://github.com/cds-snc/ai-answers/commit/a70fe73f1b0095a195132d213d17035b428dc5e0))
+
 ## [1.60.0](https://github.com/cds-snc/ai-answers/compare/v1.59.1...v1.60.0) (2025-11-17)
 
 
