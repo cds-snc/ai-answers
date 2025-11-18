@@ -30,8 +30,6 @@
     },
     "feedback": {
       "title": "",
-      "surveyLink": "Finished? Take a 3 minute survey (opens in new tab)",
-      "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs",
       "question": "How was this answer?",
       "useful": "Good",
       "notUseful": "Needs improvement",
@@ -40,29 +38,26 @@
       "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
-      "surveyLink": "Take a 3 minute feedback survey (opens in new tab)",
       "send": "Send",
       "question": "Was this helpful?",
       "yes": {
         "question": "Tell us more. Select the best option below. (required)",
-        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs/?so=pub&cl=y",
         "options": {
           "noCall": "I don't need to call the government",
           "noVisit": "I don't need to visit an office",
           "savedTime": "Saved me time searching and reading",
-          "other": "Other - please fill out the survey"
+          "other": "Other"
         },
         "shortQuestion": "Why was this helpful?"
       },
       "no": {
         "question": "Help us improve. Select the best option below. (required)",
-        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs/?so=pub&cl=n",
         "options": {
           "irrelevant": "Irrelevant or off topic",
           "confusing": "Too complex or confusing",
           "notDetailed": "Not detailed enough",
           "notWanted": "Answer is clear, but is not what I wanted to hear",
-          "other": "Other - please fill out the survey"
+          "other": "Other"
         },
         "shortQuestion": "Why wasn't this helpful?"
       }
@@ -199,8 +194,8 @@
     "overview": {
       "title": "Overview",
       "descriptionPara1": "AI Answers is a specialized AI assistant designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.",
-      "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer questions from over 4,000 users. Evaluations by partner institution experts of samples of answers identified errors in less than 10% of answers - exceeding the objective of 90% accuracy rates. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
-      "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations of accuracy and potential improvements to improve automated AI evaluations and answer quality."
+      "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
+      "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations to produce automated AI evaluations, and improve answer quality."
     },
     "systemCard": {
       "title": "System Card documentation",

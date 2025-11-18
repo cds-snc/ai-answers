@@ -191,18 +191,6 @@ const HomePage = ({ lang = "en" }) => {
 
   return (
     <WrappedErrorBoundary>
-      <style>{`
-        .feedback-survey-link {
-          display: none;
-        }
-        
-        .ai-message-content ~ * .feedback-survey-link,
-        .feedback-survey-link:has(~ .ai-message-content),
-        body:has(.ai-message-content) .feedback-survey-link {
-          display: inline !important;
-        }
-      `}</style>
-
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
         <h2
@@ -248,17 +236,6 @@ const HomePage = ({ lang = "en" }) => {
       </div>
       {!reviewMode && (
         <div className="mb-600 container-custom">
-          {/* Feedback survey link - shown/hidden via CSS based on AI responses */}
-          <GcdsText>
-            <a
-              href={t("homepage.feedback.surveyUrl")}
-              className="feedback-survey-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("homepage.feedback.surveyLink")}
-            </a>
-          </GcdsText>
           <GcdsText>
             {t("homepage.about.builtBy")}{" "}
             <GcdsLink
