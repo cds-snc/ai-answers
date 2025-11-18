@@ -30,10 +30,6 @@ const PublicFeedbackComponent = ({
         { id: 'other', score: 6, label: t('homepage.publicFeedback.no.options.other') },
       ];
 
-  const surveyUrl = isPositive
-    ? t('homepage.publicFeedback.yes.surveyUrl')
-    : t('homepage.publicFeedback.no.surveyUrl');
-
   const handleSend = async () => {
     if (!selected) return;
 
@@ -93,15 +89,6 @@ const PublicFeedbackComponent = ({
               </li>
             ))}
           </ul>
-          <a
-              href={surveyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="feedback-survey-link"
-              style={{ display: 'block', marginTop: '1em' }}
-            >
-              {t('homepage.publicFeedback.surveyLink')}
-            </a>
         </details>
       </fieldset>
       <button type="submit" className="btn-primary mrgn-lft-sm">
