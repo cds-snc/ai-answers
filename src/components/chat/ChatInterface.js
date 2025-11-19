@@ -176,6 +176,81 @@ const ChatInterface = ({
     };
   }, [isLoading, t, safeT]);
 
+  // Scroll down button functionality
+  useEffect(() => {
+    const scrollBtn = document.querySelector('.scroll-down-btn');
+    if (!scrollBtn) return;
+
+    const checkScrollableContent = () => {
+      // Requirement 2: Only show after first AI response (not loading)
+      const hasAIResponse = messages.some(m => m.sender === 'ai' && !m.error);
+      if (!hasAIResponse || isLoading) {
+        scrollBtn.classList.remove('has-scroll');
+        return;
+      }
+
+      // Requirement 3: Hide if follow-up input area is visible
+      const inputArea = document.querySelector('.input-area');
+      if (inputArea) {
+        const inputRect = inputArea.getBoundingClientRect();
+        const isInputVisible = inputRect.top < window.innerHeight && inputRect.bottom > 0;
+        if (isInputVisible) {
+          scrollBtn.classList.remove('has-scroll');
+          return;
+        }
+      }
+
+      // Show button if there's more content below
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollBottom = scrollTop + windowHeight;
+      
+      if (scrollBottom < documentHeight - 50) {
+        scrollBtn.classList.add('has-scroll');
+      } else {
+        scrollBtn.classList.remove('has-scroll');
+      }
+    };
+
+    const scrollDown = (e) => {
+      e.preventDefault();
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      const viewportHeight = window.innerHeight;
+      // Requirement 1: Scroll 80% of viewport instead of 100%
+      const targetScroll = currentScroll + (viewportHeight * 0.8);
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollTo = Math.min(targetScroll, maxScroll);
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      window.scrollTo({
+        top: scrollTo,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth'
+      });
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        scrollDown(e);
+      }
+    };
+
+    scrollBtn.addEventListener('click', scrollDown);
+    scrollBtn.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', checkScrollableContent);
+    window.addEventListener('resize', checkScrollableContent);
+    
+    checkScrollableContent();
+
+    return () => {
+      scrollBtn.removeEventListener('click', scrollDown);
+      scrollBtn.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', checkScrollableContent);
+      window.removeEventListener('resize', checkScrollableContent);
+    };
+  }, [messages, isLoading]);
+
   const getLabelForInput = () => {
     if (turnCount >= 1) {
       const followUp = t("homepage.chat.input.followUp");
@@ -521,6 +596,19 @@ const ChatInterface = ({
           </div>
         )}
       </div>
+
+      {/* Accessible Scroll Down Button */}
+      <button 
+        className="scroll-down-btn" 
+        aria-label={safeT('homepage.scroll.ariaLabel')}
+        title={safeT('homepage.scroll.title')}
+        type="button"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
 
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
         <div className="input-area mt-200">

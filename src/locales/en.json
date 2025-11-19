@@ -12,6 +12,17 @@
     "intro": {
       "researchOnly": "Answers provided by this AI service are information, not official advice.  Improvements are ongoing."
     },
+    "textarea": {
+      "ariaLabel": {
+        "first": "This is Canada dot CA AI answers, please enter your question.",
+        "followon": "Ask a follow-on question or reply.",
+        "skipfo": "Skip and ask a follow-on question"
+      }
+    },
+    "scroll": {
+      "ariaLabel": "Scroll down to view more content.",
+      "title": "Scroll down"
+    },
     "about": {
       "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service.",
