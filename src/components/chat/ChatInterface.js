@@ -182,14 +182,16 @@ const ChatInterface = ({
     if (!scrollBtn) return;
 
     const checkScrollableContent = () => {
-      // Requirement 2: Only show after first AI response (not loading)
+      // Show after first AI response OR error message (not loading)
       const hasAIResponse = messages.some(m => m.sender === 'ai' && !m.error);
-      if (!hasAIResponse || isLoading) {
+      const hasErrorMessage = messages.some(m => m.error && (m.sender === 'system' || m.sender === 'ai'));
+      
+      if ((!hasAIResponse && !hasErrorMessage) || isLoading) {
         scrollBtn.classList.remove('has-scroll');
         return;
       }
 
-      // Requirement 3: Hide if follow-up input area is visible
+      // Hide if follow-up input area is visible
       const inputArea = document.querySelector('.input-area');
       if (inputArea) {
         const inputRect = inputArea.getBoundingClientRect();
@@ -217,7 +219,7 @@ const ChatInterface = ({
       e.preventDefault();
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
       const viewportHeight = window.innerHeight;
-      // Requirement 1: Scroll 80% of viewport instead of 100%
+      // Scroll 80% of viewport instead of 100%
       const targetScroll = currentScroll + (viewportHeight * 0.8);
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const scrollTo = Math.min(targetScroll, maxScroll);
