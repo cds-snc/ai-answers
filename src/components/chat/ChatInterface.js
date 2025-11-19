@@ -610,7 +610,6 @@ const ChatInterface = ({
         </svg>
       </button>
 
-      {turnCount < MAX_CONVERSATION_TURNS && (
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
         <div className="input-area mt-200">
           {!isLoading && (
