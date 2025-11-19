@@ -177,9 +177,8 @@ const ChatInterface = ({
   }, [isLoading, t, safeT]);
 
   // Scroll down button functionality
-  // Unified behavior for both error messages and AI responses
-  // Button visible until footer (input-area bottom OR gcds-footer__sub top) is visible
-  // Scrolls 80% of viewport on click for all cases
+  // Button visible until footer is visible
+  // Scrolls 80% of viewport on click
   useEffect(() => {
     const scrollBtn = document.querySelector('.scroll-down-btn');
     if (!scrollBtn) return;
@@ -202,7 +201,7 @@ const ChatInterface = ({
       
       // if (inputArea) {
       //   const inputRect = inputArea.getBoundingClientRect();
-      //   // Check if bottom of input area is visible
+      //   // Check if bottom of input area is visible - wasn't working reliably so switched to gcds-footer__sub
       //   isFooterVisible = inputRect.bottom >= 0 && inputRect.bottom <= window.innerHeight;
       // }
       
