@@ -191,18 +191,30 @@ const ChatInterface = ({
         return;
       }
 
-      // Hide if follow-up input area is visible
+      // Check if input area (footer) is visible
       const inputArea = document.querySelector('.input-area');
       if (inputArea) {
         const inputRect = inputArea.getBoundingClientRect();
         const isInputVisible = inputRect.top < window.innerHeight && inputRect.bottom > 0;
+        
+        // For error messages: show button UNLESS footer is visible
+        if (hasErrorMessage && !hasAIResponse) {
+          if (isInputVisible) {
+            scrollBtn.classList.remove('has-scroll');
+          } else {
+            scrollBtn.classList.add('has-scroll');
+          }
+          return;
+        }
+        
+        // For AI responses: hide if footer is visible
         if (isInputVisible) {
           scrollBtn.classList.remove('has-scroll');
           return;
         }
       }
 
-      // Show button if there's more content below
+      // Show button if there's more content below (for AI responses)
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -220,13 +232,14 @@ const ChatInterface = ({
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       
-      // Check if there's an error message - if so, scroll to input area (footer)
+      // Check if there's an error message WITHOUT an AI response
       const hasErrorMessage = messages.some(m => m.error && (m.sender === 'system' || m.sender === 'ai'));
+      const hasAIResponse = messages.some(m => m.sender === 'ai' && !m.error);
       
       let scrollTo;
-      if (hasErrorMessage) {
-        // Scroll to make the input area visible
-        const inputArea = document.querySelector('.input-area');
+      if (hasErrorMessage && !hasAIResponse) {
+        // Error-only behavior: scroll to make the input area visible
+        const inputArea = document.querySelector('.gcds-footer__sub');
         if (inputArea) {
           const inputRect = inputArea.getBoundingClientRect();
           scrollTo = currentScroll + inputRect.top - 20; // 20px padding from top
@@ -235,7 +248,7 @@ const ChatInterface = ({
           scrollTo = document.documentElement.scrollHeight - window.innerHeight;
         }
       } else {
-        // Normal behavior: scroll 80% of viewport
+        // Normal answer scroll 80% of viewport
         const viewportHeight = window.innerHeight;
         const targetScroll = currentScroll + (viewportHeight * 0.8);
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
