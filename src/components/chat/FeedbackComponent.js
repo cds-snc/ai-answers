@@ -1,49 +1,51 @@
-import React, { useState } from 'react';
-import ExpertRatingComponent from './ExpertRatingComponent.js';
-import PublicFeedbackComponent from './PublicFeedbackComponent.js';
-import { useHasAnyRole } from '../RoleBasedUI.js';
-import '../../styles/App.css';
-import { useTranslations } from '../../hooks/useTranslations.js';
-import DataStoreService from '../../services/DataStoreService.js';
+import React, { useState } from "react";
+import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
+import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
+import { useHasAnyRole } from "../RoleBasedUI.js";
+import "../../styles/App.css";
+import { useTranslations } from "../../hooks/useTranslations.js";
+import FeedbackService from "../../services/FeedbackService.js";
 
 const FeedbackComponent = ({
-  lang = 'en',
+  lang = "en",
   sentenceCount = 1,
   chatId,
   userMessageId,
   sentences = [],
   // Add these new props for the skip button
-  showSkipButton = false,  // Determines if skip button should be shown
-  onSkip = () => { },       // Function to call when skip button is clicked
-  skipButtonLabel = ''     // Accessible label for the skip button
+  showSkipButton = false, // Determines if skip button should be shown
+  onSkip = () => {}, // Function to call when skip button is clicked
+  skipButtonLabel = "", // Accessible label for the skip button
 }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [feedbackError, setFeedbackError] = useState(false);
   const [showExpertRating, setShowExpertRating] = useState(false);
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);
-  const hasExpertRole = useHasAnyRole(['admin', 'partner']);
+  const hasExpertRole = useHasAnyRole(["admin", "partner"]);
 
   const handleFeedback = (isPositive) => {
-    let feedbackPayload = null; // Renamed to avoid confusion
+    let feedbackPayload = null;
     if (isPositive) {
       if (hasExpertRole) {
         feedbackPayload = {
-          // totalScore: 100, // Retained for now, can be re-evaluated if it causes issues
-          type: 'expert',
-          feedback: 'positive', // Explicitly 'positive' for expert "Useful" click
-          totalScore: 100, // Assuming a default score of 100 for positive feedback
+          type: "expert",
+          feedback: "positive",
+          totalScore: 100,
         };
-        DataStoreService.persistFeedback(feedbackPayload, chatId, userMessageId);
+        FeedbackService.persistExpertFeedback({
+          chatId,
+          interactionId: userMessageId,
+          expertFeedback: feedbackPayload,
+        });
         setFeedbackGiven(true);
       } else {
         setPublicPositive(true);
         setShowPublicRating(true);
       }
-    } else { // Not useful / No
+    } else {
       if (hasExpertRole) {
-        // When "Not Useful" is clicked by an expert, show the detailed rating component.
-        // The ExpertRatingComponent will then determine its own 'positive'/'negative' feedback string.
         setShowExpertRating(true);
       } else {
         setPublicPositive(false);
@@ -52,17 +54,26 @@ const FeedbackComponent = ({
     }
   };
   const handleExpertFeedback = (expertFeedback) => {
-    console.log('Expert feedback received:', expertFeedback);
+    console.log("Expert feedback received:", expertFeedback);
     const feedbackWithType = {
       ...expertFeedback,
-      type: 'expert'
+      type: "expert",
     };
-    setFeedbackGiven(true);
     setShowExpertRating(false);
-    DataStoreService.persistFeedback(feedbackWithType, chatId, userMessageId);
+    FeedbackService.persistExpertFeedback({
+      chatId,
+      interactionId: userMessageId,
+      expertFeedback: feedbackWithType,
+    });
+    setFeedbackGiven(true);
   };
 
   const handlePublicFeedback = (publicFeedback) => {
+    FeedbackService.persistPublicFeedback({
+      chatId,
+      interactionId: userMessageId,
+      publicFeedback,
+    });
     setFeedbackGiven(true);
     setShowPublicRating(false);
   };
@@ -71,13 +82,24 @@ const FeedbackComponent = ({
     return (
       <p className="thank-you">
         <span className="gcds-icon fa fa-solid fa-check-circle"></span>
-        {t('homepage.feedback.thankYou')}
+        {t("homepage.feedback.thankYou")}
+      </p>
+    );
+  }
+  if (feedbackError) {
+    return (
+      <p className="feedback-error">
+        <span
+          className="gcds-icon fa fa-solid fa-exclamation-circle"
+          style={{ color: "red" }}
+        ></span>
+        Error submitting feedback, contact admin.
       </p>
     );
   }
   if (showExpertRating) {
     return (
-      <ExpertRatingComponent
+      <ExpertFeedbackComponent
         onSubmit={handleExpertFeedback}
         onClose={() => setShowExpertRating(false)}
         lang={lang}
@@ -104,17 +126,28 @@ const FeedbackComponent = ({
   if (!hasExpertRole) {
     return (
       <div className="feedback-container">
-        <span className="feedback-text">{t('homepage.publicFeedback.question')}</span>
-        <button className="feedback-link button-as-link" onClick={() => handleFeedback(true)} tabIndex="0">
-          {t('common.yes', 'Yes')}
-        </button>
-        <span className="feedback-separator">·</span>
-        <button className="feedback-link button-as-link" onClick={() => handleFeedback(false)} tabIndex="0">
-          {t('common.no', 'No')}
-        </button>
+        <span className="feedback-text">
+          {t("homepage.publicFeedback.question")}
+        </span>
+        <span className="feedback-buttons">
+          <button
+            className="feedback-link button-as-link link-default hover:link-hover"
+            onClick={() => handleFeedback(true)}
+            tabIndex="0"
+          >
+            {t("common.yes", "Yes")}
+          </button>
+          <span className="feedback-separator">·</span>
+          <button
+            className="feedback-link button-as-link link-default hover:link-hover"
+            onClick={() => handleFeedback(false)}
+            tabIndex="0"
+          >
+            {t("common.no", "No")}
+          </button>
+        </span>
         {showSkipButton && (
           <>
-            <span className="feedback-separator"></span>
             <button
               className="wb-inv"
               onClick={onSkip}
@@ -131,15 +164,23 @@ const FeedbackComponent = ({
 
   return (
     <div className="feedback-container">
-      <span className="feedback-text">{t('homepage.feedback.question')} </span>
-      <button className="feedback-link button-as-link" onClick={() => handleFeedback(true)} tabIndex="0">
-        {t('homepage.feedback.useful')}
+      <span className="feedback-text">{t("homepage.feedback.question")} </span>
+      <button
+        className="feedback-link button-as-link"
+        onClick={() => handleFeedback(true)}
+        tabIndex="0"
+      >
+        {t("homepage.feedback.useful")}
       </button>
       <span className="feedback-separator">·</span>
-      <span className="feedback-text">{t('homepage.feedback.or')}</span>
+      <span className="feedback-text">{t("homepage.feedback.or")}</span>
       <span className="feedback-separator">·</span>
-      <button className="feedback-link button-as-link" onClick={() => handleFeedback(false)} tabIndex="0">
-        {t('homepage.feedback.notUseful')}
+      <button
+        className="feedback-link button-as-link"
+        onClick={() => handleFeedback(false)}
+        tabIndex="0"
+      >
+        {t("homepage.feedback.notUseful")}
       </button>
 
       {/* Add the skip button after the other buttons, in the same line */}

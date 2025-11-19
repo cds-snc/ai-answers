@@ -1,0 +1,57 @@
+name: Remove AI Answers PR Review deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/*
+    types:
+      - closed
+
+env:
+  AWS_DEFAULT_REGION: ca-central-1
+  FUNCTION_NAME: "ai-answers-client-pr"
+  IMAGE: ai_answers_pr_review
+  REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  remove-pr-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set envs
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
+        with:
+          role-to-assume: arn:aws:iam::992382783569:role/ai-answers-lambda-client-pr-review-env
+          role-session-name: PRReviewRemove
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Delete lambda function resources
+        run: |
+          # Delete the PR review Lambda function
+          FULL_FUNCTION_NAME="${FUNCTION_NAME}-${PR_NUMBER}"
+
+          echo "Removing Lambda function: $FULL_FUNCTION_NAME"
+
+          # Wait for function to be in active state before deletion
+          aws lambda wait function-active --function-name $FULL_FUNCTION_NAME > /dev/null 2>&1 || true
+
+          # Delete function URL config
+          aws lambda delete-function-url-config --function-name $FULL_FUNCTION_NAME > /dev/null 2>&1 || true
+
+          # Delete function
+          aws lambda delete-function --function-name $FULL_FUNCTION_NAME > /dev/null 2>&1 || true
+
+          # Delete log group
+          aws logs delete-log-group --log-group-name /aws/lambda/$FULL_FUNCTION_NAME > /dev/null 2>&1 || true
+
+          # Delete ECR image
+          aws ecr batch-delete-image --repository-name $IMAGE --image-ids imageTag=$PR_NUMBER > /dev/null 2>&1 || true
+
+          echo "Successfully removed PR review environment for PR #$PR_NUMBER"

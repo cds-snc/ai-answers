@@ -1,11 +1,17 @@
+
+locals {
+  # Always include alternate domain + wildcard in SANs (present in all envs)
+  expanded_sans = concat(var.san, [var.altdomain, "*.${var.altdomain}"])
+}
+
 resource "aws_acm_certificate" "ai_answers" {
   domain_name               = var.domain
-  subject_alternative_names = ["*.${var.domain}"]
+  subject_alternative_names = local.expanded_sans
   validation_method         = "DNS"
 
-  tags = {
-    "CostCentre" = var.billing_code
-  }
+  tags = merge(var.default_tags, {
+    CostCentre = var.billing_code
+  })
 
   lifecycle {
     create_before_destroy = true
@@ -13,13 +19,18 @@ resource "aws_acm_certificate" "ai_answers" {
 }
 
 resource "aws_route53_record" "ai_answers_certificate_validation" {
-  zone_id = var.hosted_zone_id
-
   for_each = {
+    # Choose the correct hosted zone per domain validation option. The alternate
+    # domain (and its wildcard) must validate in its own hosted zone when provided.
     for dvo in aws_acm_certificate.ai_answers.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       type   = dvo.resource_record_type
       record = dvo.resource_record_value
+      zone_id = (
+        length(trimspace(var.altdomain)) > 0 && (
+          dvo.domain_name == var.altdomain || dvo.domain_name == "*.${var.altdomain}"
+        ) && length(trimspace(var.alternate_zone_id)) > 0
+      ) ? var.alternate_zone_id : var.hosted_zone_id
     }
   }
 
@@ -27,8 +38,8 @@ resource "aws_route53_record" "ai_answers_certificate_validation" {
   name            = each.value.name
   records         = [each.value.record]
   type            = each.value.type
-
-  ttl = 60
+  zone_id         = each.value.zone_id
+  ttl             = 60
 }
 
 resource "aws_acm_certificate_validation" "ai_answers" {

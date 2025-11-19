@@ -34,7 +34,7 @@ async function logHandler(req, res) {
 // Only require auth and admin for GET requests
 export default function handler(req, res) {
     if (req.method === 'GET') {
-        return withProtection(logHandler, authMiddleware, adminMiddleware)(req, res);
+        return withProtection(logHandler, authMiddleware)(req, res);
     }
     return logHandler(req, res);
 }

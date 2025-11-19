@@ -1,0 +1,37 @@
+{
+  "suspiciousWords": [
+    "directives",
+    "limites",
+    "ignorer",
+    "contourner",
+    "éviter",
+    "convaincre",
+    "prétendre",
+    "jeu de rôle",
+    "Anthropic",
+    "OpenAI",
+    "Cohere",
+    "Claude",
+    "GPT"
+  ],
+  "manipulationPhrases": [
+    "vos instructions",
+    "peux-tu essayer",
+    "pourrais-tu essayer",
+    "as-tu essayé",
+    "pourquoi ne peux-tu pas",
+    "tu l'as déjà fait",
+    "mais tu l'as fait avant",
+    "ça n'a pas de sens",
+    "cela n'a pas de sens",
+    "résumer notre",
+    "notre conversation",
+    "failles logiques",
+    "contradictions",
+    "parle-moi de tes",
+    "invite système",
+    "es-tu sûr",
+    "haïku",
+    "sous forme d'histoire"
+  ]
+} 

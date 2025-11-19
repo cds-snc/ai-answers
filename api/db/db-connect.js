@@ -1,24 +1,28 @@
-import mongoose from 'mongoose';
-import '../../models/interaction.js';
-import '../../models/question.js';
-import '../../models/answer.js';
-import '../../models/citation.js';
-import '../../models/expertFeedback.js';
-import '../../models/context.js';
-import '../../models/chat.js';
-import '../../models/batch.js';
-import '../../models/tool.js';
-import '../../models/eval.js';
-import '../../models/user.js';
-import '../../models/logs.js';
-import '../../models/embedding.js';
-import '../../models/setting.js';
+import mongoose from "mongoose";
+import "../../models/interaction.js";
+import "../../models/question.js";
+import "../../models/answer.js";
+import "../../models/citation.js";
+import "../../models/expertFeedback.js";
+import "../../models/publicFeedback.js";
+import "../../models/context.js";
+import "../../models/chat.js";
+import "../../models/batch.js";
+import "../../models/scenarioOverride.js";
+import "../../models/tool.js";
+import "../../models/eval.js";
+import "../../models/user.js";
+import "../../models/logs.js";
+import "../../models/embedding.js";
+import "../../models/setting.js";
+import "../../models/batchItem.js";
+import "../../models/sentenceEmbedding.js";
 
-let cached = global.mongoose;
+// api/db/db-connect.js
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+// Cache the connection and promise at the module level. This is safe for
+// worker threads, as each thread gets its own module instance.
+let cached = { conn: null, promise: null };
 
 async function dbConnect() {
   if (cached.conn) {
@@ -28,35 +32,40 @@ async function dbConnect() {
   if (!cached.promise) {
     const mongoDbOpts = {
       bufferCommands: false,
-      connectTimeoutMS: 60000,     // 60 seconds timeout
-      socketTimeoutMS: 300000,     // 5 minutes timeout for operations
+      connectTimeoutMS: 60000, // 60 seconds timeout
+      socketTimeoutMS: 300000, // 5 minutes timeout for operations
       serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
-      heartbeatFrequencyMS: 10000,    // How often to check the connection
-      maxPoolSize: 100,               // Maximum number of connections
-      minPoolSize: 5                  // Minimum number of connections
+      heartbeatFrequencyMS: 10000, // How often to check the connection
+      maxPoolSize: 100, // Maximum number of connections
+      minPoolSize: 1, // Minimum number of connections
+      directConnection: true,
     };
 
     const docDbOpts = {
       tls: true,
-      tlsCAFile: '/app/global-bundle.pem',
+      tlsCAFile: "/app/global-bundle.pem",
       retryWrites: false,
       bufferCommands: false,
-      connectTimeoutMS: 60000,        // 60 seconds timeout
-      socketTimeoutMS: 300000,        // 5 minutes timeout for operations
+      connectTimeoutMS: 60000, // 60 seconds timeout
+      socketTimeoutMS: 300000, // 5 minutes timeout for operations
       serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
-      heartbeatFrequencyMS: 10000,     // How often to check the connection
-      minPoolSize: 20,                // Keep 20 connections ready
-      maxPoolSize: 1000               // Allow up to 1000 connections
+      heartbeatFrequencyMS: 10000, // How often to check the connection
+      minPoolSize: 1, // Keep 20 connections ready
+      maxPoolSize: 1000, // Allow up to 1000 connections
     };
 
     const connectionString = process.env.MONGODB_URI || process.env.DOCDB_URI;
     const opts = process.env.MONGODB_URI ? mongoDbOpts : docDbOpts;
 
-    cached.promise = mongoose.connect(connectionString, opts).then((mongoose) => {
-      return mongoose;
-    });
+    console.log("DB Connection Options:", opts);
+
+    cached.promise = mongoose
+      .connect(connectionString, opts)
+      .then((mongoose) => {
+        return mongoose;
+      });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {

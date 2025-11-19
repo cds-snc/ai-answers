@@ -3,6 +3,7 @@ import { getEmbeddingModelConfig } from "../config/ai-models.js";
 import ServerLoggingService from "./ServerLoggingService.js";
 import dotenv from "dotenv";
 import { Embedding } from "../models/embedding.js";
+import { SentenceEmbedding } from "../models/sentenceEmbedding.js";
 import { Chat } from "../models/chat.js";
 import { Interaction } from "../models/interaction.js";
 import dbConnect from "../api/db/db-connect.js";
@@ -62,7 +63,7 @@ class EmbeddingService {
           azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
           azureOpenAIApiInstanceName: instanceName,
           azureOpenAIApiEmbeddingsDeploymentName: modelConfig.name,
-          azureOpenAIApiVersion: "2023-05-15",
+          azureOpenAIApiVersion: "2024-02-01",
           dimensions: modelConfig.dimensions,
           timeout: modelConfig.timeoutMs,
           maxRetries: 3,
@@ -86,6 +87,23 @@ class EmbeddingService {
       .replace(/<s-\d+>|<\/s-\d+>/g, "") // remove <s-1>, </s-1>, etc.
       .replace(/\\n/g, " ") // replace \n with space
       .trim();
+  }
+
+  /**
+   * Format a sequence of questions into a single labelled flow string
+   * suitable for a questionsEmbedding query, e.g.:
+   *  "Question 1: ...\nQuestion 2: ..."
+   * @param {string[]} questions
+   * @returns {string}
+   */
+  formatQuestionsForEmbedding(questions = []) {
+    if (!Array.isArray(questions) || questions.length === 0) return '';
+    const labeled = [];
+    for (let i = 0; i < questions.length; i++) {
+      const cleaned = this.cleanTextForEmbedding(String(questions[i] || ''));
+      if (cleaned) labeled.push(`Question ${i + 1}: ${cleaned}`.trim());
+    }
+    return labeled.join("\n");
   }
 
   async createEmbedding(interaction, provider = "openai", modelName = null) {
@@ -185,6 +203,11 @@ class EmbeddingService {
         modelName
       );
 
+      const sentenceEmbeddings = embeddings.slice(
+        4,
+        4 + cleanedSentences.length
+      );
+
       const embeddingDoc = {
         chatId: chat._id,
         interactionId: interaction._id,
@@ -194,12 +217,34 @@ class EmbeddingService {
         questionsEmbedding: embeddings[1],
         answerEmbedding: embeddings[2],
         questionsAnswerEmbedding: embeddings[3],
-        sentenceEmbeddings: embeddings.slice(4, 4 + cleanedSentences.length),
+       
       };
       await dbConnect();
       const newEmbedding = await Embedding.create(embeddingDoc);
+
+      if (sentenceEmbeddings.length > 0) {
+        const sentenceEmbeddingDocs = sentenceEmbeddings.map(
+          (embedding, index) => ({
+            parentEmbeddingId: newEmbedding._id,
+            sentenceIndex: index,
+            embedding: embedding,
+          })
+        );
+        await SentenceEmbedding.insertMany(sentenceEmbeddingDocs);
+      }
+
+      // Log embedding dimensions
+      const dims = {
+        questionEmbedding: embeddingDoc.questionEmbedding?.length,
+        questionsEmbedding: embeddingDoc.questionsEmbedding?.length,
+        answerEmbedding: embeddingDoc.answerEmbedding?.length,
+        questionsAnswerEmbedding: embeddingDoc.questionsAnswerEmbedding?.length,
+        sentenceEmbeddings: Array.isArray(sentenceEmbeddings)
+          ? sentenceEmbeddings.map((e) => e?.length)
+          : [],
+      };
       ServerLoggingService.info(
-        "Embedding successfully created and saved",
+        `Embedding successfully created and saved. Dimensions: ${JSON.stringify(dims)}`,
         "embedding-service"
       );
 
@@ -275,7 +320,8 @@ class EmbeddingService {
   async processEmbeddingForDuration(
     duration,
     skipExisting = true,
-    lastProcessedId = null
+    lastProcessedId = null,
+    provider = "openai"
   ) {
     const startTime = Date.now();
     let lastId = lastProcessedId;
@@ -288,6 +334,13 @@ class EmbeddingService {
       if (!skipExisting && !lastProcessedId) {
         ServerLoggingService.info(
           "Regenerating all embeddings - deleting existing embeddings",
+          "system"
+        );
+
+        // Delete all sentence embeddings first
+        const deletedSentenceEmbeddings = await SentenceEmbedding.deleteMany({});
+        ServerLoggingService.info(
+          `Deleted ${deletedSentenceEmbeddings.deletedCount} sentence embeddings`,
           "system"
         );
 
@@ -361,7 +414,7 @@ class EmbeddingService {
         }
 
         try {
-          await this.createEmbedding(interaction);
+          await this.createEmbedding(interaction, provider);
           processedCount++;
         } catch (error) {
           ServerLoggingService.error(

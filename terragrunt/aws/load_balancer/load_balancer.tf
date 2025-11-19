@@ -1,3 +1,12 @@
+#############################################
+# Application Load Balancer (ALB) + Listener
+#############################################
+
+# Secondary hostname (alternate domain) always enabled (present in all envs)
+locals {
+  secondary_host = var.altdomain
+}
+
 resource "aws_lb" "ai_answers" {
   name               = "${var.product_name}-lb"
   internal           = false #tfsec:ignore:AWS005
@@ -13,9 +22,10 @@ resource "aws_lb" "ai_answers" {
 
   subnets = var.vpc_public_subnet_ids
 
-  tags = {
-    CostCentre = var.billing_code
-  }
+  tags = merge(var.default_tags, {
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
+  })
 }
 
 resource "aws_lb_listener" "ai_answers_listener" {
@@ -35,6 +45,30 @@ resource "aws_lb_listener" "ai_answers_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ai_answers.arn
   }
+
+  tags = merge(var.default_tags, {
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
+  })
+}
+
+# Forward alternate hostname → same target group (prod only when provided)
+resource "aws_lb_listener_rule" "https_reponses" {
+  listener_arn = aws_lb_listener.ai_answers_listener.arn
+  priority     = 110
+
+  condition {
+    host_header { values = [local.secondary_host] }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ai_answers.arn
+  }
+  tags = merge(var.default_tags, {
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
+  })
 }
 
 resource "aws_lb_target_group" "ai_answers" {
@@ -55,7 +89,8 @@ resource "aws_lb_target_group" "ai_answers" {
     unhealthy_threshold = 2
   }
 
-  tags = {
-    CostCentre = var.billing_code
-  }
+  tags = merge(var.default_tags, {
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
+  })
 }

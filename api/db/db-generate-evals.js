@@ -1,5 +1,5 @@
+
 import dbConnect from './db-connect.js';
-import { Interaction } from '../../models/interaction.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import config from '../../config/eval.js';
 import { Setting } from '../../models/setting.js';
@@ -10,23 +10,52 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    try {
-        const { lastProcessedId, regenerateAll } = req.body;
-        const duration = config.evalBatchProcessingDuration; // Use config value for duration
+    const { action, startTime, endTime, lastProcessedId, onlyEmpty } = req.body;
+    const duration = config.evalBatchProcessingDuration;
 
-        // Get deploymentMode from settings
-        let deploymentMode = 'CDS';
-        try {
-            await dbConnect();
-            const setting = await Setting.findOne({ key: 'deploymentMode' });
-            if (setting && setting.value) deploymentMode = setting.value;
-        } catch (e) {
-            console.error('Failed to read deploymentMode setting', e);
+    try {
+        await dbConnect();
+
+        // Build a time filter for interaction createdAt if provided
+        let timeFilter = {};
+        if (startTime || endTime) {
+            timeFilter.createdAt = {};
+            // If date-only string, convert to full-day range
+            if (startTime) {
+                // If startTime is date-only (YYYY-MM-DD), set to 00:00:00.000Z
+                const start = startTime.length === 10
+                    ? new Date(startTime + 'T00:00:00.000Z')
+                    : new Date(startTime);
+                timeFilter.createdAt.$gte = start;
+            }
+            if (endTime) {
+                // If endTime is date-only (YYYY-MM-DD), set to 23:59:59.999Z
+                const end = endTime.length === 10
+                    ? new Date(endTime + 'T23:59:59.999Z')
+                    : new Date(endTime);
+                timeFilter.createdAt.$lte = end;
+            }
         }
-        const result = await EvaluationService.processEvaluationsForDuration(duration, !regenerateAll, lastProcessedId, deploymentMode);
-        res.status(200).json(result);
+
+        if (action === 'delete') {
+            // Delegate to EvaluationService for deletion
+            const result = await EvaluationService.deleteEvaluations({ timeFilter, onlyEmpty });
+            return res.status(200).json(result);
+        }
+
+        if (action === 'generate') {
+            // Only generate evaluations for interactions in the timespan that do not have an evaluation
+            const result = await EvaluationService.processEvaluationsForDuration(
+                duration,
+                lastProcessedId,
+                timeFilter
+            );
+            return res.status(200).json(result);
+        }
+
+        return res.status(400).json({ error: 'Invalid action' });
     } catch (error) {
         console.error('Error in generate-evals:', error);
-        res.status(500).json({ error: 'Failed to generate evaluations' });
+        res.status(500).json({ error: 'Failed to process evaluations' });
     }
 }

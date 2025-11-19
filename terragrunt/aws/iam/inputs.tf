@@ -49,7 +49,17 @@ variable "google_api_key_arn" {
   type        = string
 }
 
+variable "gc_notify_api_key_arn" {
+  description = "The ARN of the GC Notify API Key SSM parameter"
+  type        = string
+}
+
 variable "google_search_engine_id_arn" {
   description = "The ARN of the Google Search Engine ID SSM parameter"
+  type        = string
+}
+
+variable "adobe_analytics_url_arn" {
+  description = "The ARN of the Adobe Analytics URL SSM parameter"
   type        = string
 }

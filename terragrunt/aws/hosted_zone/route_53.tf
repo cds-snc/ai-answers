@@ -11,3 +11,13 @@ resource "aws_route53_zone" "ai_answers" {
     Terraform  = true
   }
 }
+
+resource "aws_route53_zone" "alternate" {
+  name = var.altdomain
+
+  tags = {
+    Name       = "${var.product_name}-alt-zone"
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}

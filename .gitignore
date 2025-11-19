@@ -42,3 +42,8 @@ temp.jsonl
 
 # Ignore local stack data file
 .devcontainer/data
+
+# Ignore memory files
+copilot/remember.md
+CLAUDE.md
+

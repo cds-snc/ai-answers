@@ -1,0 +1,121 @@
+name: Deploy AI Answers PR Review environment
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/*
+    types:
+      - labeled
+      - opened
+      - reopened
+      - synchronize
+
+env:
+  AWS_REGION: ca-central-1
+  FUNCTION_NAME: "ai-answers-client-pr"
+  IMAGE: ai_answers_pr_review
+  REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
+  GITHUB_ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-lambda-client-pr-review-env
+  LAMBDA_EXECUTION_ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-lambda-client
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-and-push-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set envs
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: ${{ env.GITHUB_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1.7.1
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ env.PR_NUMBER }} \
+            -f Dockerfile.lambda .
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ env.PR_NUMBER }}
+
+      - name: Delete old images
+        run: |
+          IMAGES_TO_DELETE="$(aws ecr list-images --repository-name $IMAGE --filter "tagStatus=UNTAGGED" --query 'imageIds[*]' --output json)"
+          aws ecr batch-delete-image \
+            --repository-name $IMAGE \
+            --image-ids "$IMAGES_TO_DELETE" || true
+
+      - name: Logout of Amazon ECR
+        run: docker logout $REGISTRY
+
+  deploy-lambda-function:
+    runs-on: ubuntu-latest
+    needs: build-and-push-container
+    steps:
+      - name: Set envs
+        run: echo "PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: ${{ env.GITHUB_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Lambda function using script
+        run: |
+          chmod +x .github/scripts/create-lambda-function.sh
+          ./.github/scripts/create-lambda-function.sh \
+            "$PR_NUMBER" \
+            "$FUNCTION_NAME" \
+            "$REGISTRY" \
+            "$IMAGE" \
+            "$LAMBDA_EXECUTION_ROLE_ARN"
+
+      - name: Get Lambda function URL
+        run: |
+          FUNCTION_URL=$(aws lambda get-function-url-config --function-name $FUNCTION_NAME-$PR_NUMBER --query 'FunctionUrl' --output text 2>/dev/null || echo "")
+          if [ -n "$FUNCTION_URL" ]; then
+            echo "URL=$FUNCTION_URL" >> $GITHUB_ENV
+          fi
+
+      - name: Delete previous comments
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({...context.repo, issue_number: context.issue.number});
+            const comment = comments.find(comment => comment.user.type === "Bot" && comment.body.indexOf("AI Answers Review Environment") > -1);
+            if (comment) {
+              await github.rest.issues.deleteComment({...context.repo, comment_id: comment.id});
+            }
+
+      - name: Update PR with review environment URL
+        if: env.URL != ''
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## :test_tube: AI Answers Review Environment\n${process.env.URL}`
+            })

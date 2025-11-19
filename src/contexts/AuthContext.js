@@ -14,8 +14,26 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate(); 
 
   useEffect(() => {
-    // Load user from localStorage on initial render
+    // Load user from localStorage on initial render and validate token
     const user = AuthService.getUser();
+    if (user && AuthService.isTokenExpired()) {
+      // Token is expired: perform logout to clear storage and redirect
+      AuthService.logout();
+      setCurrentUser(null);
+      setLoading(false);
+      try {
+        let prefix = '/en';
+        if (typeof window !== 'undefined') {
+          const path = window.location.pathname;
+          if (path.startsWith('/fr')) prefix = '/fr';
+        }
+        navigate(`${prefix}/signin`);
+      } catch (e) {
+        // ignore navigation errors
+      }
+      return;
+    }
+
     setCurrentUser(user);
     setLoading(false);
 
@@ -42,7 +60,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const data = await AuthService.login(email, password);
-      // Update the user state
+      // If twoFA is required, do not set currentUser yet -- caller should prompt for code
+      if (data && data.twoFA) {
+        return {
+          user: data.user,
+          twoFA: true,
+          defaultRoute: getDefaultRouteForRole(data.user.role)
+        };
+      }
+
+      // Update the user state for normal login
       await Promise.resolve(setCurrentUser(data.user));
       return {
         user: data.user,
@@ -69,6 +96,17 @@ export const AuthProvider = ({ children }) => {
     AuthService.logout();
     setCurrentUser(null);
     setLoading(false);
+    // Redirect to signin preserving language prefix
+    try {
+      let prefix = '/en';
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path.startsWith('/fr')) prefix = '/fr';
+      }
+      navigate(`${prefix}/signin`);
+    } catch (e) {
+      // ignore navigation errors
+    }
   };
   
   // Helper methods for role checking
@@ -86,20 +124,17 @@ export const AuthProvider = ({ children }) => {
 
   const getDefaultRouteForRole = (role, lang = 'en') => {
     const prefix = lang === 'fr' ? '/fr' : '/en';
-    switch (role) {
-      case 'admin':
-        return `${prefix}/admin`;
-      case 'partner':
-        return `${prefix}/`;
-      default:
-        return prefix;
+    if (role === 'admin' || role === 'partner') {
+      return `${prefix}/admin`;
     }
+    return prefix;
   };
 
   const value = {
     currentUser,
     loading,
     login,
+    refreshUser: () => setCurrentUser(AuthService.getUser()),
     signup,
     logout,
     isAdmin,

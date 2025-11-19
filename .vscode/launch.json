@@ -15,7 +15,7 @@
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/server/server.js",
-      "envFile": "${workspaceFolder}/server/.env",
+      "envFile": "${workspaceFolder}/.env",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
@@ -36,12 +36,32 @@
       "port": 9222,
       "webRoot": "${workspaceFolder}/src",
       "sourceMaps": true
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug util-check-url.test.js (Vitest)",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": [
+        "run",
+        "--inspect-brk",
+        "--no-file-parallelism",
+        "api/util/__tests__/util-check-url.test.js"
+      ],
+      "autoAttachChildProcesses": true,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
     }
   ],
   "compounds": [
     {
       "name": "Debug Both",
       "configurations": ["Launch Server", "Launch Edge"]
+    }
+    ,
+    {
+      "name": "Debug Server + Chrome",
+      "configurations": ["Launch Server", "Launch Chrome"]
     }
   ]
 }

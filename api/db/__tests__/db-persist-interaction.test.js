@@ -8,10 +8,14 @@ import { Question } from '../../../models/question.js';
 import { Citation } from '../../../models/citation.js';
 import { Answer } from '../../../models/answer.js';
 import { Tool } from '../../../models/tool.js';
-import { embedText, embedDocuments } from '../../../services/EmbeddingService.js';
+import EmbeddingService from '../../../services/EmbeddingService.js';
 
 // Mock the dependencies
-vi.mock('../../../services/EmbeddingService.js');
+vi.mock('../../../services/EmbeddingService.js', () => ({
+  default: {
+    createEmbedding: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 vi.mock('../../../services/ServerLoggingService.js');
 
 const mongoUri = global.__MONGO_URI__ || process.env.MONGODB_URI;
@@ -31,6 +35,7 @@ describeFn('db-persist-interaction handler', () => {
   beforeEach(() => {
     req = {
       method: 'POST',
+      headers: {},
       body: {
         chatId: 'test-chat-id',
         userMessageId: 'test-message-id',
@@ -68,9 +73,8 @@ describeFn('db-persist-interaction handler', () => {
       json: vi.fn()
     };
 
-    // Mock the embedding functions
-    embedText.mockResolvedValue([0.1, 0.2, 0.3]);
-    embedDocuments.mockResolvedValue([[0.1, 0.2], [0.3, 0.4]]);
+    // Ensure createEmbedding is a stubbed no-op
+    EmbeddingService.createEmbedding.mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
@@ -86,6 +90,7 @@ describeFn('db-persist-interaction handler', () => {
 
   it('should handle method not allowed', async () => {
     req.method = 'GET';
+    req.headers = req.headers || {};
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(405);
     expect(res.json).toHaveBeenCalledWith({ message: 'Method Not Allowed' });
@@ -115,7 +120,8 @@ describeFn('db-persist-interaction handler', () => {
       });
 
     expect(interaction).toBeTruthy();
-    expect(interaction.responseTime).toBe(req.body.responseTime);
+    // responseTime is stored as a string in the schema
+    expect(String(interaction.responseTime)).toBe(String(req.body.responseTime));
     expect(interaction.referringUrl).toBe(req.body.referringUrl);
 
     // Verify context
@@ -123,10 +129,9 @@ describeFn('db-persist-interaction handler', () => {
     expect(interaction.context.topic).toBe(req.body.context.topic);
     expect(interaction.context.department).toBe(req.body.context.department);
 
-    // Verify question with embedding
+    // Verify question
     expect(interaction.question).toBeTruthy();
     expect(interaction.question.redactedQuestion).toBe(req.body.question);
-    expect(interaction.question.embedding).toEqual([0.1, 0.2, 0.3]);
 
     // Verify citation
     expect(interaction.answer.citation).toBeTruthy();
@@ -135,11 +140,13 @@ describeFn('db-persist-interaction handler', () => {
     expect(interaction.answer.citation.confidenceRating).toBe(req.body.confidenceRating);
     expect(interaction.answer.citation.citationHead).toBe(req.body.answer.citationHead);
 
-    // Verify answer with embeddings
+    // Verify answer
     expect(interaction.answer).toBeTruthy();
     expect(interaction.answer.content).toBe(req.body.answer.content);
-    expect(interaction.answer.embedding).toEqual([0.1, 0.2, 0.3]);
-    expect(interaction.answer.sentenceEmbeddings).toEqual([[0.1, 0.2], [0.3, 0.4]]);
+
+    // Embeddings are handled by EmbeddingService and saved in a separate collection;
+    // here we just ensure the service was invoked.
+    expect(EmbeddingService.createEmbedding).toHaveBeenCalled();
 
     // Verify tools
     expect(interaction.answer.tools).toHaveLength(1);
@@ -150,28 +157,16 @@ describeFn('db-persist-interaction handler', () => {
     expect(tool.status).toBe(req.body.answer.tools[0].status);
   });
 
-  it('should handle embedding generation errors gracefully', async () => {
-    // Mock embedding failures
-    embedText.mockRejectedValue(new Error('Embedding generation failed'));
-    embedDocuments.mockRejectedValue(new Error('Sentence embedding generation failed'));
+  it('handles embedding generation errors by returning 500', async () => {
+    // Force EmbeddingService to fail
+    EmbeddingService.createEmbedding.mockRejectedValueOnce(new Error('Embedding generation failed'));
 
     await handler(req, res);
 
-    // Should still succeed overall
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Interaction logged successfully' });
-
-    // Verify documents were created without embeddings
-    const interaction = await Interaction.findOne({ interactionId: req.body.userMessageId })
-      .populate({
-        path: 'answer',
-        populate: ['citation', 'tools']
-      })
-      .populate('question');
-
-    expect(interaction.question.embedding).toBeUndefined();
-    expect(interaction.answer.embedding).toBeUndefined();
-    expect(interaction.answer.sentenceEmbeddings).toBeUndefined();
+    // Should respond with error
+    expect(res.status).toHaveBeenCalledWith(500);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload && payload.message).toBe('Failed to log interaction');
   });
 
   it('should handle missing optional fields', async () => {
@@ -195,8 +190,11 @@ describeFn('db-persist-interaction handler', () => {
       });
 
     expect(interaction.answer.tools).toHaveLength(0);
-    expect(interaction.answer.sentences).toBeUndefined();
-    expect(interaction.answer.citation.confidenceRating).toBeUndefined();
-    expect(interaction.answer.citation.providedCitationUrl).toBeUndefined();
+    // sentences should be an empty array when omitted
+    expect(Array.isArray(interaction.answer.sentences)).toBe(true);
+    expect(interaction.answer.sentences).toHaveLength(0);
+    // citation optional fields default to empty string in the schema
+    expect(interaction.answer.citation.confidenceRating).toBe('');
+    expect(interaction.answer.citation.providedCitationUrl).toBe('');
   });
 });

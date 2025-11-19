@@ -26,48 +26,49 @@
     "about": {
       "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
+      "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
+      "contactTitle": "Contactez-nous",
+      "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
       "aiServices": {
         "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
         "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
-        "azure": "Service d'IA Azure : Microsoft Azure OpenAI"
+        "azure": "Modèle d'IA actuel : Microsoft Azure OpenAI"
       },
       "cdslink": "Service numérique canadien",
-      "contact": "Écrivez à cds.dto-btn.snc@servicecanada.gc.ca pour plus d'informations."
+      "contact": "Contactez-nous pour plus d'informations",
+      "contactUrl": "https://blogue.canada.ca/contactez-nous.html",
+      "logChatsToDatabaseLabel": "Enregistrer les conversations dans la base de données"
     },
     "feedback": {
       "title": "",
-      "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
-      "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA",
       "question": "Cette réponse était-elle utile?",
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
-      "thankYou": "Merci d'avoir donné votre avis!"
+      "thankYou": "Merci d'avoir donné votre rétroaction!",
+      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
-      "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
       "send": "Envoyer",
       "question": "C'était utile?",
       "yes": {
         "question": "Dites-nous plus. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
-        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA&so=pub&cl=y",
         "options": {
           "noCall": "Je n'ai pas besoin d'appeler le gouvernement",
           "noVisit": "Je n'ai pas besoin de me rendre dans un bureau",
           "savedTime": "J'ai gagné du temps en cherchant et en lisant",
-          "other": "Autre - veuillez remplir l'enquête"
+          "other": "Autre"
         },
         "shortQuestion": "Pourquoi était-ce utile ?"
       },
       "no": {
         "question": "Aidez-nous à améliorer. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
-        "surveyUrl": "https://cdssnc.qualtrics.com/jfe/form/SV_4N2YTcAHkcBEGfs?Q_Language=FR-CA&so=pub&cl=n",
         "options": {
           "irrelevant": "Non pertinent ou hors sujet",
           "confusing": "Trop complexe ou déroutant",
           "notDetailed": "Pas assez détaillé",
           "notWanted": "La réponse est claire, mais ce n'est pas ce que je voulais entendre",
-          "other": "Autre - veuillez remplir l'enquête"
+          "other": "Autre"
         },
         "shortQuestion": "Pourquoi n'était-ce pas utile ?"
       }
@@ -75,8 +76,8 @@
     "privacy": {
       "title": "Confidentialité et conditions d'utilisation de l'IA",
       "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
-      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux. Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
-      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada et votre utilisation de ce système et de toute information générée est également soumise aux",
+      "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.\n\nNous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
+      "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.\n\nVotre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
     },
     "errors": {
@@ -105,6 +106,13 @@
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse."
       },
+      "textarea": {
+        "ariaLabel": {
+          "first": "Posez une question sur Canada point ca",
+          "followon": "Posez une question de suivi ou répondez",
+          "skipfo": "Passer pour poser une autre question"
+        }
+      },
       "buttons": {
         "send": "Envoyer",
         "reload": "Actualiser la page"
@@ -122,6 +130,11 @@
           "canadaca": "Canada.ca",
           "google": "Google"
         },
+        "workflow": {
+          "label": "Flux de travail :",
+          "Default": "Par défaut",
+          "DefaultWithVector": "Par défaut avec vecteur"
+        },
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
         }
@@ -133,7 +146,7 @@
         "thinkingMore": "Génération de la réponse en cours...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
-        "blockedContent": "Votre question contenait des mots qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
+        "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
         "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Posez-la différemment ci-dessous sans aucune information personnelle.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
@@ -149,12 +162,18 @@
         "needClarification": "Nécessite des précisions...",
         "yourQuestionWas": "Votre question était :",
         "yourAnswerIs": "Votre réponse est :",
-        "warning": "Avertissement :"
+        "warning": "Avertissement :",
+        "shortQueryMessage": "Votre question était trop courte.",
+        "shortQueryDetails": "Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer pour les mots que vous avez saisis.",
+        "shortQuerySearch": "Recherche Canada.ca"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
         "ai": "IA :",
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
+      },
+      "review": {
+        "referringUrl": "URL de provenance :"
       }
     },
     "expertRating": {
@@ -164,6 +183,43 @@
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
       "sentence4": "Phrase 4",
+      "noEvaluation": "Aucune évaluation disponible.",
+      "noMatchReason": "Raison de non-correspondance",
+      "createdAt": "Créé le",
+      "updatedAt": "Mis à jour le",
+      "matchedText": "Texte apparié",
+      "matchStatus": "Statut de correspondance",
+      "similarityScores": "Scores de similarité",
+      "sentenceMatchTrace": "Trace de correspondance des phrases",
+      "agentUsage": "Utilisation de l’agent",
+      "metric": "Métrique",
+      "sentenceCompareUsed": "Comparaison de phrases utilisée",
+      "fallbackCompareUsed": "Comparaison de repli utilisée",
+      "field": "Champ",
+      "value": "Valeur",
+      "fallbackCompareChecks": "Vérifications de la comparaison de repli",
+      "check": "Vérification",
+      "pass": "Réussite",
+      "details": "Détails",
+      "fallbackCompareRaw": "Données brutes de la comparaison de repli",
+      "expertFeedbackId": "ID de l'évaluation d'expert",
+      "fallbackSourceChatId": "ID de chat source pour le repli",
+      "matchedCitationInteractionId": "ID d'interaction de citation appariée",
+      "matchedCitationChatId": "ID de chat de citation appariée",
+      "agentCandidateChoices": "Choix candidats de l’agent",
+      "candidateIndex": "Index du candidat",
+      "text": "Texte",
+      "numbers": "Nombres",
+      "dates_times": "Dates/Heures",
+      "negation": "Négation",
+      "entities": "Entités",
+      "quantifiers": "Quantificateurs",
+      "conditionals": "Conditionnels",
+      "connectives": "Connecteurs",
+      "modifiers": "Modificateurs",
+      "reEvaluate": "Réévaluer",
+      "deleteEvaluation": "Supprimer l’évaluation",
+      "runEvaluation": "Lancer l’évaluation",
       "citation": "Citation",
       "options": {
         "good": "Bonne",
@@ -174,11 +230,38 @@
         "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
         "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
       },
-      "submit": "Soumettre",
+      "submit": "Soumettre l'évaluation",
       "errors": {
         "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
       },
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+    }
+  },
+  "aboutPage": {
+    "title": "À propos de Canada.ca Réponses IA",
+    "overview": {
+      "title": "Aperçu",
+      "descriptionPara1": "Réponses IA est un assistant IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent qu'elles ne trouvent pas ce dont elles ont besoin sur Canada.ca. Réponses IA fournira des réponses brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations du gouvernement fédéral.",
+      "descriptionPara2": "Lors d'essais sur invitation sur les pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement. 82 % des commentaires de plus de 250 utilisateurs des essais étaient positifs, et soulignaient les économies de temps et d'efforts, ainsi que l'évitement des appels et des visites au bureau.",
+      "descriptionPara3": "Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts humains pour produire des évaluations IA automatisées et améliorer la qualité des réponses."
+    },
+    "systemCard": {
+      "title": "Documentation de la fiche système",
+      "description": "Pour des informations détaillées sur le fonctionnement de Réponses IA, nos mesures de sécurité, nos méthodes d'évaluation et notre architecture technique, voir notre",
+      "onThisPageTitle": "Sections clés :",
+      "currentStatus": "État actuel",
+      "purposeScope": "Objectif et portée du système",
+      "architecture": "Architecture technique",
+      "riskAssessment": "Évaluation des risques et mesures de sécurité",
+      "performance": "Performance et évaluation",
+      "limitations": "Limitations et contraintes",
+      "responsibleAI": "Principes d'IA responsable et gouvernance"
+    },
+    "accessibilityUsability": {
+      "title": "Accessibilité et convivialité",
+      "designRationale": "Les utilisateurs sont submergés par les longues pages contenant plusieurs instructions et ont de la difficulté à choisir entre les liens. Beaucoup visitent les sites Web gouvernementaux depuis des téléphones mobiles. Réponses IA produit un maximum de quatre phrases par réponse, soigneusement conçues pour être aussi claires que possible. Un seul lien de citation est fourni pour vous permettre de passer à l'étape suivante et de vérifier la réponse, réduisant la surcharge de choix.",
+      "testing": "Ces choix de conception sont basés sur des données provenant de plus de 50 tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.",
+      "wcag": "Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web."
     }
   },
   "batch": {
@@ -188,7 +271,7 @@
       "links": {
         "onThisPage": "Links on this page",
         "newEvaluation": "Nouveau lot",
-        "runningBatches": "Lots en cours",
+        "runningBatches": "Lots incomplets",
         "processedBatches": "Lots traités"
       }
     },
@@ -197,7 +280,7 @@
         "title": "Nouveau lot"
       },
       "running": {
-        "title": "Lots en cours"
+        "title": "Lots incomplets"
       },
       "processed": {
         "title": "Lots traités"
@@ -209,21 +292,25 @@
       "csvRequirements": {
         "title": "Le CSV doit contenir :",
         "items": {
-          "problemDetails": "Détails du problème/Question - requis",
-          "url": "URL - optionnel",
-          "context": "Propriétés de contexte - optionnel - Si laissé vide, le lot dérivera d'abord le contexte, si fourni, il utilisera le contexte fourni pour récupérer les réponses"
+          "problemDetails": "Détails du problème / Question — requis (en-têtes : REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; insensible à la casse)",
+          "url": "URL / URL de référence — optionnel (en-têtes : URL, REFERRINGURL; insensible à la casse)"
         }
       },
       "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
       "aiService": {
         "label": "Service d'IA :",
         "openai": "OpenAI",
-        "anthropic": "Anthropic"
+        "azure": "Azure OpenAI"
       },
       "language": {
         "label": "Langue d'évaluation :",
         "english": "Anglais",
         "french": "Français"
+      },
+      "workflow": {
+        "label": "Flux de travail",
+        "Default": "Par défaut",
+        "DefaultWithVector": "Par défaut avec vecteur"
       },
       "file": {
         "label": "Sélectionner le fichier CSV de rétroaction :",
@@ -238,6 +325,7 @@
         "upload": "Télécharger le fichier",
         "startProcessing": "Démarrer le traitement"
       },
+      "processing": "Traitement du fichier, veuillez patienter...",
       "status": {
         "preparing": "Création du lot...",
         "started": "Lot démarré...",
@@ -250,14 +338,15 @@
       }
     },
     "list": {
-      
       "title": "title",
       "columns": {
         "batchName": "Nom",
+        "totals": "Totaux",
         "batchId": "ID du lot",
         "createdDate": "Date de création",
         "provider": "Fournisseur",
         "type": "Type",
+        "workflow": "Flux de travail",
         "status": "Statut",
         "action": "Action"
       },
@@ -265,40 +354,299 @@
         "csv": "CSV",
         "excel": "Excel",
         "process": "Traiter",
+        "delete": "Supprimer",
         "cancel": "Annuler"
       }
     }
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "refresh": "Actualiser"
+    "refresh": "Afficher les journaux par niveau",
+    "refreshPending": "Patientez..."
   },
   "admin": {
-    "title": "Tableau de bord d'administration de Réponses IA",
+    "title": "Administration de Réponses IA",
+    "partnerTitle": "Tableau de bord partenaire Réponses IA",
+    "backToAdmin": "Retour à l'administration",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
-      "aiAnswers": "Utiliser Réponses IA avec les options de rétroaction d'expert",
+      "partnerMenu": "Menu partenaire",
+      "aiAnswers": "Utiliser Réponses IA avec les options d'évaluation",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
-      "chatViewer": "Voir le journal complet pour un ID de chat",
+      "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
-      "eval": "Contrôler les intégrations d'évaluation",
+      "eval": "Administration des évaluations",
+  "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
-      "logout": "Se déconnecter"
+      "publicEval": "Évaluer un chat public",
+      "sessions": "Sessions actives",
+      "chatDashboard": "Voir les chats",
+      "logout": "Se déconnecter",
+      "vector": "Administration des vecteurs",
+      "scenarioOverrides": "Remplacements de scénarios"
+    },
+    "evalPage": {
+      "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
+      "similarityDescription": "Cette approche évalue automatiquement les nouvelles interactions en trouvant des interactions évaluées par des experts similaires et en transférant les notes et explications. Si la correspondance au niveau des phrases échoue, le système utilisera un repli basé sur une correspondance question+réponse très similaire avec une note élevée.",
+      "label": {
+        "expertEvaluations": "Évaluations d'experts dans le système :",
+        "nonEmptyEvaluations": "Évaluations non vides dans le système :"
+      },
+      "detailsTitle": "Processus détaillé d'évaluation",
+      "step": {
+        "initialValidation": {
+          "title": "Validation initiale",
+          "description": "Valider que l'interaction contient une question et une réponse et vérifier si une évaluation existe déjà."
+        },
+        "embeddingRetrieval": {
+          "title": "Récupération des embeddings",
+          "description": "Récupérer les embeddings vectoriels pour question+réponse, réponse seule et au niveau des phrases."
+        },
+        "findingSimilar": {
+          "title": "Recherche de contenu similaire",
+          "description": "Rechercher des interactions avec une rétroaction experte existante et une forte similarité QA; filtrer les résultats du même chat et s'assurer que des embeddings de phrases existent pour les candidats.",
+          "item": {
+            "expertFeedback": "Rétroaction experte existante",
+            "qaSimilarity": "Similarité question(s)+réponse au-dessus du seuil (p. ex. 0,85)",
+            "maxMatches": "Renvoie jusqu'à 20 correspondances (les candidats sont réordonnés par similarité)"
+          }
+        },
+        "sentenceMatching": {
+          "title": "Correspondance au niveau des phrases",
+          "item": {
+            "findMostSimilar": "Pour chaque phrase de la nouvelle interaction, trouver la phrase la plus similaire dans chaque correspondance potentielle (recherche vectorielle avec seuil par phrase)",
+            "threshold": "Conserver les correspondances au-dessus du seuil de similarité des phrases et privilégier les voisins de plus haute similarité",
+            "transfer": "Si toutes ou un nombre suffisant de phrases sont appariées, transférer la rétroaction par phrase et créer une évaluation détaillée",
+            "telemetry": "Exécuter éventuellement un agent de comparaison de phrases pour une vérification supplémentaire et capturer la télémétrie (fournisseur/modèle/latence/jetons)"
+          }
+        },
+        "citationMatch": {
+          "title": "Appariement de citation",
+          "item": {
+            "compare": "Comparer l'URL de citation source avec les interactions candidates pour trouver une correspondance exacte ou de haute confiance",
+            "score": "Noter et enregistrer une correspondance de citation (score, explication, IDs d'interaction/chat appariés)",
+            "searchPage": "Les citations de page de recherche peuvent être traitées spécialement et notées zéro"
+          }
+        },
+        "qaFallback": {
+          "title": "Repli QA à note élevée",
+          "item": {
+            "checkTop": "Si la correspondance au niveau des phrases échoue, vérifier les meilleures correspondances QA (top-N configurable) pour celles ayant de bonnes notes d'expert",
+            "citationCheck": "Pour les candidats, effectuer un appariement de citation et éventuellement exécuter un agent de comparaison de repli pour s'assurer que la réponse candidate couvre suffisamment la source",
+            "useQaOnly": "Si un candidat passe les vérifications, créer une évaluation en utilisant la correspondance QA (repli QA à note élevée) et enregistrer les métadonnées de repli et les traces candidates"
+          }
+        },
+        "fallbackCompare": {
+          "title": "Vérifications de comparaison de repli",
+          "item": {
+            "agent": "Un petit agent de comparaison peut être invoqué pour vérifier qu'une candidate de repli correspond suffisamment à la réponse source; les résultats, la sortie brute et les vérifications analysées sont enregistrés",
+            "record": "L'utilisation de la comparaison et ses métadonnées (fournisseur/modèle/latence/jetons) sont stockées sur l'évaluation pour la traçabilité"
+          }
+        },
+        "creation": {
+          "title": "Création de l'évaluation et notation",
+          "item": {
+            "createFeedback": "Créer un nouvel objet de rétroaction d'expert basé sur la rétroaction de l'interaction appariée ou une rétroaction de repli générée (type 'ai')",
+            "computeScore": "Calculer le score total à partir des scores par phrase et du score de citation (pondérations par défaut). Si aucune note n'existe, totalScore peut être null.",
+            "mapFeedback": "Mapper la rétroaction à la nouvelle interaction (niveau phrase ou QA uniquement) et enregistrer la trace de correspondance des phrases et les scores de similarité",
+            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit",
+            "updateInteraction": "Mettre à jour l'interaction avec la nouvelle référence d'évaluation (autoEval)"
+          }
+        },
+        "noMatch": {
+          "title": "Aucun appariement / Cas de rejet",
+          "item": {
+            "recordNoMatch": "Si aucune correspondance ni répli accepted, créer une évaluation de non-correspondance enregistrant les types de raisons et les causes de rejet par phrase",
+            "trace": "Les évaluations de non-correspondance incluent une trace par phrase et une chronologie pour que les opérateurs puissent inspecter pourquoi les candidats ont été rejetés"
+          }
+        },
+        "timeline": {
+          "title": "Chronologie des étapes et télémétrie",
+          "item": {
+            "record": "Le worker enregistre une chronologie étape par étape (étape, statut, code, message, horodatage) dans l'évaluation pour le diagnostic",
+            "telemetry": "La télémétrie des agents et du VectorService (latence, jetons, modèle) est capturée lorsque cela est applicable"
+          }
+        }
+      },
+      "metrics": {
+        "title": "Métriques d'évaluation",
+        "total": "Total des évaluations",
+        "processed": "Évaluations traitées",
+        "hasMatches": "Évaluations avec correspondances",
+        "noMatchReasons": "Raisons de non-correspondance",
+        "reasonLabel": "Raison",
+        "countLabel": "Nombre",
+        "unknown": "inconnu",
+        "noMatchNone": "Aucune donnée de raison de non-correspondance disponible.",
+        "fallbackTypes": "Types de repli",
+        "fallbackLabel": "Repli",
+        "fallbackNone": "Aucune donnée d'utilisation de repli disponible.",
+        "refresh": "Actualiser les métriques",
+        "loading": "Chargement des métriques..."
+      },
+      "date": {
+        "startLabel": "Date de début",
+        "endLabel": "Date de fin"
+      },
+      "button": {
+        "processing": "Traitement...",
+        "generate": "Générer des évaluations",
+        "deleteAll": "Supprimer les évaluations",
+        "deleteEmpty": "Supprimer les évaluations vides"
+      },
+      "progress": {
+        "processed": "Traité",
+        "failed": "Échouées",
+        "remaining": "Restant",
+        "duration": "Durée",
+        "autoProcessing": "Traitement automatique actif",
+        "regeneratingAll": "Régénération de toutes les évaluations"
+      }
+    },
+    "filters": {
+      "title": "Filtres - sélectionnez puis Appliquer pour voir",
+      "clearAll": "Effacer",
+      "apply": "Appliquer",
+      "loading": "Chargement...",
+      "dateRange": "Plage de dates",
+      "days": "jours",
+      "allTime": "Tout le temps",
+      "referringUrl": "URL de référence",
+      "referringUrlPlaceholder": "Entrez l'URL de référence...",
+      "department": "Département",
+      "allDepartments": "Tous les départements",
+      "users": "Utilisateurs",
+      "allUsers": "Tous",
+      "publicUsers": "Public",
+      "adminUsers": "Administrateur",
+      "activeFilters": "Filtres actifs",
+      "noActiveFilters": "Aucun filtre actif"
+    },
+    "dateRange": {
+      "title": "Sélectionner la période",
+      "filterType": "Type de filtre de date",
+      "presetRanges": "Plages prédéfinies",
+      "customRange": "Plage personnalisée",
+      "chooseRange": "Choisir une plage",
+      "startDateTime": "Date et heure de début",
+      "endDateTime": "Date et heure de fin",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "thisWeek": "Cette semaine",
+      "currentSelection": "Sélection actuelle",
+      "period": "Période:",
+      "from": "De:",
+      "to": "À:"
+    },
+    "publicEval": {
+      "title": "Évaluation publique",
+      "chatId": "ID de chat",
+      "department": "Ministère",
+      "date": "Date",
+      "sessionsTitle": "Sessions actives",
+      "sessions": {
+        "chatId": "ID de chat",
+        "lastSeen": "Dernière activité",
+        "requests": "Requêtes",
+        "errors": "Erreurs",
+        "lastLatency": "Dernière latence (ms)",
+        "avgLatency": "Latence moyenne (ms)",
+        "errorLoading": "Échec du chargement des sessions : {status} {text}",
+        "errorGeneric": "Erreur : {message}"
+      }
+    },
+    "session": {
+      "title": "Sessions",
+      "sessionId": "ID de session",
+      "creditsLeft": "Crédits restants",
+      "chatId": "ID de chat",
+      "lastSeen": "Dernière activité",
+      "requests": "Requêtes",
+      "errors": "Erreurs",
+      "errorTypes": {
+        "redaction": "Rédactions",
+        "shortQuery": "Questions trop courtes",
+        "other": "Autres erreurs"
+      },
+      "lastLatency": "Dernière latence (ms)",
+      "avgLatency": "Latence moyenne (ms)",
+      "rpm": "Requêtes / minute",
+      "errorLoading": "Échec du chargement des sessions : {status} {text}",
+      "errorGeneric": "Erreur : {message}"
+    },
+    "chatDashboard": {
+      "title": "Tableau de bord de chat",
+      "description": "Filtrez les interactions de chat et explorez les détails dans le tableau ci-dessous.",
+      "loading": "Chargement des chats...",
+      "error": "Impossible de charger les données de chat.",
+      "noResults": "Appliquez des filtres pour charger les interactions de chat.",
+      "resultsSummary": "Affichage de {count} chats",
+      "totalCount": "Total des chats correspondants : {total}",
+      "searchLabel": "Rechercher par ID de chat :",
+      "searchPlaceholder": "Entrez l'ID de chat...",
+      "columns": {
+        "chatId": "ID de chat",
+        "department": "Ministère",
+        "pageLanguage": "Page",
+        "expertEmail": "Courriel de l'expert",
+        "creatorEmail": "Courriel du créateur",
+        "language": "Langue",
+        "questionCount": "Questions",
+        "createdAt": "Créé",
+        "referringUrl": "URL de référence",
+        "date": "Date et heure"
+      }
+    },
+    "evalDashboard": {
+      "title": "Tableau de bord des évaluations",
+      "description": "Filtrez les évaluations et explorez les détails dans le tableau ci-dessous.",
+      "loading": "Chargement des évaluations...",
+      "error": "Impossible de charger les données d'évaluation.",
+      "resultsSummary": "Total des évaluations correspondantes : {count}",
+      "totalCount": "Total des lignes d'évaluation dans la plage : {total}",
+      "searchLabel": "Rechercher par ID de chat ou d'interaction :",
+      "searchPlaceholder": "Entrez l'ID...",
+      "columnFilterPlaceholder": "Filtrer",
+      "columns": {
+        "chatId": "ID de chat",
+        "interactionId": "ID d'interaction",
+        "department": "Ministère",
+        "pageLanguage": "Page",
+        "autoEval": "Éval. automatique",
+        "expertEval": "Éval. expert",
+        "expertEmail": "Courriel de l'expert",
+        "processed": "Traité",
+        "matches": "Correspondances trouvées",
+        "fallback": "Repli",
+        "any": "Tous",
+        "reason": "Raison de non-correspondance",
+        "date": "Date"
+      }
     },
     "deleteChat": {
-      "title": "Supprimer une conversation avec des rétroactions incorrectes",
+      "title": "Supprimer un chat des journaux",
       "idLabel": "ID de chat",
-      "button": "Supprimer la conversation",
+      "button": "Supprimer le chat",
       "confirm": "Confirmer la suppression",
       "cancel": "Annuler",
       "loading": "Suppression en cours...",
-      "success": "Conversation supprimée avec succès",
-      "error": "Échec de la suppression de la conversation : "
+      "success": "Chat supprimé avec succès",
+      "error": "Échec de la suppression du chat : "
+    },
+    "deleteExpertEval": {
+      "title": "Supprimer une évaluation d'expert",
+      "idLabel": "ID de chat",
+      "button": "Supprimer l'évaluation d'expert",
+      "confirm": "Confirmer la suppression",
+      "cancel": "Annuler",
+      "loading": "Suppression en cours...",
+      "success": "Évaluation d'expert supprimée avec succès",
+      "error": "Échec de la suppression de l'évaluation d'expert : "
     },
     "chatLogs": {
-      "title": "Télécharger les journaux de chat récents",
+      "title": "Télécharger les journaux de chat",
       "timeRange": "Plage de temps",
       "last1Day": "Dernier jour",
       "last7Days": "7 derniers jours",
@@ -313,11 +661,11 @@
       "downloadCsv": "Télécharger CSV",
       "downloadExcel": "Télécharger Excel",
       "found": "Trouvé",
-      "interactionsFound": "interactions de chat. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
-      "selectRange": "Sélectionnez une plage de temps et cliquez sur « Obtenir les journaux » pour voir l'historique des conversations",
+      "interactionsFound": "chats. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
       "date": "Date",
       "chatId": "ID de chat",
-      "interactions": "Interactions"
+      "interactions": "Interactions",
+      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)"
     }
   },
   "signup": {
@@ -349,7 +697,54 @@
     "invalidCredentials": "Courriel ou mot de passe invalide",
     "form": {
       "submitting": "Connexion en cours...",
-      "signupLink": "Créer un compte"
+      "signupLink": "Créer un compte",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signinLink": "Se connecter"
+    }
+      ,
+  "2fa": {
+    "title": "Authentification à deux facteurs",
+    "code": "Code de vérification",
+    "verify": "Vérifier le code",
+    "resend": "Renvoyer le code",
+  "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
+    "send": "Envoyer le code de vérification",
+    "sendError": "Impossible d'envoyer le code de vérification",
+    "invalidCode": "Code de vérification invalide"
+  }
+  },
+  "reset": {
+    "request": {
+      "title": "Réinitialiser votre mot de passe",
+      "send": "Envoyer le courriel de réinitialisation",
+      "sending": "Envoi...",
+      "sent": "Si ce compte existe, nous avons envoyé un courriel de réinitialisation.",
+      "error": "Échec de la demande de réinitialisation"
+    },
+    "verify": {
+      "title": "Vérifier la réinitialisation",
+      "instructions": "Entrez un code de vérification depuis votre application d'authentification ou demandez un code à usage unique par courriel.",
+      "instructionsNoOtp": "Cliquez sur Continuer pour définir un nouveau mot de passe.",
+      "continue": "Continuer",
+      "code": "Code de vérification",
+      "sendOtp": "Envoyer le code par courriel",
+      "otpSent": "Un code de vérification a été envoyé à votre adresse courriel",
+      "otpSendError": "Échec de l'envoi du code de vérification",
+      "next": "Suivant",
+      "invalidLink": "Lien de réinitialisation invalide ou manquant"
+    },
+    "complete": {
+      "title": "Définir un nouveau mot de passe",
+      "code": "Code de vérification",
+      "password": "Nouveau mot de passe",
+      "confirm": "Confirmer le nouveau mot de passe",
+      "submit": "Définir le mot de passe",
+      "submitting": "Envoi...",
+      "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
+      "error": "Échec de la réinitialisation du mot de passe",
+      "invalid": "Lien de réinitialisation invalide",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
     }
   },
   "users": {
@@ -375,6 +770,14 @@
   },
   "settings": {
     "title": "Paramètres",
+    "liveGraph": {
+      "title": "Live Graph",
+      "description": "Modifiez les valeurs de workflow utilisées par la visualisation Live Graph.",
+      "save": "Enregistrer Live Graph"
+    },
+    "defaultWorkflow": {
+      "label": "Workflow par défaut"
+    },
     "statusLabel": "Statut du service",
     "statuses": {
       "available": "Disponible",
@@ -383,7 +786,35 @@
     "deploymentModeLabel": "Mode de déploiement",
     "deploymentMode": {
       "cds": "CDS (travailleur en arrière-plan)",
-      "vercel": "Vercel (attendre la fin de l'évaluation)"
+      "vercel": "Vercel (attendre la fin de l'évaluation)",
+      "serverless": "Serverless (attendre la fin de l'évaluation)"
+    },
+    "vectorServiceTypeLabel": "Type de service de vecteurs",
+    "vectorServiceType": {
+      "imvectordb": "IMVectorDB (local)",
+      "documentdb": "DocumentDB (AWS)"
+    },
+    "providerLabel": "Fournisseur",
+    "provider": {
+      "openai": "OpenAI",
+      "azure": "Azure OpenAI"
+    },
+    "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données",
+    "twoFA": {
+      "title": "Authentification à deux facteurs",
+      "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
+      "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
+    },
+    "site": {
+      "baseUrl": "URL de base (frontend)"
+    },
+    "session": {
+      "title": "Paramètres de session",
+      "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
+      "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
+      "rateLimitCapacity": "Capacité du quota (crédits)",
+      "rateLimitRefill": "Recharge du quota (crédits/min)",
+      "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)"
     }
   },
   "outage": {
@@ -392,8 +823,87 @@
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
+    "deleting": "Suppression en cours...",
+    "loading": "Chargement...",
+    "processing": "Traitement...",
+    "error": "Erreur",
     "yes": "Oui",
     "no": "Non"
+  },
+  "eval": {
+    "metric": "Métrique",
+    "value": "Valeur",
+    "metrics": {},
+    "sentenceTrace": "Trace de phrases",
+    "sourceSentence": "Phrase source",
+    "matchStatus": "Statut d'appariement",
+    "matchedSentence": "Phrase appariée",
+    "similarity": "Similarité",
+    "explanation": "Explication",
+    "eval": "Évaluation",
+    "details": "Détails",
+    "reRun": "Relancer",
+    "reRunning": "Relance en cours...",
+    "noMatch": "Aucune correspondance trouvée pour cette interaction.",
+    "reason": "Raison",
+    "processed": "Traité",
+    "hasMatches": "Correspondances trouvées",
+    "fallback": "Repli",
+    "expertFeedbackId": "ID de rétroaction d'expert",
+    "noMatchReason": "Raison de non-correspondance",
+    "fallbackSourceChatId": "ID de chat source pour le repli",
+    "matchedCitationInteractionId": "ID d'interaction de citation appariée",
+  "matchedCitationChatId": "ID de chat de citation appariée",
+  "stageTimeline": "Chronologie des étapes",
+  "rawTimeline": "Chronologie brute (JSON)",
+  "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "createdAt": "Créé le",
+    "updatedAt": "Mis à jour le"
+  },
+  "reviewPanels": {
+    "sentence": "Phrase",
+    "expertScore": "Note de l'expert",
+    "feedback": "Rétroaction",
+    "expertFeedbackTitle": "Évaluation d'expert",
+    "expertEmail": "Courriel de l'expert",
+    "deleteExpertFeedback": "Supprimer l'évaluation d'expert",
+    "publicFeedbackTitle": "Rétroaction publique",
+    "autoEvalTitle": "Évaluation automatisée",
+    "explanation": "Explication",
+    "score": "Note",
+    "reason": "Raison",
+    "publicComment": "Commentaire public",
+    "notAvailable": "N/D",
+    "evaluation": "Évaluation",
+    "processed": "Traité",
+    "hasMatches": "Correspondances trouvées",
+    "fallback": "Repli",
+    "none": "aucun",
+    "sourceSentenceIndex": "Index de la phrase source",
+    "sourceText": "Texte source",
+    "matchedChatId": "ID de chat apparié",
+    "matchedSentenceIndex": "Index de la phrase appariée",
+    "similarity": "Similarité",
+    "matchedScore": "Score apparié",
+    "noSentenceTraces": "Aucune trace de correspondance de phrase disponible.",
+    "citation": "Citation",
+    "totalScore": "Score total",
+    "suggestedCitation": "URL de citation suggérée",
+    "fallbackDetails": "Détails du repli",
+    "fallbackType": "Type de repli",
+  "timestamp": "Horodatage",
+  "stage": "Étape",
+  "status": "Statut",
+  "code": "Code",
+  "message": "Message",
+    "fallbackCandidateAnswer": "Réponse candidate de repli",
+    "fallbackCandidateCitation": "Citation du candidat",
+    "fallbackCompareMeta": "Métadonnées de la comparaison de repli",
+    "fallbackCompareRaw": "Données brutes de la comparaison de repli",
+    "agentSelections": "Sélections de l'agent",
+    "agentSelectedIndex": "Index sélectionné par l'agent",
+    "agentSelectionExplanation": "Explication de la sélection de l'agent",
+    "neverStale": "Toujours valide"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
@@ -402,6 +912,8 @@
       "title": "Résultats",
       "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
+      "inputTokens": "Jetons d'entrée",
+      "outputTokens": "Jetons de sortie",
       "totalQuestions": "Total des questions",
       "sessionsByQuestionCount": {
         "singleQuestion": "Sessions à une question",
@@ -409,10 +921,10 @@
         "threeQuestions": "Sessions à trois questions"
       },
       "answerTypes": {
-        "normal": "Réponses normales",
+        "normal": "Réponses GC",
         "clarifyingQuestion": "Questions de clarification",
-        "ptMuni": "Provincial/Municipal",
-        "notGc": "Non gouvernement du Canada"
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Réponses hors du mandat du GC"
       },
       "metric": "Métrique",
       "count": "Nombre",
@@ -428,6 +940,7 @@
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur",
+        "hasErrorPercent": "Contient une erreur (%)",
         "harmful": "Codé comme nuisible"
       },
       "aiScored": {
@@ -443,14 +956,75 @@
         "description": "Rétroaction oui-non des utilisateurs finaux",
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
-        "unhelpful": "Inutile (non)"
+        "unhelpful": "Problème (non)",
+        "reasonTableTitle": "Répartition des raisons des commentaires publics",
+        "reason": "Raison"
       },
       "byDepartment": {
-        "title": "Répartition par département",
-        "totalQuestions": "Total des questions",
+        "title": "Répartition par département des évaluations d'experts",
+        "department": "Département",
+        "totalQuestions": "Total des évaluations d'experts",
         "totalSessions": "Sessions totales",
         "expertTotal": "Évaluations d'experts"
       }
+    }
+  },
+  "vector": {
+    "title": "Administration des vecteurs",
+    "indexManagement": "Gestion des index de vecteurs",
+    "manageDescription": "Gérez les index de vecteurs et consultez les statistiques de la base de données de vecteurs.",
+    "loading": "Chargement...",
+    "fetchStats": "Afficher les statistiques des vecteurs",
+    "reinitializeIndex": "Réinitialiser l'index",
+    "createIndex": "Créer un index de vecteurs",
+    "embeddingManagement": "Gestion des embeddings",
+    "embeddingDescription": "Traitez les interactions pour générer des embeddings.",
+    "generateEmbeddings": "Générer les embeddings",
+    "regenerateEmbeddings": "Régénérer les embeddings",
+    "regenerating": "Régénération...",
+    "processing": "Traitement...",
+    "remaining": "Restant",
+    "autoProcessingActive": "Traitement automatique actif",
+    "similarChats": "Trouver des chats similaires",
+    "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
+    "chatIdPlaceholder": "Entrez l'ID du chat",
+    "getSimilarChats": "Obtenir les chats similaires",
+    "loadingSimilarChats": "Chargement des chats similaires..."
+  },
+  "scenarioOverrides": {
+    "title": "Remplacements de scénarios",
+    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester.",
+    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO, copiez la version modifiée pour eux, et ils déploieront les changements dans le produit Réponses IA en direct.",
+    "sections": {
+      "editOverride": "Modifier le remplacement",
+      "visualDiff": "Différence visuelle (côte à côte)"
+    },
+    "table": {
+      "department": "Ministère",
+      "defaultLabel": "Texte du scénario par défaut",
+      "overrideLabel": "Texte de remplacement",
+      "enabled": "Appliquer les modifications",
+      "showDiff": "Afficher la différence",
+      "hideDiff": "Masquer la différence",
+      "diffLabel": "Différence",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "status": {
+      "saving": "Enregistrement...",
+      "saveSuccess": "Remplacement enregistré.",
+      "saveError": "Impossible d’enregistrer le remplacement.",
+      "loadError": "Impossible de charger les remplacements."
+    },
+    "buttons": {
+      "save": "Enregistrer le remplacement",
+      "reset": "Réinitialiser"
+    },
+    "error": {
+      "fallback": "Une erreur est survenue lors du chargement de cette page."
+    },
+    "empty": {
+      "never": "Jamais",
+      "defaultMissing": "Texte par défaut indisponible."
     }
   }
 }

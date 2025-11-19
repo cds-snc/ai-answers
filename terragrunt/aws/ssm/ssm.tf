@@ -107,10 +107,32 @@ resource "aws_ssm_parameter" "google_api_key" {
   }
 }
 
+resource "aws_ssm_parameter" "gc_notify_api_key" {
+  name  = "gc_notify_api_key"
+  type  = "SecureString"
+  value = var.gc_notify_api_key
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
 resource "aws_ssm_parameter" "google_search_engine_id" {
   name  = "google_search_engine_id"
   type  = "SecureString"
   value = var.google_search_engine_id
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_ssm_parameter" "adobe_analytics_url" {
+  name  = "adobe_analytics_url"
+  type  = "SecureString"
+  value = var.adobe_analytics_url
 
   tags = {
     CostCentre = var.billing_code

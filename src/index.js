@@ -10,8 +10,42 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
 import DataStoreService from './services/DataStoreService.js';
+import { initFingerprint } from './utils/fingerprint.js';
 // Add the icon packs to the library
 library.add(fas, far);
+
+// Load Adobe Analytics script synchronously BEFORE React renders
+// This ensures _satellite is available before any tracking calls
+const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+if (adobeUrl) {
+  const script = document.createElement('script');
+  script.src = adobeUrl;
+  script.async = false; // Load synchronously to ensure it's ready before React renders
+  document.head.insertBefore(script, document.head.firstChild); // Insert at the very top of head
+  // Also add a small inline script at the bottom of the body that calls
+  // _satellite.pageBottom() once the window has finished loading. We wait
+  // for the load event to ensure document.body exists and the Adobe
+  // library has been executed.
+  try {
+    const bottomScript = document.createElement('script');
+    bottomScript.type = 'text/javascript';
+    bottomScript.text = '_satellite.pageBottom();';
+    // Append at load so body is present and _satellite is ready
+    window.addEventListener('load', () => {
+      try {
+        if (document.body) {
+          document.body.appendChild(bottomScript);
+        }
+      } catch (e) {
+        // swallow errors to avoid breaking bootstrap
+        console.warn('Failed to append Adobe pageBottom script to body', e);
+      }
+    });
+  } catch (e) {
+    // swallow errors during bootstrap so they don't prevent app render
+    console.warn('Failed to prepare Adobe pageBottom script', e);
+  }
+}
 
 const renderApp = () => {
   const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -21,6 +55,19 @@ const renderApp = () => {
     </React.StrictMode>
   );
 };
+// Start deterministic fingerprint initialization early at bootstrap so
+// service modules can await `window.fpInitPromise` to avoid timing races.
+// We don't block rendering on it, but kickoff as soon as possible.
+try {
+  if (typeof window !== 'undefined' && typeof initFingerprint === 'function') {
+    // expose the promise so any module can await: await window.fpInitPromise
+    // Note: some test runners may not have window; guard accordingly.
+    window.fpInitPromise = initFingerprint();
+  }
+} catch (e) {
+  // swallow errors during bootstrap so they don't prevent app render
+  console.warn('Fingerprint init failed to start during bootstrap', e);
+}
 
 if (process.env.REACT_APP_ENV === 'production') {
   DataStoreService.checkDatabaseConnection()

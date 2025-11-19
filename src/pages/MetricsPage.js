@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { usePageContext } from '../hooks/usePageParam.js';
-import { AdminRoute } from '../components/RoleProtectedRoute.js';
+import { RoleProtectedRoute } from '../components/RoleProtectedRoute.js';
 import MetricsDashboard from '../components/admin/MetricsDashboard.js';
 
 const MetricsPage = ({ lang = 'en' }) => {
@@ -27,11 +27,11 @@ const MetricsPage = ({ lang = 'en' }) => {
   );
 };
 
-// Wrap the component with AdminRoute for protection
+// Wrap the component with RoleProtectedRoute for admin and partner protection
 export default function ProtectedMetricsPage(props) {
   return (
-    <AdminRoute lang={props.lang}>
+    <RoleProtectedRoute roles={["admin", "partner"]} lang={props.lang}>
       <MetricsPage {...props} />
-    </AdminRoute>
+    </RoleProtectedRoute>
   );
-} 
+}

@@ -35,31 +35,7 @@ class ExportService {
     }
   }
 
-  static async exportBatchResults(batchId, format = 'json') {
-    try {
-      const response = await fetch(getApiUrl(`db-batch-retrieve/export?batchId=${batchId}&format=${format}`), {
-        headers: AuthService.getAuthHeader()
-      });
-      
-      if (!response.ok) throw new Error('Failed to export batch results');
-      
-      const blob = await response.blob();
-      const filename = `batch-${batchId}-${new Date().toISOString()}.${format}`;
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting batch results:', error);
-      throw error;
-    }
-  }
+  
 
   static jsonToFlatTable(data, headers) {
     // Ensure data is an array and not null/undefined
@@ -297,8 +273,9 @@ class ExportService {
         dataLabel: 'expertFeedback.expertCitationUrl',
         outputLabel: 'expertFeedback.expertCitationUrl',
       },
-      { dataLabel: 'expertFeedback.publicFeedbackReason', outputLabel: 'expertFeedback.publicFeedbackReason' },
-      { dataLabel: 'expertFeedback.publicFeedbackScore', outputLabel: 'expertFeedback.publicFeedbackScore' }
+      { dataLabel: 'publicFeedback.feedback', outputLabel: 'publicFeedback.feedback' },
+      { dataLabel: 'publicFeedback.publicFeedbackReason', outputLabel: 'publicFeedback.publicFeedbackReason' },
+      { dataLabel: 'publicFeedback.publicFeedbackScore', outputLabel: 'publicFeedback.publicFeedbackScore' }
     ];
     const type = filename.endsWith('.csv') ? 'csv' : filename.endsWith('.xlsx') ? 'xlsx' : 'xlsx';
     return ExportService.toSpreadsheet(items, headerOrder, type, filename);

@@ -21,7 +21,33 @@ const userSchema = new mongoose.Schema({
   active: {
     type: Boolean,
     default: true
+  },
+  // Two factor authentication fields
+  twoFACode: {
+    type: String,
+    default: null,
+  },
+  twoFAExpires: {
+    type: Date,
+    default: null,
   }
+  ,
+  // If using otplib TOTP flow, store a per-user secret
+  twoFASecret: {
+    type: String,
+    default: null,
+  },
+  // Password reset fields
+  resetPasswordToken: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
+  },
+  // Fallback email OTP for password reset (if user doesn't use TOTP/WebAuthn)
+  // (legacy) email OTP fields removed — email OTP fallback is no longer used
 }, {
   timestamps: true,
   versionKey: false,

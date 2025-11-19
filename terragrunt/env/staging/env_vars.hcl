@@ -3,4 +3,6 @@ inputs = {
   env              = "staging"
   cost_center_code = "ai-answers-staging"
   domain           = "ai-answers.cdssandbox.xyz"
+  san              = ["*.ai-answers.cdssandbox.xyz"]
+  altdomain        = "reponses-ia.cdssandbox.xyz"
 }

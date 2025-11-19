@@ -1,7 +1,46 @@
-import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
+﻿import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {
+  static async getPublicSetting(key, defaultValue = null) {
+    try {
+      const response = await fetch(getApiUrl(`setting-public-handler?key=${encodeURIComponent(key)}`));
+      if (!response.ok) throw new Error(`Failed to get public setting: ${key}`);
+      const data = await response.json();
+      return data.value !== undefined ? data.value : defaultValue;
+    } catch (error) {
+      console.error(`Error getting public setting '${key}':`, error);
+      return defaultValue;
+    }
+  }
+  static async getSetting(key, defaultValue = null) {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
+      if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
+      const data = await response.json();
+      return data.value !== undefined ? data.value : defaultValue;
+    } catch (error) {
+      console.error(`Error getting setting '${key}':`, error);
+      return defaultValue;
+    }
+  }
+
+  static async setSetting(key, value) {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('setting-handler'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ key, value })
+      });
+      if (!response.ok) throw new Error(`Failed to set setting: ${key}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error setting setting '${key}':`, error);
+      throw error;
+    }
+  }
   static async checkDatabaseConnection() {
     if (process.env.REACT_APP_ENV !== 'production') {
       console.log('Skipping database connection check in development environment');
@@ -22,47 +61,7 @@ class DataStoreService {
     }
   }
 
-  static async persistBatch(batchData) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-batch'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(batchData)
-      });
-      
-      if (!response.ok) throw new Error('Failed to persist batch');
-      return await response.json();
-    } catch (error) {
-      console.error('Error persisting batch:', error);
-      throw error;
-    }
-  }
-
-  static async getBatchList() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-batch-list'));
-      
-      if (!response.ok) throw new Error('Failed to get batch list');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting batch list:', error);
-      throw error;
-    }
-  }
-
-  static async getBatch(batchId) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-batch-retrieve?batchId=${batchId}`));
-      
-      if (!response.ok) throw new Error('Failed to retrieve batch');
-      return await response.json();
-    } catch (error) {
-      console.error('Error retrieving batch:', error);
-      throw error;
-    }
-  }
+  // ...existing code...
 
   static async persistInteraction(interactionData) {
     try {
@@ -85,58 +84,10 @@ class DataStoreService {
   }
 
   
-  static async persistFeedback(expertFeedback, chatId, userMessageId) {
-    // Standardize expert feedback format - only accept new format
-    let formattedExpertFeedback = null;
-    if (expertFeedback) {
-      formattedExpertFeedback = {
-        ...expertFeedback, // Spread the incoming feedback object
-        totalScore: expertFeedback.totalScore ?? null,
-        sentence1Score: expertFeedback.sentence1Score ?? null,
-        sentence2Score: expertFeedback.sentence2Score ?? null,
-        sentence3Score: expertFeedback.sentence3Score ?? null,
-        sentence4Score: expertFeedback.sentence4Score ?? null,
-        citationScore: expertFeedback.citationScore ?? null,
-        answerImprovement: expertFeedback.answerImprovement || '',
-        expertCitationUrl: expertFeedback.expertCitationUrl || '',
-        feedback: expertFeedback.feedback, // Directly use the feedback string provided by the component
-        publicFeedbackReason: expertFeedback.publicFeedbackReason || '',
-        publicFeedbackScore: expertFeedback.publicFeedbackScore ?? null
-        // Remove isPositive if it was part of expertFeedback object, as 'feedback' string is now canonical
-      };
-      // Ensure isPositive is not part of the final object if feedback string exists
-      
-    }
-    console.log('User feedback:', JSON.stringify(formattedExpertFeedback, null, 2));
-
-    try {
-      const response = await fetch(getApiUrl('db-persist-feedback'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatId: chatId,
-          interactionId: userMessageId,
-          expertFeedback: formattedExpertFeedback
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to log feedback');
-      }
-
-      console.log('Feedback logged successfully to database');
-    } catch (error) {
-      console.log('Development mode: Feedback not logged to console', {
-        ...formattedExpertFeedback
-      });
-    }
-
-  }
+  
   static async getChatSession(sessionId) {
     try {
-      const response = await fetch(getApiUrl(`db-chat-session?sessionId=${sessionId}`));
+      const response = await fetch(getApiUrl(`chat-session`));
       if (!response.ok) throw new Error('Failed to get chat session');
       return await response.json();
     } catch (error) {
@@ -145,22 +96,9 @@ class DataStoreService {
     }
   }
 
-  static async getChatLogs(filters = {}) {
-    try {
-      const queryParams = new URLSearchParams(filters).toString();
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat-logs?${queryParams}`));
-      if (!response.ok) throw new Error('Failed to get chat logs');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting chat logs:', error);
-      throw error;
-    }
-  }
-
   static async getLogs(chatId) {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl(`db-log?chatId=${chatId}`));
-      
       if (!response.ok) throw new Error('Failed to get logs');
       return await response.json();
     } catch (error) {
@@ -169,59 +107,11 @@ class DataStoreService {
     }
   }
 
-  static async getBatchStatus(batchId, aiProvider) {
-    try {
-      const response = await AuthService.fetchWithAuth(
-        getProviderApiUrl(aiProvider, `batch-status?batchId=${batchId}`)
-      );
-      const data = await response.json();
-      return { batchId, status: data.status };
-    } catch (error) {
-      console.error(`Error fetching status for batch ${batchId}:`, error);
-      return { batchId, status: 'Error' };
-    }
-  }
-
-  static async cancelBatch(batchId, aiProvider) {
-    try {
-      const response = await AuthService.fetchWithAuth(
-        getProviderApiUrl(aiProvider, `batch-cancel?batchId=${batchId}`)
-      );
-      if (!response.ok) throw new Error('Failed to cancel batch');
-      return await response.json();
-    } catch (error) {
-      console.error('Error canceling batch:', error);
-      throw error;
-    }
-  }
-
-  static async getBatchStatuses(batches) {
-    try {
-      const statusPromises = batches.map(async (batch) => {
-        if (!batch.status || batch.status !== 'processed') {
-          const statusResult = await this.getBatchStatus(batch.batchId, batch.aiProvider);
-          if (statusResult.status === 'not_found') {
-            await this.cancelBatch(batch.batchId, batch.aiProvider);
-          }
-          return statusResult;
-        } else {
-          return Promise.resolve({ batchId: batch.batchId, status: batch.status });
-        }
-      });
-      const statusResults = await Promise.all(statusPromises);
-      return batches.map((batch) => {
-        const statusResult = statusResults.find((status) => status.batchId === batch.batchId);
-        return { ...batch, status: statusResult ? statusResult.status : 'Unknown' };
-      });
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
-      throw error;
-    }
-  }
+  // ...existing code...
 
   static async deleteChat(chatId) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-delete-chat?chatId=${chatId}`), {
+  const response = await AuthService.fetchWithAuth(getApiUrl(`chat-delete?chatId=${chatId}`), {
         method: 'DELETE'
       });
       
@@ -236,73 +126,15 @@ class DataStoreService {
     }
   }
 
-  static async getSiteStatus() {
-    try {
-      const response = await fetch(getApiUrl('db-public-site-status'));
-      if (!response.ok) throw new Error('Failed to get site status');
-      const data = await response.json();
-      return data.value || 'unavailable';
-    } catch (error) {
-      console.error('Error getting site status:', error);
-      return 'unavailable';
-    }
-  }
 
-  static async setSiteStatus(status) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'siteStatus', value: status })
-      });
-      if (!response.ok) throw new Error('Failed to set site status');
-      return await response.json();
-    } catch (error) {
-      console.error('Error setting site status:', error);
-      throw error;
-    }
-  }
-
-  // Add deployment mode setting
-  static async getDeploymentMode() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings?key=deploymentMode')); // Use fetchWithAuth
-      if (!response.ok) throw new Error('Failed to get deployment mode');
-      const data = await response.json();
-      return data.value || 'CDS';
-    } catch (error) {
-      console.error('Error getting deployment mode:', error);
-      return 'CDS';
-    }
-  }
-
-  static async setDeploymentMode(mode) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'deploymentMode', value: mode })
-      });
-      if (!response.ok) throw new Error('Failed to set deployment mode');
-      return await response.json();
-    } catch (error) {
-      console.error('Error setting deployment mode:', error);
-      throw error;
-    }
-  }
-
-  static async generateEmbeddings({ lastProcessedId = null, regenerateAll = false } = {}) {
+  static async generateEmbeddings({ lastProcessedId = null, regenerateAll = false, provider = "openai" } = {}) {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-embeddings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ lastProcessedId, regenerateAll })
+        body: JSON.stringify({ lastProcessedId, regenerateAll, provider })
       });
       if (!response.ok) throw new Error('Failed to generate embeddings');
       return await response.json();
@@ -312,34 +144,7 @@ class DataStoreService {
     }
   }
 
-  static async generateEvals({ lastProcessedId = null, regenerateAll = false } = {}) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ lastProcessedId, regenerateAll })
-      });
-      if (!response.ok) throw new Error('Failed to generate evals');
-      return await response.json();
-    } catch (error) {
-      console.error('Error generating evals:', error);
-      throw error;
-    }
-  }
 
-  static async getExpertFeedbackCount() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-expert-feedback-count'));
-      if (!response.ok) throw new Error('Failed to get expert feedback count');
-      const data = await response.json();
-      return data.count;
-    } catch (error) {
-      console.error('Error getting expert feedback count:', error);
-      throw error;
-    }
-  }
   static async getTableCounts() {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl('db-table-counts'));
@@ -391,6 +196,53 @@ class DataStoreService {
       throw error;
     }
   }
+
+  static async getPublicEvalList() {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-public-eval-list'));
+      if (!response.ok) throw new Error('Failed to fetch public evaluation list');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching public evaluation list:', error);
+      throw error;
+    }
+  }
+
+  static async getChat(chatId) {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat?chatId=${chatId}`));
+      if (!response.ok) throw new Error('Failed to fetch chat');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching chat:', error);
+      throw error;
+    }
+  }
+
+  static async migratePublicFeedback() {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-migrate-public-feedback'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Failed to migrate public feedback');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error migrating public feedback:', error);
+      throw error;
+    }
+  }
+
+  static async getSiteStatus() {
+    return await this.getPublicSetting('siteStatus', 'available');
+  }
 }
 
 export default DataStoreService;
+
+

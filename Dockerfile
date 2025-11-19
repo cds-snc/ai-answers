@@ -1,7 +1,6 @@
 # Use Node.js LTS as the base image
 FROM node:lts AS build
 
-
 # Set working directory
 WORKDIR /app
 
@@ -21,6 +20,10 @@ FROM node:lts
 # Set working directory
 WORKDIR /app
 
+RUN apt-get update \
+ && apt-get install -y socat \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
@@ -44,4 +47,4 @@ COPY src /app/src
 EXPOSE 3001
 
 # Start the backend server
-CMD ["node", "server/server.js"]
+CMD ["node", "server/server.js"] 

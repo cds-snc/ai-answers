@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
+import AuthService from '../services/AuthService.js';
 
 // Basic authentication protection
 export const ProtectedRoute = ({ children, lang = 'en' }) => {
@@ -11,7 +12,8 @@ export const ProtectedRoute = ({ children, lang = 'en' }) => {
     return null; // or a loading spinner component
   }
   
-  if (!currentUser) {
+  // Also block if token is expired even when currentUser is present
+  if (!currentUser || AuthService.isTokenExpired()) {
     // Redirect to signin page with return url
     return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
   }
@@ -35,7 +37,7 @@ export const RoleProtectedRoute = ({
   }
   
   // First check authentication
-  if (!currentUser) {
+  if (!currentUser || AuthService.isTokenExpired()) {
     return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
   }
     // If roles are specified, check if user has one of them

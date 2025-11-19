@@ -1,9 +1,14 @@
-// config/ai-models.js
-const AI_MODELS = {
+ // config/ai-models.js
+const AI_MODELS = {  
   azure: {
-    default: "openai-gpt41-mini",
+    default: "openai-gpt41",
     models: {
       "openai-gpt41-mini": { 
+        maxTokens: 1024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+      },
+       "openai-gpt41": { 
         maxTokens: 1024,
         temperature: 0.0,
         timeoutMs: 60000,
@@ -23,7 +28,7 @@ const AI_MODELS = {
       default: 'text-embedding-3-large',
       models: {
         'text-embedding-3-large': {
-          dimensions: 3072,
+          dimensions: 2000,
           timeoutMs: 30000,
         },
         'text-embedding-3-small': {
@@ -66,7 +71,7 @@ const AI_MODELS = {
       default: 'text-embedding-3-large',
       models: {
         'text-embedding-3-large': {
-          dimensions: 3072,
+          dimensions: 2000,
           timeoutMs: 30000,
         },
         'text-embedding-3-small': {

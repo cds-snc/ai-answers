@@ -3,10 +3,31 @@ import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import { ChatPipelineService, RedactionError } from '../../services/ChatPipelineService.js';
+import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+import DataStoreService from '../../services/DataStoreService.js';
+import SessionService from '../../services/SessionService.js';
+import AuthService from '../../services/AuthService.js';
 // Utility functions go here, before the component
+const decodeHTMLEntities = (text) => {
+  const entities = {
+    '&nbsp;': '\u00A0',  // Non-breaking space
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+  };
+
+  let decoded = text;
+  Object.entries(entities).forEach(([entity, char]) => {
+    decoded = decoded.split(entity).join(char);
+  });
+  return decoded;
+};
+
 const extractSentences = (paragraph) => {
   const sentenceRegex = /<s-?\d+>(.*?)<\/s-?\d+>/g;
   const sentences = [];
@@ -17,26 +38,66 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, targetInteractionId = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
-  
+
   // Add safeT helper function
   const safeT = useCallback((key) => {
     const result = t(key);
     return typeof result === 'object' && result !== null ? result.text : result;
   }, [t]);
-  
+
   const { url: pageUrl, department: urlDepartment } = usePageContext();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [textareaKey, setTextareaKey] = useState(0);
-  const [selectedAI, setSelectedAI] = useState('openai');
-  const [selectedSearch, setSelectedSearch] = useState('google'); 
+
   const [showFeedback, setShowFeedback] = useState(false);
-  const [referringUrl, setReferringUrl] = useState(pageUrl || '');
+  // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
+  const storageKey = (k) => `aiAnswers.${k}`;
+  // selectedAI: prefer localStorage override; if absent, we'll load the persisted provider
+  const [selectedAI, setSelectedAI] = useState(() => {
+    try {
+      const val = localStorage.getItem(storageKey('selectedAI'));
+      return val !== null ? val : null;
+    } catch (e) {
+      return null;
+    }
+  }); // comment to cause change
+  const [selectedSearch, setSelectedSearch] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey('selectedSearch')) || 'google';
+    } catch (e) {
+      return 'google';
+    }
+  });
+  // workflow: prefer a user-set value in localStorage; if none exists, leave null
+  // so we can fetch the public default setting and avoid persisting it unless
+  // the user explicitly chooses a workflow in the UI.
+  const [workflow, setWorkflow] = useState(() => {
+    try {
+      const val = localStorage.getItem(storageKey('workflow'));
+      return val !== null ? val : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  // Track whether an initial value existed in localStorage and whether the user
+  // explicitly set the workflow during this session. We only persist when one
+  // of these is true so we don't overwrite the user's future changes to the
+  // public default unintentionally.
+  const initialWorkflowFromLocalStorage = useRef(false);
+  const userSetWorkflow = useRef(false);
+  // Precedence for initial referring URL:
+  // 1) saved review value (initialReferringUrl)
+  // 2) pageUrl (from usePageContext)
+  // 3) clientReferrer (document.referrer passed from HomePage)
+  const [referringUrl, setReferringUrl] = useState(() => {
+    return initialReferringUrl || pageUrl || clientReferrer || '';
+  });
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
@@ -48,6 +109,35 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
   // Add this new state to prevent multiple loading announcements
   const [loadingAnnounced, setLoadingAnnounced] = useState(false);
+
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+      const userTurns = initialMessages.filter(m => m.sender === 'user').length;
+      setTurnCount(userTurns);
+      setShowFeedback(true);
+    }
+    // If a targetInteractionId was provided, attempt to scroll to it after initial messages render
+    if (targetInteractionId) {
+      setTimeout(() => {
+        try {
+          // Try exact id first
+          let el = document.getElementById(targetInteractionId);
+          // If not found and the provided id doesn't already include the prefix, try prefixed version
+          if (!el && !String(targetInteractionId).startsWith('interactionId')) {
+            el = document.getElementById(`interactionId${targetInteractionId}`);
+          }
+          if (el && typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // also focus for accessibility
+            try { if (typeof el.focus === 'function') el.focus(); } catch(e) { /* ignore */ }
+          }
+        } catch (e) {
+          // ignore scroll errors
+        }
+      }, 200);
+    }
+  }, [initialMessages]);
 
   // This effect monitors displayStatus changes to update screen reader announcements
   useEffect(() => {
@@ -63,9 +153,9 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     } else {
       // Reset the flag when loading completes
       setLoadingAnnounced(false);
-      
+
       const lastMessage = messages[messages.length - 1];
-      
+
       if (lastMessage) {
         if (lastMessage.sender === 'ai' && !lastMessage.error) {
           // AI response
@@ -153,6 +243,99 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     console.log('Search toggled to:', e.target.value);
   };
 
+  // Persist selection changes to localStorage
+  useEffect(() => {
+    try {
+      // Only persist when we have a concrete value (avoid storing null)
+      if (selectedAI !== null && selectedAI !== undefined) {
+        localStorage.setItem(storageKey('selectedAI'), selectedAI);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [selectedAI]);
+
+  // If there's no localStorage value for selectedAI, load provider from DataStoreService
+  useEffect(() => {
+    let mounted = true;
+    const loadProvider = async () => {
+      if (selectedAI === null) {
+        try {
+          // Use the public setting endpoint so unauthenticated clients can read the provider
+          const provider = await DataStoreService.getPublicSetting('provider', 'openai');
+          if (mounted && provider) {
+            setSelectedAI(provider);
+            try {
+              localStorage.setItem(storageKey('selectedAI'), provider);
+            } catch (e) {
+              // ignore storage errors
+            }
+          }
+        } catch (err) {
+          // fallback to openai if datastore call fails
+          if (mounted) setSelectedAI('openai');
+        }
+      }
+    };
+    loadProvider();
+    return () => { mounted = false; };
+  }, [selectedAI]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey('selectedSearch'), selectedSearch);
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [selectedSearch]);
+
+  // Record whether a workflow value existed in localStorage at mount. This
+  // helps us decide whether to persist later changes.
+  useEffect(() => {
+    try {
+      const val = localStorage.getItem(storageKey('workflow'));
+      if (val !== null) initialWorkflowFromLocalStorage.current = true;
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // If there's no user-local workflow, load the public default workflow (does
+  // not mark it as user-set or persist it).
+  useEffect(() => {
+    let mounted = true;
+    const loadDefaultWorkflow = async () => {
+      if (workflow === null) {
+        try {
+          const defaultWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'Default');
+          if (mounted) setWorkflow(defaultWorkflow || 'Default');
+        } catch (err) {
+          if (mounted) setWorkflow('Default');
+        }
+      }
+    };
+    loadDefaultWorkflow();
+    return () => { mounted = false; };
+  }, [workflow]);
+
+  useEffect(() => {
+    try {
+      // Only persist workflow when it came from localStorage initially or the
+      // user explicitly changed it during this session.
+      if (workflow !== null && (initialWorkflowFromLocalStorage.current || userSetWorkflow.current)) {
+        localStorage.setItem(storageKey('workflow'), workflow);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [workflow]);
+
+  const handleWorkflowChange = (e) => {
+    userSetWorkflow.current = true;
+    setWorkflow(e.target.value);
+    console.log('Workflow changed to:', e.target.value);
+  };
+
   const clearInput = useCallback(() => {
     setInputText('');
     setTextareaKey(prevKey => prevKey + 1);
@@ -225,9 +408,12 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
           ...(referringUrl.trim() && { referringUrl: referringUrl.trim() })
         }
       ]);
+      let startMs;
+      const overrideUserId = (AuthService.getUserId ? AuthService.getUserId() : (AuthService.getUser()?.userId ?? null));
       try {
         const aiMessageId = messageIdCounter.current++;
-        const interaction = await ChatPipelineService.processResponse(
+        startMs = Date.now();
+        const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
           aiMessageId,
@@ -237,10 +423,21 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
           referringUrl,
           selectedAI,
           t,
+          workflow,
           updateStatusWithTimer,  // Pass our new status handler
-          selectedSearch  // Add this parameter
+          selectedSearch,  // Add this parameter
+          overrideUserId
         );
+        const latencyMs = Date.now() - startMs;
+
+        // Fire-and-forget report to server about latency (and success)
+        // fire-and-forget session report (no specific errorType for success)
+        if (!overrideUserId) {
+          SessionService.report(chatId, latencyMs, false, null);
+        }
+
         clearInput();
+
         // Add the AI response to messages
         setMessages(prevMessages => [...prevMessages, {
           id: aiMessageId,
@@ -255,12 +452,32 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
         setIsLoading(false);
 
       } catch (error) {
+        // attempt to record latency and error, including an errorType when we can
+        try {
+          const errLatency = Date.now() - (typeof startMs !== 'undefined' ? startMs : Date.now());
+          let errorType = null;
+          if (error instanceof RedactionError) {
+            errorType = 'redaction';
+          } else if (error instanceof ShortQueryValidation) {
+            errorType = 'shortQuery';
+          }
+          (async () => {
+            try {
+              if (!overrideUserId) {
+                await SessionService.report(chatId, errLatency, true, errorType);
+              }
+            } catch (e) {
+              if (console && console.error) console.error('session report failed', e);
+            }
+          })();
+        } catch (e) {
+          // ignore
+        }
         if (error instanceof RedactionError) {
           const userMessageId = messageIdCounter.current++;
           const blockedMessageId = messageIdCounter.current++;
-          setMessages(prevMessages => prevMessages.slice(0, -1));
           setMessages(prevMessages => [
-            ...prevMessages,
+            ...prevMessages.slice(0, -1),
             {
               id: userMessageId,
               text: error.redactedText,
@@ -271,7 +488,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
             },
             {
               id: blockedMessageId,
-              text: error.redactedText.includes('XXX') 
+              text: error.redactedText.includes('XXX')
                 ? safeT('homepage.chat.messages.privateContent')
                 : safeT('homepage.chat.messages.blockedContent'),
               sender: 'system',
@@ -279,6 +496,21 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
             }
           ]);
           clearInput();
+          setIsLoading(false);
+          return;
+        } else if (error instanceof ShortQueryValidation) {
+          // Just append the short query error message, do not remove any messages
+          const shortQueryMessageId = messageIdCounter.current++;
+          setMessages(prevMessages => [
+            ...prevMessages,
+            {
+              id: shortQueryMessageId,
+              text: safeT('homepage.chat.messages.shortQueryMessage'),
+              searchUrl: error.searchUrl,
+              sender: 'system',
+              error: true
+            }
+          ]);
           setIsLoading(false);
           return;
         } else {
@@ -305,6 +537,7 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     referringUrl,
     selectedAI,
     selectedSearch,  // Add this dependency
+    workflow,
     lang,
     t,
     clearInput,
@@ -315,62 +548,105 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
     safeT
   ]);
 
+  // If a pageUrl becomes available later and there was no saved review value,
+  // prefer pageUrl over a clientReferrer. Do not override an explicit saved
+  // initialReferringUrl.
   useEffect(() => {
-    if (pageUrl && !referringUrl) {
+    // If pageUrl becomes available later and there was no saved review value,
+    // prefer pageUrl over a clientReferrer — but don't override an explicit
+    // initialReferringUrl or a user-edited referringUrl.
+    if (pageUrl && !initialReferringUrl && (!referringUrl || referringUrl === '')) {
       setReferringUrl(pageUrl);
     }
     if (urlDepartment && !selectedDepartment) {
       setSelectedDepartment(urlDepartment);
     }
-  }, [pageUrl, urlDepartment, referringUrl, selectedDepartment]);
+  }, [pageUrl, urlDepartment, initialReferringUrl, selectedDepartment, referringUrl]);
 
   const formatAIResponse = useCallback((aiService, message) => {
     const messageId = message.id;
-    let paragraphs = message.interaction.answer.paragraphs;
-    if (paragraphs) {
-      paragraphs = paragraphs.map(paragraph =>
-        paragraph.replace(/<translated-question>.*?<\/translated-question>/g, '')
-      );
+    // Prefer paragraphs, fallback to sentences, fallback to empty array
+    let contentArr = [];
+    if (message.interaction && message.interaction.answer) {
+      if (Array.isArray(message.interaction.answer.paragraphs) && message.interaction.answer.paragraphs.length > 0) {
+        contentArr = message.interaction.answer.paragraphs.map(paragraph =>
+          paragraph.replace(/<translated-question>.*?<\/translated-question>/g, '')
+        );
+      } else if (Array.isArray(message.interaction.answer.sentences) && message.interaction.answer.sentences.length > 0) {
+        contentArr = message.interaction.answer.sentences;
+      }
     }
-    const displayUrl = message.interaction.citationUrl;
-    // Confidence rating and department are currently unused
-  
+    // Updated citation logic
+    const answer = message.interaction?.answer || {};
+    const citation = answer.citation || {};
+    const citationHead = answer.citationHead || citation.citationHead || '';
+    // displayUrl is the citation URL to show and use for analytics
+    const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    // interactionId is the message id (client-side userMessageId)
+    const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
     return (
       <div className="ai-message-content">
-        {paragraphs.map((paragraph, index) => {
-          const sentences = extractSentences(paragraph);
+        {contentArr.map((content, index) => {
+          // If using paragraphs, split into sentences; if using sentences, just display
+          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+            ? extractSentences(content)
+            : [content];
           return sentences.map((sentence, sentenceIndex) => (
             <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
-              {sentence}
+              {decodeHTMLEntities(sentence)}
             </p>
           ));
         })}
         <div className="mistake-disc">
           <p><FontAwesomeIcon icon="wand-magic-sparkles" />&nbsp;
-          {safeT('homepage.chat.input.loadingHint')}
-        </p>
-       </div>
-        {message.interaction.answer.answerType === 'normal' && (message.interaction.answer.citationHead || displayUrl) && (
+            {safeT('homepage.chat.input.loadingHint')}
+          </p>
+        </div>
+        {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <div className="citation-container">
-            {message.interaction.answer.citationHead && <p key={`${messageId}-head`} className="citation-head">{message.interaction.answer.citationHead}</p>}
+            {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
             {displayUrl && (
               <p key={`${messageId}-link`} className="citation-link">
-                <a href={displayUrl} target="_blank" rel="noopener noreferrer" tabIndex="0">
+                <a
+                  href={displayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  tabIndex="0"
+                  onClick={() => {
+                    try {
+                      if (window && window.adobeDataLayer) {
+                        // Build customCall using the required structure:
+                        // Dept. Abbreviation:Custom Variable Name:Custom Value
+                        // Use department abbreviation ESDC-EDSC and describe this as a Citation Click.
+                        var customCallValue = `ESDC-EDSC:Citation Click:${displayUrl}`;
+                        console.log('Pushing customTracking to Adobe Data Layer (customCall):', customCallValue);
+                        var result = window.adobeDataLayer.push({
+                          event: 'customTracking',
+                          link: {
+                            customCall: customCallValue
+                          },
+                          // Keep contextual fields for debugging (non-breaking extra data)
+                          citationUrl: displayUrl,
+                          interactionId: interactionId,
+                          chatId: chatId,
+                        });
+                        console.log('Adobe Data Layer push result:', result);
+                      }
+                    } catch (e) {
+                      // swallow analytics errors — should not block navigation
+                      console.error('Error pushing to Adobe Data Layer:', e);
+                    }
+                  }}
+                >
                   {displayUrl}
                 </a>
               </p>
             )}
-            {/* <p key={`${messageId}-confidence`} className="confidence-rating">
-              {finalConfidenceRating !== undefined && `${safeT('homepage.chat.citation.confidence')} ${finalConfidenceRating}`}
-              {finalConfidenceRating !== undefined && (aiService || messageDepartment) && ' | '}
-              {aiService && `${safeT('homepage.chat.citation.ai')} ${aiService}`}
-              {messageDepartment && ` | ${messageDepartment}`}
-            </p> */}
           </div>
         )}
       </div>
     );
-  }, [safeT]);
+  }, [safeT, chatId]);
 
   // Add handler for department changes
 
@@ -388,6 +664,8 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
         handleSearchToggle={handleSearchToggle} // Add this line
+        workflow={workflow}
+        handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
         selectedAI={selectedAI}
@@ -403,20 +681,22 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
         getLabelForInput={() =>
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
-            : (typeof t('homepage.chat.input.followUp') === 'object' 
-               ? t('homepage.chat.input.followUp').text 
-               : t('homepage.chat.input.followUp'))
+            : (typeof t('homepage.chat.input.followUp') === 'object'
+              ? t('homepage.chat.input.followUp').text
+              : t('homepage.chat.input.followUp'))
         }
         ariaLabelForInput={
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
             : (typeof t('homepage.chat.input.followUp') === 'object'
-               ? t('homepage.chat.input.followUp').ariaLabel
-               : undefined)
+              ? t('homepage.chat.input.followUp').ariaLabel
+              : undefined)
         }
         extractSentences={extractSentences}
         chatId={chatId}
+        readOnly={readOnly}
       />
+      {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div
         aria-live="polite"
         aria-atomic="true"
@@ -430,3 +710,5 @@ const ChatAppContainer = ({ lang = 'en', chatId }) => {
 };
 
 export default ChatAppContainer;
+
+

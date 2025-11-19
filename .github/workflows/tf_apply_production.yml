@@ -1,0 +1,81 @@
+name: "Terraform apply production"
+
+on:
+  release:
+    types:
+      - published
+
+env:
+  AWS_REGION: ca-central-1
+  TERRAFORM_VERSION: 1.10.4
+  TERRAGRUNT_VERSION: 0.72.3
+  TF_VAR_docdb_username: ${{ secrets.PROD_DOCDB_USERNAME}}
+  TF_VAR_docdb_password: ${{ secrets.PROD_DOCDB_PASSWORD}}
+  TF_VAR_azure_openai_api_key: ${{ secrets.PROD_AZURE_OPENAI_API_KEY}}
+  TF_VAR_azure_openai_endpoint: ${{ secrets.PROD_AZURE_OPENAI_ENDPOINT}}
+  TF_VAR_azure_openai_api_version: ${{ secrets.PROD_AZURE_OPENAI_API_VERSION}}
+  TF_VAR_canada_ca_search_uri: ${{ secrets.PROD_CANADA_CA_SEARCH_URI}}
+  TF_VAR_canada_ca_search_api_key: ${{ secrets.PROD_CANADA_CA_SEARCH_API_KEY}}
+  TF_VAR_user_agent: ${{ secrets.PROD_USER_AGENT}}
+  TF_VAR_jwt_secret_key: ${{ secrets.PROD_JWT_SECRET_KEY}}
+  TF_VAR_sentinel_customer_id: ${{ secrets.PROD_LOG_ANALYTICS_WORKSPACE_ID }}
+  TF_VAR_sentinel_shared_key: ${{ secrets.PROD_LOG_ANALYTICS_WORKSPACE_KEY }}
+  TF_VAR_google_api_key: ${{ secrets.PROD_GOOGLE_API_KEY}}
+  TF_VAR_gc_notify_api_key: ${{ secrets.PROD_GC_NOTIFY_API_KEY}}
+  TF_VAR_google_search_engine_id: ${{ secrets.PROD_GOOGLE_SEARCH_ENGINE_ID}}
+  TF_VAR_adobe_analytics_url: ${{ secrets.PROD_ADOBE_ANALYTICS_URL}}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terragrunt-apply:
+    if: github.repository == 'cds-snc/ai-answers'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform Tools
+        uses: cds-snc/terraform-tools-setup@v1
+
+      - name: Configure aws credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::730335533085:role/ai_answers_release
+          role-session-name: TFApply
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply ssm
+        working-directory: terragrunt/env/production/ssm
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply hosted zone
+        working-directory: terragrunt/env/production/hosted_zone
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply network
+        working-directory: terragrunt/env/production/network
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply ecr
+        working-directory: terragrunt/env/production/ecr
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply database
+        working-directory: terragrunt/env/production/database
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply iam
+        working-directory: terragrunt/env/production/iam
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply load balancer
+        working-directory: terragrunt/env/production/load_balancer
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply ecs
+        working-directory: terragrunt/env/production/ecs
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve

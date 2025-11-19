@@ -1,0 +1,35 @@
+{
+  "suspiciousWords": [
+    "limitations",
+    "ignore",
+    "override",
+    "bypass",
+    "convince",
+    "pretend",
+    "roleplay",
+    "Anthropic",
+    "OpenAI",
+    "Cohere",
+    "Claude",
+    "GPT"
+  ],
+  "manipulationPhrases": [
+    "your instructions",
+    "can you try",
+    "system prompt",
+    "have you tried",
+    "why can't you",
+    "you already did",
+    "but you did before",
+    "that doesn't make sense",
+    "summarize our",
+    "our conversation",
+    "logical flaws",
+    "contradictions",
+    "tell me about your",
+    "system prompt",
+    "are you sure",
+    "haiku",
+    "in the form of a story"
+  ]
+} 

@@ -56,8 +56,27 @@ variable "google_api_key" {
   type        = string
 }
 
+variable "gc_notify_api_key" {
+  description = "The GC Notify API key"
+  sensitive   = true
+  type        = string
+}
+
 variable "google_search_engine_id" {
   description = "The Google Search Engine ID"
   sensitive   = true
   type        = string
+}
+
+variable "adobe_analytics_url" {
+  description = "The Adobe Analytics script URL"
+  sensitive   = false
+  type        = string
+}
+
+# Temporary dummy variable to trigger workflow
+variable "dummy_trigger" {
+  type        = string
+  description = "Dummy variable for triggering CI"
+  default     = "trigger"
 }

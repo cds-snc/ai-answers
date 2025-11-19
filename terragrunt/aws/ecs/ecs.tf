@@ -37,8 +37,16 @@ locals {
       "valueFrom" = var.google_api_key_arn
     },
     {
+      "name"      = "GC_NOTIFY_API_KEY"
+      "valueFrom" = var.gc_notify_api_key_arn
+    },
+    {
       "name"      = "GOOGLE_SEARCH_ENGINE_ID"
       "valueFrom" = var.google_search_engine_id_arn
+    },
+    {
+      "name"      = "REACT_APP_ADOBE_ANALYTICS_URL"
+      "valueFrom" = var.adobe_analytics_url_arn
     }
   ]
 }
@@ -91,6 +99,9 @@ module "ai_answers" {
   sentinel_forwarder_layer_arn = "arn:aws:lambda:ca-central-1:283582579564:layer:aws-sentinel-connector-layer:199"
 
   billing_tag_value = var.billing_code
+
+  # Enabled to allow connection to DB only in staging
+  enable_execute_command = var.env == "staging" ? true : false
 }
 
 resource "aws_cloudwatch_log_group" "ai_answers_group" {

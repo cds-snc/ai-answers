@@ -1,0 +1,39 @@
+name: S3 backup
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  s3-backup:
+    if: github.repository == 'cds-snc/ai-answers'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          fetch-depth: 0 # retrieve all history
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@04b98b3f9e85f563fb061be8751a0352327246b0 # v3.0.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_S3_BACKUP_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_S3_BACKUP_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Create ZIP bundle
+        run: |
+          ZIP_FILE=`basename ${{ github.repository }}`-`date '+%Y-%m-%d'`.zip
+          zip -rq "${ZIP_FILE}" .
+          mkdir -p ${{ github.repository }}
+          mv "${ZIP_FILE}" ${{ github.repository }}
+
+      - name: Upload to S3 bucket
+        run: |
+          aws s3 sync . s3://${{ secrets.AWS_S3_BACKUP_BUCKET }} --exclude='*' --include='${{ github.repository }}/*'
+
+      - name: Notify Slack channel if this job failed
+        if: ${{ failure() }}
+        run: |
+          json='{"text":"S3 backup failed in <https://github.com/${{ github.repository }}>!"}'
+          curl -X POST -H 'Content-type: application/json' --data "$json"  ${{ secrets.SLACK_NOTIFY_WEBHOOK }}

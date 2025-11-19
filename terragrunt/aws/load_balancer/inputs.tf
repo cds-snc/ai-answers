@@ -22,3 +22,13 @@ variable "vpc_public_subnet_ids" {
   description = "Public subnet ids of the VPC"
   type        = list(string)
 }
+
+
+
+variable "alternate_zone_id" {
+  description = "Hosted zone ID for the alternate domain (if any)"
+  type        = string
+  default     = ""
+}
+
+

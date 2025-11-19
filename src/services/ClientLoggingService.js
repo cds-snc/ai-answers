@@ -7,11 +7,22 @@ class ClientLoggingService {
     console[level](`${emoji} ${message}`, metadata);
 
     try {
+      // Avoid calling client-only AuthService methods when running in Node/test environments
+      let authHeader = {};
+      try {
+        if (typeof window !== 'undefined') {
+          authHeader = AuthService.getAuthHeader();
+        }
+      } catch (e) {
+        // swallow errors from AuthService when localStorage isn't available
+        authHeader = {};
+      }
+
       const response = await fetch(getApiUrl('db-log'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...AuthService.getAuthHeader()
+          ...authHeader
         },
         body: JSON.stringify({
           chatId,
@@ -56,8 +67,16 @@ class ClientLoggingService {
         ...(options.level && { level: options.level }),
       }).toString();
 
+      let authHeader = {};
+      try {
+        if (typeof window !== 'undefined') {
+          authHeader = AuthService.getAuthHeader();
+        }
+      } catch (e) {
+        authHeader = {};
+      }
       const response = await fetch(getApiUrl(`db-log?${queryParams}`), {
-        headers: AuthService.getAuthHeader()
+        headers: authHeader
       });
       if (!response.ok) {
         throw new Error('Failed to fetch logs');

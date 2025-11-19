@@ -13,6 +13,18 @@ variable "domain" {
   type        = string
 }
 
+variable "san" {
+  description = "(Optional) List of Subject Alternative Names (SANs) for the certificate."
+  type        = list(string)
+  default     = []
+}
+
+variable "altdomain" {
+  description = "Alternate (secondary) domain name (e.g., French domain)."
+  type        = string
+  default     = ""
+}
+
 variable "env" {
   description = "The current running environment"
   type        = string

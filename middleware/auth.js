@@ -108,6 +108,23 @@ const verifyAdmin = (req, res) => {
   return true;
 };
 
+// Verify partner role or admin (allows partners and admins)
+const verifyPartnerOrAdmin = (req, res) => {
+  console.log('Verifying partner or admin access for user:', { userId: req.user?.userId, role: req.user?.role });
+  if (!req.user) {
+    console.log('Partner/Admin access denied: no user present on request');
+    res.status(401).json({ message: 'Authentication required' });
+    return false;
+  }
+  if (req.user.role !== 'partner' && req.user.role !== 'admin') {
+    console.log('Partner/Admin access denied for user:', req.user?.userId);
+    res.status(403).json({ message: 'Partner or admin access required' });
+    return false;
+  }
+  console.log('Partner/Admin access granted for user:', req.user?.userId);
+  return true;
+};
+
 export const withProtection = (handler, ...middleware) => {
   return async (req, res) => {
     console.log('withProtection wrapper called for:', {
@@ -142,5 +159,12 @@ export const withOptionalUser = (handler) => async (req, res) => {
   return handler(req, res);
 };
 
+export const withUser = (handler) => async (req, res) => {
+  req.user = await getUserFromRequest(req); // Use new utility
+  return handler(req, res);
+};
+
+
 export const authMiddleware = verifyAuth;
 export const adminMiddleware = verifyAdmin;
+export const partnerOrAdminMiddleware = verifyPartnerOrAdmin;

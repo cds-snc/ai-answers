@@ -10,9 +10,9 @@ async function regenerateEmbeddingsHandler(req, res) {
     }
 
     try {
-        const { regenerateAll, lastProcessedId } = req.body;
+        const { regenerateAll, lastProcessedId, provider = "openai" } = req.body;
         const duration = config.embedBatchProcessingDuration;
-        const result = await EmbeddingService.processEmbeddingForDuration(duration, !regenerateAll, lastProcessedId);
+        const result = await EmbeddingService.processEmbeddingForDuration(duration, !regenerateAll, lastProcessedId, provider);
 
         return res.status(200).json({
             completed: result.completed,

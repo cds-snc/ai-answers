@@ -10,6 +10,9 @@ const checkUrlStatus = async (url, chatId = 'system') => {
             httpsAgent, 
             maxRedirects: 10,
             timeout: 5000,
+            headers: {
+                'User-Agent': process.env.USER_AGENT
+            }
         });
         const isLive = response.status === 200;
         if (!isLive) {

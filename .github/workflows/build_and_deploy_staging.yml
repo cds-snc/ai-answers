@@ -1,0 +1,96 @@
+name: Build and Push to Container Registry Staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build:
+    if: github.repository == 'cds-snc/ai-answers'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit DNS requests
+        uses: cds-snc/dns-proxy-action@main
+        env:
+          DNS_PROXY_FORWARDTOSENTINEL: 'true'
+          DNS_PROXY_LOGANALYTICSWORKSPACEID: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
+          DNS_PROXY_LOGANALYTICSSHAREDKEY: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+
+      - name: Configure aws credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: arn:aws:iam::992382783569:role/ai-answers-apply
+          role-session-name: AIAnswersGitHubActions
+          aws-region: 'ca-central-1'
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+
+      - name: Build container
+        working-directory: ./
+        run: |
+          docker build \
+          -t $REGISTRY/ai-answers:$GITHUB_SHA-`date '+%Y-%m-%d'` \
+          -t $REGISTRY/ai-answers:latest .
+
+      - name: Push containers to Amazon ECR
+        working-directory: ./
+        run: |
+          docker push $REGISTRY/ai-answers:$GITHUB_SHA-`date '+%Y-%m-%d'`
+          docker push $REGISTRY/ai-answers:latest
+
+      - name: Restart ECS
+        run: |
+          aws ecs update-service --cluster ai-answers-cluster --service ai-answers-app-service --force-new-deployment > /dev/null 2>&1
+
+      # Allow this step to fail so we can handle success/failure and report it to slack. By default it waits for 10 minutes
+      - name: Wait for ECS Stability
+        id: ecs_wait
+        continue-on-error: true
+        run: |
+          echo "Wait for 15 minutes for ECS to stabilize.."
+          sleep 300 # Sleep for 5 minutes. The ecs wait command waits for an additional 10 minutes
+          aws ecs wait services-stable \
+            --cluster ai-answers-cluster \
+            --services ai-answers-app-service
+
+      # Slack notification on failed ECS wait
+      - name: Slack Notify Failure
+        if: steps.ecs_wait.outcome == 'failure'
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "❌ ECS deployment for ai-answers failed to stabilize."}' \
+          ${{ secrets.SLACK_WEBHOOK_URL}}
+
+      - name: Report deployment to Sentinel
+        if: steps.ecs_wait.outcome == 'success'
+        uses: cds-snc/sentinel-forward-data-action@main
+        with:
+          input_data: '{"product": "ai-answers", "version": "${{ github.sha }}", "repository": "${{ github.repository }}", "environment": "staging"}'
+          log_type: CDS_Product_Deployment_Data
+          log_analytics_workspace_id: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
+          log_analytics_workspace_key: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
+
+      - name: Docker generate SBOM
+        uses: cds-snc/security-tools/.github/actions/generate-sbom@34794baf2af592913bb5b51d8df4f8d0acc49b6f # v3.2.0
+        env:
+          TRIVY_DB_REPOSITORY: ${{ vars.TRIVY_DB_REPOSITORY }}
+        with:
+          docker_image: '${{ env.REGISTRY }}/ai-answers:latest'
+          dockerfile_path: './Dockerfile'
+          sbom_name: 'ai-answers'
+          token: '${{ secrets.GITHUB_TOKEN }}'

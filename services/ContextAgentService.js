@@ -1,4 +1,4 @@
-import { createContextAgent } from '../agents/AgentService.js';
+import { createContextAgent } from '../agents/AgentFactory.js';
 
 const invokeContextAgent = async (agentType, request) => {
   try {
@@ -9,7 +9,7 @@ const invokeContextAgent = async (agentType, request) => {
     const messages = [
       {
         role: "system",
-        content: `${systemPrompt}<searchResults>${searchResults.results}</searchResults>`,
+        content: `${systemPrompt}<searchResults>${searchResults}</searchResults>`,
       }
     ];
 

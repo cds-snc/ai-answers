@@ -30,9 +30,13 @@ dependency "network" {
   }
 }
 
+## Staging: French zone not used; locals removed
+locals {}
+
 inputs = {
   hosted_zone_id         = dependency.hosted_zone.outputs.hosted_zone_id
   hosted_zone_name       = dependency.hosted_zone.outputs.hosted_zone_name
+  alternate_zone_id      = dependency.hosted_zone.outputs.alternate_zone_id
   vpc_id                 = dependency.network.outputs.vpc_id
   vpc_private_subnet_ids = dependency.network.outputs.vpc_private_subnet_ids
   vpc_public_subnet_ids  = dependency.network.outputs.vpc_public_subnet_ids

@@ -14,6 +14,8 @@ const ChatViewer = () => {
   const { language } = usePageContext();
   const [chatId, setChatId] = useState('');
   const [logs, setLogs] = useState([]);
+  const [logLevel, setLogLevel] = useState('');
+  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const tableRef = useRef(null);
   const dataTableRef = useRef(null);
   const [expandedMetadata, setExpandedMetadata] = useState(null);
@@ -172,14 +174,17 @@ const ChatViewer = () => {
             .off('click')
             .on('click', function (e) {
               e.stopPropagation();
-              const rowIdx = $(this).closest('tr').index();
-              const rowData = dataTableRef.current.row(rowIdx).data();
+              // Use the row element selector to fetch correct row data
+              const tr = $(this).closest('tr');
+              const rowData = dataTableRef.current.row(tr).data();
               setExpandedMetadata(rowData.metadata);
             });
         },
       });
-
-      // No need to add rows here as we're providing the data during initialization
+      // Apply log level filter if set
+      if (logLevel && dataTableRef.current) {
+        dataTableRef.current.column(1).search(logLevel, false, false).draw();
+      }
     }
 
     return () => {
@@ -188,7 +193,16 @@ const ChatViewer = () => {
         dataTableRef.current = null;
       }
     };
-  }, [logs]);
+  }, [logs, logLevel]);
+
+  // Handler for log level filter
+  const handleLogLevelChange = (e) => {
+    const value = e.target.value;
+    setLogLevel(value);
+    if (dataTableRef.current) {
+      dataTableRef.current.column(1).search(value, false, false).draw();
+    }
+  };
 
   const handleChatIdChange = (e) => {
     const newValue = e.target ? e.target.value : e;
@@ -209,17 +223,6 @@ const ChatViewer = () => {
     setChatId(newValue);
   };
 
-  // Explicitly refresh the chat ID from localStorage when button is clicked
-  const handleRefreshChatId = () => {
-    console.log('Refreshing chat ID from localStorage');
-    const storedChatId = localStorage.getItem('chatId');
-    if (storedChatId) {
-      console.log('Found chat ID in localStorage:', storedChatId);
-      setChatId(storedChatId);
-    } else {
-      console.log('No chat ID found in localStorage');
-    }
-  };
 
   const fetchLogs = async () => {
     if (!chatId) {
@@ -238,14 +241,30 @@ const ChatViewer = () => {
     }
   };
 
-  const handleRefreshLogs = () => {
-    fetchLogs();
+  const handleRefreshLogs = async () => {
+    if (!chatId || isRefreshingLogs) {
+      return;
+    }
+
+    setIsRefreshingLogs(true);
+    try {
+      await fetchLogs();
+    } finally {
+      setIsRefreshingLogs(false);
+    }
   };
 
   useEffect(() => {
     // Control body scroll when modal is open
     if (expandedMetadata) {
       document.body.style.overflow = 'hidden';
+      // Highlight code in modal after it appears
+      setTimeout(() => {
+        const codeBlock = document.querySelector('.metadata-modal code');
+        if (codeBlock) {
+          Prism.highlightElement(codeBlock);
+        }
+      }, 0);
     } else {
       document.body.style.overflow = 'auto';
     }
@@ -281,19 +300,32 @@ const ChatViewer = () => {
                 className="form-control p-2 border rounded w-full"
               />
             </div>
-            <GcdsButton type="button" onClick={handleRefreshChatId} className="mt-4">
-              Refresh Chat ID from localStorage
-            </GcdsButton>
-          </div>
 
+          </div>
           <div className="space-y-6">
             <div className="flex gap-4 items-center">
+              <div className="flex-shrink-0">
+                <label htmlFor="logLevelFilter" className="mr-2">Filter by Level:</label>
+                <select
+                  id="logLevelFilter"
+                  value={logLevel}
+                  onChange={handleLogLevelChange}
+                  className="form-control p-2 border rounded w-40"
+                  style={{ minWidth: '120px' }}
+                >
+                  <option value="">All</option>
+                  <option value="info">Info</option>
+                  <option value="debug">Debug</option>
+                  <option value="warn">Warn</option>
+                  <option value="error">Error</option>
+                </select>
+              </div>
               <GcdsButton
                 type="button"
-                disabled={!chatId}
+                disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
               >
-                {t('logging.refresh')}
+                {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
 
@@ -341,7 +373,7 @@ const ChatViewer = () => {
           }}
         >
           <div
-            className="bg-white rounded-lg w-full max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-lg w-full max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col metadata-modal"
             style={{ position: 'relative' }}
           >
             <div className="p-4 border-b flex justify-between items-center">
@@ -369,8 +401,8 @@ const ChatViewer = () => {
                   }`}
                 >
                   {typeof expandedMetadata === 'string'
-                    ? expandedMetadata.replace(/\\n/g, '\n')
-                    : JSON.stringify(expandedMetadata || {}, null, 2).replace(/\\n/g, '\n')}
+                    ? expandedMetadata.replace(/\n/g, '\n')
+                    : JSON.stringify(expandedMetadata || {}, null, 2).replace(/\n/g, '\n')}
                 </code>
               </pre>
             </div>

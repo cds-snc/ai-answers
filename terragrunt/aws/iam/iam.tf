@@ -33,7 +33,9 @@ data "aws_iam_policy_document" "ai-answers-ssm-policy" {
       var.jwt_secret_key_arn,
       var.docdb_uri_arn,
       var.google_api_key_arn,
+      var.gc_notify_api_key_arn,
       var.google_search_engine_id_arn,
+      var.adobe_analytics_url_arn,
     ]
   }
 }

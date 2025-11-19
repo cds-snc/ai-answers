@@ -1,26 +1,41 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@cdssnc/gcds-components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
+import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
+import { useTranslations } from '../hooks/useTranslations.js';
 
 const DatabasePage = ({ lang }) => {
+  const { t } = useTranslations(lang);
   const [isExporting, setIsExporting] = useState(false);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
-  const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);  const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
+  const [importSelectedCollections, setImportSelectedCollections] = useState(['All']);
+  const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
+  const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
+  const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
   const [isRepairingTimestamps, setIsRepairingTimestamps] = useState(false);
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
+  const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
   const [tableCounts, setTableCounts] = useState(null);
   const [countsError, setCountsError] = useState('');
+  // Import controls: chunk size in MB and optional throttle between chunk uploads (ms)
+  const [importChunkMB, setImportChunkMB] = useState(90); // default 90 MB per file slice
+  const [importThrottleMs, setImportThrottleMs] = useState(0); // default no extra delay between chunk POSTs
   const fileInputRef = useRef(null);
+  const [checksRunning, setChecksRunning] = useState({});
+  const [checksResults, setChecksResults] = useState({});
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchCounts() {
+    async function fetchCountsAndCollections() {
       setCountsError('');
       try {
         const counts = await DataStoreService.getTableCounts();
@@ -28,8 +43,21 @@ const DatabasePage = ({ lang }) => {
       } catch (e) {
         if (isMounted) setCountsError(e.message);
       }
+      // Fetch collections for export dropdown
+      try {
+        const collectionsRes = await fetch(getApiUrl('db-database-management'), {
+          method: 'GET',
+          headers: AuthService.getAuthHeader()
+        });
+        if (collectionsRes.ok) {
+          const { collections } = await collectionsRes.json();
+          if (isMounted && Array.isArray(collections)) setCollections(collections);
+        }
+      } catch (e) {
+        // ignore
+      }
     }
-    fetchCounts();
+    fetchCountsAndCollections();
     return () => { isMounted = false; };
   }, []);
 
@@ -38,46 +66,51 @@ const DatabasePage = ({ lang }) => {
       setIsExporting(true);
       setMessage('');
 
-      // Step 1: Get list of collections
-      const collectionsRes = await fetch(getApiUrl('db-database-management'), {
-        method: 'GET',
-        headers: AuthService.getAuthHeader()
-      });
-      if (!collectionsRes.ok) {
-        const error = await collectionsRes.json();
-        throw new Error(error.message || 'Failed to get collections');
+      // Use selectedCollection for export
+      let collectionsToExport = collections;
+      if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
+        collectionsToExport = [selectedCollection];
+      } else if (selectedCollection === 'AllButLogs') {
+        // filter out collections whose names end with 'log' or 'logs'
+        collectionsToExport = (collections || []).filter(col => {
+          const n = String(col || '').toLowerCase();
+          return !(n.endsWith('log') || n.endsWith('logs'));
+        });
       }
-      const { collections } = await collectionsRes.json();
-      if (!collections || !Array.isArray(collections)) {
+      if (!collectionsToExport || !Array.isArray(collectionsToExport) || collectionsToExport.length === 0) {
         throw new Error('No collections found');
       }
 
       // Step 2: Stream each collection as it is fetched (JSONL format)
-      const filename = `database-backup-${new Date().toISOString()}.jsonl`;
+      const collectionTag = selectedCollection === 'AllButLogs'
+        ? 'all-but-logs-'
+        : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : '');
+      const filename = `database-backup-${collectionTag}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
-      const initialChunkSize = 2000;
-      const minChunkSize = 50;
+      const initialChunkSize = Number(exportLimit) || 10000;
+      const minChunkSize = 1;
 
-      for (let i = 0; i < collections.length; i++) {
-        const collection = collections[i];
-        let skip = 0;
-        let total = null;
+      for (let i = 0; i < collectionsToExport.length; i++) {
+        const collection = collectionsToExport[i];
+        let lastId = '';
         let chunkSize = initialChunkSize;
-        while (total === null || skip < total) {
+        let hasMore = true;
+        while (hasMore) {
           let success = false;
           let data = [];
-          let collectionTotal = null;
+          let newLastId = '';
           while (!success && chunkSize >= minChunkSize) {
             try {
               // Add date range and always use updatedAt
-              let url = getApiUrl(`db-database-management?collection=${encodeURIComponent(collection)}&skip=${skip}&limit=${chunkSize}`);
+              let url = getApiUrl(`db-database-management?collection=${encodeURIComponent(collection)}&limit=${chunkSize}`);
+              if (lastId) url += `&lastId=${encodeURIComponent(lastId)}`;
               if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
               if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
-              const timeout = setTimeout(() => controller.abort(), 25000);
+              const timeout = setTimeout(() => controller.abort(), 300000); // 5 minutes
               const res = await fetch(url, { headers: AuthService.getAuthHeader(), signal: controller.signal });
               clearTimeout(timeout);
               if (!res.ok) {
@@ -94,7 +127,7 @@ const DatabasePage = ({ lang }) => {
               }
               const json = await res.json();
               data = json.data;
-              collectionTotal = json.total;
+              newLastId = json.lastId;
               success = true;
             } catch (err) {
               // Retry on any error until minChunkSize is reached
@@ -106,13 +139,16 @@ const DatabasePage = ({ lang }) => {
               }
             }
           }
-          if (total === null) total = collectionTotal;
           // Write each document as a JSONL line: {"collection": "name", "doc": {...}}
           for (let j = 0; j < data.length; j++) {
             const docStr = JSON.stringify({ collection, doc: data[j] });
             await writer.write(encoder.encode(docStr + '\n'));
           }
-          skip += chunkSize;
+          if (!newLastId || data.length === 0) {
+            hasMore = false;
+          } else {
+            lastId = newLastId;
+          }
         }
       }
       await writer.close();
@@ -133,18 +169,70 @@ const DatabasePage = ({ lang }) => {
       return;
     }
 
-    setIsImporting(true);
-    setMessage('Starting import...');
-    let lineBuffer = '';
-    let accumulatedStats = { inserted: 0, failed: 0 };
+  setIsImporting(true);
+  setMessage('Starting import...');
+  // lineBuffer is managed inside the try block per chunk
+  let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
 
     try {
-      const chunkSize = 2 * 1024 * 1024; 
+      // Compute chunk size from UI (MB -> bytes). Minimum 64KB to avoid extremely small slices.
+      const requestedChunkSize = Number(importChunkMB) > 0 ? Number(importChunkMB) * 1024 * 1024 : 2 * 1024 * 1024;
+      const chunkSize = Math.max(requestedChunkSize, 64 * 1024);
       const totalChunks = Math.ceil(file.size / chunkSize);
       const fileName = file.name;
       let lineBuffer = '';
       let chunkIndex = 0;
       let offset = 0;
+      // helper: sleep and send with retries (exponential backoff)
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      // build collection payload for POST: 'All' | 'AllButLogs' | [list]
+      const buildCollectionPayload = () => {
+        const sel = Array.isArray(importSelectedCollections) ? importSelectedCollections : [importSelectedCollections];
+        if (sel.includes('All')) return 'All';
+        if (sel.includes('AllButLogs') && sel.length === 1) return 'AllButLogs';
+        return sel.filter(s => s !== 'All' && s !== 'AllButLogs');
+      };
+      const sendChunkWithRetry = async (bodyObj, attemptLimit = 5) => {
+        let delay = 500; // start 500ms
+        let lastErr = null;
+        for (let attempt = 0; attempt < attemptLimit; attempt++) {
+          try {
+            const response = await fetch(getApiUrl('db-database-management'), {
+              method: 'POST',
+              headers: {
+                ...AuthService.getAuthHeader(),
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(bodyObj),
+            });
+            if (!response.ok) {
+              // try to read error body if any
+              let errorMsg = response.statusText || 'Server error';
+              try {
+                const errJson = await response.json();
+                if (errJson && errJson.message) errorMsg = errJson.message;
+              } catch (e) {
+                // ignore JSON parse errors
+              }
+              throw new Error(errorMsg);
+            }
+            const result = await response.json();
+            return result;
+          } catch (err) {
+            lastErr = err;
+            if (attempt === attemptLimit - 1) {
+              // last attempt, rethrow
+              throw err;
+            }
+            // exponential backoff before next retry
+            // eslint-disable-next-line no-await-in-loop
+            await sleep(delay);
+            delay *= 2;
+          }
+        }
+        // Shouldn't reach here, but throw the last error if it does
+        throw lastErr || new Error('Unknown error during chunk upload');
+      };
       while (offset < file.size) {
         const end = Math.min(offset + chunkSize, file.size);
         const fileSlice = file.slice(offset, end);
@@ -157,61 +245,80 @@ const DatabasePage = ({ lang }) => {
         lineBuffer = lines[lines.length - 1]; // May be incomplete
         const payload = completeLines.join('\n');
         if (payload.trim().length > 0) {
-          const response = await fetch(getApiUrl('db-database-management'), {
-            method: 'POST',
-            headers: {
-              ...AuthService.getAuthHeader(),
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              chunkIndex,
-              totalChunks, // This is still the total number of file chunks, not payload chunks
-              fileName,
-              chunkPayload: payload
-            }),
-          });
-          if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(`Server error on chunk ${chunkIndex + 1}: ${errorResult.message || response.statusText}`);
+          const bodyObj = {
+            chunkIndex,
+            totalChunks, // This is still the total number of file chunks, not payload chunks
+            fileName,
+            chunkPayload: payload,
+            collection: buildCollectionPayload()
+          };
+          const result = await sendChunkWithRetry(bodyObj, 5).catch(err => { throw new Error(`Server error on chunk ${chunkIndex + 1}: ${err.message}`); });
+          if (result && result.stats) {
+            accumulatedStats.inserted += result.stats.inserted || 0;
+            accumulatedStats.failed += result.stats.failed || 0;
+            accumulatedStats.skipped += result.stats.skipped || 0;
+            if (result.stats.skippedExamples && Array.isArray(result.stats.skippedExamples)) {
+              accumulatedStats.skippedExamples = accumulatedStats.skippedExamples || [];
+              for (const ex of result.stats.skippedExamples) {
+                if (accumulatedStats.skippedExamples.length >= 10) break;
+                accumulatedStats.skippedExamples.push(ex);
+              }
+            }
           }
-          const result = await response.json();
-          if (result.stats) {
-            accumulatedStats.inserted += result.stats.inserted;
-            accumulatedStats.failed += result.stats.failed;
+          setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+          // Optional throttle between chunk uploads to avoid flooding the server
+          // Only apply throttle delay if the server performed upserts for this chunk
+          if (Number(importThrottleMs) > 0) {
+            const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
+            if (didUpsert) {
+              // eslint-disable-next-line no-await-in-loop
+              await sleep(Number(importThrottleMs));
+            }
           }
-          setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}`);
         }
         offset = end;
         chunkIndex++;
       }
       // Send any remaining buffered line as the last chunk
       if (lineBuffer.trim().length > 0) {
-        const response = await fetch(getApiUrl('db-database-management'), {
-          method: 'POST',
-          headers: {
-            ...AuthService.getAuthHeader(),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chunkIndex,
-            totalChunks,
-            fileName,
-            chunkPayload: lineBuffer
-          }),
-        });
-        if (!response.ok) {
-          const errorResult = await response.json();
-          throw new Error(`Server error on chunk ${chunkIndex + 1}: ${errorResult.message || response.statusText}`);
+        const bodyObj = {
+          chunkIndex,
+          totalChunks,
+          fileName,
+          chunkPayload: lineBuffer,
+          collection: buildCollectionPayload()
+        };
+        const result = await sendChunkWithRetry(bodyObj, 5).catch(err => { throw new Error(`Server error on chunk ${chunkIndex + 1}: ${err.message}`); });
+        if (result && result.stats) {
+          accumulatedStats.inserted += result.stats.inserted || 0;
+          accumulatedStats.failed += result.stats.failed || 0;
+          accumulatedStats.skipped += result.stats.skipped || 0;
+          if (result.stats.skippedExamples && Array.isArray(result.stats.skippedExamples)) {
+            accumulatedStats.skippedExamples = accumulatedStats.skippedExamples || [];
+            for (const ex of result.stats.skippedExamples) {
+              if (accumulatedStats.skippedExamples.length >= 10) break;
+              accumulatedStats.skippedExamples.push(ex);
+            }
+          }
         }
-        const result = await response.json();
-        if (result.stats) {
-          accumulatedStats.inserted += result.stats.inserted;
-          accumulatedStats.failed += result.stats.failed;
+        setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+        // Only apply throttle delay if the server performed upserts for this chunk
+        if (Number(importThrottleMs) > 0) {
+          const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
+          if (didUpsert) {
+            // eslint-disable-next-line no-await-in-loop
+            await sleep(Number(importThrottleMs));
+          }
         }
-        setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}`);
       }
 
-      setMessage(`Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`);
+      // Build final completion message, optionally include skipped example snippets
+      let finalMsg = `Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`;
+      if (accumulatedStats.skipped) finalMsg += `, Skipped: ${accumulatedStats.skipped}`;
+      if (accumulatedStats.skippedExamples && accumulatedStats.skippedExamples.length) {
+        finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0,10).join('\n')}`;
+      }
+      setMessage(finalMsg);
       if (fileInputRef.current) {
         fileInputRef.current.value = ''; // Reset file input
       }
@@ -292,6 +399,37 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
+  const handleDeleteAllBatches = async () => {
+    if (!window.confirm(
+      lang === 'en'
+        ? 'This will delete ALL batches and batchItems. This cannot be undone. Are you sure you want to continue?'
+        : "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?"
+    )) return;
+
+    setIsDeletingAllBatches(true);
+    setMessage('');
+    try {
+      const result = await BatchService.deleteAllBatches();
+      // Expecting { deletedBatches, deletedBatchItems } or similar
+  const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
+  const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
+      setMessage(
+        lang === 'en'
+          ? `Deleted batches: ${deletedBatches}, deleted batchItems: ${deletedBatchItems}`
+          : `Lots supprimés : ${deletedBatches}, batchItems supprimés : ${deletedBatchItems}`
+      );
+    } catch (error) {
+      setMessage(
+        lang === 'en'
+          ? `Delete all batches failed: ${error.message}`
+          : `Échec de la suppression des lots : ${error.message}`
+      );
+      console.error('Delete all batches error:', error);
+    } finally {
+      setIsDeletingAllBatches(false);
+    }
+  };
+
   const handleRepairTimestamps = async () => {    if (!window.confirm(
       lang === 'en'
         ? 'This will add updatedAt timestamps to existing tool records without them. Are you sure you want to continue?'
@@ -346,9 +484,40 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
+  const handleMigratePublicFeedback = async () => {
+    if (!window.confirm(
+      lang === 'en'
+        ? 'This will migrate all public feedback from expert feedback to the new public feedback collection. Are you sure you want to continue?'
+        : 'Cela migrera tous les commentaires publics des commentaires d\'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?'
+    )) return;
+    setIsMigratingPublicFeedback(true);
+    setMessage('');
+    try {
+      const result = await DataStoreService.migratePublicFeedback();
+      setMessage(
+        lang === 'en'
+          ? `Migration completed. Migrated ${result.migrated || 0} feedback documents.`
+          : `Migration terminée. ${result.migrated || 0} commentaires migrés.`
+      );
+    } catch (error) {
+      setMessage(
+        lang === 'en'
+          ? `Migration failed: ${error.message}`
+          : `Échec de la migration: ${error.message}`
+      );
+    } finally {
+      setIsMigratingPublicFeedback(false);
+    }
+  };
+
   return (
     <GcdsContainer  size="xl" centered>
       <GcdsHeading tag="h1">Database Management</GcdsHeading>
+      <nav className="mb-400">
+        <GcdsLink href={`/${lang}/admin`}>
+          {t('common.backToAdmin', 'Back to Admin')}
+        </GcdsLink>
+      </nav>
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{lang === 'en' ? 'Table Record Counts' : 'Nombre d\'enregistrements par table'}</GcdsHeading>
@@ -374,26 +543,175 @@ const DatabasePage = ({ lang }) => {
           !countsError && <div>{lang === 'en' ? 'Loading table counts...' : 'Chargement...'}</div>
         )}
       </div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <label>
+          Table:&nbsp;
+          <select
+            value={selectedCollection}
+            onChange={e => setSelectedCollection(e.target.value)}
+            style={{ minWidth: 120 }}
+            disabled={isExporting || collections.length === 0}
+          >
+            <option value="All">All</option>
+            <option value="AllButLogs">All but logs</option>
+            {collections.map((col) => (
+              <option key={col} value={col}>{col}</option>
+            ))}
+          </select>
+        </label>
         <label>Start date:&nbsp;
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
         </label>
-        &nbsp;&nbsp;
         <label>End date:&nbsp;
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </label>
+        <label>Limit:&nbsp;
+          <input
+            type="number"
+            min="1"
+            value={exportLimit}
+            onChange={e => setExportLimit(e.target.value)}
+            style={{ width: 100 }}
+            disabled={isExporting}
+          />
+        </label>
+        <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
+          {isExporting ? 'Exporting...' : 'Export Database'}
+        </GcdsButton>
       </div>
-      <GcdsButton onClick={handleExport} disabled={isExporting}>
-        {isExporting ? 'Exporting...' : 'Export Database'}
-      </GcdsButton>
+      {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
+                <GcdsHeading tag="h2">Integrity Checks</GcdsHeading>
+                <GcdsText>
+                  Run read-only checks to find orphaned documents and parent records that reference missing children.
+                </GcdsText>
+                <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: '600' }}>Core orphan & parent-reference checks</summary>
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[
+                      { id: 'orphanCitations', label: 'Orphaned Citations (not referenced by any Answer)' },
+                      { id: 'orphanTools', label: 'Orphaned Tools (not referenced by any Answer)' },
+                      { id: 'orphanAnswers', label: 'Orphaned Answers (not referenced by any Interaction or Embedding)' },
+                      { id: 'orphanQuestions', label: 'Orphaned Questions (not referenced by any Interaction or Embedding)' },
+                      { id: 'orphanInteractions', label: 'Orphaned Interactions (not referenced by any Chat)' },
+                      { id: 'interactionMissingChildren', label: 'Interactions referencing missing children (question/answer/feedback/context/eval)' },
+                      { id: 'embeddingsMissingRefs', label: 'Embeddings with missing Chat/Interaction/Question/Answer refs' },
+                      { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
+                      { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
+                      { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
+                      { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' }
+                    ].map(check => (
+                      <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ flex: 1 }}>{check.label}</div>
+                        <GcdsButton
+                          onClick={async () => {
+                            try {
+                              setChecksRunning(prev => ({ ...prev, [check.id]: true }));
+                              setMessage('');
+                              const res = await fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                                method: 'GET',
+                                headers: AuthService.getAuthHeader()
+                              });
+                              const json = await res.json();
+                              if (!res.ok) throw new Error(json.message || 'Check failed');
+                              setChecksResults(prev => ({ ...prev, [check.id]: json }));
+                            } catch (err) {
+                              setMessage(`Check ${check.id} failed: ${err.message}`);
+                            } finally {
+                              setChecksRunning(prev => ({ ...prev, [check.id]: false }));
+                            }
+                          }}
+                          disabled={!!checksRunning[check.id]}
+                          variant="secondary"
+                        >
+                          {checksRunning[check.id] ? 'Running...' : 'Run check'}
+                        </GcdsButton>
+                        <div style={{ minWidth: 220, textAlign: 'right' }}>
+                          {checksResults[check.id] ? (
+                            <div style={{ fontSize: 13 }}>
+                              Count: <strong>{checksResults[check.id].count}</strong>
+                              {checksResults[check.id].breakdown ? (
+                                <div style={{ marginTop: 6, textAlign: 'right' }}>
+                                  <div style={{ fontSize: 12 }}>Missing — Chat: <strong>{checksResults[check.id].breakdown.missingChat}</strong>, Interaction: <strong>{checksResults[check.id].breakdown.missingInteraction}</strong>, Question: <strong>{checksResults[check.id].breakdown.missingQuestion}</strong>, Answer: <strong>{checksResults[check.id].breakdown.missingAnswer}</strong></div>
+                                  {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                                    <div style={{ marginTop: 6 }}>
+                                      Samples: {checksResults[check.id].samples.slice(0,5).map(s => (s._id || s)).join(', ')}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                                <div style={{ marginTop: 6 }}>
+                                  Samples: {checksResults[check.id].samples.slice(0,5).map(s => (s._id || s)).join(', ')}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+
+              <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Import Database' : 'Importer la base de données'}</GcdsHeading>
         <GcdsText>
           {lang === 'en'
             ? 'Restore the database from a backup file. Warning: This will replace all existing data.'
             : 'Restaurer la base de données à partir d\'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.'}
         </GcdsText>
+        {/* Show import progress message above the import button */}
+        {isImporting && message && (
+          <div style={{ margin: '12px 0', color: 'blue' }}>{message}</div>
+        )}
         <form onSubmit={handleImport} className="mb-200">
+          <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <label>
+              Chunk size (MB):&nbsp;
+              <input
+                type="number"
+                min="0.0625"
+                step="0.0625"
+                value={importChunkMB}
+                onChange={e => setImportChunkMB(e.target.value)}
+                style={{ width: 100 }}
+                disabled={isImporting}
+              />
+            </label>
+            <label>
+              Throttle (ms):&nbsp;
+              <input
+                type="number"
+                min="0"
+                step="50"
+                value={importThrottleMs}
+                onChange={e => setImportThrottleMs(e.target.value)}
+                style={{ width: 100 }}
+                disabled={isImporting}
+              />
+            </label>
+            <label>
+              Table (hold Ctrl/Cmd to multi-select):&nbsp;
+              <select
+                value={importSelectedCollections}
+                onChange={e => {
+                  const options = Array.from(e.target.options);
+                  const vals = options.filter(o => o.selected).map(o => o.value);
+                  // If nothing selected, default to All
+                  setImportSelectedCollections(vals.length ? vals : ['All']);
+                }}
+                style={{ minWidth: 200, minHeight: 100 }}
+                multiple
+                disabled={isImporting || collections.length === 0}
+              >
+                <option value="All">All</option>
+                <option value="AllButLogs">All but logs</option>
+                {collections.map((col) => (
+                  <option key={col} value={col}>{col}</option>
+                ))}
+              </select>
+            </label>
+          </div>
           <input
             type="file"
             accept=".jsonl"
@@ -468,6 +786,25 @@ const DatabasePage = ({ lang }) => {
       </div>
 
       <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Delete All Batches' : 'Supprimer tous les lots'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Delete all batch records and their associated batchItems. This is destructive and cannot be undone.'
+            : 'Supprimer tous les enregistrements de lots et leurs batchItems associés. Cette action est destructive et irréversible.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleDeleteAllBatches}
+          disabled={isDeletingAllBatches}
+          variant="danger"
+          className="mb-200"
+        >
+          {isDeletingAllBatches
+            ? (lang === 'en' ? 'Deleting...' : 'Suppression...')
+            : (lang === 'en' ? 'Delete All Batches' : 'Supprimer tous les lots')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Repair Expert Feedback Types' : 'Réparer les types de commentaires d\'experts'}</GcdsHeading>
         <GcdsText>
           {lang === 'en'
@@ -486,7 +823,27 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
       </div>
 
-      {message && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Migrate Public Feedback' : 'Migrer les commentaires publics'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Move all public feedback from the expert feedback collection to the new public feedback collection.'
+            : 'Déplacer tous les commentaires publics de la collection des commentaires d\'experts vers la nouvelle collection des commentaires publics.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleMigratePublicFeedback}
+          disabled={isMigratingPublicFeedback}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isMigratingPublicFeedback
+            ? (lang === 'en' ? 'Migrating...' : 'Migration...')
+            : (lang === 'en' ? 'Migrate Public Feedback' : 'Migrer les commentaires publics')}
+        </GcdsButton>
+      </div>
+
+      {/* Show other messages (not import progress) at the bottom */}
+      {(!isImporting && message) && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
     </GcdsContainer>
   );
 };

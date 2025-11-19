@@ -1,4 +1,4 @@
-import checkCitationUrl from './urlChecker.js';
+import { getApiUrl } from './apiToUrl.js';
 
 /**
  * URLToSearch class provides methods to validate and verify URLs for Canada.ca domains
@@ -15,31 +15,35 @@ class URLToSearch {
    * @param {function} t - Translation function
    * @returns {Promise<object>} Validation result with network check
    */
-  async validateAndCheckUrl(url, lang, question, department, t) {
-    // If URL is empty, null, or undefined, skip validation and return a fallback search URL
+  async validateAndCheckUrl(url, lang, question, department, t, chatId = null) {
     if (!url) {
       return this.generateFallbackSearchUrl(lang, question, department, t);
     }
 
-    // Function to check if a URL is a Canada.ca domain
     const isCanadaCaDomain = (url) => {
       return url.startsWith('https://www.canada.ca') || url.startsWith('http://www.canada.ca');
     };
 
-    // Only check Canada.ca URLs to see if they are going to 404 problem here when they redirect from a canada.ca domain to a non-canada.ca domain like isc
+    // COMMENTED OUT: Pipeline URL validation disabled to avoid double-checking 
+    // (AI agent already validates URLs during response generation based on citationInstructions.js)
+    // Uncomment if needed for additional validation layer
+    
     let checkResult = { isValid: true };
-    if (isCanadaCaDomain(url)) {
-      checkResult = await checkCitationUrl(url);
-    }
+    // if (isCanadaCaDomain(url)) {
+    //   try {
+    //     const apiUrl = getApiUrl(`util-check-url?url=${encodeURIComponent(url)}${chatId ? `&chatId=${encodeURIComponent(chatId)}` : ''}`);
+    //     const response = await fetch(apiUrl);
+    //     checkResult = await response.json();
+    //   } catch (error) {
+    //     checkResult = { isValid: false };
+    //   }
+    // }
 
-    // Only return the URL with high confidence if:
-    // 1. It's a valid Canada.ca URL that isn't 404, OR
-    // 2. It's not a Canada.ca domain at all
     if ((checkResult.isValid && isCanadaCaDomain(url)) || !isCanadaCaDomain(url)) {
       return {
         isValid: true,
-        url: url, // Keep the original URL
-        confidenceRating: checkResult.confidenceRating || '0.5', // Use checkResult rating if available, otherwise default to 0.5
+        url: url,
+        confidenceRating: checkResult.confidenceRating || '0.5',
       };
     }
 
