@@ -49,7 +49,7 @@ export class DefaultWithVector {
     });
     const translationContext = ChatWorkflowService.buildTranslationContext(conversationHistory);
 
-    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI, translationContext);
+    const translationData = await ChatWorkflowService.translateQuestion(redactedText, "en", selectedAI, translationContext);
     await LoggingService.info(chatId, 'Translation data', { translationData });
 
     // Decide context to use (existing or minimal) prior to short-circuit

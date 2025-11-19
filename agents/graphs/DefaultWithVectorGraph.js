@@ -76,7 +76,7 @@ graph.addNode('redact', async (state) => {
 
 graph.addNode('translate', async (state) => {
   const translationContext = workflow.buildTranslationContext(state.conversationHistory);
-  const translationData = await workflow.translateQuestion(state.redactedText, state.lang, state.selectedAI, translationContext);
+  const translationData = await workflow.translateQuestion(state.redactedText, "en", state.selectedAI, translationContext);
   return { translationData };
 });
 

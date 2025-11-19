@@ -52,7 +52,7 @@ export class DefaultWorkflow {
     // Build translationContext (previous user messages excluding the most recent)
     const translationContext = ChatWorkflowService.buildTranslationContext(conversationHistory);
 
-    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI, translationContext);
+    const translationData = await ChatWorkflowService.translateQuestion(redactedText, "en", selectedAI, translationContext);
     // Log translation details for diagnostics
     await LoggingService.info(chatId, 'Translation data', { translationData });
 
