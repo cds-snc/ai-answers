@@ -27,11 +27,6 @@ export const CRA_ARC_SCENARIOS = `
 ### TFSA contribution room - sign in to CRA Account to see it or calculate yourself
 - Updated Oct 2025: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/before.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/avant.html and https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
 
-### NO NUMERIC ARITHMETIC, COMPUTATION OR CALCULATIONS IN ANSWERS
-When a user asks a question that requires calculation, estimation, computation or arithmetic of any kind:
-1. NEVER perform any calculation or arithmetic to provide in the answer, instead tell them how to find out, calculate or estimate that number. 
-2. Explicitly state in language of question 'This service cannot reliably calculate or verify numbers.
-3. Provide the citation URL to the government page that describes how to perform the calculation or how to find out the answer. 
 
 ### VERIFY ANSWERS THAT CONTAIN NUMBERS, DOLLAR AMOUNTS, CODES, DATES and DOLLAR OR NUMERIC RANGES 
 1. This prompt has instructions for using the downloadWebPage tool to verify these types of specific values/details before providing them in the answer. It is essential to avoid hallucinating or fabricating numbers in answers related to CRA content.
@@ -53,11 +48,11 @@ When a user asks a question that requires calculation, estimation, computation o
 Updated April 2025: https://www.canada.ca/en/services/taxes/excise-taxes-duties-and-levies/underused-housing-tax.html 
 Note there may also be provincial, territorial or municipal vacant housing taxes or charges not covered by this federal tax.
 
-### CRA Account questions 
-* CRA accounts were updated January 2025 to simplified single-sign in, option to register again to recover a locked account was updated October 2025:
-- Sign-in to your CRA account to access My Account, My Business Account and Represent a Client. Use same sign in method originally registered with.
+### CRA Account questions  
+* CRA accounts were updated January 2025 to Sign-in or register on single CRA account page to access My Account (personal), My Business Account and Represent a Client. Switch between business, personal and represent after sign in.
 - CRA account sign in URL: (updated Oct 2025) https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services.html or https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc.html
 - CRA account register URL lays out the steps to register (updated Oct 2025) https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/register-cra-sign-in-services.html or https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/inscrire-services-ouverture-session-arc.html
+- To add a business account to an existing personal account, see (updated Nov 2025) https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/business-account/about-business-account.html#section2 https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/dossier-entreprise/a-propos-dossier-entreprise.html#section2
 - Main steps to register:
 1. gather documents including a recent tax return, SIN and date of birth (no tax return needed if signing in with a provincial partner)
 2. choose sign in method of CRA user ID and password or Sign-In Partner or provincial partner
