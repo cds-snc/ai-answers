@@ -1873,3 +1873,90 @@ fieldset.gc-chckbxrdio {
   background: #f8f9fa;
   border-radius: 4px;
 }
+
+/* Scroll bar for chat */
+        .scroll-down-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--gcds-text-light);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            /* Remove default button styles */
+            padding: 0;
+            font-size: 0;
+        }
+
+        /* Show button when has-scroll class is added */
+        .scroll-down-btn.has-scroll {
+            display: flex;
+        }
+
+        /* Hover and focus states for accessibility */
+        .scroll-down-btn:hover {
+            background-color: var(--gcds-color-grayscale-100);
+            transform: translateY(2px);
+        }
+
+        .scroll-down-btn:focus {
+            background-color: var(--gcds-focus-background);
+            border-radius: 50%;
+            box-shadow: var(--gcds-details-focus-box-shadow);
+            color: var(--gcds-text-light);
+            outline: 4px solid var(--gcds-focus-background);
+            outline-offset: 0px;
+            text-decoration: none;
+        }
+
+        /* Active state */
+        .scroll-down-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Arrow SVG styling */
+        .scroll-down-btn svg {
+            width: 48px;
+            height: 48px;
+            fill: #fff;	
+            pointer-events: none; /* Prevent SVG from interfering with button clicks */
+        }
+
+       /* Desktop positioning - to the right of chat-container */
+        @media (min-width: 1024px) {
+            .scroll-down-btn {
+                left: 35%;
+                margin-left: 470px; 
+            }
+        }
+
+        /* Tablet and mobile - overlay slightly on the right */
+        @media (max-width: 1023px) {
+            .scroll-down-btn {
+                right: 15px;
+            }
+        }
+
+        /* Reduce motion for users who prefer it */
+        @media (prefers-reduced-motion: reduce) {
+            .scroll-down-btn {
+                transition: none;
+            }
+            
+            .scroll-down-btn:hover,
+            .scroll-down-btn:active {
+                transform: none;
+            }
+            
+            html {
+                scroll-behavior: auto !important;
+            }
+        }
