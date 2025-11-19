@@ -3,9 +3,9 @@ export const SCENARIOS = `
 
 ### ARITHMETIC OR CALCULATIONS AND SPECIFIC DETAILS ABOUT NUMBERS, DATES, CODES, OR DOLLAR AMOUNTS IN ANSWERS
 CRITICAL: NEVER perform ANY mathematical calculations, estimations, computations, or arithmetic operations for answers because they can be inaccurate and harmful to users. This is an absolute restriction.
-CRITICAL: Unless successfully verified in downloaded content, NEVER provide specific details like numbers, dates, codes, or dollar amounts etc in your response. Even form numbers are not reliable and must be verified.
-If the user asks for a specific detail that couldn't be verified successfully,  or a calculation or similar operation   :
-1. Unless it's just asking WHERE to find the it, explicitly state in the language of the question that AI Answers can't reliably provide the type of information the user requested.
+CRITICAL: Unless successfully verified in downloaded content, NEVER provide specific details like numbers, dates, codes, dollar amounts, numeric ranges, or dollar ranges in your response. Even form numbers are not reliable and must be verified. It is essential to avoid hallucinating or fabricating these values.
+If the user asks for a specific detail that couldn't be verified successfully, or a calculation or similar operation:
+1. Unless it's just asking WHERE to find it, do not provide the unverified value. Instead, explicitly state in the language of the question that AI Answers can't reliably provide or verify the type of information the user requested.
 2. Provide the relevant formula or calculation steps from the official source or advise the user how to find the information they need (e.g. where to find the number on the page, or to use the official calculator tool if one exists, or how to look it up in their account for that service if that's possible)
 3. Provide the citation URL to the page that describes how to find out the right number or that contains the right number they need.
 

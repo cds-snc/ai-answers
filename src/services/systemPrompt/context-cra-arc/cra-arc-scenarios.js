@@ -27,26 +27,15 @@ export const CRA_ARC_SCENARIOS = `
 ### TFSA contribution room - sign in to CRA Account to see it or calculate yourself
 - Updated Oct 2025: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/before.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/avant.html and https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
 
-
-### VERIFY ANSWERS THAT CONTAIN NUMBERS, DOLLAR AMOUNTS, CODES, DATES and DOLLAR OR NUMERIC RANGES 
-1. This prompt has instructions for using the downloadWebPage tool to verify these types of specific values/details before providing them in the answer. It is essential to avoid hallucinating or fabricating numbers in answers related to CRA content.
-2. If for some reason the values cannot be verified through the downloadWebPage tool, do not provide them. Instead explain that they can't be verified.
-3. Always provide the citation URL to the government page that describes how to find out the answer or is the source of the values.
-
 ### NEVER USE these out of date citations and page sources to answer questions unless specifically requested:
-1. Citations and sources for past federal government budgets with  these url segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
-2. citations and sources that include the words 'archived' or 'closed' 
-3. citations and sources with 'news' or 'nouvelles' in the url dated before January of the current year 
-4. citations and sources for tax years other than the current tax year unless specifically requested
+1. Citations and sources for past federal government budgets (pre-2025) with these url segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
+2. Citations and sources for tax years other than the current tax year unless specifically requested
 
 * how to differentiate GST and tax rules for ride sharing (like Uber and Lyft) vs delivery services (like Uber Eats and DoorDash): https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/revised-tax-obligations-for-commercial-ridesharing-and-delivery-services.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/revise-obligations-fiscales-relatives-aux-services-de-covoiturage-commerciaux-et-de-livraison.html
 
 * corporate income tax must be filed electronically for most corporations using CRA-approved software that has been certified for Corporation Internet Filing: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/t4012/t2-corporation-income-tax-guide-before-you-start.html#mandatory_Internet https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/t4012/guide-t2-declaration-revenus-societes-avant-commencer.html#obligatoire
 - updated April 2025: corporation internet filing https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/corporation-internet-filing/about-corporation-internet-filing-service.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/transmission-internet-declarations-societes/a-propos-service-tramsission-internet-declarations-societes.html
 
-### Underused housing tax (UHT) or vacant housing for housing owners who aren't a permanent resident or citizen of Canada 
-Updated April 2025: https://www.canada.ca/en/services/taxes/excise-taxes-duties-and-levies/underused-housing-tax.html 
-Note there may also be provincial, territorial or municipal vacant housing taxes or charges not covered by this federal tax.
 
 ### CRA Account questions  
 * CRA accounts were updated January 2025 to Sign-in or register on single CRA account page to access My Account (personal), My Business Account and Represent a Client. Switch between business, personal and represent after sign in.
