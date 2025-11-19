@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.61.1](https://github.com/cds-snc/ai-answers/compare/v1.61.0...v1.61.1) (2025-11-19)
+
+
+### Bug Fixes
+
+* cra and follow-up ([235e326](https://github.com/cds-snc/ai-answers/commit/235e326c31dd574f0385b6cc0e2b12704a7afdd6))
+* cra cuts ([f0e44ec](https://github.com/cds-snc/ai-answers/commit/f0e44ec14086293e8ab377c50ba1232bfbce9fda))
+* fin and cds ([590789b](https://github.com/cds-snc/ai-answers/commit/590789b4f5b11c122ba9f922c97edd1e8e7fc5fc))
+* ircc direct deposit ([01b53d5](https://github.com/cds-snc/ai-answers/commit/01b53d5b940f186218f98f69dbecd85516464b0b))
+
 ## [1.61.0](https://github.com/cds-snc/ai-answers/compare/v1.60.1...v1.61.0) (2025-11-19)
 
 
