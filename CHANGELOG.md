@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.61.0](https://github.com/cds-snc/ai-answers/compare/v1.60.1...v1.61.0) (2025-11-19)
+
+
+### Features
+
+* fix conflict ([2e98b4c](https://github.com/cds-snc/ai-answers/commit/2e98b4c61b0c19dfe63234814b12f4d97e0bb170))
+* scroll ([574411b](https://github.com/cds-snc/ai-answers/commit/574411b5888f0a555f3cef0de18752df8e0993a6))
+* scroll css ([f7af0c4](https://github.com/cds-snc/ai-answers/commit/f7af0c4705eacac367fde58fb5f188594929e7b9))
+
 ## [1.60.1](https://github.com/cds-snc/ai-answers/compare/v1.60.0...v1.60.1) (2025-11-18)
 
 
