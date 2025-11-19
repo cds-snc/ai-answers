@@ -21,7 +21,11 @@ async function handler(req, res) {
         ServerLoggingService.info('Received request to search.', chatId, { searchService, referringUrl });
 
         try {
-            const orchestratorRequest = { translationData, referringUrl, pageLanguage };
+            const pageLang = (pageLanguage || '').toLowerCase();
+            const originalLang = (translationData && translationData.originalLanguage) ? String(translationData.originalLanguage).toLowerCase() : '';
+            const lang = (pageLang.includes('fr') || originalLang.includes('fr')) ? 'fr' : 'en';
+
+            const orchestratorRequest = { translationData, referringUrl, pageLanguage: lang };
             const rewriteResult = await AgentOrchestratorService.invokeWithStrategy({
                 chatId,
                 agentType,
@@ -32,8 +36,7 @@ async function handler(req, res) {
             const searchQuery = rewriteResult.query;
             ServerLoggingService.info('SearchContextAgent rewrite result:', chatId, { pageLanguage, ...rewriteResult });
 
-            // Determine lang: search must be executed in the language of the page
-            const lang = pageLanguage.toLowerCase().includes('fr') ? 'fr' : 'en';
+            
             const searchResults = await performSearch(searchQuery, lang, searchService, chatId);
             ServerLoggingService.debug('Search results:', chatId, searchResults);
             // Merge agentResult values into the response
