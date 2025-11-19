@@ -218,12 +218,29 @@ const ChatInterface = ({
     const scrollDown = (e) => {
       e.preventDefault();
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      const viewportHeight = window.innerHeight;
-      // Scroll 80% of viewport instead of 100%
-      const targetScroll = currentScroll + (viewportHeight * 0.8);
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollTo = Math.min(targetScroll, maxScroll);
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      // Check if there's an error message - if so, scroll to input area (footer)
+      const hasErrorMessage = messages.some(m => m.error && (m.sender === 'system' || m.sender === 'ai'));
+      
+      let scrollTo;
+      if (hasErrorMessage) {
+        // Scroll to make the input area visible
+        const inputArea = document.querySelector('.input-area');
+        if (inputArea) {
+          const inputRect = inputArea.getBoundingClientRect();
+          scrollTo = currentScroll + inputRect.top - 20; // 20px padding from top
+        } else {
+          // Fallback: scroll to bottom
+          scrollTo = document.documentElement.scrollHeight - window.innerHeight;
+        }
+      } else {
+        // Normal behavior: scroll 80% of viewport
+        const viewportHeight = window.innerHeight;
+        const targetScroll = currentScroll + (viewportHeight * 0.8);
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        scrollTo = Math.min(targetScroll, maxScroll);
+      }
       
       window.scrollTo({
         top: scrollTo,
