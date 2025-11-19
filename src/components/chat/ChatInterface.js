@@ -177,6 +177,9 @@ const ChatInterface = ({
   }, [isLoading, t, safeT]);
 
   // Scroll down button functionality
+  // Unified behavior for both error messages and AI responses
+  // Button visible until footer (input-area bottom OR gcds-footer__sub top) is visible
+  // Scrolls 80% of viewport on click for all cases
   useEffect(() => {
     const scrollBtn = document.querySelector('.scroll-down-btn');
     if (!scrollBtn) return;
@@ -191,30 +194,31 @@ const ChatInterface = ({
         return;
       }
 
-      // Check if input area (footer) is visible
+      // Check if footer is visible - try input-area bottom first, then gcds-footer__sub top
       const inputArea = document.querySelector('.input-area');
+      const gcdsFooter = document.querySelector('.gcds-footer__sub');
+      
+      let isFooterVisible = false;
+      
       if (inputArea) {
         const inputRect = inputArea.getBoundingClientRect();
-        const isInputVisible = inputRect.top < window.innerHeight && inputRect.bottom > 0;
-        
-        // For error messages: show button UNLESS footer is visible
-        if (hasErrorMessage && !hasAIResponse) {
-          if (isInputVisible) {
-            scrollBtn.classList.remove('has-scroll');
-          } else {
-            scrollBtn.classList.add('has-scroll');
-          }
-          return;
-        }
-        
-        // For AI responses: hide if footer is visible
-        if (isInputVisible) {
-          scrollBtn.classList.remove('has-scroll');
-          return;
-        }
+        // Check if bottom of input area is visible
+        isFooterVisible = inputRect.bottom >= 0 && inputRect.bottom <= window.innerHeight;
+      }
+      
+      // If input area bottom not visible, check gcds-footer__sub top
+      if (!isFooterVisible && gcdsFooter) {
+        const footerRect = gcdsFooter.getBoundingClientRect();
+        // Check if top of footer is visible
+        isFooterVisible = footerRect.top >= 0 && footerRect.top <= window.innerHeight;
+      }
+      
+      if (isFooterVisible) {
+        scrollBtn.classList.remove('has-scroll');
+        return;
       }
 
-      // Show button if there's more content below (for AI responses)
+      // Show button if there's more content below
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -230,30 +234,13 @@ const ChatInterface = ({
     const scrollDown = (e) => {
       e.preventDefault();
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      const viewportHeight = window.innerHeight;
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       
-      // Check if there's an error message WITHOUT an AI response
-      const hasErrorMessage = messages.some(m => m.error && (m.sender === 'system' || m.sender === 'ai'));
-      const hasAIResponse = messages.some(m => m.sender === 'ai' && !m.error);
-      
-      let scrollTo;
-      if (hasErrorMessage && !hasAIResponse) {
-        // Error-only behavior: scroll to make the input area visible
-        const inputArea = document.querySelector('.gcds-footer__sub');
-        if (inputArea) {
-          const inputRect = inputArea.getBoundingClientRect();
-          scrollTo = currentScroll + inputRect.top - 20; // 20px padding from top
-        } else {
-          // Fallback: scroll to bottom
-          scrollTo = document.documentElement.scrollHeight - window.innerHeight;
-        }
-      } else {
-        // Normal answer scroll 80% of viewport
-        const viewportHeight = window.innerHeight;
-        const targetScroll = currentScroll + (viewportHeight * 0.8);
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-        scrollTo = Math.min(targetScroll, maxScroll);
-      }
+      // Same behavior for all: scroll 80% of viewport
+      const targetScroll = currentScroll + (viewportHeight * 0.8);
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollTo = Math.min(targetScroll, maxScroll);
       
       window.scrollTo({
         top: scrollTo,
@@ -360,10 +347,10 @@ const ChatInterface = ({
       <div className="message-list">
         {messages.map((message) => (
           <div
-              key={`message-${message.id}`}
-              id={message.id ? `interactionId${message.id}` : undefined}
-              className={`message ${message.sender}`}
-            >
+            key={`message-${message.id}`}
+            id={message.id ? `interactionId${message.id}` : undefined}
+            className={`message ${message.sender}`}
+          >
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${
