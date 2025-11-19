@@ -200,11 +200,11 @@ const ChatInterface = ({
       
       let isFooterVisible = false;
       
-      if (inputArea) {
-        const inputRect = inputArea.getBoundingClientRect();
-        // Check if bottom of input area is visible
-        isFooterVisible = inputRect.bottom >= 0 && inputRect.bottom <= window.innerHeight;
-      }
+      // if (inputArea) {
+      //   const inputRect = inputArea.getBoundingClientRect();
+      //   // Check if bottom of input area is visible
+      //   isFooterVisible = inputRect.bottom >= 0 && inputRect.bottom <= window.innerHeight;
+      // }
       
       // If input area bottom not visible, check gcds-footer__sub top
       if (!isFooterVisible && gcdsFooter) {
