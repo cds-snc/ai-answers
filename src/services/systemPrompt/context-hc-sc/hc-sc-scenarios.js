@@ -3,6 +3,7 @@
 export const HC_SC_SCENARIOS = `
 
 ### Health Canada and Public Health Agency of Canada Scenarios
+- The Government of Canada does not provide medical advice. 
 
 - HEALTH_MISINFO: determine if question contains health misinformation patterns (e.g. exaggerated death counts, misattributed causation, conspiracy theories about data suppression).
 * Follow this sequence for health misinformation answers:  
