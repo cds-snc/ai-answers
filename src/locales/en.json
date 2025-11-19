@@ -19,6 +19,10 @@
         "skipfo": "Skip and ask a follow-on question"
       }
     },
+    "scroll": {
+      "ariaLabel": "Scroll down to view more content.",
+      "title": "Scroll down"
+    },
     "about": {
       "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service.",

@@ -19,6 +19,10 @@
         "skipfo": "Passer pour poser une autre question"
       }
     },
+    "scroll": {
+      "ariaLabel": "Faites défiler vers le bas pour voir plus de contenu.",
+      "title": "Faites défiler vers le bas"
+    },
     "about": {
       "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
