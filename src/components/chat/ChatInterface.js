@@ -177,27 +177,44 @@ const ChatInterface = ({
   }, [isLoading, t, safeT]);
 
   // Scroll down button functionality
+  // Button visible until footer is visible
+  // Scrolls 80% of viewport on click
   useEffect(() => {
     const scrollBtn = document.querySelector('.scroll-down-btn');
     if (!scrollBtn) return;
 
     const checkScrollableContent = () => {
-      // Requirement 2: Only show after first AI response (not loading)
+      // Show after first AI response OR error message (not loading)
       const hasAIResponse = messages.some(m => m.sender === 'ai' && !m.error);
-      if (!hasAIResponse || isLoading) {
+      const hasErrorMessage = messages.some(m => m.error && (m.sender === 'system' || m.sender === 'ai'));
+      
+      if ((!hasAIResponse && !hasErrorMessage) || isLoading) {
         scrollBtn.classList.remove('has-scroll');
         return;
       }
 
-      // Requirement 3: Hide if follow-up input area is visible
+      // Check if footer is visible - try input-area bottom first, then gcds-footer__sub top
       const inputArea = document.querySelector('.input-area');
-      if (inputArea) {
-        const inputRect = inputArea.getBoundingClientRect();
-        const isInputVisible = inputRect.top < window.innerHeight && inputRect.bottom > 0;
-        if (isInputVisible) {
-          scrollBtn.classList.remove('has-scroll');
-          return;
-        }
+      const gcdsFooter = document.querySelector('.gcds-footer__sub');
+      
+      let isFooterVisible = false;
+      
+      // if (inputArea) {
+      //   const inputRect = inputArea.getBoundingClientRect();
+      //   // Check if bottom of input area is visible - wasn't working reliably so switched to gcds-footer__sub
+      //   isFooterVisible = inputRect.bottom >= 0 && inputRect.bottom <= window.innerHeight;
+      // }
+      
+      // If input area bottom not visible, check gcds-footer__sub top
+      if (!isFooterVisible && gcdsFooter) {
+        const footerRect = gcdsFooter.getBoundingClientRect();
+        // Check if top of footer is visible
+        isFooterVisible = footerRect.top >= 0 && footerRect.top <= window.innerHeight;
+      }
+      
+      if (isFooterVisible) {
+        scrollBtn.classList.remove('has-scroll');
+        return;
       }
 
       // Show button if there's more content below
@@ -217,11 +234,12 @@ const ChatInterface = ({
       e.preventDefault();
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
       const viewportHeight = window.innerHeight;
-      // Requirement 1: Scroll 80% of viewport instead of 100%
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      // Same behavior for all: scroll 80% of viewport
       const targetScroll = currentScroll + (viewportHeight * 0.8);
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const scrollTo = Math.min(targetScroll, maxScroll);
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       
       window.scrollTo({
         top: scrollTo,
@@ -328,10 +346,10 @@ const ChatInterface = ({
       <div className="message-list">
         {messages.map((message) => (
           <div
-              key={`message-${message.id}`}
-              id={message.id ? `interactionId${message.id}` : undefined}
-              className={`message ${message.sender}`}
-            >
+            key={`message-${message.id}`}
+            id={message.id ? `interactionId${message.id}` : undefined}
+            className={`message ${message.sender}`}
+          >
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${
