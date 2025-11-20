@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.62.0](https://github.com/cds-snc/ai-answers/compare/v1.61.1...v1.62.0) (2025-11-20)
+
+
+### Features
+
+* scroll on short messages ([7f8b931](https://github.com/cds-snc/ai-answers/commit/7f8b931107ac23a8a1f01683bb7c9b3d8c803065))
+
 ## [1.61.1](https://github.com/cds-snc/ai-answers/compare/v1.61.0...v1.61.1) (2025-11-19)
 
 
