@@ -1,5 +1,5 @@
-import { departments_EN } from '../../src/services/systemPrompt/departments_EN.js';
-import { departments_FR } from '../../src/services/systemPrompt/departments_FR.js';
+import { departments_EN } from './scenarios/departments_EN.js';
+import { departments_FR } from './scenarios/departments_FR.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 async function loadContextSystemPrompt(language = 'en') {
