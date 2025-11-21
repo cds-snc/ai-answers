@@ -15,10 +15,10 @@
  */
 
 import { BASE_SYSTEM_PROMPT } from '../agents/prompts/agenticBase.js';
-import { SCENARIOS } from '../src/services/systemPrompt/scenarios-all.js';
+import { SCENARIOS } from '../agents/prompts/scenarios/scenarios-all.js';
 import { CITATION_INSTRUCTIONS } from '../agents/prompts/citationInstructions.js';
-import { departments_EN } from '../src/services/systemPrompt/departments_EN.js';
-import { departments_FR } from '../src/services/systemPrompt/departments_FR.js';
+import { departments_EN } from '../agents/prompts/scenarios/departments_EN.js';
+import { departments_FR } from '../agents/prompts/scenarios/departments_FR.js';
 import { PROMPT as PII_PROMPT } from '../agents/prompts/piiAgentPrompt.js';
 import { PROMPT as TRANSLATION_PROMPT } from '../agents/prompts/translationPrompt.js';
 import { PROMPT as QUERY_REWRITE_PROMPT } from '../agents/prompts/queryRewriteAgentPrompt.js';
@@ -42,7 +42,7 @@ const outputFile = getArg('--output', './system-prompt-documentation.md');
  * Dynamically discover available department context folders
  */
 async function discoverDepartmentContexts() {
-  const contextDir = path.join(path.dirname(import.meta.url.replace('file://', '')), '../src/services/systemPrompt');
+  const contextDir = path.join(path.dirname(import.meta.url.replace('file://', '')), '../agents/prompts/scenarios');
   const entries = await fs.readdir(contextDir, { withFileTypes: true });
 
   const contexts = {};
@@ -88,7 +88,7 @@ async function loadDepartmentScenarios(deptCode) {
     const deptDashed = deptLower.replace(/\s+/g, '-');
 
     // Try to import from the discovered context folder
-    const module = await import(`../src/services/systemPrompt/context-${deptDashed}/${deptDashed}-scenarios.js`, { assert: { type: 'module' } });
+    const module = await import(`../agents/prompts/scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
 
     // Get the first exported scenarios object (they all follow the pattern of exporting a single scenarios constant)
     const scenarios = Object.values(module).find(v => typeof v === 'string');

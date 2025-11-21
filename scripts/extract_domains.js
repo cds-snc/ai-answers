@@ -7,9 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Files to scan (relative to repo root)
+// Updated to use server-side copies under agents/prompts/scenarios
 const files = [
-  path.join(__dirname, '..', 'src', 'services', 'systemPrompt', 'departments_EN.js'),
-  path.join(__dirname, '..', 'src', 'services', 'systemPrompt', 'departments_FR.js'),
+  path.join(__dirname, '..', 'agents', 'prompts', 'scenarios', 'departments_EN.js'),
+  path.join(__dirname, '..', 'agents', 'prompts', 'scenarios', 'departments_FR.js'),
 ];
 
 function extractDomains(text) {
