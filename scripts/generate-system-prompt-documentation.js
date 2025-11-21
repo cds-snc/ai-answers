@@ -42,7 +42,8 @@ const outputFile = getArg('--output', './system-prompt-documentation.md');
  * Dynamically discover available department context folders
  */
 async function discoverDepartmentContexts() {
-  const contextDir = path.join(path.dirname(import.meta.url.replace('file://', '')), '../agents/prompts/scenarios');
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const contextDir = path.join(__dirname, '..', 'agents', 'prompts', 'scenarios');
   const entries = await fs.readdir(contextDir, { withFileTypes: true });
 
   const contexts = {};
@@ -186,6 +187,14 @@ async function generateDocumentation() {
       : 'https://www.canada.ca/en/revenue-agency.html',
     searchResults: '[Example search results would appear here]'
   };
+
+  // Ensure a fallback MongoDB URI exists so SettingsService and ServerLoggingService
+  // do not throw when running this standalone script in developer environments.
+  // This avoids the Mongoose error when MONGODB_URI is not provided.
+  if (!process.env.MONGODB_URI && !process.env.DOCDB_URI) {
+    process.env.MONGODB_URI = 'mongodb://127.0.0.1:27017/dev-database';
+    console.log('Using fallback MONGODB_URI for documentation generator');
+  }
 
   let contextPrompt = await loadContextSystemPrompt(lang);
 
