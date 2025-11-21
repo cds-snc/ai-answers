@@ -716,7 +716,10 @@
       "role": "Role",
       "status": "Status",
       "createdAt": "Created At",
-      "action": "Action"
+      "updatedAt": "Updated at",
+      "totalScore": "Score",
+      "referringUrl": "Referring URL",
+      "interactionUpdatedAt": "Date of Chat"
     },
     "status": {
       "active": "Active",

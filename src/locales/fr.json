@@ -858,7 +858,10 @@
   "rawTimeline": "Chronologie brute (JSON)",
   "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "createdAt": "Créé le",
-    "updatedAt": "Mis à jour le"
+    "updatedAt": "Mis à jour le",
+    "totalScore": "Score",
+    "referringUrl": "URL de référence",
+    "interactionUpdatedAt": "Date du chat"
   },
   "reviewPanels": {
     "sentence": "Phrase",
