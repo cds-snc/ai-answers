@@ -857,6 +857,7 @@
   "stageTimeline": "Chronologie des étapes",
   "rawTimeline": "Chronologie brute (JSON)",
   "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "modelData": "Données du modèle",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le",
     "totalScore": "Score",

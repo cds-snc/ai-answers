@@ -819,6 +819,7 @@
     "fallbackSourceChatId": "Fallback source chatId",
     "matchedCitationInteractionId": "Matched citation interactionId",
     "matchedCitationChatId": "Matched citation chatId",
+    "modelData": "Model data",
     "createdAt": "Created at",
     "updatedAt": "Updated at"
   },
