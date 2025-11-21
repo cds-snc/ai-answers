@@ -14,9 +14,9 @@
  *   --output <file>       Output file path (default: ./system-prompt-documentation.md)
  */
 
-import { BASE_SYSTEM_PROMPT } from '../src/services/systemPrompt/agenticBase.js';
+import { BASE_SYSTEM_PROMPT } from '../agents/prompts/agenticBase.js';
 import { SCENARIOS } from '../src/services/systemPrompt/scenarios-all.js';
-import { CITATION_INSTRUCTIONS } from '../src/services/systemPrompt/citationInstructions.js';
+import { CITATION_INSTRUCTIONS } from '../agents/prompts/citationInstructions.js';
 import { departments_EN } from '../src/services/systemPrompt/departments_EN.js';
 import { departments_FR } from '../src/services/systemPrompt/departments_FR.js';
 import { PROMPT as PII_PROMPT } from '../agents/prompts/piiAgentPrompt.js';

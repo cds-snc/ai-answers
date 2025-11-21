@@ -3,6 +3,7 @@ import { createOpenAIAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 import { withSession } from '../../middleware/session.js';
+import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
@@ -31,9 +32,18 @@ async function invokeHandler(req, res) {
 
     
       console.log('OpenAI API request received');
-      const { message, systemPrompt, conversationHistory, chatId } = req.body;
-      console.log('Request body:', req.body);
+      const { message, conversationHistory, chatId, lang, department, topic, topicUrl, departmentUrl, searchResults, scenarioOverrideText } = req.body;
+      console.log('Request body:', { message, chatId, lang, department, topic });
 
+      // Build the system prompt server-side to avoid trusting client-supplied system prompts.
+      const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
+        department,
+        departmentUrl,
+        topic,
+        topicUrl,
+        searchResults,
+        scenarioOverrideText,
+      });
 
       const openAIAgent = await createOpenAIAgent(chatId);
 

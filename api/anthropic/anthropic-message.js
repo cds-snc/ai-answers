@@ -2,6 +2,7 @@
 import { createClaudeAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { withSession } from '../../middleware/session.js';
+import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
@@ -27,9 +28,19 @@ const convertInteractionsToMessages = (interactions) => {
 async function invokeHandler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { message, systemPrompt, conversationHistory, chatId = 'system' } = req.body;
+      const { message, conversationHistory, chatId = 'system', lang, department, topic, topicUrl, departmentUrl, searchResults, scenarioOverrideText } = req.body;
       ServerLoggingService.info('Claude API request received', chatId);
-      ServerLoggingService.debug('Request body:', chatId, { message, systemPrompt, conversationHistoryLength: conversationHistory.length });
+      ServerLoggingService.debug('Request body:', chatId, { message, conversationHistoryLength: conversationHistory?.length });
+
+      // Build the system prompt on the server to avoid trusting client-supplied prompts
+      const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
+        department,
+        departmentUrl,
+        topic,
+        topicUrl,
+        searchResults,
+        scenarioOverrideText,
+      });
 
       // Create agent (callbacks are automatically attached in AgentService)
       const claudeAgent = await createClaudeAgent(chatId);
