@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { invokeContextAgent } from "../../services/ContextAgentService.js";
-import loadContextSystemPrompt from "../../src/services/contextSystemPrompt.js";
+import loadContextSystemPrompt from "../prompts/contextSystemPrompt.js";
 import { contextSearch as googleSearch } from "./googleContextSearch.js";
 import { contextSearch as canadaSearch } from "./canadaCaContextSearch.js";
 

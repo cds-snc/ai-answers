@@ -22,7 +22,7 @@ import { departments_FR } from '../src/services/systemPrompt/departments_FR.js';
 import { PROMPT as PII_PROMPT } from '../agents/prompts/piiAgentPrompt.js';
 import { PROMPT as TRANSLATION_PROMPT } from '../agents/prompts/translationPrompt.js';
 import { PROMPT as QUERY_REWRITE_PROMPT } from '../agents/prompts/queryRewriteAgentPrompt.js';
-import loadContextSystemPrompt from '../src/services/contextSystemPrompt.js';
+import loadContextSystemPrompt from '../agents/prompts/contextSystemPrompt.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
