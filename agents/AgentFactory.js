@@ -306,7 +306,7 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
         openAIApiKey: process.env.OPENAI_API_KEY,
         modelName: cfg.name,
         temperature: cfg.temperature,
-        maxTokens: cfg.maxTokens,
+        maxTokens: 2048,
         timeout: cfg.timeoutMs,
       });
       break;
