@@ -2,7 +2,7 @@ import { User } from '../../models/user.js';
 import dbConnect from '../db/db-connect.js';
 import TwoFAService from '../../services/TwoFAService.js';
 import { SettingsService } from '../../services/SettingsService.js';
-import { generateToken } from '../../middleware/auth.js';
+import { generateToken, generateRefreshToken } from '../../middleware/auth.js';
 
 const loginHandler = async (req, res) => {
   try {
@@ -10,18 +10,18 @@ const loginHandler = async (req, res) => {
     await dbConnect();
     // Basic validation
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email and password are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
       });
     }
 
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid credentials' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
       });
     }
 
@@ -36,9 +36,9 @@ const loginHandler = async (req, res) => {
     // Verify password
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid credentials' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
       });
     }
 
@@ -46,11 +46,29 @@ const loginHandler = async (req, res) => {
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
 
     if (!twoFAEnabled) {
-      const token = generateToken(user);
+      // Generate tokens
+      const accessToken = generateToken(user);
+      const refreshToken = generateRefreshToken(user);
+
+      // Set tokens in HttpOnly cookies
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 15 * 60 * 1000 // 15 minutes
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Login successful',
-        token,
         user: {
           email: user.email,
           role: user.role,
@@ -84,9 +102,9 @@ const loginHandler = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error during login' 
+    res.status(500).json({
+      success: false,
+      message: 'Error during login'
     });
   }
 };

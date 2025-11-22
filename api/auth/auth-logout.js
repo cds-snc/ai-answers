@@ -3,15 +3,15 @@ export default async function logoutHandler(req, res) {
     // If using express-session, destroy server session
     try {
       if (req && req.session && typeof req.session.destroy === 'function') {
-        req.session.destroy(() => {});
+        req.session.destroy(() => { });
       }
     } catch (sessErr) {
       // ignore session destroy errors
     }
 
-    // Expire common cookie names. HttpOnly cookies must be cleared by the server.
+    // Expire auth cookies
     const expires = new Date(0).toUTCString();
-    const cookiesToClear = ['token', 'session', 'connect.sid'];
+    const cookiesToClear = ['access_token', 'refresh_token', 'token', 'session', 'connect.sid'];
     const setCookies = cookiesToClear.map(name => `${name}=; Path=/; Expires=${expires}; HttpOnly; SameSite=Lax`);
     // Set multiple Set-Cookie headers
     res.setHeader('Set-Cookie', setCookies);
