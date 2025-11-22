@@ -18,11 +18,11 @@ async function handler(req, res) {
     }
 
     const { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
-
+    
     try {
 
         // Use pageLanguage for vector matching (matches should be in the page language)
-        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 10, pageLanguage);
+        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 5, pageLanguage);
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
             return res.json({});
@@ -89,7 +89,7 @@ async function handler(req, res) {
         const questions = Array.isArray(req.body?.questions) ? req.body.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim()) : [];
         if (questions.length === 0) return { error: { code: 400, message: 'Missing questions' } };
         const selectedAI = req.body?.selectedAI || 'openai';
-        const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 7;
+        const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 14;
         const requestedRating = typeof req.body?.expertFeedbackRating === 'number' ? req.body.expertFeedbackRating : 100;
         // Accept new shape: pageLanguage + detectedLanguage. Fall back to legacy `language` if provided.
         const pageLanguage = typeof req.body?.pageLanguage === 'string' && req.body.pageLanguage.trim() ? req.body.pageLanguage.trim() : (typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null);
