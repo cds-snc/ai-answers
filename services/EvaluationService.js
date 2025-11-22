@@ -294,7 +294,11 @@ class EvaluationService {
     async getEvaluationForInteraction(interactionId) {
         await dbConnect();
         try {
-            const interaction = await Interaction.findById(interactionId).populate('autoEval');
+            // Populate nested expertFeedback so clients can access totalScore and other fields
+            const interaction = await Interaction.findById(interactionId).populate({
+                path: 'autoEval',
+                populate: { path: 'expertFeedback' }
+            });
             const evaluation = interaction?.autoEval;
 
             if (evaluation) {
@@ -305,7 +309,20 @@ class EvaluationService {
                 ServerLoggingService.debug('No evaluation found', interactionId.toString());
             }
 
-            return evaluation;
+            // Return a plain JS object and attach referringUrl and some useful model metadata
+            const evalObj = evaluation && typeof evaluation.toObject === 'function' ? evaluation.toObject() : evaluation;
+            if (evalObj) {
+                // Attach referringUrl from the interaction for client convenience
+                evalObj.referringUrl = interaction?.referringUrl || '';
+                // Attach interaction's updatedAt so UI can show the last update time
+                evalObj.interactionUpdatedAt = interaction?.updatedAt || null;
+                // Include short model metadata for clients to display which models were used
+                evalObj._modelMeta = {
+                    sentenceCompareModel: evalObj.sentenceCompareMeta?.model || '',
+                    fallbackCompareModel: evalObj.fallbackCompareMeta?.model || ''
+                };
+            }
+            return evalObj;
         } catch (error) {
             ServerLoggingService.error('Error retrieving evaluation', interactionId.toString(), error);
             return null;

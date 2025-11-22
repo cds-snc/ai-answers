@@ -122,6 +122,23 @@ const EvalPanel = ({ message, t }) => {
     return n.toFixed(3);
   };
 
+  // Translation helper: if the translator returns the raw key (meaning missing),
+  // fall back to an alternate key or provided default string.
+  const tr = (key, fallbackKeyOrString) => {
+    try {
+      const res = t(key);
+      if (typeof res === 'string' && (res === key || res.length === 0)) {
+        // Try fallbackKeyOrString as a key first, then literal string
+        const fb = typeof fallbackKeyOrString === 'string' ? t(fallbackKeyOrString) : '';
+        if (fb && fb !== fallbackKeyOrString) return fb;
+        return typeof fallbackKeyOrString === 'string' ? fallbackKeyOrString : key;
+      }
+      return res;
+    } catch (e) {
+      return typeof fallbackKeyOrString === 'string' ? fallbackKeyOrString : key;
+    }
+  };
+
   return (
     <GcdsDetails
       detailsTitle={t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Automated evaluation'}
@@ -161,6 +178,26 @@ const EvalPanel = ({ message, t }) => {
             </p>
             <table className="table">
               <tbody>
+                {/* New fields: show above Processed */}
+                {evalObj.hasMatches && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' ? (
+                  <tr>
+                    <td>{tr('eval.totalScore', 'Score')}:</td>
+                    <td>{evalObj.expertFeedback.totalScore === null || typeof evalObj.expertFeedback.totalScore === 'undefined' ? '' : String(evalObj.expertFeedback.totalScore)}</td>
+                  </tr>
+                ) : null}
+                {evalObj.hasMatches && evalObj.interactionUpdatedAt ? (
+                  <tr>
+                    <td>{tr('eval.interactionUpdatedAt', 'Date of Chat')}:</td>
+                    <td>{formatDate(evalObj.interactionUpdatedAt)}</td>
+                  </tr>
+                ) : null}
+                {evalObj.referringUrl ? (
+                  <tr>
+                    <td>{tr('eval.referringUrl', 'Referring URL')}:</td>
+                    <td><a href={evalObj.referringUrl} target="_blank" rel="noopener noreferrer">{evalObj.referringUrl}</a></td>
+                  </tr>
+                ) : null}
+
                 <tr>
                   <td>{t('eval.processed', 'Processed')}:</td>
                   <td>{evalObj.processed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</td>
@@ -176,7 +213,17 @@ const EvalPanel = ({ message, t }) => {
                 {evalObj.expertFeedback ? (
                   <tr>
                     <td>{t('eval.expertFeedbackId', 'Expert feedback id')}:</td>
-                    <td>{String(evalObj.expertFeedback)}</td>
+                    <td>{typeof evalObj.expertFeedback === 'object' && evalObj.expertFeedback !== null ? String(evalObj.expertFeedback._id || evalObj.expertFeedback.id || '') : String(evalObj.expertFeedback)}</td>
+                  </tr>
+                ) : null}
+                {(evalObj._modelMeta && (evalObj._modelMeta.sentenceCompareModel || evalObj._modelMeta.fallbackCompareModel)) ? (
+                  <tr>
+                    <td>{tr('eval.modelData', 'Model data')}:</td>
+                    <td>
+                      {evalObj._modelMeta.sentenceCompareModel ? `${t('reviewPanels.sentenceCompare') || 'Sentence-compare'}: ${evalObj._modelMeta.sentenceCompareModel}` : null}
+                      {evalObj._modelMeta.sentenceCompareModel && evalObj._modelMeta.fallbackCompareModel ? ' • ' : ''}
+                      {evalObj._modelMeta.fallbackCompareModel ? `${t('reviewPanels.fallbackCompare') || 'Fallback-compare'}: ${evalObj._modelMeta.fallbackCompareModel}` : null}
+                    </td>
                   </tr>
                 ) : null}
                 {evalObj.noMatchReasonType || evalObj.noMatchReasonMsg ? (
