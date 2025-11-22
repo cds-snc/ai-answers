@@ -14,11 +14,11 @@
  *   --output <file>       Output file path (default: ./system-prompt-documentation.md)
  */
 
-import { BASE_SYSTEM_PROMPT } from '../src/services/systemPrompt/agenticBase.js';
-import { SCENARIOS } from '../src/services/systemPrompt/scenarios-all.js';
-import { CITATION_INSTRUCTIONS } from '../src/services/systemPrompt/citationInstructions.js';
-import { departments_EN } from '../src/services/systemPrompt/departments_EN.js';
-import { departments_FR } from '../src/services/systemPrompt/departments_FR.js';
+import { BASE_SYSTEM_PROMPT } from '../agents/prompts/agenticBase.js';
+import { SCENARIOS } from '../agents/prompts/scenarios/scenarios-all.js';
+import { CITATION_INSTRUCTIONS } from '../agents/prompts/citationInstructions.js';
+import { departments_EN } from '../agents/prompts/scenarios/departments_EN.js';
+import { departments_FR } from '../agents/prompts/scenarios/departments_FR.js';
 import { PROMPT as PII_PROMPT } from '../agents/prompts/piiAgentPrompt.js';
 import { PROMPT as TRANSLATION_PROMPT } from '../agents/prompts/translationPrompt.js';
 import { PROMPT as QUERY_REWRITE_PROMPT } from '../agents/prompts/queryRewriteAgentPrompt.js';
@@ -42,7 +42,8 @@ const outputFile = getArg('--output', './system-prompt-documentation.md');
  * Dynamically discover available department context folders
  */
 async function discoverDepartmentContexts() {
-  const contextDir = path.join(path.dirname(import.meta.url.replace('file://', '')), '../src/services/systemPrompt');
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const contextDir = path.join(__dirname, '..', 'agents', 'prompts', 'scenarios');
   const entries = await fs.readdir(contextDir, { withFileTypes: true });
 
   const contexts = {};
@@ -88,7 +89,7 @@ async function loadDepartmentScenarios(deptCode) {
     const deptDashed = deptLower.replace(/\s+/g, '-');
 
     // Try to import from the discovered context folder
-    const module = await import(`../src/services/systemPrompt/context-${deptDashed}/${deptDashed}-scenarios.js`, { assert: { type: 'module' } });
+    const module = await import(`../agents/prompts/scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
 
     // Get the first exported scenarios object (they all follow the pattern of exporting a single scenarios constant)
     const scenarios = Object.values(module).find(v => typeof v === 'string');
@@ -186,6 +187,14 @@ async function generateDocumentation() {
       : 'https://www.canada.ca/en/revenue-agency.html',
     searchResults: '[Example search results would appear here]'
   };
+
+  // Ensure a fallback MongoDB URI exists so SettingsService and ServerLoggingService
+  // do not throw when running this standalone script in developer environments.
+  // This avoids the Mongoose error when MONGODB_URI is not provided.
+  if (!process.env.MONGODB_URI && !process.env.DOCDB_URI) {
+    process.env.MONGODB_URI = 'mongodb://127.0.0.1:27017/dev-database';
+    console.log('Using fallback MONGODB_URI for documentation generator');
+  }
 
   let contextPrompt = await loadContextSystemPrompt(lang);
 
