@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.63.0](https://github.com/cds-snc/ai-answers/compare/v1.62.0...v1.63.0) (2025-11-22)
+
+
+### Features
+
+* add model data localization in English and French ([a6cefde](https://github.com/cds-snc/ai-answers/commit/a6cefde338a24fe7abaecc3a1de1b56b71096a78))
+* build system prompt server-side and update request handling in API endpoints ([3187811](https://github.com/cds-snc/ai-answers/commit/3187811ad30a136fab975b1747f9e2f3ae9226d2))
+* enhance evaluation details and translation support in chat view ([5e23f32](https://github.com/cds-snc/ai-answers/commit/5e23f3277a2b3369f3430acc71fdc48a030f950f))
+* move context system prompt to agents/prompts and update imports ([34beadf](https://github.com/cds-snc/ai-answers/commit/34beadf258f2d7849771bcb7b8980f67e03c00e6))
+* move context system prompt to agents/prompts and update imports ([25eaeb2](https://github.com/cds-snc/ai-answers/commit/25eaeb28bb82de4049d776c93f6e3efdd578f96b))
+* update context directory resolution and add fallback MongoDB URI for documentation generator ([19a0c1d](https://github.com/cds-snc/ai-answers/commit/19a0c1d5c50ae152f0874cad00946082d49b53f9))
+* update file paths to use server-side copies in extract_domains and generate-system-prompt-documentation scripts ([cec6dc6](https://github.com/cds-snc/ai-answers/commit/cec6dc611a6c211de5bf77bdfcf2640d02dd8e11))
+* update import paths for scenarios to use new directory structure ([59b7d05](https://github.com/cds-snc/ai-answers/commit/59b7d051370566bdddb6f41e8706d0f2107d5d16))
+
 ## [1.62.0](https://github.com/cds-snc/ai-answers/compare/v1.61.1...v1.62.0) (2025-11-20)
 
 
