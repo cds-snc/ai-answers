@@ -5,7 +5,7 @@ import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { VectorService } from '../../services/VectorServiceFactory.js';
 import { Embedding } from '../../models/embedding.js';
 import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
-import { withUser, withProtection } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackPersistExpertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -54,4 +54,4 @@ async function feedbackPersistExpertHandler(req, res) {
   }
 }
 
-export default withProtection(withUser(feedbackPersistExpertHandler));
+export default withProtection(feedbackPersistExpertHandler, authMiddleware, partnerOrAdminMiddleware);
