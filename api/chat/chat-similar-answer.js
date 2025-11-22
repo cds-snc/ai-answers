@@ -252,10 +252,10 @@ async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-    // Prefer the stored `interactionId` field when available (legacy or business id),
-    // otherwise fall back to the Mongo `_id` string.
-    const returnedInteractionId = (selected.interactionId && String(selected.interactionId).trim()) ? selected.interactionId : (selected._id ? selected._id.toString() : null);
-    return { text, englishAnswer, interactionId: returnedInteractionId, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null, chatId: chosenEntry.chatId || null };
+        // Prefer the stored `interactionId` field when available (legacy or business id),
+        // otherwise fall back to the Mongo `_id` string.
+        const returnedInteractionId = (selected.interactionId && String(selected.interactionId).trim()) ? selected.interactionId : (selected._id ? selected._id.toString() : null);
+        return { text, englishAnswer, interactionId: returnedInteractionId, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null, chatId: chosenEntry.chatId || null };
     }
 
     // Helper: translate the final answer when requested language is not English/French

@@ -1,5 +1,4 @@
 // src/ContextService.js
-import loadContextSystemPrompt from './contextSystemPrompt.js';
 import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
@@ -23,12 +22,12 @@ const ContextService = {
       `Context Service: Processing message in ${lang.toUpperCase()}`
     );
 
-    const SYSTEM_PROMPT = await loadContextSystemPrompt(lang, department);
     const messageWithReferrer = `${message}${referringUrl ? `\n<referring-url>${referringUrl}</referring-url>` : ''}`;
 
     return {
       message: messageWithReferrer,
-      systemPrompt: SYSTEM_PROMPT,
+      lang,
+      department,
       searchResults,
       searchProvider,
       conversationHistory,

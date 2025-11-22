@@ -41,7 +41,8 @@ describe('ContextService', () => {
 
       expect(result).toEqual({
         message: 'test message\n<referring-url>https://referrer.com</referring-url>',
-        systemPrompt: expect.any(String),
+        lang: 'en',
+        department: 'department1',
         searchResults: ['result1'],
         searchProvider: 'google',
         conversationHistory: [],
@@ -55,7 +56,8 @@ describe('ContextService', () => {
 
       expect(result).toEqual({
         message: 'test message',
-        systemPrompt: expect.any(String),
+        lang: 'en',
+        department: '',
         searchResults: null,
         searchProvider: null,
         conversationHistory: [],
