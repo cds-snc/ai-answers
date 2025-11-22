@@ -190,7 +190,7 @@ const ExpertFeedbackComponent = ({
                     onChange={handleCheckboxChange}
                   />
                   <label htmlFor={`sentence${index + 1}-content-issue`}
-                  >{t('homepage.expertRating.options.contentIssue')} (Issue)</label>
+                  >{t('homepage.expertRating.options.contentIssue')}</label>
                 </li>
                 {expertFeedback[`sentence${index + 1}Score`] === 0 && (
                   <li className="checkbox">
@@ -202,7 +202,7 @@ const ExpertFeedbackComponent = ({
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor={`sentence${index + 1}-harmful`}
-                    >{t('homepage.expertRating.options.harmful')} (0)</label>
+                    >{t('homepage.expertRating.options.harmful')}</label>
                   </li>
                 )}
               </ul>
