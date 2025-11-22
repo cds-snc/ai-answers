@@ -1,5 +1,5 @@
 // src/ContextService.js
-import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
 import getSessionBypassHeaders from './sessionHeaders.js';
@@ -8,6 +8,7 @@ import getSessionBypassHeaders from './sessionHeaders.js';
 
 const ContextService = {
   prepareMessage: async (
+    aiProvider,
     message,
     lang = 'en',
     department = '',
@@ -25,6 +26,7 @@ const ContextService = {
     const messageWithReferrer = `${message}${referringUrl ? `\n<referring-url>${referringUrl}</referring-url>` : ''}`;
 
     return {
+      provider: chatId === 'system' ? 'openai' : (aiProvider || 'openai'), // Default to openai if missing
       message: messageWithReferrer,
       lang,
       department,
@@ -35,7 +37,7 @@ const ContextService = {
       chatId,
     };
   },
- 
+
   determineOutputLang: (pageLang, translationData) => {
     const originalLang = translationData && translationData.originalLanguage ? translationData.originalLanguage : 'eng';
     return pageLang === 'fr' ? 'fra' : originalLang;
@@ -54,6 +56,7 @@ const ContextService = {
   ) => {
     try {
       const messagePayload = await ContextService.prepareMessage(
+        aiProvider,
         message,
         lang,
         department,
@@ -64,7 +67,7 @@ const ContextService = {
         chatId
       );
       await LoggingService.info(chatId, 'Calling context agent with:', { context: messagePayload });
-      let url = getProviderApiUrl(aiProvider, 'context');
+      let url = getApiUrl('chat-context');
       const fp = await getFingerprint();
       const extraHeaders = getSessionBypassHeaders();
       const response = await fetch(url, {
@@ -95,23 +98,23 @@ const ContextService = {
       const fp = await getFingerprint();
       const extraHeaders = getSessionBypassHeaders();
       const searchResponse = await fetch(getApiUrl('search-context'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-fp-id': fp,
-            ...extraHeaders
-          },
-          body: JSON.stringify({
-            message: message,
-            lang: lang,
-            searchService: searchProvider,
-            chatId,
-            agentType,
-            referringUrl,
-            translationData,
-          
-          }),
-        });
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-fp-id': fp,
+          ...extraHeaders
+        },
+        body: JSON.stringify({
+          message: message,
+          lang: lang,
+          searchService: searchProvider,
+          chatId,
+          agentType,
+          referringUrl,
+          translationData,
+
+        }),
+      });
 
       if (!searchResponse.ok) {
         const errorText = await searchResponse.text();
@@ -155,7 +158,7 @@ const ContextService = {
         "Context Service: Agent Search completed:", searchResults
       );
 
-      const { translatedText: translatedQuestion  } = translationData || {};
+      const { translatedText: translatedQuestion } = translationData || {};
       // Extract agent values from searchResults
       const { query, results } = searchResults;
 
@@ -178,7 +181,7 @@ const ContextService = {
         query,
         translatedQuestion,
         lang,
-        outputLang : ContextService.determineOutputLang(lang, translationData), 
+        outputLang: ContextService.determineOutputLang(lang, translationData),
         originalLang: translationData.originalLanguage
       };
     } catch (error) {
