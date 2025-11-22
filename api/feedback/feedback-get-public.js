@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { PublicFeedback } from '../../models/publicFeedback.js';
-import { withUser, withProtection } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackGetPublicHandler(req, res) {
   if (req.method !== 'POST') {
@@ -25,4 +25,4 @@ async function feedbackGetPublicHandler(req, res) {
   }
 }
 
-export default withProtection(withUser(feedbackGetPublicHandler));
+export default withProtection(feedbackGetPublicHandler, authMiddleware, partnerOrAdminMiddleware);

@@ -3,7 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import { SettingsService } from '../../services/SettingsService.js';
-import { withProtection, authMiddleware } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -59,4 +59,4 @@ async function handler(req, res) {
   }
 }
 
-export default withProtection(handler, authMiddleware);
+export default withProtection(handler, authMiddleware, partnerOrAdminMiddleware);

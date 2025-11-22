@@ -1,6 +1,6 @@
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -21,11 +21,13 @@ async function handler(req, res) {
           { path: 'context' },
           { path: 'expertFeedback', model: 'ExpertFeedback', select: '-__v' },
           { path: 'question', select: '-embedding' },
-          { path: 'answer', select: '-embedding -sentenceEmbeddings', populate: [
-            { path: 'sentences' },
-            { path: 'citation' },
-            { path: 'tools' },
-          ] },
+          {
+            path: 'answer', select: '-embedding -sentenceEmbeddings', populate: [
+              { path: 'sentences' },
+              { path: 'citation' },
+              { path: 'tools' },
+            ]
+          },
         ],
       });
 
@@ -41,5 +43,5 @@ async function handler(req, res) {
 }
 
 export default function handlerWrapper(req, res) {
-  return withProtection(handler, authMiddleware)(req, res);
+  return withProtection(handler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }
