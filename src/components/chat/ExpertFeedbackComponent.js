@@ -18,15 +18,19 @@ const ExpertFeedbackComponent = ({
     sentence1Score: null,
     sentence1Explanation: '',
     sentence1Harmful: false,
+    sentence1ContentIssue: false,
     sentence2Score: null,
     sentence2Explanation: '',
     sentence2Harmful: false,
+    sentence2ContentIssue: false,
     sentence3Score: null,
     sentence3Explanation: '',
     sentence3Harmful: false,
+    sentence3ContentIssue: false,
     sentence4Score: null,
     sentence4Explanation: '',
     sentence4Harmful: false,
+    sentence4ContentIssue: false,
     citationScore: null,
     citationExplanation: '',
     expertCitationUrl: '',
@@ -65,7 +69,7 @@ const ExpertFeedbackComponent = ({
 
     const totalScore = computeTotalScore(expertFeedback);
 
-    
+
     const feedbackWithScore = {
       ...expertFeedback,
       totalScore,
@@ -176,6 +180,18 @@ const ExpertFeedbackComponent = ({
                     {t('homepage.expertRating.options.incorrect')} (0)
                   </label>
                 </li>
+                {/* Content Issue checkbox */}
+                <li className="checkbox">
+                  <input
+                    type="checkbox"
+                    name={`sentence${index + 1}ContentIssue`}
+                    id={`sentence${index + 1}-content-issue`}
+                    checked={expertFeedback[`sentence${index + 1}ContentIssue`]}
+                    onChange={handleCheckboxChange}
+                  />
+                  <label htmlFor={`sentence${index + 1}-content-issue`}
+                  >{t('homepage.expertRating.options.contentIssue')} (Issue)</label>
+                </li>
                 {expertFeedback[`sentence${index + 1}Score`] === 0 && (
                   <li className="checkbox">
                     <input
@@ -185,27 +201,26 @@ const ExpertFeedbackComponent = ({
                       checked={expertFeedback[`sentence${index + 1}Harmful`]}
                       onChange={handleCheckboxChange}
                     />
-                    <label htmlFor={`sentence${index + 1}-harmful`}>
-                      {t('homepage.expertRating.options.harmful')} (0)
-                    </label>
+                    <label htmlFor={`sentence${index + 1}-harmful`}
+                    >{t('homepage.expertRating.options.harmful')} (0)</label>
                   </li>
                 )}
               </ul>
               {(expertFeedback[`sentence${index + 1}Score`] === 80 ||
                 expertFeedback[`sentence${index + 1}Score`] === 0) && (
-                <div className="explanation-field">
-                  <label htmlFor={`sentence${index + 1}-explanation`}>
-                    {t('homepage.expertRating.options.explanation')}
-                    <textarea
-                      id={`sentence${index + 1}-explanation`}
-                      name={`sentence${index + 1}Explanation`}
-                      value={expertFeedback[`sentence${index + 1}Explanation`]}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyPress}
-                    />
-                  </label>
-                </div>
-              )}
+                  <div className="explanation-field">
+                    <label htmlFor={`sentence${index + 1}-explanation`}>
+                      {t('homepage.expertRating.options.explanation')}
+                      <textarea
+                        id={`sentence${index + 1}-explanation`}
+                        name={`sentence${index + 1}Explanation`}
+                        value={expertFeedback[`sentence${index + 1}Explanation`]}
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyPress}
+                      />
+                    </label>
+                  </div>
+                )}
             </div>
           ))}
         </details>

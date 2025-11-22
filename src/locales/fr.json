@@ -226,6 +226,7 @@
         "needsImprovement": "Nécessite une amélioration",
         "incorrect": "Incorrecte",
         "harmful": "Nuisible",
+        "contentIssue": "Problème de contenu",
         "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
         "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
         "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
@@ -378,7 +379,7 @@
       "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
-  "evalDashboard": "Tableau de bord des évaluations",
+      "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
@@ -700,18 +701,17 @@
       "signupLink": "Créer un compte",
       "forgotPassword": "Mot de passe oublié ?",
       "signinLink": "Se connecter"
+    },
+    "2fa": {
+      "title": "Authentification à deux facteurs",
+      "code": "Code de vérification",
+      "verify": "Vérifier le code",
+      "resend": "Renvoyer le code",
+      "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
+      "send": "Envoyer le code de vérification",
+      "sendError": "Impossible d'envoyer le code de vérification",
+      "invalidCode": "Code de vérification invalide"
     }
-      ,
-  "2fa": {
-    "title": "Authentification à deux facteurs",
-    "code": "Code de vérification",
-    "verify": "Vérifier le code",
-    "resend": "Renvoyer le code",
-  "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
-    "send": "Envoyer le code de vérification",
-    "sendError": "Impossible d'envoyer le code de vérification",
-    "invalidCode": "Code de vérification invalide"
-  }
   },
   "reset": {
     "request": {
@@ -853,10 +853,10 @@
     "noMatchReason": "Raison de non-correspondance",
     "fallbackSourceChatId": "ID de chat source pour le repli",
     "matchedCitationInteractionId": "ID d'interaction de citation appariée",
-  "matchedCitationChatId": "ID de chat de citation appariée",
-  "stageTimeline": "Chronologie des étapes",
-  "rawTimeline": "Chronologie brute (JSON)",
-  "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "matchedCitationChatId": "ID de chat de citation appariée",
+    "stageTimeline": "Chronologie des étapes",
+    "rawTimeline": "Chronologie brute (JSON)",
+    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le"
   },
@@ -891,11 +891,11 @@
     "suggestedCitation": "URL de citation suggérée",
     "fallbackDetails": "Détails du repli",
     "fallbackType": "Type de repli",
-  "timestamp": "Horodatage",
-  "stage": "Étape",
-  "status": "Statut",
-  "code": "Code",
-  "message": "Message",
+    "timestamp": "Horodatage",
+    "stage": "Étape",
+    "status": "Statut",
+    "code": "Code",
+    "message": "Message",
     "fallbackCandidateAnswer": "Réponse candidate de repli",
     "fallbackCandidateCitation": "Citation du candidat",
     "fallbackCompareMeta": "Métadonnées de la comparaison de repli",
