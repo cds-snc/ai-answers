@@ -25,16 +25,16 @@ AI Answers is a specialized AI chat agent designed for Government of Canada webs
 
 ### Key Features
 - **Context-Aware Responses**: Uses referral URLs and department detection
-- **Citation system**: Every answer includes a verified government source link
-- **Privacy and manipulation protection**: Automatic PI, profanity, manipulation and threat blocking 
-- **Accessibility**: Screen reader tested and WCAG compliant
+- **Citation system**: Federal government answers include verified source links
+- **Privacy and manipulation protection**: Automatic PI, profanity, manipulation and threat blocking
 - **Evaluation-driven**: Continuous improvement through expert and automated evaluation
 
 ### Safety & Compliance
 - **Content filtering**: Blocks inappropriate content, threats, and manipulation attempts
 - **Rate limiting**: 3 questions per session to prevent abuse
 - **Character limits**: 260 character limit per question
-- **PI protection**: Most personal information not sent to AI services or logged (some names may slip through)
+- **PI protection**: 2-stage detection blocks personal information before AI answering and logging (Stage 1: pattern-based, Stage 2: AI-powered)
+- **Accessibility**: Tested with screen reader users and WCAG compliant
 - **Official languages**: Compliant with Canadian official languages requirements
 
 ## Technical Architecture
@@ -50,7 +50,16 @@ AI Answers is a specialized AI chat agent designed for Government of Canada webs
 
 ## 🌟 Key Features
 
+### Accuracy & Source Verification
+- **Intelligent search**: AI-optimized search queries find relevant and current government content in the appropriate language
+- **Layered prompt architecture**: Multiple specialized prompts guide the AI to source information exclusively from federal government online content
+- **Scenario-based guidance**: Department-specific scenarios address top user tasks and common government issues with verified answers
+- **Citation requirements**: Federal government answers include verified source links to official government content
+- **Real-time verification**: AI agent downloads and reads current web pages to verify accuracy of time-sensitive information
+- **Expert evaluation**: Continuous human expert review ensures response quality and accuracy
+
 ### Tuned for Canada.ca User Needs
+- **User-centered design**: 50+ usability testing sessions conducted to refine the UX during the design process, with ongoing improvements based on user feedback
 - AI response is tagged so sentences in answer can be displayed in accessible canada.ca format and single citation url can be displayed for next step of task, with clickable link
 - Assumes the AI service will be called from a specific canada.ca page, and uses the referral url to pass that information to the AI service
 - System prompt forces short answers of a maximum of 4 sentences to improve clarity, use plain language, and reduce risk of hallucinations
@@ -58,6 +67,10 @@ AI Answers is a specialized AI chat agent designed for Government of Canada webs
 - Takes advantage of canada.ca interaction patterns and support - e.g. if a wizard is already in place, direct the user to answer those questions rather than having the AI service attempt to answer
 - **Department-aligned**: Departments can provide prompt scenarios to address specific communications needs
 - Since GC pages are added and updated frequently, the AI agent uses the downloadWebPage tool to read the page if it identifies a new, updated or unfamiliar url
+
+### AI Agent Capabilities
+- **Autonomous tool use**: AI agent can choose and use specialized tools (downloadWebPage, checkUrlStatus, contextAgentTool) during answer generation
+- **Future vision**: Architecture supports handing off to department-specific agents for deep service tasks and complex interactions
 
 ### 2-Stage Privacy Protection & Content Filtering
 - **Stage 1 - Initial Redaction**: RedactionService filters profanity, threats, manipulation attempts, and common PI patterns (phone numbers, emails, addresses, SIN numbers)
@@ -71,13 +84,12 @@ AI Answers is a specialized AI chat agent designed for Government of Canada webs
 - Matches canada.ca spec with EN and FR official translated versions of the main AI Answers page
 - Users can ask questions in any language on either page, but the citation url will be to an English canada.ca or gc.ca URL if the user is asking from the English AI Answers page, and to a French citation url if the user is asking from the French AI Answers page
 - Language selector also available in batch process
-- Context service loads Canada.ca French menu structure and FR department and agency names and urls
 - System prompt scenarios and updates all include English and French citation urls pairs when a scenario or example suggests a specific url be used for related questions
 - All text displayed to users in JSON language files for easy updates and translations in the locales folder
 
 ### AI Service Provider Independence
 - Original design was tested with two AI service providers for exploration of strengths and weaknesses of different models
-- On this repo, only OpenAI GPT latest model is currently supported
+- On this repo, Azure OpenAI GPT models are currently supported
 - Failover was in place, to switch to the other AI service if one fails - with only one service, will need to pull product out of service when ai performance is degraded or down. Setting to turn it off and display a message is provided in the Admin interface
 - Prompt caching implemented to improve response quality and speed
 - Temperature set to 0 for more deterministic responses for both models

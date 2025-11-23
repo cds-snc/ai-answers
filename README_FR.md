@@ -25,16 +25,16 @@ Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites We
 
 ### Caractéristiques principales
 - **Réponses contextuelles** : Utilise les URL de référence et la détection de département
-- **Système de citation** : Chaque réponse inclut un lien source gouvernemental vérifié
+- **Système de citation** : Les réponses du gouvernement fédéral incluent des liens sources vérifiés
 - **Protection de la vie privée et de la manipulation** : Blocage automatique des renseignements personnels, de la profanité, de la manipulation et des menaces
-- **Accessibilité** : Testé avec lecteur d'écran et conforme WCAG
 - **Axé sur l'évaluation** : Amélioration continue grâce à l'évaluation d'experts et automatisée
 
 ### Sécurité et conformité
 - **Filtrage du contenu** : Bloque le contenu inapproprié, les menaces et les tentatives de manipulation
 - **Limitation du taux** : 3 questions par session pour prévenir les abus
 - **Limites de caractères** : Limite de 260 caractères par question
-- **Protection des renseignements personnels** : La plupart des renseignements personnels ne sont pas envoyés aux services IA ou enregistrés (certains noms peuvent passer à travers)
+- **Protection des renseignements personnels** : Détection en 2 étapes bloque les renseignements personnels avant la réponse IA et la journalisation (Étape 1 : basée sur motifs, Étape 2 : alimentée par IA)
+- **Accessibilité** : Testé avec des utilisateurs de lecteurs d'écran et conforme WCAG
 - **Langues officielles** : Conforme aux exigences des langues officielles canadiennes
 
 ## Architecture technique
@@ -50,7 +50,16 @@ Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites We
 
 ## 🌟 Caractéristiques principales
 
+### Précision et vérification des sources
+- **Recherche intelligente** : Des requêtes de recherche optimisées par IA trouvent du contenu gouvernemental pertinent et actuel dans la langue appropriée
+- **Architecture d'invites en couches** : Plusieurs invites spécialisées guident l'IA pour sourcer l'information exclusivement du contenu en ligne du gouvernement fédéral
+- **Guidage basé sur des scénarios** : Des scénarios spécifiques aux départements traitent des principales tâches des utilisateurs et des enjeux gouvernementaux courants avec des réponses vérifiées
+- **Exigences de citation** : Les réponses du gouvernement fédéral incluent des liens sources vérifiés vers du contenu gouvernemental officiel
+- **Vérification en temps réel** : L'agent IA télécharge et lit les pages Web actuelles pour vérifier l'exactitude des informations sensibles au temps
+- **Évaluation d'experts** : L'examen continu par des experts humains assure la qualité et la précision des réponses
+
 ### Adapté aux besoins des utilisateurs de Canada.ca
+- **Conception centrée sur l'utilisateur** : Plus de 50 séances de tests d'utilisabilité menées pour affiner l'expérience utilisateur pendant le processus de conception, avec des améliorations continues basées sur les commentaires des utilisateurs
 - La réponse IA est étiquetée pour que les phrases de la réponse puissent être affichées dans un format Canada.ca accessible et qu'une URL de citation unique puisse être affichée pour la prochaine étape de la tâche, avec un lien cliquable
 - Suppose que le service IA sera appelé depuis une page Canada.ca spécifique, et utilise l'URL de référence pour transmettre cette information au service IA
 - L'invite système force des réponses courtes d'un maximum de 4 phrases pour améliorer la clarté, utiliser un langage simple et réduire le risque d'hallucinations
@@ -58,6 +67,10 @@ Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites We
 - Tire parti des modèles d'interaction et du support de Canada.ca - par ex. si un assistant est déjà en place, diriger l'utilisateur à répondre à ces questions plutôt que d'avoir le service IA qui tente de répondre
 - **Aligné sur les départements** : Les départements peuvent fournir des scénarios d'invite pour répondre aux besoins de communication spécifiques
 - Puisque les pages GC sont ajoutées et mises à jour fréquemment, l'agent IA utilise l'outil downloadWebPage pour lire la page s'il identifie une URL nouvelle, mise à jour ou inconnue
+
+### Capacités de l'agent IA
+- **Utilisation autonome d'outils** : L'agent IA peut choisir et utiliser des outils spécialisés (downloadWebPage, checkUrlStatus, contextAgentTool) pendant la génération de réponses
+- **Vision future** : L'architecture supporte le transfert vers des agents spécifiques aux départements pour des tâches de service approfondies et des interactions complexes
 
 ### Protection de la vie privée et filtrage du contenu à 2 étapes
 - **Étape 1 - Rédaction initiale** : RedactionService filtre la profanité, les menaces, les tentatives de manipulation et les modèles de renseignements personnels courants (numéros de téléphone, courriels, adresses, numéros d'assurance sociale)
@@ -71,13 +84,12 @@ Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites We
 - Conforme aux spécifications de Canada.ca avec des versions traduites officielles EN et FR de la page principale Réponses IA
 - Les utilisateurs peuvent poser des questions dans n'importe quelle langue sur l'une ou l'autre page, mais l'URL de citation sera vers une URL Canada.ca ou gc.ca anglaise si l'utilisateur demande depuis la page Réponses IA anglaise, et vers une URL de citation française si l'utilisateur demande depuis la page Réponses IA française
 - Sélecteur de langue également disponible dans le processus par lots
-- Le service de contexte charge la structure de menu Canada.ca française et les noms et URLs de départements et agences FR
 - Tous les scénarios et mises à jour d'invite système incluent des paires d'URLs de citation anglaises et françaises lorsqu'un scénario ou exemple suggère qu'une URL spécifique soit utilisée pour les questions connexes
 - Tout le texte affiché aux utilisateurs dans les fichiers de langue JSON pour des mises à jour et traductions faciles dans le dossier locales
 
 ### Indépendance du fournisseur de services IA
 - La conception originale a été testée avec deux fournisseurs de services IA pour explorer les forces et faiblesses de différents modèles
-- Sur ce dépôt, seul le dernier modèle OpenAI GPT est actuellement supporté
+- Sur ce dépôt, les modèles Azure OpenAI GPT sont actuellement supportés
 - Un basculement était en place, pour passer à l'autre service IA si l'un échoue - avec un seul service, il faudra retirer le produit du service lorsque les performances IA sont dégradées ou arrêtées. Un paramètre pour l'éteindre et afficher un message est fourni dans l'interface d'administration
 - Mise en cache d'invite implémentée pour améliorer la qualité et la vitesse des réponses
 - Température fixée à 0 pour des réponses plus déterministes pour les deux modèles
