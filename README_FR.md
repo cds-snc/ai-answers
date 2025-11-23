@@ -2,12 +2,17 @@
 
 ## Aperçu
 
-Réponses IA est une application de clavardage IA spécialisée conçue pour les sites Web du gouvernement du Canada. Elle fournit des réponses précises et brèves aux questions des utilisateurs sur les services, programmes et informations gouvernementaux, avec une seule citation vers une source gouvernementale officielle ou la prochaine étape de leur tâche. Réponses IA est indépendante du modèle, avec un système d'évaluation innovant qui utilise des évaluations détaillées d'experts humains pour alimenter les évaluations IA automatisées et des réponses précises. Une interface d'administration complète prend en charge les vues d'évaluation, de métriques, de gestion des utilisateurs et de journalisation.
+Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites Web du gouvernement du Canada. Elle fournit des réponses précises et brèves aux questions des utilisateurs sur les services, programmes et informations gouvernementaux, avec une seule citation vers une source gouvernementale officielle ou la prochaine étape de leur tâche. Réponses IA est indépendante du modèle, avec un système d'évaluation innovant qui utilise des évaluations détaillées d'experts humains pour alimenter les évaluations IA automatisées et des réponses précises. Une interface d'administration complète prend en charge les vues d'évaluation, de métriques, de gestion des utilisateurs et de journalisation.
 
-## Documentation du système
+## Documentation
 
-Pour des informations complètes sur le système, voir :
+### Documentation du système
 - **[SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)** - Fiche système complète avec architecture technique, mesures de sécurité, cadre d'évaluation et détails de gouvernance
+
+### Documentation pour développeurs
+- **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Architecture LangGraph complète et détails d'implémentation
+- **[docs/pipeline.md](docs/pipeline.md)** - Détails étape par étape du pipeline avec liens vers les fichiers d'implémentation
+- **[docs/agents-prompts/system-prompt-documentation.md](docs/agents-prompts/system-prompt-documentation.md)** - Invites système des agents IA pour toutes les étapes du pipeline
 
 **English** : [README.md](README.md) | [SYSTEM_CARD.md](SYSTEM_CARD.md)
 
@@ -36,10 +41,12 @@ Pour des informations complètes sur le système, voir :
 
 ### Composants principaux
 - **Interface utilisateur** : Interface de clavardage basée sur React avec le système de conception de Canada.ca
-- **Serveur** : Microservices Node.js avec architecture de chaînage d'invites
-- **Services IA** : Modèles Azure OpenAI GPT (production)
-- **Base de données** : AWS DocumentDB (production)
+- **Serveur** : Node.js avec orchestration de machine à états LangGraph
+- **Services IA** : Modèles Azure OpenAI GPT (production), avec support OpenAI et Anthropic
+- **Base de données** : MongoDB (AWS DocumentDB en production)
 - **Déploiement** : Nuage Azure
+
+**Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ## 🌟 Caractéristiques principales
 
@@ -98,29 +105,35 @@ Pour des informations complètes sur le système, voir :
 - Notez que la réponse est formatée et complète avant d'être affichée ou annoncée - pas de diffusion en continu
 - Étiquettes Aria pour un contexte utile, utilisation d'Aria-live pour annoncer les réponses et messages d'erreur
 
-## Architecture technique
+## Architecture du pipeline
 
-### Architecture de microservices avec chaînage d'invites
-- **Architecture de chaînage d'invites** pour améliorer la qualité et la vitesse des réponses [voir diagramme](#diagramme-darchitecture)
-- **Agents LangChain React** pour la génération de contexte et de réponses avec intégration d'outils
-- **Chaîne de pensée** - le système utilise plusieurs agents IA en séquence pour le traitement :
-  - **Agent de réécriture de requête** : Traduit les questions et crée des requêtes de recherche optimisées (garde les questions françaises en français pour les recherches de pages françaises)
-  - **Agent de contexte** : Rassemble le contenu gouvernemental pertinent et identifie les départements (appelé pour **chaque question**, y compris les questions de suivi, pour assurer une dérivation de contexte à jour)
-  - **Agent de réponse** : Génère des réponses avec vérifications préliminaires incluant l'analyse de département et la vérification de contenu
-- **Utilisation d'outils agentiques** - Les agents IA peuvent utiliser de manière autonome des outils spécialisés pour améliorer les réponses
+### Machine à états LangGraph
+- **Orchestration côté serveur** utilisant une machine à états LangGraph pour une exécution déterministe et traçable
+- **Pipeline en 9 étapes** avec validation, traduction, dérivation de contexte et génération de réponses [voir diagramme](#diagramme-darchitecture)
+- **Traitement multi-agents** - Agents IA spécialisés pour différentes tâches :
+  - **Agent de renseignements personnels** : Détection de renseignements personnels alimentée par IA (GPT-4 mini)
+  - **Agent de traduction** : Détection de langue et traduction (GPT-4 mini)
+  - **Agent de réécriture de requête** : Optimisation des requêtes de recherche (GPT-4 mini)
+  - **Agent de contexte** : Correspondance de département et dérivation de contexte (modèle configurable)
+  - **Agent de réponse** : Génération de réponses avec intégration d'outils (modèle configurable)
+- **Optimisations de performance** :
+  - **Court-circuit** : Réutilise les questions similaires déjà répondues (taux de succès 40-60%)
+  - **Réutilisation de contexte** : Exploite le contexte précédent pour les questions de suivi
+  - **Mise en cache d'invites** : Réduit les coûts IA d'environ 50% pour le contenu répété
 - **Support multi-fournisseur** - Modèles Azure OpenAI (production), OpenAI et Anthropic Claude
-- **Dérivation de contexte** : Un contexte frais est dérivé pour chaque question en utilisant le flux de travail `DefaultAlwaysContext`, garantissant que les questions de suivi ont un contexte mis à jour basé sur l'historique de conversation
+
+**Voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) pour les détails techniques complets**
 
 ### Utilisation d'outils agentiques
-L'application utilise des agents LangChain React avec des outils spécialisés pour améliorer les interactions IA :
+Les agents IA peuvent utiliser de manière autonome des outils spécialisés pendant la génération de réponses :
 
-- **Outil de recherche Canada.ca** - Effectue des recherches sur les sites Web gouvernementaux
+- **Outil de recherche Canada.ca** - Recherche du contenu pertinent sur les sites Web gouvernementaux
 - **Outil de recherche de contexte Google** - Fournisseur de recherche alternatif pour un contexte plus large
 - **Vérificateur de statut d'URL** - Valide les URLs de citation avant de les inclure dans les réponses
-- **Téléchargeur de pages Web** - Télécharge et analyse le contenu des pages Web pour la précision
-- **Outil d'agent de contexte** - Coordonne la génération de contexte et l'analyse de département
+- **Téléchargeur de pages Web** - Télécharge et analyse le contenu des pages Web pour vérification
+- **Outil d'agent de contexte** - Re-dérive le contexte si nécessaire pendant la génération de réponses
 
-Pour des informations détaillées sur l'architecture agentique et l'intégration d'outils, voir la [Fiche système](SYSTEM_CARD_FR.md#utilisation-doutils-agentiques).
+Pour l'intégration détaillée des outils, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md#agentic-tool-use).
 
 ## Fonctionnalités d'administration
 
@@ -169,92 +182,56 @@ flowchart TB
     User(["Utilisateur/Navigateur"])
 
     subgraph Frontend
-        ChatInterface["**Interface de clavardage**<br>- Composants React<br>- Système de conception Canada.ca<br>- Fonctionnalités d'accessibilité"]
-        OptionsPanel["**Panneau d'options**<br>- Sélection de service IA<br>- Commutateur de fournisseur de recherche<br>- Saisie d'URL de référence"]
+        ChatUI["Interface de clavardage React<br>Conception Canada.ca<br>Mises à jour de statut SSE"]
     end
 
-    subgraph PreProcessing
-        Redaction["**Étape 1 : Service de rédaction**<br>- Détection de renseignements personnels basée sur motifs<br>- Filtrage menaces/manipulation<br>- Modération de contenu"]
-        PIAgent["**Étape 2 : Agent de renseignements personnels**<br>- Détection IA de renseignements personnels<br>- Reconnaissance intelligente de noms<br>- Vérification finale de la vie privée"]
-        PipelineService["**Service de pipeline de clavardage**<br>- Orchestre le flux<br>- Gestion du statut<br>- Gestion d'erreurs"]
-    end
+    subgraph "Pipeline LangGraph (Côté serveur)"
+        API["API: /chat-graph-run<br>Point d'entrée d'exécution du graphe"]
 
-    subgraph SearchLayer
-        SearchAPI["**API de recherche**<br>- Coordonne les outils de recherche<br>- Sélection de fournisseur<br>- Limitation du taux"]
-        CanadaSearch["**Recherche Canada.ca**<br>- Recherche de site Web<br>- Support bilingue<br>- Grattage Playwright"]
-        GoogleSearch["**Recherche Google**<br>- API de recherche personnalisée<br>- Contexte étendu<br>- Résultats Web"]
-    end
-
-    subgraph AI_Services
-        ContextAPI["**API de contexte**<br>- Détection de département<br>- Analyse d'URL<br>- Génération de contexte"]
-        AnswerAPI["**API de réponse**<br>- Traitement de questions<br>- Génération de réponses<br>- Gestion de citations"]
-    end
-
-    subgraph AgentSystem
-        ContextAgent["**Agent de contexte**<br>- Agent LangChain React<br>- Intégration d'outils<br>- Analyse de département"]
-        AnswerAgent["**Agent de réponse**<br>- Agent LangChain React<br>- Utilisation d'outils<br>- Génération de réponses"]
-    end
-
-    subgraph AI_Tools
-        URLChecker["**Vérificateur d'URL**<br>- Validation de liens<br>- Gestion de redirections<br>- Vérification de certificats"]
-        PageDownloader["**Téléchargeur de pages**<br>- Extraction de contenu<br>- Préservation de liens<br>- Contenu dynamique"]
-        ContextTool["**Outil de contexte**<br>- Intégration de recherche<br>- Génération de contexte<br>- Coordination d'agents"]
-    end
-
-    subgraph ContextSystem
-        DeptContext["**Contexte de département**<br>- Scénarios<br>- Mises à jour<br>- Contenu spécifique aux départements"]
-        SystemPrompts["**Invites système**<br>- Invites de contexte<br>- Invites de réponse<br>- Support linguistique"]
+        subgraph Graph["Machine à états DefaultWithVectorGraph"]
+            Init["1. init<br>Initialiser l'état"]
+            Validate["2. validate<br>Vérification courte requête<br>(Programmatique)"]
+            Redact["3. redact<br>Étape 1: Rédaction de motifs<br>Étape 2: Détection IA de RP<br>(GPT-4 mini)"]
+            Translate["4. translate<br>Détection de langue<br>(GPT-4 mini)"]
+            Context["5. contextNode<br>Réécriture de requête → Recherche<br>Correspondance de département<br>(GPT-4 mini)"]
+            ShortCircuit["6. shortCircuit<br>Détection de réponse similaire<br>(Vecteur + Reclassement IA)"]
+            Answer["7. answerNode<br>Génération de réponse<br>(Modèle configurable)"]
+            Verify["8. verifyNode<br>Validation de citation<br>(Programmatique)"]
+            Persist["9. persistNode<br>Sauvegarder dans BD<br>Déclencher évaluation"]
+        end
     end
 
     subgraph Infrastructure
-        AIManager["**Gestionnaire de services IA**<br>- Configuration de modèle<br>- Sélection de fournisseur<br>- Gestion de clés API"]
-        DB["**Service de base de données**<br>- MongoDB Atlas<br>- Journalisation d'interactions<br>- Exportation de données"]
-        Eval["**Service d'évaluation**<br>- Notation de réponses<br>- Commentaires d'experts<br>- Évaluation automatisée"]
-        Feedback["**Système de commentaires**<br>- Commentaires publics<br>- Évaluation d'experts<br>- Évaluation de citations"]
-        Logging["**Service de journalisation**<br>- Journalisation serveur<br>- Journalisation client<br>- Suivi d'outils"]
+        DB["MongoDB<br>DocumentDB"]
+        Search["Fournisseurs de recherche<br>Canada.ca / Google"]
+        AI["Fournisseurs IA<br>Azure OpenAI / OpenAI / Anthropic"]
+        Embeddings["Service d'incorporation<br>Similarité vectorielle"]
     end
 
-    subgraph AI_Providers
-        Azure["Azure OpenAI<br>GPT-4/GPT-4o Mini"]
-        OpenAI["OpenAI<br>GPT-4.1/GPT-4o"]
-        Anthropic["Anthropic<br>Claude Sonnet/Haiku"]
-    end
-
-    User -->|Question| ChatInterface
-    ChatInterface -->|Saisie utilisateur| PipelineService
-    PipelineService -->|Saisie utilisateur| Redaction
-    Redaction -->|Étape 1 filtrée| PIAgent
-    PIAgent -->|Étape 2 validée| SearchAPI
-
-    SearchAPI -->|Demande de recherche| CanadaSearch
-    SearchAPI -->|Demande de recherche| GoogleSearch
-    CanadaSearch -->|Résultats| SearchAPI
-    GoogleSearch -->|Résultats| SearchAPI
-    SearchAPI -->|Résultats de recherche| ContextAPI
-
-    ContextAPI -->|Demande de contexte| ContextAgent
-    ContextAgent -->|Appel d'outil| ContextTool
-    ContextTool -->|Intégration de recherche| SearchAPI
-    ContextAgent -->|Info de département| DeptContext
-    ContextAgent -->|Invite système| SystemPrompts
-    ContextAgent -->|Appel API| AI_Providers
-
-    ContextAPI -->|Données de contexte| AnswerAPI
-    AnswerAPI -->|Demande de réponse| AnswerAgent
-    AnswerAgent -->|Appel d'outil| URLChecker
-    AnswerAgent -->|Appel d'outil| PageDownloader
-    AnswerAgent -->|Invite système| SystemPrompts
-    AnswerAgent -->|Appel API| AI_Providers
-
-    AnswerAPI -->|Réponse| Feedback
-    Feedback -->|Scores et évaluations| DB
-    PipelineService -->|Données d'interaction| DB
-    Logging -->|Données de journal| DB
-    DB -->|Données historiques| Eval
-
-    AIManager -->|Config| ContextAPI
-    AIManager -->|Config| AnswerAPI
-    AIManager -->|Config| AI_Providers
+    User -->|Question| ChatUI
+    ChatUI -->|Connexion SSE| API
+    API --> Init
+    Init --> Validate
+    Validate --> Redact
+    Redact -->|Appel IA| AI
+    Redact --> Translate
+    Translate -->|Appel IA| AI
+    Translate --> Context
+    Context -->|Appel IA| AI
+    Context -->|Recherche| Search
+    Context --> ShortCircuit
+    ShortCircuit -->|Vérifier vecteurs| Embeddings
+    ShortCircuit -->|Correspondance?| Answer
+    ShortCircuit -->|Aucune correspondance| Answer
+    Answer -->|Appel IA| AI
+    Answer --> Verify
+    Verify --> Persist
+    Persist -->|Sauvegarder| DB
+    Persist -->|Créer incorporations| Embeddings
+    Persist -->|Retourner| API
+    API -->|Flux SSE| ChatUI
 ```
 
-Pour des informations détaillées sur l'architecture technique, voir la [Fiche système](SYSTEM_CARD_FR.md#architecture-technique).
+**Pour le flux détaillé et l'implémentation, voir :**
+- [Documentation du pipeline](docs/pipeline.md) - Détails étape par étape
+- [Documentation d'architecture](docs/architecture/pipeline-architecture.md) - Architecture technique complète

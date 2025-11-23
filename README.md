@@ -2,12 +2,17 @@
 
 ## Overview
 
-AI Answers is a specialized AI chat application designed for Government of Canada websites. It provides highly accurate, brief answers to user questions about government services, programs, and information, with a single citation to an official government source or next step of their task. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. An extensive Admin interface supports evaluation, metrics, user management, and logging views.
+AI Answers is a specialized AI chat agent designed for Government of Canada websites. It provides highly accurate, brief answers to user questions about government services, programs, and information, with a single citation to an official government source or next step of their task. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. An extensive Admin interface supports evaluation, metrics, user management, and logging views.
 
-## System Documentation
+## Documentation
 
-For comprehensive system information, see:
+### System Documentation
 - **[SYSTEM_CARD.md](SYSTEM_CARD.md)** - Complete system card with technical architecture, safety measures, evaluation framework, and governance details
+
+### Developer Documentation
+- **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Complete LangGraph architecture and implementation details
+- **[docs/pipeline.md](docs/pipeline.md)** - Step-by-step pipeline breakdown with links to implementation files
+- **[docs/agents-prompts/system-prompt-documentation.md](docs/agents-prompts/system-prompt-documentation.md)** - AI agent system prompts for all pipeline steps
 
 **Français** : [README_FR.md](README_FR.md) | [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
 
@@ -36,10 +41,12 @@ For comprehensive system information, see:
 
 ### Core Components
 - **Frontend**: React-based chat interface with Canada.ca design system
-- **Backend**: Node.js microservices with prompt-chaining architecture
-- **AI services**: Azure OpenAI GPT models (production)
-- **Database**: AWS DocumentDB (production)
+- **Backend**: Node.js with LangGraph state machine orchestration
+- **AI services**: Azure OpenAI GPT models (production), with OpenAI and Anthropic support
+- **Database**: MongoDB (AWS DocumentDB in production)
 - **Deployment**: Azure cloud
+
+**For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ## 🌟 Key Features
 
@@ -98,29 +105,35 @@ For comprehensive system information, see:
 - Note that the response is formatted and complete before it is displayed or announced - no streaming
 - Aria-labels for helpful context, use of Aria-live to announce answers and error messages
 
-## Technical Architecture
+## Pipeline Architecture
 
-### Microservices Prompt-Chaining Architecture
-- **Prompt-chaining architecture** to improve response quality and speed [see diagram](#architecture-diagram)
-- **LangChain React agents** for both context and answer generation with tool integration
-- **Chain of thought** - the system uses multiple AI agents in sequence for processing:
-  - **Query Rewrite Agent**: Translates questions and crafts optimized search queries (keeps French questions in French for French page searches)
-  - **Context Agent**: Gathers relevant government content and identifies departments (called for **every question**, including follow-on questions, to ensure fresh context derivation)
-  - **Answer Agent**: Generates responses with preliminary checks including department analysis and content verification
-- **Agentic tool usage** - AI agents can autonomously use specialized tools for enhanced responses
+### LangGraph State Machine
+- **Server-side orchestration** using LangGraph state machine for deterministic, traceable execution
+- **9-step pipeline** with validation, translation, context derivation, and answer generation [see diagram](#architecture-diagram)
+- **Multi-agent processing** - Specialized AI agents for different tasks:
+  - **PII Agent**: AI-powered personal information detection (GPT-4 mini)
+  - **Translation Agent**: Language detection and translation (GPT-4 mini)
+  - **Query Rewrite Agent**: Search query optimization (GPT-4 mini)
+  - **Context Agent**: Department matching and context derivation (configurable model)
+  - **Answer Agent**: Response generation with tool integration (configurable model)
+- **Performance optimizations**:
+  - **Short-circuit**: Reuses similar answered questions (40-60% hit rate)
+  - **Context reuse**: Leverages previous context for follow-up questions
+  - **Prompt caching**: Reduces AI costs by ~50% for repeated content
 - **Multi-provider support** - Azure OpenAI (production), OpenAI, and Anthropic Claude models
-- **Context Derivation**: Fresh context is derived for each question using the `DefaultAlwaysContext` workflow, ensuring follow-on questions have updated context based on conversation history
+
+**See [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) for complete technical details**
 
 ### Agentic Tool Use
-The application uses LangChain React Agents with specialized tools to enhance AI interactions:
+AI agents can autonomously use specialized tools during answer generation:
 
-- **Canada.ca search tool** - Performs searches on government websites
+- **Canada.ca search tool** - Searches government websites for relevant content
 - **Google context search tool** - Alternative search provider for broader context
 - **URL status checker** - Validates citation URLs before including in responses
-- **Web page downloader** - Downloads and parses web page content for accuracy
-- **Context agent tool** - Coordinates context generation and department analysis
+- **Web page downloader** - Downloads and parses web page content for verification
+- **Context agent tool** - Re-derives context if needed during answer generation
 
-For detailed information about the agentic architecture and tool integration, see the [System Card](SYSTEM_CARD.md#agentic-tool-use).
+For detailed tool integration, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md#agentic-tool-use).
 
 ## Admin Features
 
@@ -169,97 +182,56 @@ flowchart TB
     User(["User/Browser"])
 
     subgraph Frontend
-        ChatInterface["**Chat Interface**<br>- React Components<br>- Canada.ca Design System<br>- Accessibility Features"]
-        OptionsPanel["**Options Panel**<br>- AI Service Selection<br>- Search Provider Toggle<br>- Referring URL Input"]
+        ChatUI["React Chat Interface<br>Canada.ca Design<br>SSE Status Updates"]
     end
 
-    subgraph PreProcessing
-        Redaction["**Stage 1: Redaction Service**<br>- Pattern-based PI Detection<br>- Threat/Manipulation Filtering<br>- Content Moderation"]
-        PIAgent["**Stage 2: PI Agent**<br>- AI-powered PI Detection<br>- Intelligent Name Recognition<br>- Final Privacy Check"]
-        PipelineService["**Chat Pipeline Service**<br>- Orchestrates Flow<br>- Status Management<br>- Error Handling"]
-    end
+    subgraph "LangGraph Pipeline (Server-Side)"
+        API["API: /chat-graph-run<br>Graph Execution Entry Point"]
 
-    subgraph SearchLayer
-        SearchAPI["**Search API**<br>- Coordinates Search Tools<br>- Provider Selection<br>- Rate Limiting"]
-        CanadaSearch["**Canada.ca Search**<br>- Website Search<br>- Bilingual Support<br>- Playwright Scraping"]
-        GoogleSearch["**Google Search**<br>- Custom Search API<br>- Extended Context<br>- Web Results"]
-    end
-
-    subgraph AI_Services
-        QueryAPI["**Query Rewrite API**<br>- Question Translation<br>- Search Query Optimization<br>- Language Detection"]
-        ContextAPI["**Context API**<br>- Department Detection<br>- URL Analysis<br>- Context Generation"]
-        AnswerAPI["**Answer API**<br>- Question Processing<br>- Response Generation<br>- Citation Handling"]
-    end
-
-    subgraph AgentSystem
-        QueryAgent["**Query Rewrite Agent**<br>- AI-powered Translation<br>- Search Query Crafting<br>- Language-aware Processing"]
-        ContextAgent["**Context Agent**<br>- LangChain React Agent<br>- Tool Integration<br>- Department Analysis"]
-        AnswerAgent["**Answer Agent**<br>- LangChain React Agent<br>- Tool Usage<br>- Response Generation"]
-    end
-
-    subgraph AI_Tools
-        URLChecker["**URL Checker**<br>- Link Validation<br>- Redirect Handling<br>- Certificate Verification"]
-        PageDownloader["**Page Downloader**<br>- Content Extraction<br>- Link Preservation<br>- Dynamic Content"]
-        ContextTool["**Context Tool**<br>- Search Integration<br>- Context Generation<br>- Agent Coordination"]
-    end
-
-    subgraph ContextSystem
-        DeptContext["**Department Context**<br>- Scenarios<br>- Updates<br>- Department-Specific Content"]
-        SystemPrompts["**System Prompts**<br>- Context Prompts<br>- Answer Prompts<br>- Language Support"]
+        subgraph Graph["DefaultWithVectorGraph State Machine"]
+            Init["1. init<br>Initialize State"]
+            Validate["2. validate<br>Short Query Check<br>(Programmatic)"]
+            Redact["3. redact<br>Stage 1: Pattern Redaction<br>Stage 2: AI PII Detection<br>(GPT-4 mini)"]
+            Translate["4. translate<br>Language Detection<br>(GPT-4 mini)"]
+            Context["5. contextNode<br>Query Rewrite → Search<br>Department Matching<br>(GPT-4 mini)"]
+            ShortCircuit["6. shortCircuit<br>Similar Answer Detection<br>(Vector + AI Reranking)"]
+            Answer["7. answerNode<br>Answer Generation<br>(Configurable Model)"]
+            Verify["8. verifyNode<br>Citation Validation<br>(Programmatic)"]
+            Persist["9. persistNode<br>Save to Database<br>Trigger Evaluation"]
+        end
     end
 
     subgraph Infrastructure
-        AIManager["**AI Service Manager**<br>- Model Configuration<br>- Provider Selection<br>- API Key Management"]
-        DB["**Database Service**<br>- MongoDB Atlas<br>- Interaction Logging<br>- Data Export"]
-        Eval["**Evaluation Service**<br>- Response Scoring<br>- Expert Feedback<br>- Automated Eval"]
-        Feedback["**Feedback System**<br>- Public Feedback<br>- Expert Evaluation<br>- Citation Rating"]
-        Logging["**Logging Service**<br>- Server Logging<br>- Client Logging<br>- Tool Tracking"]
+        DB["MongoDB<br>DocumentDB"]
+        Search["Search Providers<br>Canada.ca / Google"]
+        AI["AI Providers<br>Azure OpenAI / OpenAI / Anthropic"]
+        Embeddings["Embedding Service<br>Vector Similarity"]
     end
 
-    subgraph AI_Providers
-        Azure["Azure OpenAI<br>GPT-4/GPT-4o Mini"]
-        OpenAI["OpenAI<br>GPT-4.1/GPT-4o"]
-        Anthropic["Anthropic<br>Claude Sonnet/Haiku"]
-    end
-
-    User -->|Question| ChatInterface
-    ChatInterface -->|User Input| PipelineService
-    PipelineService -->|User Input| Redaction
-    Redaction -->|Stage 1 Filtered| PIAgent
-    PIAgent -->|Stage 2 Validated| QueryAPI
-
-    QueryAPI -->|Translation Request| QueryAgent
-    QueryAgent -->|Optimized Query| SearchAPI
-    SearchAPI -->|Search Request| CanadaSearch
-    SearchAPI -->|Search Request| GoogleSearch
-    CanadaSearch -->|Results| SearchAPI
-    GoogleSearch -->|Results| SearchAPI
-    SearchAPI -->|Search Results| ContextAPI
-
-    ContextAPI -->|Context Request| ContextAgent
-    ContextAgent -->|Tool Call| ContextTool
-    ContextTool -->|Search Integration| SearchAPI
-    ContextAgent -->|Department Info| DeptContext
-    ContextAgent -->|System Prompt| SystemPrompts
-    ContextAgent -->|API Call| AI_Providers
-    QueryAgent -->|API Call| AI_Providers
-
-    ContextAPI -->|Context Data| AnswerAPI
-    AnswerAPI -->|Answer Request| AnswerAgent
-    AnswerAgent -->|Tool Call| URLChecker
-    AnswerAgent -->|Tool Call| PageDownloader
-    AnswerAgent -->|System Prompt| SystemPrompts
-    AnswerAgent -->|API Call| AI_Providers
-
-    AnswerAPI -->|Response| Feedback
-    Feedback -->|Scores & Ratings| DB
-    PipelineService -->|Interaction Data| DB
-    Logging -->|Log Data| DB
-    DB -->|Historical Data| Eval
-
-    AIManager -->|Config| ContextAPI
-    AIManager -->|Config| AnswerAPI
-    AIManager -->|Config| AI_Providers
+    User -->|Question| ChatUI
+    ChatUI -->|SSE Connection| API
+    API --> Init
+    Init --> Validate
+    Validate --> Redact
+    Redact -->|AI Call| AI
+    Redact --> Translate
+    Translate -->|AI Call| AI
+    Translate --> Context
+    Context -->|AI Call| AI
+    Context -->|Search| Search
+    Context --> ShortCircuit
+    ShortCircuit -->|Check Vectors| Embeddings
+    ShortCircuit -->|Match?| Answer
+    ShortCircuit -->|No Match| Answer
+    Answer -->|AI Call| AI
+    Answer --> Verify
+    Verify --> Persist
+    Persist -->|Save| DB
+    Persist -->|Create Embeddings| Embeddings
+    Persist -->|Return| API
+    API -->|SSE Stream| ChatUI
 ```
 
-For detailed technical architecture information, see the [System Card](SYSTEM_CARD.md#technical-architecture).
+**For detailed flow and implementation, see:**
+- [Pipeline Documentation](docs/pipeline.md) - Detailed step breakdown
+- [Architecture Documentation](docs/architecture/pipeline-architecture.md) - Complete technical architecture
