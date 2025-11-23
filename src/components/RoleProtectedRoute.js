@@ -1,19 +1,18 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
-import AuthService from '../services/AuthService.js';
 
 // Basic authentication protection
 export const ProtectedRoute = ({ children, lang = 'en' }) => {
   const location = useLocation();
   const { currentUser, loading } = useAuth();
-  
+
   if (loading) {
     return null; // or a loading spinner component
   }
-  
-  // Also block if token is expired even when currentUser is present
-  if (!currentUser || AuthService.isTokenExpired()) {
+
+  // Check if user is authenticated
+  if (!currentUser) {
     // Redirect to signin page with return url
     return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
   }
@@ -22,30 +21,30 @@ export const ProtectedRoute = ({ children, lang = 'en' }) => {
 };
 
 // Role-based route protection
-export const RoleProtectedRoute = ({ 
-  children, 
+export const RoleProtectedRoute = ({
+  children,
   roles = [], // Array of allowed roles
   lang = 'en',
   redirectTo = null // Custom redirect path
 }) => {
   const location = useLocation();
   const { currentUser, loading, getDefaultRouteForRole } = useAuth();
-  
+
   // If still loading, don't redirect yet
   if (loading) {
     return null; // or a loading spinner component
   }
-  
-  // First check authentication
-  if (!currentUser || AuthService.isTokenExpired()) {
+
+  // Check if user is authenticated
+  if (!currentUser) {
     return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
   }
-    // If roles are specified, check if user has one of them
+  // If roles are specified, check if user has one of them
   if (roles.length > 0 && !roles.includes(currentUser.role)) {
     // Redirect to custom path or the default route for user's role
     return <Navigate to={redirectTo || getDefaultRouteForRole(currentUser.role, lang)} replace />;
   }
-  
+
   // User is authenticated and has proper role
   return children;
 };
@@ -77,17 +76,17 @@ export const PartnerRoute = ({ children, lang = 'en', redirectTo = null }) => {
 export const withProtection = (Component) => {
   const ProtectedComponent = (props) => {
     const { lang = 'en', ...restProps } = props;
-    
+
     return (
       <ProtectedRoute lang={lang}>
         <Component {...restProps} lang={lang} />
       </ProtectedRoute>
     );
   };
-  
+
   // Set display name for debugging and React DevTools
   ProtectedComponent.displayName = `withProtection(${Component.displayName || Component.name || 'Component'})`;
-  
+
   return ProtectedComponent;
 };
 
@@ -96,31 +95,32 @@ export const withProtection = (Component) => {
  * Usage: export default withRoleProtection(['admin'], { redirectTo: '/home' })(MyComponent)
  */
 export const withRoleProtection = (roles = [], options = {}) => {
-  return (Component) => {    const RoleProtectedComponent = (props) => {
+  return (Component) => {
+    const RoleProtectedComponent = (props) => {
       const { lang = 'en', ...restProps } = props;
       const { currentUser, getDefaultRouteForRole } = useAuth();
-      
+
       // If user is not authenticated or doesn't have required role
       if (!currentUser || (roles.length > 0 && !roles.includes(currentUser.role))) {
         return (
-          <RoleProtectedRoute 
-            roles={roles} 
-            lang={lang} 
+          <RoleProtectedRoute
+            roles={roles}
+            lang={lang}
             redirectTo={options.redirectTo || (currentUser ? getDefaultRouteForRole(currentUser.role, lang) : undefined)}
           >
             <Component {...restProps} lang={lang} />
           </RoleProtectedRoute>
         );
       }
-      
+
       // User is authenticated and has proper role
       return <Component {...restProps} lang={lang} />;
     };
-    
+
     // Set display name for debugging and React DevTools
     const roleNames = roles.join(',');
     RoleProtectedComponent.displayName = `withRoleProtection(${roleNames})(${Component.displayName || Component.name || 'Component'})`;
-    
+
     return RoleProtectedComponent;
   };
 };

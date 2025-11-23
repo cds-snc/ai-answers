@@ -131,6 +131,13 @@ export const withProtection = (handler, ...middleware) => {
   };
 };
 
+// Optional authentication: sets req.user if valid token exists, but does NOT block if no token
+// Used for endpoints that work for both authenticated and anonymous users (e.g., db-persist-interaction)
+export const withOptionalUser = (handler) => async (req, res) => {
+  req.user = await getUserFromCookie(req);
+  return handler(req, res);
+};
+
 export const authMiddleware = verifyAuth;
 export const adminMiddleware = verifyAdmin;
 export const partnerOrAdminMiddleware = verifyPartnerOrAdmin;
