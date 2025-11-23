@@ -51,18 +51,19 @@ const loginHandler = async (req, res) => {
       const refreshToken = generateRefreshToken(user);
 
       // Set tokens in HttpOnly cookies
-      const isProduction = process.env.NODE_ENV === 'production';
+      // Use secure cookies for any non-development environment (staging, production)
+      const isSecure = process.env.NODE_ENV !== 'development';
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax',
+        secure: isSecure,
+        sameSite: isSecure ? 'strict' : 'lax',
         maxAge: 15 * 60 * 1000 // 15 minutes
       });
 
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax',
+        secure: isSecure,
+        sameSite: isSecure ? 'strict' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
 
