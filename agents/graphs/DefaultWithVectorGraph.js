@@ -80,7 +80,8 @@ graph.addNode('translate', async (state) => {
   return { translationData };
 });
 
-graph.addNode('contextNode', async (state) => {
+// Prepare context for short-circuit check (minimal or existing)
+graph.addNode('prepareContextNode', async (state) => {
   const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
     conversationHistory: state.conversationHistory,
     department: state.department,
@@ -93,24 +94,8 @@ graph.addNode('contextNode', async (state) => {
     selectedAI: state.selectedAI,
   });
 
-  let context = preContext;
-  if (!usedExistingContext) {
-    context = await workflow.deriveContext({
-      selectedAI: state.selectedAI,
-      translationData: state.translationData,
-      lang: state.lang,
-      department: state.department,
-      referringUrl: state.referringUrl,
-      searchProvider: state.searchProvider,
-      conversationHistory: cleanedHistory,
-      overrideUserId: state.overrideUserId,
-      chatId: state.chatId,
-      userMessage: state.userMessage,
-    });
-  }
-
   return {
-    context,
+    context: preContext,
     cleanedHistory,
     usedExistingContext,
   };
@@ -161,6 +146,24 @@ graph.addNode('shortCircuit', async (state) => {
   return { status: WorkflowStatus.GENERATING_ANSWER };
 });
 
+// Derive fresh context for normal flow (expensive step)
+graph.addNode('deriveContextNode', async (state) => {
+  const context = await workflow.deriveContext({
+    selectedAI: state.selectedAI,
+    translationData: state.translationData,
+    lang: state.lang,
+    department: state.department,
+    referringUrl: state.referringUrl,
+    searchProvider: state.searchProvider,
+    conversationHistory: state.cleanedHistory,
+    overrideUserId: state.overrideUserId,
+    chatId: state.chatId,
+    userMessage: state.userMessage,
+  });
+
+  return { context };
+});
+
 graph.addNode('answerNode', async (state) => {
   const answer = await workflow.sendAnswerRequest({
     selectedAI: state.selectedAI,
@@ -203,7 +206,7 @@ graph.addNode('persistNode', async (state) => {
   const finalCitationUrl = state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null;
   const confidenceRating = state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null;
 
-  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
+  const needsClarification = Boolean(answerData && answerData.answerType && answerData.answerType.includes('question'));
 
   if (!isShortCircuit) {
     await workflow.persistInteraction({
@@ -237,10 +240,10 @@ graph.addNode('persistNode', async (state) => {
 });
 
 graph.addConditionalEdges('shortCircuit', (state) =>
-  state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
+  state.shortCircuitPayload ? 'skipAnswer' : 'runContext',
   {
     skipAnswer: 'persistNode',
-    runAnswer: 'answerNode',
+    runContext: 'deriveContextNode',
   },
 );
 
@@ -248,12 +251,11 @@ graph.addEdge(START, 'init');
 graph.addEdge('init', 'validate');
 graph.addEdge('validate', 'redact');
 graph.addEdge('redact', 'translate');
-graph.addEdge('translate', 'contextNode');
-graph.addEdge('contextNode', 'shortCircuit');
+graph.addEdge('translate', 'prepareContextNode');
+graph.addEdge('prepareContextNode', 'shortCircuit');
+graph.addEdge('deriveContextNode', 'answerNode');
 graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
-graph.addEdge('answerNode', 'persistNode');
-
 graph.addEdge('persistNode', END);
 
 export const defaultWithVectorGraphApp = graph.compile();

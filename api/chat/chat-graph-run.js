@@ -63,12 +63,14 @@ async function handler(req, res) {
   const handlers = {
     onStatus: (status) => {
       if (status) {
+        // console.log(`[Graph ${name}] Status:`, status);
         writeEvent(res, 'status', { status, graph: name });
       }
     },
     onResult: (result) => {
       if (!resultSent && result && result.answer && result.answer.answerType) {
         resultSent = true;
+        // console.log(`[Graph ${name}] Result found`);
         writeEvent(res, 'result', result);
       }
     },
@@ -86,12 +88,14 @@ async function handler(req, res) {
     });
   } catch (err) {
     streamError = err;
+    console.error(`[Graph ${name}] Execution failed:`, err);
     if (!resultSent) {
       writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
       resultSent = true;
     }
   } finally {
     if (!resultSent && !streamError) {
+      console.warn(`[Graph ${name}] Completed without result`);
       writeEvent(res, 'error', { message: 'Graph completed without result payload' });
     }
     res.end();

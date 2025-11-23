@@ -100,6 +100,7 @@ export class DefaultWithVectorGraph {
         }
 
         if (eventType === 'status' && parsedData && parsedData.status) {
+          console.log('[DefaultWithVectorGraph] Status update:', parsedData.status);
           ChatWorkflowService.sendStatusUpdate(onStatusUpdate, parsedData.status);
           return { done: false };
         }
@@ -107,6 +108,7 @@ export class DefaultWithVectorGraph {
         if (eventType === 'result') {
           completed = true;
           if (parsedData) {
+            console.log('[DefaultWithVectorGraph] Result received:', parsedData);
             return { done: true, value: parsedData };
           }
           throw new Error('Graph completed without result payload');

@@ -20,6 +20,8 @@ describe('IMVectorService', () => {
     // Avoid heavy initialize; we'll stub indexes and metadata directly
     svc.isInitialized = true;
     svc.qaMeta = new Map();
+    // Provide a minimal qaDB stub so matchQuestions can call .query safely
+    svc.qaDB = { query: async () => [] };
   });
 
   it('search() respects threshold and returns top-k ordered results', async () => {

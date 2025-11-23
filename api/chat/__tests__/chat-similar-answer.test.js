@@ -66,7 +66,7 @@ describe('chat-similar-answer handler', () => {
     // Clear database state before each test
     try {
       await reset();
-    } catch (_) {}
+    } catch (_) { }
 
     // Ensure Answer, Question and Interaction models are registered (db-connect imports them already)
     const AnswerModel = mongoose.model('Answer');
@@ -96,8 +96,8 @@ describe('chat-similar-answer handler', () => {
     // Prepare VectorService to return two matches in order
     mockMatchQuestions.mockResolvedValue([[{ id: 'doc1', interactionId: '64fec1000000000000000001' }, { id: 'doc2', interactionId: '64fec1000000000000000002' }]]);
 
-    // Make the ranker choose the second candidate (index 1) with all checks pass
-    mockInvokeWithStrategy.mockResolvedValue({ results: [{ index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }] });
+    // Make the ranker choose the first candidate (index 0) with all checks pass
+    mockInvokeWithStrategy.mockResolvedValue({ results: [{ index: 0, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }] });
   });
 
   afterAll(async () => {
@@ -155,12 +155,14 @@ describe('chat-similar-answer handler', () => {
     // Ensure ranker returns an ordering that includes both candidates,
     // so the selector can pick the one with enough turns (index 1)
     mockInvokeWithStrategy.mockReset();
-    mockInvokeWithStrategy.mockResolvedValue({ results: [
-      // First result fails a check, so interpretRankResult skips it
-      { index: 0, checks: { numbers: 'fail', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
-      // Second result passes, so index 1 is selected
-      { index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }
-    ] });
+    mockInvokeWithStrategy.mockResolvedValue({
+      results: [
+        // First result fails a check, so interpretRankResult skips it
+        { index: 0, checks: { numbers: 'fail', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
+        // Second result passes, so index 1 is selected
+        { index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }
+      ]
+    });
 
     const req = { method: 'POST', body: { questions: ['What is SCIS?', 'Where are the forms?'], selectedAI: 'openai', language: 'en' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };

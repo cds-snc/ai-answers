@@ -158,12 +158,11 @@ const createContextAgent = async (agentType, chatId = 'system') => {
       break;
     }
     case 'cohere': {
-      llm = new CohereClient({
+      llm = new ChatCohere({
         apiKey: process.env.COHERE_API_KEY,
-        modelName: 'command-xlarge-nightly',
+        model: 'command-xlarge-nightly',
         maxTokens: 4096,
         temperature: 0,
-        timeoutMs: 60000,
       });
       break;
     }
@@ -227,7 +226,7 @@ const createQueryAndPIIAgent = async (agentType, chatId = 'system') => {
 };
 
 
-const createPIIAgent = async (agentType, chatId = 'system') => {
+const createPIIAgent = async (agentType = 'openai', chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'openai': {
@@ -255,9 +254,11 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
       break;
     }
     default:
+      // Fallback to openai if unknown (or handle error if strictness is preferred, but user had null issue)
+      // Since we defaulted the arg, this case is for explicit unknown strings.
       throw new Error(`Unknown agent type for PII: ${agentType}`);
   }
-  
+
   return llm;
 };
 
@@ -291,7 +292,7 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
     default:
       throw new Error(`Unknown agent type for rewrite: ${agentType}`);
   }
-  
+
   return llm;
 };
 

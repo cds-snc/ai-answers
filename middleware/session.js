@@ -29,7 +29,7 @@ export default function sessionMiddleware(options = {}) {
       }
 
       if (!chatId) {
-        chatId = req.query?.chatId || req.headers['x-chat-id'] || null;
+        chatId = req.query?.chatId || req.headers?.['x-chat-id'] || null;
       }
       if (chatId) req.chatId = chatId;
 
