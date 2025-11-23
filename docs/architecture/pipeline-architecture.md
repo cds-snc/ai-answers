@@ -151,8 +151,6 @@ The graph maintains state across all nodes with these key fields:
 
 ## Pipeline Execution Flow
 
-For detailed step-by-step breakdown, see [`docs/pipeline.md`](../pipeline.md).
-
 ### 1. Initialization (`init` node)
 
 **Purpose:** Set up timing and initial status
@@ -629,19 +627,12 @@ try {
 
 ---
 
-## Deployment Modes
+## Deployment
 
-### CDS Mode (Default)
+**CDS Deployment:**
 - Evaluation runs **asynchronously** after response sent
 - Faster user response times
 - Background worker processes evaluations
-
-### Vercel Mode
-- Evaluation runs **synchronously** before response
-- Ensures evaluation completes
-- Slightly slower response times
-
-**Configuration:** `DEPLOYMENT_MODE` environment variable
 
 ---
 
@@ -682,7 +673,6 @@ Tracked per interaction:
 ## Related Documentation
 
 ### Core Documentation
-- **[Pipeline Overview](../pipeline.md)**: Step-by-step pipeline breakdown with implementation links
 - **[System Prompts](../agents-prompts/system-prompt-documentation.md)**: Complete AI agent prompts for all steps
 - **[SYSTEM_CARD.md](../../SYSTEM_CARD.md)**: System card with safety measures and evaluation framework
 

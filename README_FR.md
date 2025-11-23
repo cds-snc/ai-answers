@@ -10,8 +10,7 @@ Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites We
 - **[SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)** - Fiche système complète avec architecture technique, mesures de sécurité, cadre d'évaluation et détails de gouvernance
 
 ### Documentation pour développeurs
-- **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Architecture LangGraph complète et détails d'implémentation
-- **[docs/pipeline.md](docs/pipeline.md)** - Détails étape par étape du pipeline avec liens vers les fichiers d'implémentation
+- **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Architecture LangGraph complète et implémentation étape par étape du pipeline
 - **[docs/agents-prompts/system-prompt-documentation.md](docs/agents-prompts/system-prompt-documentation.md)** - Invites système des agents IA pour toutes les étapes du pipeline
 
 **English** : [README.md](README.md) | [SYSTEM_CARD.md](SYSTEM_CARD.md)
@@ -245,5 +244,4 @@ flowchart TB
 ```
 
 **Pour le flux détaillé et l'implémentation, voir :**
-- [Documentation du pipeline](docs/pipeline.md) - Détails étape par étape
-- [Documentation d'architecture](docs/architecture/pipeline-architecture.md) - Architecture technique complète
+- [Documentation d'architecture du pipeline](docs/architecture/pipeline-architecture.md) - Architecture technique complète avec implémentation étape par étape

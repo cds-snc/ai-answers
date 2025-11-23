@@ -103,7 +103,7 @@ The system uses a **9-step LangGraph pipeline** that orchestrates all processing
 8. **Citation Verification** (Programmatic): Validate that citation URLs are accessible
 9. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
 
-**For complete pipeline details, see [docs/pipeline.md](docs/pipeline.md)**
+**For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ## Risk Assessment and Safety Measures
 
@@ -313,7 +313,6 @@ The system uses a **9-step LangGraph pipeline** that orchestrates all processing
 
 #### **System Configuration**
 - **Service Status**: Toggle system availability (available/unavailable)
-- **Deployment Mode**: Switch between CDS (background worker) and Vercel (wait for completion) modes
 - **Settings Management**: Configure system-wide settings and parameters
 
 #### **Chat Viewer and Analysis**

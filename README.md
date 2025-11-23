@@ -10,8 +10,7 @@ AI Answers is a specialized AI chat agent designed for Government of Canada webs
 - **[SYSTEM_CARD.md](SYSTEM_CARD.md)** - Complete system card with technical architecture, safety measures, evaluation framework, and governance details
 
 ### Developer Documentation
-- **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Complete LangGraph architecture and implementation details
-- **[docs/pipeline.md](docs/pipeline.md)** - Step-by-step pipeline breakdown with links to implementation files
+- **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Complete LangGraph architecture and step-by-step pipeline implementation
 - **[docs/agents-prompts/system-prompt-documentation.md](docs/agents-prompts/system-prompt-documentation.md)** - AI agent system prompts for all pipeline steps
 
 **Français** : [README_FR.md](README_FR.md) | [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
@@ -245,5 +244,4 @@ flowchart TB
 ```
 
 **For detailed flow and implementation, see:**
-- [Pipeline Documentation](docs/pipeline.md) - Detailed step breakdown
-- [Architecture Documentation](docs/architecture/pipeline-architecture.md) - Complete technical architecture
+- [Pipeline Architecture Documentation](docs/architecture/pipeline-architecture.md) - Complete technical architecture with step-by-step implementation

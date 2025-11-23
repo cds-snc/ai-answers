@@ -103,7 +103,7 @@ Le système utilise un **pipeline LangGraph en 9 étapes** qui orchestre tout le
 8. **Vérification de citation** (Programmatique) : Valide que les URLs de citation sont accessibles
 9. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
 
-**Pour les détails complets du pipeline, voir [docs/pipeline.md](docs/pipeline.md)**
+**Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ## Évaluation des risques et mesures de sécurité
 
@@ -313,7 +313,6 @@ Le système utilise un **pipeline LangGraph en 9 étapes** qui orchestre tout le
 
 #### **Configuration du système**
 - **Statut du service** : Basculer la disponibilité du système (disponible/indisponible)
-- **Mode de déploiement** : Basculer entre les modes CDS (travailleur en arrière-plan) et Vercel (attendre l'achèvement)
 - **Gestion des paramètres** : Configurer les paramètres et paramètres au niveau du système
 
 #### **Visionneuse de discussion et analyse**
