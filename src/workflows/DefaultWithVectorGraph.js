@@ -1,6 +1,7 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import { ChatWorkflowService } from '../services/ChatWorkflowService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
+import AuthService from '../services/AuthService.js';
 
 export class DefaultWithVectorGraph {
   async processResponse(
@@ -50,12 +51,11 @@ export class DefaultWithVectorGraph {
         // ignore fingerprint errors; proceed without header
       }
 
-      const response = await fetch(getApiUrl('chat-graph-run'), {
+      const response = await AuthService.fetchWithAuth(getApiUrl('chat-graph-run'), {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
-        signal: controller.signal,
-        credentials: 'include'
+        signal: controller.signal
       });
 
       if (!response.ok) {

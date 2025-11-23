@@ -49,11 +49,11 @@ const UsersPage = ({ lang }) => {
 
   const handleFieldChange = (userId, field, value) => {
     // Update the ref directly (this persists across renders)
-    console.log('Before change:', { 
-      userId, field, value, 
-      current: editStatesRef.current[userId] 
+    console.log('Before change:', {
+      userId, field, value,
+      current: editStatesRef.current[userId]
     });
-    
+
     if (!editStatesRef.current[userId]) {
       // Initialize if it doesn't exist yet
       const matchingUser = users.find(u => u._id === userId);
@@ -69,41 +69,37 @@ const UsersPage = ({ lang }) => {
         };
       }
     }
-    
+
     // Update the field
     editStatesRef.current[userId][field] = value;
     editStatesRef.current[userId].changed = true;
-    
-    console.log('After change:', { 
-      userId, field, value, 
+
+    console.log('After change:', {
+      userId, field, value,
       current: editStatesRef.current[userId],
-      allStates: {...editStatesRef.current} 
+      allStates: { ...editStatesRef.current }
     });
-    
+
     // Force a re-render to update UI
     setTriggerRender(prev => prev + 1);
   };
 
   const handleSave = async (userId) => {
     const edit = editStatesRef.current[userId];
-    console.log('Save clicked, current state:', { 
-      userId, 
+    console.log('Save clicked, current state:', {
+      userId,
       edit,
-      allStates: {...editStatesRef.current} 
+      allStates: { ...editStatesRef.current }
     });
-    
+
     if (!edit || !edit.changed) {
       console.log('No changes to save');
       return;
     }
 
     try {
-      const response = await fetch(getApiUrl('db-users'), {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-users'), {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeader()
-        },
         body: JSON.stringify({
           userId,
           active: edit.active,
@@ -133,16 +129,12 @@ const UsersPage = ({ lang }) => {
       alert(t('users.actions.adminOnly', 'Only administrators can delete users'));
       return;
     }
-    
+
     if (!window.confirm(t('users.actions.confirmDelete'))) return;
-    
+
     try {
-      const response = await fetch(getApiUrl('db-users'), {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-users'), {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeader()
-        },
         body: JSON.stringify({ userId })
       });
 
@@ -163,12 +155,10 @@ const UsersPage = ({ lang }) => {
 
   useEffect(() => {
     let didCancel = false;
-    
+
     const fetchUsers = async () => {
       try {
-        const response = await fetch(getApiUrl('db-users'), {
-          headers: AuthService.getAuthHeader()
-        });
+        const response = await AuthService.fetchWithAuth(getApiUrl('db-users'));
         if (!didCancel) {
           const data = await response.json();
           setUsers(data);
@@ -179,14 +169,14 @@ const UsersPage = ({ lang }) => {
         }
       }
     };
-    
+
     fetchUsers();
     return () => { didCancel = true; };
   }, []);
 
   const columns = [
     { title: t('users.columns.email'), data: 'email' },
-    { 
+    {
       title: t('users.columns.role'),
       data: 'role',
       render: (data, type, row) => {
@@ -206,8 +196,8 @@ const UsersPage = ({ lang }) => {
         return `<select data-userid="${userId}" data-field="active">${statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('')}</select>`;
       }
     },
-    { 
-      title: t('users.columns.createdAt'), 
+    {
+      title: t('users.columns.createdAt'),
       data: 'createdAt',
       render: (data) => new Date(data).toLocaleDateString()
     },
@@ -226,7 +216,7 @@ const UsersPage = ({ lang }) => {
           <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
         </GcdsText>
       </nav>
-      
+
       <DataTable
         data={users}
         columns={columns}
@@ -237,7 +227,8 @@ const UsersPage = ({ lang }) => {
           order: [[3, 'desc']],
           createdRow: (row, data) => {
             // Attach select change handlers
-            row.querySelectorAll('select').forEach(select => {              select.onchange = () => {
+            row.querySelectorAll('select').forEach(select => {
+              select.onchange = () => {
                 const userId = select.getAttribute('data-userid');
                 const field = select.getAttribute('data-field');
                 let value = select.value;
@@ -245,19 +236,19 @@ const UsersPage = ({ lang }) => {
                 handleFieldChange(userId, field, value);
               };
             });
-            
+
             // Render Save and Delete buttons
             const actionsCell = row.querySelector('td:last-child');
             actionsCell.innerHTML = '';
             const root = createRoot(actionsCell);
-              // Render admin buttons (only admins should reach this page)
+            // Render admin buttons (only admins should reach this page)
             root.render(
               <>
                 <GcdsButton
                   size="small"
                   variant="primary"
                   onClick={() => handleSave(data._id)}
-                  
+
                 >
                   {t('users.actions.save')}
                 </GcdsButton>

@@ -65,16 +65,12 @@ class DataStoreService {
 
   static async persistInteraction(interactionData) {
     try {
-      
-      const response = await fetch(getApiUrl('db-persist-interaction'), {
+
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-persist-interaction'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeader()
-        },
         body: JSON.stringify(interactionData)
       });
-      
+
       if (!response.ok) throw new Error('Failed to persist interaction');
       return await response.json();
     } catch (error) {
@@ -83,8 +79,8 @@ class DataStoreService {
     }
   }
 
-  
-  
+
+
   static async getChatSession(sessionId) {
     try {
       const response = await fetch(getApiUrl(`chat-session`));
@@ -111,10 +107,10 @@ class DataStoreService {
 
   static async deleteChat(chatId) {
     try {
-  const response = await AuthService.fetchWithAuth(getApiUrl(`chat-delete?chatId=${chatId}`), {
+      const response = await AuthService.fetchWithAuth(getApiUrl(`chat-delete?chatId=${chatId}`), {
         method: 'DELETE'
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to delete chat');

@@ -10,16 +10,14 @@ class ExportService {
         ...filters,
         format
       }).toString();
-      
-      const response = await fetch(getApiUrl(`db-chat-logs/export?${queryParams}`), {
-        headers: AuthService.getAuthHeader()
-      });
-      
+
+      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat-logs/export?${queryParams}`));
+
       if (!response.ok) throw new Error('Failed to export chat logs');
-      
+
       const blob = await response.blob();
       const filename = `chat-logs-${new Date().toISOString()}.${format}`;
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -35,7 +33,7 @@ class ExportService {
     }
   }
 
-  
+
 
   static jsonToFlatTable(data, headers) {
     // Ensure data is an array and not null/undefined
@@ -144,7 +142,7 @@ class ExportService {
     const autoEvalHeaders = headers.filter(h => h.includes('autoEval'));
     const contextToolHeaders = headers.filter(h => h.includes('context.tools'));
     const otherHeaders = headers.filter(h => !h.includes('autoEval') && !h.includes('answer.tools') && !h.includes('context.tools'));
-    headers = [...otherHeaders, ...autoEvalHeaders,...contextToolHeaders, ...answerToolsHeaders];
+    headers = [...otherHeaders, ...autoEvalHeaders, ...contextToolHeaders, ...answerToolsHeaders];
 
     for (const chat of chats) {
       const interactions = chat.interactions.map((interaction) => ({
@@ -164,7 +162,7 @@ class ExportService {
 
       // Make sure we include the referringUrl from both the chat level and interaction level
       const globalInfo = [chat.chatId, chat.pageLanguage, chat.aiProvider, chat.searchProvider, chat.user?.email || ''];
-      const globalInfoHeaders = ['chatId', 'pageLanguage', 'aiService', 'searchService','user.email'];
+      const globalInfoHeaders = ['chatId', 'pageLanguage', 'aiService', 'searchService', 'user.email'];
 
       const rowsWithGlobalInfo = filteredRows.map((row) => globalInfo.concat(row));
 

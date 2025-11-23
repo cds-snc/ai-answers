@@ -45,9 +45,8 @@ const DatabasePage = ({ lang }) => {
       }
       // Fetch collections for export dropdown
       try {
-        const collectionsRes = await fetch(getApiUrl('db-database-management'), {
-          method: 'GET',
-          headers: AuthService.getAuthHeader()
+        const collectionsRes = await AuthService.fetchWithAuth(getApiUrl('db-database-management'), {
+          method: 'GET'
         });
         if (collectionsRes.ok) {
           const { collections } = await collectionsRes.json();
@@ -111,7 +110,7 @@ const DatabasePage = ({ lang }) => {
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
               const timeout = setTimeout(() => controller.abort(), 300000); // 5 minutes
-              const res = await fetch(url, { headers: AuthService.getAuthHeader(), signal: controller.signal });
+              const res = await AuthService.fetchWithAuth(url, { signal: controller.signal });
               clearTimeout(timeout);
               if (!res.ok) {
                 let errorMsg = `Failed to export collection ${collection}`;
@@ -169,10 +168,10 @@ const DatabasePage = ({ lang }) => {
       return;
     }
 
-  setIsImporting(true);
-  setMessage('Starting import...');
-  // lineBuffer is managed inside the try block per chunk
-  let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
+    setIsImporting(true);
+    setMessage('Starting import...');
+    // lineBuffer is managed inside the try block per chunk
+    let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
 
     try {
       // Compute chunk size from UI (MB -> bytes). Minimum 64KB to avoid extremely small slices.
@@ -197,12 +196,8 @@ const DatabasePage = ({ lang }) => {
         let lastErr = null;
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
           try {
-            const response = await fetch(getApiUrl('db-database-management'), {
+            const response = await AuthService.fetchWithAuth(getApiUrl('db-database-management'), {
               method: 'POST',
-              headers: {
-                ...AuthService.getAuthHeader(),
-                'Content-Type': 'application/json',
-              },
               body: JSON.stringify(bodyObj),
             });
             if (!response.ok) {
@@ -316,7 +311,7 @@ const DatabasePage = ({ lang }) => {
       let finalMsg = `Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`;
       if (accumulatedStats.skipped) finalMsg += `, Skipped: ${accumulatedStats.skipped}`;
       if (accumulatedStats.skippedExamples && accumulatedStats.skippedExamples.length) {
-        finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0,10).join('\n')}`;
+        finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0, 10).join('\n')}`;
       }
       setMessage(finalMsg);
       if (fileInputRef.current) {
@@ -336,16 +331,15 @@ const DatabasePage = ({ lang }) => {
         ? 'This will drop all database indexes. Database operations may be slower until indexes are rebuilt automatically. Are you sure you want to continue?'
         : 'Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu\'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer?'
     );
-    
+
     if (!confirmed) return;
-    
+
     try {
       setIsDroppingIndexes(true);
       setMessage('');
 
-      const response = await fetch(getApiUrl('db-database-management'), {
-        method: 'DELETE',
-        headers: AuthService.getAuthHeader()
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-database-management'), {
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -354,12 +348,12 @@ const DatabasePage = ({ lang }) => {
       }
 
       const result = await response.json();
-      setMessage(lang === 'en' 
+      setMessage(lang === 'en'
         ? `Indexes dropped successfully for ${result.results.success.length} collections`
         : `Indexes supprimés avec succès pour ${result.results.success.length} collections`
       );
     } catch (error) {
-      setMessage(lang === 'en' 
+      setMessage(lang === 'en'
         ? `Drop indexes failed: ${error.message}`
         : `Échec de la suppression des index: ${error.message}`
       );
@@ -378,9 +372,8 @@ const DatabasePage = ({ lang }) => {
     setIsDeletingSystemLogs(true);
     setMessage('');
     try {
-      const response = await fetch(getApiUrl('db-delete-system-logs'), {
-        method: 'DELETE',
-        headers: AuthService.getAuthHeader(),
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-system-logs'), {
+        method: 'DELETE'
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Failed to delete system logs');
@@ -394,7 +387,8 @@ const DatabasePage = ({ lang }) => {
         lang === 'en'
           ? `Delete system logs failed: ${error.message}`
           : `Échec de la suppression des journaux système: ${error.message}`
-      );    } finally {
+      );
+    } finally {
       setIsDeletingSystemLogs(false);
     }
   };
@@ -411,8 +405,8 @@ const DatabasePage = ({ lang }) => {
     try {
       const result = await BatchService.deleteAllBatches();
       // Expecting { deletedBatches, deletedBatchItems } or similar
-  const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
-  const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
+      const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
+      const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
       setMessage(
         lang === 'en'
           ? `Deleted batches: ${deletedBatches}, deleted batchItems: ${deletedBatchItems}`
@@ -430,16 +424,18 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
-  const handleRepairTimestamps = async () => {    if (!window.confirm(
+  const handleRepairTimestamps = async () => {
+    if (!window.confirm(
       lang === 'en'
         ? 'This will add updatedAt timestamps to existing tool records without them. Are you sure you want to continue?'
         : 'Cela ajoutera des horodatages updatedAt aux enregistrements d\'outils existants qui n\'en ont pas. Êtes-vous sûr de vouloir continuer?'
     )) return;
-    
+
     setIsRepairingTimestamps(true);
     setMessage('');
-    
-    try {      const result = await DataStoreService.repairTimestamps();
+
+    try {
+      const result = await DataStoreService.repairTimestamps();
       setMessage(
         lang === 'en'
           ? `Tool timestamps repaired successfully. Tools: ${result.stats.tools.updated}/${result.stats.tools.total}`
@@ -462,10 +458,10 @@ const DatabasePage = ({ lang }) => {
         ? 'This will set the "type" field to "expert" for expert feedback records that have missing or empty type fields. Records with "public" or "ai" types will be left unchanged. Are you sure you want to continue?'
         : 'Cela définira le champ "type" sur "expert" pour les enregistrements de commentaires d\'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types "public" ou "ai" resteront inchangés. Êtes-vous sûr de vouloir continuer?'
     )) return;
-    
+
     setIsRepairingExpertFeedback(true);
     setMessage('');
-    
+
     try {
       const result = await DataStoreService.repairExpertFeedback();
       setMessage(
@@ -511,7 +507,7 @@ const DatabasePage = ({ lang }) => {
   };
 
   return (
-    <GcdsContainer  size="xl" centered>
+    <GcdsContainer size="xl" centered>
       <GcdsHeading tag="h1">Database Management</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
@@ -581,79 +577,78 @@ const DatabasePage = ({ lang }) => {
       </div>
       {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
-                <GcdsHeading tag="h2">Integrity Checks</GcdsHeading>
-                <GcdsText>
-                  Run read-only checks to find orphaned documents and parent records that reference missing children.
-                </GcdsText>
-                <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
-                  <summary style={{ cursor: 'pointer', fontWeight: '600' }}>Core orphan & parent-reference checks</summary>
-                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {[
-                      { id: 'orphanCitations', label: 'Orphaned Citations (not referenced by any Answer)' },
-                      { id: 'orphanTools', label: 'Orphaned Tools (not referenced by any Answer)' },
-                      { id: 'orphanAnswers', label: 'Orphaned Answers (not referenced by any Interaction or Embedding)' },
-                      { id: 'orphanQuestions', label: 'Orphaned Questions (not referenced by any Interaction or Embedding)' },
-                      { id: 'orphanInteractions', label: 'Orphaned Interactions (not referenced by any Chat)' },
-                      { id: 'interactionMissingChildren', label: 'Interactions referencing missing children (question/answer/feedback/context/eval)' },
-                      { id: 'embeddingsMissingRefs', label: 'Embeddings with missing Chat/Interaction/Question/Answer refs' },
-                      { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
-                      { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
-                      { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
-                      { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' }
-                    ].map(check => (
-                      <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ flex: 1 }}>{check.label}</div>
-                        <GcdsButton
-                          onClick={async () => {
-                            try {
-                              setChecksRunning(prev => ({ ...prev, [check.id]: true }));
-                              setMessage('');
-                              const res = await fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
-                                method: 'GET',
-                                headers: AuthService.getAuthHeader()
-                              });
-                              const json = await res.json();
-                              if (!res.ok) throw new Error(json.message || 'Check failed');
-                              setChecksResults(prev => ({ ...prev, [check.id]: json }));
-                            } catch (err) {
-                              setMessage(`Check ${check.id} failed: ${err.message}`);
-                            } finally {
-                              setChecksRunning(prev => ({ ...prev, [check.id]: false }));
-                            }
-                          }}
-                          disabled={!!checksRunning[check.id]}
-                          variant="secondary"
-                        >
-                          {checksRunning[check.id] ? 'Running...' : 'Run check'}
-                        </GcdsButton>
-                        <div style={{ minWidth: 220, textAlign: 'right' }}>
-                          {checksResults[check.id] ? (
-                            <div style={{ fontSize: 13 }}>
-                              Count: <strong>{checksResults[check.id].count}</strong>
-                              {checksResults[check.id].breakdown ? (
-                                <div style={{ marginTop: 6, textAlign: 'right' }}>
-                                  <div style={{ fontSize: 12 }}>Missing — Chat: <strong>{checksResults[check.id].breakdown.missingChat}</strong>, Interaction: <strong>{checksResults[check.id].breakdown.missingInteraction}</strong>, Question: <strong>{checksResults[check.id].breakdown.missingQuestion}</strong>, Answer: <strong>{checksResults[check.id].breakdown.missingAnswer}</strong></div>
-                                  {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                                    <div style={{ marginTop: 6 }}>
-                                      Samples: {checksResults[check.id].samples.slice(0,5).map(s => (s._id || s)).join(', ')}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                                <div style={{ marginTop: 6 }}>
-                                  Samples: {checksResults[check.id].samples.slice(0,5).map(s => (s._id || s)).join(', ')}
-                                </div>
-                              ) : null}
+        <GcdsHeading tag="h2">Integrity Checks</GcdsHeading>
+        <GcdsText>
+          Run read-only checks to find orphaned documents and parent records that reference missing children.
+        </GcdsText>
+        <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
+          <summary style={{ cursor: 'pointer', fontWeight: '600' }}>Core orphan & parent-reference checks</summary>
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { id: 'orphanCitations', label: 'Orphaned Citations (not referenced by any Answer)' },
+              { id: 'orphanTools', label: 'Orphaned Tools (not referenced by any Answer)' },
+              { id: 'orphanAnswers', label: 'Orphaned Answers (not referenced by any Interaction or Embedding)' },
+              { id: 'orphanQuestions', label: 'Orphaned Questions (not referenced by any Interaction or Embedding)' },
+              { id: 'orphanInteractions', label: 'Orphaned Interactions (not referenced by any Chat)' },
+              { id: 'interactionMissingChildren', label: 'Interactions referencing missing children (question/answer/feedback/context/eval)' },
+              { id: 'embeddingsMissingRefs', label: 'Embeddings with missing Chat/Interaction/Question/Answer refs' },
+              { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
+              { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
+              { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
+              { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' }
+            ].map(check => (
+              <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>{check.label}</div>
+                <GcdsButton
+                  onClick={async () => {
+                    try {
+                      setChecksRunning(prev => ({ ...prev, [check.id]: true }));
+                      setMessage('');
+                      const res = await AuthService.fetchWithAuth(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                        method: 'GET'
+                      });
+                      const json = await res.json();
+                      if (!res.ok) throw new Error(json.message || 'Check failed');
+                      setChecksResults(prev => ({ ...prev, [check.id]: json }));
+                    } catch (err) {
+                      setMessage(`Check ${check.id} failed: ${err.message}`);
+                    } finally {
+                      setChecksRunning(prev => ({ ...prev, [check.id]: false }));
+                    }
+                  }}
+                  disabled={!!checksRunning[check.id]}
+                  variant="secondary"
+                >
+                  {checksRunning[check.id] ? 'Running...' : 'Run check'}
+                </GcdsButton>
+                <div style={{ minWidth: 220, textAlign: 'right' }}>
+                  {checksResults[check.id] ? (
+                    <div style={{ fontSize: 13 }}>
+                      Count: <strong>{checksResults[check.id].count}</strong>
+                      {checksResults[check.id].breakdown ? (
+                        <div style={{ marginTop: 6, textAlign: 'right' }}>
+                          <div style={{ fontSize: 12 }}>Missing — Chat: <strong>{checksResults[check.id].breakdown.missingChat}</strong>, Interaction: <strong>{checksResults[check.id].breakdown.missingInteraction}</strong>, Question: <strong>{checksResults[check.id].breakdown.missingQuestion}</strong>, Answer: <strong>{checksResults[check.id].breakdown.missingAnswer}</strong></div>
+                          {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                            <div style={{ marginTop: 6 }}>
+                              Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
                             </div>
-                          ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
+                          ) : null}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </details>
+                      ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                        <div style={{ marginTop: 6 }}>
+                          Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
+                </div>
               </div>
+            ))}
+          </div>
+        </details>
+      </div >
 
-              <div className="mb-400">
+      <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Import Database' : 'Importer la base de données'}</GcdsHeading>
         <GcdsText>
           {lang === 'en'
@@ -724,7 +719,7 @@ const DatabasePage = ({ lang }) => {
             disabled={isImporting}
             variant="secondary"
           >
-            {isImporting 
+            {isImporting
               ? (lang === 'en' ? 'Importing...' : 'Importation...')
               : (lang === 'en' ? 'Import Database' : 'Importer la base de données')}
           </GcdsButton>
@@ -744,7 +739,7 @@ const DatabasePage = ({ lang }) => {
           variant="danger"
           className="mb-200"
         >
-          {isDroppingIndexes 
+          {isDroppingIndexes
             ? (lang === 'en' ? 'Dropping Indexes...' : 'Suppression des index...')
             : (lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index')}
         </GcdsButton>
@@ -780,8 +775,8 @@ const DatabasePage = ({ lang }) => {
           variant="secondary"
           className="mb-200"
         >          {isRepairingTimestamps
-            ? (lang === 'en' ? 'Repairing...' : 'Réparation...')
-            : (lang === 'en' ? 'Repair Tool Timestamps' : 'Réparer les horodatages des outils')}
+          ? (lang === 'en' ? 'Repairing...' : 'Réparation...')
+          : (lang === 'en' ? 'Repair Tool Timestamps' : 'Réparer les horodatages des outils')}
         </GcdsButton>
       </div>
 
@@ -844,7 +839,7 @@ const DatabasePage = ({ lang }) => {
 
       {/* Show other messages (not import progress) at the bottom */}
       {(!isImporting && message) && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
-    </GcdsContainer>
+    </GcdsContainer >
   );
 };
 

@@ -54,7 +54,7 @@ class BatchService {
   async retrieveBatch(batchId) {
     if (!batchId) throw new Error('batchId required');
     const url = getApiUrl(`batch-retrieve?batchId=${encodeURIComponent(batchId)}`);
-    const res = await fetch(url, { headers: AuthService.getAuthHeader() });
+    const res = await AuthService.fetchWithAuth(url);
     if (!res.ok) throw new Error(`Failed to retrieve batch: ${res.status} ${res.statusText}`);
     const result = await res.json();
     console.log(`[batch] retrieveBatch ${batchId}:`, result);
@@ -181,7 +181,7 @@ class BatchService {
   // Given an array of batches, fetch their latest statuses from server (mirrors DataStoreService logic)
   async getBatchStatuses(batches) {
     try {
-     
+
       const statusPromises = batches.map(async (batch) => {
         try {
           // Always fetch the latest server-side stats for this batch. Use

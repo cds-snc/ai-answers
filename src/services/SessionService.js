@@ -5,7 +5,9 @@ import AuthService from './AuthService.js';
 const SessionService = {
   async getSessionMetrics() {
     const url = getApiUrl('chat-session-metrics');
-    const resp = await fetch(url, { headers: { ...AuthService.getAuthHeader(), Accept: 'application/json' } });
+    const resp = await AuthService.fetchWithAuth(url, {
+      headers: { Accept: 'application/json' }
+    });
     if (!resp.ok) {
       const txt = await resp.text();
       const err = new Error(`Failed to load sessions: ${resp.status} ${txt}`);
@@ -20,11 +22,9 @@ const SessionService = {
   async report(chatId, latencyMs = 0, error = false, errorType = null) {
     const url = getApiUrl('chat-report');
     try {
-      await fetch(url, {
+      await AuthService.fetchWithAuth(url, {
         method: 'POST',
         // Ensure cookies / session token are sent so the server can map chatId -> session
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeader() },
         body: JSON.stringify({ chatId, latencyMs, error, errorType })
       });
     } catch (e) {
