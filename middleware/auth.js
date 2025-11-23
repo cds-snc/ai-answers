@@ -3,21 +3,33 @@ import { User } from '../models/user.js';
 import dbConnect from '../api/db/db-connect.js';
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY;
+const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || '15m';
+const REFRESH_TOKEN_EXPIRES_IN = process.env.JWT_REFRESH_TOKEN_EXPIRES_IN || '7d';
 
-export const generateToken = (user) => {
-  console.log('Generating token for user:', { userId: user._id, email: user.email, role: user.role });
+// Generate access token (short-lived)
+export const generateToken = (user, expiresIn = ACCESS_TOKEN_EXPIRES_IN) => {
+  console.log('Generating access token for user:', { userId: user._id, email: user.email, role: user.role, expiresIn });
   return jwt.sign(
     { userId: user._id, email: user.email, role: user.role },
     JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn }
   );
 };
 
-// Utility to extract user from request without sending a response
-export const getUserFromRequest = async (req) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
+// Generate refresh token (long-lived)
+export const generateRefreshToken = (user) => {
+  console.log('Generating refresh token for user:', { userId: user._id, expiresIn: REFRESH_TOKEN_EXPIRES_IN });
+  return jwt.sign(
+    { userId: user._id, type: 'refresh' },
+    JWT_SECRET,
+    { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
+  );
+};
+
+// Utility to extract user from cookie without sending a response
+export const getUserFromCookie = async (req) => {
+  const token = req.cookies?.access_token;
+  if (!token) return null;
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     await dbConnect();
@@ -29,52 +41,25 @@ export const getUserFromRequest = async (req) => {
   }
 };
 
-const handleCORS = (req, res) => {
-  console.log('CORS handling for request:', { 
-    method: req.method, 
-    path: req.path,
-    origin: req.headers.origin,
-    headers: req.headers
-  });
-
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    console.log('Set Access-Control-Allow-Origin to:', origin);
-  }
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
-  res.setHeader(
-      "Access-Control-Allow-Headers",
-      "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
-  );
-
-  if (req.method === 'OPTIONS') {
-      console.log('Handling OPTIONS preflight request');
-      return res.status(200).end();
-  }
-  return true;
-};
-
 const verifyAuth = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    console.log('Verifying auth with headers:', {
-      authorization: authHeader,
+    const token = req.cookies?.access_token;
+    console.log('Verifying auth with cookie:', {
+      hasCookie: !!token,
       method: req.method,
       path: req.path
     });
 
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.log('Auth failed: No bearer token provided');
+    if (!token) {
+      console.log('Auth failed: No access token cookie provided');
       res.status(401).json({ message: 'No token provided' });
       return false;
     }
 
-    const token = authHeader.split(' ')[1];
     console.log('Attempting to verify token');
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log('Token verified successfully:', { userId: decoded.userId, role: decoded.role });
+
     await dbConnect();
     const user = await User.findById(decoded.userId);
     if (!user) {
@@ -94,11 +79,11 @@ const verifyAuth = async (req, res) => {
 };
 
 const verifyAdmin = (req, res) => {
-  console.log('Verifying admin access for user:', { 
+  console.log('Verifying admin access for user:', {
     userId: req.user?.userId,
-    role: req.user?.role 
+    role: req.user?.role
   });
-  
+
   if (req.user.role !== 'admin') {
     console.log('Admin access denied for user:', req.user?.userId);
     res.status(403).json({ message: 'Admin access required' });
@@ -133,13 +118,6 @@ export const withProtection = (handler, ...middleware) => {
       middlewareCount: middleware.length
     });
 
-    // Handle CORS preflight before any middleware
-    //const corsResult = handleCORS(req, res);
-    //if (corsResult !== true) {
-    //  console.log('CORS preflight handled, ending request');
-    //  return corsResult;
-    //}
-
     for (const mw of middleware) {
       console.log('Executing middleware:', mw.name);
       const result = await mw(req, res);
@@ -152,18 +130,6 @@ export const withProtection = (handler, ...middleware) => {
     return handler(req, res);
   };
 };
-
-// Optional authentication: sets req.user if valid token, does not block if not
-export const withOptionalUser = (handler) => async (req, res) => {
-  req.user = await getUserFromRequest(req); // Use new utility
-  return handler(req, res);
-};
-
-export const withUser = (handler) => async (req, res) => {
-  req.user = await getUserFromRequest(req); // Use new utility
-  return handler(req, res);
-};
-
 
 export const authMiddleware = verifyAuth;
 export const adminMiddleware = verifyAdmin;

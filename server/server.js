@@ -1,4 +1,5 @@
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
@@ -48,6 +49,8 @@ import verify2FAHandler from '../api/auth/auth-verify-2fa.js';
 import userSend2FAHandler from '../api/auth/auth-send-2fa.js';
 import sendResetHandler from '../api/auth/auth-send-reset.js';
 import resetPasswordHandler from '../api/auth/auth-reset-password.js';
+import refreshHandler from '../api/auth/auth-refresh.js';
+import meHandler from '../api/auth/auth-me.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/db/db-users.js';
 import deleteChatHandler from '../api/chat/chat-delete.js';
@@ -84,7 +87,14 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
-app.use(cors());
+
+// CORS configuration - allow credentials for cookie-based auth
+app.use(cors({
+  origin: true, // Reflect the request origin
+  credentials: true // Allow cookies
+}));
+
+app.use(cookieParser()); // Parse cookies
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
@@ -110,7 +120,7 @@ app.get("/health", (req, res) => {
 // Serve runtime config for frontend
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL||'')}};`);
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);
 });
 
 app.get("*", (req, res, next) => {
@@ -158,6 +168,8 @@ app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/auth/signup', signupHandler);
 app.post('/api/auth/login', loginHandler);
 app.post('/api/auth/logout', logoutHandler);
+app.post('/api/auth/refresh', refreshHandler); // New: refresh access token
+app.get('/api/auth/me', meHandler); // New: get current user
 // Normalize user-facing logout under /api/auth for consistency. Reuse the
 // existing `logoutHandler` (from `auth-logout.js`) instead of a missing
 // `api/user/user-auth-logout.js` module.
@@ -170,6 +182,8 @@ app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
 app.post('/api/auth/auth-logout', logoutHandler);
 app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
+app.post('/api/auth/auth-refresh', refreshHandler); // Compatibility alias
+app.get('/api/auth/auth-me', meHandler); // Compatibility alias
 // Legacy /api/db/db-auth-* endpoints have been moved to the canonical /api/auth/*
 // and are intentionally not re-registered here to avoid duplicate/ambiguous
 // handlers. If a compatibility shim is needed in the future, add explicit
