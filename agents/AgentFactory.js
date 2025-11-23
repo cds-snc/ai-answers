@@ -167,13 +167,14 @@ const createContextAgent = async (agentType, chatId = 'system') => {
       });
       break;
     }
-    case 'anthropic': {
+    case 'anthropic':
+    case 'claude': {
       llm = new ChatAnthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
         modelName: 'claude-3-5-haiku-20241022',
         maxTokens: 8192,
         temperature: 0,
-        timeoutMs: 60000,
+        timeout: 60000,
       });
       break;
     }
@@ -257,7 +258,7 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
     default:
       throw new Error(`Unknown agent type for PII: ${agentType}`);
   }
-  
+
   return llm;
 };
 
@@ -291,7 +292,7 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
     default:
       throw new Error(`Unknown agent type for rewrite: ${agentType}`);
   }
-  
+
   return llm;
 };
 
@@ -480,6 +481,21 @@ const createDetectLanguageAgent = async (agentType = 'openai', chatId = 'system'
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent };
+// New helper to create chat agents based on provider
+const createChatAgent = async (provider, chatId = 'system') => {
+  switch (provider) {
+    case 'openai':
+      return await createOpenAIAgent(chatId);
+    case 'azure':
+      return await createAzureOpenAIAgent(chatId);
+    case 'claude':
+    case 'anthropic':
+      return await createClaudeAgent(chatId);
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
+  }
+};
+
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent };
 
 

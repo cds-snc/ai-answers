@@ -8,10 +8,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import dotenv from 'dotenv';
-import openAIHandler from '../api/openai/openai-message.js';
-import azureHandler from '../api/azure/azure-message.js';
-import azureContextHandler from '../api/azure/azure-context.js';
-import anthropicAgentHandler from '../api/anthropic/anthropic-message.js';
+import chatMessageHandler from '../api/chat/chat-message.js';
+import chatContextHandler from '../api/chat/chat-context.js';
 import dbChatLogsHandler from '../api/db/db-chat-logs.js';
 import contextSearchHandler from '../api/search/search-context.js';
 import dbBatchListHandler from '../api/batch/batch-list.js';
@@ -110,7 +108,7 @@ app.get("/health", (req, res) => {
 // Serve runtime config for frontend
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL||'')}};`);
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);
 });
 
 app.get("*", (req, res, next) => {
@@ -205,12 +203,8 @@ app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
 app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
-app.post("/api/openai/openai-message", openAIHandler);
-app.post("/api/openai/openai-context", openAIContextAgentHandler);
-app.post('/api/anthropic/anthropic-message', anthropicAgentHandler);
-app.post('/api/anthropic/anthropic-context', anthropicContextAgentHandler);
-app.post("/api/azure/azure-message", azureHandler);  // Updated Azure endpoint
-app.post("/api/azure/azure-context", azureContextHandler);
+app.post('/api/chat/chat-message', chatMessageHandler);
+app.post('/api/chat/chat-context', chatContextHandler);
 app.post('/api/search/search-context', contextSearchHandler);
 app.post('/api/chat/chat-similar-answer', chatSimilarAnswerHandler);
 app.post('/api/chat/chat-pii-check', chatPIICheckHandler);
