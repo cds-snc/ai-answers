@@ -59,9 +59,11 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 
 ### System Components
 1. **Frontend**: React-based chat interface using Canada.ca design system
-2. **Backend**: Node.js microservices with prompt-chaining architecture
-3. **AI Services**: Azure OpenAI GPT models (production)
-4. **Database**: AWS DocumentDB (production)
+2. **Backend**: Node.js with LangGraph state machine orchestration
+3. **AI Services**: Azure OpenAI GPT models (production), with OpenAI and Anthropic support
+4. **Database**: MongoDB (AWS DocumentDB in production)
+
+**For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
 - **Production models**: Azure OpenAI GPT-4 and GPT-4o Mini models
@@ -70,7 +72,7 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
 
 ### Agentic Capabilities
-- **Tool usage**: AI can autonomously use specialized tools to enhance responses
+- **Tool usage**: AI can autonomously use specialized tools to enhance responses during answer generation
 - **downloadWebPage tool**: Critical for accuracy - downloads and reads web pages to verify current information, especially for:
   - New or updated government pages
   - Time-sensitive content (tax year changes, program updates)
@@ -80,18 +82,28 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 - **URL validation**: Automatically checks if citation URLs are active and accessible
 - **Context generation**: Derives fresh context for **every question**, including follow-on questions, to ensure accurate department identification and relevant content
 - **Content verification**: Prioritizes freshly downloaded content over training data
-- **DefaultAlwaysContext workflow**: Ensures context derivation is performed for all questions in a conversation, not just initial questions
+- **Context reuse optimization**: Can reuse valid context from previous questions in the same conversation to improve response time
 
-### Data Flow
-1. User submits question through chat interface
-2. **Stage 1**: RedactionService applies pattern-based filtering for profanity, threats, and common PI
-3. **Stage 2**: PI Agent performs AI-powered detection of any personal information that slipped through
-4. **Query Rewrite Agent**: Translates questions and crafts optimized search queries (French questions stay in French for French page searches)
-5. Search tools gather relevant government content using optimized queries
-6. **Context service determines relevant department** (performed for **every question**, including follow-on questions, via DefaultAlwaysContext workflow)
-7. **AI agentic behavior**: AI uses specialized tools (see Agentic Capabilities section for details)
-8. Answer service generates response with citations
-9. Response logged to database with user feedback
+### Pipeline Flow (LangGraph State Machine)
+The system uses a **9-step LangGraph pipeline** that orchestrates all processing server-side:
+
+1. **Initialization**: Set up timing and state tracking
+2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
+3. **Two-Stage Redaction**:
+   - **Stage 1** (Programmatic): Pattern-based filtering for profanity, threats, and common PI
+   - **Stage 2** (AI - GPT-4 mini): AI-powered detection of personal information that slipped through
+4. **Translation** (AI - GPT-4 mini): Detects language and translates to English for processing
+5. **Context Derivation** (AI - GPT-4 mini):
+   - Query rewrite for optimized search
+   - Search execution (Canada.ca or Google)
+   - Department matching and context generation
+   - Optional: Load department-specific scenarios
+6. **Short-Circuit Check** (AI): Vector similarity search to find previously answered similar questions
+7. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
+8. **Citation Verification** (Programmatic): Validate that citation URLs are accessible
+9. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
+
+**For complete pipeline details, see [docs/pipeline.md](docs/pipeline.md)**
 
 ## Risk Assessment and Safety Measures
 

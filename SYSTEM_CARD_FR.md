@@ -59,9 +59,11 @@ Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouve
 
 ### Composants du système
 1. **Interface utilisateur** : Interface de clavardage basée sur React utilisant le système de conception Canada.ca
-2. **Serveur** : Microservices Node.js avec architecture de chaînage d'invites
-3. **Services IA** : Modèles Azure OpenAI GPT (production)
-4. **Base de données** : AWS DocumentDB (production)
+2. **Serveur** : Node.js avec orchestration de machine à états LangGraph
+3. **Services IA** : Modèles Azure OpenAI GPT (production), avec support OpenAI et Anthropic
+4. **Base de données** : MongoDB (AWS DocumentDB en production)
+
+**Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### Détails des modèles IA
 - **Modèles de production** : Modèles Azure OpenAI GPT-4 et GPT-4o Mini
@@ -70,7 +72,7 @@ Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouve
 - **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs IA, testé avec GPT et Claude
 
 ### Capacités agentiques
-- **Utilisation d'outils** : L'IA peut utiliser de manière autonome des outils spécialisés pour améliorer les réponses
+- **Utilisation d'outils** : L'IA peut utiliser de manière autonome des outils spécialisés pour améliorer les réponses pendant la génération de réponses
 - **Outil downloadWebPage** : Critique pour la précision - télécharge et lit les pages Web pour vérifier les informations actuelles, surtout pour :
   - Pages gouvernementales nouvelles ou mises à jour
   - Contenu sensible au temps (changements d'année fiscale, mises à jour de programmes)
@@ -80,18 +82,28 @@ Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouve
 - **Validation d'URL** : Vérifie automatiquement si les URLs de citation sont actives et accessibles
 - **Génération de contexte** : Dérive un contexte frais pour **chaque question**, y compris les questions de suivi, pour assurer une identification précise du département et un contenu pertinent
 - **Vérification de contenu** : Priorise le contenu fraîchement téléchargé sur les données d'entraînement
-- **Flux de travail DefaultAlwaysContext** : Assure que la dérivation de contexte est effectuée pour toutes les questions d'une conversation, pas seulement les questions initiales
+- **Optimisation de réutilisation de contexte** : Peut réutiliser le contexte valide des questions précédentes dans la même conversation pour améliorer le temps de réponse
 
-### Flux de données
-1. L'utilisateur soumet une question par l'interface de clavardage
-2. **Étape 1** : RedactionService applique le filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants
-3. **Étape 2** : L'agent de renseignements personnels effectue une détection alimentée par IA de tout renseignement personnel qui a échappé au premier filtrage
-4. **Agent de réécriture de requête** : Traduit les questions et crée des requêtes de recherche optimisées (les questions françaises restent en français pour les recherches de pages françaises)
-5. Les outils de recherche rassemblent le contenu gouvernemental pertinent en utilisant des requêtes optimisées
-6. **Le service de contexte détermine le département pertinent** (effectué pour **chaque question**, y compris les questions de suivi, via le flux de travail DefaultAlwaysContext)
-7. **Comportement IA agentique** : L'IA utilise des outils spécialisés (voir la section Capacités agentiques pour les détails)
-8. Le service de réponse génère une réponse avec citations
-9. Réponse enregistrée dans la base de données avec commentaires utilisateur
+### Flux du pipeline (Machine à états LangGraph)
+Le système utilise un **pipeline LangGraph en 9 étapes** qui orchestre tout le traitement côté serveur :
+
+1. **Initialisation** : Configure le chronométrage et le suivi de l'état
+2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
+3. **Rédaction en deux étapes** :
+   - **Étape 1** (Programmatique) : Filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants
+   - **Étape 2** (IA - GPT-4 mini) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
+4. **Traduction** (IA - GPT-4 mini) : Détecte la langue et traduit en anglais pour le traitement
+5. **Dérivation de contexte** (IA - GPT-4 mini) :
+   - Réécriture de requête pour une recherche optimisée
+   - Exécution de recherche (Canada.ca ou Google)
+   - Correspondance de département et génération de contexte
+   - Optionnel : Chargement de scénarios spécifiques au département
+6. **Vérification de court-circuit** (IA) : Recherche de similarité vectorielle pour trouver des questions similaires déjà répondues
+7. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
+8. **Vérification de citation** (Programmatique) : Valide que les URLs de citation sont accessibles
+9. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+
+**Pour les détails complets du pipeline, voir [docs/pipeline.md](docs/pipeline.md)**
 
 ## Évaluation des risques et mesures de sécurité
 
