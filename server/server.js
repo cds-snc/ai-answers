@@ -18,8 +18,7 @@ import dbBatchPersistHandler from '../api/batch/batch-persist.js';
 import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
-import anthropicContextAgentHandler from '../api/anthropic/anthropic-context.js';
-import openAIContextAgentHandler from '../api/openai/openai-context.js';
+
 import chatSessionHandler from '../api/chat/chat-session.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
