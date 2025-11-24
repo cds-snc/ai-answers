@@ -20,7 +20,7 @@ import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 
-import chatSessionHandler from '../api/chat/chat-session.js';
+import chatSessionInfoHandler from '../api/chat/chat-session-info.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
@@ -145,7 +145,7 @@ app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
 app.post('/api/db/db-persist-interaction', dbPersistInteraction);
-app.get('/api/chat/chat-session', chatSessionHandler);
+app.get('/api/chat/chat-session-info', chatSessionInfoHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
 app.post('/api/chat/chat-report', chatReportHandler);

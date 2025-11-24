@@ -83,7 +83,7 @@ class DataStoreService {
 
   static async getChatSession(sessionId) {
     try {
-      const response = await AuthService.fetch(getApiUrl(`chat-session`));
+      const response = await AuthService.fetch(getApiUrl(`chat-session-info`));
       if (!response.ok) throw new Error('Failed to get chat session');
       return await response.json();
     } catch (error) {
