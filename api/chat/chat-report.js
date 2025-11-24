@@ -1,7 +1,7 @@
 import { withSession } from '../../middleware/session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
-export default async function handler(req, res) {
+export async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
@@ -16,3 +16,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'server_error' });
   }
 }
+export default withOptionalUser(withSession(handler));
