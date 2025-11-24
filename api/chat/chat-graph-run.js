@@ -1,6 +1,5 @@
-import { getGraphApp } from '../../agents/graphs/registry.js';
-import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 const REQUIRED_METHOD = 'POST';
 
@@ -114,4 +113,4 @@ async function handler(req, res) {
   }
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

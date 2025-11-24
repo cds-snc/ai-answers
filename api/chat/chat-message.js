@@ -3,6 +3,7 @@ import { createChatAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
@@ -104,4 +105,4 @@ async function handler(req, res) {
     return res.status(500).json({ error: 'Failed after retries', details: lastError?.message });
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

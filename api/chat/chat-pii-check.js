@@ -1,6 +1,7 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { invokePIIAgent } from '../../services/PIIAgentService.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,7 +14,7 @@ async function handler(req, res) {
     ServerLoggingService.info('PII check request received.', chatId, { agentType });
 
     const piiResult = await invokePIIAgent(agentType, { chatId, question: message });
-    
+
     if (piiResult.pii !== null) {
       ServerLoggingService.info('PII detected:', chatId);
     }
@@ -28,5 +29,5 @@ async function handler(req, res) {
   }
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));
 

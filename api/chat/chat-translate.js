@@ -3,6 +3,7 @@ import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.
 import { createTranslationAgent } from '../../agents/AgentFactory.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).setHeader('Allow', ['POST']).end(`Method ${req.method} Not Allowed`);
@@ -69,4 +70,4 @@ async function handler(req, res) {
   }
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));
