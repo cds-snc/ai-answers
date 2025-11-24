@@ -1,6 +1,6 @@
 // src/ClaudeService.js
 
-import { getProviderApiUrl } from '../utils/apiToUrl.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
 import ScenarioOverrideService from './ScenarioOverrideService.js';
 
@@ -40,6 +40,7 @@ const AnswerService = {
 
     // Send structured context to the server and let it build the system prompt.
     return {
+      provider: provider,
       message: message,
       conversationHistory: conversationHistory,
       chatId: chatId,

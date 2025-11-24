@@ -1,5 +1,5 @@
 // src/ContextService.js
-import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
 
 import AuthService from './AuthService.js';
@@ -8,6 +8,7 @@ import AuthService from './AuthService.js';
 
 const ContextService = {
   prepareMessage: async (
+    aiProvider,
     message,
     lang = 'en',
     department = '',
@@ -25,6 +26,7 @@ const ContextService = {
     const messageWithReferrer = `${message}${referringUrl ? `\n<referring-url>${referringUrl}</referring-url>` : ''}`;
 
     return {
+      provider: chatId === 'system' ? 'openai' : (aiProvider || 'openai'), // Default to openai if missing
       message: messageWithReferrer,
       lang,
       department,
@@ -54,6 +56,7 @@ const ContextService = {
   ) => {
     try {
       const messagePayload = await ContextService.prepareMessage(
+        aiProvider,
         message,
         lang,
         department,
@@ -64,7 +67,7 @@ const ContextService = {
         chatId
       );
       await LoggingService.info(chatId, 'Calling context agent with:', { context: messagePayload });
-      let url = getProviderApiUrl(aiProvider, 'context');
+      let url = getApiUrl('chat-context');
 
       const response = await AuthService.fetch(url, {
         method: 'POST',
@@ -89,7 +92,6 @@ const ContextService = {
 
   contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai', referringUrl = '', translationData = null) => {
     try {
-
       const searchResponse = await AuthService.fetch(getApiUrl('search-context'), {
         method: 'POST',
         headers: {
