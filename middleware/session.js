@@ -35,7 +35,7 @@ export default function sessionMiddleware(options = {}) {
 
       // Compute HMACed fingerprint key early so it can be passed to any
       // SessionManagementService.register call (new or existing sessions).
-      const fingerprintHeader = (req.headers['x-fp-hash'] || req.headers['x-fp-id'] || '').toString();
+      const fingerprintHeader = (req.headers['x-fp-id'] || '').toString();
       const fingerprintKey = fingerprintHeader
         ? crypto.createHmac('sha256', fingerprintPepper).update(fingerprintHeader).digest('hex')
         : null;
@@ -62,7 +62,8 @@ export default function sessionMiddleware(options = {}) {
 
         // Pass fingerprintKey when registering an existing-but-unknown session
         // so the session manager can map any provided fingerprint to the session.
-        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+        const isAuthenticated = !!req.user;
+        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey, isAuthenticated });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -103,7 +104,8 @@ export default function sessionMiddleware(options = {}) {
         // a raw fingerprint header, we will still issue a signed `fpSigned`
         // cookie for stronger verification on subsequent requests.
         sessionId = uuidv4();
-        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+        const isAuthenticated = !!req.user;
+        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey, isAuthenticated });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -144,7 +146,8 @@ export default function sessionMiddleware(options = {}) {
         // are tracked under the same session and will show up in the admin UI.
         try {
           // register will update ttl/lastSeen and add chatId to session.chatIds if provided
-          await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+          const isAuthenticated = !!req.user;
+          await SessionManagementService.register(sessionId, { chatId, fingerprintKey, isAuthenticated });
         } catch (e) {
           // fall back to touch on any failure to avoid blocking requests
           SessionManagementService.touch(sessionId);

@@ -1,4 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
+import { getFingerprint } from '../utils/fingerprint.js';
 
 class AuthService {
   static unauthorizedCallback = null;
@@ -16,6 +17,12 @@ class AuthService {
     // Set Content-Type for requests with body
     if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
+    }
+
+    // Inject fingerprint header automatically
+    const fp = await getFingerprint();
+    if (fp) {
+      headers['x-fp-id'] = fp;
     }
 
     // Always include credentials for cookies
@@ -43,10 +50,9 @@ class AuthService {
     return response;
   }
 
-  // Alias for backwards compatibility
-  static async fetchWithAuth(url, options = {}) {
-    return this.fetch(url, options);
-  }
+
+
+
 
   // Get current user from server
   static async getCurrentUser() {
