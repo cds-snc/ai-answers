@@ -98,7 +98,7 @@ const UsersPage = ({ lang }) => {
     }
 
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-users'), {
+      const response = await AuthService.fetch(getApiUrl('db-users'), {
         method: 'PATCH',
         body: JSON.stringify({
           userId,
@@ -133,7 +133,7 @@ const UsersPage = ({ lang }) => {
     if (!window.confirm(t('users.actions.confirmDelete'))) return;
 
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-users'), {
+      const response = await AuthService.fetch(getApiUrl('db-users'), {
         method: 'DELETE',
         body: JSON.stringify({ userId })
       });
@@ -158,7 +158,7 @@ const UsersPage = ({ lang }) => {
 
     const fetchUsers = async () => {
       try {
-        const response = await AuthService.fetchWithAuth(getApiUrl('db-users'));
+        const response = await AuthService.fetch(getApiUrl('db-users'));
         if (!didCancel) {
           const data = await response.json();
           setUsers(data);
