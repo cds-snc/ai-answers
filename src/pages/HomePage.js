@@ -108,6 +108,8 @@ const HomePage = ({ lang = "en" }) => {
 
   async function fetchSession() {
     try {
+      // Always request a new chat ID on mount (new tab or reload)
+      // so that every tab/visit gets its own conversation context.
       const data = await DataStoreService.getChatSession();
       if (data && data.chatId) {
         setChatId(data.chatId);

@@ -4,6 +4,8 @@
 // - touch session to extend TTL
 // - capacity limit (max concurrent sessions)
 // - per-session token-bucket rate limiter
+import { v4 as uuidv4 } from 'uuid';
+import { SettingsService } from './SettingsService.js';
 
 class CreditBucket {
   constructor({ capacity = 60, refillPerSec = 1 }) {
@@ -17,6 +19,19 @@ class CreditBucket {
     const now = Date.now();
     const elapsed = (now - this.lastRefill) / 1000;
     if (elapsed <= 0) return;
+    // Use cached settings when available to update refill rate / capacity.
+    // This keeps the hot-path synchronous and avoids DB access.
+    try {
+      const s = SettingsService && SettingsService.cache ? SettingsService.cache : null;
+      const cachedRefill = s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitRefillPerSec') ? s['session.rateLimitRefillPerSec'] : null;
+      const cachedCap = s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitCapacity') ? s['session.rateLimitCapacity'] : null;
+      if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) this.refillPerSec = Number(cachedRefill);
+      if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
+        this.capacity = Number(cachedCap);
+        if (this.credits > this.capacity) this.credits = this.capacity;
+      }
+    } catch (e) { /* best-effort, ignore errors */ }
+
     const add = elapsed * this.refillPerSec;
     this.credits = Math.min(this.capacity, this.credits + add);
     this.lastRefill = now;
@@ -38,7 +53,6 @@ class CreditBucket {
   }
 }
 
-import { SettingsService } from './SettingsService.js';
 
 class SessionManagementService {
   constructor() {
@@ -137,8 +151,8 @@ class SessionManagementService {
   // fingerprint->session mapping. No canCreateSession helper exists anymore.
 
   async register(sessionId, opts = {}) {
-    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey, isAuthenticated }
-    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey, isAuthenticated } = opts || {};
+    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey, isAuthenticated, generateChatId }
+    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey, isAuthenticated, generateChatId } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
 
     // Require a verified fingerprintKey to create or reuse sessions. This prevents
@@ -165,11 +179,16 @@ class SessionManagementService {
           // update lastSeen and return existing session
           sess.lastSeen = Date.now();
           // ensure provided chatId is tracked
-          if (providedChatId && !sess.chatIds.includes(providedChatId)) {
-            sess.chatIds.push(providedChatId);
-            this.chatToSession.set(providedChatId, sess.sessionId || existing);
+          let activeChatId = providedChatId;
+          if (generateChatId && !activeChatId) {
+            activeChatId = uuidv4();
           }
-          return { ok: true, session: sess };
+
+          if (activeChatId && !sess.chatIds.includes(activeChatId)) {
+            sess.chatIds.push(activeChatId);
+            this.chatToSession.set(activeChatId, sess.sessionId || existing);
+          }
+          return { ok: true, session: sess, chatId: activeChatId };
         }
         // stale mapping: fall through and create a new session, but ensure mapping is replaced below
       }
@@ -230,10 +249,18 @@ class SessionManagementService {
       }
 
       const bucket = this._createBucket(rl || this.defaultRateLimit);
+
+      let initialChatIds = [];
+      let activeChatId = providedChatId;
+      if (generateChatId && !activeChatId) {
+        activeChatId = uuidv4();
+      }
+      if (activeChatId) initialChatIds.push(activeChatId);
+
       session = {
         sessionId,
         // support multiple chatIds per session (array). `session.chatId` is deprecated.
-        chatIds: providedChatId ? [providedChatId] : [],
+        chatIds: initialChatIds,
         createdAt: now,
         lastSeen: now,
         ttl,
@@ -261,22 +288,30 @@ class SessionManagementService {
       if (providedChatId) {
         this.chatToSession.set(providedChatId, sessionId);
       }
+      if (activeChatId && activeChatId !== providedChatId) {
+        this.chatToSession.set(activeChatId, sessionId);
+      }
     } else {
       session.lastSeen = now;
       session.ttl = ttl; // allow updating ttl
     }
 
     // If there's a provided chatId for an existing session, ensure it's tracked
-    if (session && providedChatId) {
+    let activeChatId = providedChatId;
+    if (generateChatId && !activeChatId) {
+      activeChatId = uuidv4();
+    }
+
+    if (session && activeChatId) {
       session.chatIds = session.chatIds || [];
-      if (!session.chatIds.includes(providedChatId)) {
-        session.chatIds.push(providedChatId);
+      if (!session.chatIds.includes(activeChatId)) {
+        session.chatIds.push(activeChatId);
         // note: `session.chatId` is deprecated; do not set it
-        this.chatToSession.set(providedChatId, sessionId);
+        this.chatToSession.set(activeChatId, sessionId);
       }
     }
 
-    return { ok: true, session };
+    return { ok: true, session, chatId: activeChatId };
   }
 
 
