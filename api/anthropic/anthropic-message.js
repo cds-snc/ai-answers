@@ -2,6 +2,7 @@
 import { createClaudeAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
@@ -69,7 +70,7 @@ async function invokeHandler(req, res) {
           });
         });
         const lastMessage = answer.messages[answer.messages.length - 1];
-        
+
         // Get tool usage data from the agent's callback handler
         const toolUsage = claudeAgent.callbacks[0].getToolUsageSummary();
         ServerLoggingService.info('Tool usage summary:', chatId, toolUsage);
@@ -81,7 +82,7 @@ async function invokeHandler(req, res) {
           model: lastMessage.response_metadata.model,
           toolUsage: toolUsage // Include tool usage data in the response
         };
-        
+
         ServerLoggingService.info('Claude API request completed successfully', chatId, response);
         res.json(response);
       } else {
@@ -122,4 +123,4 @@ async function handler(req, res) {
   });
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

@@ -2,6 +2,7 @@ import { createAzureOpenAIAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
@@ -53,7 +54,7 @@ async function invokeHandler(req, res) {
           content: message,
         },
       ];
-      
+
       ServerLoggingService.info('azureAgent.invoke start', chatId);
       const invokeStart = Date.now();
       let answer = await azureAgent.invoke({
@@ -69,9 +70,9 @@ async function invokeHandler(req, res) {
             classType: msg.constructor.name,
           });
         });*/
-        
+
         const lastMessage = answer.messages[answer.messages.length - 1];
-        
+
         // Find the correct tool tracking handler from callbacks
         let toolTrackingHandler = null;
         for (const callback of azureAgent.callbacks) {
@@ -80,10 +81,10 @@ async function invokeHandler(req, res) {
             break;
           }
         }
-        
+
         const toolUsage = toolTrackingHandler ? toolTrackingHandler.getToolUsageSummary() : {};
         ServerLoggingService.info('Tool usage summary:', chatId, toolUsage);
-        
+
         const response = {
           content: lastMessage.content,
           inputTokens: lastMessage.response_metadata.tokenUsage.promptTokens,
@@ -91,7 +92,7 @@ async function invokeHandler(req, res) {
           model: lastMessage.response_metadata.model_name,
           tools: toolUsage
         };
-        
+
         ServerLoggingService.info('Azure OpenAI API request completed successfully', chatId, response);
         res.json(response);
       } else {
@@ -129,4 +130,4 @@ async function handler(req, res) {
   });
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

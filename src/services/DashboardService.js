@@ -14,9 +14,9 @@ class DashboardService {
         params.append(key, value);
       });
       const query = params.toString();
-  const url = getApiUrl(`chat-dashboard${query ? `?${query}` : ''}`);
+      const url = getApiUrl(`chat-dashboard${query ? `?${query}` : ''}`);
       // Use auth fetch to preserve session if needed
-      const response = await AuthService.fetchWithAuth(url);
+      const response = await AuthService.fetch(url);
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || 'Failed to fetch chat dashboard');

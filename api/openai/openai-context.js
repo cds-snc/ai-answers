@@ -2,11 +2,12 @@ import { invokeContextAgent } from '../../services/ContextAgentService.js';
 import loadContextSystemPrompt from '../../agents/prompts/contextSystemPrompt.js';
 import { exponentialBackoff } from '../../src/utils/backoff.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method === 'POST') {
     console.log('Request body:', req.body);
-    
+
     try {
       const lang = req.body.lang || 'en';
       const department = req.body.department || '';
@@ -24,4 +25,4 @@ async function handler(req, res) {
 
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

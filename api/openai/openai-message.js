@@ -3,6 +3,7 @@ import { createOpenAIAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
@@ -30,7 +31,7 @@ async function invokeHandler(req, res) {
   if (req.method === 'POST') {
     try {
 
-    
+
       console.log('OpenAI API request received');
       const { message, conversationHistory, chatId, lang, department, topic, topicUrl, departmentUrl, searchResults, scenarioOverrideText } = req.body;
       console.log('Request body:', { message, chatId, lang, department, topic });
@@ -71,7 +72,7 @@ async function invokeHandler(req, res) {
           });
         });*/
         const lastMessage = answer.messages[answer.messages.length - 1];
-        
+
         // Find the correct tool tracking handler from callbacks
         let toolTrackingHandler = null;
         for (const callback of openAIAgent.callbacks) {
@@ -131,4 +132,4 @@ async function handler(req, res) {
   });
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

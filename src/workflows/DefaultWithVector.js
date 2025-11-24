@@ -6,7 +6,8 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 
 
 import { ChatWorkflowService, WorkflowStatus } from '../services/ChatWorkflowService.js';
-import { getFingerprint } from '../utils/fingerprint.js';
+
+import AuthService from '../services/AuthService.js';
 
 export class DefaultWithVector {
   constructor() { }
@@ -224,7 +225,7 @@ export class DefaultWithVector {
         content: similarShortCircuit.answer && similarShortCircuit.answer.content,
         paragraphs: (similarShortCircuit.answer && similarShortCircuit.answer.paragraphs) || [],
         sentences: parsedSentences,
-  englishAnswer: englishAnswerText,
+        englishAnswer: englishAnswerText,
         citationHead: citationHead,
         questionLanguage: (translationData && translationData.originalLanguage) || lang,
         englishQuestion: (translationData && translationData.translatedText) || userMessage,
@@ -308,10 +309,10 @@ export class DefaultWithVector {
         })
         .filter(q => q);
       const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
-      const fp = await getFingerprint();
-      const similarResp = await fetch(getApiUrl('chat-similar-answer'), {
+
+      const similarResp = await AuthService.fetch(getApiUrl('chat-similar-answer'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-fp-id': fp },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId, questions, selectedAI, pageLanguage: pageLang || null, detectedLanguage: detectedLang || null })
       });
       if (similarResp && similarResp.ok) {

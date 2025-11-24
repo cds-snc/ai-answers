@@ -45,7 +45,7 @@ const DatabasePage = ({ lang }) => {
       }
       // Fetch collections for export dropdown
       try {
-        const collectionsRes = await AuthService.fetchWithAuth(getApiUrl('db-database-management'), {
+        const collectionsRes = await AuthService.fetch(getApiUrl('db-database-management'), {
           method: 'GET'
         });
         if (collectionsRes.ok) {
@@ -110,7 +110,7 @@ const DatabasePage = ({ lang }) => {
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
               const timeout = setTimeout(() => controller.abort(), 300000); // 5 minutes
-              const res = await AuthService.fetchWithAuth(url, { signal: controller.signal });
+              const res = await AuthService.fetch(url, { signal: controller.signal });
               clearTimeout(timeout);
               if (!res.ok) {
                 let errorMsg = `Failed to export collection ${collection}`;
@@ -196,7 +196,7 @@ const DatabasePage = ({ lang }) => {
         let lastErr = null;
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
           try {
-            const response = await AuthService.fetchWithAuth(getApiUrl('db-database-management'), {
+            const response = await AuthService.fetch(getApiUrl('db-database-management'), {
               method: 'POST',
               body: JSON.stringify(bodyObj),
             });
@@ -338,7 +338,7 @@ const DatabasePage = ({ lang }) => {
       setIsDroppingIndexes(true);
       setMessage('');
 
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-database-management'), {
+      const response = await AuthService.fetch(getApiUrl('db-database-management'), {
         method: 'DELETE'
       });
 
@@ -372,7 +372,7 @@ const DatabasePage = ({ lang }) => {
     setIsDeletingSystemLogs(true);
     setMessage('');
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-system-logs'), {
+      const response = await AuthService.fetch(getApiUrl('db-delete-system-logs'), {
         method: 'DELETE'
       });
       const result = await response.json();
@@ -604,7 +604,7 @@ const DatabasePage = ({ lang }) => {
                     try {
                       setChecksRunning(prev => ({ ...prev, [check.id]: true }));
                       setMessage('');
-                      const res = await AuthService.fetchWithAuth(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                      const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
                         method: 'GET'
                       });
                       const json = await res.json();

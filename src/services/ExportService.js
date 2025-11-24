@@ -11,7 +11,7 @@ class ExportService {
         format
       }).toString();
 
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat-logs/export?${queryParams}`));
+      const response = await AuthService.fetch(getApiUrl(`db-chat-logs/export?${queryParams}`));
 
       if (!response.ok) throw new Error('Failed to export chat logs');
 

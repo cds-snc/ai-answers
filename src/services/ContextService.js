@@ -1,8 +1,8 @@
 // src/ContextService.js
 import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
-import { getFingerprint } from '../utils/fingerprint.js';
-import getSessionBypassHeaders from './sessionHeaders.js';
+
+import AuthService from './AuthService.js';
 
 
 
@@ -35,7 +35,7 @@ const ContextService = {
       chatId,
     };
   },
- 
+
   determineOutputLang: (pageLang, translationData) => {
     const originalLang = translationData && translationData.originalLanguage ? translationData.originalLanguage : 'eng';
     return pageLang === 'fr' ? 'fra' : originalLang;
@@ -65,14 +65,11 @@ const ContextService = {
       );
       await LoggingService.info(chatId, 'Calling context agent with:', { context: messagePayload });
       let url = getProviderApiUrl(aiProvider, 'context');
-      const fp = await getFingerprint();
-      const extraHeaders = getSessionBypassHeaders();
-      const response = await fetch(url, {
+
+      const response = await AuthService.fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-fp-id': fp,
-          ...extraHeaders
         },
         body: JSON.stringify(messagePayload),
       });
@@ -92,26 +89,23 @@ const ContextService = {
 
   contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai', referringUrl = '', translationData = null) => {
     try {
-      const fp = await getFingerprint();
-      const extraHeaders = getSessionBypassHeaders();
-      const searchResponse = await fetch(getApiUrl('search-context'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-fp-id': fp,
-            ...extraHeaders
-          },
-          body: JSON.stringify({
-            message: message,
-            lang: lang,
-            searchService: searchProvider,
-            chatId,
-            agentType,
-            referringUrl,
-            translationData,
-          
-          }),
-        });
+
+      const searchResponse = await AuthService.fetch(getApiUrl('search-context'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: message,
+          lang: lang,
+          searchService: searchProvider,
+          chatId,
+          agentType,
+          referringUrl,
+          translationData,
+
+        }),
+      });
 
       if (!searchResponse.ok) {
         const errorText = await searchResponse.text();
@@ -155,7 +149,7 @@ const ContextService = {
         "Context Service: Agent Search completed:", searchResults
       );
 
-      const { translatedText: translatedQuestion  } = translationData || {};
+      const { translatedText: translatedQuestion } = translationData || {};
       // Extract agent values from searchResults
       const { query, results } = searchResults;
 
@@ -178,7 +172,7 @@ const ContextService = {
         query,
         translatedQuestion,
         lang,
-        outputLang : ContextService.determineOutputLang(lang, translationData), 
+        outputLang: ContextService.determineOutputLang(lang, translationData),
         originalLang: translationData.originalLanguage
       };
     } catch (error) {

@@ -54,7 +54,7 @@ class BatchService {
   async retrieveBatch(batchId) {
     if (!batchId) throw new Error('batchId required');
     const url = getApiUrl(`batch-retrieve?batchId=${encodeURIComponent(batchId)}`);
-    const res = await AuthService.fetchWithAuth(url);
+    const res = await AuthService.fetch(url);
     if (!res.ok) throw new Error(`Failed to retrieve batch: ${res.status} ${res.statusText}`);
     const result = await res.json();
     console.log(`[batch] retrieveBatch ${batchId}:`, result);
@@ -64,7 +64,7 @@ class BatchService {
 
   async getBatchList() {
     const url = getApiUrl('batch-list');
-    const res = await AuthService.fetchWithAuth(url);
+    const res = await AuthService.fetch(url);
     if (!res.ok) throw new Error(`Failed to get batch list: ${res.status} ${res.statusText}`);
     return await res.json();
   }
@@ -72,7 +72,7 @@ class BatchService {
   async persistBatch(batchData) {
     console.log(`[batch] persistBatch called with:`, batchData);
     const url = getApiUrl('batch-persist');
-    const res = await AuthService.fetchWithAuth(url, {
+    const res = await AuthService.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(batchData),
@@ -89,7 +89,7 @@ class BatchService {
     if (!Array.isArray(items) || !items.length) return null;
     console.log(`[batch] upsertBatchItems: batchId=${batchId} items=${items.length}`);
     const url = getApiUrl('batch-items-upsert');
-    const res = await AuthService.fetchWithAuth(url, {
+    const res = await AuthService.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ batchId, items }),
@@ -104,7 +104,7 @@ class BatchService {
   async getBatchStatus(batchId) {
     try {
       const url = getApiUrl(`batch-stats?batchId=${encodeURIComponent(batchId)}`);
-      const res = await AuthService.fetchWithAuth(url);
+      const res = await AuthService.fetch(url);
       if (!res.ok) {
         if (res.status === 404) return { batchId, status: 'not_found' };
         throw new Error(`Failed to get batch stats: ${res.status} ${res.statusText}`);
@@ -156,7 +156,7 @@ class BatchService {
     if (!batchId) throw new Error('batchId required for delete');
     try {
       const url = getApiUrl(`batch-delete?batchId=${encodeURIComponent(batchId)}`);
-      const res = await AuthService.fetchWithAuth(url, { method: 'DELETE' });
+      const res = await AuthService.fetch(url, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Failed to delete batch: ${res.status} ${res.statusText}`);
       return await res.json();
     } catch (err) {
@@ -169,7 +169,7 @@ class BatchService {
   async deleteAllBatches() {
     try {
       const url = getApiUrl('batch-delete-all');
-      const res = await AuthService.fetchWithAuth(url, { method: 'DELETE' });
+      const res = await AuthService.fetch(url, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Failed to delete all batches: ${res.status} ${res.statusText}`);
       return await res.json();
     } catch (err) {
@@ -258,7 +258,7 @@ class BatchService {
       polling = setInterval(async () => {
         try {
           const url = getApiUrl(`batch-stats?batchId=${encodeURIComponent(batchId)}`);
-          const res = await AuthService.fetchWithAuth(url);
+          const res = await AuthService.fetch(url);
           if (!res.ok) return;
           const stats = await res.json();
           // emit a status update with counts for UI consumers
@@ -483,7 +483,7 @@ class BatchService {
     if (!batchId) throw new Error('batchId required');
     try {
       const url = getApiUrl(`db-chat-logs?batchId=${encodeURIComponent(batchId)}&limit=${encodeURIComponent(limit)}`);
-      const res = await AuthService.fetchWithAuth(url);
+      const res = await AuthService.fetch(url);
       if (!res.ok) throw new Error(`Failed to retrieve batch chats: ${res.status} ${res.statusText}`);
       const body = await res.json();
       console.log(`[batch] retrieveBatchChats ${batchId}: found ${Array.isArray(body.logs) ? body.logs.length : 0} chats`);

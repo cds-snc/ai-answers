@@ -4,7 +4,7 @@ import AuthService from './AuthService.js';
 class DataStoreService {
   static async getPublicSetting(key, defaultValue = null) {
     try {
-      const response = await fetch(getApiUrl(`setting-public-handler?key=${encodeURIComponent(key)}`));
+      const response = await AuthService.fetch(getApiUrl(`setting-public-handler?key=${encodeURIComponent(key)}`));
       if (!response.ok) throw new Error(`Failed to get public setting: ${key}`);
       const data = await response.json();
       return data.value !== undefined ? data.value : defaultValue;
@@ -15,7 +15,7 @@ class DataStoreService {
   }
   static async getSetting(key, defaultValue = null) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
+      const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
       if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
       const data = await response.json();
       return data.value !== undefined ? data.value : defaultValue;
@@ -27,7 +27,7 @@ class DataStoreService {
 
   static async setSetting(key, value) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('setting-handler'), {
+      const response = await AuthService.fetch(getApiUrl('setting-handler'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ class DataStoreService {
     }
 
     try {
-      const response = await fetch(getApiUrl('db-check'));
+      const response = await AuthService.fetch(getApiUrl('db-check'));
       if (!response.ok) {
         throw new Error('Database connection failed');
       }
@@ -66,7 +66,7 @@ class DataStoreService {
   static async persistInteraction(interactionData) {
     try {
 
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-persist-interaction'), {
+      const response = await AuthService.fetch(getApiUrl('db-persist-interaction'), {
         method: 'POST',
         body: JSON.stringify(interactionData)
       });
@@ -83,7 +83,7 @@ class DataStoreService {
 
   static async getChatSession(sessionId) {
     try {
-      const response = await fetch(getApiUrl(`chat-session`));
+      const response = await AuthService.fetch(getApiUrl(`chat-session`));
       if (!response.ok) throw new Error('Failed to get chat session');
       return await response.json();
     } catch (error) {
@@ -94,7 +94,7 @@ class DataStoreService {
 
   static async getLogs(chatId) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-log?chatId=${chatId}`));
+      const response = await AuthService.fetch(getApiUrl(`db-log?chatId=${chatId}`));
       if (!response.ok) throw new Error('Failed to get logs');
       return await response.json();
     } catch (error) {
@@ -107,7 +107,7 @@ class DataStoreService {
 
   static async deleteChat(chatId) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`chat-delete?chatId=${chatId}`), {
+      const response = await AuthService.fetch(getApiUrl(`chat-delete?chatId=${chatId}`), {
         method: 'DELETE'
       });
 
@@ -125,7 +125,7 @@ class DataStoreService {
 
   static async generateEmbeddings({ lastProcessedId = null, regenerateAll = false, provider = "openai" } = {}) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-embeddings'), {
+      const response = await AuthService.fetch(getApiUrl('db-generate-embeddings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -143,7 +143,7 @@ class DataStoreService {
 
   static async getTableCounts() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-table-counts'));
+      const response = await AuthService.fetch(getApiUrl('db-table-counts'));
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.message || 'Failed to fetch table counts');
@@ -157,7 +157,7 @@ class DataStoreService {
   }
   static async repairTimestamps() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-repair-timestamps'), {
+      const response = await AuthService.fetch(getApiUrl('db-repair-timestamps'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -176,7 +176,7 @@ class DataStoreService {
 
   static async repairExpertFeedback() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-repair-expert-feedback'), {
+      const response = await AuthService.fetch(getApiUrl('db-repair-expert-feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -195,7 +195,7 @@ class DataStoreService {
 
   static async getPublicEvalList() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-public-eval-list'));
+      const response = await AuthService.fetch(getApiUrl('db-public-eval-list'));
       if (!response.ok) throw new Error('Failed to fetch public evaluation list');
       return await response.json();
     } catch (error) {
@@ -206,7 +206,7 @@ class DataStoreService {
 
   static async getChat(chatId) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat?chatId=${chatId}`));
+      const response = await AuthService.fetch(getApiUrl(`db-chat?chatId=${chatId}`));
       if (!response.ok) throw new Error('Failed to fetch chat');
       return await response.json();
     } catch (error) {
@@ -217,7 +217,7 @@ class DataStoreService {
 
   static async migratePublicFeedback() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-migrate-public-feedback'), {
+      const response = await AuthService.fetch(getApiUrl('db-migrate-public-feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

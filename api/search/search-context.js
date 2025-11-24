@@ -6,12 +6,13 @@ import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.
 import { createQueryRewriteAgent } from '../../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../../agents/strategies/queryRewriteStrategy.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-    const searchFunction = searchService.toLowerCase() === 'google' 
-        ? googleContextSearch 
+    const searchFunction = searchService.toLowerCase() === 'google'
+        ? googleContextSearch
         : canadaContextSearch;
-        
+
     return await exponentialBackoff(() => searchFunction(query, lang));
 }
 
@@ -36,7 +37,7 @@ async function handler(req, res) {
             const searchQuery = rewriteResult.query;
             ServerLoggingService.info('SearchContextAgent rewrite result:', chatId, { pageLanguage, ...rewriteResult });
 
-            
+
             const searchResults = await performSearch(searchQuery, lang, searchService, chatId);
             ServerLoggingService.debug('Search results:', chatId, searchResults);
             // Merge agentResult values into the response
@@ -55,4 +56,4 @@ async function handler(req, res) {
 
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

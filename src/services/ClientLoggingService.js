@@ -7,7 +7,7 @@ class ClientLoggingService {
     console[level](`${emoji} ${message}`, metadata);
 
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-log'), {
+      const response = await AuthService.fetch(getApiUrl('db-log'), {
         method: 'POST',
         body: JSON.stringify({
           chatId,
@@ -52,7 +52,7 @@ class ClientLoggingService {
         ...(options.level && { level: options.level }),
       }).toString();
 
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-log?${queryParams}`));
+      const response = await AuthService.fetch(getApiUrl(`db-log?${queryParams}`));
       if (!response.ok) {
         throw new Error('Failed to fetch logs');
       }
