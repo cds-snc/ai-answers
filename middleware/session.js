@@ -128,6 +128,7 @@ export default function sessionMiddleware(options = {}) {
           // ignore and use fallback
         }
 
+
         const sessionJwt = jwt.sign({}, secretKey, { jwtid: sessionId, expiresIn: `${sessionTtlSeconds}s` });
         appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${sessionTtlSeconds}`);
 
@@ -144,6 +145,16 @@ export default function sessionMiddleware(options = {}) {
         // existing session: update lastSeen and ensure any provided chatId
         // is associated with the session. This ensures multiple tabs (chatIds)
         // are tracked under the same session and will show up in the admin UI.
+
+        // Bot detection: If we have a sessionId (from cookie) but no fingerprint,
+        // this indicates a bot that accepts cookies but doesn't execute JavaScript
+        // to generate the fingerprint. Block these requests.
+        if (!fingerprintHeader) {
+          res.statusCode = 403;
+          res.setHeader('Content-Type', 'application/json');
+          return res.end(JSON.stringify({ error: 'botDetected', message: 'Fingerprint required for existing sessions' }));
+        }
+
         try {
           // register will update ttl/lastSeen and add chatId to session.chatIds if provided
           const isAuthenticated = !!req.user;
@@ -152,6 +163,15 @@ export default function sessionMiddleware(options = {}) {
           // fall back to touch on any failure to avoid blocking requests
           SessionManagementService.touch(sessionId);
         }
+      }
+
+      // Additional bot detection: If this is the second+ request and we still don't have
+      // a sessionToken cookie, the client isn't storing cookies (likely a bot).
+      // We detect this by checking if fpSigned cookie exists but sessionToken doesn't.
+      if (!sessionId && cookies['fpSigned']) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'botDetected', message: 'Session cookie required' }));
       }
 
       if (!sessionId) {
