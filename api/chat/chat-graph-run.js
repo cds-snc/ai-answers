@@ -107,20 +107,8 @@ async function handler(req, res) {
     const authorization = headers['authorization'];
     if (authorization) out['Authorization'] = authorization;
 
-    const sessionToken = headers['x-session-token'];
-    if (sessionToken) out['x-session-token'] = sessionToken;
-
     const fpId = headers['x-fp-id'];
     if (fpId) out['x-fp-id'] = fpId;
-
-    const fpHash = headers['x-fp-hash'];
-    if (fpHash) out['x-fp-hash'] = fpHash;
-
-    const chatIdHeader = headers['x-chat-id'];
-    if (chatIdHeader) out['x-chat-id'] = chatIdHeader;
-
-    const bypass = headers['x-session-bypass'];
-    if (bypass) out['x-session-bypass'] = bypass;
 
     return out;
   }

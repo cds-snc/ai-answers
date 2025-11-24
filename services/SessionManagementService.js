@@ -55,9 +55,10 @@ class SessionManagementService {
     this.maxSessions = 1000; // default capacity fallback
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
+    this.authenticatedRateLimit = { capacity: 100, refillPerSec: 5 };
     // Track anonymous session creation attempts to prevent churn abuse
-  // Map verified fingerprintKey -> sessionId to ensure one session per fingerprint
-  this.fingerprintToSession = new Map();
+    // Map verified fingerprintKey -> sessionId to ensure one session per fingerprint
+    this.fingerprintToSession = new Map();
     // NOTE: settings will be read live from SettingsService when needed.
     // start cleanup timer with defaults
     this._startCleanup();
@@ -136,8 +137,8 @@ class SessionManagementService {
   // fingerprint->session mapping. No canCreateSession helper exists anymore.
 
   async register(sessionId, opts = {}) {
-    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey }
-    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey } = opts || {};
+    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey, isAuthenticated }
+    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey, isAuthenticated } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
 
     // Require a verified fingerprintKey to create or reuse sessions. This prevents
@@ -205,10 +206,29 @@ class SessionManagementService {
           const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
           if (!Number.isNaN(cap) && cap > 0) rl = rl || {}, rl.capacity = cap; // ensure rl is object when values exist
           if (!Number.isNaN(refill) && refill >= 0) rl = rl || {}, rl.refillPerSec = refill;
+          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {}, rl.refillPerSec = refill;
         } catch (e) {
           // ignore and fall back to defaults
         }
       }
+
+      // If still no explicit rate limit, check if authenticated and use those defaults/settings
+      if (!rl && isAuthenticated) {
+        try {
+          const capVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
+          const refillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
+          const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
+          const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
+
+          let authRl = { ...this.authenticatedRateLimit };
+          if (!Number.isNaN(cap) && cap > 0) authRl.capacity = cap;
+          if (!Number.isNaN(refill) && refill >= 0) authRl.refillPerSec = refill;
+          rl = authRl;
+        } catch (e) {
+          rl = this.authenticatedRateLimit;
+        }
+      }
+
       const bucket = this._createBucket(rl || this.defaultRateLimit);
       session = {
         sessionId,
@@ -218,6 +238,7 @@ class SessionManagementService {
         lastSeen: now,
         ttl,
         bucket,
+        isAuthenticated: !!isAuthenticated,
         // metrics
         requestCount: 0,
         errorCount: 0,
@@ -276,6 +297,14 @@ class SessionManagementService {
         capacity: (!Number.isNaN(Number(rateLimitCapVal)) && rateLimitCapVal !== null && rateLimitCapVal !== '') ? Number(rateLimitCapVal) : this.defaultRateLimit.capacity,
         refillPerSec: (!Number.isNaN(Number(rateLimitRefillVal)) && rateLimitRefillVal !== null && rateLimitRefillVal !== '') ? Number(rateLimitRefillVal) : this.defaultRateLimit.refillPerSec
       };
+
+      const authRateLimitCapVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
+      const authRateLimitRefillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
+      const authenticatedRateLimit = {
+        capacity: (!Number.isNaN(Number(authRateLimitCapVal)) && authRateLimitCapVal !== null && authRateLimitCapVal !== '') ? Number(authRateLimitCapVal) : this.authenticatedRateLimit.capacity,
+        refillPerSec: (!Number.isNaN(Number(authRateLimitRefillVal)) && authRateLimitRefillVal !== null && authRateLimitRefillVal !== '') ? Number(authRateLimitRefillVal) : this.authenticatedRateLimit.refillPerSec
+      };
+
       let maxSessions = this.maxSessions;
       if (typeof maxActiveVal !== 'undefined' && maxActiveVal !== null && maxActiveVal !== '') {
         const n = Number(maxActiveVal);
@@ -286,7 +315,9 @@ class SessionManagementService {
         defaultTTLMs,
         cleanupIntervalMinutes,
         cleanupIntervalMs,
+        cleanupIntervalMs,
         rateLimit,
+        authenticatedRateLimit,
         maxSessions
       };
     } catch (e) {
@@ -296,6 +327,7 @@ class SessionManagementService {
         cleanupIntervalMinutes: this.cleanupIntervalMinutes,
         cleanupIntervalMs: this.cleanupInterval,
         rateLimit: this.defaultRateLimit,
+        authenticatedRateLimit: this.authenticatedRateLimit,
         maxSessions: this.maxSessions
       };
     }

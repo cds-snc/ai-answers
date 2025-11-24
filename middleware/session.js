@@ -29,7 +29,7 @@ export default function sessionMiddleware(options = {}) {
       }
 
       if (!chatId) {
-        chatId = req.query?.chatId || req.headers['x-chat-id'] || null;
+        chatId = req.query?.chatId || null;
       }
       if (chatId) req.chatId = chatId;
 
@@ -41,7 +41,7 @@ export default function sessionMiddleware(options = {}) {
         : null;
 
       let sessionId = null;
-      const sessionToken = cookies[SESSION_COOKIE_NAME] || req.headers['x-session-token'];
+      const sessionToken = cookies[SESSION_COOKIE_NAME];
       if (sessionToken) {
         try {
           const decodedSession = jwt.verify(sessionToken, secretKey) || {};
@@ -212,9 +212,6 @@ export function ensureSession(req, res) {
 export function withSession(handler) {
   return async function (req, res) {
     try {
-      if (shouldBypassSession(req)) {
-        return handler(req, res);
-      }
       const ok = await ensureSession(req, res);
       if (!ok) return; // middleware already handled the response
       return handler(req, res);
@@ -270,20 +267,4 @@ function hasAdminBearerAuth(req) {
   } catch (e) {
     return false;
   }
-}
-
-function shouldBypassSession(req) {
-  try {
-    const bypassHeader = req?.headers?.['x-session-bypass'];
-    if (!hasAdminBearerAuth(req)) return false;
-    if (typeof bypassHeader === 'string') {
-      return bypassHeader === '1' || bypassHeader.toLowerCase() === 'true';
-    }
-    if (Array.isArray(bypassHeader)) {
-      return bypassHeader.some((v) => typeof v === 'string' && (v === '1' || v.toLowerCase() === 'true'));
-    }
-  } catch (e) {
-    // ignore and fall through to enforce session
-  }
-  return false;
 }
