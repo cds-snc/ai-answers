@@ -20,28 +20,26 @@ class CreditBucket {
     const now = Date.now();
     const elapsed = (now - this.lastRefill) / 1000;
     if (elapsed <= 0) return;
-    // Use cached settings when available to update refill rate / capacity.
-    // This keeps the hot-path synchronous and avoids DB access.
+    // SettingsService.cache is already used internally by SettingsService.get(),
+    // so reading from cache directly gives us the same values without async calls.
+    // This keeps the hot-path synchronous and avoids DB access during bucket refill.
     try {
-      const s = SettingsService && SettingsService.cache ? SettingsService.cache : null;
-      // Prefer authenticated settings for authenticated buckets, fall back to generic session settings.
-      let cachedRefill = null;
-      let cachedCap = null;
-      if (this.isAuthenticated) {
-        cachedRefill = s && Object.prototype.hasOwnProperty.call(s, 'session.authenticatedRateLimitRefillPerSec') ? s['session.authenticatedRateLimitRefillPerSec'] : null;
-        cachedCap = s && Object.prototype.hasOwnProperty.call(s, 'session.authenticatedRateLimitCapacity') ? s['session.authenticatedRateLimitCapacity'] : null;
-      }
-      // fallback to generic keys if authenticated-specific keys are not present
-      if ((cachedRefill === null || typeof cachedRefill === 'undefined') && s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitRefillPerSec')) {
-        cachedRefill = s['session.rateLimitRefillPerSec'];
-      }
-      if ((cachedCap === null || typeof cachedCap === 'undefined') && s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitCapacity')) {
-        cachedCap = s['session.rateLimitCapacity'];
-      }
-      if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) this.refillPerSec = Number(cachedRefill);
-      if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
-        this.capacity = Number(cachedCap);
-        if (this.credits > this.capacity) this.credits = this.capacity;
+      const cache = SettingsService && SettingsService.cache ? SettingsService.cache : null;
+      if (cache) {
+        // Read appropriate settings based on authentication status only (no fallback)
+        const capKey = this.isAuthenticated ? 'session.authenticatedRateLimitCapacity' : 'session.rateLimitCapacity';
+        const refillKey = this.isAuthenticated ? 'session.authenticatedRateLimitRefillPerSec' : 'session.rateLimitRefillPerSec';
+
+        const cachedCap = Object.prototype.hasOwnProperty.call(cache, capKey) ? cache[capKey] : null;
+        const cachedRefill = Object.prototype.hasOwnProperty.call(cache, refillKey) ? cache[refillKey] : null;
+
+        if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
+          this.capacity = Number(cachedCap);
+          if (this.credits > this.capacity) this.credits = this.capacity;
+        }
+        if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) {
+          this.refillPerSec = Number(cachedRefill);
+        }
       }
     } catch (e) { /* best-effort, ignore errors */ }
 
@@ -294,26 +292,18 @@ class SessionManagementService {
     return { ok: true, session, chatId: activeChatId };
   }
 
-  // Read rate limit values from SettingsService. When preferAuthenticated is true,
-  // try the authenticated-specific keys first and fall back to generic keys.
+  // Read rate limit values from SettingsService based on authentication status.
+  // When preferAuthenticated is true, read only authenticated-specific keys.
+  // When preferAuthenticated is false, read only generic keys.
   // Returns an object like { capacity, refillPerSec } if any values found, otherwise null.
+  // If settings are not configured, returns null so register() can apply defaults.
   async _getRateLimitFromSettings(preferAuthenticated = false) {
     try {
-      let capVal = null;
-      let refillVal = null;
-      if (preferAuthenticated) {
-        capVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
-        refillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
-      }
-      // fallback to generic if auth-specific not present
-      if (capVal === null || typeof capVal === 'undefined' || capVal === '') {
-        const g = await SettingsService.get('session.rateLimitCapacity');
-        if (!(g === null || typeof g === 'undefined' || g === '')) capVal = g;
-      }
-      if (refillVal === null || typeof refillVal === 'undefined' || refillVal === '') {
-        const g = await SettingsService.get('session.rateLimitRefillPerSec');
-        if (!(g === null || typeof g === 'undefined' || g === '')) refillVal = g;
-      }
+      const capKey = preferAuthenticated ? 'session.authenticatedRateLimitCapacity' : 'session.rateLimitCapacity';
+      const refillKey = preferAuthenticated ? 'session.authenticatedRateLimitRefillPerSec' : 'session.rateLimitRefillPerSec';
+
+      const capVal = await SettingsService.get(capKey);
+      const refillVal = await SettingsService.get(refillKey);
 
       const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
       const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;

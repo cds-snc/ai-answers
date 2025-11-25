@@ -19,6 +19,33 @@ class BatchService {
     // Map of batchId -> AbortController for running client-side batches
     this._controllers = new Map();
   }
+
+  /**
+   * Create a new chatId for this batch item with the current session.
+   * Calls POST /api/batch-register-chatid to generate and register the chatId.
+   * @returns {Promise<string>} - The registered chatId
+   * @throws {Error} - If registration fails
+   */
+  async registerBatchChatId() {
+    try {
+      const url = getApiUrl('batch-register-chatid');
+      const res = await AuthService.fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to register batch chatId: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      return data.chatId;
+    } catch (err) {
+      console.error('Error registering batch chatId:', err);
+      throw err;
+    }
+  }
   /**
    * Start a batch: decide whether to derive context or send batch messages.
    * Returns whatever the underlying service returns (usually an object with batchId).
@@ -299,13 +326,23 @@ class BatchService {
           : entry;
         const question = this._extractQuestion(original);
         const existingChat = entry && entry.chat ? entry.chat : (original && original.chat ? original.chat : null);
-        const idPrefix = batchId || batchName;
-        const chatId = existingChat || `${idPrefix}-${i}-${Date.now()}`;
-
+        
         // If this entry already has a chat id recorded, skip re-processing it
         if (existingChat) {
           results[i] = { index: i, chatId: existingChat, skipped: true };
           onProgress({ index: i, total, status: 'skipped', chatId: existingChat });
+          continue;
+        }
+
+        // Register batch chatId with the session before processing
+        let chatId = null;
+        try {
+          chatId = await this.registerBatchChatId();
+          console.log(`[batch] registered chatId=${chatId} for batchId=${batchId} rowIndex=${i}`);
+        } catch (regErr) {
+          const message = `Failed to register batch chatId: ${regErr.message}`;
+          results[i] = { index: i, error: message };
+          onProgress({ index: i, total, status: 'failed', chatId: null, error: message });
           continue;
         }
 

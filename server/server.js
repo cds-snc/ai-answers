@@ -74,6 +74,7 @@ import { VectorService, initVectorService } from '../services/VectorServiceFacto
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
+import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 
@@ -153,6 +154,7 @@ app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
 app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
+app.post('/api/batch/batch-register-chatid', batchRegisterChatIdHandler);
 app.delete('/api/batch/batch-delete', dbBatchDeleteHandler);
 app.delete('/api/batch/batch-delete-all', batchesDeleteAllHandler);
 app.get('/api/batch/batch-stats', dbBatchStatsHandler);
