@@ -254,17 +254,19 @@ class SessionManagementService {
         ttl,
         bucket,
         isAuthenticated: !!isAuthenticated,
-        // metrics
+        // metrics (session-wide aggregates)
         requestCount: 0,
         errorCount: 0,
         totalLatencyMs: 0,
-        lastLatencyMs: 0
-        ,
-        // timestamps of requests (ms since epoch) used to compute RPM
-        requestTimestamps: []
-        ,
-        // per-error-type counters: { <type>: count }
-        errorTypes: {}
+        lastLatencyMs: 0,
+        // timestamps of requests (ms since epoch) used to compute RPM (session-level)
+        requestTimestamps: [],
+        // per-error-type counters: { <type>: count } (session-level)
+        errorTypes: {},
+        // Per-chat metrics keyed by chatId. This allows reporting accurate
+        // stats for each chatId in a session while keeping session-level
+        // aggregates for backwards compatibility.
+        chatMetrics: {}
       };
       this.sessions.set(sessionId, session);
       // map fingerprint -> sessionId for reuse if provided
@@ -410,11 +412,27 @@ class SessionManagementService {
   }
 
   recordRequest(chatId, { latencyMs = 0, error = false, errorType = null } = {}) {
-    const session = this.getInfo(chatId);
+    // Determine whether `chatId` is actually a sessionId or a chatId. If it's
+    // a chatId we will update both the session-level aggregates and the
+    // per-chat metrics for that chatId. If it's a sessionId, only update the
+    // session-level aggregates.
+    if (!chatId) return false;
+    let session = null;
+    let resolvedChatId = null;
+    if (this.sessions.has(chatId)) {
+      session = this.sessions.get(chatId);
+    } else {
+      const mapped = this.chatToSession.get(chatId);
+      if (mapped) {
+        session = this.sessions.get(mapped) || null;
+        resolvedChatId = chatId;
+      }
+    }
     if (!session) return false;
+
+    // Update session-level aggregates
     session.requestCount = (session.requestCount || 0) + 1;
     if (error) session.errorCount = (session.errorCount || 0) + 1;
-    // support errorType counting when provided
     if (errorType) {
       session.errorTypes = session.errorTypes || {};
       session.errorTypes[errorType] = (session.errorTypes[errorType] || 0) + 1;
@@ -433,6 +451,31 @@ class SessionManagementService {
       let i = 0;
       while (i < session.requestTimestamps.length && session.requestTimestamps[i] < pruneBefore) i++;
       if (i > 0) session.requestTimestamps.splice(0, i);
+
+      // Also update per-chat metrics when we have a resolved chatId
+      if (resolvedChatId) {
+        session.chatMetrics = session.chatMetrics || {};
+        const cm = session.chatMetrics[resolvedChatId] = session.chatMetrics[resolvedChatId] || {
+          requestCount: 0,
+          errorCount: 0,
+          totalLatencyMs: 0,
+          lastLatencyMs: 0,
+          requestTimestamps: [],
+          errorTypes: {}
+        };
+        cm.requestCount = (cm.requestCount || 0) + 1;
+        if (error) cm.errorCount = (cm.errorCount || 0) + 1;
+        if (errorType) cm.errorTypes = cm.errorTypes || {}, cm.errorTypes[errorType] = (cm.errorTypes[errorType] || 0) + 1;
+        if (typeof latencyMs === 'number' && latencyMs >= 0) {
+          cm.lastLatencyMs = latencyMs;
+          cm.totalLatencyMs = (cm.totalLatencyMs || 0) + latencyMs;
+        }
+        cm.requestTimestamps.push(now);
+        // prune
+        let j = 0;
+        while (j < cm.requestTimestamps.length && cm.requestTimestamps[j] < pruneBefore) j++;
+        if (j > 0) cm.requestTimestamps.splice(0, j);
+      }
     } catch (e) {
       // ignore timestamp recording errors
     }
@@ -444,6 +487,17 @@ class SessionManagementService {
     for (const [k, v] of this.sessions.entries()) {
       const chatIds = (v.chatIds && v.chatIds.length) ? v.chatIds : [v.chatId || null];
       for (const cid of chatIds) {
+        // Prefer per-chat metrics when available, otherwise fall back to
+        // session-level aggregates. This ensures summaries are accurate for
+        // individual chats while retaining session-wide visibility.
+        const cm = (v.chatMetrics && cid && v.chatMetrics[cid]) ? v.chatMetrics[cid] : null;
+        const requestCount = cm ? (cm.requestCount || 0) : (v.requestCount || 0);
+        const errorCount = cm ? (cm.errorCount || 0) : (v.errorCount || 0);
+        const lastLatencyMs = cm ? (cm.lastLatencyMs || 0) : (v.lastLatencyMs || 0);
+        const avgLatencyMs = cm ? (cm.requestCount ? Math.round((cm.totalLatencyMs || 0) / cm.requestCount) : 0) : (v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0);
+        const errorTypes = cm ? (cm.errorTypes || {}) : (v.errorTypes || {});
+        const requestTimestamps = cm ? (cm.requestTimestamps || []) : (v.requestTimestamps || []);
+
         out.push({
           // Return explicit `sessionId` and `chatId` fields. Do NOT alias them.
           sessionId: k,
@@ -452,27 +506,27 @@ class SessionManagementService {
           createdAt: v.createdAt,
           lastSeen: v.lastSeen,
           ttl: v.ttl,
-          requestCount: v.requestCount || 0,
-          errorCount: v.errorCount || 0,
+          requestCount: requestCount,
+          errorCount: errorCount,
           // expose per-error-type counts and an "other" bucket
-          errorTypes: v.errorTypes || {},
+          errorTypes: errorTypes,
           errorTypesOther: (() => {
             try {
-              const byType = v.errorTypes || {};
+              const byType = errorTypes || {};
               const sumSpecific = Object.values(byType).reduce((a, b) => a + b, 0);
-              const other = (v.errorCount || 0) - sumSpecific;
+              const other = (errorCount || 0) - sumSpecific;
               return other > 0 ? other : 0;
             } catch (e) {
               return 0;
             }
           })(),
-          lastLatencyMs: v.lastLatencyMs || 0,
-          avgLatencyMs: v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0,
+          lastLatencyMs: lastLatencyMs || 0,
+          avgLatencyMs: avgLatencyMs,
           // requests per minute: count of requests in the last 60 seconds
           rpm: (() => {
             try {
               const now = Date.now();
-              const mts = v.requestTimestamps || [];
+              const mts = requestTimestamps || [];
               let count = 0;
               for (let i = mts.length - 1; i >= 0; i--) {
                 if (now - mts[i] <= 60 * 1000) count++; else break;
@@ -581,6 +635,20 @@ class SessionManagementService {
     if (!session.chatIds.includes(chatId)) session.chatIds.push(chatId);
     const sid = session.sessionId || fallbackSessionId || null;
     if (sid) this.chatToSession.set(chatId, sid);
+    // initialize per-chat metrics when a new chat is mapped
+    try {
+      session.chatMetrics = session.chatMetrics || {};
+      if (!session.chatMetrics[chatId]) {
+        session.chatMetrics[chatId] = {
+          requestCount: 0,
+          errorCount: 0,
+          totalLatencyMs: 0,
+          lastLatencyMs: 0,
+          requestTimestamps: [],
+          errorTypes: {}
+        };
+      }
+    } catch (e) { /* best-effort */ }
   }
 }
 
