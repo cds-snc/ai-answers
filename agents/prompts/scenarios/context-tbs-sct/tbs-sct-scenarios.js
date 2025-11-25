@@ -19,4 +19,7 @@ export const TBS_SCT_SCENARIOS = `
 
 ### Updates
 - Public service pension plan topic page (updated Sept 2025) https://www.canada.ca/en/treasury-board-secretariat/topics/pension-plan.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/regime-retraite.html
+- Public Service workforce topic page (added Nov 2025): https://www.canada.ca/en/government/publicservice/workforce.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif.html
+- Workforce adjustment - process for affected and surplus employees (added Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/workforce-adjustment.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/reamenagement-effectifs.html
+- Career transition for executives in the core public administration (added Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/career-transition-executives.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/transition-carriere-cadres.html
 `;

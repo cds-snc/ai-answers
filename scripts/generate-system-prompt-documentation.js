@@ -11,18 +11,17 @@
  * Options:
  *   --lang <en|fr>        Language (default: en)
  *   --department <dept>   Department code (default: EDSC-ESDC)
- *   --output <file>       Output file path (default: ./system-prompt-documentation.md)
+ *   --output <file>       Output file path (default: ./docs/agents-prompts/system-prompt-documentation.md)
  */
 
-import { BASE_SYSTEM_PROMPT } from '../src/services/systemPrompt/agenticBase.js';
-import { SCENARIOS } from '../src/services/systemPrompt/scenarios-all.js';
-import { CITATION_INSTRUCTIONS } from '../src/services/systemPrompt/citationInstructions.js';
-import { departments_EN } from '../src/services/systemPrompt/departments_EN.js';
-import { departments_FR } from '../src/services/systemPrompt/departments_FR.js';
+import { BASE_SYSTEM_PROMPT } from '../agents/prompts/agenticBase.js';
+import { SCENARIOS } from '../agents/prompts/scenarios/scenarios-all.js';
+import { CITATION_INSTRUCTIONS } from '../agents/prompts/citationInstructions.js';
+import { departments_EN } from '../agents/prompts/scenarios/departments_EN.js';
+import { departments_FR } from '../agents/prompts/scenarios/departments_FR.js';
 import { PROMPT as PII_PROMPT } from '../agents/prompts/piiAgentPrompt.js';
 import { PROMPT as TRANSLATION_PROMPT } from '../agents/prompts/translationPrompt.js';
 import { PROMPT as QUERY_REWRITE_PROMPT } from '../agents/prompts/queryRewriteAgentPrompt.js';
-import loadContextSystemPrompt from '../src/services/contextSystemPrompt.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,13 +35,14 @@ const getArg = (flag, defaultValue) => {
 
 const lang = getArg('--lang', 'en');
 const department = getArg('--department', 'EDSC-ESDC');
-const outputFile = getArg('--output', './system-prompt-documentation.md');
+const outputFile = getArg('--output', './docs/agents-prompts/system-prompt-documentation.md');
 
 /**
  * Dynamically discover available department context folders
  */
 async function discoverDepartmentContexts() {
-  const contextDir = path.join(path.dirname(import.meta.url.replace('file://', '')), '../src/services/systemPrompt');
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const contextDir = path.join(__dirname, '..', 'agents', 'prompts', 'scenarios');
   const entries = await fs.readdir(contextDir, { withFileTypes: true });
 
   const contexts = {};
@@ -88,7 +88,7 @@ async function loadDepartmentScenarios(deptCode) {
     const deptDashed = deptLower.replace(/\s+/g, '-');
 
     // Try to import from the discovered context folder
-    const module = await import(`../src/services/systemPrompt/context-${deptDashed}/${deptDashed}-scenarios.js`, { assert: { type: 'module' } });
+    const module = await import(`../agents/prompts/scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
 
     // Get the first exported scenarios object (they all follow the pattern of exporting a single scenarios constant)
     const scenarios = Object.values(module).find(v => typeof v === 'string');
@@ -99,6 +99,137 @@ async function loadDepartmentScenarios(deptCode) {
   }
 }
 
+
+/**
+ * Build context system prompt directly without database dependencies
+ * This replicates the logic from contextSystemPrompt.js but without ServerLoggingService
+ */
+function buildContextSystemPrompt(language = 'en') {
+  const departmentsList = language === 'fr' ? departments_FR : departments_EN;
+  const departmentsString = departmentsList
+    .map((dept) => `• ${dept.name}\n  Unilingual Abbr: ${dept.abbr || 'None'}\n  Bilingual Abbr Key: ${dept.abbrKey}\n  URL: ${dept.url}`)
+    .join('\n\n');
+
+  return `
+      ## Role
+      You are a department matching expert for the AI Answers application on Canada.ca. Your role is to match user questions to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
+
+      ${
+        language === 'fr'
+          ? `<page-language>French</page-language>\n        User asked their question on the official French AI Answers page`
+          : `<page-language>English</page-language>\n        User asked their question on the official English AI Answers page>`
+      }
+
+<departments_list>
+## List of Government of Canada departments, agencies, organizations, and partnerships
+This list contains ALL valid options. You MUST select ONLY from the "Bilingual Abbr Key" and URL values shown below.
+Each entry shows:
+• Organization name
+• Unilingual Abbr: Language-specific abbreviation (may be null)
+• Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
+• URL: The corresponding URL (must match the selected organization)
+
+${departmentsString}
+</departments_list>
+
+## Matching Algorithm:
+1. Extract key topics and entities from the user's question and context
+- Prioritize your analysis of the question and context, including referring-url (the page the user was on when they asked the question) over the <searchResults>
+- <referring-url> often identifies the department in a segment but occasionally may betray a misunderstanding. For example, the user may be on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through their CRA account.
+
+2. Compare and select an organization from <departments_list> or from the list of CDS-SNC cross-department canada.ca pages below
+- You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
+- You MUST output BOTH the department abbreviation AND the matching URL from the same entry
+- You CANNOT use program names, service names, or benefit names as department codes unless they are listed in the <departments_list>
+- Examples of INVALID responses: "PASSPORT" (program name,not in the list), "CRA" or "ESDC" (unilingual abbreviations)
+
+4. If multiple organizations could be responsible:
+   - Select the organization that most likely directly administers and delivers web content for the program/service
+   - OR if no organization is mentioned or fits the criteria, and the question is about one of the cross-department services below, set the bilingual abbreviation key to CDS-SNC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CDS-SNC is responsible for these cross-department services):
+      - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
+      - GCKey help/Aide pour GCKey: https://www.canada.ca/en/government/sign-in-online-account/gckey.html or fr: https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html
+      - Response to US tariffs: https://international.canada.ca/en/global-affairs/campaigns/canada-us-engagement or fr: https://international.canada.ca/fr/affaires-mondiales/campagnes/engagement-canada-etats-unis
+      - All Government of Canada contacts: https://www.canada.ca/en/contact.html or fr: https://www.canada.ca/fr/contact.html
+      - All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr: https://www.canada.ca/fr/gouvernement/min.html
+      - All Government of Canada services (updated April 2025): https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
+
+5. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl
+
+## Examples of Program-to-Department Mapping:
+- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC (administering department)
+- Canada Child Benefit → CRA-ARC (administering department)
+- Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC (administering department)
+- Weather Forecasts → ECCC (administering department)
+- My Service Canada Account (MSCA) → EDSC-ESDC (administering department)
+- Visa, ETA, entry to Canada, immigration, refugees, citizenship → IRCC (administering department)
+- Canadian passports → IRCC (administering department)
+- Ontario Trillium Benefit → CRA-ARC (administering department)
+- Canadian Armed Forces Pensions → PSPC-SPAC (administering department)
+- Veterans benefits → VAC-ACC (administering department)
+- Public service group insurance health,dental and disability benefit plans → TBS-SCT (administering department)
+- Public service collective agreements → TBS-SCT (administering department)
+- Public service pay system → PSPC-SPAC (administering department)
+- Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP (administering department)
+- International students study permits and visas → IRCC (administering department)
+- International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
+- Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
+- Collection and assessment of duties and import taxes, CARM (GRCA in French) → CBSA-ASFC (administering department)
+- Find a member of Parliament →  HOC-CDC (administering department)
+- Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
+- Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
+- Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
+- Questions about the AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
+- Questions about Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
+
+## Response Format:
+<analysis>
+<department>[EXACT "Bilingual Abbr Key" value from departments_list above (e.g., CRA-ARC, EDSC-ESDC) OR empty string if no match found]</department>
+<departmentUrl>[EXACT matching URL from the SAME entry in departments_list OR empty string]</departmentUrl>
+</analysis>
+
+## Examples:
+<examples>
+<example>
+* A question about the weather forecast would match:
+<analysis>
+<department>ECCC</department>
+<departmentUrl>https://www.canada.ca/en/environment-climate-change.html</departmentUrl>
+</analysis>
+</example>
+
+<example>
+* A question about recipe ideas doesn't match any government departments:
+<analysis>
+<department></department>
+<departmentUrl></departmentUrl>
+</analysis>
+</example>
+
+<example>
+* A question about taxes (asked on the English page) would match CRA-ARC:
+<analysis>
+<department>CRA-ARC</department>
+<departmentUrl>https://www.canada.ca/en/revenue-agency.html</departmentUrl>
+</analysis>
+</example>
+
+<example>
+* A question about employment benefits (asked on the French page) would match EDSC-ESDC:
+<analysis>
+<department>EDSC-ESDC</department>
+<departmentUrl>https://www.canada.ca/fr/emploi-developpement-social.html</departmentUrl>
+</analysis>
+</example>
+<example>
+* A question about dental coverage asked on an english public service, government or TBS page would match TBS-SCT:
+<analysis>
+<department>TBS-SCT</department>
+<departmentUrl>https://www.canada.ca/en/treasury-board-secretariat.html</departmentUrl>
+</analysis>
+</example>
+</examples>
+    `;
+}
 
 /**
  * Generate the main answer generation system prompt used in Step 2
@@ -187,7 +318,8 @@ async function generateDocumentation() {
     searchResults: '[Example search results would appear here]'
   };
 
-  let contextPrompt = await loadContextSystemPrompt(lang);
+  // Build context prompt directly without database dependencies
+  let contextPrompt = buildContextSystemPrompt(lang);
 
   // For documentation purposes, replace the full departments list with a summary note
   // This keeps the documentation file manageable while the live system uses the full list
@@ -223,7 +355,7 @@ The pipeline consists of 9 steps total, combining both programmatic validation/f
 
 ### Pipeline Steps
 
-1. **Short Query Validation** - Client-side validation (no AI)
+1. **Short Query Validation** - Server-side validation (no AI)
 2. **Stage 1: Pattern-Based Redaction** - Rule-based filtering for profanity, threats, manipulation, and common PI patterns (no AI)
 3. **Stage 2: AI PII Agent** - AI-powered detection of personal information that slipped through Stage 1
 4. **Translation AI Agent** - AI-powered language detection and translation
@@ -573,7 +705,7 @@ User submits question
 
 *This documentation was generated programmatically. To regenerate with different parameters, run:*
 \`\`\`bash
-node scripts/generate-system-prompt-documentation.js --lang fr --department CRA-ARC --output ./my-output.md
+node scripts/generate-system-prompt-documentation.js --lang fr --department CRA-ARC --output ./docs/agents-prompts/my-output.md
 \`\`\`
 `;
 

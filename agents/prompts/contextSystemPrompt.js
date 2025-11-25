@@ -1,7 +1,6 @@
-
-import { departments_EN } from './systemPrompt/departments_EN.js';
-import { departments_FR } from './systemPrompt/departments_FR.js';
-import LoggingService from './ClientLoggingService.js';
+import { departments_EN } from './scenarios/departments_EN.js';
+import { departments_FR } from './scenarios/departments_FR.js';
+import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 async function loadContextSystemPrompt(language = 'en') {
   try {
@@ -24,10 +23,8 @@ async function loadContextSystemPrompt(language = 'en') {
 
       ${
         language === 'fr'
-          ? `<page-language>French</page-language>
-        User asked their question on the official French AI Answers page`
-          : `<page-language>English</page-language>
-        User asked their question on the official English AI Answers page`
+          ? `<page-language>French</page-language>\n        User asked their question on the official French AI Answers page`
+          : `<page-language>English</page-language>\n        User asked their question on the official English AI Answers page>`
       }
 
 <departments_list>
@@ -140,13 +137,13 @@ ${departmentsString}
 </examples>
     `;
 
-    await LoggingService.info(
+    await ServerLoggingService.info(
       'system',
       `Context system prompt successfully loaded in ${language.toUpperCase()} (${fullPrompt.length} chars)`
     );
     return fullPrompt;
   } catch (error) {
-    await LoggingService.error('system', 'CONTEXT SYSTEM PROMPT ERROR', error);
+    await ServerLoggingService.error('system', 'CONTEXT SYSTEM PROMPT ERROR', error);
     return 'Default context system prompt';
   }
 }

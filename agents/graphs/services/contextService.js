@@ -4,6 +4,7 @@ import { queryRewriteStrategy } from '../../../agents/strategies/queryRewriteStr
 import { contextSearch as canadaContextSearch } from '../../../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../../../agents/tools/googleContextSearch.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
+import loadContextSystemPrompt from '../../prompts/contextSystemPrompt.js';
 import ServerLoggingService from '../../../services/ServerLoggingService.js';
 
 async function exponentialBackoff(fn, retries = 5, initialDelay = 500) {
@@ -76,10 +77,11 @@ export async function deriveContext({
   const langForSearch = pageLang.toLowerCase().includes('fr') ? 'fr' : 'en';
   const searchResults = await performSearch(searchQuery, langForSearch, searchProvider, chatId);
 
+  const systemPrompt = rewrite?.systemPrompt || await loadContextSystemPrompt(pageLang, department);
   const contextResponse = await invokeContextAgent(agentType, {
     chatId,
     message: translatedQuestion,
-    systemPrompt: rewrite?.systemPrompt || '',
+    systemPrompt,
     searchResults,
     conversationHistory,
   });

@@ -1,7 +1,6 @@
 // src/ClaudeService.js
 
-import loadSystemPrompt from './systemPrompt.js';
-import { getProviderApiUrl } from '../utils/apiToUrl.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
 import ScenarioOverrideService from './ScenarioOverrideService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
@@ -30,8 +29,6 @@ const AnswerService = {
         ClientLoggingService.warn(chatId, `Failed to load scenario override for ${context.department}`, { error: error?.message });
       }
     }
-
-    const SYSTEM_PROMPT = await loadSystemPrompt(lang, context, chatId, { scenarioOverrideText });
     const { translatedQuestion, outputLang } = context;
     const header = `\n<output-lang>${outputLang || ''}</output-lang>`;
     let message = `${translatedQuestion}${header}`;
@@ -39,14 +36,21 @@ const AnswerService = {
     ClientLoggingService.debug(chatId, 'Sending to ' + provider + ' API:', {
       message,
       conversationHistory: conversationHistory,
-      systemPromptLength: SYSTEM_PROMPT.length,
     });
 
+    // Send structured context to the server and let it build the system prompt.
     return {
+      provider: provider,
       message: message,
       conversationHistory: conversationHistory,
-      systemPrompt: SYSTEM_PROMPT,
       chatId: chatId,
+      lang: lang,
+      department: context?.department || '',
+      topic: context?.topic || '',
+      topicUrl: context?.topicUrl || '',
+      departmentUrl: context?.departmentUrl || '',
+      searchResults: context?.searchResults || '',
+      scenarioOverrideText: scenarioOverrideText || '',
     };
   },
 
@@ -72,7 +76,7 @@ const AnswerService = {
 
       const fp = await getFingerprint();
       const extraHeaders = getSessionBypassHeaders();
-      const response = await fetch(getProviderApiUrl(provider, 'message'), {
+      const response = await fetch(getApiUrl('chat-message'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

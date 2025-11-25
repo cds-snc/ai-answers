@@ -717,7 +717,10 @@
       "role": "Role",
       "status": "Status",
       "createdAt": "Created At",
-      "action": "Action"
+      "updatedAt": "Updated at",
+      "totalScore": "Score",
+      "referringUrl": "Referring URL",
+      "interactionUpdatedAt": "Date of Chat"
     },
     "status": {
       "active": "Active",
@@ -817,6 +820,7 @@
     "fallbackSourceChatId": "Fallback source chatId",
     "matchedCitationInteractionId": "Matched citation interactionId",
     "matchedCitationChatId": "Matched citation chatId",
+    "modelData": "Model data",
     "createdAt": "Created at",
     "updatedAt": "Updated at"
   },

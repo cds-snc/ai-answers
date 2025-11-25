@@ -3,51 +3,51 @@ import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../
 
 const SUPPORTED_DEPARTMENTS = {
   'CDS-SNC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-cds-snc/cds-snc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-cds-snc/cds-snc-scenarios.js');
     return mod.CDS_SNC_SCENARIOS || '';
   },
   'CRA-ARC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-cra-arc/cra-arc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-cra-arc/cra-arc-scenarios.js');
     return mod.CRA_ARC_SCENARIOS || '';
   },
   'ECCC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-eccc/eccc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-eccc/eccc-scenarios.js');
     return mod.ECCC_SCENARIOS || '';
   },
   'EDSC-ESDC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-edsc-esdc/edsc-esdc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-edsc-esdc/edsc-esdc-scenarios.js');
     return mod.EDSC_ESDC_SCENARIOS || '';
   },
   'FIN': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-fin/fin-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-fin/fin-scenarios.js');
     return mod.FIN_SCENARIOS || '';
   },
   'HC-SC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-hc-sc/hc-sc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-hc-sc/hc-sc-scenarios.js');
     return mod.HC_SC_SCENARIOS || '';
   },
   'IRCC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-ircc/ircc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-ircc/ircc-scenarios.js');
     return mod.IRCC_SCENARIOS || '';
   },
   'ISED-ISDE': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-ised-isde/ised-isde-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-ised-isde/ised-isde-scenarios.js');
     return mod.ISED_ISDE_SCENARIOS || '';
   },
   'NRCan-RNCan': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-nrcan-rncan/nrcan-rncan-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-nrcan-rncan/nrcan-rncan-scenarios.js');
     return mod.NRCAN_RNCAN_SCENARIOS || '';
   },
   'PSPC-SPAC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-pspc-spac/pspc-spac-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-pspc-spac/pspc-spac-scenarios.js');
     return mod.PSPC_SPAC_SCENARIOS || '';
   },
   'SAC-ISC': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-sac-isc/sac-isc-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-sac-isc/sac-isc-scenarios.js');
     return mod.SAC_ISC_SCENARIOS || '';
   },
   'TBS-SCT': async () => {
-    const mod = await import('../../src/services/systemPrompt/context-tbs-sct/tbs-sct-scenarios.js');
+    const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');
     return mod.TBS_SCT_SCENARIOS || '';
   },
 };
