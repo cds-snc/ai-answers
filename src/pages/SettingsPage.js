@@ -351,10 +351,10 @@ const SettingsPage = ({ lang = 'en' }) => {
         }}
         disabled={savingDefaultWorkflow}
       >
-        <option value="Default">Default</option>
-        <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
-        <option value="DefaultWithVector">DefaultWithVector</option>
-        <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
+        <option value="Default">{t('settings.defaultWorkflow.options.Default', 'Default')}</option>
+        <option value="DefaultAlwaysContext">{t('settings.defaultWorkflow.options.DefaultAlwaysContext', 'DefaultAlwaysContext')}</option>
+        <option value="DefaultWithVector">{t('settings.defaultWorkflow.options.DefaultWithVector', 'DefaultWithVector')}</option>
+        <option value="DefaultWithVectorGraph">{t('settings.defaultWorkflow.options.DefaultWithVectorGraph', 'DefaultWithVectorGraph')}</option>
       </select>
       <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
         {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
