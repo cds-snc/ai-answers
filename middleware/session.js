@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import SessionManagementService from '../services/SessionManagementService.js';
 import { SettingsService } from '../services/SettingsService.js';
+import { getParentDomain } from '../api/util/cookie-utils.js';
 
 const secretKey = process.env.JWT_SECRET_KEY || 'dev-secret';
 const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
@@ -117,13 +118,16 @@ export default function sessionMiddleware(options = {}) {
 
         const sessionJwt = jwt.sign({}, secretKey, { jwtid: sessionId, expiresIn: `${sessionTtlSeconds}s` });
         const secureFlag = isSecure ? 'Secure; ' : '';
-        appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; ${secureFlag}SameSite=${sameSite}; Path=/; Max-Age=${sessionTtlSeconds}`);
+        // Add Domain attribute when appropriate (non-development and multi-label host)
+        const parentDomain = getParentDomain(req.get && req.get('host') ? req.get('host') : (req.headers && req.headers.host) || undefined);
+        const domainAttr = parentDomain ? `Domain=${parentDomain}; ` : '';
+        appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; ${secureFlag}${domainAttr}SameSite=${sameSite}; Path=/; Max-Age=${sessionTtlSeconds}`);
 
         // If client provided a fingerprint header and it was not yet verified, issue a signed fp cookie
         try {
-          if (fingerprintHeader && !fingerprintVerified) {
+            if (fingerprintHeader && !fingerprintVerified) {
             const fpToken = jwt.sign({ fp: fingerprintHeader, iat: Math.floor(Date.now() / 1000) }, secretKey, { expiresIn: `${sessionTtlSeconds}s` });
-            appendSetCookie(res, `fpSigned=${fpToken}; HttpOnly; ${secureFlag}SameSite=${sameSite}; Path=/; Max-Age=${sessionTtlSeconds}`);
+            appendSetCookie(res, `fpSigned=${fpToken}; HttpOnly; ${secureFlag}${domainAttr}SameSite=${sameSite}; Path=/; Max-Age=${sessionTtlSeconds}`);
           }
         } catch (e) {
           // ignore cookie issuance failures

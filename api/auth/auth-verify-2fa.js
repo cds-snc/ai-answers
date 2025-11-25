@@ -3,6 +3,7 @@ import { User } from '../../models/user.js';
 import TwoFAService from '../../services/TwoFAService.js';
 import { generateToken, generateRefreshToken } from '../../middleware/auth.js';
 import { SettingsService } from '../../services/SettingsService.js';
+import { getCookieOptions } from '../util/cookie-utils.js';
 
 const verify2FAHandler = async (req, res) => {
   try {
@@ -25,22 +26,9 @@ const verify2FAHandler = async (req, res) => {
       const accessToken = generateToken(user);
       const refreshToken = generateRefreshToken(user);
 
-      // Set tokens in HttpOnly cookies
-      // Use secure cookies for any non-development environment (staging, production)
-      const isSecure = process.env.NODE_ENV !== 'development';
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: isSecure,
-        sameSite: isSecure ? 'strict' : 'lax',
-        maxAge: 15 * 60 * 1000 // 15 minutes
-      });
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: isSecure,
-        sameSite: isSecure ? 'strict' : 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      });
+      // Set tokens in HttpOnly cookies with parent-domain support in non-dev
+      res.cookie('access_token', accessToken, getCookieOptions(req, 15 * 60 * 1000));
+      res.cookie('refresh_token', refreshToken, getCookieOptions(req, 7 * 24 * 60 * 60 * 1000));
 
       return res.status(200).json({
         success: true,

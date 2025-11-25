@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../../models/user.js';
 import dbConnect from '../db/db-connect.js';
 import { generateToken } from '../../middleware/auth.js';
+import { getCookieOptions } from '../util/cookie-utils.js';
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
@@ -40,15 +41,8 @@ const refreshHandler = async (req, res) => {
         // Generate new access token
         const newAccessToken = generateToken(user);
 
-        // Set new access token in cookie
-        // Use secure cookies for any non-development environment (staging, production)
-        const isSecure = process.env.NODE_ENV !== 'development';
-        res.cookie('access_token', newAccessToken, {
-            httpOnly: true,
-            secure: isSecure,
-            sameSite: isSecure ? 'strict' : 'lax',
-            maxAge: 15 * 60 * 1000 // 15 minutes
-        });
+        // Set new access token in cookie with parent-domain support in non-dev
+        res.cookie('access_token', newAccessToken, getCookieOptions(req, 15 * 60 * 1000));
 
         return res.status(200).json({
             success: true,
