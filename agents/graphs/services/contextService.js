@@ -77,7 +77,7 @@ export async function deriveContext({
   const langForSearch = pageLang.toLowerCase().includes('fr') ? 'fr' : 'en';
   const searchResults = await performSearch(searchQuery, langForSearch, searchProvider, chatId);
 
-  const systemPrompt = rewrite?.systemPrompt || await loadContextSystemPrompt(pageLang, department);
+  const systemPrompt = rewrite?.systemPrompt || await loadContextSystemPrompt(pageLang);
   const contextResponse = await invokeContextAgent(agentType, {
     chatId,
     message: translatedQuestion,

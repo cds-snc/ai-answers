@@ -10,9 +10,9 @@ async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
     try {
-        const { provider = 'openai', ...rest } = req.body;
+        const { provider = 'openai', language = 'en', ...rest } = req.body;
         // Add validated chatId from middleware to the body
-        const bodyWithChatId = { ...rest, chatId: req.chatId, provider };
+        const bodyWithChatId = { ...rest, chatId: req.chatId, provider, language };
         const result = await exponentialBackoff(() => invokeContextAgent(provider, bodyWithChatId));
         return res.json(result);
     } catch (error) {

@@ -771,6 +771,9 @@
       "enabledLabel": "Require two-factor authentication for login",
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
+    "notify": {
+      "resetTemplateLabel": "Reset Link Template ID"
+    },
     "site": {
       "baseUrl": "Base URL (frontend)"
     },
@@ -780,6 +783,8 @@
       "cleanupSeconds": "Session cleanup interval (seconds)",
       "rateLimitCapacity": "Rate limit capacity (credits)",
       "rateLimitRefill": "Rate limit refill (credits per min)",
+      "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (credits)",
+      "authenticatedRateLimitRefill": "Authenticated rate limit refill (credits per min)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)"
     }
   },

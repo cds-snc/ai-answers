@@ -548,12 +548,15 @@
       "date": "Date",
       "sessionsTitle": "Sessions actives",
       "sessions": {
+        "sessionId": "ID de session",
+        "creditsLeft": "Crédits restants",
         "chatId": "ID de chat",
         "lastSeen": "Dernière activité",
         "requests": "Requêtes",
         "errors": "Erreurs",
         "lastLatency": "Dernière latence (ms)",
         "avgLatency": "Latence moyenne (ms)",
+        "rpm": "Requêtes / minute",
         "errorLoading": "Échec du chargement des sessions : {status} {text}",
         "errorGeneric": "Erreur : {message}"
       }
@@ -805,6 +808,9 @@
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
       "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
     },
+    "notify": {
+      "resetTemplateLabel": "ID du modèle pour le lien de réinitialisation"
+    },
     "site": {
       "baseUrl": "URL de base (frontend)"
     },
@@ -814,6 +820,8 @@
       "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
       "rateLimitCapacity": "Capacité du quota (crédits)",
       "rateLimitRefill": "Recharge du quota (crédits/min)",
+      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (crédits)",
+      "authenticatedRateLimitRefill": "Recharge du quota authentifié (crédits/min)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)"
     }
   },

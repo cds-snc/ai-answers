@@ -13,6 +13,8 @@ const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // default 30 days fallback
 export default function sessionMiddleware(options = {}) {
   return async function (req, res, next) {
     try {
+      const isSecure = process.env.NODE_ENV !== 'development';
+      const sameSite = isSecure ? 'strict' : 'lax';
       const cookies = parseCookies(req.headers?.cookie || '');
 
       // chatId is now generated and managed server-side only
@@ -114,13 +116,14 @@ export default function sessionMiddleware(options = {}) {
 
 
         const sessionJwt = jwt.sign({}, secretKey, { jwtid: sessionId, expiresIn: `${sessionTtlSeconds}s` });
-        appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${sessionTtlSeconds}`);
+        const secureFlag = isSecure ? 'Secure; ' : '';
+        appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; ${secureFlag}SameSite=${sameSite}; Path=/; Max-Age=${sessionTtlSeconds}`);
 
         // If client provided a fingerprint header and it was not yet verified, issue a signed fp cookie
         try {
           if (fingerprintHeader && !fingerprintVerified) {
             const fpToken = jwt.sign({ fp: fingerprintHeader, iat: Math.floor(Date.now() / 1000) }, secretKey, { expiresIn: `${sessionTtlSeconds}s` });
-            appendSetCookie(res, `fpSigned=${fpToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${sessionTtlSeconds}`);
+            appendSetCookie(res, `fpSigned=${fpToken}; HttpOnly; ${secureFlag}SameSite=${sameSite}; Path=/; Max-Age=${sessionTtlSeconds}`);
           }
         } catch (e) {
           // ignore cookie issuance failures
