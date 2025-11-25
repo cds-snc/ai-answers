@@ -21,8 +21,15 @@ async function feedbackGetExpertHandler(req, res) {
     for (let i = 1; i <= 4; i++) {
       const scoreKey = `sentence${i}Score`;
       const explanationKey = `sentence${i}Explanation`;
+      const harmfulKey = `sentence${i}Harmful`;
+      const contentIssueKey = `sentence${i}ContentIssue`;
       if (typeof ef[scoreKey] !== 'undefined' || ef[explanationKey]) {
-        sentences.push({ score: ef[scoreKey], explanation: ef[explanationKey] || '' });
+        sentences.push({
+          score: ef[scoreKey],
+          explanation: ef[explanationKey] || '',
+          harmful: ef[harmfulKey] || false,
+          contentIssue: ef[contentIssueKey] || false
+        });
       }
     }
     return res.status(200).json({ expertFeedback: ef, sentences, message: 'OK' });

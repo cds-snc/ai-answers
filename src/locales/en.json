@@ -189,7 +189,8 @@
         "needsImprovement": "Needs improvement",
         "incorrect": "Incorrect",
         "harmful": "Harmful",
-        "explanation": "Please explain why you rated it this way (optional):",
+        "contentIssue": "Content Issue",
+        "explanation": "Please explain your rating (optional):",
         "answerImprovement": "How could the answer be improved (optional)?",
         "betterCitation": "Better canada.ca or gc.ca citation URL (optional):"
       },
