@@ -29,7 +29,6 @@ async function invokeHandler(req, res) {
             provider = 'openai',
             message,
             conversationHistory = [],
-            chatId,
             lang,
             department,
             topic,
@@ -38,6 +37,9 @@ async function invokeHandler(req, res) {
             searchResults,
             scenarioOverrideText,
         } = req.body;
+
+        // Get validated chatId from middleware
+        const chatId = req.chatId;
 
         const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
             department,
@@ -81,8 +83,8 @@ async function invokeHandler(req, res) {
         }
         throw new Error(`${provider} returned no messages`);
     } catch (error) {
-        const chatId = req.body?.chatId || 'system';
-        ServerLoggingService.error(`Error in ${req.body?.provider || 'chat'} handler:`, chatId, error);
+        const errorChatId = req.chatId;
+        ServerLoggingService.error(`Error in ${req.body?.provider || 'chat'} handler:`, errorChatId, error);
         return res.status(500).json({ error: 'Error processing your request', details: error.message });
     }
 }

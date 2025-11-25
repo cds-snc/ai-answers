@@ -10,8 +10,10 @@ async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
     try {
-        const { provider = 'openai' } = req.body;
-        const result = await exponentialBackoff(() => invokeContextAgent(provider, req.body));
+        const { provider = 'openai', ...rest } = req.body;
+        // Add validated chatId from middleware to the body
+        const bodyWithChatId = { ...rest, chatId: req.chatId, provider };
+        const result = await exponentialBackoff(() => invokeContextAgent(provider, bodyWithChatId));
         return res.json(result);
     } catch (error) {
         console.error('Error processing request:', error);

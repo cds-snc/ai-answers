@@ -65,8 +65,7 @@ class DataStoreService {
 
   static async persistInteraction(interactionData) {
     try {
-
-      const response = await AuthService.fetch(getApiUrl('db-persist-interaction'), {
+      const response = await AuthService.fetch(getApiUrl('chat-persist-interaction'), {
         method: 'POST',
         body: JSON.stringify(interactionData)
       });
@@ -81,9 +80,11 @@ class DataStoreService {
 
 
 
-  static async getChatSession(sessionId) {
+  static async getChatSession(newChat = false) {
     try {
-      const response = await AuthService.fetch(getApiUrl(`chat-session-info`));
+      // Always creates a new chatId
+      const url = getApiUrl('chat-create');
+      const response = await AuthService.fetch(url);
       if (!response.ok) throw new Error('Failed to get chat session');
       return await response.json();
     } catch (error) {

@@ -1,11 +1,13 @@
 import { withSession } from '../../middleware/session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import SessionManagementService from '../../services/SessionManagementService.js';
 
 export async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
-    const { chatId, latencyMs, error, errorType } = req.body || {};
+    const { latencyMs, error, errorType } = req.body || {};
+    const chatId = req.chatId;
     if (!chatId) return res.status(400).json({ error: 'missing_chatId' });
 
     const ok = SessionManagementService.recordRequest(chatId, { latencyMs: Number(latencyMs) || 0, error: !!error, errorType });

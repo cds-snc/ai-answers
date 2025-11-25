@@ -8,11 +8,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { SettingsService } from './SettingsService.js';
 
 class CreditBucket {
-  constructor({ capacity = 60, refillPerSec = 1 }) {
+  constructor({ capacity = 60, refillPerSec = 1, isAuthenticated = false }) {
     this.capacity = capacity;
     this.credits = capacity;
     this.refillPerSec = refillPerSec;
     this.lastRefill = Date.now();
+    this.isAuthenticated = !!isAuthenticated;
   }
 
   _refill() {
@@ -23,8 +24,20 @@ class CreditBucket {
     // This keeps the hot-path synchronous and avoids DB access.
     try {
       const s = SettingsService && SettingsService.cache ? SettingsService.cache : null;
-      const cachedRefill = s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitRefillPerSec') ? s['session.rateLimitRefillPerSec'] : null;
-      const cachedCap = s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitCapacity') ? s['session.rateLimitCapacity'] : null;
+      // Prefer authenticated settings for authenticated buckets, fall back to generic session settings.
+      let cachedRefill = null;
+      let cachedCap = null;
+      if (this.isAuthenticated) {
+        cachedRefill = s && Object.prototype.hasOwnProperty.call(s, 'session.authenticatedRateLimitRefillPerSec') ? s['session.authenticatedRateLimitRefillPerSec'] : null;
+        cachedCap = s && Object.prototype.hasOwnProperty.call(s, 'session.authenticatedRateLimitCapacity') ? s['session.authenticatedRateLimitCapacity'] : null;
+      }
+      // fallback to generic keys if authenticated-specific keys are not present
+      if ((cachedRefill === null || typeof cachedRefill === 'undefined') && s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitRefillPerSec')) {
+        cachedRefill = s['session.rateLimitRefillPerSec'];
+      }
+      if ((cachedCap === null || typeof cachedCap === 'undefined') && s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitCapacity')) {
+        cachedCap = s['session.rateLimitCapacity'];
+      }
       if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) this.refillPerSec = Number(cachedRefill);
       if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
         this.capacity = Number(cachedCap);
@@ -177,17 +190,14 @@ class SessionManagementService {
         const sess = this.sessions.get(existing);
         if (sess) {
           // update lastSeen and return existing session
-          sess.lastSeen = Date.now();
+          this._touchSession(sess);
           // ensure provided chatId is tracked
           let activeChatId = providedChatId;
           if (generateChatId && !activeChatId) {
             activeChatId = uuidv4();
           }
 
-          if (activeChatId && !sess.chatIds.includes(activeChatId)) {
-            sess.chatIds.push(activeChatId);
-            this.chatToSession.set(activeChatId, sess.sessionId || existing);
-          }
+          if (activeChatId) this._ensureChatMapped(sess, activeChatId, existing);
           return { ok: true, session: sess, chatId: activeChatId };
         }
         // stale mapping: fall through and create a new session, but ensure mapping is replaced below
@@ -216,39 +226,17 @@ class SessionManagementService {
       // create token bucket for rate limiting. Prefer explicit rateLimit, otherwise
       // use defaults (already initialized from SettingsService on startup).
       // Prefer explicit rateLimit. If not provided, try reading live settings.
+      // Determine rate limit: prefer explicit, then settings (preferring authenticated if applicable), then defaults
       let rl = explicitRateLimit || null;
       if (!rl) {
-        try {
-          const capVal = await SettingsService.get('session.rateLimitCapacity');
-          const refillVal = await SettingsService.get('session.rateLimitRefillPerSec');
-          const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
-          const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
-          if (!Number.isNaN(cap) && cap > 0) rl = rl || {}, rl.capacity = cap; // ensure rl is object when values exist
-          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {}, rl.refillPerSec = refill;
-          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {}, rl.refillPerSec = refill;
-        } catch (e) {
-          // ignore and fall back to defaults
-        }
+        const fromSettings = await this._getRateLimitFromSettings(!!isAuthenticated);
+        if (fromSettings) rl = fromSettings;
+      }
+      if (!rl) {
+        rl = isAuthenticated ? { ...this.authenticatedRateLimit } : { ...this.defaultRateLimit };
       }
 
-      // If still no explicit rate limit, check if authenticated and use those defaults/settings
-      if (!rl && isAuthenticated) {
-        try {
-          const capVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
-          const refillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
-          const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
-          const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
-
-          let authRl = { ...this.authenticatedRateLimit };
-          if (!Number.isNaN(cap) && cap > 0) authRl.capacity = cap;
-          if (!Number.isNaN(refill) && refill >= 0) authRl.refillPerSec = refill;
-          rl = authRl;
-        } catch (e) {
-          rl = this.authenticatedRateLimit;
-        }
-      }
-
-      const bucket = this._createBucket(rl || this.defaultRateLimit);
+      const bucket = this._createBucket(rl || this.defaultRateLimit, !!isAuthenticated);
 
       let initialChatIds = [];
       let activeChatId = providedChatId;
@@ -285,15 +273,10 @@ class SessionManagementService {
           this.fingerprintToSession.set(fingerprintKey, sessionId);
         } catch (e) { }
       }
-      if (providedChatId) {
-        this.chatToSession.set(providedChatId, sessionId);
-      }
-      if (activeChatId && activeChatId !== providedChatId) {
-        this.chatToSession.set(activeChatId, sessionId);
-      }
+      if (providedChatId) this._ensureChatMapped(session, providedChatId, sessionId);
+      if (activeChatId && activeChatId !== providedChatId) this._ensureChatMapped(session, activeChatId, sessionId);
     } else {
-      session.lastSeen = now;
-      session.ttl = ttl; // allow updating ttl
+      this._touchSession(session, now, ttl); // allow updating ttl
     }
 
     // If there's a provided chatId for an existing session, ensure it's tracked
@@ -303,15 +286,43 @@ class SessionManagementService {
     }
 
     if (session && activeChatId) {
-      session.chatIds = session.chatIds || [];
-      if (!session.chatIds.includes(activeChatId)) {
-        session.chatIds.push(activeChatId);
-        // note: `session.chatId` is deprecated; do not set it
-        this.chatToSession.set(activeChatId, sessionId);
-      }
+      this._ensureChatMapped(session, activeChatId, sessionId);
     }
 
     return { ok: true, session, chatId: activeChatId };
+  }
+
+  // Read rate limit values from SettingsService. When preferAuthenticated is true,
+  // try the authenticated-specific keys first and fall back to generic keys.
+  // Returns an object like { capacity, refillPerSec } if any values found, otherwise null.
+  async _getRateLimitFromSettings(preferAuthenticated = false) {
+    try {
+      let capVal = null;
+      let refillVal = null;
+      if (preferAuthenticated) {
+        capVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
+        refillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
+      }
+      // fallback to generic if auth-specific not present
+      if (capVal === null || typeof capVal === 'undefined' || capVal === '') {
+        const g = await SettingsService.get('session.rateLimitCapacity');
+        if (!(g === null || typeof g === 'undefined' || g === '')) capVal = g;
+      }
+      if (refillVal === null || typeof refillVal === 'undefined' || refillVal === '') {
+        const g = await SettingsService.get('session.rateLimitRefillPerSec');
+        if (!(g === null || typeof g === 'undefined' || g === '')) refillVal = g;
+      }
+
+      const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
+      const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
+
+      const out = {};
+      if (!Number.isNaN(cap) && cap > 0) out.capacity = cap;
+      if (!Number.isNaN(refill) && refill >= 0) out.refillPerSec = refill;
+      return Object.keys(out).length ? out : null;
+    } catch (e) {
+      return null;
+    }
   }
 
 
@@ -552,10 +563,24 @@ class SessionManagementService {
     this.fingerprintToSession.clear();
   }
 
-  _createBucket({ capacity = null, refillPerSec = null } = {}) {
+  _createBucket({ capacity = null, refillPerSec = null } = {}, isAuthenticated = false) {
     const cap = (capacity !== null && !Number.isNaN(Number(capacity))) ? Number(capacity) : this.defaultRateLimit.capacity;
     const refill = (refillPerSec !== null && !Number.isNaN(Number(refillPerSec))) ? Number(refillPerSec) : this.defaultRateLimit.refillPerSec;
-    return new CreditBucket({ capacity: cap, refillPerSec: refill });
+    return new CreditBucket({ capacity: cap, refillPerSec: refill, isAuthenticated });
+  }
+
+  _touchSession(session, now = Date.now(), ttl = undefined) {
+    if (!session) return;
+    session.lastSeen = now;
+    if (typeof ttl !== 'undefined' && ttl !== null) session.ttl = ttl;
+  }
+
+  _ensureChatMapped(session, chatId, fallbackSessionId = null) {
+    if (!session || !chatId) return;
+    session.chatIds = session.chatIds || [];
+    if (!session.chatIds.includes(chatId)) session.chatIds.push(chatId);
+    const sid = session.sessionId || fallbackSessionId || null;
+    if (sid) this.chatToSession.set(chatId, sid);
   }
 }
 

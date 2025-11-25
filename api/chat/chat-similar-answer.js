@@ -86,7 +86,7 @@ async function handler(req, res) {
 
     function validateAndExtract(req) {
         if (req.method !== 'POST') return { error: { code: 405, message: `Method ${req.method} Not Allowed`, headers: { Allow: ['POST'] } } };
-        const chatId = req.body?.chatId || null;
+        const chatId = req.chatId || null;
         const questions = Array.isArray(req.body?.questions) ? req.body.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim()) : [];
         if (questions.length === 0) return { error: { code: 400, message: 'Missing questions' } };
         const selectedAI = req.body?.selectedAI || 'openai';

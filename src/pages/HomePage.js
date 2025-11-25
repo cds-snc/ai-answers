@@ -93,9 +93,19 @@ const HomePage = ({ lang = "en" }) => {
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
   useEffect(() => {
-    // Use client SessionService wrapper which checks siteSetting + sessions via API
+    // First attempt to create a chat session (chat-create) before checking availability.
+    // This ensures the server-side session exists prior to the availability check.
     (async () => {
       try {
+        if (!reviewChatId) {
+          try {
+            await fetchSession();
+          } catch (e) {
+            // fetchSession handles its own errors and sets chatSessionFailed; continue to availability check
+            console.debug('fetchSession failed (continuing to availability):', e);
+          }
+        }
+
         const ok = await SessionService.isAvailable();
         // isAvailable() returns true only when site is 'available' AND sessions exist
         // We set sessionAvailable = ok and isAvailable = ok for compatibility with existing logic

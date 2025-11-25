@@ -75,7 +75,7 @@ const AnswerService = {
       );
 
 
-      const response = await AuthService.fetch(getProviderApiUrl(provider, 'message'), {
+      const response = await AuthService.fetch(getApiUrl('chat-message'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

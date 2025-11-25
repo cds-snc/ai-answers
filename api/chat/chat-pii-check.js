@@ -10,7 +10,8 @@ async function handler(req, res) {
   }
 
   try {
-    const { message, chatId = 'system', agentType = 'openai' } = req.body || {};
+    const { message, agentType = 'openai' } = req.body || {};
+    const chatId = req.chatId;
     ServerLoggingService.info('PII check request received.', chatId, { agentType });
 
     const piiResult = await invokePIIAgent(agentType, { chatId, question: message });
@@ -24,7 +25,7 @@ async function handler(req, res) {
 
     return res.json(piiResult);
   } catch (error) {
-    ServerLoggingService.error('Error processing PII check.', req?.body?.chatId || 'system', error);
+    ServerLoggingService.error('Error processing PII check.', req.chatId, error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }

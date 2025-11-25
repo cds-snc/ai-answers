@@ -18,7 +18,7 @@ async function handler(req, res) {
     };
 
     const resp = await AgentOrchestratorService.invokeWithStrategy({
-      chatId: 'detect-language',
+      chatId: req.chatId,
       agentType: selectedAI,
       request: { text },
       createAgentFn,
@@ -27,10 +27,10 @@ async function handler(req, res) {
 
     // Normalize response shape for callers
     const result = resp?.result || null;
-    ServerLoggingService.info('detect-language result', 'chat-detect-language', { result });
+    ServerLoggingService.info('detect-language result', req.chatId, { result });
     return res.json({ result });
   } catch (err) {
-    ServerLoggingService.error('Error in chat-detect-language', 'chat-detect-language', err);
+    ServerLoggingService.error('Error in chat-detect-language', req.chatId, err);
     return res.status(500).json({ error: 'internal error' });
   }
 }
