@@ -14,8 +14,10 @@ export const getParentDomain = (host, nodeEnv = process.env.NODE_ENV) => {
   // If not a multi-label hostname (localhost, example), don't set domain
   if (parts.length <= 2) return undefined;
 
-  // Use the last 3 labels as the parent domain (e.g. 'alpha.canada.ca')
-  return '.' + parts.slice(-3).join('.');
+  // Drop the first label (subdomain) to get the parent domain
+  // e.g. 'ai-answers.alpha.canada.ca' -> '.alpha.canada.ca'
+  // e.g. 'reponses-ia.cdssandbox.xyz' -> '.cdssandbox.xyz'
+  return '.' + parts.slice(1).join('.');
 };
 
 export const getCookieOptions = (req, maxAge) => {
