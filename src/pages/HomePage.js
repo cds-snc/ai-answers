@@ -93,19 +93,9 @@ const HomePage = ({ lang = "en" }) => {
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
   useEffect(() => {
-    // First attempt to create a chat session (chat-create) before checking availability.
-    // This ensures the server-side session exists prior to the availability check.
+    // Use client SessionService wrapper which checks siteSetting + sessions via API
     (async () => {
       try {
-        if (!reviewChatId) {
-          try {
-            await fetchSession();
-          } catch (e) {
-            // fetchSession handles its own errors and sets chatSessionFailed; continue to availability check
-            console.debug('fetchSession failed (continuing to availability):', e);
-          }
-        }
-
         const ok = await SessionService.isAvailable();
         // isAvailable() returns true only when site is 'available' AND sessions exist
         // We set sessionAvailable = ok and isAvailable = ok for compatibility with existing logic
@@ -136,15 +126,19 @@ const HomePage = ({ lang = "en" }) => {
 
   useEffect(() => {
     if (reviewChatId) return;
-    // Only fetch a chat session if not explicitly unavailable (site and sessions), or if privileged
-    const siteNotFalse = serviceStatus.isAvailable !== false;
-    const sessionsNotFalse = serviceStatus.sessionAvailable !== false;
-    if (isPrivileged || (siteNotFalse && sessionsNotFalse)) {
-      if (!chatId) {
-        fetchSession();
-      }
+
+    // If privileged users, always fetch a chat.
+    if (isPrivileged) {
+      if (!chatId) fetchSession();
+      return;
     }
-  }, [serviceStatus.isAvailable, isPrivileged, chatId, reviewChatId]);
+
+    // For normal users, wait until availability is confirmed (true)
+    const available = serviceStatus.isAvailable === true && serviceStatus.sessionAvailable === true;
+    if (available && !chatId) {
+      fetchSession();
+    }
+  }, [serviceStatus.isAvailable, serviceStatus.sessionAvailable, isPrivileged, chatId, reviewChatId]);
 
   useEffect(() => {
     if (reviewChatId) {

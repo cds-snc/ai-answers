@@ -6,7 +6,6 @@ import { SettingsService } from '../services/SettingsService.js';
 
 const secretKey = process.env.JWT_SECRET_KEY || 'dev-secret';
 const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
-const CHAT_COOKIE_NAME = 'token';
 const SESSION_COOKIE_NAME = 'sessionToken';
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // default 30 days fallback
 
@@ -140,13 +139,7 @@ export default function sessionMiddleware(options = {}) {
           return res.end(JSON.stringify({ error: 'botDetected', message: 'Fingerprint required for existing sessions' }));
         }
 
-        // If the session exists (or was just recovered) but has no chatIds (e.g. server restart),
-        // generate a new chatId so the client has a valid context.
-        let chatId = null;
-        if (sessionInfo && (!sessionInfo.chatIds || sessionInfo.chatIds.length === 0)) {
-          chatId = uuidv4();
-        }
-
+       
         try {
           // register will update ttl/lastSeen for existing session
           const isAuthenticated = !!req.user;

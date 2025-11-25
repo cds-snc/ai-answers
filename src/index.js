@@ -50,10 +50,8 @@ if (adobeUrl) {
 const renderApp = () => {
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(
-    <React.StrictMode>
       <App />
-    </React.StrictMode>
-  );
+    );
 };
 // Start deterministic fingerprint initialization early at bootstrap so
 // service modules can await `window.fpInitPromise` to avoid timing races.

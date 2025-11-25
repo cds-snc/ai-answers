@@ -5,7 +5,7 @@ const meHandler = async (req, res) => {
         const user = await getUserFromCookie(req);
 
         if (!user) {
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Not authenticated'
             });
