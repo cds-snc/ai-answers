@@ -1,9 +1,16 @@
 import { createContextAgent } from '../agents/AgentFactory.js';
+import loadContextSystemPrompt from '../agents/prompts/contextSystemPrompt.js';
 
 const invokeContextAgent = async (agentType, request) => {
   try {
 
-    const { chatId, message, systemPrompt, searchResults, conversationHistory = [] } = request;
+    let { chatId, message, systemPrompt, searchResults, conversationHistory = [], language = 'en' } = request;
+    
+    // Load system prompt from contextSystemPrompt.js if not provided
+    if (!systemPrompt) {
+      systemPrompt = await loadContextSystemPrompt(language);
+    }
+    
     const contextAgent = await createContextAgent(agentType, chatId);
 
     const messages = [
