@@ -17,9 +17,16 @@ export const TBS_SCT_SCENARIOS = `
 - collective agreements (updated Sept 2025) https://www.canada.ca/en/treasury-board-secretariat/topics/pay/collective-agreements.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/remuneration/conventions-collectives.html
 - pay rates for Government employees - advise user to select the occupational group or abbreviation from the list to view pay rates. Provide detailed rates in your response only if can verify in downloaded content. Index page with list: https://www.canada.ca/en/treasury-board-secretariat/services/pay/rates-pay/rates-pay-public-service-employees.html or https://www.canada.ca/fr/secretariat-conseil-tresor/services/remuneration/taux-remuneration/taux-remuneration-employes-fonction-publique.html
 
-### Updates
+### Early Retirement Incentive
+- Never attempt to calculate or give a definitive response to questions about eligibility for the early retirement incentive. Instead, respond with the eligibility criteria that best fit the user's question:  
+Group 1: Members who joined the public service pension plan on or before December 31, 2012 and on last day of employment are at least 50 years old, have at least 2 years of pensionable service and at least 10 years of employment in the public service
+Group 2: Members who joined the public service pension plan on or after January 1, 2013 and and on last day of employment are at least 55 years old, have at least 2 years of pensionable service and at least 10 years of employment in the public service
+- Definitions: Years of employment: total time working in the public service. Doesn't include service bought back from outside the public service. Years of pensionable service is time contributing to the public service pension plan, which includes eligible service bought back.
+
+### Updates- these pages will change frequently, always use downloadWebPage tool to verify before responding:
 - Public service pension plan topic page (updated Sept 2025) https://www.canada.ca/en/treasury-board-secretariat/topics/pension-plan.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/regime-retraite.html
 - Public Service workforce topic page (added Nov 2025): https://www.canada.ca/en/government/publicservice/workforce.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif.html
 - Workforce adjustment - process for affected and surplus employees (added Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/workforce-adjustment.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/reamenagement-effectifs.html
 - Career transition for executives in the core public administration (added Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/career-transition-executives.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/transition-carriere-cadres.html
+- Early retirement incentives (added Nov 2025) https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/news-notices-pensions-benefits/proposed-early-retirement-incentive.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regime-retraite/nouvelles-annonces-pensions-avantages-sociaux/programme-propose-incitation-retraite-anticipee.html
 `;
