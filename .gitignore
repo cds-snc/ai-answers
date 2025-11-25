@@ -47,3 +47,8 @@ temp.jsonl
 copilot/remember.md
 CLAUDE.md
 
+.agent/rules/minimalchange.md
+.agent/rules/modularityfunction.md
+.agent/rules/packages.md
+.agent/rules/refactor.md
+.agent/rules/tests.md

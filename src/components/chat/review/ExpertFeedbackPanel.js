@@ -159,7 +159,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
                                     <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
                                 ) : null}
-                                    {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
+                                {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>
                         );
                     })()}
@@ -169,6 +169,8 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                         <tr>
                             <th>{t('reviewPanels.sentence') || 'Sentence'}</th>
                             <th>{t('reviewPanels.expertScore') || 'Expert score'}</th>
+                            <th>{t('homepage.expertRating.options.harmful') || 'Harmful'}</th>
+                            <th>{t('homepage.expertRating.options.contentIssue') || 'Content Issue'}</th>
                             <th>{t('reviewPanels.explanation') || 'Explanation'}</th>
                         </tr>
                     </thead>
@@ -177,10 +179,15 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                             const row = (data && data.sentences && data.sentences[i]) || {};
                             const scoreVal = (typeof row.score !== 'undefined' && row.score !== null) ? row.score : getExpertScore(i);
                             const explVal = (row.explanation || (expert && expert[`sentence${i + 1}Explanation`])) || (t('reviewPanels.notAvailable') || 'N/A');
+                            const harmfulVal = (typeof row.harmful !== 'undefined') ? row.harmful : (expert && expert[`sentence${i + 1}Harmful`]);
+                            const contentIssueVal = (typeof row.contentIssue !== 'undefined') ? row.contentIssue : (expert && expert[`sentence${i + 1}ContentIssue`]);
+
                             return (
                                 <tr key={`s-${i}`}>
                                     <td>{s || (t('reviewPanels.notAvailable') || 'N/A')}</td>
                                     <td>{typeof scoreVal !== 'undefined' && scoreVal !== null ? scoreVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{harmfulVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
+                                    <td>{contentIssueVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
                                     <td>{explVal}</td>
                                 </tr>
                             );
@@ -198,6 +205,8 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                                 <tr key="citation-row" className="citation-row">
                                     <td>{t('reviewPanels.citation') || 'Citation'}</td>
                                     <td>{scoreCell}</td>
+                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
                                     <td>{explCell}</td>
                                 </tr>
                             );
