@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.64.0](https://github.com/cds-snc/ai-answers/compare/v1.63.0...v1.64.0) (2025-11-25)
+
+
+### Features
+
+* implement cookie utility functions for secure cookie handling a… ([0a8f31d](https://github.com/cds-snc/ai-answers/commit/0a8f31dedbf33a0f9ab4e74b52fb135f0963b045))
+* implement cookie utility functions for secure cookie handling across subdomains ([5420e6b](https://github.com/cds-snc/ai-answers/commit/5420e6b800ee46a3621da482c7c75221e04717f3))
+
+
+### Bug Fixes
+
+* add early retirement section ([f82c6b3](https://github.com/cds-snc/ai-answers/commit/f82c6b37e4ec4195911ce3953ab7fc087aa48e38))
+* add early retirement section ([bcb6968](https://github.com/cds-snc/ai-answers/commit/bcb69689847a7241418196a925cfe6bbdad97471))
+
 ## [1.63.0](https://github.com/cds-snc/ai-answers/compare/v1.62.0...v1.63.0) (2025-11-25)
 
 
