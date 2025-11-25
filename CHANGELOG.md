@@ -1,5 +1,69 @@
 # Changelog
 
+## [1.63.0](https://github.com/cds-snc/ai-answers/compare/v1.62.0...v1.63.0) (2025-11-25)
+
+
+### Features
+
+* Add API endpoints for expert feedback management, public evaluation listings, detailed chat retrieval, and server-side logging, with enhanced authentication. ([272f0d0](https://github.com/cds-snc/ai-answers/commit/272f0d00e28a2d9ce4e174fca7994b170e1646dd))
+* add authentication, evaluation, expert feedback APIs, and server infrastructure ([993fae5](https://github.com/cds-snc/ai-answers/commit/993fae59b8704598f5ea2af32cef2b303a272533))
+* add batch chatId registration endpoint and integrate with batch processing ([05d206b](https://github.com/cds-snc/ai-answers/commit/05d206b02306e4a4aa3ce54587b850b1af1ba584))
+* add batch chatId registration endpoint and integrate with batch… ([32bc3f4](https://github.com/cds-snc/ai-answers/commit/32bc3f43ec2e5f1efefed5317fbbc245e6f7d1d5))
+* Add comprehensive authentication, evaluation, and feedback API endpoints and server setup. ([0f27f8c](https://github.com/cds-snc/ai-answers/commit/0f27f8c76cd6722781023c47356e89aa6bae335a))
+* add expert feedback API endpoint and UI component for response evaluation. ([38c44b4](https://github.com/cds-snc/ai-answers/commit/38c44b4c9170169b45aa3190b4288f48eca91572))
+* add model data localization in English and French ([a6cefde](https://github.com/cds-snc/ai-answers/commit/a6cefde338a24fe7abaecc3a1de1b56b71096a78))
+* Add new chat API endpoints for translation, context, language detection, graph execution, messaging, PII, and reporting. ([479ae64](https://github.com/cds-snc/ai-answers/commit/479ae64069ec6405d19af92d25aaec7661eeaca4))
+* Add new services, pages, and a chat workflow for session, database, and user management. ([70709be](https://github.com/cds-snc/ai-answers/commit/70709be52fcbf77e5953f43228e6dd33c1297923))
+* add rules for refactoring and testing to .gitignore ([b354c93](https://github.com/cds-snc/ai-answers/commit/b354c93edef05bc4350271bcad68fa6bc7e68ecd))
+* Add UsersPage component to display and manage user accounts with editable roles and statuses. ([6a067d8](https://github.com/cds-snc/ai-answers/commit/6a067d88ca8d30d203eeba2a2848c1bba142519a))
+* add utility to get session bypass headers for authenticated admin users. ([69a55c2](https://github.com/cds-snc/ai-answers/commit/69a55c2c1b380adb6bd19ca29a6a58cb819b4bd5))
+* build system prompt server-side and update request handling in API endpoints ([3187811](https://github.com/cds-snc/ai-answers/commit/3187811ad30a136fab975b1747f9e2f3ae9226d2))
+* enhance evaluation details and translation support in chat view ([5e23f32](https://github.com/cds-snc/ai-answers/commit/5e23f3277a2b3369f3430acc71fdc48a030f950f))
+* Implement advanced session management with rate limiting and capacity, add session middleware, a Users page, and a chat graph run API endpoint. ([f524495](https://github.com/cds-snc/ai-answers/commit/f52449506ed0b48abfde56f46588d80e3968fbcc))
+* Implement comprehensive authentication, evaluation, and feedback management systems with new API endpoints and services. ([d56c13e](https://github.com/cds-snc/ai-answers/commit/d56c13e8d719a0d901b712d3b55417bca85e8bc7))
+* Implement comprehensive user authentication with JWT, cookie-based sessions, and 2FA verification. ([49409ae](https://github.com/cds-snc/ai-answers/commit/49409ae1ab8cdaf10552a82fb8ff0b707801d7d6))
+* Implement core AI chat functionality including answer processing, data persistence, and session management. ([ae33532](https://github.com/cds-snc/ai-answers/commit/ae3353292aa51472f373906ba1472e946277e0c9))
+* implement core chat system with session management, graph execution, and interaction persistence APIs. ([7448fa5](https://github.com/cds-snc/ai-answers/commit/7448fa573f3bbd325d4a56903328495ebd100c45))
+* Implement expert feedback functionality with new model and component, and add French and English localization. ([0091ab8](https://github.com/cds-snc/ai-answers/commit/0091ab8f7d1d94d18aba31c2842dca075eae300a))
+* Implement initial backend server with API routes, middleware, and authentication. ([88b1675](https://github.com/cds-snc/ai-answers/commit/88b1675820e95723d6a675e2b6c712d9c6266dd6))
+* Implement new chat system with context handling, message processing, and various API endpoints. ([a21581a](https://github.com/cds-snc/ai-answers/commit/a21581a7cecb4cb79d7759c2df1d30dcac3a7a6d))
+* Implement server-side authentication middleware for JWT and client-side role-based route protection components. ([e73863c](https://github.com/cds-snc/ai-answers/commit/e73863ce674ad2adac1ef31b32b9fb234b1b0f6a))
+* Implement session management middleware with JWTs, cookies, and bot detection, and create a Users page. ([9ff7f70](https://github.com/cds-snc/ai-answers/commit/9ff7f704981ccd19b6357ab97f8eb00826fd0db4))
+* Implement session management, authentication, streaming chat graph API, and a users page. ([17305e6](https://github.com/cds-snc/ai-answers/commit/17305e65c4f4989340130ec5a708ccc839a9e4c3))
+* Implement updated authentication system with user roles, 2FA, and new API endpoints for evaluation and feedback management. ([627a296](https://github.com/cds-snc/ai-answers/commit/627a29684715884f2be001479bf4d1ec2045be49))
+* introduce core AI answer services, multi-provider API integrations, and administrative pages. ([08f1c55](https://github.com/cds-snc/ai-answers/commit/08f1c558ca4a7039f3caf46df74914ca0f9f035a))
+* move context system prompt to agents/prompts and update imports ([34beadf](https://github.com/cds-snc/ai-answers/commit/34beadf258f2d7849771bcb7b8980f67e03c00e6))
+* move context system prompt to agents/prompts and update imports ([25eaeb2](https://github.com/cds-snc/ai-answers/commit/25eaeb28bb82de4049d776c93f6e3efdd578f96b))
+* Remove deprecated chat-session endpoint and update related documentation ([b33d7ac](https://github.com/cds-snc/ai-answers/commit/b33d7ac7fa3324a77753d51138d268bfa13758bd))
+* Replace deprecated chat-session endpoint with chat-session-info and update related references ([fb7c0e4](https://github.com/cds-snc/ai-answers/commit/fb7c0e4e8df746dd7cb23a5e5a7749fc843349b1))
+* update context directory resolution and add fallback MongoDB URI for documentation generator ([19a0c1d](https://github.com/cds-snc/ai-answers/commit/19a0c1d5c50ae152f0874cad00946082d49b53f9))
+* update file paths to use server-side copies in extract_domains and generate-system-prompt-documentation scripts ([cec6dc6](https://github.com/cds-snc/ai-answers/commit/cec6dc611a6c211de5bf77bdfcf2640d02dd8e11))
+* update import paths for scenarios to use new directory structure ([59b7d05](https://github.com/cds-snc/ai-answers/commit/59b7d051370566bdddb6f41e8706d0f2107d5d16))
+
+
+### Bug Fixes
+
+* docs-shoot-scenarios ([a43c6cd](https://github.com/cds-snc/ai-answers/commit/a43c6cd241ccba20eab18a4c3032b19468d4da4c))
+* docs-shoot-scenarios ([694088d](https://github.com/cds-snc/ai-answers/commit/694088da7a1a73b79382271be0a1bc4be33bac69))
+* enhance cookie security settings and update localization for set… ([cf75926](https://github.com/cds-snc/ai-answers/commit/cf7592621c0f22eb67aa074708c8c11f536c1483))
+* enhance cookie security settings and update localization for settings page ([f7b14b5](https://github.com/cds-snc/ai-answers/commit/f7b14b5db76055de803a14ff172484092fa44f9a))
+* Enhance security by managing chatId server-side and updating related handlers ([debf4ca](https://github.com/cds-snc/ai-answers/commit/debf4ca10666c200395c10f294864f219b48043a))
+* Enhance session metrics tracking and normalize creditsLeft for session-level visibility ([28cff3e](https://github.com/cds-snc/ai-answers/commit/28cff3e75c6ec18c4a15e5c5fdcf655a22bbbd2b))
+* more clean up ([3f2729d](https://github.com/cds-snc/ai-answers/commit/3f2729d8880d99e412b6bf528c52c53129e052f2))
+* more updates ([db5191c](https://github.com/cds-snc/ai-answers/commit/db5191cf4263ca4b1d922d82f1fe049fcf10718c))
+* more-docs ([3873360](https://github.com/cds-snc/ai-answers/commit/3873360ab30efc7d01a93f7adf18e11df7afe711))
+* readme architecture ([2f546e3](https://github.com/cds-snc/ai-answers/commit/2f546e37e96891d3bc629eea99efd0b52d7f86a4))
+* Update authentication response and clean up session handling for improved security ([30d93d9](https://github.com/cds-snc/ai-answers/commit/30d93d9cc8d6bf82a24abfa75ffc163153f49aed))
+* update context handling to include language in requests and improve system prompt loading ([bfa3858](https://github.com/cds-snc/ai-answers/commit/bfa3858c9856224201e75e7612923928e7caeeb6))
+* update system card ([357eee4](https://github.com/cds-snc/ai-answers/commit/357eee4c33439aebdec7aa82b1917ede0b208c39))
+
+
+### Code Refactoring
+
+* remove unused context agent imports from server.js ([d51c887](https://github.com/cds-snc/ai-answers/commit/d51c887786fff71a10d230e795f887ee13d05f59))
+* remove unused context agent imports from server.js ([6c37591](https://github.com/cds-snc/ai-answers/commit/6c37591a503c1d84be09ad1c33a885c16cb930bf))
+* Update chat report handler to improve export structure and maintainability ([b7587ec](https://github.com/cds-snc/ai-answers/commit/b7587ec4e9d2b068b9dc9bdcb578529a67a8c82c))
+
 ## [1.62.0](https://github.com/cds-snc/ai-answers/compare/v1.61.1...v1.62.0) (2025-11-20)
 
 
