@@ -4,7 +4,7 @@ import AuthService from './AuthService.js';
 class EvaluationService {
   static async getEvaluation({ interactionId }) {
     if (!interactionId) throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('eval-get'), {
+    const response = await AuthService.fetch(getApiUrl('eval-get'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId })
@@ -18,7 +18,7 @@ class EvaluationService {
 
   static async deleteEvaluation({ interactionId }) {
     if (!interactionId) throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('eval-delete'), {
+    const response = await AuthService.fetch(getApiUrl('eval-delete'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId })
@@ -32,7 +32,7 @@ class EvaluationService {
 
   static async reEvaluate({ interactionId, forceFallbackEval = false }) {
     if (!interactionId) throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('eval-run'), {
+    const response = await AuthService.fetch(getApiUrl('eval-run'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId, forceFallbackEval, replaceExisting: true })
@@ -44,7 +44,7 @@ class EvaluationService {
     return response.json();
   }
   static async deleteExpertEval(chatId) {
-    const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-expert-eval'), {
+    const response = await AuthService.fetch(getApiUrl('db-delete-expert-eval'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chatId })
@@ -61,7 +61,7 @@ class EvaluationService {
       if (lastProcessedId) payload.lastProcessedId = lastProcessedId;
       if (startTime) payload.startTime = startTime;
       if (endTime) payload.endTime = endTime;
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
+      const response = await AuthService.fetch(getApiUrl('db-generate-evals'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -81,7 +81,7 @@ class EvaluationService {
       if (endTime) payload.endTime = endTime;
       payload.action = 'delete';
       if (onlyEmpty) payload.onlyEmpty = true;
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
+      const response = await AuthService.fetch(getApiUrl('db-generate-evals'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -96,7 +96,7 @@ class EvaluationService {
 
   static async getEvalNonEmptyCount() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-eval-non-empty-count'));
+      const response = await AuthService.fetch(getApiUrl('db-eval-non-empty-count'));
       if (!response.ok) throw new Error('Failed to get non-empty eval count');
       const data = await response.json();
       return data.count;
@@ -108,7 +108,7 @@ class EvaluationService {
 
   static async getExpertFeedbackCount() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-expert-feedback-count'));
+      const response = await AuthService.fetch(getApiUrl('db-expert-feedback-count'));
       if (!response.ok) throw new Error('Failed to get expert feedback count');
       const data = await response.json();
       return data.count;
@@ -120,7 +120,7 @@ class EvaluationService {
 
   static async getEvalMetrics() {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-eval-metrics'));
+      const response = await AuthService.fetch(getApiUrl('db-eval-metrics'));
       if (!response.ok) throw new Error('Failed to get eval metrics');
       return await response.json();
     } catch (error) {
@@ -144,7 +144,7 @@ class EvaluationService {
       const query = params.toString();
       // Use the short endpoint name so getApiUrl constructs /api/eval/eval-dashboard
       const url = getApiUrl(`eval-dashboard${query ? `?${query}` : ''}`);
-      const response = await AuthService.fetchWithAuth(url);
+      const response = await AuthService.fetch(url);
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || 'Failed to fetch eval dashboard');

@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
-import { withUser, withProtection } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackExpertNeverStaleHandler(req, res) {
   if (req.method !== 'POST') {
@@ -58,6 +58,4 @@ async function feedbackExpertNeverStaleHandler(req, res) {
   }
 }
 
-export default function handler(req, res) {
-  return withProtection(withUser(feedbackExpertNeverStaleHandler))(req, res);
-}
+export default withProtection(feedbackExpertNeverStaleHandler, authMiddleware, partnerOrAdminMiddleware);

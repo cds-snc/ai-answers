@@ -21,7 +21,18 @@ const SessionPage = ({ lang: propLang }) => {
     setError('');
     try {
       const sess = await SessionService.getSessionMetrics();
-      setSessions(sess);
+      // Ensure creditsLeft reflects the session-level value (shared across
+      // multiple chatIds) while preserving chat-specific metrics for the
+      // other columns. Build a lookup of sessionId -> creditsLeft and
+      // normalize the returned rows to use that value.
+      const sessionCredits = {};
+      for (const row of sess || []) {
+        if (row && typeof row.sessionId !== 'undefined' && typeof row.creditsLeft !== 'undefined') {
+          if (typeof sessionCredits[row.sessionId] === 'undefined') sessionCredits[row.sessionId] = row.creditsLeft;
+        }
+      }
+      const normalized = (sess || []).map(r => ({ ...r, creditsLeft: sessionCredits[r.sessionId] ?? r.creditsLeft }));
+      setSessions(normalized);
     } catch (e) {
       // prefer admin.session.errorLoading if status/text available
       if (e && e.status) {

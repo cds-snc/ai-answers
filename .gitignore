@@ -52,3 +52,5 @@ CLAUDE.md
 .agent/rules/packages.md
 .agent/rules/refactor.md
 .agent/rules/tests.md
+.agent/rules/api.md
+.agent/rules/localize.md

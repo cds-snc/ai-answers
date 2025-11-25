@@ -1,8 +1,8 @@
 // src/ContextService.js
 import { getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
-import { getFingerprint } from '../utils/fingerprint.js';
-import getSessionBypassHeaders from './sessionHeaders.js';
+
+import AuthService from './AuthService.js';
 
 
 
@@ -68,14 +68,11 @@ const ContextService = {
       );
       await LoggingService.info(chatId, 'Calling context agent with:', { context: messagePayload });
       let url = getApiUrl('chat-context');
-      const fp = await getFingerprint();
-      const extraHeaders = getSessionBypassHeaders();
-      const response = await fetch(url, {
+
+      const response = await AuthService.fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-fp-id': fp,
-          ...extraHeaders
         },
         body: JSON.stringify(messagePayload),
       });
@@ -95,14 +92,10 @@ const ContextService = {
 
   contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai', referringUrl = '', translationData = null) => {
     try {
-      const fp = await getFingerprint();
-      const extraHeaders = getSessionBypassHeaders();
-      const searchResponse = await fetch(getApiUrl('search-context'), {
+      const searchResponse = await AuthService.fetch(getApiUrl('search-context'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-fp-id': fp,
-          ...extraHeaders
         },
         body: JSON.stringify({
           message: message,

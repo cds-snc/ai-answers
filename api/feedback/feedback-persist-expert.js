@@ -28,7 +28,7 @@ async function feedbackPersistExpertHandler(req, res) {
     }
     let expertFeedbackDoc = new ExpertFeedback();
     Object.assign(expertFeedbackDoc, expertFeedback);
-    // Attach expertEmail if available
+    // Attach expertEmail if available (req.user set by authMiddleware)
     if (req.user && req.user.email) {
       expertFeedbackDoc.expertEmail = req.user.email;
     }

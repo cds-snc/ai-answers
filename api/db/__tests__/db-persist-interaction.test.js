@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
-import handler from '../db-persist-interaction.js';
+import handler from '../../chat/chat-persist-interaction.js';
 import { Chat } from '../../../models/chat.js';
 import { Interaction } from '../../../models/interaction.js';
 import { Context } from '../../../models/context.js';
@@ -21,7 +21,7 @@ vi.mock('../../../services/ServerLoggingService.js');
 const mongoUri = global.__MONGO_URI__ || process.env.MONGODB_URI;
 const describeFn = mongoUri ? describe : describe.skip;
 
-describeFn('db-persist-interaction handler', () => {
+describeFn('chat-persist-interaction handler', () => {
   let req, res;
 
   beforeAll(async () => {
@@ -36,8 +36,8 @@ describeFn('db-persist-interaction handler', () => {
     req = {
       method: 'POST',
       headers: {},
+      chatId: 'test-chat-id', // Now comes from middleware via req.chatId
       body: {
-        chatId: 'test-chat-id',
         userMessageId: 'test-message-id',
         selectedAI: 'test-ai',
         searchProvider: 'test-provider',
@@ -104,7 +104,7 @@ describeFn('db-persist-interaction handler', () => {
     expect(res.json).toHaveBeenCalledWith({ message: 'Interaction logged successfully' });
 
     // Verify chat was created
-    const chat = await Chat.findOne({ chatId: req.body.chatId });
+    const chat = await Chat.findOne({ chatId: req.chatId });
     expect(chat).toBeTruthy();
     expect(chat.aiProvider).toBe(req.body.selectedAI);
     expect(chat.searchProvider).toBe(req.body.searchProvider);

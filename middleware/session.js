@@ -6,7 +6,6 @@ import { SettingsService } from '../services/SettingsService.js';
 
 const secretKey = process.env.JWT_SECRET_KEY || 'dev-secret';
 const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
-const CHAT_COOKIE_NAME = 'token';
 const SESSION_COOKIE_NAME = 'sessionToken';
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // default 30 days fallback
 
@@ -16,32 +15,18 @@ export default function sessionMiddleware(options = {}) {
     try {
       const cookies = parseCookies(req.headers?.cookie || '');
 
-      // Preserve existing chat token behaviour for compatibility
-      let chatId = null;
-      const chatToken = cookies[CHAT_COOKIE_NAME];
-      if (chatToken) {
-        try {
-          const decodedChat = jwt.decode(chatToken) || {};
-          chatId = decodedChat.jti || decodedChat.jwtid || null;
-        } catch (e) {
-          // ignore malformed chat token
-        }
-      }
-
-      if (!chatId) {
-        chatId = req.query?.chatId || req.headers['x-chat-id'] || null;
-      }
-      if (chatId) req.chatId = chatId;
+      // chatId is now generated and managed server-side only
+      // No longer accept client-provided chatId for security
 
       // Compute HMACed fingerprint key early so it can be passed to any
       // SessionManagementService.register call (new or existing sessions).
-      const fingerprintHeader = (req.headers['x-fp-hash'] || req.headers['x-fp-id'] || '').toString();
+      const fingerprintHeader = (req.headers['x-fp-id'] || '').toString();
       const fingerprintKey = fingerprintHeader
         ? crypto.createHmac('sha256', fingerprintPepper).update(fingerprintHeader).digest('hex')
         : null;
 
       let sessionId = null;
-      const sessionToken = cookies[SESSION_COOKIE_NAME] || req.headers['x-session-token'];
+      const sessionToken = cookies[SESSION_COOKIE_NAME];
       if (sessionToken) {
         try {
           const decodedSession = jwt.verify(sessionToken, secretKey) || {};
@@ -62,7 +47,8 @@ export default function sessionMiddleware(options = {}) {
 
         // Pass fingerprintKey when registering an existing-but-unknown session
         // so the session manager can map any provided fingerprint to the session.
-        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+        const isAuthenticated = !!req.user;
+        const reg = await SessionManagementService.register(sessionId, { fingerprintKey, isAuthenticated });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -98,12 +84,12 @@ export default function sessionMiddleware(options = {}) {
           fingerprintVerified = false;
         }
 
-        // Pass the HMACed fingerprintKey to the session manager so it can
-        // map the fingerprint to the created session. If the client provided
-        // a raw fingerprint header, we will still issue a signed `fpSigned`
-        // cookie for stronger verification on subsequent requests.
+        // Generate both sessionId and chatId server-side
+        // The chatId is created here and associated with the session
         sessionId = uuidv4();
-        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+        const chatId = uuidv4(); // Server-generated chatId
+        const isAuthenticated = !!req.user;
+        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey, isAuthenticated });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -126,6 +112,7 @@ export default function sessionMiddleware(options = {}) {
           // ignore and use fallback
         }
 
+
         const sessionJwt = jwt.sign({}, secretKey, { jwtid: sessionId, expiresIn: `${sessionTtlSeconds}s` });
         appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${sessionTtlSeconds}`);
 
@@ -142,13 +129,34 @@ export default function sessionMiddleware(options = {}) {
         // existing session: update lastSeen and ensure any provided chatId
         // is associated with the session. This ensures multiple tabs (chatIds)
         // are tracked under the same session and will show up in the admin UI.
+
+        // Bot detection: If we have a sessionId (from cookie) but no fingerprint,
+        // this indicates a bot that accepts cookies but doesn't execute JavaScript
+        // to generate the fingerprint. Block these requests.
+        if (!fingerprintHeader) {
+          res.statusCode = 403;
+          res.setHeader('Content-Type', 'application/json');
+          return res.end(JSON.stringify({ error: 'botDetected', message: 'Fingerprint required for existing sessions' }));
+        }
+
+       
         try {
-          // register will update ttl/lastSeen and add chatId to session.chatIds if provided
-          await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+          // register will update ttl/lastSeen for existing session
+          const isAuthenticated = !!req.user;
+          await SessionManagementService.register(sessionId, { chatId, fingerprintKey, isAuthenticated });
         } catch (e) {
           // fall back to touch on any failure to avoid blocking requests
           SessionManagementService.touch(sessionId);
         }
+      }
+
+      // Additional bot detection: If this is the second+ request and we still don't have
+      // a sessionToken cookie, the client isn't storing cookies (likely a bot).
+      // We detect this by checking if fpSigned cookie exists but sessionToken doesn't.
+      if (!sessionId && cookies['fpSigned']) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'botDetected', message: 'Session cookie required' }));
       }
 
       if (!sessionId) {
@@ -167,9 +175,31 @@ export default function sessionMiddleware(options = {}) {
         return res.end(JSON.stringify({ error: 'rateLimitExceeded' }));
       }
 
+
+      // Validate chatId from request body if provided
+      // Endpoints can access validated chatId via req.chatId
+      let chatId = null;
+
+      // Check body (POST/PUT) or query params (GET)
+      const requestChatId = req.body?.chatId || req.query?.chatId;
+
+      if (requestChatId) {
+        // Validate that chatId belongs to this session
+        if (sessionInfo?.chatIds && sessionInfo.chatIds.includes(requestChatId)) {
+          chatId = requestChatId;
+        } else {
+          // ChatId provided but doesn't belong to session - reject request
+          res.statusCode = 403;
+          res.setHeader('Content-Type', 'application/json');
+          return res.end(JSON.stringify({ error: 'invalid_chatId', message: 'ChatId does not belong to session' }));
+        }
+      }
+
       req.sessionId = sessionId;
       req.session = sessionInfo || SessionManagementService.getInfo(sessionId);
       req.chatSession = req.session;
+      req.fingerprintKey = fingerprintKey; // Expose for downstream handlers
+      req.chatId = chatId;
       return next();
     } catch (err) {
       if (console && console.error) console.error('sessionMiddleware error', err);
@@ -209,9 +239,6 @@ export function ensureSession(req, res) {
 export function withSession(handler) {
   return async function (req, res) {
     try {
-      if (shouldBypassSession(req)) {
-        return handler(req, res);
-      }
       const ok = await ensureSession(req, res);
       if (!ok) return; // middleware already handled the response
       return handler(req, res);
@@ -252,35 +279,3 @@ function appendSetCookie(res, cookie) {
   res.setHeader('Set-Cookie', [current, cookie]);
 }
 
-function hasAdminBearerAuth(req) {
-  try {
-    const header = req?.headers?.authorization || req?.headers?.Authorization;
-    if (!header || typeof header !== 'string') return false;
-    const [scheme, token] = header.trim().split(/\s+/);
-    if (!token || scheme.toLowerCase() !== 'bearer') return false;
-    try {
-      const decoded = jwt.verify(token, secretKey);
-      return decoded && decoded.role === 'admin';
-    } catch (e) {
-      return false;
-    }
-  } catch (e) {
-    return false;
-  }
-}
-
-function shouldBypassSession(req) {
-  try {
-    const bypassHeader = req?.headers?.['x-session-bypass'];
-    if (!hasAdminBearerAuth(req)) return false;
-    if (typeof bypassHeader === 'string') {
-      return bypassHeader === '1' || bypassHeader.toLowerCase() === 'true';
-    }
-    if (Array.isArray(bypassHeader)) {
-      return bypassHeader.some((v) => typeof v === 'string' && (v === '1' || v.toLowerCase() === 'true'));
-    }
-  } catch (e) {
-    // ignore and fall through to enforce session
-  }
-  return false;
-}

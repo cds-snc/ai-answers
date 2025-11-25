@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import TwoFAService from '../../services/TwoFAService.js';
-import { generateToken } from '../../middleware/auth.js';
+import { generateToken, generateRefreshToken } from '../../middleware/auth.js';
 import { SettingsService } from '../../services/SettingsService.js';
 
 const verify2FAHandler = async (req, res) => {
@@ -21,11 +21,29 @@ const verify2FAHandler = async (req, res) => {
 
     const result = await TwoFAService.verify2FACode({ userOrId: user, code });
     if (result.success) {
-      // On successful 2FA verification, issue a JWT token the same way signup/login endpoints do
-      const token = generateToken(user);
+      // Generate tokens
+      const accessToken = generateToken(user);
+      const refreshToken = generateRefreshToken(user);
+
+      // Set tokens in HttpOnly cookies
+      // Use secure cookies for any non-development environment (staging, production)
+      const isSecure = process.env.NODE_ENV !== 'development';
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: isSecure ? 'strict' : 'lax',
+        maxAge: 15 * 60 * 1000 // 15 minutes
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: isSecure ? 'strict' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
       return res.status(200).json({
         success: true,
-        token,
         user: {
           email: user.email,
           role: user.role,

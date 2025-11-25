@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { Eval } from '../../models/eval.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
-import { withUser, withProtection, authMiddleware } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -49,4 +49,4 @@ async function handler(req, res) {
   }
 }
 
-export default withProtection(withUser(handler), authMiddleware);
+export default withProtection(handler, authMiddleware, partnerOrAdminMiddleware);

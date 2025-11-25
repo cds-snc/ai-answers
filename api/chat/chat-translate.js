@@ -3,6 +3,7 @@ import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.
 import { createTranslationAgent } from '../../agents/AgentFactory.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).setHeader('Allow', ['POST']).end(`Method ${req.method} Not Allowed`);
@@ -22,7 +23,7 @@ async function handler(req, res) {
     };
 
     const resp = await AgentOrchestratorService.invokeWithStrategy({
-      chatId: 'translate',
+      chatId: req.chatId,
       agentType: selectedAI,
       request: { text, desired_language, translation_context },
       createAgentFn,
@@ -46,10 +47,10 @@ async function handler(req, res) {
       normalized = Object.assign({}, result || {}, { originalText: text, translation_context });
     }
 
-    ServerLoggingService.info('translate result', 'chat-translate', { result: normalized });
+    ServerLoggingService.info('translate result', req.chatId, { result: normalized });
     return res.json(normalized);
   } catch (err) {
-    ServerLoggingService.error('Error in chat-translate', 'chat-translate', err);
+    ServerLoggingService.error('Error in chat-translate', req.chatId, err);
 
     // Detect content-safety / provider content-filter errors (e.g., Azure OpenAI filtering)
     try {
@@ -58,15 +59,15 @@ async function handler(req, res) {
       const isContentFilter = msg.includes('filtered') || msg.includes('content policy') || msg.includes('safety') || code.includes('content_filter') || code.includes('content_policy') || /response was filtered due to the prompt triggering/i.test(msg);
       if (isContentFilter) {
         const blockedResp = { blocked: true };
-        ServerLoggingService.info('translate blocked - returning minimal blocked response', 'chat-translate', { blockedResp });
+        ServerLoggingService.info('translate blocked - returning minimal blocked response', req.chatId, { blockedResp });
         return res.json(blockedResp);
       }
     } catch (innerErr) {
-      ServerLoggingService.error('Error detecting content-filter in chat-translate catch', 'chat-translate', innerErr);
+      ServerLoggingService.error('Error detecting content-filter in chat-translate catch', req.chatId, innerErr);
     }
 
     return res.status(500).json({ error: 'internal error' });
   }
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

@@ -8,6 +8,7 @@ import { rankerStrategy } from '../../agents/strategies/rankerStrategy.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
 import { createRankerAgent, createTranslationAgent } from '../../agents/AgentFactory.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 // --- Main handler (composed of the helpers above) ---
 async function handler(req, res) {
@@ -18,7 +19,7 @@ async function handler(req, res) {
     }
 
     const { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
-    
+
     try {
 
         // Use pageLanguage for vector matching (matches should be in the page language)
@@ -85,7 +86,7 @@ async function handler(req, res) {
 
     function validateAndExtract(req) {
         if (req.method !== 'POST') return { error: { code: 405, message: `Method ${req.method} Not Allowed`, headers: { Allow: ['POST'] } } };
-        const chatId = req.body?.chatId || null;
+        const chatId = req.chatId || null;
         const questions = Array.isArray(req.body?.questions) ? req.body.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim()) : [];
         if (questions.length === 0) return { error: { code: 400, message: 'Missing questions' } };
         const selectedAI = req.body?.selectedAI || 'openai';
@@ -334,4 +335,4 @@ async function handler(req, res) {
 
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

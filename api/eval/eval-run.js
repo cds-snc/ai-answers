@@ -3,7 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import { SettingsService } from '../../services/SettingsService.js';
-import { withUser, withProtection, authMiddleware } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -50,7 +50,7 @@ async function handler(req, res) {
       }
     }
 
-  const evaluation = await EvaluationService.evaluateInteraction(interaction, chatId, { forceFallbackEval });
+    const evaluation = await EvaluationService.evaluateInteraction(interaction, chatId, { forceFallbackEval });
     const evalObj = evaluation?.toObject ? evaluation.toObject() : evaluation;
     return res.status(200).json({ message: 'Re-evaluation completed', evaluation: evalObj });
   } catch (err) {
@@ -59,4 +59,4 @@ async function handler(req, res) {
   }
 }
 
-export default withProtection(withUser(handler), authMiddleware);
+export default withProtection(handler, authMiddleware, partnerOrAdminMiddleware);

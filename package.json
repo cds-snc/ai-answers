@@ -30,6 +30,7 @@
     "cohere-ai": "^2.3.0",
     "compromise": "^14.14.4",
     "compute-cosine-similarity": "^1.1.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "datatables.net": "^2.2.1",

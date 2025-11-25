@@ -3,8 +3,8 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
 import ScenarioOverrideService from './ScenarioOverrideService.js';
-import { getFingerprint } from '../utils/fingerprint.js';
-import getSessionBypassHeaders from './sessionHeaders.js';
+
+import AuthService from './AuthService.js';
 
 const AnswerService = {
   prepareMessage: async (
@@ -74,14 +74,11 @@ const AnswerService = {
         overrideUserId
       );
 
-      const fp = await getFingerprint();
-      const extraHeaders = getSessionBypassHeaders();
-      const response = await fetch(getApiUrl('chat-message'), {
+
+      const response = await AuthService.fetch(getApiUrl('chat-message'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-fp-id': fp,
-          ...extraHeaders,
         },
         body: JSON.stringify(messagePayload),
       });

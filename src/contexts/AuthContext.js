@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AuthService from '../services/AuthService.js';
-import { useNavigate } from 'react-router-dom'; // <-- Add this if using react-router
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -11,31 +11,23 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Load user from localStorage on initial render and validate token
-    const user = AuthService.getUser();
-    if (user && AuthService.isTokenExpired()) {
-      // Token is expired: perform logout to clear storage and redirect
-      AuthService.logout();
-      setCurrentUser(null);
-      setLoading(false);
+    // Load user from server on initial render
+    const initAuth = async () => {
       try {
-        let prefix = '/en';
-        if (typeof window !== 'undefined') {
-          const path = window.location.pathname;
-          if (path.startsWith('/fr')) prefix = '/fr';
-        }
-        navigate(`${prefix}/signin`);
-      } catch (e) {
-        // ignore navigation errors
+        const user = await AuthService.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Failed to load user:', error);
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
       }
-      return;
-    }
+    };
 
-    setCurrentUser(user);
-    setLoading(false);
+    initAuth();
 
     // Set up unauthorized callback
     AuthService.setUnauthorizedCallback(() => {
@@ -70,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Update the user state for normal login
-      await Promise.resolve(setCurrentUser(data.user));
+      setCurrentUser(data.user);
       return {
         user: data.user,
         defaultRoute: getDefaultRouteForRole(data.user.role)
@@ -79,7 +71,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   const signup = async (email, password) => {
     try {
       setLoading(true);
@@ -90,7 +82,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   const logout = () => {
     setLoading(true);
     AuthService.logout();
@@ -108,18 +100,28 @@ export const AuthProvider = ({ children }) => {
       // ignore navigation errors
     }
   };
-  
+
   // Helper methods for role checking
   const isAdmin = () => {
     return currentUser?.role === 'admin';
   };
-  
+
   const isPartner = () => {
     return currentUser?.role === 'partner';
   };
-  
+
   const hasRole = (role) => {
     return currentUser?.role === role;
+  };
+
+  const refreshUser = async () => {
+    try {
+      const user = await AuthService.getCurrentUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      setCurrentUser(null);
+    }
   };
 
   const getDefaultRouteForRole = (role, lang = 'en') => {
@@ -134,7 +136,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     loading,
     login,
-    refreshUser: () => setCurrentUser(AuthService.getUser()),
+    refreshUser,
     signup,
     logout,
     isAdmin,
@@ -142,7 +144,7 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     getDefaultRouteForRole
   };
-  
+
   return (
     <AuthContext.Provider value={value}>
       {children}

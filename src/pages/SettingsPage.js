@@ -47,6 +47,11 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
+  // Authenticated session rate-limit settings
+  const [authRateLimitCapacity, setAuthRateLimitCapacity] = useState(100);
+  const [savingAuthRateLimitCapacity, setSavingAuthRateLimitCapacity] = useState(false);
+  const [authRateLimitRefill, setAuthRateLimitRefill] = useState(5);
+  const [savingAuthRateLimitRefill, setSavingAuthRateLimitRefill] = useState(false);
   const [maxActiveSessions, setMaxActiveSessions] = useState('');
   const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
 
@@ -86,6 +91,12 @@ const SettingsPage = ({ lang = 'en' }) => {
   const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '1');
   const refillPerSec = Number(refill);
   setRateLimitRefill(Number((refillPerSec * 60).toFixed(2)));
+        // Authenticated rate-limit settings (stored per-second, display per-minute)
+        const authCap = await DataStoreService.getSetting('session.authenticatedRateLimitCapacity', '100');
+        setAuthRateLimitCapacity(Number(authCap));
+        const authRefill = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', '5');
+        const authRefillPerSec = Number(authRefill);
+        setAuthRateLimitRefill(Number((authRefillPerSec * 60).toFixed(2)));
       const maxSessions = await DataStoreService.getSetting('session.maxActiveSessions', '');
       setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
     }
@@ -126,6 +137,17 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleAuthRateLimitCapacityChange = async (e) => {
+    const val = Number(e.target.value);
+    setAuthRateLimitCapacity(val);
+    setSavingAuthRateLimitCapacity(true);
+    try {
+      await DataStoreService.setSetting('session.authenticatedRateLimitCapacity', String(val));
+    } finally {
+      setSavingAuthRateLimitCapacity(false);
+    }
+  };
+
   const handleRateLimitRefillChange = async (e) => {
     const val = Number(e.target.value);
     setRateLimitRefill(val);
@@ -136,6 +158,19 @@ const SettingsPage = ({ lang = 'en' }) => {
       await DataStoreService.setSetting('session.rateLimitRefillPerSec', String(perSec));
     } finally {
       setSavingRateLimitRefill(false);
+    }
+  };
+
+  const handleAuthRateLimitRefillChange = async (e) => {
+    const val = Number(e.target.value);
+    setAuthRateLimitRefill(val);
+    setSavingAuthRateLimitRefill(true);
+    try {
+      // Admin enters requests per minute; store as per-second for the service
+      const perSec = Number(val) / 60;
+      await DataStoreService.setSetting('session.authenticatedRateLimitRefillPerSec', String(perSec));
+    } finally {
+      setSavingAuthRateLimitRefill(false);
     }
   };
 
@@ -402,10 +437,20 @@ const SettingsPage = ({ lang = 'en' }) => {
       </label>
       <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
 
+      <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
+        {t('settings.session.authenticatedRateLimitCapacity', 'Authenticated rate limit capacity (tokens)')}
+      </label>
+      <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
+
       <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
         {t('settings.session.rateLimitRefill', 'Rate limit refill (tokens/sec)')}
       </label>
       <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
+
+      <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
+        {t('settings.session.authenticatedRateLimitRefill', 'Authenticated rate limit refill (tokens/sec)')}
+      </label>
+      <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
 
       <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
         {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}

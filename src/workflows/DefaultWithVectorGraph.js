@@ -1,6 +1,7 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import { ChatWorkflowService } from '../services/ChatWorkflowService.js';
-import { getFingerprint } from '../utils/fingerprint.js';
+
+import AuthService from '../services/AuthService.js';
 
 export class DefaultWithVectorGraph {
   async processResponse(
@@ -38,24 +39,13 @@ export class DefaultWithVectorGraph {
         },
       };
 
-      // include fingerprint header (if available) and send cookies so
-      // server session middleware can associate this request
-      const headers = { 'Content-Type': 'application/json' };
-      try {
-        const fp = await getFingerprint();
-        if (fp) {
-          headers['x-fp-id'] = fp;
-        }
-      } catch (_err) {
-        // ignore fingerprint errors; proceed without header
-      }
 
-      const response = await fetch(getApiUrl('chat-graph-run'), {
+
+      const response = await AuthService.fetch(getApiUrl('chat-graph-run'), {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        signal: controller.signal,
-        credentials: 'include'
+        signal: controller.signal
       });
 
       if (!response.ok) {

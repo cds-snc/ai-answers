@@ -1,5 +1,5 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function logHandler(req, res) {
     if (req.method === 'POST') {
@@ -34,7 +34,7 @@ async function logHandler(req, res) {
 // Only require auth and admin for GET requests
 export default function handler(req, res) {
     if (req.method === 'GET') {
-        return withProtection(logHandler, authMiddleware)(req, res);
+        return withProtection(logHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
     }
     return logHandler(req, res);
 }

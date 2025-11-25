@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
-import { withUser, withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
 
 const HOURS_IN_DAY = 24;
@@ -301,10 +301,8 @@ async function evalDashboardHandler(req, res) {
   }
 }
 
-export default function handler(req, res) {
-  return withProtection(
-    evalDashboardHandler,
-    authMiddleware,
-    partnerOrAdminMiddleware
-  )(req, res);
-}
+export default withProtection(
+  evalDashboardHandler,
+  authMiddleware,
+  partnerOrAdminMiddleware
+);

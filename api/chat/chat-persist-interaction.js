@@ -1,4 +1,4 @@
-import dbConnect from './db-connect.js';
+import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { Interaction } from '../../models/interaction.js';
 import { Context } from '../../models/context.js';
@@ -11,6 +11,7 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import { Setting } from '../../models/setting.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import { withSession } from '../../middleware/session.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -23,14 +24,21 @@ async function handler(req, res) {
     const interaction = req.body;
     const forceFallbackEval = false;
     delete interaction.forceFallbackEval;
-    let chatId = interaction.chatId;
-    ServerLoggingService.info('[db-persist-interaction] Start - chatId:', chatId, {});
+
+    // Get validated chatId from middleware
+    const chatId = req.chatId;
+
+    if (!chatId) {
+      return res.status(400).json({ error: 'chatId_required' });
+    }
+
+    ServerLoggingService.info('[chat-persist-interaction] Start - chatId:', chatId, {});
     let chat = await Chat.findOne({ chatId: chatId });
 
     if (!chat) {
       chat = new Chat();
     }
-    chat.chatId = interaction.chatId;
+    chat.chatId = chatId;
     chat.aiProvider = interaction.selectedAI;
     chat.searchProvider = interaction.searchProvider;
     chat.pageLanguage = interaction.pageLanguage;
@@ -107,9 +115,9 @@ async function handler(req, res) {
     await chat.save();
 
     // 5. Generate embeddings for the interaction
-    ServerLoggingService.info('[db-persist-interaction] Embedding creation start', chatId, {});
+    ServerLoggingService.info('[chat-persist-interaction] Embedding creation start', chatId, {});
     await EmbeddingService.createEmbedding(dbInteraction, interaction.selectedAI);
-    ServerLoggingService.info('[db-persist-interaction] Embedding creation end', chatId, {});
+    ServerLoggingService.info('[chat-persist-interaction] Embedding creation end', chatId, {});
 
     // 6. Perform evaluation on the saved interaction (mode depends on deploymentMode setting)
     let deploymentMode = 'CDS';
@@ -119,10 +127,10 @@ async function handler(req, res) {
     } catch (e) {
       ServerLoggingService.error('Failed to read deploymentMode setting', chatId, e);
     }
-    // 6. Perform evaluation on the saved interaction
-    ServerLoggingService.info('Evaluation starting', chatId, {});
 
+    ServerLoggingService.info('Evaluation starting', chatId, {});
     ServerLoggingService.info('Deployment mode', chatId, { deploymentMode });
+
     if (deploymentMode === 'Vercel') {
       try {
         // Trigger evaluation (provider resolved centrally inside EvaluationService)
@@ -131,10 +139,10 @@ async function handler(req, res) {
       } catch (evalError) {
         ServerLoggingService.error('Evaluation failed (Vercel mode)', chat.chatId, evalError);
       }
-      res.status(200).json({ message: 'Interaction logged successfully' });
+      res.status(200).json({ message: 'Interaction logged successfully', chatId });
     } else {
       // CDS mode (or default)
-      res.status(200).json({ message: 'Interaction logged successfully' });
+      res.status(200).json({ message: 'Interaction logged successfully', chatId });
       // Trigger background evaluation (provider resolved centrally inside EvaluationService)
       EvaluationService.evaluateInteraction(dbInteraction, chatId, { forceFallbackEval })
         .then(() => {
@@ -144,13 +152,13 @@ async function handler(req, res) {
           ServerLoggingService.error('Evaluation failed (CDS mode background)', chat.chatId, evalError);
         });
     }
-    ServerLoggingService.info('[db-persist-interaction] End - chatId:', chatId, {});
+    ServerLoggingService.info('[chat-persist-interaction] End - chatId:', chatId, {});
   } catch (error) {
-    ServerLoggingService.error('Failed to log interaction', req.body?.chatId || 'system', error);
+    ServerLoggingService.error('Failed to log interaction', req.chatId, error);
     res.status(500).json({ message: 'Failed to log interaction', error: error.message });
   }
 }
 
-export default function handlerWithUser(req, res) {
-  return withOptionalUser(handler)(req, res);
+export default function handlerWithMiddleware(req, res) {
+  return withOptionalUser(withSession(handler))(req, res);
 }

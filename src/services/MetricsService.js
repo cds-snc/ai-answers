@@ -5,7 +5,7 @@ class MetricsService {
   static async getChatLogs(filters = {}, limit = 100, lastId = null) {
     try {
       const queryParams = new URLSearchParams({ ...filters, limit, lastId }).toString();
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat-logs?${queryParams}`));
+      const response = await AuthService.fetch(getApiUrl(`db-chat-logs?${queryParams}`));
       if (!response.ok) throw new Error('Failed to get chat logs');
       return await response.json();
     } catch (error) {
@@ -102,7 +102,7 @@ class MetricsService {
       // Count questions for this session
       const questionCount = chat.interactions?.length || 0;
       const pageLanguage = chat.pageLanguage || 'en';
-      
+
       if (questionCount === 1) {
         metrics.sessionsByQuestionCount.singleQuestion.total++;
         if (pageLanguage === 'en') metrics.sessionsByQuestionCount.singleQuestion.en++;
@@ -123,29 +123,29 @@ class MetricsService {
         metrics.totalQuestions++;
         if (pageLanguage === 'en') metrics.totalQuestionsEn++;
         if (pageLanguage === 'fr') metrics.totalQuestionsFr++;
-        
+
         // Count input tokens from all sources (context, answer)
         const contextInputTokens = Number(interaction.context?.inputTokens) || 0;
         const answerInputTokens = Number(interaction.answer?.inputTokens) || 0;
         const totalInputTokens = contextInputTokens + answerInputTokens;
-        
+
         if (totalInputTokens > 0) {
           metrics.totalInputTokens += totalInputTokens;
           if (pageLanguage === 'en') metrics.totalInputTokensEn += totalInputTokens;
           if (pageLanguage === 'fr') metrics.totalInputTokensFr += totalInputTokens;
         }
-        
+
         // Count output tokens from all sources (context, answer)
         const contextOutputTokens = Number(interaction.context?.outputTokens) || 0;
         const answerOutputTokens = Number(interaction.answer?.outputTokens) || 0;
         const totalOutputTokens = contextOutputTokens + answerOutputTokens;
-        
+
         if (totalOutputTokens > 0) {
           metrics.totalOutputTokens += totalOutputTokens;
           if (pageLanguage === 'en') metrics.totalOutputTokensEn += totalOutputTokens;
           if (pageLanguage === 'fr') metrics.totalOutputTokensFr += totalOutputTokens;
         }
-        
+
         // Count answer types (per language)
         if (interaction.answer?.answerType) {
           const answerType = interaction.answer.answerType;
@@ -155,10 +155,10 @@ class MetricsService {
             if (pageLanguage === 'fr') metrics.answerTypes[answerType].fr++;
           }
         }
-        
+
         // Get department
         const department = interaction.context?.department || 'Unknown';
-        
+
         // Initialize department metrics if not exists
         if (!metrics.byDepartment[department]) {
           metrics.byDepartment[department] = {
@@ -176,10 +176,10 @@ class MetricsService {
             }
           };
         }
-        
+
         // Count department interactions
         metrics.byDepartment[department].total++;
-        
+
         // Process expert feedback
         if (interaction.expertFeedback) {
           // Defensive: ensure all expertScored properties exist before incrementing
@@ -244,7 +244,7 @@ class MetricsService {
             metrics.byDepartment[department].expertScored.correct++;
           }
         }
-        
+
         // Process user feedback
         if (interaction.userFeedback) {
           // Defensive: ensure all userScored properties exist before incrementing
@@ -269,7 +269,7 @@ class MetricsService {
             metrics.byDepartment[department].userScored.unhelpful++;
           }
         }
-        
+
         // Process AI self-assessment
         if (interaction.autoEval?.expertFeedback) {
           // Defensive: ensure all aiScored properties exist before incrementing
@@ -329,7 +329,7 @@ class MetricsService {
             if (pageLanguage === 'fr') metrics.aiScored.correct.fr++;
           }
         }
-        
+
         // Process public feedback
         if (interaction.publicFeedback) {
           const feedbackType = interaction.publicFeedback.feedback === 'yes' ? 'yes' : 'no';

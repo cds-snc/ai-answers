@@ -1,4 +1,5 @@
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
@@ -19,7 +20,7 @@ import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 
-import chatSessionHandler from '../api/chat/chat-session.js';
+import chatCreateHandler from '../api/chat/chat-create.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
@@ -28,9 +29,7 @@ import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
 import chatReportHandler from '../api/chat/chat-report.js';
 import sessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
-import dbVerifyChatSessionHandler from '../api/db/db-verify-chat-session.js';
-import dbCheckhandler from '../api/db/db-check.js';
-import dbPersistInteraction from '../api/db/db-persist-interaction.js';
+import chatPersistInteractionHandler from '../api/chat/chat-persist-interaction.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
 import feedbackGetExpertHandler from '../api/feedback/feedback-get-expert.js';
@@ -45,6 +44,8 @@ import verify2FAHandler from '../api/auth/auth-verify-2fa.js';
 import userSend2FAHandler from '../api/auth/auth-send-2fa.js';
 import sendResetHandler from '../api/auth/auth-send-reset.js';
 import resetPasswordHandler from '../api/auth/auth-reset-password.js';
+import refreshHandler from '../api/auth/auth-refresh.js';
+import meHandler from '../api/auth/auth-me.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/db/db-users.js';
 import deleteChatHandler from '../api/chat/chat-delete.js';
@@ -73,6 +74,7 @@ import { VectorService, initVectorService } from '../services/VectorServiceFacto
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
+import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -81,7 +83,14 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
-app.use(cors());
+
+// CORS configuration - allow credentials for cookie-based auth
+app.use(cors({
+  origin: true, // Reflect the request origin
+  credentials: true // Allow cookies
+}));
+
+app.use(cookieParser()); // Parse cookies
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
@@ -134,12 +143,12 @@ app.post('/api/feedback/feedback-get-expert', feedbackGetExpertHandler);
 app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
-app.post('/api/db/db-persist-interaction', dbPersistInteraction);
-app.get('/api/chat/chat-session', chatSessionHandler);
+app.post('/api/chat/chat-persist-interaction', chatPersistInteractionHandler);
+app.get('/api/chat/chat-create', chatCreateHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
 app.post('/api/chat/chat-report', chatReportHandler);
-app.get('/api/db/db-verify-chat-session', dbVerifyChatSessionHandler);
+// app.get('/api/chat/chat-verify-session', chatVerifySessionHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
@@ -155,6 +164,8 @@ app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/auth/signup', signupHandler);
 app.post('/api/auth/login', loginHandler);
 app.post('/api/auth/logout', logoutHandler);
+app.post('/api/auth/refresh', refreshHandler); // New: refresh access token
+app.get('/api/auth/me', meHandler); // New: get current user
 // Normalize user-facing logout under /api/auth for consistency. Reuse the
 // existing `logoutHandler` (from `auth-logout.js`) instead of a missing
 // `api/user/user-auth-logout.js` module.
@@ -167,6 +178,8 @@ app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
 app.post('/api/auth/auth-logout', logoutHandler);
 app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
+app.post('/api/auth/auth-refresh', refreshHandler); // Compatibility alias
+app.get('/api/auth/auth-me', meHandler); // Compatibility alias
 // Legacy /api/db/db-auth-* endpoints have been moved to the canonical /api/auth/*
 // and are intentionally not re-registered here to avoid duplicate/ambiguous
 // handlers. If a compatibility shim is needed in the future, add explicit

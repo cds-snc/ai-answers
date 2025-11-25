@@ -1,5 +1,5 @@
 import { User } from '../../models/user.js';
-import { generateToken } from '../../middleware/auth.js';
+import { generateToken, generateRefreshToken } from '../../middleware/auth.js';
 import dbConnect from '../db/db-connect.js';
 
 const signupHandler = async (req, res) => {
@@ -30,24 +30,41 @@ const signupHandler = async (req, res) => {
     const isFirstUser = userCount === 0;
 
     // Create new user (automatically active if first user)
-    const user = new User({ 
-      email, 
+    const user = new User({
+      email,
       password,
       role: "admin",
       active: isFirstUser // First user is automatically active
     });
     await user.save();
 
-    // Generate JWT token
-    const token = generateToken(user);
+    // Generate tokens
+    const accessToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Set tokens in HttpOnly cookies
+    // Use secure cookies for any non-development environment (staging, production)
+    const isSecure = process.env.NODE_ENV !== 'development';
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: isSecure ? 'strict' : 'lax',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: isSecure ? 'strict' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     // Return success with token and user data
     res.status(201).json({
       success: true,
-      message: isFirstUser 
-        ? 'User created successfully as admin.' 
+      message: isFirstUser
+        ? 'User created successfully as admin.'
         : 'User created successfully. Account requires activation by an administrator.',
-      token,
       user: {
         email: user.email,
         role: user.role,

@@ -3,6 +3,7 @@ import { createChatAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 import { buildAnswerSystemPrompt } from '../../agents/prompts/systemPrompt.js';
 
 const NUM_RETRIES = 3;
@@ -28,7 +29,6 @@ async function invokeHandler(req, res) {
             provider = 'openai',
             message,
             conversationHistory = [],
-            chatId,
             lang,
             department,
             topic,
@@ -37,6 +37,9 @@ async function invokeHandler(req, res) {
             searchResults,
             scenarioOverrideText,
         } = req.body;
+
+        // Get validated chatId from middleware
+        const chatId = req.chatId;
 
         const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
             department,
@@ -80,8 +83,8 @@ async function invokeHandler(req, res) {
         }
         throw new Error(`${provider} returned no messages`);
     } catch (error) {
-        const chatId = req.body?.chatId || 'system';
-        ServerLoggingService.error(`Error in ${req.body?.provider || 'chat'} handler:`, chatId, error);
+        const errorChatId = req.chatId;
+        ServerLoggingService.error(`Error in ${req.body?.provider || 'chat'} handler:`, errorChatId, error);
         return res.status(500).json({ error: 'Error processing your request', details: error.message });
     }
 }
@@ -104,4 +107,4 @@ async function handler(req, res) {
     return res.status(500).json({ error: 'Failed after retries', details: lastError?.message });
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

@@ -5,7 +5,9 @@ import AuthService from './AuthService.js';
 const SessionService = {
   async getSessionMetrics() {
     const url = getApiUrl('chat-session-metrics');
-    const resp = await fetch(url, { headers: { ...AuthService.getAuthHeader(), Accept: 'application/json' } });
+    const resp = await AuthService.fetch(url, {
+      headers: { Accept: 'application/json' }
+    });
     if (!resp.ok) {
       const txt = await resp.text();
       const err = new Error(`Failed to load sessions: ${resp.status} ${txt}`);
@@ -20,11 +22,9 @@ const SessionService = {
   async report(chatId, latencyMs = 0, error = false, errorType = null) {
     const url = getApiUrl('chat-report');
     try {
-      await fetch(url, {
+      await AuthService.fetch(url, {
         method: 'POST',
         // Ensure cookies / session token are sent so the server can map chatId -> session
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeader() },
         body: JSON.stringify({ chatId, latencyMs, error, errorType })
       });
     } catch (e) {
@@ -41,7 +41,7 @@ const SessionService = {
     try {
       // Use the availability endpoint via apiToUrl so the dev proxy and overrides work
       const url = getApiUrl('chat-session-availability');
-      const resp = await fetch(url);
+      const resp = await AuthService.fetch(url);
       if (!resp.ok) return false;
       const data = await resp.json();
       // expects { siteStatus: boolean, sessionAvailable: boolean }

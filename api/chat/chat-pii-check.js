@@ -1,6 +1,7 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { invokePIIAgent } from '../../services/PIIAgentService.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,11 +10,12 @@ async function handler(req, res) {
   }
 
   try {
-    const { message, chatId = 'system', agentType = 'openai' } = req.body || {};
+    const { message, agentType = 'openai' } = req.body || {};
+    const chatId = req.chatId;
     ServerLoggingService.info('PII check request received.', chatId, { agentType });
 
     const piiResult = await invokePIIAgent(agentType, { chatId, question: message });
-    
+
     if (piiResult.pii !== null) {
       ServerLoggingService.info('PII detected:', chatId);
     }
@@ -23,10 +25,10 @@ async function handler(req, res) {
 
     return res.json(piiResult);
   } catch (error) {
-    ServerLoggingService.error('Error processing PII check.', req?.body?.chatId || 'system', error);
+    ServerLoggingService.error('Error processing PII check.', req.chatId, error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));
 

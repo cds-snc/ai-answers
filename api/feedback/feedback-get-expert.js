@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
-import { withUser, withProtection } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackGetExpertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -39,4 +39,4 @@ async function feedbackGetExpertHandler(req, res) {
   }
 }
 
-export default withProtection(withUser(feedbackGetExpertHandler));
+export default withProtection(feedbackGetExpertHandler, authMiddleware, partnerOrAdminMiddleware);

@@ -4,19 +4,47 @@
 // - touch session to extend TTL
 // - capacity limit (max concurrent sessions)
 // - per-session token-bucket rate limiter
+import { v4 as uuidv4 } from 'uuid';
+import { SettingsService } from './SettingsService.js';
 
 class CreditBucket {
-  constructor({ capacity = 60, refillPerSec = 1 }) {
+  constructor({ capacity = 60, refillPerSec = 1, isAuthenticated = false }) {
     this.capacity = capacity;
     this.credits = capacity;
     this.refillPerSec = refillPerSec;
     this.lastRefill = Date.now();
+    this.isAuthenticated = !!isAuthenticated;
   }
 
   _refill() {
     const now = Date.now();
     const elapsed = (now - this.lastRefill) / 1000;
     if (elapsed <= 0) return;
+    // Use cached settings when available to update refill rate / capacity.
+    // This keeps the hot-path synchronous and avoids DB access.
+    try {
+      const s = SettingsService && SettingsService.cache ? SettingsService.cache : null;
+      // Prefer authenticated settings for authenticated buckets, fall back to generic session settings.
+      let cachedRefill = null;
+      let cachedCap = null;
+      if (this.isAuthenticated) {
+        cachedRefill = s && Object.prototype.hasOwnProperty.call(s, 'session.authenticatedRateLimitRefillPerSec') ? s['session.authenticatedRateLimitRefillPerSec'] : null;
+        cachedCap = s && Object.prototype.hasOwnProperty.call(s, 'session.authenticatedRateLimitCapacity') ? s['session.authenticatedRateLimitCapacity'] : null;
+      }
+      // fallback to generic keys if authenticated-specific keys are not present
+      if ((cachedRefill === null || typeof cachedRefill === 'undefined') && s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitRefillPerSec')) {
+        cachedRefill = s['session.rateLimitRefillPerSec'];
+      }
+      if ((cachedCap === null || typeof cachedCap === 'undefined') && s && Object.prototype.hasOwnProperty.call(s, 'session.rateLimitCapacity')) {
+        cachedCap = s['session.rateLimitCapacity'];
+      }
+      if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) this.refillPerSec = Number(cachedRefill);
+      if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
+        this.capacity = Number(cachedCap);
+        if (this.credits > this.capacity) this.credits = this.capacity;
+      }
+    } catch (e) { /* best-effort, ignore errors */ }
+
     const add = elapsed * this.refillPerSec;
     this.credits = Math.min(this.capacity, this.credits + add);
     this.lastRefill = now;
@@ -38,7 +66,6 @@ class CreditBucket {
   }
 }
 
-import { SettingsService } from './SettingsService.js';
 
 class SessionManagementService {
   constructor() {
@@ -55,9 +82,10 @@ class SessionManagementService {
     this.maxSessions = 1000; // default capacity fallback
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
+    this.authenticatedRateLimit = { capacity: 100, refillPerSec: 5 };
     // Track anonymous session creation attempts to prevent churn abuse
-  // Map verified fingerprintKey -> sessionId to ensure one session per fingerprint
-  this.fingerprintToSession = new Map();
+    // Map verified fingerprintKey -> sessionId to ensure one session per fingerprint
+    this.fingerprintToSession = new Map();
     // NOTE: settings will be read live from SettingsService when needed.
     // start cleanup timer with defaults
     this._startCleanup();
@@ -136,8 +164,8 @@ class SessionManagementService {
   // fingerprint->session mapping. No canCreateSession helper exists anymore.
 
   async register(sessionId, opts = {}) {
-    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey }
-    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey } = opts || {};
+    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey, isAuthenticated, generateChatId }
+    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey, isAuthenticated, generateChatId } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
 
     // Require a verified fingerprintKey to create or reuse sessions. This prevents
@@ -162,13 +190,15 @@ class SessionManagementService {
         const sess = this.sessions.get(existing);
         if (sess) {
           // update lastSeen and return existing session
-          sess.lastSeen = Date.now();
+          this._touchSession(sess);
           // ensure provided chatId is tracked
-          if (providedChatId && !sess.chatIds.includes(providedChatId)) {
-            sess.chatIds.push(providedChatId);
-            this.chatToSession.set(providedChatId, sess.sessionId || existing);
+          let activeChatId = providedChatId;
+          if (generateChatId && !activeChatId) {
+            activeChatId = uuidv4();
           }
-          return { ok: true, session: sess };
+
+          if (activeChatId) this._ensureChatMapped(sess, activeChatId, existing);
+          return { ok: true, session: sess, chatId: activeChatId };
         }
         // stale mapping: fall through and create a new session, but ensure mapping is replaced below
       }
@@ -196,39 +226,47 @@ class SessionManagementService {
       // create token bucket for rate limiting. Prefer explicit rateLimit, otherwise
       // use defaults (already initialized from SettingsService on startup).
       // Prefer explicit rateLimit. If not provided, try reading live settings.
+      // Determine rate limit: prefer explicit, then settings (preferring authenticated if applicable), then defaults
       let rl = explicitRateLimit || null;
       if (!rl) {
-        try {
-          const capVal = await SettingsService.get('session.rateLimitCapacity');
-          const refillVal = await SettingsService.get('session.rateLimitRefillPerSec');
-          const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
-          const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
-          if (!Number.isNaN(cap) && cap > 0) rl = rl || {}, rl.capacity = cap; // ensure rl is object when values exist
-          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {}, rl.refillPerSec = refill;
-        } catch (e) {
-          // ignore and fall back to defaults
-        }
+        const fromSettings = await this._getRateLimitFromSettings(!!isAuthenticated);
+        if (fromSettings) rl = fromSettings;
       }
-      const bucket = this._createBucket(rl || this.defaultRateLimit);
+      if (!rl) {
+        rl = isAuthenticated ? { ...this.authenticatedRateLimit } : { ...this.defaultRateLimit };
+      }
+
+      const bucket = this._createBucket(rl || this.defaultRateLimit, !!isAuthenticated);
+
+      let initialChatIds = [];
+      let activeChatId = providedChatId;
+      if (generateChatId && !activeChatId) {
+        activeChatId = uuidv4();
+      }
+      if (activeChatId) initialChatIds.push(activeChatId);
+
       session = {
         sessionId,
         // support multiple chatIds per session (array). `session.chatId` is deprecated.
-        chatIds: providedChatId ? [providedChatId] : [],
+        chatIds: initialChatIds,
         createdAt: now,
         lastSeen: now,
         ttl,
         bucket,
-        // metrics
+        isAuthenticated: !!isAuthenticated,
+        // metrics (session-wide aggregates)
         requestCount: 0,
         errorCount: 0,
         totalLatencyMs: 0,
-        lastLatencyMs: 0
-        ,
-        // timestamps of requests (ms since epoch) used to compute RPM
-        requestTimestamps: []
-        ,
-        // per-error-type counters: { <type>: count }
-        errorTypes: {}
+        lastLatencyMs: 0,
+        // timestamps of requests (ms since epoch) used to compute RPM (session-level)
+        requestTimestamps: [],
+        // per-error-type counters: { <type>: count } (session-level)
+        errorTypes: {},
+        // Per-chat metrics keyed by chatId. This allows reporting accurate
+        // stats for each chatId in a session while keeping session-level
+        // aggregates for backwards compatibility.
+        chatMetrics: {}
       };
       this.sessions.set(sessionId, session);
       // map fingerprint -> sessionId for reuse if provided
@@ -237,25 +275,56 @@ class SessionManagementService {
           this.fingerprintToSession.set(fingerprintKey, sessionId);
         } catch (e) { }
       }
-      if (providedChatId) {
-        this.chatToSession.set(providedChatId, sessionId);
-      }
+      if (providedChatId) this._ensureChatMapped(session, providedChatId, sessionId);
+      if (activeChatId && activeChatId !== providedChatId) this._ensureChatMapped(session, activeChatId, sessionId);
     } else {
-      session.lastSeen = now;
-      session.ttl = ttl; // allow updating ttl
+      this._touchSession(session, now, ttl); // allow updating ttl
     }
 
     // If there's a provided chatId for an existing session, ensure it's tracked
-    if (session && providedChatId) {
-      session.chatIds = session.chatIds || [];
-      if (!session.chatIds.includes(providedChatId)) {
-        session.chatIds.push(providedChatId);
-        // note: `session.chatId` is deprecated; do not set it
-        this.chatToSession.set(providedChatId, sessionId);
-      }
+    let activeChatId = providedChatId;
+    if (generateChatId && !activeChatId) {
+      activeChatId = uuidv4();
     }
 
-    return { ok: true, session };
+    if (session && activeChatId) {
+      this._ensureChatMapped(session, activeChatId, sessionId);
+    }
+
+    return { ok: true, session, chatId: activeChatId };
+  }
+
+  // Read rate limit values from SettingsService. When preferAuthenticated is true,
+  // try the authenticated-specific keys first and fall back to generic keys.
+  // Returns an object like { capacity, refillPerSec } if any values found, otherwise null.
+  async _getRateLimitFromSettings(preferAuthenticated = false) {
+    try {
+      let capVal = null;
+      let refillVal = null;
+      if (preferAuthenticated) {
+        capVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
+        refillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
+      }
+      // fallback to generic if auth-specific not present
+      if (capVal === null || typeof capVal === 'undefined' || capVal === '') {
+        const g = await SettingsService.get('session.rateLimitCapacity');
+        if (!(g === null || typeof g === 'undefined' || g === '')) capVal = g;
+      }
+      if (refillVal === null || typeof refillVal === 'undefined' || refillVal === '') {
+        const g = await SettingsService.get('session.rateLimitRefillPerSec');
+        if (!(g === null || typeof g === 'undefined' || g === '')) refillVal = g;
+      }
+
+      const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
+      const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
+
+      const out = {};
+      if (!Number.isNaN(cap) && cap > 0) out.capacity = cap;
+      if (!Number.isNaN(refill) && refill >= 0) out.refillPerSec = refill;
+      return Object.keys(out).length ? out : null;
+    } catch (e) {
+      return null;
+    }
   }
 
 
@@ -276,6 +345,14 @@ class SessionManagementService {
         capacity: (!Number.isNaN(Number(rateLimitCapVal)) && rateLimitCapVal !== null && rateLimitCapVal !== '') ? Number(rateLimitCapVal) : this.defaultRateLimit.capacity,
         refillPerSec: (!Number.isNaN(Number(rateLimitRefillVal)) && rateLimitRefillVal !== null && rateLimitRefillVal !== '') ? Number(rateLimitRefillVal) : this.defaultRateLimit.refillPerSec
       };
+
+      const authRateLimitCapVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
+      const authRateLimitRefillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
+      const authenticatedRateLimit = {
+        capacity: (!Number.isNaN(Number(authRateLimitCapVal)) && authRateLimitCapVal !== null && authRateLimitCapVal !== '') ? Number(authRateLimitCapVal) : this.authenticatedRateLimit.capacity,
+        refillPerSec: (!Number.isNaN(Number(authRateLimitRefillVal)) && authRateLimitRefillVal !== null && authRateLimitRefillVal !== '') ? Number(authRateLimitRefillVal) : this.authenticatedRateLimit.refillPerSec
+      };
+
       let maxSessions = this.maxSessions;
       if (typeof maxActiveVal !== 'undefined' && maxActiveVal !== null && maxActiveVal !== '') {
         const n = Number(maxActiveVal);
@@ -286,7 +363,9 @@ class SessionManagementService {
         defaultTTLMs,
         cleanupIntervalMinutes,
         cleanupIntervalMs,
+        cleanupIntervalMs,
         rateLimit,
+        authenticatedRateLimit,
         maxSessions
       };
     } catch (e) {
@@ -296,6 +375,7 @@ class SessionManagementService {
         cleanupIntervalMinutes: this.cleanupIntervalMinutes,
         cleanupIntervalMs: this.cleanupInterval,
         rateLimit: this.defaultRateLimit,
+        authenticatedRateLimit: this.authenticatedRateLimit,
         maxSessions: this.maxSessions
       };
     }
@@ -332,11 +412,27 @@ class SessionManagementService {
   }
 
   recordRequest(chatId, { latencyMs = 0, error = false, errorType = null } = {}) {
-    const session = this.getInfo(chatId);
+    // Determine whether `chatId` is actually a sessionId or a chatId. If it's
+    // a chatId we will update both the session-level aggregates and the
+    // per-chat metrics for that chatId. If it's a sessionId, only update the
+    // session-level aggregates.
+    if (!chatId) return false;
+    let session = null;
+    let resolvedChatId = null;
+    if (this.sessions.has(chatId)) {
+      session = this.sessions.get(chatId);
+    } else {
+      const mapped = this.chatToSession.get(chatId);
+      if (mapped) {
+        session = this.sessions.get(mapped) || null;
+        resolvedChatId = chatId;
+      }
+    }
     if (!session) return false;
+
+    // Update session-level aggregates
     session.requestCount = (session.requestCount || 0) + 1;
     if (error) session.errorCount = (session.errorCount || 0) + 1;
-    // support errorType counting when provided
     if (errorType) {
       session.errorTypes = session.errorTypes || {};
       session.errorTypes[errorType] = (session.errorTypes[errorType] || 0) + 1;
@@ -355,6 +451,31 @@ class SessionManagementService {
       let i = 0;
       while (i < session.requestTimestamps.length && session.requestTimestamps[i] < pruneBefore) i++;
       if (i > 0) session.requestTimestamps.splice(0, i);
+
+      // Also update per-chat metrics when we have a resolved chatId
+      if (resolvedChatId) {
+        session.chatMetrics = session.chatMetrics || {};
+        const cm = session.chatMetrics[resolvedChatId] = session.chatMetrics[resolvedChatId] || {
+          requestCount: 0,
+          errorCount: 0,
+          totalLatencyMs: 0,
+          lastLatencyMs: 0,
+          requestTimestamps: [],
+          errorTypes: {}
+        };
+        cm.requestCount = (cm.requestCount || 0) + 1;
+        if (error) cm.errorCount = (cm.errorCount || 0) + 1;
+        if (errorType) cm.errorTypes = cm.errorTypes || {}, cm.errorTypes[errorType] = (cm.errorTypes[errorType] || 0) + 1;
+        if (typeof latencyMs === 'number' && latencyMs >= 0) {
+          cm.lastLatencyMs = latencyMs;
+          cm.totalLatencyMs = (cm.totalLatencyMs || 0) + latencyMs;
+        }
+        cm.requestTimestamps.push(now);
+        // prune
+        let j = 0;
+        while (j < cm.requestTimestamps.length && cm.requestTimestamps[j] < pruneBefore) j++;
+        if (j > 0) cm.requestTimestamps.splice(0, j);
+      }
     } catch (e) {
       // ignore timestamp recording errors
     }
@@ -366,6 +487,17 @@ class SessionManagementService {
     for (const [k, v] of this.sessions.entries()) {
       const chatIds = (v.chatIds && v.chatIds.length) ? v.chatIds : [v.chatId || null];
       for (const cid of chatIds) {
+        // Prefer per-chat metrics when available, otherwise fall back to
+        // session-level aggregates. This ensures summaries are accurate for
+        // individual chats while retaining session-wide visibility.
+        const cm = (v.chatMetrics && cid && v.chatMetrics[cid]) ? v.chatMetrics[cid] : null;
+        const requestCount = cm ? (cm.requestCount || 0) : (v.requestCount || 0);
+        const errorCount = cm ? (cm.errorCount || 0) : (v.errorCount || 0);
+        const lastLatencyMs = cm ? (cm.lastLatencyMs || 0) : (v.lastLatencyMs || 0);
+        const avgLatencyMs = cm ? (cm.requestCount ? Math.round((cm.totalLatencyMs || 0) / cm.requestCount) : 0) : (v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0);
+        const errorTypes = cm ? (cm.errorTypes || {}) : (v.errorTypes || {});
+        const requestTimestamps = cm ? (cm.requestTimestamps || []) : (v.requestTimestamps || []);
+
         out.push({
           // Return explicit `sessionId` and `chatId` fields. Do NOT alias them.
           sessionId: k,
@@ -374,27 +506,27 @@ class SessionManagementService {
           createdAt: v.createdAt,
           lastSeen: v.lastSeen,
           ttl: v.ttl,
-          requestCount: v.requestCount || 0,
-          errorCount: v.errorCount || 0,
+          requestCount: requestCount,
+          errorCount: errorCount,
           // expose per-error-type counts and an "other" bucket
-          errorTypes: v.errorTypes || {},
+          errorTypes: errorTypes,
           errorTypesOther: (() => {
             try {
-              const byType = v.errorTypes || {};
+              const byType = errorTypes || {};
               const sumSpecific = Object.values(byType).reduce((a, b) => a + b, 0);
-              const other = (v.errorCount || 0) - sumSpecific;
+              const other = (errorCount || 0) - sumSpecific;
               return other > 0 ? other : 0;
             } catch (e) {
               return 0;
             }
           })(),
-          lastLatencyMs: v.lastLatencyMs || 0,
-          avgLatencyMs: v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0,
+          lastLatencyMs: lastLatencyMs || 0,
+          avgLatencyMs: avgLatencyMs,
           // requests per minute: count of requests in the last 60 seconds
           rpm: (() => {
             try {
               const now = Date.now();
-              const mts = v.requestTimestamps || [];
+              const mts = requestTimestamps || [];
               let count = 0;
               for (let i = mts.length - 1; i >= 0; i--) {
                 if (now - mts[i] <= 60 * 1000) count++; else break;
@@ -485,10 +617,38 @@ class SessionManagementService {
     this.fingerprintToSession.clear();
   }
 
-  _createBucket({ capacity = null, refillPerSec = null } = {}) {
+  _createBucket({ capacity = null, refillPerSec = null } = {}, isAuthenticated = false) {
     const cap = (capacity !== null && !Number.isNaN(Number(capacity))) ? Number(capacity) : this.defaultRateLimit.capacity;
     const refill = (refillPerSec !== null && !Number.isNaN(Number(refillPerSec))) ? Number(refillPerSec) : this.defaultRateLimit.refillPerSec;
-    return new CreditBucket({ capacity: cap, refillPerSec: refill });
+    return new CreditBucket({ capacity: cap, refillPerSec: refill, isAuthenticated });
+  }
+
+  _touchSession(session, now = Date.now(), ttl = undefined) {
+    if (!session) return;
+    session.lastSeen = now;
+    if (typeof ttl !== 'undefined' && ttl !== null) session.ttl = ttl;
+  }
+
+  _ensureChatMapped(session, chatId, fallbackSessionId = null) {
+    if (!session || !chatId) return;
+    session.chatIds = session.chatIds || [];
+    if (!session.chatIds.includes(chatId)) session.chatIds.push(chatId);
+    const sid = session.sessionId || fallbackSessionId || null;
+    if (sid) this.chatToSession.set(chatId, sid);
+    // initialize per-chat metrics when a new chat is mapped
+    try {
+      session.chatMetrics = session.chatMetrics || {};
+      if (!session.chatMetrics[chatId]) {
+        session.chatMetrics[chatId] = {
+          requestCount: 0,
+          errorCount: 0,
+          totalLatencyMs: 0,
+          lastLatencyMs: 0,
+          requestTimestamps: [],
+          errorTypes: {}
+        };
+      }
+    } catch (e) { /* best-effort */ }
   }
 }
 

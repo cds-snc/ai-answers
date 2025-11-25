@@ -1,106 +1,127 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
+import { getFingerprint } from '../utils/fingerprint.js';
 
 class AuthService {
   static unauthorizedCallback = null;
-
-  static decodeTokenPayload(token) {
-    if (!token) {
-      return null;
-    }
-    try {
-      const payload = token.split('.')[1];
-      if (!payload) {
-        return null;
-      }
-      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-      let decoded;
-      if (typeof atob === 'function') {
-        decoded = atob(normalized);
-      } else if (typeof Buffer !== 'undefined') {
-        decoded = Buffer.from(normalized, 'base64').toString('utf-8');
-      } else {
-        return null;
-      }
-      return JSON.parse(decoded);
-    } catch (error) {
-      console.error('decodeTokenPayload error:', error);
-      return null;
-    }
-  }
-
-  static getUserId() {
-    const token = this.getToken();
-    const payload = this.decodeTokenPayload(token);
-    return payload && payload.userId ? payload.userId : null;
-  }
-
-  // Send user details (token) with every request, no logout or 401 handling
-  static async fetchWithUser(url, options = {}) {
-    const token = this.getToken();
-    const headers = { ...options.headers };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    const method = (options.method || 'GET').toUpperCase();
-    if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
-      headers['Content-Type'] = 'application/json';
-    }
-    return fetch(url, { ...options, headers });
-  }
+  static currentUser = null; // Cache for current user
 
   static setUnauthorizedCallback(cb) {
     this.unauthorizedCallback = cb;
   }
 
-  static setToken(token) {
-    localStorage.setItem('token', token);
-  }
+  // Consolidated fetch method with automatic token refresh
+  static async fetch(url, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
+    const headers = { ...options.headers };
 
-  static getToken() {
-    return localStorage.getItem('token');
-  }
-
-  static setUser(user) {
-    localStorage.setItem('user', JSON.stringify(user));
-  }
-
-  static getUser() {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      const fallbackId = this.getUserId();
-      return fallbackId ? { userId: fallbackId } : null;
+    // Set Content-Type for requests with body
+    if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
     }
-    try {
-      const user = JSON.parse(userStr);
-      const userId = this.getUserId();
-      if (userId && !user.userId) {
-        user.userId = userId;
+
+    // Inject fingerprint header automatically
+    const fp = await getFingerprint();
+    if (fp) {
+      headers['x-fp-id'] = fp;
+    }
+
+    // Always include credentials for cookies
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include'
+    });
+
+    // Handle 401 - try to refresh token
+    if (response.status === 401) {
+      const refreshed = await this.refreshToken();
+      if (refreshed) {
+        // Retry the original request
+        return fetch(url, { ...options, headers, credentials: 'include' });
+      } else {
+        // Refresh failed, trigger logout
+        this.logout();
+        if (typeof this.unauthorizedCallback === 'function') {
+          this.unauthorizedCallback();
+        }
       }
-      return user;
+    }
+
+    return response;
+  }
+
+
+
+
+
+  // Get current user from server
+  static async getCurrentUser() {
+    try {
+      const response = await fetch(getApiUrl('auth-me'), {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        this.currentUser = null;
+        return null;
+      }
+
+      const data = await response.json();
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        return data.user;
+      }
+
+      this.currentUser = null;
+      return null;
     } catch (error) {
-      console.error('getUser parse error:', error);
+      console.error('getCurrentUser error:', error);
+      this.currentUser = null;
       return null;
     }
   }
 
-  static removeToken() {
+  // Get cached user or fetch from server
+  static async getUser() {
+    if (this.currentUser) {
+      return this.currentUser;
+    }
+    return await this.getCurrentUser();
+  }
+
+  // Refresh access token using refresh token
+  static async refreshToken() {
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      const response = await fetch(getApiUrl('auth-refresh'), {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        console.log('Token refreshed successfully');
+        return true;
       }
-    } catch (e) {
-      console.warn('removeToken error', e);
+
+      console.log('Token refresh failed');
+      return false;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return false;
     }
   }
 
   static logout() {
-    this.removeToken();
+    // Clear cached user
+    this.currentUser = null;
 
     try {
       const logoutUrl = getApiUrl('auth-logout');
-      fetch(logoutUrl, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
-        .catch(() => {});
+      fetch(logoutUrl, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(() => { });
     } catch (e) {
       // ignore
     }
@@ -108,8 +129,7 @@ class AuthService {
     this.clearClientStorage();
   }
 
-  // Clear localStorage, sessionStorage and non-HttpOnly cookies.
-  // Note: HttpOnly cookies cannot be cleared via JavaScript; they must be cleared by the server.
+  // Clear localStorage and sessionStorage (cookies cleared by server)
   static clearClientStorage() {
     try {
       if (typeof window === 'undefined') return;
@@ -124,72 +144,18 @@ class AuthService {
       } catch (e) {
         console.warn('sessionStorage.clear() failed', e);
       }
-
-      if (typeof document !== 'undefined' && document.cookie) {
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-          const eqPos = cookie.indexOf('=');
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          try {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-            try {
-              const hostParts = window.location.hostname.split('.');
-              for (let i = 0; i <= hostParts.length - 1; i++) {
-                const domain = hostParts.slice(i).join('.');
-                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${domain}`;
-              }
-            } catch (domErr) {
-              // ignore domain clear errors
-            }
-          } catch (e) {
-            // ignore per-cookie errors
-          }
-        }
-      }
     } catch (e) {
       console.error('clearClientStorage error', e);
     }
   }
 
-  static isAuthenticated() {
-    const token = this.getToken();
-    const user = this.getUser();
-
-    if (!token || !user || !user.active) {
-      return false;
-    }
-
-    if (this.isTokenExpired()) {
-      this.logout();
-      return false;
-    }
-
-    return true;
+  static async isAuthenticated() {
+    const user = await this.getCurrentUser();
+    return !!user && user.active !== false;
   }
 
-  static isTokenExpired() {
-    const token = this.getToken();
-    if (!token) {
-      return true;
-    }
-
-    try {
-      const payload = token.split('.')[1];
-      const decoded = JSON.parse(atob(payload));
-
-      if (decoded.exp) {
-        const currentTime = Date.now() / 1000;
-        return decoded.exp < currentTime;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error checking token expiration:', error);
-      return true;
-    }
-  }
-
-  static isAdmin() {
-    const user = this.getUser();
+  static async isAdmin() {
+    const user = await this.getUser();
     return !!user && user.role === 'admin';
   }
 
@@ -199,6 +165,7 @@ class AuthService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
@@ -207,8 +174,8 @@ class AuthService {
     }
 
     const data = await response.json();
-    this.setToken(data.token);
-    this.setUser(data.user);
+    // Cookies are set automatically by the server
+    this.currentUser = data.user;
     return data;
   }
 
@@ -218,6 +185,7 @@ class AuthService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
@@ -226,15 +194,13 @@ class AuthService {
     }
 
     const data = await response.json();
-    // If backend indicates twoFA is required, do not set token yet
+    // If backend indicates twoFA is required, do not cache user yet
     if (data && data.twoFA) {
-      // Return the user info without setting token
       return data;
     }
 
-    // Store token and user for normal flows
-    this.setToken(data.token);
-    this.setUser(data.user);
+    // Cookies are set automatically by the server
+    this.currentUser = data.user;
     return data;
   }
 
@@ -242,6 +208,7 @@ class AuthService {
     const response = await fetch(getApiUrl('auth-verify-2fa'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, code }),
     });
 
@@ -251,9 +218,9 @@ class AuthService {
     }
 
     const data = await response.json();
-    if (data.token) {
-      this.setToken(data.token);
-      this.setUser(data.user);
+    // Cookies are set automatically by the server
+    if (data.user) {
+      this.currentUser = data.user;
     }
     return data;
   }
@@ -265,6 +232,7 @@ class AuthService {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email })
     });
     if (!resp.ok) {
@@ -274,15 +242,13 @@ class AuthService {
     return await resp.json();
   }
 
-  // Request an OTP to be sent for a given reset token
-  // Deprecated: OTP fallback removed. Use sendReset to request a link and reset via the link.
-
   // Finalize password reset: provide token (from link), verification code (TOTP or email OTP), and new password
   static async resetPassword({ email, token, password }) {
     const url = getApiUrl('auth-reset-password');
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, token, password })
     });
     if (!resp.ok) {
@@ -300,6 +266,7 @@ class AuthService {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email }),
     });
 
@@ -316,39 +283,8 @@ class AuthService {
     return publicRoutes.some(route => pathname.startsWith(route));
   }
 
-  static getAuthHeader() {
-    const token = this.getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  static async fetchWithAuth(url, options = {}) {
-    const method = (options.method || 'GET').toUpperCase();
-    const hasBody = !!options.body;
-
-    let combinedHeaders = { ...this.getAuthHeader() };
-
-    if (['POST', 'PUT', 'PATCH'].includes(method) && hasBody) {
-      if (!(options.headers && options.headers['Content-Type'])) {
-        combinedHeaders['Content-Type'] = 'application/json';
-      }
-    }
-
-    combinedHeaders = { ...combinedHeaders, ...options.headers };
-
-    const response = await fetch(url, { ...options, headers: combinedHeaders });
-
-    if (response.status === 401) {
-      this.logout();
-      if (typeof this.unauthorizedCallback === 'function') {
-        this.unauthorizedCallback();
-      }
-    }
-
-    return response;
-  }
-
-  static hasRole(requiredRoles = []) {
-    const user = this.getUser();
+  static async hasRole(requiredRoles = []) {
+    const user = await this.getUser();
     return user && requiredRoles.includes(user.role);
   }
 }

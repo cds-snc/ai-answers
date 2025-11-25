@@ -33,7 +33,7 @@ class ScenarioOverrideServiceClass {
     }
     try {
       const url = `${getApiUrl('scenario-overrides')}?departmentKey=${encodeURIComponent(departmentKey)}`;
-      const response = await AuthService.fetchWithAuth(url);
+      const response = await AuthService.fetch(url);
       if (!response.ok) {
         if (response.status === 404) {
           this.overrideCache.set(departmentKey, null);
@@ -60,7 +60,7 @@ class ScenarioOverrideServiceClass {
       return this.listCache;
     }
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('scenario-overrides'));
+      const response = await AuthService.fetch(getApiUrl('scenario-overrides'));
       if (!response.ok) {
         throw new Error('Failed to load scenario overrides');
       }
@@ -84,7 +84,7 @@ class ScenarioOverrideServiceClass {
     if (!departmentKey) {
       throw new Error('departmentKey is required');
     }
-    const response = await AuthService.fetchWithAuth(getApiUrl('scenario-overrides'), {
+    const response = await AuthService.fetch(getApiUrl('scenario-overrides'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ departmentKey, overrideText, enabled }),
@@ -104,7 +104,7 @@ class ScenarioOverrideServiceClass {
       throw new Error('departmentKey is required');
     }
     const delUrl = `${getApiUrl('scenario-overrides')}?departmentKey=${encodeURIComponent(departmentKey)}`;
-    const response = await AuthService.fetchWithAuth(delUrl, { method: 'DELETE' });
+    const response = await AuthService.fetch(delUrl, { method: 'DELETE' });
     if (!response.ok && response.status !== 404) {
       const errText = await response.text();
       throw new Error(errText || 'Failed to delete override');

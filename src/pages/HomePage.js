@@ -108,6 +108,8 @@ const HomePage = ({ lang = "en" }) => {
 
   async function fetchSession() {
     try {
+      // Always request a new chat ID on mount (new tab or reload)
+      // so that every tab/visit gets its own conversation context.
       const data = await DataStoreService.getChatSession();
       if (data && data.chatId) {
         setChatId(data.chatId);
@@ -124,15 +126,19 @@ const HomePage = ({ lang = "en" }) => {
 
   useEffect(() => {
     if (reviewChatId) return;
-    // Only fetch a chat session if not explicitly unavailable (site and sessions), or if privileged
-    const siteNotFalse = serviceStatus.isAvailable !== false;
-    const sessionsNotFalse = serviceStatus.sessionAvailable !== false;
-    if (isPrivileged || (siteNotFalse && sessionsNotFalse)) {
-      if (!chatId) {
-        fetchSession();
-      }
+
+    // If privileged users, always fetch a chat.
+    if (isPrivileged) {
+      if (!chatId) fetchSession();
+      return;
     }
-  }, [serviceStatus.isAvailable, isPrivileged, chatId, reviewChatId]);
+
+    // For normal users, wait until availability is confirmed (true)
+    const available = serviceStatus.isAvailable === true && serviceStatus.sessionAvailable === true;
+    if (available && !chatId) {
+      fetchSession();
+    }
+  }, [serviceStatus.isAvailable, serviceStatus.sessionAvailable, isPrivileged, chatId, reviewChatId]);
 
   useEffect(() => {
     if (reviewChatId) {

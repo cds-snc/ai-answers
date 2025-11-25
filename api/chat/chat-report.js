@@ -1,13 +1,16 @@
+import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 import SessionManagementService from '../../services/SessionManagementService.js';
 
-export default async function handler(req, res) {
+export async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
-  const { chatId, latencyMs, error, errorType } = req.body || {};
-  if (!chatId) return res.status(400).json({ error: 'missing_chatId' });
+    const { latencyMs, error, errorType } = req.body || {};
+    const chatId = req.chatId;
+    if (!chatId) return res.status(400).json({ error: 'missing_chatId' });
 
-  const ok = SessionManagementService.recordRequest(chatId, { latencyMs: Number(latencyMs) || 0, error: !!error, errorType });
+    const ok = SessionManagementService.recordRequest(chatId, { latencyMs: Number(latencyMs) || 0, error: !!error, errorType });
     if (!ok) return res.status(404).json({ error: 'no_session' });
     return res.status(200).json({ ok: true });
   } catch (e) {
@@ -15,3 +18,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'server_error' });
   }
 }
+export default withOptionalUser(withSession(handler));

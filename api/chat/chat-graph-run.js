@@ -1,6 +1,5 @@
-import { getGraphApp } from '../../agents/graphs/registry.js';
-import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { withSession } from '../../middleware/session.js';
+import { withOptionalUser } from '../../middleware/auth.js';
 
 const REQUIRED_METHOD = 'POST';
 
@@ -107,23 +106,11 @@ async function handler(req, res) {
     const authorization = headers['authorization'];
     if (authorization) out['Authorization'] = authorization;
 
-    const sessionToken = headers['x-session-token'];
-    if (sessionToken) out['x-session-token'] = sessionToken;
-
     const fpId = headers['x-fp-id'];
     if (fpId) out['x-fp-id'] = fpId;
-
-    const fpHash = headers['x-fp-hash'];
-    if (fpHash) out['x-fp-hash'] = fpHash;
-
-    const chatIdHeader = headers['x-chat-id'];
-    if (chatIdHeader) out['x-chat-id'] = chatIdHeader;
-
-    const bypass = headers['x-session-bypass'];
-    if (bypass) out['x-session-bypass'] = bypass;
 
     return out;
   }
 }
 
-export default withSession(handler);
+export default withOptionalUser(withSession(handler));

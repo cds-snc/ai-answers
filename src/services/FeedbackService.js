@@ -20,9 +20,9 @@ class FeedbackService {
       expertCitationUrl: expertFeedback.expertCitationUrl || '',
       feedback: expertFeedback.feedback
     };
-  // Log expert feedback using ClientLoggingService
-  await ClientLoggingService.info(chatId, 'Expert feedback submitted', formattedExpertFeedback);
-    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-persist-expert'), {
+    // Log expert feedback using ClientLoggingService
+    await ClientLoggingService.info(chatId, 'Expert feedback submitted', formattedExpertFeedback);
+    const response = await AuthService.fetch(getApiUrl('feedback-persist-expert'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -46,9 +46,9 @@ class FeedbackService {
       publicFeedbackReason: publicFeedback.publicFeedbackReason || '',
       publicFeedbackScore: publicFeedback.publicFeedbackScore ?? null
     };
-  // Log public feedback using ClientLoggingService
-  await ClientLoggingService.info(chatId, 'Public feedback submitted', formattedPublicFeedback);
-    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-persist-public'), {
+    // Log public feedback using ClientLoggingService
+    await ClientLoggingService.info(chatId, 'Public feedback submitted', formattedPublicFeedback);
+    const response = await AuthService.fetch(getApiUrl('feedback-persist-public'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -68,7 +68,7 @@ class FeedbackService {
 
   static async getExpertFeedback({ interactionId }) {
     if (!interactionId) throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-get-expert'), {
+    const response = await AuthService.fetch(getApiUrl('feedback-get-expert'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId })
@@ -82,7 +82,7 @@ class FeedbackService {
 
   static async getPublicFeedback({ interactionId }) {
     if (!interactionId) throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-get-public'), {
+    const response = await AuthService.fetch(getApiUrl('feedback-get-public'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId })
@@ -96,7 +96,7 @@ class FeedbackService {
 
   static async deleteExpertFeedback({ interactionId }) {
     if (!interactionId) throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-delete-expert'), {
+    const response = await AuthService.fetch(getApiUrl('feedback-delete-expert'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId })
@@ -110,7 +110,7 @@ class FeedbackService {
 
   static async setExpertNeverStale({ interactionId, neverStale }) {
     if (!interactionId || typeof neverStale === 'undefined') throw new Error('Missing required fields');
-    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-expert-never-stale'), {
+    const response = await AuthService.fetch(getApiUrl('feedback-expert-never-stale'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ interactionId, neverStale })
