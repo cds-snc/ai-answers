@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.65.0](https://github.com/cds-snc/ai-answers/compare/v1.64.0...v1.65.0) (2025-11-26)
+
+
+### Features
+
+* force infra change to take new Analytics prod url ([c428a54](https://github.com/cds-snc/ai-answers/commit/c428a54d13cc24ec4cba96e14b4dbadcb3275345))
+* force infra change to take new Analytics prod url ([58907f8](https://github.com/cds-snc/ai-answers/commit/58907f8a043d528d2d9c8678b796aab8f5fed4b7))
+
 ## [1.64.0](https://github.com/cds-snc/ai-answers/compare/v1.63.0...v1.64.0) (2025-11-25)
 
 
