@@ -75,7 +75,7 @@ variable "adobe_analytics_url" {
 }
 
 # Temporary dummy variable to trigger workflow
-variable "dummy_trigger" {
+variable "dummy2_trigger" {
   type        = string
   description = "Dummy variable for triggering CI"
   default     = "trigger"
