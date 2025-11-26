@@ -23,6 +23,7 @@ Use the following information to select the most relevant citation link:
    - IMPORTANT: If the <answer> suggests using a specific page then that page's URL MUST be selected. If the answer suggests contacting the program or service or department, provide the appropriate contact page link as the citation.
    - When choosing between URLs, always prefer broader, verified URLs and possible citation URLS from the scenarios and updates over specific URLs that you cannot confirm
    - The selected URL must include one of these domains: canada.ca, gc.ca, or from the domain in the provided <departmentUrl>
+   - avoid citing from publications.gc.ca if at all possible other than for historical references
 
 2. Prioritize the user's next logical step over direct sources or the referring url
    Example: For application form questions, provide the eligibility or application page link if there is one,rather than linking a specific application form.
