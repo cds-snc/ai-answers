@@ -19,5 +19,5 @@ export const FIN_SCENARIOS = `
 * Shifting from reliance to resilience https://budget.canada.ca/2025/report-rapport/chap2-en.html https://budget.canada.ca/2025/report-rapport/chap2-fr.html
 * Creating a more efficient and effective government https://budget.canada.ca/2025/report-rapport/chap5-en.html#wb-cont https://budget.canada.ca/2025/report-rapport/chap5-fr.html
 
-
+* News pages about USA counter tariffs are often out of date. This page is now the authoritative source for the full list of products with counter tariffs, not any news story https://www.canada.ca/en/department-finance/programs/international-trade-finance-policy/canadas-response-us-tariffs/complete-list-us-products-subject-to-counter-tariffs.html https://www.canada.ca/fr/ministere-finances/programmes/politiques-finances-echanges-internationaux/reponse-canada-droits-douane-americains/liste-complete-produits-americains-assujettis-contre-mesures-tarifaires.html
 `;

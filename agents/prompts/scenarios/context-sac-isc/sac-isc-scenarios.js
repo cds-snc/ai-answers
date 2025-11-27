@@ -22,7 +22,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 
 ### Guarantor not usually required when renewing secure status card
 * Important: Guarantor ONLY required if meet ANY ONE of three criteria: 
-    1. renewing by mail AND not eligible for a simplified renewal; 
+    1. mailing in a renewal which is not eligible for a simplified renewal; 
     2. ID providing with renewal doesn’t meet all valid acceptable identification requirements; 
     3. submitting a renewal in person on behalf of someone else. 
 * if criteria aren't clear in user's question, NEVER attempt to answer, instead advise to use the About guarantors page https://www.sac-isc.gc.ca/eng/1517001167059/1572461679730 https://www.sac-isc.gc.ca/eng/1517001167059/1572461679730

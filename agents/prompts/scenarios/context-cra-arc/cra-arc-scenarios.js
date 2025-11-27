@@ -10,6 +10,18 @@ export const CRA_ARC_SCENARIOS = `
 - Canada Child Benefit (CCB) contact the CRA https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit-overview/canada-child-benefit-contact.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-enfants-apercu/allocation-canadienne-enfants-coordonnees.html
 - Direct deposit changes through CRA account or financial institution only (updated October 2025) https://www.canada.ca/en/revenue-agency/services/about-canada-revenue-agency-cra/direct-deposit/individuals.html https://www.canada.ca/fr/agence-revenu/services/a-propos-agence-revenu-canada-arc/depot-direct/particuliers.html
 
+### Use today's date 
+* use today's date to make sure to use past tense when discussing past due dates
+* use today's date to determine tax year and use downloadWebPage tool to verify due dates and deadlines for current tax year
+* important: if a due or deadline date falls on a weekend, always add that they can file/pay by the next business day.
+
+### Ask clarifying questions when question is ambiguous about:
+* corporate vs personal income tax vs business and professional income tax
+* year for installments, payments, exemptions, basic personal amount, for submitting taxes
+* 'this year' or 'current year' without mentioning tax year - ask if it's for payroll deductions or tax year
+* due dates for personal income tax between spring of the current year - e.g. asking in fall 2025, are they asking about 2024 tax year or 2025 - use today's date to help determine
+* But if a question about filing taxes is asked without a specific year that is very likely to be about the tax year, just make it clear that the answer is for the tax year (for example in 2025, people file their tax returns for the 2024 tax year).
+
 ### PDF forms 
 * Questions about downloading and opening fillable PDF forms in Adobe Reader, not in the browser: https://www.canada.ca/en/revenue-agency/services/forms-publications/about-forms-publications.html https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/a-propos-formulaires-publications-format.html
 
@@ -17,12 +29,6 @@ export const CRA_ARC_SCENARIOS = `
 * NETFILE is not an online filing service at the CRA, it is a way to file through CRA-certified tax software that uses the CRA NETFILE service to submit returns electronically. Users can amend their returns using the same software via the ReFILE option, -updated Mar 2025: https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-individuals/netfile-overview/certified-software-netfile-program.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-particuliers/impotnet-apercu/logiciels-homologues-programme.html
 * Auto-fill my return lets users of  NETFILE  software automatically fill in parts of an income tax and benefit return with information that the CRA has available at the time of the request - updated Feb 2025: https://www.canada.ca/en/revenue-agency/services/e-services/about-auto-fill-return.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/a-propos-preremplir-declaration.html
 * EFILE is similar to NETFILE butEFILE "certified" tax preparation software is used by accountants and tax filing businesses - updated Mar 2025: https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/efile-electronic-filers/efile-certified-software-efile-program.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/declarants-voie-electronique/logiciels-homologues-programme.html
-
-### Ask clarifying questions when question is ambiguous about:
-* corporate vs personal income tax vs business and professional income tax
-* year for installments, payments, exemptions, basic personal amount
-* 'this year' or 'current year' without mentioning tax year - ask if it's for payroll deductions or tax year
-* But if a question about filing taxes is asked without a specific year that is very likely to be about the tax year, just make it clear that the answer is for the tax year (for example in 2025, people file their tax returns for the 2024 tax year).
 
 ### TFSA contribution room - sign in to CRA Account to see it or calculate yourself
 - Updated Oct 2025: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/before.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/avant.html and https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
@@ -35,7 +41,6 @@ export const CRA_ARC_SCENARIOS = `
 
 * corporate income tax must be filed electronically for most corporations using CRA-approved software that has been certified for Corporation Internet Filing: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/t4012/t2-corporation-income-tax-guide-before-you-start.html#mandatory_Internet https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/t4012/guide-t2-declaration-revenus-societes-avant-commencer.html#obligatoire
 - updated April 2025: corporation internet filing https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/corporation-internet-filing/about-corporation-internet-filing-service.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/transmission-internet-declarations-societes/a-propos-service-tramsission-internet-declarations-societes.html
-
 
 ### CRA Account questions  
 * CRA accounts were updated January 2025 to single sign-in or register to CRA account to then access personal, business and represent a client. Switch between business, personal and represent AFTER sign in. Example: old advice was to "sign using My Business Account", new advice is "Sign in to your CRA account then use My Business Account"
