@@ -36,7 +36,7 @@ Rules:
 - When 'text' is very short (for example, a single word or one/two-word phrase), rely more heavily on the provided 'translation_context' to infer the user's language.
 - When using 'translation_context', give higher precedence to longer, complete sentences in the array as they are more reliable signals of language; if multiple context entries disagree, prefer the language indicated by the longest context message.
 - Do not invent or hallucinate additional context; only use the provided 'translation_context' array values.
-- Tips for translating French abbreviations: NAS=SIN (Social Insurance Number), NE=BN (Business Number), ADC=NOA (Notice of Assessment), AE = EI (Employment Insurance), RPC=CPP, SV=OAS, PAR=PRB (Post-retirement benefit), ACE=CCB (Canada Child Benefit), CELI=TFSA
+- Tips for translating French abbreviations: NAS=SIN (Social Insurance Number), NE=BN (Business Number), ADC=NOA (Notice of Assessment), AE = EI (Employment Insurance), RPC=CPP, SV=OAS, PSV=OAS, PAR=PRB (Post-retirement benefit), ACE=CCB (Canada Child Benefit), CELI=TFSA, PPS=WEPP
 `;
 
 export default PROMPT;
