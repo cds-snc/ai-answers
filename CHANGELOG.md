@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.65.1](https://github.com/cds-snc/ai-answers/compare/v1.65.0...v1.65.1) (2025-11-27)
+
+
+### Bug Fixes
+
+* ISC-scenario-guarantor ([c6f25ee](https://github.com/cds-snc/ai-answers/commit/c6f25eea9dfe8b609da849250d1c19ee3058d138))
+* more translations and PII ([0efbede](https://github.com/cds-snc/ai-answers/commit/0efbede32d479f587e0f8b40559543ae5087ad6d))
+* trial-prompt-issues ([391f712](https://github.com/cds-snc/ai-answers/commit/391f71293a705ff31ee632e6b485eb9a56cdcb94))
+* trial-prompt-issues ([b855f17](https://github.com/cds-snc/ai-answers/commit/b855f17bc2ae3422c789b22a9d4b1abba8fa50b9))
+
 ## [1.65.0](https://github.com/cds-snc/ai-answers/compare/v1.64.0...v1.65.0) (2025-11-26)
 
 
