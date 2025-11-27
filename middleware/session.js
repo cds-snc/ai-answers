@@ -63,7 +63,7 @@ export default function sessionMiddleware(options = {}) {
 
       async function rehydrateOrRegister(sessionId, { fingerprintHeader, fingerprintKey, fingerprintVerified, isAuthenticated }) {
         // Try to read existing in-memory info first
-        let info = sessionId ? SessionManagementService.getInfo(sessionId) : null;
+        let info = sessionId ? await SessionManagementService.getInfo(sessionId) : null;
         if (info) return { ok: true, session: info };
 
         // Require a verified fingerprint or raw header for resurrect/register path
@@ -88,7 +88,7 @@ export default function sessionMiddleware(options = {}) {
       }
 
       let sessionId = extractSessionIdFromCookie(cookies[SESSION_COOKIE_NAME]);
-      let sessionInfo = sessionId ? SessionManagementService.getInfo(sessionId) : null;
+      let sessionInfo = sessionId ? await SessionManagementService.getInfo(sessionId) : null;
 
       // Verify server-signed fingerprint cookie (if present) to avoid counting unverified headers
       const fingerprintVerified = verifyFpSignedCookie(cookies, fingerprintHeader);
@@ -142,7 +142,7 @@ export default function sessionMiddleware(options = {}) {
 
         // persist session values locally for downstream handlers and set cookies
         sessionId = created.sessionId;
-        sessionInfo = created.session || SessionManagementService.getInfo(sessionId);
+        sessionInfo = created.session || await SessionManagementService.getInfo(sessionId);
 
         // Read dynamic session TTL from settings (minutes) if available.
         let sessionTtlSeconds = SESSION_TTL_SECONDS;
@@ -195,7 +195,7 @@ export default function sessionMiddleware(options = {}) {
           res.setHeader('Content-Type', 'application/json');
           return res.end(JSON.stringify({ error: 'couldNotRegister' }));
         }
-        sessionInfo = reg.session || SessionManagementService.getInfo(sessionId);
+        sessionInfo = reg.session || await SessionManagementService.getInfo(sessionId);
       }
 
       const allowed = await SessionManagementService.canConsume(sessionId, 1);
@@ -229,7 +229,7 @@ export default function sessionMiddleware(options = {}) {
       }
 
       req.sessionId = sessionId;
-      req.session = sessionInfo || SessionManagementService.getInfo(sessionId);
+      req.session = sessionInfo || await SessionManagementService.getInfo(sessionId);
       req.chatSession = req.session;
       req.fingerprintKey = fingerprintKey; // Expose for downstream handlers
       req.chatId = chatId;

@@ -738,12 +738,17 @@ class SessionManagementService {
     return { ok: false, reason: 'noCredits', remaining: session.bucket.getCredits() };
   }
 
-  getInfo(chatId) {
+  async getInfo(chatId) {
     // Accept either a sessionId or a chatId. Prefer sessionId lookup for speed.
     if (!chatId) return null;
     if (this.sessions.has(chatId)) return this.sessions.get(chatId);
     const mapped = this.chatToSession.get(chatId);
     if (mapped) return this.sessions.get(mapped) || null;
+    if (await this._isMongoMode()) {
+      let session = await this._loadSessionFromDBBySessionId(chatId);
+      if (!session) session = await this._loadSessionFromDBByChatId(chatId);
+      return session;
+    }
     return null;
   }
 
