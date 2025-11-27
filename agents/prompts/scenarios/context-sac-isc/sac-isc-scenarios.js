@@ -20,6 +20,14 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 ### Acceptable photos for Secure status card 
 * People applying for or renewing a secure status card can submit 2 printed photos or use the SCIS Photo App, as described on this page: https://www.sac-isc.gc.ca/eng/1333474227679/1572461782133 https://www.sac-isc.gc.ca/fra/1333474227679/1572461782133
 
+### Guarantor not usually required when renewing secure status card
+* Important: Guarantor ONLY required if meet ANY ONE of three criteria: 
+    1. renewing by mail AND not eligible for a simplified renewal; 
+    2. ID providing with renewal doesn’t meet all valid acceptable identification requirements; 
+    3. submitting a renewal in person on behalf of someone else. 
+* if criteria aren't clear in user's question, NEVER attempt to answer, instead advise to use the About guarantors page https://www.sac-isc.gc.ca/eng/1517001167059/1572461679730 https://www.sac-isc.gc.ca/eng/1517001167059/1572461679730
+* A guarantor for a child under 2 must be someone who has known the parent or legal guardian for at least 2 years. 
+
 ### Required documents
 * Required documents to submit an application vary depending on the user's circumstances. If it is unclear whether the user is asking about required documents for registration vs status card, ask a clarifying question so you can provide a helpful answer.
 * If the user is asking about the documents required to register under the Indian Act, the documents required are detailed here: https://www.sac-isc.gc.ca/eng/1710868681038/1710868708332
@@ -30,9 +38,6 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * Group application forms are not available on the website. People looking for a group application form must contact a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * How to submit a request via the Jordan's Principle Call Centre at 1-855-JP-CHILD (1-855-572-4453) or through a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * Regional focal points do not have an email address listed on the website. Users can contact the regional focal points by email or phone to get information on how to submit a request under Jordan's Principle. Les points de contact régionaux n’ont pas d’adresse électronique répertoriée sur le site Web. Les utilisateurs peuvent contacter les points de contact régionaux par courrier électronique ou par téléphone pour obtenir des informations sur la manière de soumettre une demande au titre du principe de Jordan. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
-
-### Guarantors for children
-* A guarantor for a child under 2 must be someone who has known the parent or legal guardian for at least 2 years. 
 
 ### Jordan's Principle - what is covered
 * What is covered under Jordan's Principle depends on the situation and needs of the First Nations child. Ce qui est couvert par le principe de Jordan dépend de la situation et des besoins de l'enfant des Premières Nations. Citations sur le principe de Jordan : Jordan's Principle coverage citations: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387#sec1 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387#sec1

@@ -51,9 +51,9 @@ export const EDSC_ESDC_SCENARIOS = `
 * Apply, update or obtain a SIN confirmation Apply for a SIN online, by mail or in person - answer the questions on this page to see what documents will be required, updated Feb 2025: https://www.canada.ca/en/employment-social-development/services/sin/apply.html https://www.canada.ca/fr/emploi-developpement-social/services/numero-assurance-sociale/demande.html
 
 ### CPP/OAS
-* most CPP pages updated May 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp.html 
+* CPP pages updated Nov 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp.html 
 * new OAS estimator tool added April 2025:  https://estimateursv-oasestimator.service.canada.ca/en 
-* retirement income calculator updated May 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
+* retirement income calculator (starts at 1954 because it is for people not yet retired) updated Nov 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
 * Lived or living outside Canada - applying and receiving pensions and benefits (updated Jun 2025) https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales.html
 * Applying for CPP from outside Canada - process and forms differ by country -  select the country they are applying from to get correct form(updated Jun 2025) https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html 
 * Do not advise people that they should apply for CPP a year in advance - that is just a general guideline and could frighten people who aren't within that time frame. 

@@ -80,13 +80,14 @@ ${departmentsString}
 - International students study permits and visas → IRCC (administering department)
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
 - Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
-- Collection and assessment of duties and import taxes, CARM (GRCA in French) → CBSA-ASFC (administering department)
+- Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC (administering department)
 - Find a member of Parliament →  HOC-CDC (administering department)
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
 - Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
-- Questions about the AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
-- Questions about Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
+- AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
+- Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
+- 
 
 ## Response Format:
 <analysis>

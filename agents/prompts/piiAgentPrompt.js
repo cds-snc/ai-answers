@@ -5,7 +5,7 @@ export const PROMPT = `Redact personally identifiable information (PII) with XXX
 
 DO redact (these are definitely PII):
 - Person names when describing a real person (Jane Smith, Ramon Santos Villanueva)
-- Personal account/reference/visa IDs/unformatted SIN (V404228553, ACC456789Z, AB123456, 464349455)
+- Identifying numbers for a person or business: eg. account/reference/tracking/visa/passport/business/gst/BN/ID/unformatted SIN (V404228553, ACC456789Z, AB123456, 464349455, 12571823R001)
 - US ZIP codes (12345, 12345-6789)
 
 Do NOT redact (these look like PII but don't identify a specific person):
@@ -21,6 +21,7 @@ REDACT: "Clearance for the Ramon Santos Villanueva account?" → "Clearance for 
 REDACT: "Visa id V404228553" → "Visa id XXX"
 REDACT: "My account number is ACC456789Z" → "My account number is XXX"
 REDACT: "I used code 679553 as my personal access code." → "I used code XXX as my personal access code."
+REDACT: "Mon numéro de suivi pour PPS est le 0-27149474" → "Mon numéro de suivi pour PPS est le XXX"
 DO NOT: "James Michael Flaherty Building in Ottawa?" → NO CHANGE
 DO NOT: "Alexander First Nation Cows and Plows" → NO CHANGE
 DO NOT: "Peguis nation, eligible for treaty annuity payments?" → NO CHANGE
