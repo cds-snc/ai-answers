@@ -116,13 +116,21 @@ const SettingsPage = ({ lang = 'en' }) => {
     loadSettings();
   }, []);
 
+  // Helper to save a setting and read it back to confirm persistence.
+  const saveAndVerify = async (key, value, readTransform = (v) => v) => {
+    await DataStoreService.setSetting(key, value);
+    const current = await DataStoreService.getSetting(key, value);
+    return readTransform(current);
+  };
+
   // Session handlers
   const handleSessionTTLChange = async (e) => {
     const val = Number(e.target.value);
     setSessionTTL(val);
     setSavingSessionTTL(true);
     try {
-      await DataStoreService.setSetting('session.defaultTTLMinutes', String(val));
+      const current = await saveAndVerify('session.defaultTTLMinutes', String(val), (v) => Number(v));
+      setSessionTTL(Number(current));
     } finally {
       setSavingSessionTTL(false);
     }
@@ -133,7 +141,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setCleanupInterval(val);
     setSavingCleanupInterval(true);
     try {
-      await DataStoreService.setSetting('session.cleanupIntervalSeconds', String(val));
+      const current = await saveAndVerify('session.cleanupIntervalSeconds', String(val), (v) => Number(v));
+      setCleanupInterval(Number(current));
     } finally {
       setSavingCleanupInterval(false);
     }
@@ -144,7 +153,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setRateLimitCapacity(val);
     setSavingRateLimitCapacity(true);
     try {
-      await DataStoreService.setSetting('session.rateLimitCapacity', String(val));
+      const current = await saveAndVerify('session.rateLimitCapacity', String(val), (v) => Number(v));
+      setRateLimitCapacity(Number(current));
     } finally {
       setSavingRateLimitCapacity(false);
     }
@@ -155,7 +165,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setAuthRateLimitCapacity(val);
     setSavingAuthRateLimitCapacity(true);
     try {
-      await DataStoreService.setSetting('session.authenticatedRateLimitCapacity', String(val));
+      const current = await saveAndVerify('session.authenticatedRateLimitCapacity', String(val), (v) => Number(v));
+      setAuthRateLimitCapacity(Number(current));
     } finally {
       setSavingAuthRateLimitCapacity(false);
     }
@@ -169,6 +180,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Admin enters requests per minute; store as per-second for the service
       const perSec = Number(val) / 60;
       await DataStoreService.setSetting('session.rateLimitRefillPerSec', String(perSec));
+      // read back saved per-second value and convert to per-minute for display
+      const saved = await DataStoreService.getSetting('session.rateLimitRefillPerSec', String(perSec));
+      setRateLimitRefill(Number((Number(saved) * 60).toFixed(2)));
     } finally {
       setSavingRateLimitRefill(false);
     }
@@ -182,6 +196,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Admin enters requests per minute; store as per-second for the service
       const perSec = Number(val) / 60;
       await DataStoreService.setSetting('session.authenticatedRateLimitRefillPerSec', String(perSec));
+      const saved = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', String(perSec));
+      setAuthRateLimitRefill(Number((Number(saved) * 60).toFixed(2)));
     } finally {
       setSavingAuthRateLimitRefill(false);
     }
@@ -192,7 +208,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setMaxActiveSessions(val);
     setSavingMaxActiveSessions(true);
     try {
-      await DataStoreService.setSetting('session.maxActiveSessions', val);
+      const current = await saveAndVerify('session.maxActiveSessions', val, (v) => (v === 'undefined' ? '' : v));
+      setMaxActiveSessions(current);
     } finally {
       setSavingMaxActiveSessions(false);
     }
@@ -205,8 +222,9 @@ const SettingsPage = ({ lang = 'en' }) => {
     setSavingSessionPersistence(true);
     try {
       // store as 'mongo' or 'memory'
-      await DataStoreService.setSetting('session.persistence', val);
-      console.log('Session persistence saved successfully:', val);
+      const current = await saveAndVerify('session.persistence', val, (v) => ((v || '').toString().trim().toLowerCase() === 'mongo' ? 'mongo' : 'memory'));
+      setSessionPersistence(current);
+      console.log('Session persistence saved successfully:', current);
     } catch (error) {
       console.error('Failed to save session persistence:', error);
     } finally {
@@ -219,7 +237,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setSessionManagementEnabled(val);
     setSavingSessionManagementEnabled(true);
     try {
-      await DataStoreService.setSetting('session.managementEnabled', val);
+      const current = await saveAndVerify('session.managementEnabled', val, (v) => String(v ?? 'true'));
+      setSessionManagementEnabled(String(current));
     } finally {
       setSavingSessionManagementEnabled(false);
     }
@@ -230,7 +249,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setStatus(newStatus);
     setSaving(true);
     try {
-      await DataStoreService.setSetting('siteStatus', newStatus);
+      const current = await saveAndVerify('siteStatus', newStatus);
+      setStatus(current);
     } finally {
       setSaving(false);
     }
@@ -242,7 +262,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setProvider(newValue);
     setSavingProvider(true);
     try {
-      await DataStoreService.setSetting('provider', newValue);
+      const current = await saveAndVerify('provider', newValue);
+      setProvider(current);
     } finally {
       setSavingProvider(false);
     }
@@ -253,7 +274,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setDeploymentMode(newMode);
     setSavingDeployment(true);
     try {
-      await DataStoreService.setSetting('deploymentMode', newMode);
+      const current = await saveAndVerify('deploymentMode', newMode);
+      setDeploymentMode(current);
     } finally {
       setSavingDeployment(false);
     }
@@ -265,7 +287,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setLogChats(newValue);
     setSavingLogChats(true);
     try {
-      await DataStoreService.setSetting('logChatsToDatabase', newValue);
+      const current = await saveAndVerify('logChatsToDatabase', newValue);
+      setLogChats(current);
     } finally {
       setSavingLogChats(false);
     }
@@ -276,7 +299,8 @@ const SettingsPage = ({ lang = 'en' }) => {
     setTwoFAEnabled(newValue);
     setSavingTwoFAEnabled(true);
     try {
-      await DataStoreService.setSetting('twoFA.enabled', newValue);
+      const current = await saveAndVerify('twoFA.enabled', newValue);
+      setTwoFAEnabled(String(current ?? 'false'));
     } finally {
       setSavingTwoFAEnabled(false);
     }
@@ -289,7 +313,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   const handleTwoFATemplateIdBlur = async () => {
     setSavingTwoFATemplateId(true);
     try {
-      await DataStoreService.setSetting('twoFA.templateId', twoFATemplateId);
+      const current = await saveAndVerify('twoFA.templateId', twoFATemplateId, (v) => v ?? '');
+      setTwoFATemplateId(current);
     } finally {
       setSavingTwoFATemplateId(false);
     }
@@ -302,7 +327,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   const handleResetTemplateIdBlur = async () => {
     setSavingResetTemplateId(true);
     try {
-      await DataStoreService.setSetting('notify.resetTemplateId', resetTemplateId);
+      const current = await saveAndVerify('notify.resetTemplateId', resetTemplateId, (v) => v ?? '');
+      setResetTemplateId(current);
     } finally {
       setSavingResetTemplateId(false);
     }
@@ -315,7 +341,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   const handleBaseUrlBlur = async () => {
     setSavingBaseUrl(true);
     try {
-      await DataStoreService.setSetting('site.baseUrl', baseUrl);
+      const current = await saveAndVerify('site.baseUrl', baseUrl, (v) => v ?? '');
+      setBaseUrl(current);
     } finally {
       setSavingBaseUrl(false);
     }
@@ -353,8 +380,12 @@ const SettingsPage = ({ lang = 'en' }) => {
           const newType = e.target.value;
           setSavingVectorType(true);
           setVectorServiceType(newType);
-          await DataStoreService.setSetting('vectorServiceType', newType);
-          setSavingVectorType(false);
+          try {
+            const current = await saveAndVerify('vectorServiceType', newType);
+            setVectorServiceType(current);
+          } finally {
+            setSavingVectorType(false);
+          }
         }}
         disabled={savingVectorType}
       >
@@ -384,7 +415,9 @@ const SettingsPage = ({ lang = 'en' }) => {
           setDefaultWorkflow(v);
           setSavingDefaultWorkflow(true);
           try {
-            await DataStoreService.setSetting('workflow.default', v);
+            const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+            const current = await saveAndVerify('workflow.default', v);
+            setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
           } finally {
             setSavingDefaultWorkflow(false);
           }

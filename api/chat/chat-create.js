@@ -9,8 +9,9 @@ async function handler(req, res) {
 
   try {
     // If session management is disabled, just return a new UUID
-    if (!SessionManagementService.isManagementEnabled()) {
-      return res.status(200).json({ chatId: uuidv4() });
+    const sessionEnabled = SessionManagementService.isManagementEnabled();
+    if (!sessionEnabled) {
+      return res.status(200).json({ chatId: uuidv4(), sessionManagementEnabled: false });
     }
 
     const sessionId = req.sessionId || null;
@@ -30,12 +31,13 @@ async function handler(req, res) {
     if (!reg.ok) {
       return res.status(503).json({
         error: 'could_not_create_chat',
-        reason: reg.reason || 'unknown'
+        reason: reg.reason || 'unknown',
+        sessionManagementEnabled: true
       });
     }
 
-    // Return the newly generated chatId from the register result
-    return res.status(200).json({ chatId: reg.chatId });
+    // Return the newly generated chatId from the register result and indicate session management is enabled
+    return res.status(200).json({ chatId: reg.chatId, sessionManagementEnabled: true });
   } catch (e) {
     if (console && console.error) console.error('chat-create error', e);
     return res.status(500).json({ error: 'internal_error' });
