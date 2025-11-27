@@ -6,6 +6,8 @@
 // - per-session token-bucket rate limiter
 import { v4 as uuidv4 } from 'uuid';
 import { SettingsService } from './SettingsService.js';
+import dbConnect from '../api/db/db-connect.js';
+import { SessionState } from '../models/sessionState.js';
 
 class CreditBucket {
   constructor({ capacity = 60, refillPerSec = 1, isAuthenticated = false }) {
@@ -24,22 +26,19 @@ class CreditBucket {
     // so reading from cache directly gives us the same values without async calls.
     // This keeps the hot-path synchronous and avoids DB access during bucket refill.
     try {
-      const cache = SettingsService && SettingsService.cache ? SettingsService.cache : null;
-      if (cache) {
-        // Read appropriate settings based on authentication status only (no fallback)
-        const capKey = this.isAuthenticated ? 'session.authenticatedRateLimitCapacity' : 'session.rateLimitCapacity';
-        const refillKey = this.isAuthenticated ? 'session.authenticatedRateLimitRefillPerSec' : 'session.rateLimitRefillPerSec';
+      // Read appropriate settings based on authentication status only (no fallback)
+      const capKey = this.isAuthenticated ? 'session.authenticatedRateLimitCapacity' : 'session.rateLimitCapacity';
+      const refillKey = this.isAuthenticated ? 'session.authenticatedRateLimitRefillPerSec' : 'session.rateLimitRefillPerSec';
 
-        const cachedCap = Object.prototype.hasOwnProperty.call(cache, capKey) ? cache[capKey] : null;
-        const cachedRefill = Object.prototype.hasOwnProperty.call(cache, refillKey) ? cache[refillKey] : null;
+      const cachedCap = SettingsService.get(capKey);
+      const cachedRefill = SettingsService.get(refillKey);
 
-        if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
-          this.capacity = Number(cachedCap);
-          if (this.credits > this.capacity) this.credits = this.capacity;
-        }
-        if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) {
-          this.refillPerSec = Number(cachedRefill);
-        }
+      if (cachedCap !== null && !Number.isNaN(Number(cachedCap))) {
+        this.capacity = Number(cachedCap);
+        if (this.credits > this.capacity) this.credits = this.capacity;
+      }
+      if (cachedRefill !== null && !Number.isNaN(Number(cachedRefill))) {
+        this.refillPerSec = Number(cachedRefill);
       }
     } catch (e) { /* best-effort, ignore errors */ }
 
@@ -84,10 +83,23 @@ class SessionManagementService {
     // Track anonymous session creation attempts to prevent churn abuse
     // Map verified fingerprintKey -> sessionId to ensure one session per fingerprint
     this.fingerprintToSession = new Map();
+    // persistence mode cache
+    this._persistence = { value: 'memory', ts: 0 };
     // NOTE: settings will be read live from SettingsService when needed.
     // start cleanup timer with defaults
     this._startCleanup();
   }
+
+  // Check if session management is enabled via settings
+  isManagementEnabled() {
+    try {
+      const enabled = SettingsService.get('session.managementEnabled');
+      return enabled !== 'false';
+    } catch (e) {
+      return true; // Default to enabled if setting cannot be read
+    }
+  }
+
   // No settings caching helpers: SettingsService values must be read live where needed.
   _applyTTL(ttlMinutesValue) {
     try {
@@ -144,16 +156,122 @@ class SessionManagementService {
     }
   }
 
-  async hasCapacity() {
-    // Delegate to sessionsAvailable which reads `session.maxActiveSessions`
-    // live from SettingsService. Keeping this method async avoids using any
-    // cached `this.maxSessions` value.
+  async _isMongoMode() {
     try {
-      return await this.sessionsAvailable();
+      const v = SettingsService.get('session.persistence');
+      const norm = (v || '').toString().trim().toLowerCase();
+      return norm === 'mongo';
     } catch (e) {
-      if (console && console.error) console.error('hasCapacity check failed', e);
       return false;
     }
+  }
+
+  async _saveSessionToDB(session) {
+    try {
+      await dbConnect();
+      const doc = {
+        sessionId: session.sessionId,
+        chatIds: session.chatIds || [],
+        createdAt: new Date(session.createdAt || Date.now()),
+        lastSeen: new Date(session.lastSeen || Date.now()),
+        ttl: session.ttl,
+        isAuthenticated: !!session.isAuthenticated,
+        bucket: {
+          capacity: session.bucket?.capacity ?? this.defaultRateLimit.capacity,
+          credits: typeof session.bucket?.credits === 'number' ? session.bucket.credits : (session.bucket?.capacity ?? this.defaultRateLimit.capacity),
+          refillPerSec: session.bucket?.refillPerSec ?? this.defaultRateLimit.refillPerSec,
+          lastRefill: new Date(session.bucket?.lastRefill || Date.now())
+        },
+        requestCount: session.requestCount || 0,
+        errorCount: session.errorCount || 0,
+        totalLatencyMs: session.totalLatencyMs || 0,
+        lastLatencyMs: session.lastLatencyMs || 0,
+        requestTimestamps: (session.requestTimestamps || []).map(ts => new Date(ts)),
+        errorTypes: session.errorTypes || {},
+        chatMetrics: session.chatMetrics || {}
+      };
+      await SessionState.findOneAndUpdate({ sessionId: session.sessionId }, doc, { upsert: true, setDefaultsOnInsert: true });
+    } catch (e) {
+      // best-effort persistence
+    }
+  }
+
+  _hydrateBucket(bucketSrc, isAuthenticated) {
+    const cap = Number(bucketSrc?.capacity) || this.defaultRateLimit.capacity;
+    const refill = Number(bucketSrc?.refillPerSec) || this.defaultRateLimit.refillPerSec;
+    const b = new CreditBucket({ capacity: cap, refillPerSec: refill, isAuthenticated: !!isAuthenticated });
+    if (typeof bucketSrc?.credits === 'number') b.credits = bucketSrc.credits;
+    if (bucketSrc?.lastRefill) b.lastRefill = new Date(bucketSrc.lastRefill).getTime();
+    return b;
+  }
+
+  async _loadSessionFromDBBySessionId(sessionId) {
+    try {
+      await dbConnect();
+      const s = await SessionState.findOne({ sessionId }).lean();
+      if (!s) return null;
+      const sess = {
+        sessionId: s.sessionId,
+        chatIds: s.chatIds || [],
+        createdAt: (s.createdAt ? new Date(s.createdAt).getTime() : Date.now()),
+        lastSeen: (s.lastSeen ? new Date(s.lastSeen).getTime() : Date.now()),
+        ttl: s.ttl || this.defaultTTL,
+        bucket: this._hydrateBucket(s.bucket, s.isAuthenticated),
+        isAuthenticated: !!s.isAuthenticated,
+        requestCount: s.requestCount || 0,
+        errorCount: s.errorCount || 0,
+        totalLatencyMs: s.totalLatencyMs || 0,
+        lastLatencyMs: s.lastLatencyMs || 0,
+        requestTimestamps: (s.requestTimestamps || []).map(d => new Date(d).getTime()),
+        errorTypes: s.errorTypes || {},
+        chatMetrics: s.chatMetrics || {}
+      };
+      this.sessions.set(sessionId, sess);
+      for (const cid of sess.chatIds) this.chatToSession.set(cid, sessionId);
+      return sess;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async _loadSessionFromDBByChatId(chatId) {
+    try {
+      await dbConnect();
+      const s = await SessionState.findOne({ chatIds: chatId }).lean();
+      if (!s) return null;
+      return this._loadSessionFromDBBySessionId(s.sessionId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Return true if there is capacity to create a new session based on the
+  // `session.maxActiveSessions` setting. If the setting is empty/null, treat
+  // it as unlimited (sessionAvailable = true). If the setting is a number,
+  // compute (maxActiveSessions - currentSessions) > 0.
+  sessionsAvailable() {
+    try {
+      const maxVal = SettingsService.get('session.maxActiveSessions');
+      // Empty string or null => unlimited
+      if (maxVal === '' || maxVal === null || typeof maxVal === 'undefined') {
+        return true;
+      }
+      const max = Number(maxVal);
+      if (Number.isNaN(max)) {
+        // Fall back to configured maxSessions property
+        return this.sessions.size < this.maxSessions;
+      }
+      return (max - this.sessions.size) > 0;
+    } catch (e) {
+      if (console && console.error) console.error('sessionsAvailable check failed', e);
+      return false;
+    }
+  }
+
+  async hasCapacity() {
+    // Delegate to sessionsAvailable which reads `session.maxActiveSessions`
+    // live from SettingsService.
+    return this.sessionsAvailable();
   }
 
   // fingerprintKey: optional HMACed fingerprint. When provided it should be pre-verified by middleware
@@ -166,9 +284,7 @@ class SessionManagementService {
     const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey, isAuthenticated, generateChatId } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
 
-    // Require a verified fingerprintKey to create or reuse sessions. This prevents
-    // anonymous clients from spinning up unlimited sessions and ensures that the
-    // same fingerprint always maps to the same session object.
+    // Require a verified fingerprintKey to create or reuse sessions.
     if (!fingerprintKey) {
       return { ok: false, reason: 'fingerprintRequired' };
     }
@@ -177,9 +293,7 @@ class SessionManagementService {
     const existing = this.fingerprintToSession.get(fingerprintKey);
     if (existing) {
       // If the fingerprint maps to a sessionId different from the provided
-      // sessionId (i.e. mismatch), treat the mapping as stale and remove it so
-      // we create/recreate the proper session below. This avoids accidentally
-      // returning a session that belongs to a different client or tab.
+      // sessionId (i.e. mismatch), treat the mapping as stale and remove it.
       if (existing !== sessionId) {
         try {
           this.fingerprintToSession.delete(fingerprintKey);
@@ -198,38 +312,28 @@ class SessionManagementService {
           if (activeChatId) this._ensureChatMapped(sess, activeChatId, existing);
           return { ok: true, session: sess, chatId: activeChatId };
         }
-        // stale mapping: fall through and create a new session, but ensure mapping is replaced below
+        // stale mapping: fall through and create a new session
       }
     }
 
-    if (!(await this.hasCapacity()) && !this.sessions.has(sessionId)) {
+    // Synchronous Capacity Check
+    if (!this.sessionsAvailable() && !this.sessions.has(sessionId)) {
       return { ok: false, reason: 'capacity' };
     }
 
     const now = Date.now();
-    // Determine TTL: prefer explicit ttlMs, otherwise read live setting
+    // Determine TTL
     let ttl = (typeof explicitTtlMs !== 'undefined' && explicitTtlMs !== null) ? explicitTtlMs : this.defaultTTL;
-    try {
-      const ttlMVal = await SettingsService.get('session.defaultTTLMinutes');
-      const ttlM = (typeof ttlMVal !== 'undefined' && ttlMVal !== null && ttlMVal !== '') ? Number(ttlMVal) : null;
-      if ((explicitTtlMs === undefined || explicitTtlMs === null) && ttlM !== null && !Number.isNaN(ttlM) && ttlM > 0) {
-        ttl = ttlM * 60 * 1000;
-      }
-    } catch (e) {
-      // ignore and use fallback
+    const ttlMinutesVal = SettingsService.get('session.defaultTTLMinutes');
+    const ttlM = (typeof ttlMinutesVal !== 'undefined' && ttlMinutesVal !== null && ttlMinutesVal !== '') ? Number(ttlMinutesVal) : null;
+    if ((explicitTtlMs === undefined || explicitTtlMs === null) && ttlM !== null && !Number.isNaN(ttlM) && ttlM > 0) {
+      ttl = ttlM * 60 * 1000;
     }
 
     let session = this.sessions.get(sessionId);
     if (!session) {
-      // create token bucket for rate limiting. Prefer explicit rateLimit, otherwise
-      // use defaults (already initialized from SettingsService on startup).
-      // Prefer explicit rateLimit. If not provided, try reading live settings.
-      // Determine rate limit: prefer explicit, then settings (preferring authenticated if applicable), then defaults
-      let rl = explicitRateLimit || null;
-      if (!rl) {
-        const fromSettings = await this._getRateLimitFromSettings(!!isAuthenticated);
-        if (fromSettings) rl = fromSettings;
-      }
+      // Create token bucket
+      let rl = explicitRateLimit || this._getRateLimitFromSettings(!!isAuthenticated);
       if (!rl) {
         rl = isAuthenticated ? { ...this.authenticatedRateLimit } : { ...this.defaultRateLimit };
       }
@@ -245,29 +349,25 @@ class SessionManagementService {
 
       session = {
         sessionId,
-        // support multiple chatIds per session (array). `session.chatId` is deprecated.
         chatIds: initialChatIds,
         createdAt: now,
         lastSeen: now,
         ttl,
         bucket,
         isAuthenticated: !!isAuthenticated,
-        // metrics (session-wide aggregates)
         requestCount: 0,
         errorCount: 0,
         totalLatencyMs: 0,
         lastLatencyMs: 0,
-        // timestamps of requests (ms since epoch) used to compute RPM (session-level)
         requestTimestamps: [],
-        // per-error-type counters: { <type>: count } (session-level)
         errorTypes: {},
-        // Per-chat metrics keyed by chatId. This allows reporting accurate
-        // stats for each chatId in a session while keeping session-level
-        // aggregates for backwards compatibility.
         chatMetrics: {}
       };
+
+      // ATOMIC INSERTION
       this.sessions.set(sessionId, session);
-      // map fingerprint -> sessionId for reuse if provided
+
+      // map fingerprint -> sessionId
       if (fingerprintKey) {
         try {
           this.fingerprintToSession.set(fingerprintKey, sessionId);
@@ -276,7 +376,28 @@ class SessionManagementService {
       if (providedChatId) this._ensureChatMapped(session, providedChatId, sessionId);
       if (activeChatId && activeChatId !== providedChatId) this._ensureChatMapped(session, activeChatId, sessionId);
     } else {
-      this._touchSession(session, now, ttl); // allow updating ttl
+      // If session exists but is now authenticated (and wasn't before), upgrade the bucket
+      if (!session.isAuthenticated && isAuthenticated) {
+        session.isAuthenticated = true;
+        session.bucket.isAuthenticated = true;
+        // Re-fetch authenticated rate limits
+        let rl = explicitRateLimit || this._getRateLimitFromSettings(true);
+        if (!rl) rl = { ...this.authenticatedRateLimit };
+
+        // Update bucket parameters
+        if (rl.capacity) {
+          session.bucket.capacity = rl.capacity;
+          // Optionally boost credits to match new capacity immediately or let them refill?
+          // Let's just cap them at new capacity for now.
+          if (session.bucket.credits > session.bucket.capacity) {
+            session.bucket.credits = session.bucket.capacity;
+          }
+        }
+        if (rl.refillPerSec) {
+          session.bucket.refillPerSec = rl.refillPerSec;
+        }
+      }
+      this._touchSession(session, now, ttl);
     }
 
     // If there's a provided chatId for an existing session, ensure it's tracked
@@ -289,6 +410,10 @@ class SessionManagementService {
       this._ensureChatMapped(session, activeChatId, sessionId);
     }
 
+    // persist to DB if configured (async, outside critical section)
+    if (await this._isMongoMode()) {
+      await this._saveSessionToDB(session);
+    }
     return { ok: true, session, chatId: activeChatId };
   }
 
@@ -297,13 +422,13 @@ class SessionManagementService {
   // When preferAuthenticated is false, read only generic keys.
   // Returns an object like { capacity, refillPerSec } if any values found, otherwise null.
   // If settings are not configured, returns null so register() can apply defaults.
-  async _getRateLimitFromSettings(preferAuthenticated = false) {
+  _getRateLimitFromSettings(preferAuthenticated = false) {
     try {
       const capKey = preferAuthenticated ? 'session.authenticatedRateLimitCapacity' : 'session.rateLimitCapacity';
       const refillKey = preferAuthenticated ? 'session.authenticatedRateLimitRefillPerSec' : 'session.rateLimitRefillPerSec';
 
-      const capVal = await SettingsService.get(capKey);
-      const refillVal = await SettingsService.get(refillKey);
+      const capVal = SettingsService.get(capKey);
+      const refillVal = SettingsService.get(refillKey);
 
       const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
       const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
@@ -318,15 +443,15 @@ class SessionManagementService {
   }
 
 
-  async getCurrentSettings() {
+  getCurrentSettings() {
     // Read live values from SettingsService where available. Fall back to
     // the in-memory defaults if the setting is absent or malformed.
     try {
-      const ttlMinutesVal = await SettingsService.get('session.defaultTTLMinutes');
-      const cleanupMinutesVal = await SettingsService.get('session.cleanupIntervalMinutes');
-      const rateLimitCapVal = await SettingsService.get('session.rateLimitCapacity');
-      const rateLimitRefillVal = await SettingsService.get('session.rateLimitRefillPerSec');
-      const maxActiveVal = await SettingsService.get('session.maxActiveSessions');
+      const ttlMinutesVal = SettingsService.get('session.defaultTTLMinutes');
+      const cleanupMinutesVal = SettingsService.get('session.cleanupIntervalMinutes');
+      const rateLimitCapVal = SettingsService.get('session.rateLimitCapacity');
+      const rateLimitRefillVal = SettingsService.get('session.rateLimitRefillPerSec');
+      const maxActiveVal = SettingsService.get('session.maxActiveSessions');
 
       const defaultTTLMs = (typeof ttlMinutesVal !== 'undefined' && ttlMinutesVal !== null && ttlMinutesVal !== '') ? Number(ttlMinutesVal) * 60 * 1000 : this.defaultTTL;
       const cleanupIntervalMinutes = (typeof cleanupMinutesVal !== 'undefined' && cleanupMinutesVal !== null && cleanupMinutesVal !== '') ? Number(cleanupMinutesVal) : this.cleanupIntervalMinutes;
@@ -336,8 +461,8 @@ class SessionManagementService {
         refillPerSec: (!Number.isNaN(Number(rateLimitRefillVal)) && rateLimitRefillVal !== null && rateLimitRefillVal !== '') ? Number(rateLimitRefillVal) : this.defaultRateLimit.refillPerSec
       };
 
-      const authRateLimitCapVal = await SettingsService.get('session.authenticatedRateLimitCapacity');
-      const authRateLimitRefillVal = await SettingsService.get('session.authenticatedRateLimitRefillPerSec');
+      const authRateLimitCapVal = SettingsService.get('session.authenticatedRateLimitCapacity');
+      const authRateLimitRefillVal = SettingsService.get('session.authenticatedRateLimitRefillPerSec');
       const authenticatedRateLimit = {
         capacity: (!Number.isNaN(Number(authRateLimitCapVal)) && authRateLimitCapVal !== null && authRateLimitCapVal !== '') ? Number(authRateLimitCapVal) : this.authenticatedRateLimit.capacity,
         refillPerSec: (!Number.isNaN(Number(authRateLimitRefillVal)) && authRateLimitRefillVal !== null && authRateLimitRefillVal !== '') ? Number(authRateLimitRefillVal) : this.authenticatedRateLimit.refillPerSec
@@ -371,33 +496,13 @@ class SessionManagementService {
     }
   }
 
-  // Return true if there is capacity to create a new session based on the
-  // `session.maxActiveSessions` setting. If the setting is empty/null, treat
-  // it as unlimited (sessionAvailable = true). If the setting is a number,
-  // compute (maxActiveSessions - currentSessions) > 0.
-  async sessionsAvailable() {
-    try {
-      const maxVal = await SettingsService.get('session.maxActiveSessions');
-      // Empty string or null => unlimited
-      if (maxVal === '' || maxVal === null || typeof maxVal === 'undefined') {
-        return true;
-      }
-      const max = Number(maxVal);
-      if (Number.isNaN(max)) {
-        // Fall back to configured maxSessions property
-        return this.sessions.size < this.maxSessions;
-      }
-      return (max - this.sessions.size) > 0;
-    } catch (e) {
-      if (console && console.error) console.error('sessionsAvailable check failed', e);
-      return false;
-    }
-  }
 
-  touch(chatId) {
-    const session = this.getInfo(chatId);
+
+  async touch(chatId) {
+    const session = await this.getInfo(chatId);
     if (!session) return false;
     session.lastSeen = Date.now();
+    if (await this._isMongoMode()) await this._saveSessionToDB(session);
     return true;
   }
 
@@ -532,7 +637,7 @@ class SessionManagementService {
     return out;
   }
 
-  unregister(chatId) {
+  async unregister(chatId) {
     // Accept either a sessionId (remove entire session) or a chatId (remove only that mapping)
     if (!chatId) return false;
 
@@ -542,7 +647,11 @@ class SessionManagementService {
       if (session.chatIds && session.chatIds.length) {
         for (const cid of session.chatIds) this.chatToSession.delete(cid);
       }
-      return this.sessions.delete(chatId);
+      const deleted = this.sessions.delete(chatId);
+      if (await this._isMongoMode()) {
+        try { await dbConnect(); await SessionState.deleteOne({ sessionId: chatId }); } catch (e) { }
+      }
+      return deleted;
     }
 
     // Otherwise treat the input as a chatId -> remove that mapping from the session
@@ -563,15 +672,20 @@ class SessionManagementService {
           if (v === mappedSessionId) this.fingerprintToSession.delete(k);
         }
       } catch (e) { }
-      return this.sessions.delete(mappedSessionId);
+      const deleted = this.sessions.delete(mappedSessionId);
+      if (await this._isMongoMode()) {
+        try { await dbConnect(); await SessionState.deleteOne({ sessionId: mappedSessionId }); } catch (e) { }
+      }
+      return deleted;
     }
+    if (await this._isMongoMode()) await this._saveSessionToDB(session);
     return true;
   }
 
   // Check and consume credits from the session's bucket. Returns {ok, remaining}.
   // Accepts either a sessionId or a chatId. Prefer direct sessionId lookup
   // to avoid accidentally resolving a sessionId via chat mappings.
-  canConsume(id, credits = 1) {
+  async canConsume(id, credits = 1) {
     if (!id) return { ok: false, reason: 'no_session' };
     // Prefer direct session lookup
     let session = null;
@@ -581,10 +695,16 @@ class SessionManagementService {
       // Fallback: treat id as chatId and map to session
       const mapped = this.chatToSession.get(id);
       if (mapped) session = this.sessions.get(mapped) || null;
+      if (!session && (await this._isMongoMode())) {
+        // Try to hydrate from DB
+        session = await this._loadSessionFromDBBySessionId(id);
+        if (!session) session = await this._loadSessionFromDBByChatId(id);
+      }
     }
 
     if (!session) return { ok: false, reason: 'no_session' };
     const allowed = session.bucket.consume(credits);
+    if (await this._isMongoMode()) await this._saveSessionToDB(session);
     if (allowed) {
       return { ok: true, remaining: session.bucket.getCredits() };
     }

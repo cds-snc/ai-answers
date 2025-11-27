@@ -1,5 +1,6 @@
 import { withOptionalUser } from '../../middleware/auth.js';
 import { withSession } from '../../middleware/session.js';
+import { v4 as uuidv4 } from 'uuid';
 
 import SessionManagementService from '../../services/SessionManagementService.js';
 
@@ -7,6 +8,11 @@ async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
 
   try {
+    // If session management is disabled, just return a new UUID
+    if (!SessionManagementService.isManagementEnabled()) {
+      return res.status(200).json({ chatId: uuidv4() });
+    }
+
     const sessionId = req.sessionId || null;
     if (!sessionId) return res.status(400).json({ error: 'no_session' });
 

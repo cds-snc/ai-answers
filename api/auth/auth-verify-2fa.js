@@ -14,7 +14,7 @@ const verify2FAHandler = async (req, res) => {
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
     if (!user) return res.status(404).json({ success: false, message: 'user not found' });
 
-    const enabledSetting = await SettingsService.get('twoFA.enabled');
+    const enabledSetting = SettingsService.get('twoFA.enabled');
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
     if (!twoFAEnabled) {
       return res.status(403).json({ success: false, message: 'two-factor authentication disabled' });

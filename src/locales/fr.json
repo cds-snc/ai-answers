@@ -5,6 +5,13 @@
       "text": "Obtenez des réponses à vos questions sur Canada.ca.",
       "ariaLabel": "Obtenez des réponses à vos questions sur Canada point CA."
     },
+    "session": {
+      "storeTypeLabel": "Stockage de session",
+      "storeType": {
+        "memory": "En mémoire (volatile)",
+        "mongo": "MongoDB (persistant/cache)"
+      }
+    },
     "alpha": {
       "label": "Alpha",
       "description": "Page expérimentale — non publique."
@@ -779,7 +786,13 @@
       "save": "Enregistrer Live Graph"
     },
     "defaultWorkflow": {
-      "label": "Workflow par défaut"
+      "label": "Workflow par défaut",
+      "options": {
+        "Default": "Par défaut",
+        "DefaultAlwaysContext": "Par défaut (toujours inclure le contexte)",
+        "DefaultWithVector": "Par défaut avec vecteur",
+        "DefaultWithVectorGraph": "Par défaut avec graphe vectoriel"
+      }
     },
     "statusLabel": "Statut du service",
     "statuses": {
@@ -816,13 +829,21 @@
     },
     "session": {
       "title": "Paramètres de session",
+      "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
       "rateLimitCapacity": "Capacité du quota (crédits)",
       "rateLimitRefill": "Recharge du quota (crédits/min)",
       "authenticatedRateLimitCapacity": "Capacité du quota authentifié (crédits)",
       "authenticatedRateLimitRefill": "Recharge du quota authentifié (crédits/min)",
-      "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)"
+      "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
+      "persistence": {
+        "label": "Persistance des sessions",
+        "options": {
+          "memory": "Mémoire (en processus)",
+          "mongo": "MongoDB (persistant/cache)"
+        }
+      }
     }
   },
   "outage": {
@@ -861,10 +882,10 @@
     "noMatchReason": "Raison de non-correspondance",
     "fallbackSourceChatId": "ID de chat source pour le repli",
     "matchedCitationInteractionId": "ID d'interaction de citation appariée",
-  "matchedCitationChatId": "ID de chat de citation appariée",
-  "stageTimeline": "Chronologie des étapes",
-  "rawTimeline": "Chronologie brute (JSON)",
-  "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "matchedCitationChatId": "ID de chat de citation appariée",
+    "stageTimeline": "Chronologie des étapes",
+    "rawTimeline": "Chronologie brute (JSON)",
+    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "modelData": "Données du modèle",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le",

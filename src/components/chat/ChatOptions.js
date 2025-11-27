@@ -2,7 +2,7 @@ import React from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
 
-const ChatOptions = ({ 
+const ChatOptions = ({
   safeT,
   selectedAI,
   handleAIToggle,
@@ -73,7 +73,7 @@ const ChatOptions = ({
               <select
                 id="workflow"
                 name="workflow"
-                value={workflow}
+                value={workflow || ''}
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >

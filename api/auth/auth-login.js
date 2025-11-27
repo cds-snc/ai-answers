@@ -43,7 +43,7 @@ const loginHandler = async (req, res) => {
       });
     }
 
-    const enabledSetting = await SettingsService.get('twoFA.enabled');
+    const enabledSetting = SettingsService.get('twoFA.enabled');
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
 
     if (!twoFAEnabled) {
@@ -69,7 +69,7 @@ const loginHandler = async (req, res) => {
 
     // Instead of issuing token immediately, require 2FA verification.
     // Send a 2FA code to the user's email and return a twoFA-required response.
-    const templateId = await SettingsService.get('twoFA.templateId');
+    const templateId = SettingsService.get('twoFA.templateId');
     const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
     if (!sendResult.success) {
       console.error('TwoFAService failed to send code', sendResult);

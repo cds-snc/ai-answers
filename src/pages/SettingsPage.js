@@ -47,6 +47,9 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
+  // Session persistence mode (memory | mongo)
+  const [sessionPersistence, setSessionPersistence] = useState('memory');
+  const [savingSessionPersistence, setSavingSessionPersistence] = useState(false);
   // Authenticated session rate-limit settings
   const [authRateLimitCapacity, setAuthRateLimitCapacity] = useState(100);
   const [savingAuthRateLimitCapacity, setSavingAuthRateLimitCapacity] = useState(false);
@@ -54,6 +57,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingAuthRateLimitRefill, setSavingAuthRateLimitRefill] = useState(false);
   const [maxActiveSessions, setMaxActiveSessions] = useState('');
   const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
+  const [sessionManagementEnabled, setSessionManagementEnabled] = useState('true');
+  const [savingSessionManagementEnabled, setSavingSessionManagementEnabled] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
@@ -66,9 +71,11 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load provider setting
       const providerSetting = await DataStoreService.getSetting('provider', 'openai');
       setProvider(providerSetting);
-  // Load default workflow setting
-  const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
-  setDefaultWorkflow(defaultWorkflowSetting || 'Default');
+      // Load default workflow setting
+      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
+      // Validate default workflow against known options
+      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'Default');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
       setLogChats(logChatsSetting);
@@ -76,10 +83,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
       const twoFATemplateSetting = await DataStoreService.getSetting('twoFA.templateId', '');
       setTwoFATemplateId(twoFATemplateSetting ?? '');
-  const resetTpl = await DataStoreService.getSetting('notify.resetTemplateId', '');
-  setResetTemplateId(resetTpl ?? '');
-    const base = await DataStoreService.getSetting('site.baseUrl', '');
-    setBaseUrl(base ?? '');
+      const resetTpl = await DataStoreService.getSetting('notify.resetTemplateId', '');
+      setResetTemplateId(resetTpl ?? '');
+      const base = await DataStoreService.getSetting('site.baseUrl', '');
+      setBaseUrl(base ?? '');
       // Load session settings
       const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
       setSessionTTL(Number(ttl));
@@ -87,18 +94,24 @@ const SettingsPage = ({ lang = 'en' }) => {
       setCleanupInterval(Number(cleanup));
       const capacity = await DataStoreService.getSetting('session.rateLimitCapacity', '60');
       setRateLimitCapacity(Number(capacity));
-  // Stored value is refill per second; display to admin as requests per minute
-  const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '1');
-  const refillPerSec = Number(refill);
-  setRateLimitRefill(Number((refillPerSec * 60).toFixed(2)));
-        // Authenticated rate-limit settings (stored per-second, display per-minute)
-        const authCap = await DataStoreService.getSetting('session.authenticatedRateLimitCapacity', '100');
-        setAuthRateLimitCapacity(Number(authCap));
-        const authRefill = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', '5');
-        const authRefillPerSec = Number(authRefill);
-        setAuthRateLimitRefill(Number((authRefillPerSec * 60).toFixed(2)));
+      // Stored value is refill per second; display to admin as requests per minute
+      const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '1');
+      const refillPerSec = Number(refill);
+      setRateLimitRefill(Number((refillPerSec * 60).toFixed(2)));
+      // Authenticated rate-limit settings (stored per-second, display per-minute)
+      const authCap = await DataStoreService.getSetting('session.authenticatedRateLimitCapacity', '100');
+      setAuthRateLimitCapacity(Number(authCap));
+      const authRefill = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', '5');
+      const authRefillPerSec = Number(authRefill);
+      setAuthRateLimitRefill(Number((authRefillPerSec * 60).toFixed(2)));
       const maxSessions = await DataStoreService.getSetting('session.maxActiveSessions', '');
       setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
+      // Load session persistence mode
+      const persistence = await DataStoreService.getSetting('session.persistence', 'memory');
+      const persistenceNorm = (persistence || '').toString().trim().toLowerCase();
+      setSessionPersistence(persistenceNorm === 'mongo' ? 'mongo' : 'memory');
+      const managementEnabled = await DataStoreService.getSetting('session.managementEnabled', 'true');
+      setSessionManagementEnabled(String(managementEnabled ?? 'true'));
     }
     loadSettings();
   }, []);
@@ -182,6 +195,29 @@ const SettingsPage = ({ lang = 'en' }) => {
       await DataStoreService.setSetting('session.maxActiveSessions', val);
     } finally {
       setSavingMaxActiveSessions(false);
+    }
+  };
+
+  const handleSessionPersistenceChange = async (e) => {
+    const val = e.target.value;
+    setSessionPersistence(val);
+    setSavingSessionPersistence(true);
+    try {
+      // store as 'mongo' or 'memory'
+      await DataStoreService.setSetting('session.persistence', val);
+    } finally {
+      setSavingSessionPersistence(false);
+    }
+  };
+
+  const handleSessionManagementEnabledChange = async (e) => {
+    const val = e.target.value;
+    setSessionManagementEnabled(val);
+    setSavingSessionManagementEnabled(true);
+    try {
+      await DataStoreService.setSetting('session.managementEnabled', val);
+    } finally {
+      setSavingSessionManagementEnabled(false);
     }
   };
 
@@ -363,7 +399,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         id="log-chats-db"
         value={logChats}
         onChange={handleLogChatsChange}
-      disabled={savingLogChats}
+        disabled={savingLogChats}
       >
         <option value="yes">{t('common.yes', 'Yes')}</option>
         <option value="no">{t('common.no', 'No')}</option>
@@ -422,6 +458,19 @@ const SettingsPage = ({ lang = 'en' }) => {
 
       <h2 className="mt-600 mb-200">{t('settings.session.title', 'Session settings')}</h2>
 
+      <label htmlFor="session-management-enabled" className="mb-200 display-block mt-200">
+        {t('settings.session.managementEnabled', 'Enable Session Management')}
+      </label>
+      <select
+        id="session-management-enabled"
+        value={sessionManagementEnabled}
+        onChange={handleSessionManagementEnabledChange}
+        disabled={savingSessionManagementEnabled}
+      >
+        <option value="true">{t('common.yes', 'Yes')}</option>
+        <option value="false">{t('common.no', 'No')}</option>
+      </select>
+
       <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
         {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
       </label>
@@ -456,6 +505,14 @@ const SettingsPage = ({ lang = 'en' }) => {
         {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}
       </label>
       <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
+
+      <label htmlFor="session-persistence" className="mb-200 display-block mt-400">
+        {t('settings.session.persistence.label', 'Session persistence (memory | mongo)')}
+      </label>
+      <select id="session-persistence" value={sessionPersistence} onChange={handleSessionPersistenceChange} disabled={savingSessionPersistence}>
+        <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
+        <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
+      </select>
     </GcdsContainer>
   );
 };

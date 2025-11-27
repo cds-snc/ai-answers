@@ -5,6 +5,13 @@
       "text": "Get answers to your Canada.ca questions.",
       "ariaLabel": "Get answers to your Canada dot CA questions."
     },
+    "session": {
+      "storeTypeLabel": "Session storage",
+      "storeType": {
+        "memory": "In-memory (volatile)",
+        "mongo": "MongoDB (persistent/cache)"
+      }
+    },
     "alpha": {
       "label": "Alpha",
       "description": "Experimental page - not public."
@@ -742,7 +749,13 @@
       "save": "Save Live Graph"
     },
     "defaultWorkflow": {
-      "label": "Default workflow"
+      "label": "Default workflow",
+      "options": {
+        "Default": "Default",
+        "DefaultAlwaysContext": "Default (always include context)",
+        "DefaultWithVector": "Default with vector",
+        "DefaultWithVectorGraph": "Default with vector graph"
+      }
     },
     "statusLabel": "Service status",
     "statuses": {
@@ -779,13 +792,21 @@
     },
     "session": {
       "title": "Session settings",
+      "managementEnabled": "Enable Session Management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
       "rateLimitCapacity": "Rate limit capacity (credits)",
       "rateLimitRefill": "Rate limit refill (credits per min)",
       "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (credits)",
       "authenticatedRateLimitRefill": "Authenticated rate limit refill (credits per min)",
-      "maxActiveSessions": "Max active sessions (count — empty = unlimited)"
+      "maxActiveSessions": "Max active sessions (count — empty = unlimited)",
+      "persistence": {
+        "label": "Session persistence",
+        "options": {
+          "memory": "Memory (in-process)",
+          "mongo": "MongoDB (persistent/cache)"
+        }
+      }
     }
   },
   "outage": {

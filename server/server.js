@@ -70,6 +70,7 @@ import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
 import chatDashboardHandler from '../api/chat/chat-dashboard.js';
+import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
@@ -233,7 +234,11 @@ const PORT = process.env.PORT || 3001;
 (async () => {
   try {
     await dbConnect();
+    await dbConnect();
     console.log("Database connected");
+
+    // Load all settings into memory
+    await SettingsService.loadAll();
 
     // Initialize VectorService using the factory method (do not await, run async)
     initVectorService()

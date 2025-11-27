@@ -14,13 +14,13 @@ function generateSecret() {
 
 async function getTwoFATemplateId(explicitTemplateId) {
   if (explicitTemplateId) return explicitTemplateId;
-  const configured = await SettingsService.get('twoFA.templateId');
+  const configured = SettingsService.get('twoFA.templateId');
   if (configured && String(configured).trim()) return String(configured).trim();
   return process.env.GC_NOTIFY_2FA_TEMPLATE_ID || null;
 }
 
 async function ensureTwoFAEnabled() {
-  const enabledSetting = await SettingsService.get('twoFA.enabled');
+  const enabledSetting = SettingsService.get('twoFA.enabled');
   return SettingsService.toBoolean(enabledSetting, false);
 }
 

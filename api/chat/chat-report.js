@@ -6,6 +6,11 @@ export async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
+    // If session management is disabled, just return success without recording
+    if (!SessionManagementService.isManagementEnabled()) {
+      return res.status(200).json({ ok: true });
+    }
+
     const { latencyMs, error, errorType } = req.body || {};
     const chatId = req.chatId;
     if (!chatId) return res.status(400).json({ error: 'missing_chatId' });

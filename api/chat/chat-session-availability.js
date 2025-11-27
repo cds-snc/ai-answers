@@ -4,7 +4,7 @@ import SessionManagementService from '../../services/SessionManagementService.js
 async function availabilityHandler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
   try {
-    const siteStatusRaw = await SettingsService.get('siteStatus');
+    const siteStatusRaw = SettingsService.get('siteStatus');
     const siteStatus = siteStatusRaw === 'available';
     let sessionAvailable = false;
     try {
