@@ -332,6 +332,32 @@ class SessionManagementService {
 
     let session = this.sessions.get(sessionId);
     if (!session) {
+      // If in Mongo mode, try to load the session from DB before creating a new one
+      if (await this._isMongoMode()) {
+        session = await this._loadSessionFromDBBySessionId(sessionId);
+        if (session) {
+          // Session was loaded from DB, update fingerprint mapping and touch it
+          if (fingerprintKey) {
+            try {
+              this.fingerprintToSession.set(fingerprintKey, sessionId);
+            } catch (e) { }
+          }
+          this._touchSession(session, now, ttl);
+
+          // Ensure provided chatId is tracked
+          let activeChatId = providedChatId;
+          if (generateChatId && !activeChatId) {
+            activeChatId = uuidv4();
+          }
+          if (activeChatId) this._ensureChatMapped(session, activeChatId, sessionId);
+
+          // Persist updated session back to DB
+          await this._saveSessionToDB(session);
+          return { ok: true, session, chatId: activeChatId };
+        }
+      }
+
+      // Session doesn't exist in memory or DB, create a new one
       // Create token bucket
       let rl = explicitRateLimit || this._getRateLimitFromSettings(!!isAuthenticated);
       if (!rl) {

@@ -200,11 +200,15 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   const handleSessionPersistenceChange = async (e) => {
     const val = e.target.value;
+    console.log('Session persistence changing to:', val);
     setSessionPersistence(val);
     setSavingSessionPersistence(true);
     try {
       // store as 'mongo' or 'memory'
       await DataStoreService.setSetting('session.persistence', val);
+      console.log('Session persistence saved successfully:', val);
+    } catch (error) {
+      console.error('Failed to save session persistence:', error);
     } finally {
       setSavingSessionPersistence(false);
     }
