@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.65.2](https://github.com/cds-snc/ai-answers/compare/v1.65.1...v1.65.2) (2025-11-28)
+
+
+### Bug Fixes
+
+* cra-clean up all ([6e5eb2c](https://github.com/cds-snc/ai-answers/commit/6e5eb2ca78bce46abf07680ada9eab279f8fd7c2))
+* cra-clean up all ([f96b4da](https://github.com/cds-snc/ai-answers/commit/f96b4da9c8b5a70f428c5a0e9705c0f19af88eda))
+* refactor dept list ([0a05328](https://github.com/cds-snc/ai-answers/commit/0a053287262b0cffd48f2c2829f98d086217a14f))
+* refactor dept list - Tested - found dept ([9161914](https://github.com/cds-snc/ai-answers/commit/9161914521a4e5239397720132aa9ea97aeee83d))
+
 ## [1.65.1](https://github.com/cds-snc/ai-answers/compare/v1.65.0...v1.65.1) (2025-11-27)
 
 
