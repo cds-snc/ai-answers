@@ -30,6 +30,24 @@ async function handler(req, res) {
       });
     }
 
+    // Persist the new chatId into the express-session so subsequent requests
+    // will include it (SessionManagementService.syncSession reads from
+    // `req.session.chatIds`). Best-effort: if save fails, we still return
+    // the chatId to the client but log the error.
+    try {
+      if (req.session) {
+        // Ensure session.chatIds contains the latest list from the management service
+        req.session.chatIds = (reg.session && reg.session.chatIds) ? reg.session.chatIds : (req.session.chatIds || []).concat(reg.chatId).filter(Boolean);
+        if (typeof req.session.save === 'function') {
+          await new Promise((resolve, reject) => {
+            req.session.save((err) => err ? reject(err) : resolve());
+          });
+        }
+      }
+    } catch (e) {
+      if (console && console.error) console.error('chat-create session save error', e);
+    }
+
     // Return the newly generated chatId from the register result and indicate session management is enabled
     return res.status(200).json({ chatId: reg.chatId, sessionManagementEnabled: true });
   } catch (e) {

@@ -1,6 +1,3 @@
-import { User } from '../models/user.js';
-import dbConnect from '../api/db/db-connect.js';
-
 // Simplified auth middleware using Passport
 export const ensureAuthenticated = (req, res, next) => {
   if (req.isAuthenticated()) {

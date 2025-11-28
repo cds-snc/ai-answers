@@ -45,7 +45,7 @@ export default function sessionMiddleware(options = {}) {
       req.sessionId = sessionId;
       req.chatId = chatId;
       // visitorId is set by bot-fingerprint-presence and stored in session
-      req.fingerprintKey = session.visitorId;
+      req.visitorId = session.visitorId;
 
       return next();
     } catch (err) {
