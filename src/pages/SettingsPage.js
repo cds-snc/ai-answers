@@ -41,8 +41,6 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Session-related settings
   const [sessionTTL, setSessionTTL] = useState(60); // minutes
   const [savingSessionTTL, setSavingSessionTTL] = useState(false);
-  const [cookieMaxAgeDays, setCookieMaxAgeDays] = useState(14);
-  const [savingCookieMaxAgeDays, setSavingCookieMaxAgeDays] = useState(false);
   const [cleanupInterval, setCleanupInterval] = useState(60); // seconds
   const [savingCleanupInterval, setSavingCleanupInterval] = useState(false);
   const [rateLimitCapacity, setRateLimitCapacity] = useState(60);
@@ -92,8 +90,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load session settings
       const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
       setSessionTTL(Number(ttl));
-      const cookieMaxDays = await DataStoreService.getSetting('session.cookieMaxAgeDays', '14');
-      setCookieMaxAgeDays(Number(cookieMaxDays));
       const cleanup = await DataStoreService.getSetting('session.cleanupIntervalSeconds', '60');
       setCleanupInterval(Number(cleanup));
       const capacity = await DataStoreService.getSetting('session.rateLimitCapacity', '60');
@@ -137,18 +133,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionTTL(Number(current));
     } finally {
       setSavingSessionTTL(false);
-    }
-  };
-
-  const handleCookieMaxAgeChange = async (e) => {
-    const val = Number(e.target.value);
-    setCookieMaxAgeDays(val);
-    setSavingCookieMaxAgeDays(true);
-    try {
-      const current = await saveAndVerify('session.cookieMaxAgeDays', String(val), (v) => Number(v));
-      setCookieMaxAgeDays(Number(current));
-    } finally {
-      setSavingCookieMaxAgeDays(false);
     }
   };
 
@@ -528,11 +512,6 @@ const SettingsPage = ({ lang = 'en' }) => {
         {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
       </label>
       <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
-
-      <label htmlFor="session-cookie-max-age" className="mb-200 display-block mt-400">
-        {t('settings.session.cookieMaxAgeDays', 'Session cookie max age (days)')}
-      </label>
-      <input id="session-cookie-max-age" type="number" min="0" value={cookieMaxAgeDays} onChange={handleCookieMaxAgeChange} disabled={savingCookieMaxAgeDays} />
 
       <label htmlFor="session-cleanup" className="mb-200 display-block mt-400">
         {t('settings.session.cleanupSeconds', 'Session cleanup interval (seconds)')}

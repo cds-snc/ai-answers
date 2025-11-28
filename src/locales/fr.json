@@ -844,8 +844,6 @@
           "mongo": "MongoDB (persistant/cache)"
         }
       }
-      ,
-      "cookieMaxAgeDays": "Durée maximale du cookie de session (jours)"
     }
   },
   "outage": {
