@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import SessionManagementService from '../SessionManagementService.js';
+import ChatSessionService from '../ChatSessionService.js';
 import { SettingsService } from '../SettingsService.js';
 import { SessionState } from '../../models/sessionState.js';
 
@@ -35,7 +35,7 @@ describe('SessionManagementService - Lambda Persistence', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        SessionManagementService.shutdown();
+        ChatSessionService.shutdown();
 
         // Default settings
         SettingsService.get.mockImplementation((key) => {
@@ -70,7 +70,7 @@ describe('SessionManagementService - Lambda Persistence', () => {
         SessionState.findOneAndUpdate.mockResolvedValue(dbSession);
 
         // Act: Register with the existing sessionId
-        const result = await SessionManagementService.registerChat(mockSessionId);
+        const result = await ChatSessionService.registerChat(mockSessionId);
 
         // Assert
         expect(result.ok).toBe(true);
@@ -89,7 +89,7 @@ describe('SessionManagementService - Lambda Persistence', () => {
         SessionState.findOneAndUpdate.mockResolvedValue(null);
 
         // Act
-        const result = await SessionManagementService.registerChat(mockSessionId);
+        const result = await ChatSessionService.registerChat(mockSessionId);
 
         // Assert
         expect(result.ok).toBe(true);
@@ -104,9 +104,9 @@ describe('SessionManagementService - Lambda Persistence', () => {
             chatIds: ['chat1']
         };
 
-        await SessionManagementService.syncSession(expressSession, mockSessionId);
+        await ChatSessionService.syncSession(expressSession, mockSessionId);
 
-        const info = await SessionManagementService.getInfo(mockSessionId);
+        const info = await ChatSessionService.getInfo(mockSessionId);
         expect(info).toBeDefined();
         expect(info.isAuthenticated).toBe(true);
         expect(info.chatIds).toContain('chat1');

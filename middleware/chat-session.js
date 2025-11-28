@@ -1,4 +1,5 @@
-import SessionManagementService from '../services/SessionManagementService.js';
+import ChatSessionService from '../services/ChatSessionService.js';
+import ChatSessionMetricsService from '../services/ChatSessionMetricsService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Express/Next.js style middleware
@@ -6,8 +7,8 @@ export default function sessionMiddleware(options = {}) {
   return async function (req, res, next) {
     try {
       // Check if session management is enabled
-      if (!SessionManagementService.isManagementEnabled()) {
-        // If management is disabled but we are asked to create a chat ID, do it manually
+          if (!ChatSessionService.isManagementEnabled()) {
+            // If management is disabled but we are asked to create a chat ID, do it manually
         if (options.createChatId) {
           req.chatId = uuidv4();
           return next();
@@ -16,24 +17,27 @@ export default function sessionMiddleware(options = {}) {
         return next();
       }
 
-      // express-session middleware should have already run and populated req.session
+      // express-session middleware should have already run and populated `req.session`.
+      // If there's no session present at this point the request is malformed or
+      // coming from a client we cannot associate state with (likely a bot).
+      // For security and consistency we block these requests rather than
+      // silently allowing them through.
       if (!req.session) {
-        // If express-session is missing or failed, we can't proceed with session logic
-        // But we shouldn't block if it's just not configured yet, though in this app it should be.
-        // For now, just pass through.
-        return next();
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'no_session', message: 'Missing session; request blocked' }));
       }
 
       const sessionId = req.sessionID;
       const session = req.session;
 
-      // Sync session data with SessionManagementService (metrics, mapping)
+      // Sync session data with ChatSessionService (metrics, mapping)
       // This ensures the service knows about this active session
-      await SessionManagementService.syncSession(session, sessionId);
+      // await ChatSessionService.syncSession(session, sessionId);
 
       // Ensure the browser session cookie maxAge reflects the current TTL
       try {
-        const ttlMs = SessionManagementService.defaultTTL;
+        const ttlMs = ChatSessionService.defaultTTL;
         if (req.session && req.session.cookie && typeof ttlMs === 'number' && req.session.cookie.maxAge !== ttlMs) {
           req.session.cookie.maxAge = ttlMs;
           if (typeof req.session.save === 'function') {
@@ -51,22 +55,22 @@ export default function sessionMiddleware(options = {}) {
 
       // If options.createChatId is true, we must generate and register a new chat ID
       if (options.createChatId) {
-        const reg = await SessionManagementService.registerChat(sessionId, {
-          generateChatId: true,
-        });
-
-        if (!reg.ok) {
+        const avail = await ChatSessionService.sessionsAvailable();
+        if (!avail) {
           res.statusCode = 503;
           res.setHeader('Content-Type', 'application/json');
           return res.end(JSON.stringify({
             error: 'could_not_create_chat',
-            reason: reg.reason || 'unknown',
+            reason: 'sessions_full',
           }));
         }
 
+        const chatId = uuidv4();
+        ChatSessionMetricsService.registerChat(sessionId, chatId);
+
         // Persist the new chatId into the express-session
         try {
-          req.session.chatIds = (reg.session && reg.session.chatIds) ? reg.session.chatIds : (req.session.chatIds || []).concat(reg.chatId).filter(Boolean);
+          req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
           if (typeof req.session.save === 'function') {
             await new Promise((resolve, reject) => {
               req.session.save((err) => err ? reject(err) : resolve());
@@ -76,7 +80,7 @@ export default function sessionMiddleware(options = {}) {
           if (console && console.error) console.error('sessionMiddleware save error', e);
         }
 
-        req.chatId = reg.chatId;
+        req.chatId = chatId;
         // We created a new one, so we don't check body
       } else {
         // Validate chatId from request body if provided
@@ -95,6 +99,9 @@ export default function sessionMiddleware(options = {}) {
           }
         }
         req.chatId = chatId;
+        if (chatId) {
+          ChatSessionMetricsService.registerChat(sessionId, chatId);
+        }
       }
 
       // Expose for downstream handlers

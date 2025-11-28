@@ -1,5 +1,5 @@
 import { SettingsService } from '../../services/SettingsService.js';
-import SessionManagementService from '../../services/SessionManagementService.js';
+import ChatSessionService from '../../services/ChatSessionService.js';
 
 async function availabilityHandler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
@@ -8,7 +8,7 @@ async function availabilityHandler(req, res) {
     const siteStatus = siteStatusRaw === 'available';
     let sessionAvailable = false;
     try {
-      sessionAvailable = Boolean(await SessionManagementService.sessionsAvailable());
+      sessionAvailable = Boolean(await ChatSessionService.sessionsAvailable());
     } catch (e) {
       sessionAvailable = false;
     }
