@@ -16,15 +16,44 @@ class SessionManagementService {
     this.sessions = new Map();
     // Map chatId -> sessionId for quick lookup
     this.chatToSession = new Map();
-    this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
-    this.cleanupIntervalMinutes = 1;
-    this.cleanupInterval = this.cleanupIntervalMinutes * 60 * 1000;
+    // defaultTTL and cleanup interval will be loaded from SettingsService
+    this.defaultTTL = 1000 * 60 * 60; // fallback 1 hour
+    this.cleanupInterval = 60 * 1000; // fallback 60s
     this.maxSessions = 1000;
 
     // persistence mode cache
     this._persistence = { value: 'memory', ts: 0 };
 
+    // Initialize settings-driven values and start cleanup timer
+    this._refreshSettings();
     this._startCleanup();
+  }
+
+  // Read session-related settings from SettingsService cache and apply them.
+  async _refreshSettings() {
+    try {
+      const ttlSetting = SettingsService.get('session.defaultTTLMinutes');
+      const ttlMinutes = Number(ttlSetting);
+      const minutes = Number.isFinite(ttlMinutes) && ttlMinutes > 0 ? ttlMinutes : 60;
+      const newTTL = minutes * 60 * 1000;
+      this.defaultTTL = newTTL;
+
+      const cleanupSetting = SettingsService.get('session.cleanupIntervalSeconds');
+      const cleanupSeconds = Number(cleanupSetting);
+      const secs = Number.isFinite(cleanupSeconds) && cleanupSeconds > 0 ? cleanupSeconds : 60;
+      const newCleanupInterval = secs * 1000;
+      // If the cleanup interval changed, restart the cleanup timer
+      if (this.cleanupInterval !== newCleanupInterval) {
+        this.cleanupInterval = newCleanupInterval;
+        if (this.cleanupTimer) {
+          clearInterval(this.cleanupTimer);
+          this.cleanupTimer = null;
+        }
+        this._startCleanup();
+      }
+    } catch (e) {
+      // best-effort: keep previous values on error
+    }
   }
 
   isManagementEnabled() {
@@ -139,6 +168,8 @@ class SessionManagementService {
   async syncSession(expressSession, sessionId) {
     if (!expressSession || !sessionId) return;
 
+    // Refresh settings so TTL and cleanup interval can be changed at runtime
+    await this._refreshSettings();
     const now = Date.now();
     let session = this.sessions.get(sessionId);
 
@@ -195,6 +226,8 @@ class SessionManagementService {
     const { chatId: providedChatId, generateChatId } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
 
+    // Ensure settings are current before creating/registering chats
+    await this._refreshSettings();
     let session = this.sessions.get(sessionId);
 
     // If not in memory, try to load from DB or wait for syncSession to handle it.

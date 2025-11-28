@@ -31,6 +31,24 @@ export default function sessionMiddleware(options = {}) {
       // This ensures the service knows about this active session
       await SessionManagementService.syncSession(session, sessionId);
 
+      // Ensure the browser session cookie maxAge reflects the current TTL
+      try {
+        const ttlMs = SessionManagementService.defaultTTL;
+        if (req.session && req.session.cookie && typeof ttlMs === 'number' && req.session.cookie.maxAge !== ttlMs) {
+          req.session.cookie.maxAge = ttlMs;
+          if (typeof req.session.save === 'function') {
+            // save updated cookie to session store so Set-Cookie is sent
+            await new Promise((resolve) => {
+              try {
+                req.session.save(() => resolve());
+              } catch (e) { resolve(); }
+            });
+          }
+        }
+      } catch (e) {
+        // best-effort: don't fail the request if cookie update fails
+      }
+
       // If options.createChatId is true, we must generate and register a new chat ID
       if (options.createChatId) {
         const reg = await SessionManagementService.registerChat(sessionId, {
