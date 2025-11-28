@@ -807,6 +807,8 @@
           "mongo": "MongoDB (persistent/cache)"
         }
       }
+      ,
+      "cookieMaxAgeDays": "Session cookie max age (days)"
     }
   },
   "outage": {
