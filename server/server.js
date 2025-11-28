@@ -73,6 +73,7 @@ import chatDashboardHandler from '../api/chat/chat-dashboard.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
+import createRateLimiterMiddleware from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
@@ -215,6 +216,15 @@ const PORT = process.env.PORT || 3001;
 
     await SettingsService.loadAll();
     console.log("Settings service started...");
+
+    // Initialize and mount rate limiter middleware (depends on settings)
+    try {
+      const rateLimitMiddleware = await createRateLimiterMiddleware(app);
+      app.use(rateLimitMiddleware);
+      console.log('Rate limiter middleware initialized');
+    } catch (rlErr) {
+      console.error('Failed to initialize rate limiter middleware:', rlErr);
+    }
 
     initVectorService()
       .then(() => {

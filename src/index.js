@@ -10,7 +10,6 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
 import DataStoreService from './services/DataStoreService.js';
-import { initFingerprint } from './utils/fingerprint.js';
 // Add the icon packs to the library
 library.add(fas, far);
 
@@ -53,19 +52,7 @@ const renderApp = () => {
       <App />
     );
 };
-// Start deterministic fingerprint initialization early at bootstrap so
-// service modules can await `window.fpInitPromise` to avoid timing races.
-// We don't block rendering on it, but kickoff as soon as possible.
-try {
-  if (typeof window !== 'undefined' && typeof initFingerprint === 'function') {
-    // expose the promise so any module can await: await window.fpInitPromise
-    // Note: some test runners may not have window; guard accordingly.
-    window.fpInitPromise = initFingerprint();
-  }
-} catch (e) {
-  // swallow errors during bootstrap so they don't prevent app render
-  console.warn('Fingerprint init failed to start during bootstrap', e);
-}
+// (Fingerprint initialization removed from bootstrap.)
 
 if (process.env.REACT_APP_ENV === 'production') {
   DataStoreService.checkDatabaseConnection()
