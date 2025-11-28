@@ -14,8 +14,8 @@ async function loadContextSystemPrompt(language = 'en') {
 
     // Convert departments array to formatted string with clear structure
     const departmentsString = departmentsList
-      .map((dept) => `• ${dept.name}\n  Unilingual Abbr: ${dept.abbr || 'None'}\n  Bilingual Abbr Key: ${dept.abbrKey}\n  URL: ${dept.url}`)
-      .join('\n\n');
+      .map((dept) => `${dept.abbrKey} | ${dept.name} | ${dept.url}`)
+      .join('\n');
 
     const fullPrompt = `
       ## Role
@@ -29,12 +29,10 @@ async function loadContextSystemPrompt(language = 'en') {
 
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
-This list contains ALL valid options. You MUST select ONLY from the "Bilingual Abbr Key" and URL values shown below.
-Each entry shows:
-• Organization name
-• Unilingual Abbr: Language-specific abbreviation (may be null)
-• Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
-• URL: The corresponding URL (must match the selected organization)
+This list contains ALL valid options. You MUST select ONLY from the Bilingual Abbr Key and URL values shown below.
+Format: Bilingual Abbr Key | Organization Name | URL
+- Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
+- URL: The corresponding URL (must match the selected organization)
 
 ${departmentsString}
 </departments_list> 
