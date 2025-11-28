@@ -76,7 +76,8 @@
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"
     ,"@fingerprintjs/fingerprintjs": "^4.11.1",
-    "isbot": "^3.6.0"
+    "isbot": "^3.6.0",
+    "bot-detector": "^1.0.5"
   },
   "scripts": {
     "start": "react-scripts start",

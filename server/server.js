@@ -83,6 +83,7 @@ import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import createSessionMiddleware from '../middleware/express-session.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import botIsBot from '../middleware/bot-isbot.js';
+import botDetector from '../middleware/bot-detector.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -106,6 +107,8 @@ app.use(createSessionMiddleware(app));
 app.use(botFingerprintPresence);
 // Block requests with known bot User-Agent strings
 app.use(botIsBot);
+// Additional detection using `bot-detector` (runs after isbot)
+app.use(botDetector);
 
 app.use((req, res, next) => {
   req.setTimeout(300000);
