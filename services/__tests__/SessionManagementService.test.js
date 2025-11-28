@@ -22,9 +22,15 @@ vi.mock('../../models/sessionState.js', () => ({
     },
 }));
 
+vi.mock('../../middleware/rate-limiter.js', () => ({
+    rateLimiters: {
+        public: { get: vi.fn() },
+        auth: { get: vi.fn() }
+    }
+}));
+
 describe('SessionManagementService - Lambda Persistence', () => {
     const mockSessionId = 'test-session-id';
-    const mockFingerprintKey = 'test-fingerprint-key';
     const mockChatId = 'test-chat-id';
 
     beforeEach(() => {
@@ -39,7 +45,7 @@ describe('SessionManagementService - Lambda Persistence', () => {
         });
     });
 
-    it('should load session from DB if missing from memory during register', async () => {
+    it('should load session from DB if missing from memory during registerChat', async () => {
         // Setup: Session exists in DB but not in memory
         const dbSession = {
             sessionId: mockSessionId,
@@ -47,12 +53,6 @@ describe('SessionManagementService - Lambda Persistence', () => {
             createdAt: new Date(),
             lastSeen: new Date(),
             ttl: 3600000,
-            bucket: {
-                capacity: 60,
-                credits: 50,
-                refillPerSec: 1,
-                lastRefill: new Date(),
-            },
             isAuthenticated: false,
             requestCount: 5,
             errorCount: 0,
@@ -70,17 +70,13 @@ describe('SessionManagementService - Lambda Persistence', () => {
         SessionState.findOneAndUpdate.mockResolvedValue(dbSession);
 
         // Act: Register with the existing sessionId
-        const result = await SessionManagementService.register(mockSessionId, {
-            fingerprintKey: mockFingerprintKey,
-        });
+        const result = await SessionManagementService.registerChat(mockSessionId);
 
         // Assert
         expect(result.ok).toBe(true);
         expect(SessionState.findOne).toHaveBeenCalledWith({ sessionId: mockSessionId });
         // Should have loaded the chatIds from DB
         expect(result.session.chatIds).toContain(mockChatId);
-        // Should have restored credits
-        expect(result.session.bucket.credits).toBe(50);
         // Should have restored request count
         expect(result.session.requestCount).toBe(5);
     });
@@ -93,15 +89,26 @@ describe('SessionManagementService - Lambda Persistence', () => {
         SessionState.findOneAndUpdate.mockResolvedValue(null);
 
         // Act
-        const result = await SessionManagementService.register(mockSessionId, {
-            fingerprintKey: mockFingerprintKey,
-        });
+        const result = await SessionManagementService.registerChat(mockSessionId);
 
         // Assert
         expect(result.ok).toBe(true);
         expect(SessionState.findOne).toHaveBeenCalledWith({ sessionId: mockSessionId });
         // Should be a new session
         expect(result.session.chatIds).toEqual([]);
-        expect(result.session.bucket.credits).toBe(60); // default capacity
+    });
+
+    it('should sync session from express-session', async () => {
+        const expressSession = {
+            user: { id: 'user1' },
+            chatIds: ['chat1']
+        };
+
+        await SessionManagementService.syncSession(expressSession, mockSessionId);
+
+        const info = await SessionManagementService.getInfo(mockSessionId);
+        expect(info).toBeDefined();
+        expect(info.isAuthenticated).toBe(true);
+        expect(info.chatIds).toContain('chat1');
     });
 });

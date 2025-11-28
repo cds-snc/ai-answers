@@ -53,7 +53,7 @@ export default async function createRateLimiterMiddleware(app) {
   }
 
   // Middleware function
-  return async function rateLimit(req, res, next) {
+  const rateLimitMiddleware = async function rateLimit(req, res, next) {
     const key = (req && req.session && req.sessionID) ? req.sessionID : req.ip;
     const isAuthenticated = !!(req && req.session && req.session.user);
     const limiter = isAuthenticated ? authLimiter : publicLimiter;
@@ -68,4 +68,12 @@ export default async function createRateLimiterMiddleware(app) {
       return res.status(429).send('Too many requests');
     }
   };
+
+  // Expose limiters for SessionManagementService metrics
+  rateLimiters.public = publicLimiter;
+  rateLimiters.auth = authLimiter;
+
+  return rateLimitMiddleware;
 }
+
+export const rateLimiters = { public: null, auth: null };

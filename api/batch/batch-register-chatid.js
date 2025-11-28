@@ -1,5 +1,5 @@
 import { withOptionalUser } from '../../middleware/auth.js';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 import SessionManagementService from '../../services/SessionManagementService.js';
 
 async function handler(req, res) {
@@ -13,15 +13,9 @@ async function handler(req, res) {
       return res.status(400).json({ error: 'no_session' });
     }
 
-    // Use pre-computed fingerprintKey from middleware to avoid duplication
-    const fingerprintKey = req.fingerprintKey;
-    const isAuthenticated = !!req.user;
-
     // Generate a new UUID chatId for this batch item (same as chat-create.js)
-    const reg = await SessionManagementService.register(sessionId, {
+    const reg = await SessionManagementService.registerChat(sessionId, {
       generateChatId: true,
-      fingerprintKey,
-      isAuthenticated,
     });
 
     if (!reg.ok) {

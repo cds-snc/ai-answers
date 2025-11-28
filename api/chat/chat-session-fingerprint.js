@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 
 const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
 
@@ -22,7 +22,7 @@ export async function handler(req, res) {
       session.visitorId = fingerprintKey;
       // Ensure session is saved (express-session will persist it based on store)
       if (typeof session.save === 'function') {
-        session.save(() => {});
+        session.save(() => { });
       }
     } catch (e) {
       if (console && console.error) console.error('Failed to compute/store fingerprintKey', e);
