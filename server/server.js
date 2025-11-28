@@ -81,6 +81,7 @@ import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import createSessionMiddleware from '../middleware/express-session.js';
+import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -100,6 +101,8 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
 
 app.use(createSessionMiddleware(app));
+// Ensure a visitor fingerprint (hashed) is present in the session for all requests
+app.use(botFingerprintPresence);
 
 app.use((req, res, next) => {
   req.setTimeout(300000);
