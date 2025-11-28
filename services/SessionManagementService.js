@@ -36,6 +36,57 @@ class SessionManagementService {
     }
   }
 
+  async sessionsAvailable() {
+    if (!this.isManagementEnabled()) return true;
+    const maxSessionsSetting = SettingsService.get('session.maxActiveSessions');
+    if (maxSessionsSetting === null || maxSessionsSetting === undefined || maxSessionsSetting === '') {
+      return true;
+    }
+
+    const max = parseInt(maxSessionsSetting, 10);
+    if (isNaN(max)) return true;
+
+    const activeCount = await this.getActiveSessionsCount();
+    if (activeCount === null) return true; // error reading count, treat as available
+    return activeCount < max;
+  }
+
+  // Returns the number of active sessions (sessions with at least one chatId).
+  // Abstracts storage mode so callers don't need to branch on memory vs mongo.
+  async getActiveSessionsCount() {
+    try {
+      if (await this._isMongoMode()) {
+        await dbConnect();
+        // count documents where chatIds array exists and has at least one element
+        return await SessionState.countDocuments({ chatIds: { $exists: true, $not: { $size: 0 } } });
+      }
+    } catch (e) {
+      // If DB mode fails for some reason, fall back to in-memory count
+      try {
+        let count = 0;
+        for (const s of this.sessions.values()) {
+          if (s && Array.isArray(s.chatIds) && s.chatIds.length > 0) count++;
+        }
+        return count;
+      } catch (e2) {
+        console.error('[SessionManagementService] getActiveSessionsCount error', e, e2);
+        return null;
+      }
+    }
+
+    // Memory mode
+    try {
+      let count = 0;
+      for (const s of this.sessions.values()) {
+        if (s && Array.isArray(s.chatIds) && s.chatIds.length > 0) count++;
+      }
+      return count;
+    } catch (e) {
+      console.error('[SessionManagementService] getActiveSessionsCount error', e);
+      return null;
+    }
+  }
+
   _startCleanup() {
     this.cleanupTimer = setInterval(() => {
       const now = Date.now();
@@ -169,6 +220,24 @@ class SessionManagementService {
     let activeChatId = providedChatId;
     if (generateChatId && !activeChatId) {
       activeChatId = uuidv4();
+    }
+
+    // If this register call would create the first chat for this session,
+    // enforce the global "max active sessions" limit (only counts sessions
+    // that have at least one chatId). If the limit is reached, return a
+    // failure so callers can surface a friendly message.
+    try {
+      const hasAnyChats = !!(session.chatIds && session.chatIds.length > 0);
+      const willCreateFirstChat = !hasAnyChats && (!!activeChatId);
+      if (willCreateFirstChat) {
+        const avail = await this.sessionsAvailable();
+        if (!avail) {
+          return { ok: false, reason: 'sessions_full' };
+        }
+      }
+    } catch (e) {
+      // On errors checking availability, prefer to allow creation rather
+      // than block — treat availability check as best-effort.
     }
 
     if (activeChatId) {
