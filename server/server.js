@@ -78,6 +78,7 @@ import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
+import createSessionMiddleware from '../middleware/express-session.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -86,26 +87,24 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 
-// CORS configuration - allow credentials for cookie-based auth
 app.use(cors({
-  origin: true, // Reflect the request origin
-  credentials: true // Allow cookies
+  origin: true,
+  credentials: true
 }));
 
-app.use(cookieParser()); // Parse cookies
+app.use(cookieParser());
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
 
-// Set higher timeout limits for all routes
+app.use(createSessionMiddleware(app));
+
 app.use((req, res, next) => {
-  // Set timeout to 5 minutes
   req.setTimeout(300000);
   res.setTimeout(300000);
   next();
 });
 
-// Logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} request to ${req.url}`);
   next();
@@ -115,7 +114,6 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "Healthy" });
 });
 
-// Serve runtime config for frontend
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);
@@ -150,7 +148,6 @@ app.get('/api/chat/chat-create', chatCreateHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
 app.post('/api/chat/chat-report', chatReportHandler);
-// app.get('/api/chat/chat-verify-session', chatVerifySessionHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
@@ -167,40 +164,20 @@ app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/auth/signup', signupHandler);
 app.post('/api/auth/login', loginHandler);
 app.post('/api/auth/logout', logoutHandler);
-app.post('/api/auth/refresh', refreshHandler); // New: refresh access token
-app.get('/api/auth/me', meHandler); // New: get current user
-// Normalize user-facing logout under /api/auth for consistency. Reuse the
-// existing `logoutHandler` (from `auth-logout.js`) instead of a missing
-// `api/user/user-auth-logout.js` module.
+app.post('/api/auth/refresh', refreshHandler);
+app.get('/api/auth/me', meHandler);
 app.post('/api/auth/user-auth-logout', logoutHandler);
-// Public user routes for 2FA (send and verify)
-// Public user 2FA verification endpoint (token issued after this)
 app.post('/api/auth/verify-2fa', verify2FAHandler);
-// Also expose the same handlers under /api/auth/auth-* for compatibility
 app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
 app.post('/api/auth/auth-logout', logoutHandler);
 app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
-app.post('/api/auth/auth-refresh', refreshHandler); // Compatibility alias
-app.get('/api/auth/auth-me', meHandler); // Compatibility alias
-// Legacy /api/db/db-auth-* endpoints have been moved to the canonical /api/auth/*
-// and are intentionally not re-registered here to avoid duplicate/ambiguous
-// handlers. If a compatibility shim is needed in the future, add explicit
-// aliases that forward to the /api/auth handlers.
-// Also expose the existing user-send/user-verify handlers under /api/auth
-// so client code expecting /api/auth/* variants will work.
-// Expose canonical auth 2FA send endpoint. Clients should call the auth-prefixed
-// endpoints (no fallbacks). Short and legacy compatibility endpoints were removed
-// to avoid ambiguous routing.
+app.post('/api/auth/auth-refresh', refreshHandler);
+app.get('/api/auth/auth-me', meHandler);
 app.post('/api/auth/auth-send-2fa', userSend2FAHandler);
-// Keep canonical verify alias
 app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
-// Password reset endpoints
 app.post('/api/auth/auth-send-reset', sendResetHandler);
 app.post('/api/auth/auth-reset-password', resetPasswordHandler);
-// Keep the public users endpoints for compatibility if external callers want
-// Compatibility endpoints (public) - also available under /api/auth-send and /api/auth-verify
-// Removed legacy user/send endpoints. 2FA is now served via the /api/auth/* endpoints only.
 app.all('/api/db/db-users', dbUsersHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
 app.get('/api/chat/chat-dashboard', chatDashboardHandler);
@@ -234,30 +211,26 @@ const PORT = process.env.PORT || 3001;
 (async () => {
   try {
     await dbConnect();
-    await dbConnect();
-    console.log("Database connected");
+    console.log("Database service started...");
 
-    // Load all settings into memory
     await SettingsService.loadAll();
+    console.log("Settings service started...");
 
-    // Initialize VectorService using the factory method (do not await, run async)
     initVectorService()
       .then(() => {
-        console.log("Vector service initialized (async)");
+        console.log("Vector service started...");
         if (VectorService && typeof VectorService.getStats === 'function') {
           console.log('Vector Service Stats:', VectorService.getStats());
         }
       })
       .catch((vectorError) => {
         console.error("Vector service initialization failed:", vectorError);
-        // Optionally, set VectorService to null or a stub
       });
     const memoryUsage = process.memoryUsage();
     console.log(`Total application memory usage (RSS): ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`);
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
-    // Skip the self health check in Lambda environment to avoid startup delays
     if (!process.env.AWS_LAMBDA_RUNTIME_API) {
       fetch(`http://localhost:${PORT}/health`)
         .then((response) => response.json())
