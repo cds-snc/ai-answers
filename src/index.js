@@ -15,15 +15,37 @@ import SessionService from './services/SessionService.js';
 // Add the icon packs
 library.add(fas, far);
 
-// ---- Adobe Analytics Logic (unchanged) ----
-const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
-if (adobeUrl) {
-  const script = document.createElement('script');
-  script.src = adobeUrl;
-  script.async = false;
-  document.head.insertBefore(script, document.head.firstChild);
+// ---- Runtime config loader (loads after fingerprint) ----
+function loadRuntimeConfig() {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && window.RUNTIME_CONFIG) {
+      resolve();
+      return;
+    }
 
+    const script = document.createElement('script');
+    script.src = '/config.js';
+    script.async = false;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      // Not fatal — continue without runtime config
+      console.warn('Failed to load /config.js');
+      resolve();
+    };
+    document.head.insertBefore(script, document.head.firstChild);
+  });
+}
+
+function insertAdobeScriptsIfNeeded() {
   try {
+    const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+    if (!adobeUrl) return;
+
+    const script = document.createElement('script');
+    script.src = adobeUrl;
+    script.async = false;
+    document.head.insertBefore(script, document.head.firstChild);
+
     const bottomScript = document.createElement('script');
     bottomScript.type = 'text/javascript';
     bottomScript.text = '_satellite.pageBottom();';
@@ -38,7 +60,7 @@ if (adobeUrl) {
     console.warn('Failed to prepare Adobe pageBottom script', e);
   }
 }
-// --------------------------------------------
+// -------------------------------------------------------
 
 // ⭐ Unified Fingerprint Initialization (runs ONCE)
 async function initFingerprint() {
@@ -60,6 +82,10 @@ const renderApp = async () => {
 
   // ⭐ Fingerprint sent ONCE before render
   await initFingerprint();
+
+  // Load runtime config (from /config.js) after fingerprint, then insert Adobe scripts.
+  await loadRuntimeConfig();
+  insertAdobeScriptsIfNeeded();
 
   root.render(<App />);
 };

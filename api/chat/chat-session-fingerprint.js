@@ -35,4 +35,4 @@ export async function handler(req, res) {
   }
 }
 
-export default withSession(handler);
+export default handler;
