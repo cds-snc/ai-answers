@@ -20,7 +20,7 @@ vi.mock('../SettingsService.js', () => ({
 import TwoFAService from '../TwoFAService.js';
 import GCNotifyService from '../GCNotifyService.js';
 import { User } from '../../models/user.js';
-import { authenticator } from 'otplib';
+import speakeasy from 'speakeasy';
 import { SettingsService } from '../SettingsService.js';
 
 describe('TwoFAService', () => {
@@ -30,7 +30,7 @@ describe('TwoFAService', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     SettingsService.get.mockReset();
-    SettingsService.get.mockImplementation(async (key) => {
+    SettingsService.get.mockImplementation((key) => {
       if (key === 'twoFA.enabled') return 'true';
       if (key === 'twoFA.templateId') return 'tpl-from-settings';
       return null;
@@ -50,10 +50,13 @@ describe('TwoFAService', () => {
 
     findByIdSpy = vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
 
-  const fakeNotify = vi.spyOn(GCNotifyService, 'sendEmail').mockResolvedValue({ success: true });
-  const secret = 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLD';
-  vi.spyOn(authenticator, 'generateSecret').mockReturnValue(secret);
-  vi.spyOn(authenticator, 'generate').mockReturnValue('999999');
+    const fakeNotify = vi.spyOn(GCNotifyService, 'sendEmail').mockResolvedValue({ success: true });
+    const secret = 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLD';
+
+    // Mock speakeasy.generateSecret to return a secret with base32 property
+    vi.spyOn(speakeasy, 'generateSecret').mockReturnValue({ base32: secret });
+    // Mock speakeasy.totp to return the code
+    vi.spyOn(speakeasy, 'totp').mockReturnValue('999999');
 
     const result = await TwoFAService.send2FACode({ userOrId: 'u1', templateId: 'tpl-2fa', fetchImpl: async () => ({ ok: true, status: 201, json: async () => ({ id: 'n1' }) }) });
 
@@ -76,7 +79,8 @@ describe('TwoFAService', () => {
     };
 
     vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
-    vi.spyOn(authenticator, 'check').mockReturnValue(true);
+    // Mock speakeasy.totp.verify to return true
+    vi.spyOn(speakeasy.totp, 'verify').mockReturnValue(true);
 
     const res = await TwoFAService.verify2FACode({ userOrId: 'u2', code: '123456' });
     expect(res.success).toBe(true);
@@ -92,7 +96,8 @@ describe('TwoFAService', () => {
     };
 
     vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
-    vi.spyOn(authenticator, 'check').mockReturnValue(false);
+    // Mock speakeasy.totp.verify to return false
+    vi.spyOn(speakeasy.totp, 'verify').mockReturnValue(false);
 
     const res = await TwoFAService.verify2FACode({ userOrId: 'u3', code: '000000' });
     expect(res.success).toBe(false);
@@ -100,7 +105,7 @@ describe('TwoFAService', () => {
   });
 
   it('returns disabled reason when 2FA is disabled', async () => {
-    SettingsService.get.mockImplementation(async (key) => {
+    SettingsService.get.mockImplementation((key) => {
       if (key === 'twoFA.enabled') return 'false';
       if (key === 'twoFA.templateId') return 'tpl-from-settings';
       return null;

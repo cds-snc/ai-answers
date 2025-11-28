@@ -1,58 +1,27 @@
-import jwt from 'jsonwebtoken';
-import { User } from '../../models/user.js';
-import dbConnect from '../db/db-connect.js';
-import { generateToken } from '../../middleware/auth.js';
-import { getCookieOptions } from '../util/cookie-utils.js';
-
-const JWT_SECRET = process.env.JWT_SECRET_KEY;
+// Refresh handler is no longer needed with express-session
+// Session TTL is managed by express-session automatically
+// This endpoint can be removed or kept as a no-op for backward compatibility
 
 const refreshHandler = async (req, res) => {
     try {
-        const refreshToken = req.cookies?.refresh_token;
-
-        if (!refreshToken) {
-            return res.status(401).json({
-                success: false,
-                message: 'No refresh token provided'
+        // With express-session, the session is automatically refreshed on each request
+        // Check if user is still logged in
+        if (req.session?.user) {
+            return res.status(200).json({
+                success: true,
+                message: 'Session is valid'
             });
         }
 
-        // Verify refresh token
-        const decoded = jwt.verify(refreshToken, JWT_SECRET);
-
-        // Ensure it's actually a refresh token
-        if (decoded.type !== 'refresh') {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid token type'
-            });
-        }
-
-        await dbConnect();
-        const user = await User.findById(decoded.userId);
-
-        if (!user || !user.active) {
-            return res.status(401).json({
-                success: false,
-                message: 'User not found or inactive'
-            });
-        }
-
-        // Generate new access token
-        const newAccessToken = generateToken(user);
-
-        // Set new access token in cookie with parent-domain support in non-dev
-        res.cookie('access_token', newAccessToken, getCookieOptions(req, 15 * 60 * 1000));
-
-        return res.status(200).json({
-            success: true,
-            message: 'Token refreshed successfully'
-        });
-    } catch (error) {
-        console.error('Refresh token error:', error);
         return res.status(401).json({
             success: false,
-            message: 'Invalid or expired refresh token'
+            message: 'No active session'
+        });
+    } catch (error) {
+        console.error('Refresh handler error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error checking session'
         });
     }
 };

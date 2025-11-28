@@ -45,7 +45,6 @@ import verify2FAHandler from '../api/auth/auth-verify-2fa.js';
 import userSend2FAHandler from '../api/auth/auth-send-2fa.js';
 import sendResetHandler from '../api/auth/auth-send-reset.js';
 import resetPasswordHandler from '../api/auth/auth-reset-password.js';
-import refreshHandler from '../api/auth/auth-refresh.js';
 import meHandler from '../api/auth/auth-me.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/db/db-users.js';
@@ -84,6 +83,7 @@ import createSessionMiddleware from '../middleware/express-session.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
+import passport from '../config/passport.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -103,6 +103,9 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
 
 app.use(createSessionMiddleware(app));
+// Initialize Passport for authentication
+app.use(passport.initialize());
+app.use(passport.session());
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use(botFingerprintPresence);
 // Block requests with known bot User-Agent strings
@@ -176,20 +179,11 @@ app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/auth/signup', signupHandler);
 app.post('/api/auth/login', loginHandler);
 app.post('/api/auth/logout', logoutHandler);
-app.post('/api/auth/refresh', refreshHandler);
 app.get('/api/auth/me', meHandler);
-app.post('/api/auth/user-auth-logout', logoutHandler);
 app.post('/api/auth/verify-2fa', verify2FAHandler);
-app.post('/api/auth/auth-signup', signupHandler);
-app.post('/api/auth/auth-login', loginHandler);
-app.post('/api/auth/auth-logout', logoutHandler);
-app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
-app.post('/api/auth/auth-refresh', refreshHandler);
-app.get('/api/auth/auth-me', meHandler);
-app.post('/api/auth/auth-send-2fa', userSend2FAHandler);
-app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
-app.post('/api/auth/auth-send-reset', sendResetHandler);
-app.post('/api/auth/auth-reset-password', resetPasswordHandler);
+app.post('/api/auth/send-2fa', userSend2FAHandler);
+app.post('/api/auth/send-reset', sendResetHandler);
+app.post('/api/auth/reset-password', resetPasswordHandler);
 app.all('/api/db/db-users', dbUsersHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
 app.get('/api/chat/chat-dashboard', chatDashboardHandler);
