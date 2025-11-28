@@ -1,5 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { getFingerprint } from '../utils/fingerprint.js';
+
 
 class AuthService {
   static unauthorizedCallback = null;
@@ -9,7 +9,7 @@ class AuthService {
     this.unauthorizedCallback = cb;
   }
 
-  // Consolidated fetch method with automatic token refresh
+  // Consolidated fetch method
   static async fetch(url, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
     const headers = { ...options.headers };
@@ -19,11 +19,7 @@ class AuthService {
       headers['Content-Type'] = 'application/json';
     }
 
-    // Inject fingerprint header automatically
-    const fp = await getFingerprint();
-    if (fp) {
-      headers['x-fp-id'] = fp;
-    }
+   
 
     // Always include credentials for cookies
     const response = await fetch(url, {
@@ -32,18 +28,11 @@ class AuthService {
       credentials: 'include'
     });
 
-    // Handle 401 - try to refresh token
+    // Handle 401 - session expired, trigger logout
     if (response.status === 401) {
-      const refreshed = await this.refreshToken();
-      if (refreshed) {
-        // Retry the original request
-        return fetch(url, { ...options, headers, credentials: 'include' });
-      } else {
-        // Refresh failed, trigger logout
-        this.logout();
-        if (typeof this.unauthorizedCallback === 'function') {
-          this.unauthorizedCallback();
-        }
+      this.logout();
+      if (typeof this.unauthorizedCallback === 'function') {
+        this.unauthorizedCallback();
       }
     }
 
@@ -90,26 +79,7 @@ class AuthService {
     return await this.getCurrentUser();
   }
 
-  // Refresh access token using refresh token
-  static async refreshToken() {
-    try {
-      const response = await fetch(getApiUrl('auth-refresh'), {
-        method: 'POST',
-        credentials: 'include'
-      });
 
-      if (response.ok) {
-        console.log('Token refreshed successfully');
-        return true;
-      }
-
-      console.log('Token refresh failed');
-      return false;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      return false;
-    }
-  }
 
   static logout() {
     // Clear cached user
