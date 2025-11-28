@@ -2,6 +2,14 @@
 // If absent, responds with 403 (botDetected).
 export default function botFingerprintPresence(req, res, next) {
   try {
+    // Allow the server-side fingerprinting endpoint to run even when
+    // there is no `visitorId` present yet. The endpoint will compute
+    // and store the hashed visitor id in the session; blocking here
+    // would prevent that flow.
+    const url = (req && (req.originalUrl || req.url || '')) + '';
+    if (url.includes('chat-session-fingerprint')) {
+      return next();
+    }
     // If session middleware hasn't run or session is missing, fail
     if (!req || !req.session) {
       res.statusCode = 403;
