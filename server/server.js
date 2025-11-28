@@ -102,6 +102,17 @@ app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build")));
 
+// Short-circuit health checks to avoid bot detection blocking them.
+// This returns a fast 200 response for `GET /health` before session
+// and bot-detection middleware are executed.
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.path === '/health') {
+    res.status(200).json({ status: 'Healthy' });
+    return;
+  }
+  next();
+});
+
 app.use(createSessionMiddleware(app));
 // Initialize Passport for authentication
 app.use(passport.initialize());
@@ -123,11 +134,6 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} request to ${req.url}`);
   next();
 });
-
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "Healthy" });
-});
-
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);

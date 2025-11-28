@@ -1,5 +1,7 @@
 import { RateLimiterMemory, RateLimiterMongo } from 'rate-limiter-flexible';
 import { MongoClient } from 'mongodb';
+import mongoose from 'mongoose';
+import dbConnect from '../api/db/db-connect.js';
 import { SettingsService } from '../services/SettingsService.js';
 
 const _getSetting = (keys) => {
@@ -24,8 +26,26 @@ export default async function createRateLimiterMiddleware(app) {
 
   if (persistence === 'mongo' || persistence === 'mongodb') {
     const mongoUrl = _getSetting(['mongo.uri', 'MONGODB_URI']) || process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/ai-answers';
-    mongoClient = new MongoClient(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    await mongoClient.connect();
+
+    // Prefer using the application's existing mongoose connection so we
+    // reuse the same MongoClient instance used elsewhere in the app.
+    try {
+      await dbConnect();
+      // Mongoose exposes the native MongoClient via connection.getClient()
+      // in newer versions; fall back to connection.client when needed.
+      mongoClient = (mongoose.connection && typeof mongoose.connection.getClient === 'function')
+        ? mongoose.connection.getClient()
+        : (mongoose.connection && mongoose.connection.client) ? mongoose.connection.client : null;
+    } catch (err) {
+      // If dbConnect failed, we'll fall back to creating a dedicated client.
+      mongoClient = null;
+      console.warn('Rate limiter: failed to obtain mongoose client, falling back to new MongoClient', err);
+    }
+
+    if (!mongoClient) {
+      mongoClient = new MongoClient(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+      await mongoClient.connect();
+    }
 
     publicLimiter = new RateLimiterMongo({
       storeClient: mongoClient,
