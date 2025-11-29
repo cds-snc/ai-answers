@@ -94,7 +94,7 @@ export default function createSessionMiddleware(app) {
       name: 'aianswers.sid',
       secret: cfg.sessionSecret,
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true,
       store: sessionStore,
       cookie: cookieDefaults
     });
