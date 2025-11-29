@@ -544,25 +544,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <input id="session-cleanup" type="number" min="5" value={cleanupInterval} onChange={handleCleanupIntervalChange} disabled={savingCleanupInterval} />
 
-        <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-400">
-          {t('settings.session.rateLimitCapacity', 'Rate limit capacity (tokens)')}
-        </label>
-        <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
-
-        <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
-          {t('settings.session.authenticatedRateLimitCapacity', 'Authenticated rate limit capacity (tokens)')}
-        </label>
-        <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
-
-        <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
-          {t('settings.session.rateLimitRefill', 'Rate limit refill (tokens/sec)')}
-        </label>
-        <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
-
-        <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
-          {t('settings.session.authenticatedRateLimitRefill', 'Authenticated rate limit refill (tokens/sec)')}
-        </label>
-        <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
+        {/* Rate limiting moved to its own section for clarity (localized below) */}
 
         <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
           {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}
@@ -576,6 +558,28 @@ const SettingsPage = ({ lang = 'en' }) => {
           <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
           <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
         </select>
+      </GcdsDetails>
+
+      <GcdsDetails detailsTitle={t('settings.rateLimiting.title', 'Rate limiting')} className="mt-600 mb-200" tabIndex="0">
+        <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">
+          {t('settings.rateLimiting.rateLimitCapacity', 'Rate limit capacity (tokens)')}
+        </label>
+        <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
+
+        <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.authenticatedRateLimitCapacity', 'Authenticated rate limit capacity (tokens)')}
+        </label>
+        <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
+
+        <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.rateLimitRefill', 'Rate limit refill (tokens/min)')}
+        </label>
+        <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
+
+        <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.authenticatedRateLimitRefill', 'Authenticated rate limit refill (tokens/min)')}
+        </label>
+        <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
       </GcdsDetails>
     </GcdsContainer>
   );

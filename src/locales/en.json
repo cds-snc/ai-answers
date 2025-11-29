@@ -804,10 +804,6 @@
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
-      "rateLimitCapacity": "Rate limit capacity (credits)",
-      "rateLimitRefill": "Rate limit refill (credits per min)",
-      "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (credits)",
-      "authenticatedRateLimitRefill": "Authenticated rate limit refill (credits per min)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)",
       "persistence": {
         "label": "Session persistence",
@@ -816,6 +812,13 @@
           "mongo": "MongoDB (persistent/cache)"
         }
       }
+    },
+    "rateLimiting": {
+      "title": "Rate limiting",
+      "rateLimitCapacity": "Rate limit capacity (requests)",
+      "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (requests)",
+      "rateLimitRefill": "Rate limit refill (requests per min)",
+      "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
     }
   },
   "outage": {

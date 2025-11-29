@@ -841,10 +841,6 @@
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
       "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
-      "rateLimitCapacity": "Capacité du quota (crédits)",
-      "rateLimitRefill": "Recharge du quota (crédits/min)",
-      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (crédits)",
-      "authenticatedRateLimitRefill": "Recharge du quota authentifié (crédits/min)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
       "persistence": {
         "label": "Persistance des sessions",
@@ -853,6 +849,13 @@
           "mongo": "MongoDB (persistant/cache)"
         }
       }
+    },
+    "rateLimiting": {
+      "title": "Limitation du débit",
+      "rateLimitCapacity": "Capacité du quota (requêtes)",
+      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
+      "rateLimitRefill": "Recharge du quota (requêtes/min)",
+      "authenticatedRateLimitRefill": "Recharge du quota authentifié (requêtes/min)"
     }
   },
   "outage": {
