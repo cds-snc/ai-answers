@@ -26,6 +26,7 @@ import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
+import { useTranslations } from './hooks/useTranslations.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -165,6 +166,7 @@ const AppLayout = () => {
   const location = useLocation();
 
   const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
+  const { t } = useTranslations(currentLang);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
@@ -201,10 +203,8 @@ const AppLayout = () => {
       <section className="alpha-top">
         <div className="container">
           <small>
-            <span className="alpha-label">Alpha</span>&nbsp;&nbsp;
-            {currentLang === 'en'
-              ? 'Experimental page - not public.'
-              : 'Page expérimentale - non publique.'}
+            <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
+            {t('homepage.status.description')}
           </small>
         </div>
       </section>

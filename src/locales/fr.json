@@ -5,9 +5,9 @@
       "text": "Obtenez des réponses à vos questions sur Canada.ca.",
       "ariaLabel": "Obtenez des réponses à vos questions sur Canada point CA."
     },
-    "alpha": {
-      "label": "Alpha",
-      "description": "Page expérimentale — non publique."
+    "status": {
+      "label": "Bêta",
+      "description": "Essais bêta"
     },
     "intro": {
       "researchOnly": "Les réponses fournies par ce service d'IA sont des informations, et non des conseils officiels. Des améliorations sont en cours."
