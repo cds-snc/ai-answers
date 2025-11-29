@@ -135,29 +135,47 @@ export default function createSessionMiddleware(app) {
           const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : sessionMinutes;
           const AUTH_MAX_AGE = authMinutes * 60 * 1000;
 
-          const isAuthenticated = Boolean(
-            req.user ||
-            (req.session && (
-              (req.session.passport && req.session.passport.user) ||
-              req.session.user ||
-              req.session.userId ||
-              req.session.authenticated ||
-              req.session.isAuthenticated
-            ))
-          );
+          // Define helper to apply dynamic domain and TTL
+          // We need this because req.login() (Passport) regenerates the session,
+          // which resets the cookie options. We must re-apply our dynamic settings
+          // just before the response is sent (when the session is saved).
+          const applyDynamicSessionSettings = () => {
+            if (!req.session || !req.session.cookie) return;
 
-          if (req.session && req.session.cookie) {
-            req.session.cookie.maxAge = isAuthenticated ? AUTH_MAX_AGE : MAX_AGE;
+            const isAuth = Boolean(
+              req.user ||
+              (req.session && (
+                (req.session.passport && req.session.passport.user) ||
+                req.session.user ||
+                req.session.userId ||
+                req.session.authenticated ||
+                req.session.isAuthenticated
+              ))
+            );
 
-            // NEW: Dynamically set the domain based on the incoming request
+            req.session.cookie.maxAge = isAuth ? AUTH_MAX_AGE : MAX_AGE;
+
             const requestHost = req.get('host');
             if (requestHost) {
               const dynamicDomain = getParentDomain(requestHost, process.env.NODE_ENV);
-              // If dynamicDomain is undefined (e.g. lambda-url), this correctly sets it to undefined (host-only)
-              // If dynamicDomain is set (e.g. .cdssandbox.xyz), it sets the shared domain
               req.session.cookie.domain = dynamicDomain;
             }
-          }
+          };
+
+          // Apply immediately for the current session
+          applyDynamicSessionSettings();
+
+          // Hook into res.end to ensure settings are applied even if session was regenerated
+          const originalEnd = res.end;
+          res.end = function(...args) {
+            try {
+              applyDynamicSessionSettings();
+            } catch (e) {
+              // ignore errors during patch
+            }
+            return originalEnd.apply(this, args);
+          };
+
         } catch (e) {
         }
         next();
