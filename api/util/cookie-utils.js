@@ -9,6 +9,15 @@ export const getParentDomain = (host, nodeEnv = process.env.NODE_ENV) => {
 
   // Strip port if present
   const hostOnly = host.split(':')[0];
+  const lower = hostOnly.toLowerCase();
+
+  // Heuristic: avoid setting a parent domain for known preview/cloud provider
+  // hostnames (these are often treated like public suffixes and browsers
+  // may reject cookies that set Domain to them). Keep cookies host-only
+  // for these environments so browsers accept them in previews.
+  // Examples: AWS Lambda preview URLs that include "lambda-url" or end with
+  // ".on.aws".
+  if (lower.includes('lambda-url') || lower.endsWith('.on.aws')) return undefined;
 
   const parts = hostOnly.split('.').filter(Boolean);
   // If not a multi-label hostname (localhost, example), don't set domain
