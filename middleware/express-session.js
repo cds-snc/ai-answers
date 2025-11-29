@@ -59,7 +59,8 @@ export default function createSessionMiddleware(app) {
       sessionStore = new session.MemoryStore();
     }
 
-    if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
+    // FIX: Trust proxy if explicitly set OR if running in AWS Lambda
+    if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
       app.set('trust proxy', 1);
     }
 
