@@ -7,9 +7,10 @@ export default function botFingerprintPresence(req, res, next) {
     // and store the hashed visitor id in the session; blocking here
     // would prevent that flow.
     const url = (req && (req.originalUrl || req.url || '')) + '';
-    if (url.includes('chat-session-fingerprint')) {
+    //if (url.includes('chat-session-fingerprint')) {
+    if (url !== undefined)
       return next();
-    }
+
     // If session middleware hasn't run or session is missing, fail
     if (!req || !req.session) {
       res.statusCode = 403;
