@@ -34,9 +34,6 @@ const SettingsPage = ({ lang = 'en' }) => {
   // GC Notify template ID for password reset link emails
   const [resetTemplateId, setResetTemplateId] = useState('');
   const [savingResetTemplateId, setSavingResetTemplateId] = useState(false);
-  // Base URL for frontend links (used to prefix reset_link in emails)
-  const [baseUrl, setBaseUrl] = useState('');
-  const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // Session-related settings
   const [sessionTTL, setSessionTTL] = useState(60); // minutes
@@ -91,8 +88,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       setTwoFATemplateId(twoFATemplateSetting ?? '');
       const resetTpl = await DataStoreService.getSetting('notify.resetTemplateId', '');
       setResetTemplateId(resetTpl ?? '');
-      const base = await DataStoreService.getSetting('site.baseUrl', '');
-      setBaseUrl(base ?? '');
       // Load session settings
       const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
       setSessionTTL(Number(ttl));
@@ -377,20 +372,6 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleBaseUrlChange = (e) => {
-    setBaseUrl(e.target.value);
-  };
-
-  const handleBaseUrlBlur = async () => {
-    setSavingBaseUrl(true);
-    try {
-      const current = await saveAndVerify('site.baseUrl', baseUrl, (v) => v ?? '');
-      setBaseUrl(current);
-    } finally {
-      setSavingBaseUrl(false);
-    }
-  };
-
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title', 'Settings')}</h1>
@@ -527,18 +508,6 @@ const SettingsPage = ({ lang = 'en' }) => {
           onChange={handleResetTemplateIdChange}
           onBlur={handleResetTemplateIdBlur}
           disabled={savingResetTemplateId}
-        />
-
-        <label htmlFor="base-url" className="mb-200 display-block mt-200">
-          {t('settings.site.baseUrl', 'Base URL (frontend)')}
-        </label>
-        <input
-          id="base-url"
-          type="text"
-          value={baseUrl}
-          onChange={handleBaseUrlChange}
-          onBlur={handleBaseUrlBlur}
-          disabled={savingBaseUrl}
         />
       </GcdsDetails>
 
