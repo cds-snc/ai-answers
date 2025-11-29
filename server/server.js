@@ -118,18 +118,17 @@ app.use(createSessionMiddleware(app));
 app.use(passport.initialize());
 app.use(passport.session());
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
-//app.use(botFingerprintPresence);
+app.use(botFingerprintPresence);
 // Block requests with known bot User-Agent strings
-//app.use(botIsBot);
+app.use(botIsBot);
 // Additional detection using `bot-detector` (runs after isbot)
-//app.use(botDetector);
+app.use(botDetector);
 
 // Placeholder for async rate limiter initialization.
 // We register a wrapper middleware now (after bot detection) that will
 // await the actual rate limiter once it's initialized in the startup
 // sequence below. This ensures the rate limiter runs after session and
 // bot-detection, but before any route handlers.
-/*
 let rateLimitMiddlewareReady = null;
 app.use(async (req, res, next) => {
   try {
@@ -141,7 +140,7 @@ app.use(async (req, res, next) => {
     return next();
   }
 });
-*/
+
 app.use((req, res, next) => {
   req.setTimeout(300000);
   res.setTimeout(300000);
@@ -246,12 +245,10 @@ const PORT = process.env.PORT || 3001;
     await SettingsService.loadAll();
     console.log("Settings service started...");
 
-    // Initialize rate limiter middleware (depends on settings).
-    // The promise is assigned to `rateLimitMiddlewareReady` so the wrapper
-    // middleware (registered after bot detection) will start using it.
+    // Initialize and mount rate limiter middleware (depends on settings)
     try {
-      //rateLimitMiddlewareReady = createRateLimiterMiddleware(app);
-      //await rateLimitMiddlewareReady;
+      const rateLimitMiddleware = await createRateLimiterMiddleware(app);
+      app.use(rateLimitMiddleware);
       console.log('Rate limiter middleware initialized');
     } catch (rlErr) {
       console.error('Failed to initialize rate limiter middleware:', rlErr);

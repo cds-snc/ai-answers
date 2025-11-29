@@ -60,27 +60,14 @@ export default function createSessionMiddleware(app) {
     }
 
     // FIX: Trust proxy if explicitly set OR if running in AWS Lambda
-    if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
       app.set('trust proxy', 1);
     }
 
-    let parentDomain;
-    try {
-      let hostCandidate = cfg.baseUrl;
-      if (cfg.baseUrl) {
-        try {
-          const u = new URL(cfg.baseUrl);
-          hostCandidate = u.host;
-        } catch (e) {
-          hostCandidate = cfg.baseUrl.split('/')[0];
-        }
-      }
-      parentDomain = getParentDomain(hostCandidate, process.env.NODE_ENV);
-    } catch (e) {
-      parentDomain = undefined;
-    }
+    // We no longer set a static domain here based on baseUrl.
+    // Instead, we determine the domain dynamically in the request wrapper.
 
-    const isSecure = false; //process.env.NODE_ENV !== 'development';
+    const isSecure = process.env.NODE_ENV !== 'development';
     const INITIAL_MAX_AGE = cfg.initialMinutes * 60 * 1000;
     const cookieDefaults = {
       httpOnly: true,
@@ -89,13 +76,12 @@ export default function createSessionMiddleware(app) {
       maxAge: INITIAL_MAX_AGE,
       path: '/'
     };
-    if (parentDomain) cookieDefaults.domain = parentDomain;
 
     return session({
       name: 'aianswers.sid',
       secret: cfg.sessionSecret,
       resave: false,
-      saveUninitialized: true,
+      saveUninitialized: false,
       store: sessionStore,
       cookie: cookieDefaults
     });
@@ -169,6 +155,15 @@ export default function createSessionMiddleware(app) {
 
           if (req.session && req.session.cookie) {
             req.session.cookie.maxAge = isAuthenticated ? AUTH_MAX_AGE : MAX_AGE;
+
+            // NEW: Dynamically set the domain based on the incoming request
+            const requestHost = req.get('host');
+            if (requestHost) {
+              const dynamicDomain = getParentDomain(requestHost, process.env.NODE_ENV);
+              // If dynamicDomain is undefined (e.g. lambda-url), this correctly sets it to undefined (host-only)
+              // If dynamicDomain is set (e.g. .cdssandbox.xyz), it sets the shared domain
+              req.session.cookie.domain = dynamicDomain;
+            }
           }
         } catch (e) {
         }
