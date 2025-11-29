@@ -118,11 +118,11 @@ app.use(createSessionMiddleware(app));
 app.use(passport.initialize());
 app.use(passport.session());
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
-app.use(botFingerprintPresence);
+//app.use(botFingerprintPresence);
 // Block requests with known bot User-Agent strings
-app.use(botIsBot);
+//app.use(botIsBot);
 // Additional detection using `bot-detector` (runs after isbot)
-app.use(botDetector);
+//app.use(botDetector);
 
 // Placeholder for async rate limiter initialization.
 // We register a wrapper middleware now (after bot detection) that will
