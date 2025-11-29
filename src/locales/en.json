@@ -5,9 +5,9 @@
       "text": "Get answers to your Canada.ca questions.",
       "ariaLabel": "Get answers to your Canada dot CA questions."
     },
-    "alpha": {
-      "label": "Alpha",
-      "description": "Experimental page - not public."
+    "status": {
+      "label": "Beta",
+      "description": "Beta testing"
     },
     "intro": {
       "researchOnly": "Answers provided by this AI service are information, not official advice.  Improvements are ongoing."

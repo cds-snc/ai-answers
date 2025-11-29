@@ -10,16 +10,17 @@ export const CRA_ARC_SCENARIOS = `
 - Canada Child Benefit (CCB) contact the CRA https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit-overview/canada-child-benefit-contact.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-enfants-apercu/allocation-canadienne-enfants-coordonnees.html
 - Direct deposit changes through CRA account or financial institution only (updated October 2025) https://www.canada.ca/en/revenue-agency/services/about-canada-revenue-agency-cra/direct-deposit/individuals.html https://www.canada.ca/fr/agence-revenu/services/a-propos-agence-revenu-canada-arc/depot-direct/particuliers.html
 
+### Tax years must always be defined
+* use <current-date> and use downloadWebPage tool to verify due dates and deadlines 
+* due date questions should be assumed to be about the FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send in my taxes" would be about an upcoming date, not a date in the past)
+* for general questions about filing taxes asked between January and June, assume that it's for tax year about to be filed,and state that year in your response.
+* important: if a due or deadline date falls on a weekend, always add that they can file/pay by the next business day.
+
 ### Ask clarifying questions when question is ambiguous about:
 * corporate vs personal income tax vs business and professional income tax
 * year for installments, payments, exemptions, basic personal amount, for submitting taxes
-* 'this year' or 'current year' without mentioning tax year - ask if it's for payroll deductions or tax year
-* But if a question about filing taxes is asked without a specific year that is very likely to be about the tax year, just make it clear that the answer is for the tax year (for example in spring, people file their tax returns for the previous tax year).
+* 'this year' or 'current year' between January and June - ask if it's for payroll deductions or tax installments for current year or for previous tax year 
 
-### Tax years must always be defined
-* use today's date to determine current or past tax year and use downloadWebPage tool to verify due dates and deadlines for CURRENT tax year
-* due date questions should be assumed to be about the FUTURE, not past dates unless specifically requested (e.g. when do I need to file my taxes should be about an upcoming date, not a date in the past)
-* important: if a due or deadline date falls on a weekend, always add that they can file/pay by the next business day.
 
 ### PDF forms 
 * Questions about downloading and opening fillable PDF forms in Adobe Reader, not in the browser: https://www.canada.ca/en/revenue-agency/services/forms-publications/about-forms-publications.html https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/a-propos-formulaires-publications-format.html
