@@ -839,6 +839,7 @@
       "title": "Paramètres de session",
       "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
+      "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
       "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
       "rateLimitCapacity": "Capacité du quota (crédits)",
       "rateLimitRefill": "Recharge du quota (crédits/min)",

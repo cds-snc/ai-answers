@@ -802,6 +802,7 @@
       "title": "Session settings",
       "managementEnabled": "Enable Session Management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
+      "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
       "rateLimitCapacity": "Rate limit capacity (credits)",
       "rateLimitRefill": "Rate limit refill (credits per min)",

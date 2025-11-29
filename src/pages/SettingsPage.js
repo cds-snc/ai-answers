@@ -41,6 +41,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Session-related settings
   const [sessionTTL, setSessionTTL] = useState(60); // minutes
   const [savingSessionTTL, setSavingSessionTTL] = useState(false);
+  const [sessionAuthTTL, setSessionAuthTTL] = useState(60); // minutes for authenticated users
+  const [savingSessionAuthTTL, setSavingSessionAuthTTL] = useState(false);
   const [cleanupInterval, setCleanupInterval] = useState(60); // seconds
   const [savingCleanupInterval, setSavingCleanupInterval] = useState(false);
   const [rateLimitCapacity, setRateLimitCapacity] = useState(60);
@@ -106,6 +108,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setAuthRateLimitRefill(Number((authRefillPerSec * 60).toFixed(2)));
       const maxSessions = await DataStoreService.getSetting('session.maxActiveSessions', '');
       setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
+      const authTtl = await DataStoreService.getSetting('session.authenticatedTTLMinutes', '60');
+      setSessionAuthTTL(Number(authTtl));
       // Load session persistence mode
       const persistence = await DataStoreService.getSetting('session.persistence', 'memory');
       const persistenceNorm = (persistence || '').toString().trim().toLowerCase();
@@ -133,6 +137,18 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionTTL(Number(current));
     } finally {
       setSavingSessionTTL(false);
+    }
+  };
+
+  const handleSessionAuthTTLChange = async (e) => {
+    const val = Number(e.target.value);
+    setSessionAuthTTL(val);
+    setSavingSessionAuthTTL(true);
+    try {
+      const current = await saveAndVerify('session.authenticatedTTLMinutes', String(val), (v) => Number(v));
+      setSessionAuthTTL(Number(current));
+    } finally {
+      setSavingSessionAuthTTL(false);
     }
   };
 
@@ -517,6 +533,11 @@ const SettingsPage = ({ lang = 'en' }) => {
           {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
         </label>
         <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
+
+        <label htmlFor="session-auth-ttl" className="mb-200 display-block mt-200">
+          {t('settings.session.authTtlMinutes', 'Authenticated session TTL (minutes — e.g. 60 = 1 hour)')}
+        </label>
+        <input id="session-auth-ttl" type="number" min="1" value={sessionAuthTTL} onChange={handleSessionAuthTTLChange} disabled={savingSessionAuthTTL} />
 
         <label htmlFor="session-cleanup" className="mb-200 display-block mt-400">
           {t('settings.session.cleanupSeconds', 'Session cleanup interval (seconds)')}
