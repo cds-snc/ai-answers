@@ -464,8 +464,7 @@
             "createFeedback": "Créer un nouvel objet de rétroaction d'expert basé sur la rétroaction de l'interaction appariée ou une rétroaction de repli générée (type 'ai')",
             "computeScore": "Calculer le score total à partir des scores par phrase et du score de citation (pondérations par défaut). Si aucune note n'existe, totalScore peut être null.",
             "mapFeedback": "Mapper la rétroaction à la nouvelle interaction (niveau phrase ou QA uniquement) et enregistrer la trace de correspondance des phrases et les scores de similarité",
-            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit",
-            "updateInteraction": "Mettre à jour l'interaction avec la nouvelle référence d'évaluation (autoEval)"
+            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit"
           }
         },
         "noMatch": {

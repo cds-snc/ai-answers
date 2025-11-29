@@ -426,8 +426,7 @@
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
             "mapFeedback": "Map feedback to the new interaction (sentence-level or QA-only) and save sentence match trace and similarity scores",
-            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing",
-            "updateInteraction": "Update the interaction with the new evaluation reference (autoEval)"
+            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing"
           }
         },
         "noMatch": {

@@ -4,6 +4,7 @@ const ChatMetricsSchema = new mongoose.Schema({}, { strict: false, _id: false })
 
 const SessionStateSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true, index: true },
+  status: { type: String, default: 'active', index: true },
   chatIds: { type: [String], default: [] },
   createdAt: { type: Date, default: () => new Date() },
   lastSeen: { type: Date, default: () => new Date() },

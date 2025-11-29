@@ -64,6 +64,9 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Session store type (memory | mongo)
   const [sessionStoreType, setSessionStoreType] = useState('memory');
   const [savingSessionStoreType, setSavingSessionStoreType] = useState(false);
+  // Metrics store type (memory | mongo)
+  const [metricsStoreType, setMetricsStoreType] = useState('memory');
+  const [savingMetricsStoreType, setSavingMetricsStoreType] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
@@ -123,6 +126,11 @@ const SettingsPage = ({ lang = 'en' }) => {
       const storeType = await DataStoreService.getSetting('session.type', 'memory');
       const storeNorm = (storeType || '').toString().trim().toLowerCase();
       setSessionStoreType(storeNorm === 'mongo' || storeNorm === 'mongodb' ? 'mongo' : 'memory');
+
+      // Load metrics store type (memory | mongo)
+      const metricsType = await DataStoreService.getSetting('metrics.type', 'memory');
+      const metricsNorm = (metricsType || '').toString().trim().toLowerCase();
+      setMetricsStoreType(metricsNorm === 'mongo' || metricsNorm === 'mongodb' ? 'mongo' : 'memory');
     }
     loadSettings();
   }, []);
@@ -277,6 +285,21 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionStoreType(current);
     } finally {
       setSavingSessionStoreType(false);
+    }
+  };
+
+  const handleMetricsStoreTypeChange = async (e) => {
+    const val = e.target.value;
+    setMetricsStoreType(val);
+    setSavingMetricsStoreType(true);
+    try {
+      const current = await saveAndVerify('metrics.type', val, (v) => {
+        const n = (v || '').toString().trim().toLowerCase();
+        return n === 'mongo' || n === 'mongodb' ? 'mongo' : 'memory';
+      });
+      setMetricsStoreType(current);
+    } finally {
+      setSavingMetricsStoreType(false);
     }
   };
 
@@ -550,13 +573,26 @@ const SettingsPage = ({ lang = 'en' }) => {
         </select>
 
         <label htmlFor="session-store-type" className="mb-200 display-block mt-200">
-          {t('settings.session.storeType', 'Session store (memory | mongo)')}
+          {t('settings.session.storeType', 'Express Session Store (memory | mongo)')}
         </label>
         <select
           id="session-store-type"
           value={sessionStoreType}
           onChange={handleSessionStoreTypeChange}
           disabled={savingSessionStoreType}
+        >
+          <option value="memory">{t('settings.session.store.options.memory', 'Memory (in-process)')}</option>
+          <option value="mongo">{t('settings.session.store.options.mongo', 'MongoDB (persistent)')}</option>
+        </select>
+
+        <label htmlFor="metrics-store-type" className="mb-200 display-block mt-200">
+          {t('settings.metrics.storeType', 'Chat Metrics Store (memory | mongo)')}
+        </label>
+        <select
+          id="metrics-store-type"
+          value={metricsStoreType}
+          onChange={handleMetricsStoreTypeChange}
+          disabled={savingMetricsStoreType}
         >
           <option value="memory">{t('settings.session.store.options.memory', 'Memory (in-process)')}</option>
           <option value="mongo">{t('settings.session.store.options.mongo', 'MongoDB (persistent)')}</option>
