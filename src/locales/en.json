@@ -805,6 +805,13 @@
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)",
+      "storeType": "Session store (memory | mongo)",
+      "store": {
+        "options": {
+          "memory": "Memory (in-process)",
+          "mongo": "MongoDB (persistent/cache)"
+        }
+      },
       "persistence": {
         "label": "Session persistence",
         "options": {

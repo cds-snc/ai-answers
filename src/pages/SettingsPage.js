@@ -61,6 +61,9 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
   const [sessionManagementEnabled, setSessionManagementEnabled] = useState('true');
   const [savingSessionManagementEnabled, setSavingSessionManagementEnabled] = useState(false);
+  // Session store type (memory | mongo)
+  const [sessionStoreType, setSessionStoreType] = useState('memory');
+  const [savingSessionStoreType, setSavingSessionStoreType] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
@@ -116,6 +119,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       setRateLimitPersistence(persistenceNorm === 'mongo' ? 'mongo' : 'memory');
       const managementEnabled = await DataStoreService.getSetting('session.managementEnabled', 'true');
       setSessionManagementEnabled(String(managementEnabled ?? 'true'));
+      // Load session store type (memory | mongo)
+      const storeType = await DataStoreService.getSetting('session.type', 'memory');
+      const storeNorm = (storeType || '').toString().trim().toLowerCase();
+      setSessionStoreType(storeNorm === 'mongo' || storeNorm === 'mongodb' ? 'mongo' : 'memory');
     }
     loadSettings();
   }, []);
@@ -255,6 +262,21 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionManagementEnabled(String(current));
     } finally {
       setSavingSessionManagementEnabled(false);
+    }
+  };
+
+  const handleSessionStoreTypeChange = async (e) => {
+    const val = e.target.value;
+    setSessionStoreType(val);
+    setSavingSessionStoreType(true);
+    try {
+      const current = await saveAndVerify('session.type', val, (v) => {
+        const n = (v || '').toString().trim().toLowerCase();
+        return n === 'mongo' || n === 'mongodb' ? 'mongo' : 'memory';
+      });
+      setSessionStoreType(current);
+    } finally {
+      setSavingSessionStoreType(false);
     }
   };
 
@@ -525,6 +547,19 @@ const SettingsPage = ({ lang = 'en' }) => {
         >
           <option value="true">{t('common.yes', 'Yes')}</option>
           <option value="false">{t('common.no', 'No')}</option>
+        </select>
+
+        <label htmlFor="session-store-type" className="mb-200 display-block mt-200">
+          {t('settings.session.storeType', 'Session store (memory | mongo)')}
+        </label>
+        <select
+          id="session-store-type"
+          value={sessionStoreType}
+          onChange={handleSessionStoreTypeChange}
+          disabled={savingSessionStoreType}
+        >
+          <option value="memory">{t('settings.session.store.options.memory', 'Memory (in-process)')}</option>
+          <option value="mongo">{t('settings.session.store.options.mongo', 'MongoDB (persistent)')}</option>
         </select>
 
         <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
