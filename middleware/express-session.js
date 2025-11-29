@@ -15,10 +15,10 @@ export default function createSessionMiddleware(app) {
   const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'memory')).toLowerCase();
   const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
 
-  const sessionTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
-  const parsedMinutes = Number(sessionTTLSetting);
-  const sessionMinutes = Number.isFinite(parsedMinutes) && parsedMinutes > 0 ? parsedMinutes : 60;
-  const MAX_AGE = sessionMinutes * 60 * 1000;
+  const initialTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
+  const parsedInitialMinutes = Number(initialTTLSetting);
+  const initialMinutes = Number.isFinite(parsedInitialMinutes) && parsedInitialMinutes > 0 ? parsedInitialMinutes : 60;
+  const INITIAL_MAX_AGE = initialMinutes * 60 * 1000;
 
   let sessionStore = null;
   if (sessionType === 'mongodb' || sessionType === 'mongo') {
@@ -32,7 +32,6 @@ export default function createSessionMiddleware(app) {
     app.set('trust proxy', 1);
   }
 
-  // Compute cookie options from settings (Base URL) and environment.
   const baseUrl = (SettingsService.get('site.baseUrl') || process.env.BASE_URL || '').toString().trim();
   let parentDomain;
   try {
@@ -42,7 +41,6 @@ export default function createSessionMiddleware(app) {
         const u = new URL(baseUrl);
         hostCandidate = u.host;
       } catch (e) {
-        // baseUrl may already be a host; fall back to raw value
         hostCandidate = baseUrl.split('/')[0];
       }
     }
@@ -56,12 +54,11 @@ export default function createSessionMiddleware(app) {
     httpOnly: true,
     secure: isSecure,
     sameSite: isSecure ? 'strict' : 'lax',
-    maxAge: MAX_AGE,
+    maxAge: INITIAL_MAX_AGE,
     path: '/'
   };
   if (parentDomain) cookieDefaults.domain = parentDomain;
 
-  // Create the session middleware with computed cookie defaults
   const sessionMiddleware = session({
     name: 'aianswers.sid',
     secret: sessionSecret,
@@ -71,5 +68,33 @@ export default function createSessionMiddleware(app) {
     cookie: cookieDefaults
   });
 
-  return sessionMiddleware;
+  const wrapped = (req, res, next) => {
+    sessionMiddleware(req, res, (err) => {
+      if (err) return next(err);
+      try {
+        const sessionTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
+        const parsedMinutes = Number(sessionTTLSetting);
+        const sessionMinutes = Number.isFinite(parsedMinutes) && parsedMinutes > 0 ? parsedMinutes : 60;
+        const MAX_AGE = sessionMinutes * 60 * 1000;
+
+        const authTTLSetting = _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
+        const parsedAuthMinutes = Number(authTTLSetting);
+        const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : sessionMinutes;
+        const AUTH_MAX_AGE = authMinutes * 60 * 1000;
+
+        const isAuthenticated = Boolean(
+          req.user ||
+          (req.session && (req.session.user || req.session.userId || req.session.authenticated || req.session.isAuthenticated))
+        );
+
+        if (req.session && req.session.cookie) {
+          req.session.cookie.maxAge = isAuthenticated ? AUTH_MAX_AGE : MAX_AGE;
+        }
+      } catch (e) {
+      }
+      next();
+    });
+  };
+
+  return wrapped;
 }
