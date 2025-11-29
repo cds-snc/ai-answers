@@ -43,8 +43,6 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingSessionTTL, setSavingSessionTTL] = useState(false);
   const [sessionAuthTTL, setSessionAuthTTL] = useState(60); // minutes for authenticated users
   const [savingSessionAuthTTL, setSavingSessionAuthTTL] = useState(false);
-  const [cleanupInterval, setCleanupInterval] = useState(60); // seconds
-  const [savingCleanupInterval, setSavingCleanupInterval] = useState(false);
   const [rateLimitCapacity, setRateLimitCapacity] = useState(60);
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
@@ -98,8 +96,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load session settings
       const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
       setSessionTTL(Number(ttl));
-      const cleanup = await DataStoreService.getSetting('session.cleanupIntervalSeconds', '60');
-      setCleanupInterval(Number(cleanup));
       const capacity = await DataStoreService.getSetting('session.rateLimitCapacity', '60');
       setRateLimitCapacity(Number(capacity));
       // Stored value is refill per second; display to admin as requests per minute
@@ -164,18 +160,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionAuthTTL(Number(current));
     } finally {
       setSavingSessionAuthTTL(false);
-    }
-  };
-
-  const handleCleanupIntervalChange = async (e) => {
-    const val = Number(e.target.value);
-    setCleanupInterval(val);
-    setSavingCleanupInterval(true);
-    try {
-      const current = await saveAndVerify('session.cleanupIntervalSeconds', String(val), (v) => Number(v));
-      setCleanupInterval(Number(current));
-    } finally {
-      setSavingCleanupInterval(false);
     }
   };
 
@@ -607,11 +591,6 @@ const SettingsPage = ({ lang = 'en' }) => {
           {t('settings.session.authTtlMinutes', 'Authenticated session TTL (minutes — e.g. 60 = 1 hour)')}
         </label>
         <input id="session-auth-ttl" type="number" min="1" value={sessionAuthTTL} onChange={handleSessionAuthTTLChange} disabled={savingSessionAuthTTL} />
-
-        <label htmlFor="session-cleanup" className="mb-200 display-block mt-400">
-          {t('settings.session.cleanupSeconds', 'Session cleanup interval (seconds)')}
-        </label>
-        <input id="session-cleanup" type="number" min="5" value={cleanupInterval} onChange={handleCleanupIntervalChange} disabled={savingCleanupInterval} />
 
         {/* Rate limiting moved to its own section for clarity (localized below) */}
 
