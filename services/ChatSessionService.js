@@ -1,4 +1,4 @@
-import SettingsService from './SettingsService.js';
+import { SettingsService } from './SettingsService.js';
 import { SessionState } from '../models/sessionState.js';
 import dbConnect from '../api/db/db-connect.js';
 import ChatSessionMetricsService from './ChatSessionMetricsService.js';

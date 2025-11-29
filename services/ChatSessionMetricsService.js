@@ -1,5 +1,6 @@
 import { SessionState } from '../models/sessionState.js';
 import dbConnect from '../api/db/db-connect.js';
+import { rateLimiters } from '../middleware/rate-limiter.js';
 
 class ChatSessionMetricsService {
   constructor() {
@@ -13,9 +14,11 @@ class ChatSessionMetricsService {
     this._startFlushTimer();
   }
 
+ 
   // Called when a chat is created or accessed
   registerChat(sessionId, chatId) {
     if (!sessionId || !chatId) return;
+    if (console && console.debug) console.debug('[ChatSessionMetricsService] registerChat', { sessionId, chatId });
     this.chatToSession.set(chatId, sessionId);
     
     // Ensure we have a buffer entry
@@ -41,7 +44,10 @@ class ChatSessionMetricsService {
 
   recordRequest(chatId, { latencyMs = 0, error = false, errorType = null } = {}) {
     const sessionId = this.chatToSession.get(chatId);
-    if (!sessionId) return false;
+    if (!sessionId) {
+      if (console && console.debug) console.debug('[ChatSessionMetricsService] recordRequest - unknown chatId', { chatId });
+      return false;
+    }
 
     let m = this.metricsBuffer.get(sessionId);
     if (!m) {
@@ -70,7 +76,16 @@ class ChatSessionMetricsService {
       m.lastLatencyMs = latencyMs;
       m.totalLatencyMs += latencyMs;
     }
-    m.lastSeen = Date.now();
+    const now = Date.now();
+    m.lastSeen = now;
+
+    // RPM timestamps for session
+    m.requestTimestamps = m.requestTimestamps || [];
+    m.requestTimestamps.push(now);
+    const pruneBefore = now - (5 * 60 * 1000);
+    let pi = 0;
+    while (pi < m.requestTimestamps.length && m.requestTimestamps[pi] < pruneBefore) pi++;
+    if (pi > 0) m.requestTimestamps.splice(0, pi);
 
     // Chat specific metrics
     if (!m.chatMetrics[chatId]) {
@@ -90,8 +105,22 @@ class ChatSessionMetricsService {
       cm.lastLatencyMs = latencyMs;
       cm.totalLatencyMs += latencyMs;
     }
+    // RPM timestamps for chat-metrics
+    cm.requestTimestamps = cm.requestTimestamps || [];
+    cm.requestTimestamps.push(now);
+    let cj = 0;
+    while (cj < cm.requestTimestamps.length && cm.requestTimestamps[cj] < pruneBefore) cj++;
+    if (cj > 0) cm.requestTimestamps.splice(0, cj);
 
     return true;
+  }
+
+  // Expose a small debug helper
+  _debugState() {
+    return {
+      metricsBufferSize: this.metricsBuffer.size,
+      chatToSessionSize: this.chatToSession.size
+    };
   }
 
   _startFlushTimer() {
@@ -136,13 +165,91 @@ class ChatSessionMetricsService {
   
   async getSummary() {
       const out = [];
-      for (const [k, v] of this.metricsBuffer.entries()) {
+      const now = Date.now();
+      // Try to fetch persisted session documents (no bucket, limiter is authoritative)
+      const sessionIds = Array.from(this.metricsBuffer.keys());
+      let bucketMap = new Map();
+      try {
+        if (sessionIds.length) {
+          await dbConnect();
+          const docs = await SessionState.find({ sessionId: { $in: sessionIds } }).select('sessionId createdAt ttl lastSeen isAuthenticated').lean();
+          for (const d of docs) bucketMap.set(d.sessionId, d);
+        }
+      } catch (e) {
+        console.error('[ChatSessionMetricsService] getSummary - failed to load session documents', e);
+      }
+      for (const [sessionId, v] of this.metricsBuffer.entries()) {
+        // Determine if session is authenticated (prefer persisted value)
+        const persisted = bucketMap.get(sessionId);
+        const isAuthenticated = (persisted && typeof persisted.isAuthenticated !== 'undefined') ? persisted.isAuthenticated : (v && v.isAuthenticated) || false;
+        // Try to read remaining rate-limiter points for this session as a fallback
+        let limiterRemaining = null;
+        try {
+          limiterRemaining = await (async () => {
+            try {
+              const limiter = (isAuthenticated && rateLimiters && rateLimiters.auth) ? rateLimiters.auth : (rateLimiters && rateLimiters.public) ? rateLimiters.public : null;
+              if (!limiter || typeof limiter.get !== 'function') return null;
+              const rec = await limiter.get(sessionId);
+              if (!rec) return null;
+              if (typeof rec.remainingPoints === 'number') return rec.remainingPoints;
+              if (typeof rec.consumedPoints === 'number' && typeof limiter.points === 'number') return Math.max(0, limiter.points - rec.consumedPoints);
+              return null;
+            } catch (e) { return null; }
+          })();
+        } catch (e) {
+          limiterRemaining = null;
+        }
+        const chatIds = Array.from(v.chatIds || []);
+        // If there are no chatIds, still output a session-level row with null chatId
+        if (!chatIds.length) chatIds.push(null);
+
+        for (const cid of chatIds) {
+          const cm = (v.chatMetrics && cid && v.chatMetrics[cid]) ? v.chatMetrics[cid] : null;
+          const requestCount = cm ? (cm.requestCount || 0) : (v.requestCount || 0);
+          const errorCount = cm ? (cm.errorCount || 0) : (v.errorCount || 0);
+          const lastLatencyMs = cm ? (cm.lastLatencyMs || 0) : (v.lastLatencyMs || 0);
+          const avgLatencyMs = cm ? (cm.requestCount ? Math.round((cm.totalLatencyMs || 0) / cm.requestCount) : 0) : (v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0);
+          const errorTypes = cm ? (cm.errorTypes || {}) : (v.errorTypes || {});
+          const requestTimestamps = cm ? (cm.requestTimestamps || []) : (v.requestTimestamps || []);
+
+          // rpm: count timestamps in last 60s
+          let rpm = 0;
+          for (let i = requestTimestamps.length - 1; i >= 0; i--) {
+            if (now - requestTimestamps[i] <= 60 * 1000) rpm++; else break;
+          }
+
           out.push({
-              sessionId: k,
-              requestCount: v.requestCount,
-              lastSeen: v.lastSeen,
-              chatIds: Array.from(v.chatIds)
+            sessionId,
+            chatId: cid || null,
+            // Use rate-limiter remaining points as the authoritative credits source.
+            // Fall back to persisted/in-memory bucket only when limiter data is unavailable.
+            creditsLeft: (() => {
+              try {
+                if (typeof limiterRemaining === 'number') return limiterRemaining;
+                // No bucket persisted anymore; fall back to 0 when limiter data is unavailable
+                return 0;
+              } catch (e) { return 0; }
+            })(),
+            createdAt: (persisted && persisted.createdAt) || v.createdAt || null,
+            lastSeen: (persisted && persisted.lastSeen) || v.lastSeen || now,
+            ttl: (persisted && persisted.ttl) || v.ttl || null,
+            limiterRemaining: typeof limiterRemaining === 'number' ? limiterRemaining : null,
+            requestCount,
+            errorCount,
+            errorTypes,
+            errorTypesOther: (() => {
+              try {
+                const byType = errorTypes || {};
+                const sumSpecific = Object.values(byType).reduce((a, b) => a + b, 0);
+                const other = (errorCount || 0) - sumSpecific;
+                return other > 0 ? other : 0;
+              } catch (e) { return 0; }
+            })(),
+            lastLatencyMs: lastLatencyMs || 0,
+            avgLatencyMs,
+            rpm
           });
+        }
       }
       return out;
   }

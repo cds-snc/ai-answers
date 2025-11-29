@@ -1,5 +1,3 @@
-import { User } from '../../models/user.js';
-import dbConnect from '../db/db-connect.js';
 import TwoFAService from '../../services/TwoFAService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import passport from '../../config/passport.js';

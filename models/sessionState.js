@@ -1,12 +1,5 @@
 import mongoose from 'mongoose';
 
-const SessionBucketSchema = new mongoose.Schema({
-  capacity: { type: Number, default: 60 },
-  credits: { type: Number, default: 60 },
-  refillPerSec: { type: Number, default: 1 },
-  lastRefill: { type: Date, default: () => new Date() }
-}, { _id: false });
-
 const ChatMetricsSchema = new mongoose.Schema({}, { strict: false, _id: false });
 
 const SessionStateSchema = new mongoose.Schema({
@@ -16,7 +9,6 @@ const SessionStateSchema = new mongoose.Schema({
   lastSeen: { type: Date, default: () => new Date() },
   ttl: { type: Number, default: 1000 * 60 * 60 },
   isAuthenticated: { type: Boolean, default: false },
-  bucket: { type: SessionBucketSchema, default: () => ({}) },
   requestCount: { type: Number, default: 0 },
   errorCount: { type: Number, default: 0 },
   totalLatencyMs: { type: Number, default: 0 },
