@@ -1,6 +1,6 @@
 import { SessionState } from '../models/sessionState.js';
 import dbConnect from '../api/db/db-connect.js';
-import { getRateLimiterConfig, rateLimiters } from '../middleware/rate-limiter.js';
+import { getRateLimiterConfig } from '../middleware/rate-limiter.js';
 import { SettingsService } from './SettingsService.js';
 
 class ChatSessionMetricsService {
@@ -32,26 +32,10 @@ class ChatSessionMetricsService {
     if (!sessionId || !chatId) return;
     if (console && console.debug) console.debug('[ChatSessionMetricsService] registerChat', { sessionId, chatId });
     this.chatToSession.set(chatId, sessionId);
-    
-    // Ensure we have a buffer entry
-    if (!this.metricsBuffer.has(sessionId)) {
-      this.metricsBuffer.set(sessionId, {
-        sessionId,
-        chatIds: new Set([chatId]),
-        requestCount: 0,
-        errorCount: 0,
-        totalLatencyMs: 0,
-        lastLatencyMs: 0,
-        requestTimestamps: [],
-        errorTypes: {},
-        chatMetrics: {},
-        lastSeen: Date.now()
-      });
-    } else {
-      const m = this.metricsBuffer.get(sessionId);
-      m.chatIds.add(chatId);
-      m.lastSeen = Date.now();
-    }
+    const m = this._ensureMetricsEntry(sessionId);
+    m.chatIds.add(chatId);
+    m.chatIds.add(chatId);
+    m.lastSeen = Date.now();
   }
 
   recordRequest(chatId, { latencyMs = 0, error = false, errorType = null } = {}) {
@@ -61,23 +45,7 @@ class ChatSessionMetricsService {
       return false;
     }
 
-    let m = this.metricsBuffer.get(sessionId);
-    if (!m) {
-      // If not in buffer, create fresh
-      m = {
-        sessionId,
-        chatIds: new Set([chatId]),
-        requestCount: 0,
-        errorCount: 0,
-        totalLatencyMs: 0,
-        lastLatencyMs: 0,
-        requestTimestamps: [],
-        errorTypes: {},
-        chatMetrics: {},
-        lastSeen: Date.now()
-      };
-      this.metricsBuffer.set(sessionId, m);
-    }
+    const m = this._ensureMetricsEntry(sessionId);
 
     m.requestCount++;
     if (error) m.errorCount++;
@@ -127,6 +95,13 @@ class ChatSessionMetricsService {
     return true;
   }
 
+  recordRateLimiterSnapshot(sessionId, snapshot) {
+    if (!sessionId || !snapshot) return;
+    const m = this._ensureMetricsEntry(sessionId);
+    m.rateLimiterSnapshot = snapshot;
+    m.lastSeen = Date.now();
+  }
+
   // Expose a small debug helper
   _debugState() {
     return {
@@ -147,6 +122,29 @@ class ChatSessionMetricsService {
 
   _startFlushTimer() {
     setInterval(() => this.flushMetrics(), this.flushInterval);
+  }
+
+  _createMetricsEntry(sessionId) {
+    return {
+      sessionId,
+      chatIds: new Set(),
+      requestCount: 0,
+      errorCount: 0,
+      totalLatencyMs: 0,
+      lastLatencyMs: 0,
+      requestTimestamps: [],
+      errorTypes: {},
+      chatMetrics: {},
+      lastSeen: Date.now(),
+      rateLimiterSnapshot: null
+    };
+  }
+
+  _ensureMetricsEntry(sessionId) {
+    if (!this.metricsBuffer.has(sessionId)) {
+      this.metricsBuffer.set(sessionId, this._createMetricsEntry(sessionId));
+    }
+    return this.metricsBuffer.get(sessionId);
   }
 
   async pruneStaleSessions() {
@@ -201,7 +199,8 @@ class ChatSessionMetricsService {
                 totalLatencyMs: m.totalLatencyMs,
                 lastLatencyMs: m.lastLatencyMs,
                 errorTypes: m.errorTypes,
-                chatMetrics: m.chatMetrics
+                chatMetrics: m.chatMetrics,
+                rateLimiter: m.rateLimiterSnapshot || null
             };
 
             await SessionState.findOneAndUpdate(
@@ -229,7 +228,7 @@ class ChatSessionMetricsService {
     try {
       if (sessionIds.length) {
         await dbConnect();
-        const docs = await SessionState.find({ sessionId: { $in: sessionIds } }).select('sessionId createdAt ttl lastSeen isAuthenticated').lean();
+        const docs = await SessionState.find({ sessionId: { $in: sessionIds } }).select('sessionId createdAt ttl lastSeen isAuthenticated rateLimiter').lean();
         for (const d of docs) bucketMap.set(d.sessionId, d);
       }
     } catch (e) {
@@ -239,24 +238,13 @@ class ChatSessionMetricsService {
       // Determine if session is authenticated (prefer persisted value)
       const persisted = bucketMap.get(sessionId);
       const isAuthenticated = (persisted && typeof persisted.isAuthenticated !== 'undefined') ? persisted.isAuthenticated : (v && v.isAuthenticated) || false;
-      const limiter = (isAuthenticated && rateLimiters && rateLimiters.auth) ? rateLimiters.auth : (rateLimiters && rateLimiters.public) ? rateLimiters.public : null;
-      const limiterPoints = (limiter && typeof limiter.points === 'number') ? limiter.points : null;
-      // Try to read remaining rate-limiter points for this session as a fallback
-      let limiterRemaining = null;
-      if (limiter && typeof limiter.get === 'function') {
-        try {
-          const rec = await limiter.get(sessionId);
-          if (rec) {
-            if (typeof rec.remainingPoints === 'number') {
-              limiterRemaining = rec.remainingPoints;
-            } else if (typeof rec.consumedPoints === 'number' && typeof limiterPoints === 'number') {
-              limiterRemaining = Math.max(0, limiterPoints - rec.consumedPoints);
-            }
-          }
-        } catch (e) {
-          limiterRemaining = null;
-        }
-      }
+      const sessionLimiterSnapshot = (persisted && persisted.rateLimiter) || (v && v.rateLimiterSnapshot) || null;
+      const limiterRemaining = (sessionLimiterSnapshot && typeof sessionLimiterSnapshot.remainingPoints === 'number')
+        ? sessionLimiterSnapshot.remainingPoints
+        : null;
+      const limiterPoints = (sessionLimiterSnapshot && typeof sessionLimiterSnapshot.points === 'number')
+        ? sessionLimiterSnapshot.points
+        : null;
       const chatIds = Array.from(v.chatIds || []);
       // If there are no chatIds, still output a session-level row with null chatId
       if (!chatIds.length) chatIds.push(null);

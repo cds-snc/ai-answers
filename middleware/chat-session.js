@@ -85,6 +85,10 @@ export default function sessionMiddleware(options = {}) {
 
       req.sessionId = sessionId;
       req.visitorId = session.visitorId;
+      const rateLimiterSnapshot = req.rateLimiterSnapshot || (req.session && req.session.rateLimiter);
+      if (rateLimiterSnapshot) {
+        ChatSessionMetricsService.recordRateLimiterSnapshot(sessionId, rateLimiterSnapshot);
+      }
 
       return next();
     } catch (err) {

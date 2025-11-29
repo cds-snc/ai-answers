@@ -205,7 +205,23 @@ export default async function createRateLimiterMiddleware(app) {
 
     try {
       // consume 1 point per request
-      await limiter.consume(key);
+      const reward = await limiter.consume(key);
+      const points = typeof limiter.points === 'number' ? limiter.points : null;
+      const duration = typeof limiter.duration === 'number' ? limiter.duration : null;
+      const rateLimiterSnapshot = {
+        remainingPoints: reward.remainingPoints,
+        consumedPoints: reward.consumedPoints,
+        points,
+        duration,
+        msBeforeNext: reward.msBeforeNext,
+        lastUpdated: new Date(),
+        authenticated: isAuthenticated
+      };
+      if (req.session) {
+        req.session.rateLimiter = rateLimiterSnapshot;
+      }
+      req.rateLimiterSnapshot = rateLimiterSnapshot;
+      console.log(`RateLimiter: allowed request for key=${key} (auth=${isAuthenticated}) remaining=${reward.remainingPoints}`);
       return next();
     } catch (rej) {
       // RateLimiter throws when points exhausted (rej instanceof Error in some cases)

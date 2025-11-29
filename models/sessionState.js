@@ -10,6 +10,7 @@ const SessionStateSchema = new mongoose.Schema({
   lastSeen: { type: Date, default: () => new Date() },
   ttl: { type: Number, default: 1000 * 60 * 60 },
   isAuthenticated: { type: Boolean, default: false },
+  rateLimiter: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
   requestCount: { type: Number, default: 0 },
   errorCount: { type: Number, default: 0 },
   totalLatencyMs: { type: Number, default: 0 },
