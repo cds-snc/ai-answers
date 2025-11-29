@@ -194,7 +194,13 @@ export default async function createRateLimiterMiddleware(app) {
   const rateLimitMiddleware = async function rateLimit(req, res, next) {
     await ensureLimitersUpToDate();
     const key = (req && req.session && req.sessionID) ? req.sessionID : req.ip;
-    const isAuthenticated = !!(req.user || (req.session && req.session.user));
+    const isAuthenticated = !!(
+      req.user ||
+      (req.session && (
+        (req.session.passport && req.session.passport.user) ||
+        req.session.user
+      ))
+    );
     const limiter = isAuthenticated ? authLimiter : publicLimiter;
 
     try {

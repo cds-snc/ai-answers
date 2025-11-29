@@ -26,7 +26,13 @@ export default function sessionMiddleware(options = {}) {
       if (options.createChatId) {
         const isAuthenticated = Boolean(
           req.user ||
-          (req.session && (req.session.user || req.session.userId || req.session.authenticated || req.session.isAuthenticated))
+          (req.session && (
+            (req.session.passport && req.session.passport.user) ||
+            req.session.user ||
+            req.session.userId ||
+            req.session.authenticated ||
+            req.session.isAuthenticated
+          ))
         );
 
         if (!isAuthenticated) {
