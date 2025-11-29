@@ -49,9 +49,9 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
-  // Session persistence mode (memory | mongo)
-  const [sessionPersistence, setSessionPersistence] = useState('memory');
-  const [savingSessionPersistence, setSavingSessionPersistence] = useState(false);
+  // Rate-limiter persistence mode (memory | mongo)
+  const [rateLimitPersistence, setRateLimitPersistence] = useState('memory');
+  const [savingRateLimitPersistence, setSavingRateLimitPersistence] = useState(false);
   // Authenticated session rate-limit settings
   const [authRateLimitCapacity, setAuthRateLimitCapacity] = useState(100);
   const [savingAuthRateLimitCapacity, setSavingAuthRateLimitCapacity] = useState(false);
@@ -110,10 +110,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
       const authTtl = await DataStoreService.getSetting('session.authenticatedTTLMinutes', '60');
       setSessionAuthTTL(Number(authTtl));
-      // Load session persistence mode
-      const persistence = await DataStoreService.getSetting('session.persistence', 'memory');
+      // Load rate-limiter persistence mode
+      const persistence = await DataStoreService.getSetting('session.rateLimitPersistence', 'memory');
       const persistenceNorm = (persistence || '').toString().trim().toLowerCase();
-      setSessionPersistence(persistenceNorm === 'mongo' ? 'mongo' : 'memory');
+      setRateLimitPersistence(persistenceNorm === 'mongo' ? 'mongo' : 'memory');
       const managementEnabled = await DataStoreService.getSetting('session.managementEnabled', 'true');
       setSessionManagementEnabled(String(managementEnabled ?? 'true'));
     }
@@ -231,20 +231,18 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleSessionPersistenceChange = async (e) => {
+  const handleRateLimitPersistenceChange = async (e) => {
     const val = e.target.value;
-    console.log('Session persistence changing to:', val);
-    setSessionPersistence(val);
-    setSavingSessionPersistence(true);
+    setRateLimitPersistence(val);
+    setSavingRateLimitPersistence(true);
     try {
       // store as 'mongo' or 'memory'
-      const current = await saveAndVerify('session.persistence', val, (v) => ((v || '').toString().trim().toLowerCase() === 'mongo' ? 'mongo' : 'memory'));
-      setSessionPersistence(current);
-      console.log('Session persistence saved successfully:', current);
+      const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => ((v || '').toString().trim().toLowerCase() === 'mongo' ? 'mongo' : 'memory'));
+      setRateLimitPersistence(current);
     } catch (error) {
-      console.error('Failed to save session persistence:', error);
+      console.error('Failed to save rate-limiter persistence:', error);
     } finally {
-      setSavingSessionPersistence(false);
+      setSavingRateLimitPersistence(false);
     }
   };
 
@@ -551,16 +549,18 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
 
-        <label htmlFor="session-persistence" className="mb-200 display-block mt-400">
-          {t('settings.session.persistence.label', 'Session persistence (memory | mongo)')}
-        </label>
-        <select id="session-persistence" value={sessionPersistence} onChange={handleSessionPersistenceChange} disabled={savingSessionPersistence}>
-          <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
-          <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
-        </select>
+        {/* session.persistence moved to rate-limiting section (stored as session.rateLimitPersistence) */}
       </GcdsDetails>
 
       <GcdsDetails detailsTitle={t('settings.rateLimiting.title', 'Rate limiting')} className="mt-600 mb-200" tabIndex="0">
+        <label htmlFor="session-rate-persistence" className="mb-200 display-block mt-200">
+          {t('settings.rateLimiting.persistence.label', 'Rate-limiter persistence (memory | mongo)')}
+        </label>
+        <select id="session-rate-persistence" value={rateLimitPersistence} onChange={handleRateLimitPersistenceChange} disabled={savingRateLimitPersistence}>
+          <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
+          <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
+        </select>
+
         <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">
           {t('settings.rateLimiting.rateLimitCapacity', 'Rate limit capacity (tokens)')}
         </label>

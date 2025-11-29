@@ -14,7 +14,7 @@ export async function resetRateLimiters() {
 
 // Exported helper to read the current limiter-related settings from cache/env
 export function getRateLimiterConfig() {
-  const persistenceNow = (String(_getSetting(['session.persistence', 'SESSION_PERSISTENCE']) || process.env.SESSION_PERSISTENCE || 'memory')).toLowerCase();
+  const persistenceNow = (String(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory')).toLowerCase();
   const publicCapacityNow = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
   const authCapacityNow = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
   const windowSecondsNow = 60;
@@ -35,7 +35,7 @@ const _getSetting = (keys) => {
 };
 
 export default async function createRateLimiterMiddleware(app) {
-  const persistence = (String(_getSetting(['session.persistence', 'SESSION_PERSISTENCE']) || process.env.SESSION_PERSISTENCE || 'memory')).toLowerCase();
+  const persistence = (String(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory')).toLowerCase();
 
   const publicCapacity = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
   const authCapacity = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');

@@ -815,6 +815,9 @@
     },
     "rateLimiting": {
       "title": "Rate limiting",
+      "persistence": {
+        "label": "Rate-limiter persistence (memory | mongo)"
+      },
       "rateLimitCapacity": "Rate limit capacity (requests)",
       "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (requests)",
       "rateLimitRefill": "Rate limit refill (requests per min)",
