@@ -24,14 +24,21 @@ export default function sessionMiddleware(options = {}) {
       const session = req.session;
 
       if (options.createChatId) {
-        const avail = await ChatSessionService.sessionsAvailable();
-        if (!avail) {
-          res.statusCode = 503;
-          res.setHeader('Content-Type', 'application/json');
-          return res.end(JSON.stringify({
-            error: 'could_not_create_chat',
-            reason: 'sessions_full',
-          }));
+        const isAuthenticated = Boolean(
+          req.user ||
+          (req.session && (req.session.user || req.session.userId || req.session.authenticated || req.session.isAuthenticated))
+        );
+
+        if (!isAuthenticated) {
+          const avail = await ChatSessionService.sessionsAvailable(req.sessionID);
+          if (!avail) {
+            res.statusCode = 503;
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({
+              error: 'could_not_create_chat',
+              reason: 'sessions_full',
+            }));
+          }
         }
 
         const chatId = uuidv4();

@@ -37,8 +37,35 @@ class ChatSessionService {
         }
     }
 
-    async sessionsAvailable() {
+    async isSessionActive(sessionId) {
+        if (!sessionId) return false;
+        try {
+            if (await this._isMongoMode()) {
+                await dbConnect();
+                const exists = await SessionState.exists({ 
+                    sessionId, 
+                    chatIds: { $exists: true, $not: { $size: 0 } } 
+                });
+                return !!exists;
+            }
+        } catch (e) {
+            console.error('Error checking active session (mongo)', e);
+        }
+
+        try {
+            return ChatSessionMetricsService.metricsBuffer.has(sessionId);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async sessionsAvailable(sessionId) {
         if (!this.isManagementEnabled()) return true;
+
+        if (sessionId && await this.isSessionActive(sessionId)) {
+            return true;
+        }
+
         const maxSessionsSetting = SettingsService.get('session.maxActiveSessions');
         if (maxSessionsSetting === null || maxSessionsSetting === undefined || maxSessionsSetting === '') {
             return true;

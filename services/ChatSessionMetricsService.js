@@ -205,12 +205,14 @@ class ChatSessionMetricsService {
 
         for (const cid of chatIds) {
           const cm = (v.chatMetrics && cid && v.chatMetrics[cid]) ? v.chatMetrics[cid] : null;
-          const requestCount = cm ? (cm.requestCount || 0) : (v.requestCount || 0);
-          const errorCount = cm ? (cm.errorCount || 0) : (v.errorCount || 0);
-          const lastLatencyMs = cm ? (cm.lastLatencyMs || 0) : (v.lastLatencyMs || 0);
-          const avgLatencyMs = cm ? (cm.requestCount ? Math.round((cm.totalLatencyMs || 0) / cm.requestCount) : 0) : (v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0);
-          const errorTypes = cm ? (cm.errorTypes || {}) : (v.errorTypes || {});
-          const requestTimestamps = cm ? (cm.requestTimestamps || []) : (v.requestTimestamps || []);
+          
+          // STRICTLY per-chat metrics. Do not fall back to session totals.
+          const requestCount = cm ? (cm.requestCount || 0) : 0;
+          const errorCount = cm ? (cm.errorCount || 0) : 0;
+          const lastLatencyMs = cm ? (cm.lastLatencyMs || 0) : 0;
+          const avgLatencyMs = cm ? (cm.requestCount ? Math.round((cm.totalLatencyMs || 0) / cm.requestCount) : 0) : 0;
+          const errorTypes = cm ? (cm.errorTypes || {}) : {};
+          const requestTimestamps = cm ? (cm.requestTimestamps || []) : [];
 
           // rpm: count timestamps in last 60s
           let rpm = 0;

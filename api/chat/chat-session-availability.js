@@ -8,7 +8,7 @@ async function availabilityHandler(req, res) {
     const siteStatus = siteStatusRaw === 'available';
     let sessionAvailable = false;
     try {
-      sessionAvailable = Boolean(await ChatSessionService.sessionsAvailable());
+      sessionAvailable = Boolean(await ChatSessionService.sessionsAvailable(req.sessionID));
     } catch (e) {
       sessionAvailable = false;
     }
