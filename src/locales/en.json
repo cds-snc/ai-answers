@@ -208,6 +208,11 @@
       "intro": "Rate the sentences in the answer, or the citation, or both"
     }
   },
+  "settings": {
+    "general": {
+      "title": "General settings"
+    }
+  },
   "aboutPage": {
     "title": "About Canada.ca AI Answers",
     "overview": {
@@ -743,6 +748,9 @@
   },
   "settings": {
     "title": "Settings",
+    "general": {
+      "title": "General settings"
+    },
     "liveGraph": {
       "title": "Live Graph",
       "description": "Edit the workflow values used by the Live Graph visualization.",

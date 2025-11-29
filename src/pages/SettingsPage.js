@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GcdsContainer } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -354,202 +354,208 @@ const SettingsPage = ({ lang = 'en' }) => {
       <nav className="mb-400">
         <a href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</a>
       </nav>
-      <label htmlFor="site-status" className="mb-200 display-block">
-        {t('settings.statusLabel', 'Service status')}
-      </label>
-      <select id="site-status" value={status} onChange={handleChange} disabled={saving}>
-        <option value="available">{t('settings.statuses.available', 'Available')}</option>
-        <option value="unavailable">{t('settings.statuses.unavailable', 'Unavailable')}</option>
-      </select>
+      <GcdsDetails detailsTitle={t('settings.general.title', 'General settings')} className="mb-400" tabIndex="0">
+        <div>
+          <label htmlFor="site-status" className="mb-200 display-block">
+            {t('settings.statusLabel', 'Service status')}
+          </label>
+          <select id="site-status" value={status} onChange={handleChange} disabled={saving}>
+            <option value="available">{t('settings.statuses.available', 'Available')}</option>
+            <option value="unavailable">{t('settings.statuses.unavailable', 'Unavailable')}</option>
+          </select>
 
-      <label htmlFor="deployment-mode" className="mb-200 display-block mt-400">
-        {t('settings.deploymentModeLabel', 'Deployment Mode')}
-      </label>
-      <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
-        <option value="CDS">{t('settings.deploymentMode.cds', 'CDS (Background worker)')}</option>
-        <option value="Vercel">{t('settings.deploymentMode.serverless', 'Serverless (Wait for completion)')}</option>
-      </select>
+          <label htmlFor="deployment-mode" className="mb-200 display-block mt-400">
+            {t('settings.deploymentModeLabel', 'Deployment Mode')}
+          </label>
+          <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
+            <option value="CDS">{t('settings.deploymentMode.cds', 'CDS (Background worker)')}</option>
+            <option value="Vercel">{t('settings.deploymentMode.serverless', 'Serverless (Wait for completion)')}</option>
+          </select>
 
-      <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
-        {t('settings.vectorServiceTypeLabel', 'Vector Service Type')}
-      </label>
-      <select
-        id="vector-service-type"
-        value={vectorServiceType}
-        onChange={async (e) => {
-          const newType = e.target.value;
-          setSavingVectorType(true);
-          setVectorServiceType(newType);
-          try {
-            const current = await saveAndVerify('vectorServiceType', newType);
-            setVectorServiceType(current);
-          } finally {
-            setSavingVectorType(false);
-          }
-        }}
-        disabled={savingVectorType}
-      >
-        <option value="imvectordb">{t('settings.vectorServiceType.imvectordb', 'IMVectorDB (local)')}</option>
-        <option value="documentdb">{t('settings.vectorServiceType.documentdb', 'DocumentDB (AWS)')}</option>
-      </select>
-      <label htmlFor="provider" className="mb-200 display-block mt-400">
-        {t('settings.providerLabel', 'Provider')}
-      </label>
-      <select
-        id="provider"
-        value={provider}
-        onChange={handleProviderChange}
-        disabled={savingProvider}
-      >
-        <option value="openai">{t('settings.provider.openai', 'OpenAI')}</option>
-        <option value="azure">{t('settings.provider.azure', 'Azure')}</option>
-      </select>
-      <label htmlFor="default-workflow" className="mb-200 display-block mt-400">
-        {t('settings.defaultWorkflow.label', 'Default workflow')}
-      </label>
-      <select
-        id="default-workflow"
-        value={defaultWorkflow}
-        onChange={async (e) => {
-          const v = e.target.value;
-          setDefaultWorkflow(v);
-          setSavingDefaultWorkflow(true);
-          try {
-            const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
-            const current = await saveAndVerify('workflow.default', v);
-            setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
-          } finally {
-            setSavingDefaultWorkflow(false);
-          }
-        }}
-        disabled={savingDefaultWorkflow}
-      >
-        <option value="Default">{t('settings.defaultWorkflow.options.Default', 'Default')}</option>
-        <option value="DefaultAlwaysContext">{t('settings.defaultWorkflow.options.DefaultAlwaysContext', 'DefaultAlwaysContext')}</option>
-        <option value="DefaultWithVector">{t('settings.defaultWorkflow.options.DefaultWithVector', 'DefaultWithVector')}</option>
-        <option value="DefaultWithVectorGraph">{t('settings.defaultWorkflow.options.DefaultWithVectorGraph', 'DefaultWithVectorGraph')}</option>
-      </select>
-      <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
-        {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
-      </label>
-      <select
-        id="log-chats-db"
-        value={logChats}
-        onChange={handleLogChatsChange}
-        disabled={savingLogChats}
-      >
-        <option value="yes">{t('common.yes', 'Yes')}</option>
-        <option value="no">{t('common.no', 'No')}</option>
-      </select>
+          <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
+            {t('settings.vectorServiceTypeLabel', 'Vector Service Type')}
+          </label>
+          <select
+            id="vector-service-type"
+            value={vectorServiceType}
+            onChange={async (e) => {
+              const newType = e.target.value;
+              setSavingVectorType(true);
+              setVectorServiceType(newType);
+              try {
+                const current = await saveAndVerify('vectorServiceType', newType);
+                setVectorServiceType(current);
+              } finally {
+                setSavingVectorType(false);
+              }
+            }}
+            disabled={savingVectorType}
+          >
+            <option value="imvectordb">{t('settings.vectorServiceType.imvectordb', 'IMVectorDB (local)')}</option>
+            <option value="documentdb">{t('settings.vectorServiceType.documentdb', 'DocumentDB (AWS)')}</option>
+          </select>
 
-      <h2 className="mt-600 mb-200">{t('settings.twoFA.title', 'Two-factor authentication')}</h2>
+          <label htmlFor="provider" className="mb-200 display-block mt-400">
+            {t('settings.providerLabel', 'Provider')}
+          </label>
+          <select
+            id="provider"
+            value={provider}
+            onChange={handleProviderChange}
+            disabled={savingProvider}
+          >
+            <option value="openai">{t('settings.provider.openai', 'OpenAI')}</option>
+            <option value="azure">{t('settings.provider.azure', 'Azure')}</option>
+          </select>
 
-      <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
-        {t('settings.twoFA.enabledLabel', 'Require two-factor authentication for login')}
-      </label>
-      <select
-        id="twofa-enabled"
-        value={twoFAEnabled}
-        onChange={handleTwoFAEnabledChange}
-        disabled={savingTwoFAEnabled}
-      >
-        <option value="true">{t('common.yes', 'Yes')}</option>
-        <option value="false">{t('common.no', 'No')}</option>
-      </select>
+          <label htmlFor="default-workflow" className="mb-200 display-block mt-400">
+            {t('settings.defaultWorkflow.label', 'Default workflow')}
+          </label>
+          <select
+            id="default-workflow"
+            value={defaultWorkflow}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setDefaultWorkflow(v);
+              setSavingDefaultWorkflow(true);
+              try {
+                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+                const current = await saveAndVerify('workflow.default', v);
+                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
+              } finally {
+                setSavingDefaultWorkflow(false);
+              }
+            }}
+            disabled={savingDefaultWorkflow}
+          >
+            <option value="Default">{t('settings.defaultWorkflow.options.Default', 'Default')}</option>
+            <option value="DefaultAlwaysContext">{t('settings.defaultWorkflow.options.DefaultAlwaysContext', 'DefaultAlwaysContext')}</option>
+            <option value="DefaultWithVector">{t('settings.defaultWorkflow.options.DefaultWithVector', 'DefaultWithVector')}</option>
+            <option value="DefaultWithVectorGraph">{t('settings.defaultWorkflow.options.DefaultWithVectorGraph', 'DefaultWithVectorGraph')}</option>
+          </select>
+          <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
+            {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
+          </label>
+          <select
+            id="log-chats-db"
+            value={logChats}
+            onChange={handleLogChatsChange}
+            disabled={savingLogChats}
+          >
+            <option value="yes">{t('common.yes', 'Yes')}</option>
+            <option value="no">{t('common.no', 'No')}</option>
+          </select>
+        </div>
+      </GcdsDetails>
 
-      <label htmlFor="twofa-template" className="mb-200 display-block mt-400">
-        {t('settings.twoFA.templateLabel', 'GC Notify template ID for 2FA emails')}
-      </label>
-      <input
-        id="twofa-template"
-        type="text"
-        value={twoFATemplateId}
-        onChange={handleTwoFATemplateIdChange}
-        onBlur={handleTwoFATemplateIdBlur}
-        disabled={savingTwoFATemplateId}
-      />
+      <GcdsDetails detailsTitle={t('settings.twoFA.title', 'Two-factor authentication')} className="mt-600 mb-200" tabIndex="0">
+        <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
+          {t('settings.twoFA.enabledLabel', 'Require two-factor authentication for login')}
+        </label>
+        <select
+          id="twofa-enabled"
+          value={twoFAEnabled}
+          onChange={handleTwoFAEnabledChange}
+          disabled={savingTwoFAEnabled}
+        >
+          <option value="true">{t('common.yes', 'Yes')}</option>
+          <option value="false">{t('common.no', 'No')}</option>
+        </select>
 
-      <label htmlFor="reset-template" className="mb-200 display-block mt-400">
-        {t('settings.notify.resetTemplateLabel', 'Reset Link Template ID')}
-      </label>
-      <input
-        id="reset-template"
-        type="text"
-        value={resetTemplateId}
-        onChange={handleResetTemplateIdChange}
-        onBlur={handleResetTemplateIdBlur}
-        disabled={savingResetTemplateId}
-      />
+        <label htmlFor="twofa-template" className="mb-200 display-block mt-400">
+          {t('settings.twoFA.templateLabel', 'GC Notify template ID for 2FA emails')}
+        </label>
+        <input
+          id="twofa-template"
+          type="text"
+          value={twoFATemplateId}
+          onChange={handleTwoFATemplateIdChange}
+          onBlur={handleTwoFATemplateIdBlur}
+          disabled={savingTwoFATemplateId}
+        />
 
-      <label htmlFor="base-url" className="mb-200 display-block mt-200">
-        {t('settings.site.baseUrl', 'Base URL (frontend)')}
-      </label>
-      <input
-        id="base-url"
-        type="text"
-        value={baseUrl}
-        onChange={handleBaseUrlChange}
-        onBlur={handleBaseUrlBlur}
-        disabled={savingBaseUrl}
-      />
+        <label htmlFor="reset-template" className="mb-200 display-block mt-400">
+          {t('settings.notify.resetTemplateLabel', 'Reset Link Template ID')}
+        </label>
+        <input
+          id="reset-template"
+          type="text"
+          value={resetTemplateId}
+          onChange={handleResetTemplateIdChange}
+          onBlur={handleResetTemplateIdBlur}
+          disabled={savingResetTemplateId}
+        />
 
-      <h2 className="mt-600 mb-200">{t('settings.session.title', 'Session settings')}</h2>
+        <label htmlFor="base-url" className="mb-200 display-block mt-200">
+          {t('settings.site.baseUrl', 'Base URL (frontend)')}
+        </label>
+        <input
+          id="base-url"
+          type="text"
+          value={baseUrl}
+          onChange={handleBaseUrlChange}
+          onBlur={handleBaseUrlBlur}
+          disabled={savingBaseUrl}
+        />
+      </GcdsDetails>
 
-      <label htmlFor="session-management-enabled" className="mb-200 display-block mt-200">
-        {t('settings.session.managementEnabled', 'Enable Session Management')}
-      </label>
-      <select
-        id="session-management-enabled"
-        value={sessionManagementEnabled}
-        onChange={handleSessionManagementEnabledChange}
-        disabled={savingSessionManagementEnabled}
-      >
-        <option value="true">{t('common.yes', 'Yes')}</option>
-        <option value="false">{t('common.no', 'No')}</option>
-      </select>
+      <GcdsDetails detailsTitle={t('settings.session.title', 'Session settings')} className="mt-600 mb-200" tabIndex="0">
+        <label htmlFor="session-management-enabled" className="mb-200 display-block mt-200">
+          {t('settings.session.managementEnabled', 'Enable Session Management')}
+        </label>
+        <select
+          id="session-management-enabled"
+          value={sessionManagementEnabled}
+          onChange={handleSessionManagementEnabledChange}
+          disabled={savingSessionManagementEnabled}
+        >
+          <option value="true">{t('common.yes', 'Yes')}</option>
+          <option value="false">{t('common.no', 'No')}</option>
+        </select>
 
-      <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
-        {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
-      </label>
-      <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
+        <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
+          {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
+        </label>
+        <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
 
-      <label htmlFor="session-cleanup" className="mb-200 display-block mt-400">
-        {t('settings.session.cleanupSeconds', 'Session cleanup interval (seconds)')}
-      </label>
-      <input id="session-cleanup" type="number" min="5" value={cleanupInterval} onChange={handleCleanupIntervalChange} disabled={savingCleanupInterval} />
+        <label htmlFor="session-cleanup" className="mb-200 display-block mt-400">
+          {t('settings.session.cleanupSeconds', 'Session cleanup interval (seconds)')}
+        </label>
+        <input id="session-cleanup" type="number" min="5" value={cleanupInterval} onChange={handleCleanupIntervalChange} disabled={savingCleanupInterval} />
 
-      <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-400">
-        {t('settings.session.rateLimitCapacity', 'Rate limit capacity (tokens)')}
-      </label>
-      <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
+        <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-400">
+          {t('settings.session.rateLimitCapacity', 'Rate limit capacity (tokens)')}
+        </label>
+        <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
 
-      <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
-        {t('settings.session.authenticatedRateLimitCapacity', 'Authenticated rate limit capacity (tokens)')}
-      </label>
-      <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
+        <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
+          {t('settings.session.authenticatedRateLimitCapacity', 'Authenticated rate limit capacity (tokens)')}
+        </label>
+        <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
 
-      <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
-        {t('settings.session.rateLimitRefill', 'Rate limit refill (tokens/sec)')}
-      </label>
-      <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
+        <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
+          {t('settings.session.rateLimitRefill', 'Rate limit refill (tokens/sec)')}
+        </label>
+        <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
 
-      <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
-        {t('settings.session.authenticatedRateLimitRefill', 'Authenticated rate limit refill (tokens/sec)')}
-      </label>
-      <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
+        <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
+          {t('settings.session.authenticatedRateLimitRefill', 'Authenticated rate limit refill (tokens/sec)')}
+        </label>
+        <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
 
-      <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
-        {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}
-      </label>
-      <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
+        <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
+          {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}
+        </label>
+        <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
 
-      <label htmlFor="session-persistence" className="mb-200 display-block mt-400">
-        {t('settings.session.persistence.label', 'Session persistence (memory | mongo)')}
-      </label>
-      <select id="session-persistence" value={sessionPersistence} onChange={handleSessionPersistenceChange} disabled={savingSessionPersistence}>
-        <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
-        <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
-      </select>
+        <label htmlFor="session-persistence" className="mb-200 display-block mt-400">
+          {t('settings.session.persistence.label', 'Session persistence (memory | mongo)')}
+        </label>
+        <select id="session-persistence" value={sessionPersistence} onChange={handleSessionPersistenceChange} disabled={savingSessionPersistence}>
+          <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
+          <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
+        </select>
+      </GcdsDetails>
     </GcdsContainer>
   );
 };
