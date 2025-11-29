@@ -25,11 +25,21 @@ const verify2FAHandler = async (req, res) => {
     const result = await TwoFAService.verify2FACode({ userOrId: user, code });
 
     if (result.success) {
+      // Preserve visitorId across session regeneration triggered by req.login
+      const visitorId = req.session?.visitorId;
+
       // Log user in using Passport
       req.login(user, (err) => {
         if (err) {
           console.error('Login after 2FA error:', err);
           return res.status(500).json({ success: false, message: 'Login failed' });
+        }
+
+        // Restore visitorId into the (possibly regenerated) session
+        try {
+          if (visitorId) req.session.visitorId = visitorId;
+        } catch (e) {
+          console.warn('Failed to restore visitorId after 2FA login', e);
         }
 
         // Clear pending user from session

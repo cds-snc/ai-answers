@@ -21,11 +21,21 @@ const loginHandler = (req, res, next) => {
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
 
     if (!twoFAEnabled) {
+      // Preserve visitorId across session regeneration triggered by req.login
+      const visitorId = req.session?.visitorId;
+
       // Log user in directly using Passport
       req.login(user, (loginErr) => {
         if (loginErr) {
           console.error('Login error:', loginErr);
           return res.status(500).json({ success: false, message: 'Login failed' });
+        }
+
+        // Restore visitorId into the (possibly regenerated) session
+        try {
+          if (visitorId) req.session.visitorId = visitorId;
+        } catch (e) {
+          console.warn('Failed to restore visitorId after login', e);
         }
 
         return res.status(200).json({
