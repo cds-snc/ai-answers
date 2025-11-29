@@ -37,8 +37,6 @@ export default function createSessionMiddleware(app) {
 
     const authTTLSetting = _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || initialTTLSetting;
 
-    const baseUrl = (SettingsService.get('site.baseUrl') || process.env.BASE_URL || '').toString().trim();
-
     const mongoUrl = _getSetting(['mongo.uri', 'MONGODB_URI']) || process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/ai-answers';
 
     return {
@@ -46,7 +44,6 @@ export default function createSessionMiddleware(app) {
       sessionSecret,
       initialMinutes,
       authTTLSetting,
-      baseUrl,
       mongoUrl
     };
   };
@@ -59,15 +56,12 @@ export default function createSessionMiddleware(app) {
       sessionStore = new session.MemoryStore();
     }
 
-    // FIX: Trust proxy if explicitly set OR if running in AWS Lambda
-    if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
       app.set('trust proxy', 1);
-    }
-
+   
     // We no longer set a static domain here based on baseUrl.
     // Instead, we determine the domain dynamically in the request wrapper.
 
-    const isSecure = process.env.NODE_ENV !== 'development';
+    const isSecure = false; //process.env.NODE_ENV !== 'development';
     const INITIAL_MAX_AGE = cfg.initialMinutes * 60 * 1000;
     const cookieDefaults = {
       httpOnly: true,
@@ -96,7 +90,6 @@ export default function createSessionMiddleware(app) {
         cfg.sessionSecret !== currentConfig.sessionSecret ||
         cfg.initialMinutes !== currentConfig.initialMinutes ||
         cfg.authTTLSetting !== currentConfig.authTTLSetting ||
-        cfg.baseUrl !== currentConfig.baseUrl ||
         cfg.mongoUrl !== currentConfig.mongoUrl;
 
       if (needsRebuild) {
