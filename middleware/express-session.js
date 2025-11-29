@@ -80,7 +80,7 @@ export default function createSessionMiddleware(app) {
       parentDomain = undefined;
     }
 
-    const isSecure = process.env.NODE_ENV !== 'development';
+    const isSecure = false; //process.env.NODE_ENV !== 'development';
     const INITIAL_MAX_AGE = cfg.initialMinutes * 60 * 1000;
     const cookieDefaults = {
       httpOnly: true,
