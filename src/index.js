@@ -10,71 +10,91 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
 import DataStoreService from './services/DataStoreService.js';
-import { initFingerprint } from './utils/fingerprint.js';
-// Add the icon packs to the library
+import SessionService from './services/SessionService.js';
+
+// Add the icon packs
 library.add(fas, far);
 
-// Load Adobe Analytics script synchronously BEFORE React renders
-// This ensures _satellite is available before any tracking calls
-const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
-if (adobeUrl) {
-  const script = document.createElement('script');
-  script.src = adobeUrl;
-  script.async = false; // Load synchronously to ensure it's ready before React renders
-  document.head.insertBefore(script, document.head.firstChild); // Insert at the very top of head
-  // Also add a small inline script at the bottom of the body that calls
-  // _satellite.pageBottom() once the window has finished loading. We wait
-  // for the load event to ensure document.body exists and the Adobe
-  // library has been executed.
+// ---- Runtime config loader (loads after fingerprint) ----
+function loadRuntimeConfig() {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && window.RUNTIME_CONFIG) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = '/config.js';
+    script.async = false;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      // Not fatal — continue without runtime config
+      console.warn('Failed to load /config.js');
+      resolve();
+    };
+    document.head.insertBefore(script, document.head.firstChild);
+  });
+}
+
+function insertAdobeScriptsIfNeeded() {
   try {
+    const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+    if (!adobeUrl) return;
+
+    const script = document.createElement('script');
+    script.src = adobeUrl;
+    script.async = false;
+    document.head.insertBefore(script, document.head.firstChild);
+
     const bottomScript = document.createElement('script');
     bottomScript.type = 'text/javascript';
     bottomScript.text = '_satellite.pageBottom();';
-    // Append at load so body is present and _satellite is ready
     window.addEventListener('load', () => {
       try {
-        if (document.body) {
-          document.body.appendChild(bottomScript);
-        }
+        if (document.body) document.body.appendChild(bottomScript);
       } catch (e) {
-        // swallow errors to avoid breaking bootstrap
         console.warn('Failed to append Adobe pageBottom script to body', e);
       }
     });
   } catch (e) {
-    // swallow errors during bootstrap so they don't prevent app render
     console.warn('Failed to prepare Adobe pageBottom script', e);
   }
 }
+// -------------------------------------------------------
 
-const renderApp = () => {
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(
-      <App />
-    );
-};
-// Start deterministic fingerprint initialization early at bootstrap so
-// service modules can await `window.fpInitPromise` to avoid timing races.
-// We don't block rendering on it, but kickoff as soon as possible.
-try {
-  if (typeof window !== 'undefined' && typeof initFingerprint === 'function') {
-    // expose the promise so any module can await: await window.fpInitPromise
-    // Note: some test runners may not have window; guard accordingly.
-    window.fpInitPromise = initFingerprint();
+// ⭐ Unified Fingerprint Initialization (runs ONCE)
+async function initFingerprint() {
+  try {
+    if (
+      typeof window !== 'undefined' &&
+      SessionService &&
+      typeof SessionService.sendFingerprint === 'function'
+    ) {
+      await SessionService.sendFingerprint();
+    }
+  } catch (e) {
+    console.warn("Fingerprint initialization failed", e);
   }
-} catch (e) {
-  // swallow errors during bootstrap so they don't prevent app render
-  console.warn('Fingerprint init failed to start during bootstrap', e);
 }
 
+const renderApp = async () => {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+
+  // ⭐ Fingerprint sent ONCE before render
+  await initFingerprint();
+
+  // Load runtime config (from /config.js) after fingerprint, then insert Adobe scripts.
+  await loadRuntimeConfig();
+  insertAdobeScriptsIfNeeded();
+
+  root.render(<App />);
+};
+
+// ---- Environment Logic ----
 if (process.env.REACT_APP_ENV === 'production') {
   DataStoreService.checkDatabaseConnection()
     .then((isConnected) => {
-      if (isConnected) {
-        console.log('Database is connected');
-      } else {
-        console.warn('Database is not connected. Some features may not work.');
-      }
+      console.log(isConnected ? 'Database is connected' : 'Database is NOT connected');
       renderApp();
     })
     .catch((error) => {
@@ -82,21 +102,18 @@ if (process.env.REACT_APP_ENV === 'production') {
       renderApp();
     });
 } else {
-  console.log('Running in development mode. Skipping database connection check.');
+  console.log('Running in development mode. Skipping DB check.');
   renderApp();
 }
 
 reportWebVitals();
 
+// ---- Service Worker Logic (unchanged) ----
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/stream-saver-sw.js') // Adjust the path if necessary
-      .then((registration) => {
-        console.log('StreamSaver service worker registered:', registration);
-      })
-      .catch((error) => {
-        console.error('StreamSaver service worker registration failed:', error);
-      });
+      .register('/stream-saver-sw.js')
+      .then((registration) => console.log('SW registered:', registration))
+      .catch((error) => console.error('SW registration failed:', error));
   });
 }

@@ -7,7 +7,7 @@ import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.
 import { rankerStrategy } from '../../agents/strategies/rankerStrategy.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
 import { createRankerAgent, createTranslationAgent } from '../../agents/AgentFactory.js';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
 // --- Main handler (composed of the helpers above) ---

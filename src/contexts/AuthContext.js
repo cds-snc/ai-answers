@@ -38,7 +38,17 @@ export const AuthProvider = ({ children }) => {
         const path = window.location.pathname;
         if (path.startsWith('/fr')) prefix = '/fr';
       }
-      navigate(`${prefix}/signin`); // Redirect to language-specific signin
+      try {
+        if (typeof window !== 'undefined') {
+          // Use a full page navigation to the signin route so the app reloads
+          window.location.replace(`${prefix}/signin`);
+        } else {
+          navigate(`${prefix}/signin`);
+        }
+      } catch (e) {
+        // Fallback to SPA navigation if redirect fails
+        try { navigate(`${prefix}/signin`); } catch (err) { /* ignore */ }
+      }
     });
 
     // Cleanup on unmount
@@ -95,7 +105,10 @@ export const AuthProvider = ({ children }) => {
         const path = window.location.pathname;
         if (path.startsWith('/fr')) prefix = '/fr';
       }
-      navigate(`${prefix}/signin`);
+
+      // Use full page replace so the app starts fresh on signin
+      window.location.replace(`${prefix}/signin`);
+
     } catch (e) {
       // ignore navigation errors
     }

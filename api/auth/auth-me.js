@@ -1,10 +1,7 @@
-import { getUserFromCookie } from '../../middleware/auth.js';
-
 const meHandler = async (req, res) => {
     try {
-        const user = await getUserFromCookie(req);
-
-        if (!user) {
+        // req.user is automatically populated by Passport if authenticated
+        if (!req.isAuthenticated()) {
             return res.status(200).json({
                 success: false,
                 message: 'Not authenticated'
@@ -13,12 +10,7 @@ const meHandler = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            user: {
-                userId: user.userId,
-                email: user.email,
-                role: user.role,
-                active: true
-            }
+            user: req.user
         });
     } catch (error) {
         console.error('Get current user error:', error);

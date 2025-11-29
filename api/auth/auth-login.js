@@ -1,101 +1,94 @@
-import { User } from '../../models/user.js';
-import dbConnect from '../db/db-connect.js';
 import TwoFAService from '../../services/TwoFAService.js';
 import { SettingsService } from '../../services/SettingsService.js';
-import { getCookieOptions } from '../util/cookie-utils.js';
-import { generateToken, generateRefreshToken } from '../../middleware/auth.js';
+import passport from '../../config/passport.js';
 
-const loginHandler = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    await dbConnect();
-    // Basic validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required'
-      });
+const loginHandler = (req, res, next) => {
+  passport.authenticate('local', async (err, user, info) => {
+    if (err) {
+      console.error('Login error:', err);
+      return res.status(500).json({ success: false, message: 'Error during login' });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: info?.message || 'Invalid credentials'
       });
     }
 
-    // Check if user is active
-    if (!user.active) {
-      return res.status(403).json({
-        success: false,
-        message: 'Account is deactivated'
-      });
-    }
-
-    // Verify password
-    const isValidPassword = await user.comparePassword(password);
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    const enabledSetting = await SettingsService.get('twoFA.enabled');
+    // Check if 2FA is enabled
+    const enabledSetting = SettingsService.get('twoFA.enabled');
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
 
     if (!twoFAEnabled) {
-      // Generate tokens
-      const accessToken = generateToken(user);
-      const refreshToken = generateRefreshToken(user);
+      // Preserve visitorId across session regeneration triggered by req.login
+      const visitorId = req.session?.visitorId;
 
-      // Set tokens in HttpOnly cookies with parent-domain support in non-dev
-      res.cookie('access_token', accessToken, getCookieOptions(req, 15 * 60 * 1000));
-      res.cookie('refresh_token', refreshToken, getCookieOptions(req, 7 * 24 * 60 * 60 * 1000));
-
-      return res.status(200).json({
-        success: true,
-        message: 'Login successful',
-        user: {
-          email: user.email,
-          role: user.role,
-          active: user.active,
-          createdAt: user.createdAt
+      // Log user in directly using Passport
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error('Login error:', loginErr);
+          return res.status(500).json({ success: false, message: 'Login failed' });
         }
-      });
-    }
 
-    // Instead of issuing token immediately, require 2FA verification.
-    // Send a 2FA code to the user's email and return a twoFA-required response.
-    const templateId = await SettingsService.get('twoFA.templateId');
-    const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
-    if (!sendResult.success) {
-      console.error('TwoFAService failed to send code', sendResult);
-      return res.status(500).json({
-        success: false,
-        message: 'Error during login'
+        // Restore visitorId into the (possibly regenerated) session
+        try {
+          if (visitorId) req.session.visitorId = visitorId;
+        } catch (e) {
+          console.warn('Failed to restore visitorId after login', e);
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Login successful',
+          user: {
+            email: user.email,
+            role: user.role,
+            active: user.active,
+            createdAt: user.createdAt
+          }
+        });
       });
-    }
-    res.status(200).json({
-      success: true,
-      twoFA: true,
-      message: '2FA code sent',
-      user: {
+    } else {
+      // Store user temporarily for 2FA verification (don't log in yet)
+      req.session.pendingUser = {
+        userId: user._id.toString(),
         email: user.email,
-        role: user.role,
-        active: user.active,
-        createdAt: user.createdAt
+        role: user.role
+      };
+
+      try {
+        const templateId = SettingsService.get('twoFA.templateId');
+        const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
+
+        if (!sendResult.success) {
+          console.error('TwoFAService failed to send code', sendResult);
+          return res.status(500).json({
+            success: false,
+            message: 'Error during login'
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          twoFA: true,
+          message: '2FA code sent',
+          user: {
+            email: user.email,
+            role: user.role,
+            active: user.active,
+            createdAt: user.createdAt
+          }
+        });
+      } catch (error) {
+        console.error('2FA send error:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error during login'
+        });
       }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error during login'
-    });
-  }
+    }
+  })(req, res, next);
 };
 
 export default loginHandler;

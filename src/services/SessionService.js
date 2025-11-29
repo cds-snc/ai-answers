@@ -51,6 +51,34 @@ const SessionService = {
       return false;
     }
   }
+,
+
+  // Collect visitor fingerprint via FingerprintJS and POST to server to attach to session
+  async sendFingerprint() {
+    if (typeof window === 'undefined') return;
+    try {
+      const FingerprintJSImport = await import('@fingerprintjs/fingerprintjs');
+      const FingerprintJS = FingerprintJSImport && FingerprintJSImport.default ? FingerprintJSImport.default : FingerprintJSImport;
+      if (!FingerprintJS || typeof FingerprintJS.load !== 'function') return;
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      const visitorId = result?.visitorId;
+      if (!visitorId) return;
+      const url = getApiUrl('chat-session-fingerprint');
+      try {
+        await AuthService.fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visitorId })
+        });
+      } catch (e) {
+        if (console && console.error) console.error('Failed to POST visitorId', e);
+      }
+    } catch (e) {
+      if (console && console.error) console.error('sendFingerprint failed', e);
+    }
+  }
 };
+
 
 export default SessionService;

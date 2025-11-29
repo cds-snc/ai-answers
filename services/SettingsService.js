@@ -6,21 +6,26 @@ class SettingsServiceClass {
     this.cache = {};
   }
 
-  async get(key) {
-    if (this.cache.hasOwnProperty(key)) {
-      return this.cache[key];
-    }
+  async loadAll() {
     await dbConnect();
-    const setting = await Setting.findOne({ key });
-    const value = setting ? setting.value : null;
-    this.cache[key] = value;
-    return value;
+    const settings = await Setting.find({});
+    settings.forEach(s => {
+      this.cache[s.key] = s.value;
+    });
+    console.log(`[SettingsService] Loaded ${settings.length} settings into cache.`);
+  }
+
+  get(key) {
+    // Synchronous read from cache
+    return this.cache.hasOwnProperty(key) ? this.cache[key] : null;
   }
 
   async set(key, value) {
+    // Update cache immediately
+    this.cache[key] = value;
+    // Persist to DB asynchronously
     await dbConnect();
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
-    this.cache[key] = value;
   }
 
   toBoolean(value, defaultValue = true) {

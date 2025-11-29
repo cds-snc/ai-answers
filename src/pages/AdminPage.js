@@ -15,6 +15,15 @@ const AdminPage = ({ lang = 'en' }) => {
   const handleLogout = (e) => {
     e.preventDefault();
     logout();
+    // Force a full page reload to the signin page so the app's
+    // fingerprint initialization runs again and a new session is created.
+    try {
+      const prefix = lang === 'fr' ? '/fr' : '/en';
+      window.location.href = `${prefix}/signin`;
+    } catch (e) {
+      // Fallback: reload the current page
+      try { window.location.reload(); } catch (err) { /* ignore */ }
+    }
   };
 
   // Determine if user is partner only

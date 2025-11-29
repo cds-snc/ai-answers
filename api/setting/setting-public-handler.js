@@ -9,6 +9,6 @@ export default async function handler(req, res) {
   if (!key) {
     return res.status(400).json({ message: 'Key required' });
   }
-  const value = await SettingsService.get(key);
+  const value = SettingsService.get(key);
   return res.status(200).json({ key, value });
 }

@@ -1,7 +1,7 @@
 // api/chat/chat-context.js
 import { invokeContextAgent } from '../../services/ContextAgentService.js';
 import { exponentialBackoff } from '../../src/utils/backoff.js';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {

@@ -12,13 +12,13 @@ const send2FAHandler = async (req, res) => {
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
     if (!user) return res.status(404).json({ success: false, message: 'user not found' });
 
-    const enabledSetting = await SettingsService.get('twoFA.enabled');
+    const enabledSetting = SettingsService.get('twoFA.enabled');
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
     if (!twoFAEnabled) {
       return res.status(403).json({ success: false, message: 'two-factor authentication disabled' });
     }
 
-    const templateId = await SettingsService.get('twoFA.templateId');
+    const templateId = SettingsService.get('twoFA.templateId');
     const result = await TwoFAService.send2FACode({ userOrId: user, templateId });
 
     if (!result.success) {
