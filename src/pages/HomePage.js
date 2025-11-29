@@ -193,6 +193,10 @@ const HomePage = ({ lang = "en" }) => {
     }
   }, [reviewChatId]);
 
+  const handleSessionError = () => {
+    setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });
+  };
+
   const WrappedErrorBoundary = ({ children }) => (
     <ErrorBoundary t={t}>{children}</ErrorBoundary>
   );
@@ -244,6 +248,7 @@ const HomePage = ({ lang = "en" }) => {
           initialReferringUrl={reviewReferringUrl}
           clientReferrer={clientReferrer}
           targetInteractionId={targetInteractionId}
+          onSessionError={handleSessionError}
         />
       </div>
       {!reviewMode && (

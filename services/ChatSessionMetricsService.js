@@ -1,6 +1,7 @@
 import { SessionState } from '../models/sessionState.js';
 import dbConnect from '../api/db/db-connect.js';
 import { rateLimiters } from '../middleware/rate-limiter.js';
+import { SettingsService } from './SettingsService.js';
 
 class ChatSessionMetricsService {
   constructor() {
@@ -14,6 +15,17 @@ class ChatSessionMetricsService {
     this._startFlushTimer();
   }
 
+  _isMongoMode() {
+    try {
+        // Check metrics.type first, fall back to session.type
+        const v = SettingsService.get('metrics.type') || process.env.METRICS_TYPE || 
+                  SettingsService.get('session.type') || process.env.SESSION_TYPE || process.env.SESSION_STORE;
+        const norm = (v || '').toString().trim().toLowerCase();
+        return norm === 'mongodb' || norm === 'mongo';
+    } catch (e) {
+        return false;
+    }
+  }
  
   // Called when a chat is created or accessed
   registerChat(sessionId, chatId) {
@@ -123,44 +135,88 @@ class ChatSessionMetricsService {
     };
   }
 
+  _getTTL() {
+    try {
+        const ttlSetting = SettingsService.get('session.defaultTTLMinutes');
+        const ttlMinutes = Number(ttlSetting);
+        return (Number.isFinite(ttlMinutes) && ttlMinutes > 0 ? ttlMinutes : 10) * 60 * 1000;
+    } catch (e) {
+        return 1000 * 60 * 10;
+    }
+  }
+
   _startFlushTimer() {
     setInterval(() => this.flushMetrics(), this.flushInterval);
   }
 
-  async flushMetrics() {
-    for (const [sessionId, m] of this.metricsBuffer.entries()) {
-      try {
-        await dbConnect();
-        const chatIds = Array.from(m.chatIds);
-        
-        const doc = {
-            sessionId,
-            chatIds,
-            lastSeen: new Date(m.lastSeen),
-            requestCount: m.requestCount,
-            errorCount: m.errorCount,
-            totalLatencyMs: m.totalLatencyMs,
-            lastLatencyMs: m.lastLatencyMs,
-            errorTypes: m.errorTypes,
-            chatMetrics: m.chatMetrics
-        };
+  async pruneStaleSessions() {
+    const ttl = this._getTTL();
+    const cleanupThreshold = ttl;
+    const now = Date.now();
 
-        await SessionState.findOneAndUpdate(
-          { sessionId }, 
-          doc, 
-          { upsert: true, setDefaultsOnInsert: true }
-        );
-        
-        // Cleanup old entries from buffer (1 hour idle)
-        if (Date.now() - m.lastSeen > (1000 * 60 * 60)) {
+    // 1. Memory Cleanup (Always run to prevent leaks)
+    for (const [sessionId, m] of this.metricsBuffer.entries()) {
+        if (now - m.lastSeen > cleanupThreshold) {
            this.metricsBuffer.delete(sessionId);
+           const chatIds = Array.from(m.chatIds);
            for (const cid of chatIds) this.chatToSession.delete(cid);
         }
+    }
 
+    // 2. Mongo Cleanup (If enabled)
+    if (this._isMongoMode()) {
+        try {
+            await dbConnect();
+            // Soft Delete: Mark sessions as 'expired'
+            const expirationCutoff = new Date(now - cleanupThreshold);
+            await SessionState.updateMany(
+                { 
+                    lastSeen: { $lt: expirationCutoff },
+                    status: { $ne: 'expired' }
+                },
+                { $set: { status: 'expired' } }
+            );
+        } catch (e) {
+            console.error('Error in session archival/cleanup (mongo)', e);
+        }
+    }
+  }
+
+  async flushMetrics() {
+    const useMongo = this._isMongoMode();
+
+    for (const [sessionId, m] of this.metricsBuffer.entries()) {
+      try {
+        if (useMongo) {
+            await dbConnect();
+            const chatIds = Array.from(m.chatIds);
+            
+            const doc = {
+                sessionId,
+                status: 'active',
+                chatIds,
+                lastSeen: new Date(m.lastSeen),
+                requestCount: m.requestCount,
+                errorCount: m.errorCount,
+                totalLatencyMs: m.totalLatencyMs,
+                lastLatencyMs: m.lastLatencyMs,
+                errorTypes: m.errorTypes,
+                chatMetrics: m.chatMetrics
+            };
+
+            await SessionState.findOneAndUpdate(
+            { sessionId }, 
+            doc, 
+            { upsert: true, setDefaultsOnInsert: true }
+            );
+        }
       } catch (e) {
         console.error('Error flushing metrics', e);
       }
     }
+    
+    // Prune stale sessions after flushing
+    await this.pruneStaleSessions();
   }
   
   async getSummary() {

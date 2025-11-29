@@ -20,7 +20,9 @@ class ChatSessionService {
 
     async _isMongoMode() {
         try {
-            const v = SettingsService.get('session.type') || process.env.SESSION_TYPE || process.env.SESSION_STORE || process.env.SESSION_TYPE;
+            // Check metrics.type first, fall back to session.type
+            const v = SettingsService.get('metrics.type') || process.env.METRICS_TYPE || 
+                      SettingsService.get('session.type') || process.env.SESSION_TYPE || process.env.SESSION_STORE;
             const norm = (v || '').toString().trim().toLowerCase();
             return norm === 'mongodb' || norm === 'mongo';
         } catch (e) {
@@ -39,12 +41,15 @@ class ChatSessionService {
 
     async isSessionActive(sessionId) {
         if (!sessionId) return false;
+        await this._refreshSettings();
         try {
             if (await this._isMongoMode()) {
                 await dbConnect();
+                const cutoff = new Date(Date.now() - this.defaultTTL);
                 const exists = await SessionState.exists({ 
                     sessionId, 
-                    chatIds: { $exists: true, $not: { $size: 0 } } 
+                    chatIds: { $exists: true, $not: { $size: 0 } },
+                    lastSeen: { $gt: cutoff }
                 });
                 return !!exists;
             }
@@ -80,6 +85,11 @@ class ChatSessionService {
     }
 
     async getActiveSessionsCount() {
+        await this._refreshSettings();
+        
+        // Unified cleanup: Prune stale sessions (Memory & Mongo) before counting
+        await ChatSessionMetricsService.pruneStaleSessions();
+
         // If session persistence is configured to use Mongo, query the
         // `SessionState` collection for sessions that have at least one chatId.
         // Otherwise (memory session store) fall back to the in-memory metrics
@@ -87,7 +97,13 @@ class ChatSessionService {
         try {
             if (await this._isMongoMode()) {
                 await dbConnect();
-                return await SessionState.countDocuments({ chatIds: { $exists: true, $not: { $size: 0 } } });
+                const cutoff = new Date(Date.now() - this.defaultTTL);
+                
+                return await SessionState.countDocuments({ 
+                    chatIds: { $exists: true, $not: { $size: 0 } },
+                    lastSeen: { $gt: cutoff },
+                    status: { $ne: 'expired' }
+                });
             }
         } catch (e) {
             // If DB mode fails, fall through to buffer fallback
@@ -95,7 +111,15 @@ class ChatSessionService {
         }
 
         try {
-            return ChatSessionMetricsService.metricsBuffer.size;
+            // Count only active sessions in memory (exclude those that are expired but not yet cleaned up)
+            const now = Date.now();
+            let count = 0;
+            for (const m of ChatSessionMetricsService.metricsBuffer.values()) {
+                if (now - m.lastSeen < this.defaultTTL) {
+                    count++;
+                }
+            }
+            return count;
         } catch (e) {
             console.error('Error counting active sessions (buffer fallback)', e);
             return null;
