@@ -158,7 +158,11 @@ export default function createSessionMiddleware(app) {
             const requestHost = req.get('host');
             if (requestHost) {
               const dynamicDomain = getParentDomain(requestHost, process.env.NODE_ENV);
-              req.session.cookie.domain = dynamicDomain;
+              if (dynamicDomain) {
+                req.session.cookie.domain = dynamicDomain;
+              } else {
+                delete req.session.cookie.domain;
+              }
             }
           };
 
