@@ -13,7 +13,7 @@ const _getSetting = (keys) => {
 };
 
 // Internal reset hook (will be set when middleware initializes)
-let internalResetFn = async () => {};
+let internalResetFn = async () => { };
 
 // Exported helper to force a reset from other modules (admin endpoint/tests)
 export async function resetSessionMiddleware() {
@@ -55,13 +55,14 @@ export default function createSessionMiddleware(app) {
       sessionStore = MongoStore.create({
         clientPromise: dbConnect().then((m) => m.connection.getClient()),
         collectionName: 'sessions',
+     touchAfter: 0,
       });
     } else {
       sessionStore = new session.MemoryStore();
     }
 
-      app.set('trust proxy', 1);
-   
+    app.set('trust proxy', 1);
+
     // We no longer set a static domain here based on baseUrl.
     // Instead, we determine the domain dynamically in the request wrapper.
 
@@ -175,7 +176,7 @@ export default function createSessionMiddleware(app) {
 
           // Hook into res.end to ensure settings are applied even if session was regenerated
           const originalEnd = res.end;
-          res.end = function(...args) {
+          res.end = function (...args) {
             try {
               applyDynamicSessionSettings();
             } catch (e) {
