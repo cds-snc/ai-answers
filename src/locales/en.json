@@ -5,16 +5,9 @@
       "text": "Get answers to your Canada.ca questions.",
       "ariaLabel": "Get answers to your Canada dot CA questions."
     },
-    "session": {
-      "storeTypeLabel": "Session storage",
-      "storeType": {
-        "memory": "In-memory (volatile)",
-        "mongo": "MongoDB (persistent/cache)"
-      }
-    },
-    "alpha": {
-      "label": "Alpha",
-      "description": "Experimental page - not public."
+    "status": {
+      "label": "Beta",
+      "description": "Beta testing"
     },
     "intro": {
       "researchOnly": "Answers provided by this AI service are information, not official advice.  Improvements are ongoing."
@@ -217,7 +210,7 @@
     "title": "About Canada.ca AI Answers",
     "overview": {
       "title": "Overview",
-      "descriptionPara1": "AI Answers is a specialized AI assistant designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.",
+      "descriptionPara1": "AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.",
       "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
       "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations to produce automated AI evaluations, and improve answer quality."
     },
@@ -235,7 +228,7 @@
     },
     "accessibilityUsability": {
       "title": "Accessibility and Usability",
-      "designRationale": "Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload.",
+      "designRationale": "Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.",
       "testing": "These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.",
       "wcag": "The service meets WCAG 2.1 AA accessibility standards for web content accessibility."
     }
