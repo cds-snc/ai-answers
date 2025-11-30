@@ -2,6 +2,7 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { SettingsService } from '../services/SettingsService.js';
 import { getParentDomain } from '../api/util/cookie-utils.js';
+import dbConnect from '../api/db/db-connect.js';
 
 const _getSetting = (keys) => {
   for (const k of keys) {
@@ -51,7 +52,10 @@ export default function createSessionMiddleware(app) {
   const buildSessionMiddleware = (cfg) => {
     let sessionStore = null;
     if (cfg.sessionType === 'mongodb' || cfg.sessionType === 'mongo') {
-      sessionStore = MongoStore.create({ mongoUrl: cfg.mongoUrl, collectionName: 'sessions' });
+      sessionStore = MongoStore.create({
+        clientPromise: dbConnect().then((m) => m.connection.getClient()),
+        collectionName: 'sessions',
+      });
     } else {
       sessionStore = new session.MemoryStore();
     }
