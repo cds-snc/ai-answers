@@ -11,7 +11,7 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import { Setting } from '../../models/setting.js';
 import { withOptionalUser } from '../../middleware/auth.js';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {

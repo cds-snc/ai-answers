@@ -2,7 +2,7 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { createDetectLanguageAgent } from '../../agents/AgentFactory.js';
 import { detectLanguageStrategy } from '../../agents/strategies/detectLanguageStrategy.js';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {

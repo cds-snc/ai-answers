@@ -5,6 +5,13 @@
       "text": "Obtenez des réponses à vos questions sur Canada.ca.",
       "ariaLabel": "Obtenez des réponses à vos questions sur Canada point CA."
     },
+    "session": {
+      "storeTypeLabel": "Stockage de session",
+      "storeType": {
+        "memory": "En mémoire (volatile)",
+        "mongo": "MongoDB (persistant/cache)"
+      }
+    },
     "alpha": {
       "label": "Alpha",
       "description": "Page expérimentale — non publique."
@@ -238,6 +245,11 @@
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
     }
   },
+  "settings": {
+    "general": {
+      "title": "Paramètres généraux"
+    }
+  },
   "aboutPage": {
     "title": "À propos de Canada.ca Réponses IA",
     "overview": {
@@ -452,8 +464,7 @@
             "createFeedback": "Créer un nouvel objet de rétroaction d'expert basé sur la rétroaction de l'interaction appariée ou une rétroaction de repli générée (type 'ai')",
             "computeScore": "Calculer le score total à partir des scores par phrase et du score de citation (pondérations par défaut). Si aucune note n'existe, totalScore peut être null.",
             "mapFeedback": "Mapper la rétroaction à la nouvelle interaction (niveau phrase ou QA uniquement) et enregistrer la trace de correspondance des phrases et les scores de similarité",
-            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit",
-            "updateInteraction": "Mettre à jour l'interaction avec la nouvelle référence d'évaluation (autoEval)"
+            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit"
           }
         },
         "noMatch": {
@@ -773,13 +784,22 @@
   },
   "settings": {
     "title": "Paramètres",
+    "general": {
+      "title": "Paramètres généraux"
+    },
     "liveGraph": {
       "title": "Live Graph",
       "description": "Modifiez les valeurs de workflow utilisées par la visualisation Live Graph.",
       "save": "Enregistrer Live Graph"
     },
     "defaultWorkflow": {
-      "label": "Workflow par défaut"
+      "label": "Workflow par défaut",
+      "options": {
+        "Default": "Par défaut",
+        "DefaultAlwaysContext": "Par défaut (toujours inclure le contexte)",
+        "DefaultWithVector": "Par défaut avec vecteur",
+        "DefaultWithVectorGraph": "Par défaut avec graphe vectoriel"
+      }
     },
     "statusLabel": "Statut du service",
     "statuses": {
@@ -816,13 +836,35 @@
     },
     "session": {
       "title": "Paramètres de session",
+      "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
+      "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
       "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
-      "rateLimitCapacity": "Capacité du quota (crédits)",
-      "rateLimitRefill": "Recharge du quota (crédits/min)",
-      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (crédits)",
-      "authenticatedRateLimitRefill": "Recharge du quota authentifié (crédits/min)",
-      "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)"
+      "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
+      "storeType": "Stockage de session (mémoire | mongo)",
+      "store": {
+        "options": {
+          "memory": "En mémoire (volatile)",
+          "mongo": "MongoDB (persistant/cache)"
+        }
+      },
+      "persistence": {
+        "label": "Persistance des sessions",
+        "options": {
+          "memory": "Mémoire (en processus)",
+          "mongo": "MongoDB (persistant/cache)"
+        }
+      }
+    },
+    "rateLimiting": {
+      "title": "Limitation du débit",
+      "persistence": {
+        "label": "Persistance du limiteur de débit (mémoire | mongo)"
+      },
+      "rateLimitCapacity": "Capacité du quota (requêtes)",
+      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
+      "rateLimitRefill": "Recharge du quota (requêtes/min)",
+      "authenticatedRateLimitRefill": "Recharge du quota authentifié (requêtes/min)"
     }
   },
   "outage": {
@@ -861,10 +903,10 @@
     "noMatchReason": "Raison de non-correspondance",
     "fallbackSourceChatId": "ID de chat source pour le repli",
     "matchedCitationInteractionId": "ID d'interaction de citation appariée",
-  "matchedCitationChatId": "ID de chat de citation appariée",
-  "stageTimeline": "Chronologie des étapes",
-  "rawTimeline": "Chronologie brute (JSON)",
-  "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "matchedCitationChatId": "ID de chat de citation appariée",
+    "stageTimeline": "Chronologie des étapes",
+    "rawTimeline": "Chronologie brute (JSON)",
+    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "modelData": "Données du modèle",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le",

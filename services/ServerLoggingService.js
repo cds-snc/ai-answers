@@ -85,7 +85,7 @@ class LogQueue {
     }
 
     async processLogEntry({ level, message, chatId, data }) {
-       
+
         // Only save to DB if chatId is present and not "system"
         if (!chatId || chatId === 'system') {
             // Do not save to DB, just log to console
@@ -137,7 +137,7 @@ process.on('SIGTERM', async () => {
 
 const ServerLoggingService = {
     log: async (level, message, chatId = 'system', data = {}) => {
-        const logChatsSetting = await SettingsService.get('logChatsToDatabase');
+        const logChatsSetting = SettingsService.get('logChatsToDatabase');
         console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
         if (logChatsSetting !== 'no') {
             // Log directly to console and bypass queue

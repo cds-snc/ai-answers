@@ -1,6 +1,6 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { invokePIIAgent } from '../../services/PIIAgentService.js';
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
 async function handler(req, res) {

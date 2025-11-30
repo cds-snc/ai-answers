@@ -50,7 +50,7 @@ async function dbConnect() {
       socketTimeoutMS: 300000, // 5 minutes timeout for operations
       serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
       heartbeatFrequencyMS: 10000, // How often to check the connection
-      minPoolSize: 1, // Keep 20 connections ready
+      minPoolSize: 10, // Keep 20 connections ready
       maxPoolSize: 1000, // Allow up to 1000 connections
     };
 

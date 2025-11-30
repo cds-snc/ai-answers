@@ -1,81 +1,20 @@
-import jwt from 'jsonwebtoken';
-import { User } from '../models/user.js';
-import dbConnect from '../api/db/db-connect.js';
-
-const JWT_SECRET = process.env.JWT_SECRET_KEY;
-const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || '15m';
-const REFRESH_TOKEN_EXPIRES_IN = process.env.JWT_REFRESH_TOKEN_EXPIRES_IN || '7d';
-
-// Generate access token (short-lived)
-export const generateToken = (user, expiresIn = ACCESS_TOKEN_EXPIRES_IN) => {
-  console.log('Generating access token for user:', { userId: user._id, email: user.email, role: user.role, expiresIn });
-  return jwt.sign(
-    { userId: user._id, email: user.email, role: user.role },
-    JWT_SECRET,
-    { expiresIn }
-  );
-};
-
-// Generate refresh token (long-lived)
-export const generateRefreshToken = (user) => {
-  console.log('Generating refresh token for user:', { userId: user._id, expiresIn: REFRESH_TOKEN_EXPIRES_IN });
-  return jwt.sign(
-    { userId: user._id, type: 'refresh' },
-    JWT_SECRET,
-    { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
-  );
-};
-
-// Utility to extract user from cookie without sending a response
-export const getUserFromCookie = async (req) => {
-  const token = req.cookies?.access_token;
-  if (!token) return null;
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    await dbConnect();
-    const user = await User.findById(decoded.userId);
-    if (!user) return null;
-    return decoded;
-  } catch (e) {
-    return null;
+// Simplified auth middleware using Passport
+export const ensureAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
   }
+  res.status(401).json({ message: 'Authentication required' });
 };
 
 const verifyAuth = async (req, res) => {
-  try {
-    const token = req.cookies?.access_token;
-    console.log('Verifying auth with cookie:', {
-      hasCookie: !!token,
-      method: req.method,
-      path: req.path
-    });
-
-    if (!token) {
-      console.log('Auth failed: No access token cookie provided');
-      res.status(401).json({ message: 'No token provided' });
-      return false;
-    }
-
-    console.log('Attempting to verify token');
-    const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Token verified successfully:', { userId: decoded.userId, role: decoded.role });
-
-    await dbConnect();
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      console.log('Auth failed: User not found in database:', decoded.userId);
-      res.status(401).json({ message: 'User not found' });
-      return false;
-    }
-
-    console.log('Auth successful for user:', { userId: user._id, role: user.role });
-    req.user = decoded;
-    return true;
-  } catch (error) {
-    console.error('Auth error:', error.message);
-    res.status(401).json({ message: 'Invalid token' });
+  if (!req.isAuthenticated()) {
+    console.log('Auth failed: User not authenticated');
+    res.status(401).json({ message: 'Authentication required' });
     return false;
   }
+
+  console.log('Auth successful for user:', { userId: req.user?.userId, role: req.user?.role });
+  return true;
 };
 
 const verifyAdmin = (req, res) => {
@@ -131,10 +70,10 @@ export const withProtection = (handler, ...middleware) => {
   };
 };
 
-// Optional authentication: sets req.user if valid token exists, but does NOT block if no token
-// Used for endpoints that work for both authenticated and anonymous users (e.g., db-persist-interaction)
+// Optional authentication: sets req.user if valid session exists, but does NOT block if no session
+// Used for endpoints that work for both authenticated and anonymous users
+// req.user is automatically populated by Passport if authenticated
 export const withOptionalUser = (handler) => async (req, res) => {
-  req.user = await getUserFromCookie(req);
   return handler(req, res);
 };
 

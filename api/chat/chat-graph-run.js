@@ -1,4 +1,4 @@
-import { withSession } from '../../middleware/session.js';
+import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
 const REQUIRED_METHOD = 'POST';

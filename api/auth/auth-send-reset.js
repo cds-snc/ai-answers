@@ -19,22 +19,22 @@ const sendResetHandler = async (req, res) => {
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
-  // Generate single-use token and expiry (15 minutes)
-  const token = crypto.randomBytes(32).toString('hex');
-  const expires = new Date(Date.now() + 15 * 60 * 1000);
+    // Generate single-use token and expiry (15 minutes)
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
 
-  // Store only a hash of the token in the database for security
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  user.resetPasswordToken = tokenHash;
-  user.resetPasswordExpires = expires;
-  // Legacy: no email OTP fallback anymore; no per-reset OTP to clear
+    // Store only a hash of the token in the database for security
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    user.resetPasswordToken = tokenHash;
+    user.resetPasswordExpires = expires;
+    // Legacy: no email OTP fallback anymore; no per-reset OTP to clear
     await user.save();
 
     // Compose reset link (client will have a route to handle verification)
     // Prefer configured site.baseUrl setting, fall back to FRONTEND_URL env var
     let configuredBase = '';
     try {
-      configuredBase = (await SettingsService.get('site.baseUrl')) || process.env.FRONTEND_URL || '';
+      configuredBase = SettingsService.get('site.baseUrl') || process.env.FRONTEND_URL || '';
     } catch (e) {
       configuredBase = process.env.FRONTEND_URL || '';
     }
@@ -43,7 +43,7 @@ const sendResetHandler = async (req, res) => {
     const resetLink = normalizedBase ? `${normalizedBase}${linkPath}` : linkPath;
 
     // Resolve template id from settings or env
-    const tpl = await SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
+    const tpl = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
     const personalisation = {
       name: user.email || '',
       // The template should include the reset link. The link contains the plaintext token.

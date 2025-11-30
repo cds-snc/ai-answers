@@ -1,11 +1,8 @@
 import { User } from '../../models/user.js';
-import { generateToken, generateRefreshToken } from '../../middleware/auth.js';
 import dbConnect from '../db/db-connect.js';
-import { getCookieOptions } from '../util/cookie-utils.js';
 
 const signupHandler = async (req, res) => {
   try {
-
     await dbConnect();
     const { email, password } = req.body;
 
@@ -39,26 +36,29 @@ const signupHandler = async (req, res) => {
     });
     await user.save();
 
-    // Generate tokens
-    const accessToken = generateToken(user);
-    const refreshToken = generateRefreshToken(user);
-
-    // Set tokens in HttpOnly cookies with parent-domain support in non-dev
-    res.cookie('access_token', accessToken, getCookieOptions(req, 15 * 60 * 1000));
-    res.cookie('refresh_token', refreshToken, getCookieOptions(req, 7 * 24 * 60 * 60 * 1000));
-
-    // Return success with token and user data
-    res.status(201).json({
-      success: true,
-      message: isFirstUser
-        ? 'User created successfully as admin.'
-        : 'User created successfully. Account requires activation by an administrator.',
-      user: {
-        email: user.email,
-        role: user.role,
-        active: user.active,
-        createdAt: user.createdAt
+    // Log user in using Passport
+    req.login(user, (err) => {
+      if (err) {
+        console.error('Login after signup error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Signup succeeded but login failed'
+        });
       }
+
+      // Return success with user data
+      return res.status(201).json({
+        success: true,
+        message: isFirstUser
+          ? 'User created successfully as admin.'
+          : 'User created successfully. Account requires activation by an administrator.',
+        user: {
+          email: user.email,
+          role: user.role,
+          active: user.active,
+          createdAt: user.createdAt
+        }
+      });
     });
   } catch (error) {
     console.error('Signup error:', error);

@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, targetInteractionId = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, targetInteractionId = null, onSessionError }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -262,7 +262,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       if (selectedAI === null) {
         try {
           // Use the public setting endpoint so unauthenticated clients can read the provider
-          const provider = await DataStoreService.getPublicSetting('provider', 'openai');
+          const provider = await DataStoreService.getPublicSetting('provider', 'azure');
           if (mounted && provider) {
             setSelectedAI(provider);
             try {
@@ -379,6 +379,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   const handleSendMessage = useCallback(async () => {
     if (inputText.trim() !== '' && !isLoading) {
+
+      // Check session availability before sending
+      try {
+        const available = await SessionService.isAvailable();
+        if (!available) {
+          if (onSessionError) onSessionError();
+          return;
+        }
+      } catch (e) {
+        if (onSessionError) onSessionError();
+        return;
+      }
 
       setIsLoading(true);
 
