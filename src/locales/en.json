@@ -201,6 +201,11 @@
       "intro": "Rate the sentences in the answer, or the citation, or both"
     }
   },
+  "settings": {
+    "general": {
+      "title": "General settings"
+    }
+  },
   "aboutPage": {
     "title": "About Canada.ca AI Answers",
     "overview": {
@@ -414,8 +419,7 @@
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
             "mapFeedback": "Map feedback to the new interaction (sentence-level or QA-only) and save sentence match trace and similarity scores",
-            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing",
-            "updateInteraction": "Update the interaction with the new evaluation reference (autoEval)"
+            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing"
           }
         },
         "noMatch": {
@@ -736,13 +740,22 @@
   },
   "settings": {
     "title": "Settings",
+    "general": {
+      "title": "General settings"
+    },
     "liveGraph": {
       "title": "Live Graph",
       "description": "Edit the workflow values used by the Live Graph visualization.",
       "save": "Save Live Graph"
     },
     "defaultWorkflow": {
-      "label": "Default workflow"
+      "label": "Default workflow",
+      "options": {
+        "Default": "Default",
+        "DefaultAlwaysContext": "Default (always include context)",
+        "DefaultWithVector": "Default with vector",
+        "DefaultWithVectorGraph": "Default with vector graph"
+      }
     },
     "statusLabel": "Service status",
     "statuses": {
@@ -779,13 +792,35 @@
     },
     "session": {
       "title": "Session settings",
+      "managementEnabled": "Enable Session Management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
+      "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
-      "rateLimitCapacity": "Rate limit capacity (credits)",
-      "rateLimitRefill": "Rate limit refill (credits per min)",
-      "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (credits)",
-      "authenticatedRateLimitRefill": "Authenticated rate limit refill (credits per min)",
-      "maxActiveSessions": "Max active sessions (count — empty = unlimited)"
+      "maxActiveSessions": "Max active sessions (count — empty = unlimited)",
+      "storeType": "Session store (memory | mongo)",
+      "store": {
+        "options": {
+          "memory": "Memory (in-process)",
+          "mongo": "MongoDB (persistent/cache)"
+        }
+      },
+      "persistence": {
+        "label": "Session persistence",
+        "options": {
+          "memory": "Memory (in-process)",
+          "mongo": "MongoDB (persistent/cache)"
+        }
+      }
+    },
+    "rateLimiting": {
+      "title": "Rate limiting",
+      "persistence": {
+        "label": "Rate-limiter persistence (memory | mongo)"
+      },
+      "rateLimitCapacity": "Rate limit capacity (requests)",
+      "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (requests)",
+      "rateLimitRefill": "Rate limit refill (requests per min)",
+      "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
     }
   },
   "outage": {

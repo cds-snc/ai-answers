@@ -171,12 +171,12 @@ class EvaluationService {
         const interactionIdStr = interaction._id.toString();
         try {
             // Fetch deploymentMode and vectorServiceType from SettingsService
-            const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
-            const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
+            const deploymentMode = SettingsService.get('deploymentMode') || 'CDS';
+            const vectorServiceType = SettingsService.get('vectorServiceType') || 'imvectordb';
             // Resolve the ai provider from SettingsService (single source of truth)
             let providerSetting = null;
             try {
-                providerSetting = await SettingsService.get('provider');
+                providerSetting = SettingsService.get('provider');
             } catch (e) {
                 providerSetting = null;
             }
@@ -337,13 +337,13 @@ class EvaluationService {
         const startTime = Date.now();
         let lastId = lastProcessedId;
         // Fetch deploymentMode and vectorServiceType from SettingsService
-        const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
-       
+        const deploymentMode = SettingsService.get('deploymentMode') || 'CDS';
+
 
         // Resolve global ai provider from settings once (single source of truth)
         let globalProvider = 'openai';
         try {
-            const p = await SettingsService.get('provider');
+            const p = SettingsService.get('provider');
             if (p) globalProvider = p;
         } catch (e) {
             globalProvider = 'openai';
@@ -404,7 +404,7 @@ class EvaluationService {
                             {
                                 $and: [
                                     { autoEval: { $exists: true, $ne: null } },
-                                    { $expr: { $eq: [ { $size: '$evalDoc' }, 0 ] } }
+                                    { $expr: { $eq: [{ $size: '$evalDoc' }, 0] } }
                                 ]
                             }
                         ]
@@ -486,7 +486,7 @@ class EvaluationService {
                             {
                                 $and: [
                                     { autoEval: { $exists: true, $ne: null } },
-                                    { $expr: { $eq: [ { $size: '$evalDoc' }, 0 ] } }
+                                    { $expr: { $eq: [{ $size: '$evalDoc' }, 0] } }
                                 ]
                             }
                         ]

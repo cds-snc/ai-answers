@@ -1,5 +1,5 @@
 // src/pages/HomePage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import ChatAppContainer from "../components/chat/ChatAppContainer.js";
 import {
@@ -106,7 +106,11 @@ const HomePage = ({ lang = "en" }) => {
     })();
   }, [t]);
 
+  const fetchingSession = useRef(false);
+
   async function fetchSession() {
+    if (fetchingSession.current) return;
+    fetchingSession.current = true;
     try {
       // Always request a new chat ID on mount (new tab or reload)
       // so that every tab/visit gets its own conversation context.
@@ -121,6 +125,8 @@ const HomePage = ({ lang = "en" }) => {
     } catch (error) {
       setChatSessionFailed(true);
       console.error("Failed to get chat session:", error);
+    } finally {
+      fetchingSession.current = false;
     }
   }
 
@@ -187,6 +193,10 @@ const HomePage = ({ lang = "en" }) => {
     }
   }, [reviewChatId]);
 
+  const handleSessionError = () => {
+    setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });
+  };
+
   const WrappedErrorBoundary = ({ children }) => (
     <ErrorBoundary t={t}>{children}</ErrorBoundary>
   );
@@ -238,6 +248,7 @@ const HomePage = ({ lang = "en" }) => {
           initialReferringUrl={reviewReferringUrl}
           clientReferrer={clientReferrer}
           targetInteractionId={targetInteractionId}
+          onSessionError={handleSessionError}
         />
       </div>
       {!reviewMode && (

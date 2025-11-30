@@ -674,8 +674,11 @@ const ChatInterface = ({
                     disabled={isLoading}
                   />
                   <button
-                    type="submit"
-                    onClick={handleSendMessage}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }}
                     className={`btn-primary-send ${
                       inputText.trim().length > 0 && charCount <= MAX_CHARS
                         ? "visible"

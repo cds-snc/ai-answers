@@ -7,7 +7,7 @@ async function settingsHandler(req, res) {
     if (!key) {
       return res.status(400).json({ message: 'Key required' });
     }
-    const value = await SettingsService.get(key);
+    const value = SettingsService.get(key);
     return res.status(200).json({ key, value });
   } else if (req.method === 'POST') {
     const { key, value } = req.body;

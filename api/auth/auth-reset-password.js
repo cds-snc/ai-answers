@@ -39,9 +39,9 @@ const resetPasswordHandler = async (req, res) => {
 
     // Rotate password (User pre-save hashes password)
     user.password = password;
-  // Clear reset artifacts
-  user.resetPasswordToken = null;
-  user.resetPasswordExpires = null;
+    // Clear reset artifacts
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
     await user.save();
 
     // Optionally: revoke sessions — not fully implemented because sessions are in-memory/service-scoped
@@ -51,7 +51,7 @@ const resetPasswordHandler = async (req, res) => {
 
     // Send security notification email informing password changed
     try {
-      const tpl = await SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
+      const tpl = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
       const personalisation = {
         name: user.email || '',
         // Template implementer may want a different template for success notifications; we reuse the same if available

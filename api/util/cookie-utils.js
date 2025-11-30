@@ -9,7 +9,7 @@ export const getParentDomain = (host, nodeEnv = process.env.NODE_ENV) => {
 
   // Strip port if present
   const hostOnly = host.split(':')[0];
-
+  
   const parts = hostOnly.split('.').filter(Boolean);
   // If not a multi-label hostname (localhost, example), don't set domain
   if (parts.length <= 2) return undefined;
