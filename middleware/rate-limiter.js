@@ -17,12 +17,17 @@ export function getRateLimiterConfig() {
   const persistenceNow = (String(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory')).toLowerCase();
   const publicCapacityNow = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
   const authCapacityNow = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
-  const windowSecondsNow = 60;
+  
+  // Read refill rates (tokens per minute)
+  const publicRefillNow = Number(_getSetting(['session.rateLimitRefillPerSec', 'SESSION_RATE_LIMIT_REFILL']) || process.env.SESSION_RATE_LIMIT_REFILL || '60');
+  const authRefillNow = Number(_getSetting(['session.authenticatedRateLimitRefillPerSec', 'SESSION_AUTH_RATE_LIMIT_REFILL']) || process.env.SESSION_AUTH_RATE_LIMIT_REFILL || '300');
+
   return {
     persistence: persistenceNow,
     publicCapacity: publicCapacityNow,
     authCapacity: authCapacityNow,
-    windowSeconds: windowSecondsNow
+    publicRefill: publicRefillNow,
+    authRefill: authRefillNow
   };
 }
 
@@ -39,8 +44,9 @@ export default async function createRateLimiterMiddleware(app) {
 
   const publicCapacity = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
   const authCapacity = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
-  // Use 60 second windows (admin UI works in per-minute values)
-  const windowSeconds = 60;
+  
+  const publicRefill = Number(_getSetting(['session.rateLimitRefillPerSec', 'SESSION_RATE_LIMIT_REFILL']) || process.env.SESSION_RATE_LIMIT_REFILL || '60');
+  const authRefill = Number(_getSetting(['session.authenticatedRateLimitRefillPerSec', 'SESSION_AUTH_RATE_LIMIT_REFILL']) || process.env.SESSION_AUTH_RATE_LIMIT_REFILL || '300');
 
   let publicLimiter;
   let authLimiter;
@@ -51,7 +57,15 @@ export default async function createRateLimiterMiddleware(app) {
     persistence,
     publicCapacity,
     authCapacity,
-    windowSeconds
+    publicRefill,
+    authRefill
+  };
+
+  // Helper to calculate duration based on capacity and refill rate (tokens/min)
+  // Duration = (Capacity / Refill_per_minute) * 60
+  const calculateDuration = (capacity, refill) => {
+    if (!refill || refill <= 0) return 60; // Default to 1 minute if refill is invalid
+    return Math.ceil((capacity / refill) * 60);
   };
 
   // Build / rebuild the limiters. Safe to call multiple times.
@@ -60,6 +74,9 @@ export default async function createRateLimiterMiddleware(app) {
     let newMongoClient = mongoClient;
     let newPublicLimiter;
     let newAuthLimiter;
+
+    const publicDuration = calculateDuration(currentConfig.publicCapacity, currentConfig.publicRefill);
+    const authDuration = calculateDuration(currentConfig.authCapacity, currentConfig.authRefill);
 
     if (currentConfig.persistence === 'mongo' || currentConfig.persistence === 'mongodb') {
       const mongoUrl = _getSetting(['mongo.uri', 'MONGODB_URI']) || process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/ai-answers';
@@ -82,25 +99,25 @@ export default async function createRateLimiterMiddleware(app) {
       newPublicLimiter = new RateLimiterMongo({
         storeClient: newMongoClient,
         points: Number.isFinite(currentConfig.publicCapacity) && currentConfig.publicCapacity > 0 ? currentConfig.publicCapacity : 60,
-        duration: currentConfig.windowSeconds,
+        duration: publicDuration,
         tableName: 'rate_limiter_public'
       });
 
       newAuthLimiter = new RateLimiterMongo({
         storeClient: newMongoClient,
         points: Number.isFinite(currentConfig.authCapacity) && currentConfig.authCapacity > 0 ? currentConfig.authCapacity : 300,
-        duration: currentConfig.windowSeconds,
+        duration: authDuration,
         tableName: 'rate_limiter_auth'
       });
     } else {
       newPublicLimiter = new RateLimiterMemory({
         points: Number.isFinite(currentConfig.publicCapacity) && currentConfig.publicCapacity > 0 ? currentConfig.publicCapacity : 60,
-        duration: currentConfig.windowSeconds
+        duration: publicDuration
       });
 
       newAuthLimiter = new RateLimiterMemory({
         points: Number.isFinite(currentConfig.authCapacity) && currentConfig.authCapacity > 0 ? currentConfig.authCapacity : 300,
-        duration: currentConfig.windowSeconds
+        duration: authDuration
       });
     }
 
@@ -121,7 +138,8 @@ export default async function createRateLimiterMiddleware(app) {
     currentConfig.persistence = cfg.persistence;
     currentConfig.publicCapacity = cfg.publicCapacity;
     currentConfig.authCapacity = cfg.authCapacity;
-    currentConfig.windowSeconds = cfg.windowSeconds;
+    currentConfig.publicRefill = cfg.publicRefill;
+    currentConfig.authRefill = cfg.authRefill;
     await buildLimiters();
   };
 
@@ -129,12 +147,19 @@ export default async function createRateLimiterMiddleware(app) {
   const ensureLimitersUpToDate = async () => {
     try {
       const cfg = getRateLimiterConfig();
-      if (cfg.persistence !== currentConfig.persistence || cfg.publicCapacity !== currentConfig.publicCapacity || cfg.authCapacity !== currentConfig.authCapacity) {
+      if (
+        cfg.persistence !== currentConfig.persistence || 
+        cfg.publicCapacity !== currentConfig.publicCapacity || 
+        cfg.authCapacity !== currentConfig.authCapacity ||
+        cfg.publicRefill !== currentConfig.publicRefill ||
+        cfg.authRefill !== currentConfig.authRefill
+      ) {
         // Update config and rebuild. This will reset in-memory counters when using memory store.
         currentConfig.persistence = cfg.persistence;
         currentConfig.publicCapacity = cfg.publicCapacity;
         currentConfig.authCapacity = cfg.authCapacity;
-        currentConfig.windowSeconds = cfg.windowSeconds;
+        currentConfig.publicRefill = cfg.publicRefill;
+        currentConfig.authRefill = cfg.authRefill;
         await internalResetFn();
       }
     } catch (e) {
@@ -165,28 +190,34 @@ export default async function createRateLimiterMiddleware(app) {
       await mongoClient.connect();
     }
 
+    const publicDuration = calculateDuration(publicCapacity, publicRefill);
+    const authDuration = calculateDuration(authCapacity, authRefill);
+
     publicLimiter = new RateLimiterMongo({
       storeClient: mongoClient,
       points: Number.isFinite(publicCapacity) && publicCapacity > 0 ? publicCapacity : 60,
-      duration: windowSeconds,
+      duration: publicDuration,
       tableName: 'rate_limiter_public'
     });
 
     authLimiter = new RateLimiterMongo({
       storeClient: mongoClient,
       points: Number.isFinite(authCapacity) && authCapacity > 0 ? authCapacity : 300,
-      duration: windowSeconds,
+      duration: authDuration,
       tableName: 'rate_limiter_auth'
     });
   } else {
+    const publicDuration = calculateDuration(publicCapacity, publicRefill);
+    const authDuration = calculateDuration(authCapacity, authRefill);
+
     publicLimiter = new RateLimiterMemory({
       points: Number.isFinite(publicCapacity) && publicCapacity > 0 ? publicCapacity : 60,
-      duration: windowSeconds
+      duration: publicDuration
     });
 
     authLimiter = new RateLimiterMemory({
       points: Number.isFinite(authCapacity) && authCapacity > 0 ? authCapacity : 300,
-      duration: windowSeconds
+      duration: authDuration
     });
   }
 

@@ -65,7 +65,7 @@ export default function createSessionMiddleware(app) {
     // We no longer set a static domain here based on baseUrl.
     // Instead, we determine the domain dynamically in the request wrapper.
 
-    const isSecure = false; //process.env.NODE_ENV !== 'development';
+    const isSecure = process.env.NODE_ENV !== 'development';
     const INITIAL_MAX_AGE = cfg.initialMinutes * 60 * 1000;
     const cookieDefaults = {
       httpOnly: true,

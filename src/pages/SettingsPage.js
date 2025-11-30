@@ -93,16 +93,14 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionTTL(Number(ttl));
       const capacity = await DataStoreService.getSetting('session.rateLimitCapacity', '60');
       setRateLimitCapacity(Number(capacity));
-      // Stored value is refill per second; display to admin as requests per minute
-      const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '1');
-      const refillPerSec = Number(refill);
-      setRateLimitRefill(Number((refillPerSec * 60).toFixed(2)));
-      // Authenticated rate-limit settings (stored per-second, display per-minute)
+      // Stored value is refill per minute (no conversion)
+      const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '60');
+      setRateLimitRefill(Number(refill));
+      // Authenticated rate-limit settings
       const authCap = await DataStoreService.getSetting('session.authenticatedRateLimitCapacity', '100');
       setAuthRateLimitCapacity(Number(authCap));
-      const authRefill = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', '5');
-      const authRefillPerSec = Number(authRefill);
-      setAuthRateLimitRefill(Number((authRefillPerSec * 60).toFixed(2)));
+      const authRefill = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', '300');
+      setAuthRateLimitRefill(Number(authRefill));
       const maxSessions = await DataStoreService.getSetting('session.maxActiveSessions', '');
       setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
       const authTtl = await DataStoreService.getSetting('session.authenticatedTTLMinutes', '60');
@@ -187,12 +185,9 @@ const SettingsPage = ({ lang = 'en' }) => {
     setRateLimitRefill(val);
     setSavingRateLimitRefill(true);
     try {
-      // Admin enters requests per minute; store as per-second for the service
-      const perSec = Number(val) / 60;
-      await DataStoreService.setSetting('session.rateLimitRefillPerSec', String(perSec));
-      // read back saved per-second value and convert to per-minute for display
-      const saved = await DataStoreService.getSetting('session.rateLimitRefillPerSec', String(perSec));
-      setRateLimitRefill(Number((Number(saved) * 60).toFixed(2)));
+      await DataStoreService.setSetting('session.rateLimitRefillPerSec', String(val));
+      const saved = await DataStoreService.getSetting('session.rateLimitRefillPerSec', String(val));
+      setRateLimitRefill(Number(saved));
     } finally {
       setSavingRateLimitRefill(false);
     }
@@ -203,11 +198,9 @@ const SettingsPage = ({ lang = 'en' }) => {
     setAuthRateLimitRefill(val);
     setSavingAuthRateLimitRefill(true);
     try {
-      // Admin enters requests per minute; store as per-second for the service
-      const perSec = Number(val) / 60;
-      await DataStoreService.setSetting('session.authenticatedRateLimitRefillPerSec', String(perSec));
-      const saved = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', String(perSec));
-      setAuthRateLimitRefill(Number((Number(saved) * 60).toFixed(2)));
+      await DataStoreService.setSetting('session.authenticatedRateLimitRefillPerSec', String(val));
+      const saved = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', String(val));
+      setAuthRateLimitRefill(Number(saved));
     } finally {
       setSavingAuthRateLimitRefill(false);
     }
