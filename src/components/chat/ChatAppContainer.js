@@ -262,7 +262,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       if (selectedAI === null) {
         try {
           // Use the public setting endpoint so unauthenticated clients can read the provider
-          const provider = await DataStoreService.getPublicSetting('provider', 'openai');
+          const provider = await DataStoreService.getPublicSetting('provider', 'azure');
           if (mounted && provider) {
             setSelectedAI(provider);
             try {
