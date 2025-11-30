@@ -72,7 +72,21 @@ export default function sessionMiddleware(options = {}) {
         let chatId = null;
         const incomingChatId = req.body?.chatId;
         if (incomingChatId) {
-          if (session.chatIds && session.chatIds.includes(incomingChatId)) {
+          let isValid = session.chatIds && session.chatIds.includes(incomingChatId);
+          
+          if (!isValid && typeof session.reload === 'function') {
+            try {
+              await new Promise((resolve) => session.reload(() => resolve()));
+              isValid = session.chatIds && session.chatIds.includes(incomingChatId);
+              if (isValid) {
+                console.log('[session] Recovered chatId after reload', incomingChatId);
+              }
+            } catch (e) {
+              console.warn('[session] Reload failed', e);
+            }
+          }
+
+          if (isValid) {
             chatId = incomingChatId;
           } else {
             try {
