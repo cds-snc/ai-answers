@@ -12,33 +12,52 @@ const _getSetting = (keys) => {
   return undefined;
 };
 
-// Internal reset hook (will be set when middleware initializes)
-let internalResetFn = async () => { };
+// Internal reset hook
+let internalResetFn = async () => {};
 
-// Exported helper to force a reset from other modules (admin endpoint/tests)
+// Allow external trigger to rebuild store
 export async function resetSessionMiddleware() {
   return internalResetFn();
 }
 
 export default function createSessionMiddleware(app) {
-  // Track current configuration so we can hot-swap when settings change
   let currentConfig = null;
-
-  // sessionMiddleware is referenced by the request wrapper and can be swapped
-  // when settings change.
   let sessionMiddleware = null;
 
   const buildConfigFromSettings = () => {
-    const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
-    const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
+    const sessionType =
+      (String(
+        _getSetting(['session.type', 'SESSION_TYPE']) ||
+        process.env.SESSION_TYPE ||
+        process.env.SESSION_STORE ||
+        'mongo'
+      )).toLowerCase();
 
-    const initialTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
+    const sessionSecret =
+      _getSetting(['session.secret', 'SESSION_SECRET']) ||
+      process.env.SESSION_SECRET ||
+      'change-me-session-secret';
+
+    const initialTTLSetting =
+      _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) ||
+      process.env.SESSION_TTL_MINUTES ||
+      '10';
+
     const parsedInitialMinutes = Number(initialTTLSetting);
-    const initialMinutes = Number.isFinite(parsedInitialMinutes) && parsedInitialMinutes > 0 ? parsedInitialMinutes : 60;
+    const initialMinutes = Number.isFinite(parsedInitialMinutes) && parsedInitialMinutes > 0
+      ? parsedInitialMinutes
+      : 60;
 
-    const authTTLSetting = _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || initialTTLSetting;
+    const authTTLSetting =
+      _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) ||
+      process.env.SESSION_AUTH_TTL_MINUTES ||
+      initialTTLSetting;
 
-    const mongoUrl = _getSetting(['mongo.uri', 'MONGODB_URI']) || process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/ai-answers';
+    const mongoUrl =
+      _getSetting(['mongo.uri', 'MONGODB_URI']) ||
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URL ||
+      'mongodb://localhost:27017/ai-answers';
 
     return {
       sessionType,
@@ -51,23 +70,29 @@ export default function createSessionMiddleware(app) {
 
   const buildSessionMiddleware = (cfg) => {
     let sessionStore = null;
+
+    //
+    // ❗ FIXED — Use mongoUrl (NOT clientPromise)
+    // this guarantees stable initialization and avoids Lambda race conditions
+    //
     if (cfg.sessionType === 'mongodb' || cfg.sessionType === 'mongo') {
       sessionStore = MongoStore.create({
-        clientPromise: dbConnect().then((m) => m.connection.getClient()),
+        mongoUrl: cfg.mongoUrl,
         collectionName: 'sessions',
-     touchAfter: 0,
+        touchAfter: 0, // disable lazy writes (critical fix!)
       });
     } else {
       sessionStore = new session.MemoryStore();
     }
 
+    //
+    // Lambda + reverse proxy support
+    //
     app.set('trust proxy', 1);
-
-    // We no longer set a static domain here based on baseUrl.
-    // Instead, we determine the domain dynamically in the request wrapper.
 
     const isSecure = process.env.NODE_ENV !== 'development';
     const INITIAL_MAX_AGE = cfg.initialMinutes * 60 * 1000;
+
     const cookieDefaults = {
       httpOnly: true,
       secure: isSecure,
@@ -86,11 +111,14 @@ export default function createSessionMiddleware(app) {
     });
   };
 
-  // Helper to get settings and determine if we need to rebuild
+  //
+  // Only rebuild when config actually changes
+  //
   const ensureSessionUpToDate = async () => {
     try {
       const cfg = buildConfigFromSettings();
-      const needsRebuild = !currentConfig ||
+      const needsRebuild =
+        !currentConfig ||
         cfg.sessionType !== currentConfig.sessionType ||
         cfg.sessionSecret !== currentConfig.sessionSecret ||
         cfg.initialMinutes !== currentConfig.initialMinutes ||
@@ -98,52 +126,75 @@ export default function createSessionMiddleware(app) {
         cfg.mongoUrl !== currentConfig.mongoUrl;
 
       if (needsRebuild) {
-        // Rebuild and atomically swap
         sessionMiddleware = buildSessionMiddleware(cfg);
         currentConfig = cfg;
       }
     } catch (e) {
-      // Don't block requests if the dynamic check fails; keep using existing middleware
+      // Do not block request on config errors
     }
   };
 
-  // Assign internal reset hook so other modules can trigger rebuilds
+  //
+  // Reset hook: forces rebuild
+  //
   internalResetFn = async () => {
     const cfg = buildConfigFromSettings();
     sessionMiddleware = buildSessionMiddleware(cfg);
     currentConfig = cfg;
   };
 
-  // Initialize once synchronously
+  //
+  // Initial build
+  //
   try {
     const cfg = buildConfigFromSettings();
     sessionMiddleware = buildSessionMiddleware(cfg);
     currentConfig = cfg;
   } catch (e) {
-    // If initial build failed, ensure we have a no-op middleware that forwards
     sessionMiddleware = (req, res, next) => next();
   }
 
+  //
+  // Main wrapper
+  //
   const wrapped = (req, res, next) => {
-    // Ensure any config changes are picked up before handling the request
     Promise.resolve(ensureSessionUpToDate()).then(() => {
       sessionMiddleware(req, res, (err) => {
         if (err) return next(err);
+
         try {
-          const sessionTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
+          const sessionTTLSetting =
+            _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) ||
+            process.env.SESSION_TTL_MINUTES ||
+            '10';
+
           const parsedMinutes = Number(sessionTTLSetting);
-          const sessionMinutes = Number.isFinite(parsedMinutes) && parsedMinutes > 0 ? parsedMinutes : 60;
+          const sessionMinutes =
+            Number.isFinite(parsedMinutes) && parsedMinutes > 0
+              ? parsedMinutes
+              : 60;
+
           const MAX_AGE = sessionMinutes * 60 * 1000;
 
-          const authTTLSetting = _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
+          const authTTLSetting =
+            _getSetting([
+              'session.authenticatedTTLMinutes',
+              'SESSION_AUTH_TTL_MINUTES'
+            ]) ||
+            process.env.SESSION_AUTH_TTL_MINUTES ||
+            sessionTTLSetting;
+
           const parsedAuthMinutes = Number(authTTLSetting);
-          const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : sessionMinutes;
+          const authMinutes =
+            Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0
+              ? parsedAuthMinutes
+              : sessionMinutes;
+
           const AUTH_MAX_AGE = authMinutes * 60 * 1000;
 
-          // Define helper to apply dynamic domain and TTL
-          // We need this because req.login() (Passport) regenerates the session,
-          // which resets the cookie options. We must re-apply our dynamic settings
-          // just before the response is sent (when the session is saved).
+          //
+          // Apply dynamic cookie rules
+          //
           const applyDynamicSessionSettings = () => {
             if (!req.session || !req.session.cookie) return;
 
@@ -162,7 +213,11 @@ export default function createSessionMiddleware(app) {
 
             const requestHost = req.get('host');
             if (requestHost) {
-              const dynamicDomain = getParentDomain(requestHost, process.env.NODE_ENV);
+              const dynamicDomain = getParentDomain(
+                requestHost,
+                process.env.NODE_ENV
+              );
+
               if (dynamicDomain) {
                 req.session.cookie.domain = dynamicDomain;
               } else {
@@ -171,26 +226,27 @@ export default function createSessionMiddleware(app) {
             }
           };
 
-          // Apply immediately for the current session
           applyDynamicSessionSettings();
 
-          // Hook into res.end to ensure settings are applied even if session was regenerated
+          //
+          // Ensure cookie settings survive session regeneration
+          //
           const originalEnd = res.end;
           res.end = function (...args) {
             try {
               applyDynamicSessionSettings();
-            } catch (e) {
-              // ignore errors during patch
-            }
+            } catch (e) {}
             return originalEnd.apply(this, args);
           };
 
         } catch (e) {
+          // continue regardless
         }
+
         next();
       });
     }).catch(() => {
-      // If the ensure check fails, proceed with existing middleware
+      // fail open
       sessionMiddleware(req, res, next);
     });
   };

@@ -54,10 +54,7 @@ export default function sessionMiddleware(options = {}) {
         try {
           req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
           if (typeof req.session.save === 'function') {
-            // Ensure DB is connected in Lambda environment
-            if (process.env.MONGODB_URI || process.env.DOCDB_URI) {
-              await dbConnect();
-            }
+            
             await new Promise((resolve, reject) => {
               req.session.save((err) => err ? reject(err) : resolve());
             });
