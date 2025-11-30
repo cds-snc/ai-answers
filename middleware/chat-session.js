@@ -66,7 +66,7 @@ export default function sessionMiddleware(options = {}) {
         } catch (e) {
           if (console && console.error) {
             console.error('sessionMiddleware save error', e);
-            return res.end(JSON.stringify({ error: 'no_session', message: 'Could not add ChatId to session' }));
+            return res.end(JSON.stringify({ error: 'no_session', message: 'Could not add ChatId to session: ' + e.message }));
           }
         }
 
