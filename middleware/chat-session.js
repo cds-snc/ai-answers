@@ -1,5 +1,6 @@
 import ChatSessionService from '../services/ChatSessionService.js';
 import ChatSessionMetricsService from '../services/ChatSessionMetricsService.js';
+import dbConnect from '../api/db/db-connect.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function sessionMiddleware(options = {}) {
@@ -53,12 +54,20 @@ export default function sessionMiddleware(options = {}) {
         try {
           req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
           if (typeof req.session.save === 'function') {
+            // Ensure DB is connected in Lambda environment
+            if (process.env.MONGODB_URI || process.env.DOCDB_URI) {
+              await dbConnect();
+            }
             await new Promise((resolve, reject) => {
               req.session.save((err) => err ? reject(err) : resolve());
             });
+            console.log('[session] Saved chatId', chatId, 'to session', sessionId);
           }
         } catch (e) {
-          if (console && console.error) console.error('sessionMiddleware save error', e);
+          if (console && console.error) {
+            console.error('sessionMiddleware save error', e);
+            return res.end(JSON.stringify({ error: 'no_session', message: 'Could not add ChatId to session' }));
+          }
         }
 
         req.chatId = chatId;
