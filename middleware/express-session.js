@@ -21,8 +21,21 @@ export async function resetSessionMiddleware() {
 }
 
 export default function createSessionMiddleware(app) {
+
   let currentConfig = null;
   let sessionMiddleware = null;
+
+  // Track DB connect status so middleware can short-circuit requests
+  // if the application DB fails to connect during startup.
+  // Note: MongoStore uses `mongoUrl` (not the mongoose client), so
+  // session store creation will still attempt to use the configured URL.
+  // However we treat a failure to connect the app DB as a fatal startup
+  // condition for incoming requests and return a clear 500 response.
+  let dbConnectError = null;
+  const dbConnectPromise = dbConnect().catch(err => {
+    dbConnectError = err;
+    console.error("[session] dbConnect() failed during startup:", err);
+  });
 
   const buildConfigFromSettings = () => {
     const sessionType =
@@ -72,22 +85,19 @@ export default function createSessionMiddleware(app) {
     let sessionStore = null;
 
     //
-    // ❗ FIXED — Use mongoUrl (NOT clientPromise)
-    // this guarantees stable initialization and avoids Lambda race conditions
+    // ⭐ FIX — MongoStore uses mongoUrl, NOT your Mongoose dbConnect() client
+    // This prevents race conditions in Lambda
     //
     if (cfg.sessionType === 'mongodb' || cfg.sessionType === 'mongo') {
       sessionStore = MongoStore.create({
         mongoUrl: cfg.mongoUrl,
         collectionName: 'sessions',
-        touchAfter: 0, // disable lazy writes (critical fix!)
+        touchAfter: 0,
       });
     } else {
       sessionStore = new session.MemoryStore();
     }
 
-    //
-    // Lambda + reverse proxy support
-    //
     app.set('trust proxy', 1);
 
     const isSecure = process.env.NODE_ENV !== 'development';
@@ -111,9 +121,6 @@ export default function createSessionMiddleware(app) {
     });
   };
 
-  //
-  // Only rebuild when config actually changes
-  //
   const ensureSessionUpToDate = async () => {
     try {
       const cfg = buildConfigFromSettings();
@@ -130,34 +137,36 @@ export default function createSessionMiddleware(app) {
         currentConfig = cfg;
       }
     } catch (e) {
-      // Do not block request on config errors
+      console.error("[session] ensureSessionUpToDate error:", e);
     }
   };
 
-  //
-  // Reset hook: forces rebuild
-  //
   internalResetFn = async () => {
     const cfg = buildConfigFromSettings();
     sessionMiddleware = buildSessionMiddleware(cfg);
     currentConfig = cfg;
   };
 
-  //
-  // Initial build
-  //
   try {
     const cfg = buildConfigFromSettings();
     sessionMiddleware = buildSessionMiddleware(cfg);
     currentConfig = cfg;
   } catch (e) {
+    console.error("[session] initial build failed:", e);
     sessionMiddleware = (req, res, next) => next();
   }
 
-  //
-  // Main wrapper
-  //
   const wrapped = (req, res, next) => {
+    // If DB connection failed during startup, immediately return a clear 500.
+    if (dbConnectError) {
+      console.error('[session] rejecting request due to DB connect failure:', dbConnectError);
+      if (res && typeof res.status === 'function' && typeof res.json === 'function') {
+        res.status(500).json({ error: 'Database connection failed; please try again later.' });
+      } else {
+        next(new Error('Database connection failed; please try again later.'));
+      }
+      return;
+    }
     Promise.resolve(ensureSessionUpToDate()).then(() => {
       sessionMiddleware(req, res, (err) => {
         if (err) return next(err);
@@ -192,9 +201,6 @@ export default function createSessionMiddleware(app) {
 
           const AUTH_MAX_AGE = authMinutes * 60 * 1000;
 
-          //
-          // Apply dynamic cookie rules
-          //
           const applyDynamicSessionSettings = () => {
             if (!req.session || !req.session.cookie) return;
 
@@ -228,9 +234,6 @@ export default function createSessionMiddleware(app) {
 
           applyDynamicSessionSettings();
 
-          //
-          // Ensure cookie settings survive session regeneration
-          //
           const originalEnd = res.end;
           res.end = function (...args) {
             try {
@@ -240,13 +243,13 @@ export default function createSessionMiddleware(app) {
           };
 
         } catch (e) {
-          // continue regardless
+          console.error("[session] dynamic cookie error:", e);
         }
 
         next();
       });
-    }).catch(() => {
-      // fail open
+    }).catch((err) => {
+      console.error("[session] ensureSessionUpToDate() FAILED:", err);
       sessionMiddleware(req, res, next);
     });
   };
