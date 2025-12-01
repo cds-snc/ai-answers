@@ -2,6 +2,10 @@ import { ScenarioOverrideService } from '../../services/ScenarioOverrideService.
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const SUPPORTED_DEPARTMENTS = {
+  'CBSA-ASFC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
+    return mod.CBSA_ASFC_SCENARIOS || '';
+  },
   'CDS-SNC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-cds-snc/cds-snc-scenarios.js');
     return mod.CDS_SNC_SCENARIOS || '';
