@@ -12,6 +12,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
+| `CBSA-ASFC` | Canada Border Services Agency | Agence des services frontaliers du Canada |
 | `CDS-SNC` | Canadian Digital Service | Service numérique canadien |
 | `CRA-ARC` | Canada Revenue Agency | Agence du revenu du Canada |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
@@ -33,20 +34,21 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 | # | File | What to Update |
 |---|------|-----------------|
-| 1 | **NEW FILE** `/src/services/systemPrompt/context-{slug}/{slug}-scenarios.js` | Create with export constant (e.g., `TBS_SCT_SCENARIOS`) containing department-specific instructions |
-| 2 | `systemPrompt.js` | Add entry to `departmentModules` object with async import using `abbrKey` |
-| 3 | `FilterPanel.js` | Add department to `departmentOptions` array using `abbrKey` |
-| 4 | `scenario-overrides.js` | Add department to `SUPPORTED_DEPARTMENTS` using `abbrKey` |
-| 5 | `ScenarioOverridesPage.js` | Add department to `SUPPORTED_DEPARTMENTS` array using `abbrKey` |
+| 1 | **NEW FILE** `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` | Create with export constant (e.g., `CBSA_ASFC_SCENARIOS`) containing department-specific instructions |
+| 2 | `FilterPanel.js` | Add department to `departmentOptions` array using `abbrKey` |
+| 3 | `scenario-overrides.js` | Add department to `SUPPORTED_DEPARTMENTS` using `abbrKey` |
+| 4 | `ScenarioOverridesPage.js` | Add department to `SUPPORTED_DEPARTMENTS` array using `abbrKey` |
 
 **Note:** `departments_EN.js` and `departments_FR.js` already contain the `abbrKey`—do NOT add entries there. Use the existing `abbrKey` from those files in all other locations.
+
+**Note:** `systemPrompt.js` no longer requires manual updates—it uses dynamic imports to automatically load scenarios based on the department name.
 
 ---
 
 ## How It Works
 
-1. Chat request arrives with department context (e.g., `"TBS-SCT"`)
-2. `systemPrompt.js` dynamically imports the scenario file from `departmentModules`
+1. Chat request arrives with department context (e.g., `"CBSA-ASFC"`)
+2. `systemPrompt.js` dynamically imports the scenario file based on department name (e.g., `context-cbsa-asfc/cbsa-asfc-scenarios.js`)
 3. Department-specific scenarios are injected into the LLM system prompt
 4. Admin dashboard can filter chat logs by department via `FilterPanel.js`
 5. Admin panel can override scenarios per department via `ScenarioOverridesPage.js`
@@ -58,13 +60,13 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 **FIRST:** Look up the `abbrKey` in `departments_EN.js` or `departments_FR.js`. Use that exact `abbrKey` in all steps below.
 
-Example: To add TBS, search for "Treasury Board" → find `abbrKey: "TBS-SCT"`
+Example: To add CBSA, search for "Canada Border Services Agency" → find `abbrKey: "CBSA-ASFC"`
 
 ### Step 1: Create Scenario File
 
-**Location:** `/src/services/systemPrompt/context-{slug}/{slug}-scenarios.js`
+**Location:** `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js`
 
-Replace `{slug}` with the lowercase department key (e.g., `tbs-sct` for TBS-SCT).
+Replace `{slug}` with the lowercase department key (e.g., `cbsa-asfc` for CBSA-ASFC).
 
 ⚠️ **IMPORTANT:** Leave the scenario file **empty**. The department partner will add their own scenarios and URLs.
 
@@ -72,64 +74,73 @@ Replace `{slug}` with the lowercase department key (e.g., `tbs-sct` for TBS-SCT)
 export const {UPPER_KEY}_SCENARIOS = ``;
 ```
 
-### Step 2: Update `systemPrompt.js`
-
-Add to `departmentModules` object (lines 10-60):
-
+Example for CBSA:
 ```javascript
-'{ABBR_KEY}': {
-  getContent: async () => {
-    const { {UPPER_KEY}_SCENARIOS } = await import('./systemPrompt/context-{slug}/{slug}-scenarios.js');
-    return { scenarios: {UPPER_KEY}_SCENARIOS };
-  },
-},
+export const CBSA_ASFC_SCENARIOS = ``;
 ```
 
-### Step 3: Update `FilterPanel.js`
+### Step 2: Update `FilterPanel.js`
 
-Add to `departmentOptions` array (line 87):
+Add to `departmentOptions` array (around line 89) in **alphabetical order**:
 
 ```javascript
 { value: '{ABBR_KEY}', label: '{ABBR_KEY}' }
 ```
 
-### Step 4: Update `scenario-overrides.js`
+Example for CBSA:
+```javascript
+{ value: 'CBSA-ASFC', label: 'CBSA-ASFC' }
+```
 
-Add to `SUPPORTED_DEPARTMENTS` object:
+### Step 3: Update `scenario-overrides.js`
+
+Add to `SUPPORTED_DEPARTMENTS` object in **alphabetical order**:
 
 ```javascript
 '{ABBR_KEY}': async () => {
-  const { {UPPER_KEY}_SCENARIOS } = await import('../../src/services/systemPrompt/context-{slug}/{slug}-scenarios.js');
-  return {UPPER_KEY}_SCENARIOS;
+  const mod = await import('../../agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js');
+  return mod.{UPPER_KEY}_SCENARIOS || '';
 },
 ```
 
-### Step 5: Update `ScenarioOverridesPage.js`
+Example for CBSA:
+```javascript
+'CBSA-ASFC': async () => {
+  const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
+  return mod.CBSA_ASFC_SCENARIOS || '';
+},
+```
 
-Add to `SUPPORTED_DEPARTMENTS` array in **alphabetical order**:
+### Step 4: Update `ScenarioOverridesPage.js`
+
+Add to `SUPPORTED_DEPARTMENTS` array (line 13) in **alphabetical order**:
 
 ```javascript
 '{ABBR_KEY}'
+```
+
+Example for CBSA:
+```javascript
+'CBSA-ASFC'
 ```
 
 ### Placeholder Reference
 
 | Placeholder | Example | Description |
 |------------|---------|------------|
-| `{ABBR_KEY}` | `TBS-SCT` | The exact `abbrKey` from departments_EN.js |
-| `{slug}` | `tbs-sct` | Lowercase version of abbrKey with hyphen |
-| `{UPPER_KEY}` | `TBS_SCT` | Uppercase version of abbrKey with underscore |
+| `{ABBR_KEY}` | `CBSA-ASFC` | The exact `abbrKey` from departments_EN.js |
+| `{slug}` | `cbsa-asfc` | Lowercase version of abbrKey with hyphen |
+| `{UPPER_KEY}` | `CBSA_ASFC` | Uppercase version of abbrKey with underscore |
 
 ---
 
 ## Checklist for Adding a Department as a Partner
 
 - [ ] Look up `abbrKey` in `departments_EN.js` or `departments_FR.js`
-- [ ] Create `/src/services/systemPrompt/context-{slug}/{slug}-scenarios.js`
-- [ ] Add to `departmentModules` in `systemPrompt.js`
-- [ ] Add to `departmentOptions` in `FilterPanel.js`
-- [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js`
-- [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js`
+- [ ] Create `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` with empty export
+- [ ] Add to `departmentOptions` in `FilterPanel.js` (alphabetically)
+- [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
+- [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
 - [ ] Test scenario loading in chat
 - [ ] Test admin filtering by department
 - [ ] Test scenario override for department

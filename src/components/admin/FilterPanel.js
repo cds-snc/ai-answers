@@ -88,6 +88,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
   // Department options based on systemPrompt modules
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') },
+    { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
     { value: 'ECCC', label: 'ECCC' },
