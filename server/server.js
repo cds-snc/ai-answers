@@ -100,7 +100,7 @@ app.use(cors({
 app.use(cookieParser());
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
-app.use(express.static(path.join(__dirname, "../build")));
+app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 
 // Short-circuit health checks to avoid bot detection blocking them.
 // This returns a fast 200 response for `GET /health` before session
