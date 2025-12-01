@@ -72,7 +72,41 @@ export default function sessionMiddleware(options = {}) {
         let chatId = null;
         const incomingChatId = req.body?.chatId;
         if (incomingChatId) {
-          if (session.chatIds && session.chatIds.includes(incomingChatId)) {
+          const hasChatId = (source) => Array.isArray(source) && source.includes(incomingChatId);
+          let isValid = hasChatId(session.chatIds);
+
+          if (!isValid && typeof session.reload === 'function') {
+            try {
+              await new Promise((resolve, reject) => session.reload((err) => err ? reject(err) : resolve()));
+              isValid = hasChatId(session.chatIds);
+              if (isValid) {
+                console.log('[session] Recovered chatId after reload', incomingChatId);
+              }
+            } catch (e) {
+              console.warn('[session] Reload failed', e);
+            }
+          }
+
+          if (!isValid && req.sessionStore && typeof req.sessionStore.get === 'function') {
+            try {
+              const persisted = await new Promise((resolve, reject) => {
+                req.sessionStore.get(sessionId, (err, data) => err ? reject(err) : resolve(data));
+              });
+              const persistedChatIds = Array.isArray(persisted?.chatIds) ? persisted.chatIds.filter(Boolean) : [];
+              if (persistedChatIds.length) {
+                session.chatIds = persistedChatIds;
+                req.session.chatIds = persistedChatIds;
+              }
+              isValid = hasChatId(persistedChatIds);
+              if (isValid) {
+                console.log('[session] Recovered chatId from store lookup', incomingChatId);
+              }
+            } catch (e) {
+              console.warn('[session] sessionStore.get failed', e);
+            }
+          }
+
+          if (isValid) {
             chatId = incomingChatId;
           } else {
             try {

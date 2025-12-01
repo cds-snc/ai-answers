@@ -22,7 +22,12 @@ export async function handler(req, res) {
       session.visitorId = fingerprintKey;
       // Ensure session is saved (express-session will persist it based on store)
       if (typeof session.save === 'function') {
-        session.save(() => { });
+        await new Promise((resolve, reject) => {
+          session.save((err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
       }
     } catch (e) {
       if (console && console.error) console.error('Failed to compute/store fingerprintKey', e);
