@@ -28,7 +28,6 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 ## Current Status
 - **Environment**: Preparing for public pilot
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
-- **Staging**: https://ai-answers.cdssandbox.xyz 
 - **Evaluation**: Ongoing expert feedback collection and response scoring feeding AI evals & answers
 - **Platform**: Departments can add prompt scenarios to meet specific needs
 

@@ -28,7 +28,6 @@ Réponses IA est un assistant IA spécialisé conçu pour les sites Web du gouve
 ## État actuel
 - **Environnement** : Préparation pour le projet pilote public
 - **Production** : https://reponses-ia.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
-- **Développement** : https://ai-answers.cdssandbox.xyz
 - **Évaluation** : Collection continue de commentaires d'experts et notation de réponses alimentant les évaluations IA et réponses
 - **Plateforme** : Les départements peuvent ajouter des scénarios d'invite pour répondre aux besoins spécifiques
 
