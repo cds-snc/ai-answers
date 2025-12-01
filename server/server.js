@@ -113,6 +113,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Wide-open availability endpoint: skip session/auth/bot middleware
+app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
+
 app.use(createSessionMiddleware(app));
 // Initialize Passport for authentication
 app.use(passport.initialize());
@@ -183,7 +186,6 @@ app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHa
 app.post('/api/chat/chat-persist-interaction', chatPersistInteractionHandler);
 app.get('/api/chat/chat-create', chatCreateHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
-app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
 app.post('/api/chat/chat-report', chatReportHandler);
 app.post('/api/chat/chat-session-fingerprint', chatSessionFingerprintHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
