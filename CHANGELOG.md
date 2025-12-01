@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.66.2](https://github.com/cds-snc/ai-answers/compare/v1.66.1...v1.66.2) (2025-12-01)
+
+
+### Bug Fixes
+
+* set index option to false for static file serving ([1c5941e](https://github.com/cds-snc/ai-answers/commit/1c5941e82a42b838438427ac4e862766747a3541))
+* set index option to false for static file serving ([0c7ca26](https://github.com/cds-snc/ai-answers/commit/0c7ca266e16165c64ebb38973e3c5e6c18f951eb))
+
 ## [1.66.1](https://github.com/cds-snc/ai-answers/compare/v1.66.0...v1.66.1) (2025-12-01)
 
 
