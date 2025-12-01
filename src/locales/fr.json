@@ -148,7 +148,7 @@
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
         "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
-        "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Posez-la différemment ci-dessous sans aucune information personnelle.",
+        "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Posez-la différemment ci-dessous sans mentionner de noms, de numéros ou d'autres informations personnelles.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
         "characterWarning": "{count} {unit} restants",
         "characterLimit": "Votre message est trop long de {count} {unit}. Veuillez simplifier votre question.",

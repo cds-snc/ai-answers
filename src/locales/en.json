@@ -148,7 +148,7 @@
         "error": "Sorry, we're having a problem connecting to the service right now. Please try again in a few minutes.",
         "blockedContent": "Your question used words or emojis that aren't accepted. Please ask it differently below.",
         "blockedMessage": "Your question was not sent to the AI service.",
-        "privateContent": "To protect your privacy, your question was not sent to the AI service. Ask it differently below without any personal information.",
+        "privateContent": "To protect your privacy, your question was not sent to the AI service. Ask it differently below without any names, numbers or other personal information.",
         "privacyMessage": "Personal information in your question is marked as XXX.",
         "characterWarning": "{count} {unit} remaining",
         "characterLimit": "Your message is {count} {unit} too long. Please simplify your question.",
