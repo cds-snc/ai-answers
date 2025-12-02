@@ -673,7 +673,7 @@ const ChatInterface = ({
                 </span>
                 {/* Show referring URL only on first turn */}
                 {turnCount === 0 && referringUrl && (
-                  <span className="referring-url" id="displayReferringURL">
+                  <span className="referring-url-chat" id="displayReferringURL">
                     <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
                   </span>
                 )}

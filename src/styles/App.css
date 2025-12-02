@@ -2312,7 +2312,7 @@ fieldset.gc-chckbxrdio {
   }
 }
 
-    .referring-url, #displayReferringURL {
+    .referring-url-chat, #displayReferringURL {
 			font-size: 16px;
 			line-height: 1.55;
 			background-color: #f5f5ff;
@@ -2320,9 +2320,9 @@ fieldset.gc-chckbxrdio {
 			padding: 0.25em 0.5em;
 			color: #333;
 			display: block;
-
+     margin-bottom: 24px;
 		}
-		.field-container:focus-within .referring-url, 
+		.field-container:focus-within .referring-url-chat, 
 		.field-container:focus-within #displayReferringURL {
 			color: #0535d2;
 		}
