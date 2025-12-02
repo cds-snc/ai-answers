@@ -78,11 +78,23 @@ const HomePage = ({ lang = "en" }) => {
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
   // Capture client-side referrer (if available) so we can pass it into the
   // chat component for new chats. Keep this safe for SSR/tests by guarding
-  // access to `document`.
+  // access to `document`. Do NOT forward same-site/self referrers (they come
+  // from our own site) — treat those as absent.
   const clientReferrer = (() => {
     try {
-      if (typeof document !== 'undefined' && document.referrer) {
-        return document.referrer;
+      if (typeof document === 'undefined' || !document.referrer) return null;
+      const ref = document.referrer;
+      try {
+        const refUrl = new URL(ref);
+        // If we have window.location (client) and the referrer origin matches
+        // our origin, treat this as a same-site referral and drop it.
+        if (typeof window !== 'undefined' && window.location && refUrl.origin === window.location.origin) {
+          return null;
+        }
+        return ref;
+      } catch (e) {
+        // If parsing fails, do not forward an unparseable referrer
+        return null;
       }
     } catch (e) {
       // no-op: tests or SSR may not have document
