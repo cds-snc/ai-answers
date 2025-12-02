@@ -100,7 +100,7 @@ app.use(cors({
 app.use(cookieParser());
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
-app.use(express.static(path.join(__dirname, "../build")));
+app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 
 // Short-circuit health checks to avoid bot detection blocking them.
 // This returns a fast 200 response for `GET /health` before session
@@ -112,6 +112,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Wide-open availability endpoint: skip session/auth/bot middleware
+app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
 
 app.use(createSessionMiddleware(app));
 // Initialize Passport for authentication
@@ -183,7 +186,6 @@ app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHa
 app.post('/api/chat/chat-persist-interaction', chatPersistInteractionHandler);
 app.get('/api/chat/chat-create', chatCreateHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
-app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
 app.post('/api/chat/chat-report', chatReportHandler);
 app.post('/api/chat/chat-session-fingerprint', chatSessionFingerprintHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);

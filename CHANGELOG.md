@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.66.2](https://github.com/cds-snc/ai-answers/compare/v1.66.1...v1.66.2) (2025-12-01)
+
+
+### Bug Fixes
+
+* set index option to false for static file serving ([1c5941e](https://github.com/cds-snc/ai-answers/commit/1c5941e82a42b838438427ac4e862766747a3541))
+* set index option to false for static file serving ([0c7ca26](https://github.com/cds-snc/ai-answers/commit/0c7ca266e16165c64ebb38973e3c5e6c18f951eb))
+
+## [1.66.1](https://github.com/cds-snc/ai-answers/compare/v1.66.0...v1.66.1) (2025-12-01)
+
+
+### Bug Fixes
+
+* add availability endpoint for chat session ([3a0d54c](https://github.com/cds-snc/ai-answers/commit/3a0d54cd5b55989a8827e3dbe58ee063e3d5f281))
+* add availability endpoint for chat session ([a1ce313](https://github.com/cds-snc/ai-answers/commit/a1ce313a6fd062c67739d775f5964c3a4534277d))
+
 ## [1.66.0](https://github.com/cds-snc/ai-answers/compare/v1.65.2...v1.66.0) (2025-12-01)
 
 
