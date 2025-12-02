@@ -192,6 +192,16 @@ const AnswerService = {
       }
     }
 
+    // Special-case: if the English answer explicitly states no answer was found
+    // on Government of Canada websites, force the answerType to 'not-gc'.
+    if (
+      englishAnswer &&
+      englishAnswer.includes("An answer to your question wasn't found on Government of Canada websites.")
+    ) {
+      answerType = 'not-gc';
+      content = englishAnswer;
+    }
+
     const confidenceRatingRegex = /<confidence>(.*?)<\/confidence>/s;
     const confidenceMatch = text.match(confidenceRatingRegex);
 
