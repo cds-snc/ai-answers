@@ -72,7 +72,7 @@ ${departmentsString}
 - Canadian Armed Forces Pensions → PSPC-SPAC (administering department)
 - Veterans benefits → VAC-ACC (administering department)
 - Public service group insurance health,dental and disability benefit plans → TBS-SCT (administering department)
-- Public service collective agreements → TBS-SCT (administering department)
+- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT (administering department)
 - Public service pay system → PSPC-SPAC (administering department)
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP (administering department)
 - International students study permits and visas → IRCC (administering department)
