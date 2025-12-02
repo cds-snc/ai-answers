@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.66.5](https://github.com/cds-snc/ai-answers/compare/v1.66.4...v1.66.5) (2025-12-02)
+
+
+### Bug Fixes
+
+* prevent caching for API responses ([1db7d91](https://github.com/cds-snc/ai-answers/commit/1db7d91bedd88da1d7cbf78ae3346c3208deec4c))
+* prevent caching for API responses ([e5af838](https://github.com/cds-snc/ai-answers/commit/e5af8381f8420bff6e38d9df79c98dd6380dda49))
+
 ## [1.66.4](https://github.com/cds-snc/ai-answers/compare/v1.66.3...v1.66.4) (2025-12-02)
 
 
