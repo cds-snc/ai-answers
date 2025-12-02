@@ -104,7 +104,8 @@
           "ariaLabel": "Posez une question de suivi ou répondez"
         },
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
-        "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse."
+        "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
+        "referringPage": "Page où vous étiez :"
       },
       "textarea": {
         "ariaLabel": {

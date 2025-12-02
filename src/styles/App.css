@@ -2311,3 +2311,18 @@ fieldset.gc-chckbxrdio {
     justify-content: center;
   }
 }
+
+    .referring-url, #displayReferringURL {
+			font-size: 16px;
+			line-height: 1.55;
+			background-color: #f5f5ff;
+			border-radius: 5px;
+			padding: 0.25em 0.5em;
+			color: #333;
+			display: block;
+
+		}
+		.field-container:focus-within .referring-url, 
+		.field-container:focus-within #displayReferringURL {
+			color: #0535d2;
+		}
