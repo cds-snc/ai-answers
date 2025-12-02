@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.66.3](https://github.com/cds-snc/ai-answers/compare/v1.66.2...v1.66.3) (2025-12-02)
+
+
+### Bug Fixes
+
+* enhance client referrer handling to exclude same-site referrals ([add568c](https://github.com/cds-snc/ai-answers/commit/add568ce1bea1515e27256c89c86f862e700681b))
+* enhance client referrer handling to exclude same-site referrals ([21964c1](https://github.com/cds-snc/ai-answers/commit/21964c138ce421257b5d2d46f9c275f84eae93ed))
+* tbs issue ([cf463ee](https://github.com/cds-snc/ai-answers/commit/cf463ee6cfdb104e34339293de8fafd5301b1cad))
+
 ## [1.66.2](https://github.com/cds-snc/ai-answers/compare/v1.66.1...v1.66.2) (2025-12-01)
 
 
