@@ -102,6 +102,14 @@ app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 
+// Ensure `/api` never caches anything
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // Short-circuit health checks to avoid bot detection blocking them.
 // This returns a fast 200 response for `GET /health` before session
 // and bot-detection middleware are executed.
