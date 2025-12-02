@@ -1064,6 +1064,7 @@ summary:focus,
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 16px;
+  margin-top: 24px;
 }
 
 /* Style the textarea */
@@ -1157,7 +1158,7 @@ summary:focus,
   font-size: 20px;
   color: #333;
   font-family: "Noto Sans";
-  padding-bottom: 20px;
+  padding-bottom: 24px;
   display: block;
 }
 
