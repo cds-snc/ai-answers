@@ -54,7 +54,7 @@ export default function sessionMiddleware(options = {}) {
         try {
           req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
           if (typeof req.session.save === 'function') {
-            
+
             await new Promise((resolve, reject) => {
               req.session.save((err) => err ? reject(err) : resolve());
             });
@@ -76,14 +76,22 @@ export default function sessionMiddleware(options = {}) {
           let isValid = hasChatId(session.chatIds);
 
           if (!isValid && typeof session.reload === 'function') {
-            try {
-              await new Promise((resolve, reject) => session.reload((err) => err ? reject(err) : resolve()));
-              isValid = hasChatId(session.chatIds);
-              if (isValid) {
-                console.log('[session] Recovered chatId after reload', incomingChatId);
+            for (let attempt = 1; attempt <= 5; attempt++) {
+              // Retry with increasing backoff: 1s, 2s, 3s, 4s, 5s
+              const delay = attempt * 1000;
+              await new Promise((resolve) => setTimeout(resolve, delay));
+
+              try {
+                await new Promise((resolve, reject) => session.reload((err) => err ? reject(err) : resolve()));
+                // Re-check on req.session
+                isValid = hasChatId(req.session.chatIds);
+                if (isValid) {
+                  console.log(`[session] Recovered chatId after reload (attempt ${attempt})`, incomingChatId);
+                  break;
+                }
+              } catch (e) {
+                console.warn(`[session] Reload failed (attempt ${attempt})`, e);
               }
-            } catch (e) {
-              console.warn('[session] Reload failed', e);
             }
           }
 
