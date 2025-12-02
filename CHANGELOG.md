@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.66.4](https://github.com/cds-snc/ai-answers/compare/v1.66.3...v1.66.4) (2025-12-02)
+
+
+### Bug Fixes
+
+* handle special case for no answer found on Government of Canada websites ([46c50ae](https://github.com/cds-snc/ai-answers/commit/46c50ae9d1d32a3f82b47a8f0ae9412321613669))
+* implement retry logic for session reload with exponential backoff ([261fb58](https://github.com/cds-snc/ai-answers/commit/261fb585d32260c2ed6eedd1159ec8c48108d5a7))
+* implement retry logic for session reload with exponential backoff ([334fc14](https://github.com/cds-snc/ai-answers/commit/334fc1430decd8b84404fe130b28c0a1e906a720))
+
 ## [1.66.3](https://github.com/cds-snc/ai-answers/compare/v1.66.2...v1.66.3) (2025-12-02)
 
 
