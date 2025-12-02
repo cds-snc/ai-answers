@@ -104,7 +104,8 @@
           "ariaLabel": "Ask a follow-up question or reply"
         },
         "hint": "Hint: Add details to make your question clear and complete.",
-        "loadingHint": "AI can make mistakes, always check your answer."
+        "loadingHint": "AI can make mistakes, always check your answer.",
+        "referringPage": "Page you were on:"
       },
       "textarea": {
         "ariaLabel": {

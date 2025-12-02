@@ -48,6 +48,23 @@ const ChatInterface = ({
     [t]
   );
 
+  // Add truncateURL helper function 
+  const truncateURL = useCallback((url) => {
+    if (!url) return '';
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.replace(/^www\./, '');
+      const pathname = urlObj.pathname;
+      const filename = pathname.split('/').pop() || '';
+      
+      return `${domain}/.../${filename}`;
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return url;
+    }
+  }, []);
+
+
   const [redactionAlert, setRedactionAlert] = useState("");
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
 
@@ -654,6 +671,12 @@ const ChatInterface = ({
                   &nbsp;
                   {safeT("homepage.chat.input.hint")}
                 </span>
+                {/* Show referring URL only on first turn */}
+                {turnCount === 0 && referringUrl && (
+                  <span className="referring-url-chat" id="displayReferringURL">
+                    <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+                  </span>
+                )}
                 <div className="form-group">
                   <textarea
                     ref={textareaRef}
