@@ -48,6 +48,16 @@ const ChatInterface = ({
     [t]
   );
 
+  // Add debug log
+  useEffect(() => {
+    console.log('ChatInterface DEBUG:', {
+      referringUrl,
+      readOnly,
+      hasMessages: messages.length,
+      messageTypes: messages.map(m => m.sender)
+    });
+  }, [referringUrl, readOnly, messages]);
+
   // Add truncateURL helper function 
   const truncateURL = useCallback((url) => {
     if (!url) return '';
