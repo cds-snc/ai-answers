@@ -373,7 +373,7 @@ const ChatInterface = ({
       {/* Show referring URL at the top for review mode */}
       {readOnly && referringUrl && (
         <span className="referring-url">
-          <b>{safeT("homepage.chat.input.referringPage")}</b>{" "}
+          {" "}
           
           <a href={referringUrl}
             target="_blank"
