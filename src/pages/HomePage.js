@@ -163,6 +163,9 @@ const HomePage = ({ lang = "en" }) => {
       DataStoreService.getChat(reviewChatId)
         .then((data) => {
           const chat = data.chat;
+             console.log('HomePage DEBUG - Full chat data:', chat); // debug
+             console.log('HomePage DEBUG - Interactions:', chat?.interactions); // debug
+    
           if (!chat || !Array.isArray(chat.interactions)) {
             setInitialMessages([]);
             setReviewReferringUrl(null);
