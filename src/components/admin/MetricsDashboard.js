@@ -6,7 +6,7 @@ import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 // Removed unused Recharts imports
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
-import FilterPanel from './FilterPanel.js';
+import FilterPanelV2 from './FilterPanelV2.js';
 import MetricsService from '../../services/MetricsService.js';
 
 DataTable.use(DT);
@@ -16,7 +16,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const [metrics, setMetrics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
-  const [currentFilters, setCurrentFilters] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
 
   const fetchMetrics = async (filters = null) => {
@@ -49,7 +48,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleApplyFilters = (filters) => {
-    setCurrentFilters(filters);
     fetchMetrics(filters);
   };
 
@@ -59,7 +57,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
       startDate: today,
       endDate: today
     };
-    setCurrentFilters(todayFilters);
     fetchMetrics(todayFilters);
   };
 
@@ -71,11 +68,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      <FilterPanel
+      <FilterPanelV2
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}
-        filters={currentFilters}
+        storageKey="metricsDashboard_filters_v2"
       />
 
       {hasLoadedData && (

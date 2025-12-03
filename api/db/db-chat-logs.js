@@ -19,7 +19,7 @@ async function chatLogsHandler(req, res) {
     const {
       days, startDate, endDate,
       filterType, presetValue,
-      department, referringUrl, userType,
+      department, referringUrl, urlEn, urlFr, userType, answerType,
        limit = 100, lastId, batchId,
     } = req.query;
 
@@ -76,8 +76,8 @@ async function chatLogsHandler(req, res) {
 
     let chats;
 
-    // If department or referringUrl filters are used, we use an aggregation pipeline
-    if (department || referringUrl) {
+    // If department or referringUrl/urlEn/urlFr/answerType filters are used, we use an aggregation pipeline
+    if (department || referringUrl || urlEn || urlFr || answerType) {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
@@ -217,10 +217,37 @@ async function chatLogsHandler(req, res) {
         }
       }
 
+      // Handle URL filters - support both old referringUrl and new urlEn/urlFr
       if (referringUrl) {
+        // Backwards compatibility: single referringUrl filter
         const esc = referringUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         andFilters.push({
           'interactions.referringUrl': { $regex: esc, $options: 'i' }
+        });
+      } else if (urlEn || urlFr) {
+        // New dual URL filter: match referringUrl containing EITHER urlEn OR urlFr
+        const urlOrConditions = [];
+        if (urlEn) {
+          const escEn = urlEn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          urlOrConditions.push({
+            'interactions.referringUrl': { $regex: escEn, $options: 'i' }
+          });
+        }
+        if (urlFr) {
+          const escFr = urlFr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          urlOrConditions.push({
+            'interactions.referringUrl': { $regex: escFr, $options: 'i' }
+          });
+        }
+        if (urlOrConditions.length > 0) {
+          andFilters.push({ $or: urlOrConditions });
+        }
+      }
+
+      // Handle answerType filter
+      if (answerType && answerType !== 'all') {
+        andFilters.push({
+          'interactions.answer.answerType': answerType
         });
       }
 
