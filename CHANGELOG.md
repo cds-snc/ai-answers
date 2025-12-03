@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.67.0](https://github.com/cds-snc/ai-answers/compare/v1.66.5...v1.67.0) (2025-12-03)
+
+
+### Features
+
+* debug ([45dfc16](https://github.com/cds-snc/ai-answers/commit/45dfc16bcd6134bd8221c25db23f0d8ec3941044))
+* debugger ([6a77510](https://github.com/cds-snc/ai-answers/commit/6a7751040020b357dbf8cc657a7801544d3e5ff4))
+* json ([4db1cda](https://github.com/cds-snc/ai-answers/commit/4db1cda77099c8a75916efc625ef0cfa25d109b6))
+* referringURL admin ([271ed36](https://github.com/cds-snc/ai-answers/commit/271ed3600f0dc2869d78560c8cad703351775019))
+* referringURL admin ([ff1a140](https://github.com/cds-snc/ai-answers/commit/ff1a140c4e2ccbb3912a60957fe5acceca06bf8c))
+* rmv debug ([88b1369](https://github.com/cds-snc/ai-answers/commit/88b13691503ace5c072275ecb1e0b302d075cd39))
+* rmv space ([54712ee](https://github.com/cds-snc/ai-answers/commit/54712eebe90dc43b6e5e3e0b493f1b718916dff9))
+* rmv text ([9d735dc](https://github.com/cds-snc/ai-answers/commit/9d735dcd4c140d915093608a829ab1b6a55b6524))
+* styling ([244371b](https://github.com/cds-snc/ai-answers/commit/244371be625ef47e0e4a1ee9e70e162cb25d994b))
+
+
+### Bug Fixes
+
+* better tagging of not-gc ([b43ed91](https://github.com/cds-snc/ai-answers/commit/b43ed91610b15c83cfba0942d20e39cd03d2cd36))
+* better tagging of not-gc ([3bc232d](https://github.com/cds-snc/ai-answers/commit/3bc232d06363ef54189488367ac94ef59568a68a))
+* race condition with saving chatid and saving the sesison maxAge ([e5dd982](https://github.com/cds-snc/ai-answers/commit/e5dd9822883f27a06759510b07eaf1cf5575ed58))
+* race condition with saving chatid and saving the sesison maxAge ([95734dc](https://github.com/cds-snc/ai-answers/commit/95734dc383c6d16da8db6e584927398c87f75abe))
+
 ## [1.66.5](https://github.com/cds-snc/ai-answers/compare/v1.66.4...v1.66.5) (2025-12-02)
 
 
