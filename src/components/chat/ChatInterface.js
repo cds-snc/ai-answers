@@ -360,6 +360,19 @@ const ChatInterface = ({
 
   return (
     <div className="chat-container">
+      {/* Show referring URL at the top for review mode */}
+      {readOnly && referringUrl && (
+        <span className="referring-url-chat">
+          <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
+          
+          <a href={referringUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {referringUrl}
+          </a>
+        </span>
+      )}
       <div className="message-list">
         {messages.map((message) => (
           <div
