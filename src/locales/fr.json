@@ -105,7 +105,8 @@
         },
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
-        "referringPage": "Page où vous étiez :"
+        "referringPage": "Page où vous étiez :",
+        "referringURL": "URL de référence :"
       },
       "textarea": {
         "ariaLabel": {
