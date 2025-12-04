@@ -169,9 +169,10 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
       if ($picker.data('daterangepicker')) {
         $picker.off('apply.daterangepicker');
         $picker.data('daterangepicker').remove();
+        dateRangePickerInstance.current = null;
       }
     };
-  }, [t, dateRange.startDate, dateRange.endDate]);
+  }, [t]);
 
   // Department options
   const departmentOptions = [
