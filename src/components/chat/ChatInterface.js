@@ -286,6 +286,25 @@ const ChatInterface = ({
     };
   }, [messages, isLoading]);
 
+    useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.oninvalid = function(e) {
+        e.target.setCustomValidity('');
+        if (!e.target.validity.valid) {
+          e.target.setCustomValidity(
+            lang === 'fr' 
+              ? 'Veuillez remplir ce champ.' 
+              : 'Please fill out this field.'
+          );
+        }
+      };
+      textarea.oninput = function(e) {
+        e.target.setCustomValidity('');
+      };
+    }
+  }, [lang]);
+
   const getLabelForInput = () => {
     if (turnCount >= 1) {
       const followUp = t("homepage.chat.input.followUp");
