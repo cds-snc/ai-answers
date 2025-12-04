@@ -18,7 +18,7 @@
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": true
+          "source.fixAll.eslint": "explicit"
         }
       }
     }
@@ -28,7 +28,6 @@
   "remoteUser": "node",
   "features": {
     "ghcr.io/devcontainers/features/terraform:1": {},
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-  
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
   }
 }
