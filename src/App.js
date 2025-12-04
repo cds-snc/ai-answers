@@ -181,18 +181,60 @@ const AppLayout = () => {
     }
   }, [location.pathname]);
 
-  // Update Open Graph meta tags based on current language
+    // Update Open Graph meta tags based on current language
   useEffect(() => {
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
     const title = currentLang === 'fr' ? 'Réponses IA' : 'AI Answers';
+    const description = currentLang === 'fr' 
+      ? 'Réponses IA pour Canada.ca' 
+      : 'AI Answers for Canada.ca';
+    const dctermsDescription = currentLang === 'fr'
+      ? 'Utilisez l\'IA pour répondre aux questions des utilisateurs sur les services et programmes du gouvernement du Canada'
+      : 'Use AI to answer user questions about Government of Canada services and programs';
 
     // Update page title
     document.title = title;
+
+    // Update description meta tag
+    let descMeta = document.querySelector('meta[name="description"]');
+    if (descMeta) {
+      descMeta.setAttribute('content', description);
+    }
+
+    // Update dcterms.description
+    let dctermsDescMeta = document.querySelector('meta[name="dcterms.description"]');
+    if (dctermsDescMeta) {
+      dctermsDescMeta.setAttribute('content', dctermsDescription);
+    }
+
+    // Update og:title
+    let ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    if (ogTitleMeta) {
+      ogTitleMeta.setAttribute('content', title);
+    }
+
+    // Update og:description
+    let ogDescMeta = document.querySelector('meta[property="og:description"]');
+    if (ogDescMeta) {
+      ogDescMeta.setAttribute('content', description);
+    }
 
     // Update og:image meta tag
     let ogImageMeta = document.querySelector('meta[property="og:image"]');
     if (ogImageMeta) {
       ogImageMeta.setAttribute('content', ogImage);
+    }
+
+    // Update twitter:title
+    let twitterTitleMeta = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitleMeta) {
+      twitterTitleMeta.setAttribute('content', title);
+    }
+
+    // Update twitter:description
+    let twitterDescMeta = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDescMeta) {
+      twitterDescMeta.setAttribute('content', description);
     }
 
     // Update twitter:image meta tag
