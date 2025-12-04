@@ -181,7 +181,7 @@ const AppLayout = () => {
     }
   }, [location.pathname]);
 
-    // Update Open Graph meta tags based on current language
+  // Update Open Graph meta tags based on current language
   useEffect(() => {
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
     const title = currentLang === 'fr' ? 'Réponses IA' : 'AI Answers';
@@ -191,6 +191,7 @@ const AppLayout = () => {
     const dctermsDescription = currentLang === 'fr'
       ? 'Utilisez l\'IA pour répondre aux questions des utilisateurs sur les services et programmes du gouvernement du Canada'
       : 'Use AI to answer user questions about Government of Canada services and programs';
+    const dctermsLang = currentLang === 'fr' ? 'fra' : 'eng';
 
     // Update html lang attribute
     document.documentElement.lang = currentLang;
@@ -198,10 +199,22 @@ const AppLayout = () => {
     // Update page title
     document.title = title;
 
+    // Update dcterms.title
+    let dctermsTitleMeta = document.querySelector('meta[name="dcterms.title"]');
+    if (dctermsTitleMeta) {
+      dctermsTitleMeta.setAttribute('content', title);
+    }
+
     // Update description meta tag
     let descMeta = document.querySelector('meta[name="description"]');
     if (descMeta) {
       descMeta.setAttribute('content', description);
+    }
+
+    // Update dcterms.language
+    let dctermsLangMeta = document.querySelector('meta[name="dcterms.language"]');
+    if (dctermsLangMeta) {
+      dctermsLangMeta.setAttribute('content', dctermsLang);
     }
 
     // Update dcterms.description
