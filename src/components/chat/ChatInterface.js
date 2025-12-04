@@ -322,7 +322,6 @@ const ChatInterface = ({
 
   const handleTextareaInput = (event) => {
     const textarea = event.target;
-    textarea.setCustomValidity(''); // Clear any validation message
     setCharCount(textarea.value.length);
     handleInputChange(event);
 
@@ -702,17 +701,14 @@ const ChatInterface = ({
                     onKeyDown={handleKeyPress}
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
-                    onInvalid={(e) => {
-                      e.target.setCustomValidity(
-                        lang === 'fr' 
-                          ? 'Veuillez remplir ce champ.' 
-                          : 'Please fill out this field.'
-                      );
-                    }}
                     aria-label={
                       turnCount === 0
                         ? safeT("homepage.chat.textarea.ariaLabel.first")
                         : safeT("homepage.chat.textarea.ariaLabel.followon")
+                    }
+                    title={lang === 'fr' 
+                      ? 'Entrez votre question ici' 
+                      : 'Enter your question here'
                     }
                     required
                     disabled={isLoading}
