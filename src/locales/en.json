@@ -13,6 +13,7 @@
       "researchOnly": "Answers provided by this AI service are information, not official advice.  Improvements are ongoing."
     },
     "textarea": {
+      "title": "Ask your question here.",
       "ariaLabel": {
         "first": "This is Canada dot CA AI answers, please enter your question.",
         "followon": "Ask a follow-on question or reply.",

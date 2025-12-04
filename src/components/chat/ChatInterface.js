@@ -706,10 +706,7 @@ const ChatInterface = ({
                         ? safeT("homepage.chat.textarea.ariaLabel.first")
                         : safeT("homepage.chat.textarea.ariaLabel.followon")
                     }
-                    title={lang === 'fr' 
-                      ? 'Entrez votre question ici' 
-                      : 'Enter your question here'
-                    }
+                    title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}
                   />
