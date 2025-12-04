@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.68.1](https://github.com/cds-snc/ai-answers/compare/v1.68.0...v1.68.1) (2025-12-04)
+
+
+### Bug Fixes
+
+* malformed xml ([02db661](https://github.com/cds-snc/ai-answers/commit/02db6615fe8442d3baf4c0ac68381dc44405d84d))
+* malformed xml ([52f7436](https://github.com/cds-snc/ai-answers/commit/52f7436da91658263e392100ec611403e68abe13))
+
 ## [1.68.0](https://github.com/cds-snc/ai-answers/compare/v1.67.0...v1.68.0) (2025-12-04)
 
 
