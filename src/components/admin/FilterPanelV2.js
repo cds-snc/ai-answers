@@ -61,6 +61,8 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
   const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState('all');
   const [answerType, setAnswerType] = useState('all');
+  const [partnerEval, setPartnerEval] = useState('all');
+  const [aiEval, setAiEval] = useState('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Load saved state from localStorage
@@ -82,6 +84,8 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
           if (typeof parsed.urlFr === 'string') setUrlFr(parsed.urlFr);
           if (typeof parsed.userType === 'string') setUserType(parsed.userType);
           if (typeof parsed.answerType === 'string') setAnswerType(parsed.answerType);
+          if (typeof parsed.partnerEval === 'string') setPartnerEval(parsed.partnerEval);
+          if (typeof parsed.aiEval === 'string') setAiEval(parsed.aiEval);
           if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
         } catch (e) {
           // ignore
@@ -205,6 +209,23 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     { value: 'normal', label: 'Normal' }
   ];
 
+  // Partner evaluation options
+  const partnerEvalOptions = [
+    { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
+    { value: 'correct', label: t('admin.filters.partnerEval.correct') || 'Correct' },
+    { value: 'needsImprovement', label: t('admin.filters.partnerEval.needsImprovement') || 'Needs Improvement' },
+    { value: 'hasError', label: t('admin.filters.partnerEval.hasError') || 'Has Error' },
+    { value: 'harmful', label: t('admin.filters.partnerEval.harmful') || 'Harmful' }
+  ];
+
+  // AI evaluation options
+  const aiEvalOptions = [
+    { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
+    { value: 'correct', label: t('admin.filters.aiEval.correct') || 'Correct' },
+    { value: 'needsImprovement', label: t('admin.filters.aiEval.needsImprovement') || 'Needs Improvement' },
+    { value: 'hasError', label: t('admin.filters.aiEval.hasError') || 'Has Error' }
+  ];
+
   const handleApply = () => {
     // Parse local datetime strings and convert to UTC ISO strings for backend
     // (same approach as original FilterPanel.js)
@@ -218,7 +239,9 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
       urlEn,
       urlFr,
       userType,
-      answerType
+      answerType,
+      partnerEval,
+      aiEval
     };
 
     // Persist to localStorage
@@ -231,6 +254,8 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
           urlFr,
           userType,
           answerType,
+          partnerEval,
+          aiEval,
           showAdvancedFilters
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -250,6 +275,8 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     setUrlFr('');
     setUserType('all');
     setAnswerType('all');
+    setPartnerEval('all');
+    setAiEval('all');
     setShowAdvancedFilters(false);
 
     // Update daterangepicker
@@ -386,6 +413,42 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
                     className="filter-select"
                   >
                     {answerTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-row">
+                  <label htmlFor="partner-eval" className="filter-label">
+                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                  </label>
+                  <select
+                    id="partner-eval"
+                    value={partnerEval}
+                    onChange={(e) => setPartnerEval(e.target.value)}
+                    className="filter-select"
+                  >
+                    {partnerEvalOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-row">
+                  <label htmlFor="ai-eval" className="filter-label">
+                    {t('admin.filters.aiEval') || 'AI Evaluation'}
+                  </label>
+                  <select
+                    id="ai-eval"
+                    value={aiEval}
+                    onChange={(e) => setAiEval(e.target.value)}
+                    className="filter-select"
+                  >
+                    {aiEvalOptions.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>

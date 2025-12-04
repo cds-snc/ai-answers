@@ -19,7 +19,7 @@ async function chatLogsHandler(req, res) {
     const {
       days, startDate, endDate,
       filterType, presetValue,
-      department, referringUrl, urlEn, urlFr, userType, answerType,
+      department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
        limit = 100, lastId, batchId,
     } = req.query;
 
@@ -76,8 +76,8 @@ async function chatLogsHandler(req, res) {
 
     let chats;
 
-    // If department or referringUrl/urlEn/urlFr/answerType filters are used, we use an aggregation pipeline
-    if (department || referringUrl || urlEn || urlFr || answerType) {
+    // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
+    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval) {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
