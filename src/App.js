@@ -192,6 +192,9 @@ const AppLayout = () => {
       ? 'Utilisez l\'IA pour répondre aux questions des utilisateurs sur les services et programmes du gouvernement du Canada'
       : 'Use AI to answer user questions about Government of Canada services and programs';
 
+    // Update html lang attribute
+    document.documentElement.lang = currentLang;
+
     // Update page title
     document.title = title;
 
