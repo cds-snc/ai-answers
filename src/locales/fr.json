@@ -540,20 +540,9 @@
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",
-      "partnerEval": {
-        "correct": "Correct",
-        "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation",
-        "harmful": "Nuisible"
-      },
+      "partnerEval": "Évaluation partenaire",
       "allPartnerEvals": "Tous",
-      "aiEval": {
-        "correct": "Correct",
-        "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation"
-      },
+      "aiEval": "Évaluation IA",
       "allAiEvals": "Tous",
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif",

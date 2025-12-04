@@ -502,20 +502,9 @@
       "adminUsers": "Admin",
       "answerType": "Answer Type",
       "allAnswerTypes": "All Answer Types",
-      "partnerEval": {
-        "correct": "Correct",
-        "needsImprovement": "Needs Improvement",
-        "hasError": "Has Error",
-        "hasCitationError": "Has Citation Error",
-        "harmful": "Harmful"
-      },
+      "partnerEval": "Partner Evaluation",
       "allPartnerEvals": "All",
-      "aiEval": {
-        "correct": "Correct",
-        "needsImprovement": "Needs Improvement",
-        "hasError": "Has Error",
-        "hasCitationError": "Has Citation Error"
-      },
+      "aiEval": "AI Evaluation",
       "allAiEvals": "All",
       "activeFilters": "Active filters",
       "noActiveFilters": "No active filters",

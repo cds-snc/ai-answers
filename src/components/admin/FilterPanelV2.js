@@ -213,20 +213,20 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
   // Partner evaluation options
   const partnerEvalOptions = [
     { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
-    { value: 'correct', label: t('admin.filters.partnerEval.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('admin.filters.partnerEval.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('admin.filters.partnerEval.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('admin.filters.partnerEval.hasCitationError') || 'Has Citation Error' },
-    { value: 'harmful', label: t('admin.filters.partnerEval.harmful') || 'Harmful' }
+    { value: 'correct', label: t('metrics.dashboard.expertScored.correct') || 'Correct' },
+    { value: 'needsImprovement', label: t('metrics.dashboard.expertScored.needsImprovement') || 'Needs Improvement' },
+    { value: 'hasError', label: t('metrics.dashboard.expertScored.hasError') || 'Has Error' },
+    { value: 'hasCitationError', label: t('metrics.dashboard.expertScored.hasCitationError') || 'Has Citation Error' },
+    { value: 'harmful', label: t('metrics.dashboard.expertScored.harmful') || 'Harmful' }
   ];
 
   // AI evaluation options
   const aiEvalOptions = [
     { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
-    { value: 'correct', label: t('admin.filters.aiEval.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('admin.filters.aiEval.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('admin.filters.aiEval.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('admin.filters.aiEval.hasCitationError') || 'Has Citation Error' }
+    { value: 'correct', label: t('metrics.dashboard.aiScored.correct') || 'Correct' },
+    { value: 'needsImprovement', label: t('metrics.dashboard.aiScored.needsImprovement') || 'Needs Improvement' },
+    { value: 'hasError', label: t('metrics.dashboard.aiScored.hasError') || 'Has Error' },
+    { value: 'hasCitationError', label: t('metrics.dashboard.aiScored.hasCitationError') || 'Has Citation Error' }
   ];
 
   const handleApply = () => {
