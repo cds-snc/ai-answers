@@ -199,7 +199,7 @@ const AnswerService = {
       englishAnswer.includes("An answer to your question wasn't found on Government of Canada websites.")
     ) {
       answerType = 'not-gc';
-      content = englishAnswer;
+      
     }
 
     const confidenceRatingRegex = /<confidence>(.*?)<\/confidence>/s;
