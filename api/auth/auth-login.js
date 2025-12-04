@@ -34,8 +34,18 @@ const loginHandler = (req, res, next) => {
         // Restore visitorId into the (possibly regenerated) session
         try {
           if (visitorId) req.session.visitorId = visitorId;
+
+          // Set authenticated session TTL
+          const sessionTTLSetting = SettingsService.get('session.defaultTTLMinutes') || process.env.SESSION_TTL_MINUTES || '10';
+          const authTTLSetting = SettingsService.get('session.authenticatedTTLMinutes') || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
+          const parsedAuthMinutes = Number(authTTLSetting);
+          const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : 60;
+
+          if (req.session && req.session.cookie) {
+            req.session.cookie.maxAge = authMinutes * 60 * 1000;
+          }
         } catch (e) {
-          console.warn('Failed to restore visitorId after login', e);
+          console.warn('Failed to restore visitorId or set TTL after login', e);
         }
 
         return res.status(200).json({

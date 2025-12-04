@@ -82,7 +82,8 @@ export default function createSessionMiddleware(app) {
       resave: false,
       saveUninitialized: false,
       store: sessionStore,
-      cookie: cookieDefaults
+      cookie: cookieDefaults,
+      rolling: true // Reset the cookie expiration on every response
     });
   };
 
@@ -127,68 +128,7 @@ export default function createSessionMiddleware(app) {
   const wrapped = (req, res, next) => {
     // Ensure any config changes are picked up before handling the request
     Promise.resolve(ensureSessionUpToDate()).then(() => {
-      sessionMiddleware(req, res, (err) => {
-        if (err) return next(err);
-        try {
-          const sessionTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
-          const parsedMinutes = Number(sessionTTLSetting);
-          const sessionMinutes = Number.isFinite(parsedMinutes) && parsedMinutes > 0 ? parsedMinutes : 60;
-          const MAX_AGE = sessionMinutes * 60 * 1000;
-
-          const authTTLSetting = _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
-          const parsedAuthMinutes = Number(authTTLSetting);
-          const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : sessionMinutes;
-          const AUTH_MAX_AGE = authMinutes * 60 * 1000;
-
-          // Define helper to apply dynamic domain and TTL
-          // We need this because req.login() (Passport) regenerates the session,
-          // which resets the cookie options. We must re-apply our dynamic settings
-          // just before the response is sent (when the session is saved).
-          const applyDynamicSessionSettings = () => {
-            if (!req.session || !req.session.cookie) return;
-
-            const isAuth = Boolean(
-              req.user ||
-              (req.session && (
-                (req.session.passport && req.session.passport.user) ||
-                req.session.user ||
-                req.session.userId ||
-                req.session.authenticated ||
-                req.session.isAuthenticated
-              ))
-            );
-
-            req.session.cookie.maxAge = isAuth ? AUTH_MAX_AGE : MAX_AGE;
-
-            const requestHost = req.get('host');
-            if (requestHost) {
-              const dynamicDomain = getParentDomain(requestHost, process.env.NODE_ENV);
-              if (dynamicDomain) {
-                req.session.cookie.domain = dynamicDomain;
-              } else {
-                delete req.session.cookie.domain;
-              }
-            }
-          };
-
-          // Apply immediately for the current session
-          applyDynamicSessionSettings();
-
-          // Hook into res.end to ensure settings are applied even if session was regenerated
-          const originalEnd = res.end;
-          res.end = function (...args) {
-            try {
-              applyDynamicSessionSettings();
-            } catch (e) {
-              // ignore errors during patch
-            }
-            return originalEnd.apply(this, args);
-          };
-
-        } catch (e) {
-        }
-        next();
-      });
+      sessionMiddleware(req, res, next);
     }).catch(() => {
       // If the ensure check fails, proceed with existing middleware
       sessionMiddleware(req, res, next);
