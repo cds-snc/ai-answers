@@ -29,6 +29,6 @@
   "features": {
     "ghcr.io/devcontainers/features/terraform:1": {},
     "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/devcontainers-extra/features/terragrunt:1": {}
+    "ghcr.io/devcontainers/features/terragrunt:1": {}
   }
 }
