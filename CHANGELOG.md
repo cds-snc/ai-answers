@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.68.2](https://github.com/cds-snc/ai-answers/compare/v1.68.1...v1.68.2) (2025-12-04)
+
+
+### Bug Fixes
+
+* change conditional ([99c6252](https://github.com/cds-snc/ai-answers/commit/99c6252e9f3bd8adc491f5d981bfee91ef5b4b17))
+* remove unnecessary assignment in AnswerService for not-gc answer type ([32fa30c](https://github.com/cds-snc/ai-answers/commit/32fa30cdd36bc74321422b32354bee906641208f))
+* remove unnecessary assignment in AnswerService for not-gc answer… ([48804bc](https://github.com/cds-snc/ai-answers/commit/48804bcb0d2efd94b16d371cfc28d031ac2d58b3))
+
 ## [1.68.1](https://github.com/cds-snc/ai-answers/compare/v1.68.0...v1.68.1) (2025-12-04)
 
 
