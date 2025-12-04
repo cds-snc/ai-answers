@@ -172,7 +172,7 @@ const AppLayout = () => {
     // Removed the auth expiration checker setup
   }, []);
 
-  // Track virtual page views ONLY for public pages (not admin routes)
+    // Track virtual page views ONLY for public pages (not admin routes)
   useEffect(() => {
     const isPublicPage = location.pathname === '/en' || location.pathname === '/fr' || location.pathname === '/';
     
@@ -184,6 +184,10 @@ const AppLayout = () => {
   // Update Open Graph meta tags based on current language
   useEffect(() => {
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
+    const title = currentLang === 'fr' ? 'Réponses IA' : 'AI Answers';
+
+    // Update page title
+    document.title = title;
 
     // Update og:image meta tag
     let ogImageMeta = document.querySelector('meta[property="og:image"]');
