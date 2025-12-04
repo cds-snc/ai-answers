@@ -1,4 +1,4 @@
-// FilterPanelV2.js - Compact filter panel with daterangepicker
+// FilterPanelV2.js - Compact filter panel with explicit local time handling
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import $ from 'jquery';
@@ -11,16 +11,57 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
 
-  const [startDate, setStartDate] = useState(moment().subtract(6, 'days'));
-  const [endDate, setEndDate] = useState(moment());
+  // Helper function to format date for display (local time)
+  const formatDateTimeLocal = (date) => {
+    const d = new Date(date);
+    const pad = (num) => String(num).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Helper to parse datetime string into a local Date object
+  const parseDateTimeLocal = (dateTimeLocal) => {
+    if (!dateTimeLocal || typeof dateTimeLocal !== 'string') return null;
+    const parts = dateTimeLocal.split('T');
+    if (parts.length !== 2) return null;
+    const [datePart, timePart] = parts;
+    if (!datePart || !timePart) return null;
+    const dateArr = datePart.split('-').map(Number);
+    const timeArr = timePart.split(':').map(Number);
+    if (
+      dateArr.length !== 3 ||
+      timeArr.length < 2 ||
+      dateArr.some(isNaN) ||
+      timeArr.some(isNaN)
+    ) return null;
+    // Explicitly create Date with local time components
+    return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
+  };
+
+  const STORAGE_KEY = storageKey;
+
+  // Default to last 7 days (local time)
+  const getDefaultDates = () => {
+    const end = new Date();
+    const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return {
+      startDate: formatDateTimeLocal(start),
+      endDate: formatDateTimeLocal(end)
+    };
+  };
+
+  // Store dates as strings (like original FilterPanel.js)
+  const [dateRange, setDateRange] = useState(getDefaultDates());
   const [department, setDepartment] = useState('');
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState('all');
   const [answerType, setAnswerType] = useState('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-
-  const STORAGE_KEY = storageKey;
 
   // Load saved state from localStorage
   useEffect(() => {
@@ -31,18 +72,26 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
       const parsed = JSON.parse(raw);
       if (!parsed) return;
 
-      if (parsed.startDate) setStartDate(moment(parsed.startDate));
-      if (parsed.endDate) setEndDate(moment(parsed.endDate));
-      if (typeof parsed.department === 'string') setDepartment(parsed.department);
-      if (typeof parsed.urlEn === 'string') setUrlEn(parsed.urlEn);
-      if (typeof parsed.urlFr === 'string') setUrlFr(parsed.urlFr);
-      if (typeof parsed.userType === 'string') setUserType(parsed.userType);
-      if (typeof parsed.answerType === 'string') setAnswerType(parsed.answerType);
-      if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
+      setTimeout(() => {
+        try {
+          if (parsed.dateRange && parsed.dateRange.startDate && parsed.dateRange.endDate) {
+            setDateRange(parsed.dateRange);
+          }
+          if (typeof parsed.department === 'string') setDepartment(parsed.department);
+          if (typeof parsed.urlEn === 'string') setUrlEn(parsed.urlEn);
+          if (typeof parsed.urlFr === 'string') setUrlFr(parsed.urlFr);
+          if (typeof parsed.userType === 'string') setUserType(parsed.userType);
+          if (typeof parsed.answerType === 'string') setAnswerType(parsed.answerType);
+          if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
+        } catch (e) {
+          // ignore
+        }
+      }, 0);
     } catch (err) {
       // ignore corrupt localStorage entries
     }
-  }, [STORAGE_KEY]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Initialize daterangepicker
   useEffect(() => {
@@ -51,14 +100,21 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     const locale = t('locale') === 'fr' ? 'fr' : 'en';
     const isFrench = locale === 'fr';
 
-    // Configure daterangepicker with presets like feedback viewer
+    // Parse current date range as local time
+    const startDateObj = parseDateTimeLocal(dateRange.startDate);
+    const endDateObj = parseDateTimeLocal(dateRange.endDate);
+
+    // Configure daterangepicker with explicit local time
     const config = {
-      startDate: startDate,
-      endDate: endDate,
+      startDate: startDateObj ? moment(startDateObj) : moment().subtract(6, 'days'),
+      endDate: endDateObj ? moment(endDateObj) : moment(),
       opens: 'left',
       alwaysShowCalendars: true,
+      timePicker: true,
+      timePicker24Hour: true,
+      timePickerSeconds: false,
       locale: {
-        format: 'YYYY/MM/DD',
+        format: 'YYYY/MM/DD HH:mm',
         separator: ' - ',
         applyLabel: isFrench ? 'Appliquer' : 'Apply',
         cancelLabel: isFrench ? 'Annuler' : 'Cancel',
@@ -75,10 +131,10 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
         firstDay: isFrench ? 1 : 0
       },
       ranges: {
-        [isFrench ? 'Aujourd\'hui' : 'Today']: [moment(), moment()],
-        [isFrench ? 'Hier' : 'Yesterday']: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(6, 'days'), moment()],
-        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(29, 'days'), moment()],
+        [isFrench ? 'Aujourd\'hui' : 'Today']: [moment().startOf('day'), moment().endOf('day')],
+        [isFrench ? 'Hier' : 'Yesterday']: [moment().subtract(1, 'days').startOf('day'), moment().subtract(1, 'days').endOf('day')],
+        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(6, 'days').startOf('day'), moment()],
+        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(29, 'days').startOf('day'), moment()],
         [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().endOf('month')],
         [isFrench ? 'Le mois dernier' : 'Last Month']: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
       }
@@ -90,10 +146,18 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     // Store instance
     dateRangePickerInstance.current = $picker.data('daterangepicker');
 
-    // Handle date selection
+    // Handle date selection - convert moment to local time string
     $picker.on('apply.daterangepicker', function(ev, picker) {
-      setStartDate(picker.startDate);
-      setEndDate(picker.endDate);
+      // Get moment objects from picker and convert to Date objects (local time)
+      const startDate = picker.startDate.toDate();
+      const endDate = picker.endDate.toDate();
+
+      // Format as local time strings (same as original FilterPanel.js)
+      const newRange = {
+        startDate: formatDateTimeLocal(startDate),
+        endDate: formatDateTimeLocal(endDate)
+      };
+      setDateRange(newRange);
     });
 
     // Cleanup
@@ -103,7 +167,7 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
         $picker.data('daterangepicker').remove();
       }
     };
-  }, [t, startDate, endDate]);
+  }, [t, dateRange.startDate, dateRange.endDate]);
 
   // Department options
   const departmentOptions = [
@@ -142,9 +206,14 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
   ];
 
   const handleApply = () => {
+    // Parse local datetime strings and convert to UTC ISO strings for backend
+    // (same approach as original FilterPanel.js)
+    const startObj = parseDateTimeLocal(dateRange.startDate);
+    const endObj = parseDateTimeLocal(dateRange.endDate);
+
     const filters = {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      startDate: startObj ? startObj.toISOString() : undefined,
+      endDate: endObj ? endObj.toISOString() : undefined,
       department,
       urlEn,
       urlFr,
@@ -156,8 +225,7 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const payload = {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
+          dateRange,
           department,
           urlEn,
           urlFr,
@@ -175,8 +243,8 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
   };
 
   const handleClear = () => {
-    setStartDate(moment().subtract(6, 'days'));
-    setEndDate(moment());
+    const defaultDates = getDefaultDates();
+    setDateRange(defaultDates);
     setDepartment('');
     setUrlEn('');
     setUrlFr('');
@@ -186,8 +254,12 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
 
     // Update daterangepicker
     if (dateRangePickerInstance.current) {
-      dateRangePickerInstance.current.setStartDate(moment().subtract(6, 'days'));
-      dateRangePickerInstance.current.setEndDate(moment());
+      const startObj = parseDateTimeLocal(defaultDates.startDate);
+      const endObj = parseDateTimeLocal(defaultDates.endDate);
+      if (startObj && endObj) {
+        dateRangePickerInstance.current.setStartDate(moment(startObj));
+        dateRangePickerInstance.current.setEndDate(moment(endObj));
+      }
     }
 
     try {
@@ -210,7 +282,7 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
       </summary>
       <div className="filter-panel-content">
         <div className="filter-grid">
-          {/* Left column - Date Range */}
+          {/* Left column - Date Range and URL Filters */}
           <div className="filter-column">
             <div className="filter-row">
               <label htmlFor="dateRangePicker" className="filter-label">
@@ -223,6 +295,34 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
                 className="filter-input"
                 readOnly
                 style={{ backgroundColor: 'white', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="url-en" className="filter-label">
+                {t('admin.filters.urlEn') || 'URL (EN)'}
+              </label>
+              <input
+                type="text"
+                id="url-en"
+                value={urlEn}
+                onChange={(e) => setUrlEn(e.target.value)}
+                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                className="filter-input"
+              />
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="url-fr" className="filter-label">
+                {t('admin.filters.urlFr') || 'URL (FR)'}
+              </label>
+              <input
+                type="text"
+                id="url-fr"
+                value={urlFr}
+                onChange={(e) => setUrlFr(e.target.value)}
+                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                className="filter-input"
               />
             </div>
           </div>
@@ -265,7 +365,7 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
               </select>
             </div>
 
-            {/* Advanced Filters - Collapsible */}
+            {/* Advanced Filters - Collapsible (Closed by default) */}
             <details
               className="filter-advanced-details"
               open={showAdvancedFilters}
@@ -275,34 +375,6 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
                 {t('admin.filters.showAdvanced')}
               </summary>
               <div className="filter-advanced-section">
-                <div className="filter-row">
-                  <label htmlFor="url-en" className="filter-label">
-                    {t('admin.filters.urlEn') || 'URL (EN)'}
-                  </label>
-                  <input
-                    type="text"
-                    id="url-en"
-                    value={urlEn}
-                    onChange={(e) => setUrlEn(e.target.value)}
-                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                    className="filter-input"
-                  />
-                </div>
-
-                <div className="filter-row">
-                  <label htmlFor="url-fr" className="filter-label">
-                    {t('admin.filters.urlFr') || 'URL (FR)'}
-                  </label>
-                  <input
-                    type="text"
-                    id="url-fr"
-                    value={urlFr}
-                    onChange={(e) => setUrlFr(e.target.value)}
-                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                    className="filter-input"
-                  />
-                </div>
-
                 <div className="filter-row">
                   <label htmlFor="answer-type" className="filter-label">
                     {t('admin.filters.answerType') || 'Answer Type'}
