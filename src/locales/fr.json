@@ -540,9 +540,20 @@
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",
-      "partnerEval": "Évaluation partenaire",
+      "partnerEval": {
+        "correct": "Correct",
+        "needsImprovement": "Nécessite une amélioration",
+        "hasError": "Contient une erreur",
+        "hasCitationError": "Contient une erreur de citation",
+        "harmful": "Nuisible"
+      },
       "allPartnerEvals": "Tous",
-      "aiEval": "Évaluation IA",
+      "aiEval": {
+        "correct": "Correct",
+        "needsImprovement": "Nécessite une amélioration",
+        "hasError": "Contient une erreur",
+        "hasCitationError": "Contient une erreur de citation"
+      },
       "allAiEvals": "Tous",
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif",
@@ -1007,6 +1018,7 @@
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur",
+        "hasCitationError": "Contient une erreur de citation",
         "hasErrorPercent": "Contient une erreur (%)",
         "harmful": "Codé comme nuisible"
       },
@@ -1016,7 +1028,8 @@
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur"
+        "hasError": "Contient une erreur",
+        "hasCitationError": "Contient une erreur de citation"
       },
       "userScored": {
         "title": "Rétroaction des utilisateurs",

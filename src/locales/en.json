@@ -502,9 +502,20 @@
       "adminUsers": "Admin",
       "answerType": "Answer Type",
       "allAnswerTypes": "All Answer Types",
-      "partnerEval": "Partner Evaluation",
+      "partnerEval": {
+        "correct": "Correct",
+        "needsImprovement": "Needs Improvement",
+        "hasError": "Has Error",
+        "hasCitationError": "Has Citation Error",
+        "harmful": "Harmful"
+      },
       "allPartnerEvals": "All",
-      "aiEval": "AI Evaluation",
+      "aiEval": {
+        "correct": "Correct",
+        "needsImprovement": "Needs Improvement",
+        "hasError": "Has Error",
+        "hasCitationError": "Has Citation Error"
+      },
       "allAiEvals": "All",
       "activeFilters": "Active filters",
       "noActiveFilters": "No active filters",
@@ -1003,6 +1014,7 @@
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
         "hasError": "Has error",
+        "hasCitationError": "Has citation error",
         "hasErrorPercent": "Has error (%)",
         "harmful": "Coded as harmful"
       },
@@ -1012,7 +1024,8 @@
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error"
+        "hasError": "Has error",
+        "hasCitationError": "Has citation error"
       },
       "userScored": {
         "title": "End-user feedback",

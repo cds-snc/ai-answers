@@ -216,6 +216,7 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     { value: 'correct', label: t('admin.filters.partnerEval.correct') || 'Correct' },
     { value: 'needsImprovement', label: t('admin.filters.partnerEval.needsImprovement') || 'Needs Improvement' },
     { value: 'hasError', label: t('admin.filters.partnerEval.hasError') || 'Has Error' },
+    { value: 'hasCitationError', label: t('admin.filters.partnerEval.hasCitationError') || 'Has Citation Error' },
     { value: 'harmful', label: t('admin.filters.partnerEval.harmful') || 'Harmful' }
   ];
 
@@ -224,7 +225,8 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = false, stor
     { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
     { value: 'correct', label: t('admin.filters.aiEval.correct') || 'Correct' },
     { value: 'needsImprovement', label: t('admin.filters.aiEval.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('admin.filters.aiEval.hasError') || 'Has Error' }
+    { value: 'hasError', label: t('admin.filters.aiEval.hasError') || 'Has Error' },
+    { value: 'hasCitationError', label: t('admin.filters.aiEval.hasCitationError') || 'Has Citation Error' }
   ];
 
   const handleApply = () => {
