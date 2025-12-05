@@ -869,6 +869,8 @@
   },
   "reviewPanels": {
     "sentence": "Sentence",
+    "sentenceEnglish": "Sentence English",
+    "englishQuestion": "English question",
     "expertScore": "Expert score",
     "feedback": "Feedback",
     "notAvailable": "N/A",
