@@ -128,9 +128,11 @@ export default function createSessionMiddleware(app) {
   const wrapped = (req, res, next) => {
     // Ensure any config changes are picked up before handling the request
     Promise.resolve(ensureSessionUpToDate()).then(() => {
+      console.log(`[DEBUG] Session middleware executing for ${req.url}`);
       sessionMiddleware(req, res, next);
     }).catch(() => {
       // If the ensure check fails, proceed with existing middleware
+      console.log(`[DEBUG] Session middleware executing (fallback) for ${req.url}`);
       sessionMiddleware(req, res, next);
     });
   };

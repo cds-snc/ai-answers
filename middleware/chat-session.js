@@ -3,19 +3,80 @@ import ChatSessionMetricsService from '../services/ChatSessionMetricsService.js'
 import dbConnect from '../api/db/db-connect.js';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * Helper: Add a chatId to the session and save.
+ */
+async function saveChatIdToSession(req, chatId, sessionId) {
+  if (!req.session) return;
+
+  try {
+    req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
+    if (typeof req.session.save === 'function') {
+      console.log('[DEBUG] Saving session...', sessionId);
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => err ? reject(err) : resolve());
+      });
+      console.log('[session] Saved chatId', chatId, 'to session', sessionId);
+    }
+  } catch (e) {
+    console.error('[session] Could not save chatId to session', e);
+    throw e;
+  }
+}
+
+/**
+ * Helper: Resolve/validate an incoming chatId against the current session.
+ * If chatId is not found in session, adds it to the session.
+ * Always returns the chatId (never blocks the request).
+ */
+async function resolveIncomingChatId(req, incomingChatId) {
+  if (!incomingChatId) return null;
+
+  const sessionId = req.sessionID;
+  const session = req.session;
+  const hasChatId = (source) => Array.isArray(source) && source.includes(incomingChatId);
+
+  let isValid = hasChatId(session?.chatIds);
+
+  if (!isValid && session) {
+    // ChatId not found - add it to the session
+    console.log('[session] ChatId not found in session, adding it', incomingChatId);
+    try {
+      await saveChatIdToSession(req, incomingChatId, sessionId);
+      console.log('[session] Successfully added chatId to session', incomingChatId);
+      isValid = true;
+    } catch (e) {
+      console.error('[session] Failed to add chatId to session', e);
+      return null;
+    }
+  }
+
+  return incomingChatId;
+}
+
+/**
+ * Helper: Check if the user is authenticated.
+ */
+function isAuthenticated(req) {
+  return Boolean(
+    req.user ||
+    (req.session && (
+      (req.session.passport && req.session.passport.user) ||
+      req.session.user ||
+      req.session.userId ||
+      req.session.authenticated ||
+      req.session.isAuthenticated
+    ))
+  );
+}
+
 export default function sessionMiddleware(options = {}) {
   return async function (req, res, next) {
     try {
-      if (!ChatSessionService.isManagementEnabled()) {
-        if (options.createChatId) {
-          req.chatId = uuidv4();
-          return next();
-        }
-        req.chatId = req.body?.chatId;
-        return next();
-      }
+      const managementEnabled = ChatSessionService.isManagementEnabled();
 
-      if (!req.session) {
+      // Require session when management is enabled
+      if (managementEnabled && !req.session) {
         res.statusCode = 403;
         res.setHeader('Content-Type', 'application/json');
         return res.end(JSON.stringify({ error: 'no_session', message: 'Missing session; request blocked' }));
@@ -23,21 +84,12 @@ export default function sessionMiddleware(options = {}) {
 
       const sessionId = req.sessionID;
       const session = req.session;
+      let chatId = null;
 
       if (options.createChatId) {
-        const isAuthenticated = Boolean(
-          req.user ||
-          (req.session && (
-            (req.session.passport && req.session.passport.user) ||
-            req.session.user ||
-            req.session.userId ||
-            req.session.authenticated ||
-            req.session.isAuthenticated
-          ))
-        );
-
-        if (!isAuthenticated) {
-          const avail = await ChatSessionService.sessionsAvailable(req.sessionID);
+        // Check session availability for unauthenticated users when management is enabled
+        if (managementEnabled && !isAuthenticated(req)) {
+          const avail = await ChatSessionService.sessionsAvailable(sessionId);
           if (!avail) {
             res.statusCode = 503;
             res.setHeader('Content-Type', 'application/json');
@@ -48,94 +100,59 @@ export default function sessionMiddleware(options = {}) {
           }
         }
 
-        const chatId = uuidv4();
-        ChatSessionMetricsService.registerChat(sessionId, chatId);
+        // Create new chatId
+        chatId = uuidv4();
 
-        try {
-          req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
-          if (typeof req.session.save === 'function') {
-
-            await new Promise((resolve, reject) => {
-              req.session.save((err) => err ? reject(err) : resolve());
-            });
-            console.log('[session] Saved chatId', chatId, 'to session', sessionId);
-          }
-        } catch (e) {
-          if (console && console.error) {
-            console.error('sessionMiddleware save error', e);
-            return res.end(JSON.stringify({ error: 'no_session', message: 'Could not add ChatId to session: ' + e.message }));
+        // Save to session if available
+        if (session) {
+          try {
+            await saveChatIdToSession(req, chatId, sessionId);
+          } catch (e) {
+            if (managementEnabled) {
+              // Only block request when management is enabled
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({
+                error: 'no_session',
+                message: 'Could not add ChatId to session: ' + e.message
+              }));
+            }
+            // Otherwise just log and continue
+            console.error('[session] Failed to save chatId but continuing', e);
           }
         }
-
-        req.chatId = chatId;
       } else {
-        let chatId = null;
+        // Handle incoming chatId
         const incomingChatId = req.body?.chatId;
         if (incomingChatId) {
-          const hasChatId = (source) => Array.isArray(source) && source.includes(incomingChatId);
-          let isValid = hasChatId(session.chatIds);
-
-          if (!isValid && typeof session.reload === 'function') {
-            for (let attempt = 1; attempt <= 5; attempt++) {
-              // Retry with increasing backoff: 1s, 2s, 3s, 4s, 5s
-              const delay = attempt * 1000;
-              await new Promise((resolve) => setTimeout(resolve, delay));
-
-              try {
-                await new Promise((resolve, reject) => session.reload((err) => err ? reject(err) : resolve()));
-                // Re-check on req.session
-                isValid = hasChatId(req.session.chatIds);
-                if (isValid) {
-                  console.log(`[session] Recovered chatId after reload (attempt ${attempt})`, incomingChatId);
-                  break;
-                }
-              } catch (e) {
-                console.warn(`[session] Reload failed (attempt ${attempt})`, e);
-              }
-            }
-          }
-
-          if (!isValid && req.sessionStore && typeof req.sessionStore.get === 'function') {
-            try {
-              const persisted = await new Promise((resolve, reject) => {
-                req.sessionStore.get(sessionId, (err, data) => err ? reject(err) : resolve(data));
-              });
-              const persistedChatIds = Array.isArray(persisted?.chatIds) ? persisted.chatIds.filter(Boolean) : [];
-              if (persistedChatIds.length) {
-                session.chatIds = persistedChatIds;
-                req.session.chatIds = persistedChatIds;
-              }
-              isValid = hasChatId(persistedChatIds);
-              if (isValid) {
-                console.log('[session] Recovered chatId from store lookup', incomingChatId);
-              }
-            } catch (e) {
-              console.warn('[session] sessionStore.get failed', e);
-            }
-          }
-
-          if (isValid) {
-            chatId = incomingChatId;
-          } else {
-            try {
-              console.warn('[session] invalid_chatId', { pid: process.pid, sessionId, incomingChatId, sessionChatIds: session.chatIds });
-            } catch (e) { }
+          chatId = await resolveIncomingChatId(req, incomingChatId);
+          if (!chatId) {
+            // ChatId validation failed - block request
             res.statusCode = 403;
             res.setHeader('Content-Type', 'application/json');
-            return res.end(JSON.stringify({ error: 'invalid_chatId', message: 'ChatId does not belong to session' }));
+            return res.end(JSON.stringify({
+              error: 'invalid_chatId',
+              message: 'ChatId does not belong to session'
+            }));
           }
-        }
-        req.chatId = chatId;
-        if (chatId) {
-          ChatSessionMetricsService.registerChat(sessionId, chatId);
         }
       }
 
-      req.sessionId = sessionId;
-      req.visitorId = session.visitorId;
-      const rateLimiterSnapshot = req.rateLimiterSnapshot || (req.session && req.session.rateLimiter);
-      if (rateLimiterSnapshot) {
-        ChatSessionMetricsService.recordRateLimiterSnapshot(sessionId, rateLimiterSnapshot);
+      // Register metrics for all modes
+      if (chatId && sessionId) {
+        ChatSessionMetricsService.registerChat(sessionId, chatId);
+      }
+
+      // Set request properties
+      req.chatId = chatId;
+      if (session) {
+        req.sessionId = sessionId;
+        req.visitorId = session.visitorId;
+
+        const rateLimiterSnapshot = req.rateLimiterSnapshot || session.rateLimiter;
+        if (rateLimiterSnapshot) {
+          ChatSessionMetricsService.recordRateLimiterSnapshot(sessionId, rateLimiterSnapshot);
+        }
       }
 
       return next();
