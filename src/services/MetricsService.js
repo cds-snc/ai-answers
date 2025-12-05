@@ -53,6 +53,7 @@ class MetricsService {
         correct: { total: 0, en: 0, fr: 0 },
         needsImprovement: { total: 0, en: 0, fr: 0 },
         hasError: { total: 0, en: 0, fr: 0 },
+        hasCitationError: { total: 0, en: 0, fr: 0 },
         harmful: { total: 0, en: 0, fr: 0 }
       },
       userScored: {
@@ -65,6 +66,7 @@ class MetricsService {
         correct: { total: 0, en: 0, fr: 0 },
         needsImprovement: { total: 0, en: 0, fr: 0 },
         hasError: { total: 0, en: 0, fr: 0 },
+        hasCitationError: { total: 0, en: 0, fr: 0 },
         harmful: { total: 0, en: 0, fr: 0 }
       },
       byDepartment: {},
@@ -183,16 +185,22 @@ class MetricsService {
         // Process expert feedback
         if (interaction.expertFeedback) {
           // Defensive: ensure all expertScored properties exist before incrementing
-          ['total', 'correct', 'needsImprovement', 'hasError', 'harmful'].forEach(key => {
+          ['total', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'].forEach(key => {
             if (!metrics.expertScored[key]) metrics.expertScored[key] = { total: 0, en: 0, fr: 0 };
-            if (!metrics.byDepartment[department].expertScored[key] && key !== 'harmful') metrics.byDepartment[department].expertScored[key] = 0;
+            if (!metrics.byDepartment[department].expertScored[key] && key !== 'harmful' && key !== 'hasCitationError') metrics.byDepartment[department].expertScored[key] = 0;
           });
           metrics.expertScored.total.total++;
           if (pageLanguage === 'en') metrics.expertScored.total.en++;
           if (pageLanguage === 'fr') metrics.expertScored.total.fr++;
           metrics.byDepartment[department].expertScored.total++;
 
-          // Update expert feedback calculations
+          // Check for citation errors first (separate category)
+          let hasCitationError = false;
+          if (interaction.expertFeedback.citationScore !== null && interaction.expertFeedback.citationScore === 0) {
+            hasCitationError = true;
+          }
+
+          // Update expert feedback calculations for sentence errors
           const feedbackFields = [
             { score: interaction.expertFeedback.sentence1Score, harmful: interaction.expertFeedback.sentence1Harmful },
             { score: interaction.expertFeedback.sentence2Score, harmful: interaction.expertFeedback.sentence2Harmful },
@@ -211,22 +219,25 @@ class MetricsService {
             }
           });
 
-          // Include citationScore in the evaluation
-          if (interaction.expertFeedback.citationScore !== null) {
+          // Include citationScore for non-error scoring (but not as hasError)
+          if (interaction.expertFeedback.citationScore !== null && !hasCitationError) {
             const citationScore = interaction.expertFeedback.citationScore;
-            if (citationScore === 0) {
-              highestCategory = 'hasError';
-            } else if (citationScore === 20 && highestCategory !== 'hasError') {
+            if (citationScore === 20 && highestCategory !== 'hasError') {
               highestCategory = 'needsImprovement';
             } else if (citationScore === 25 && highestCategory === null) {
               highestCategory = 'correct';
             }
           }
 
+          // Categorize based on priority: harmful > hasCitationError > hasError > needsImprovement > correct
           if (highestCategory === 'harmful') {
             metrics.expertScored.harmful.total++;
             if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
             if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
+          } else if (hasCitationError) {
+            metrics.expertScored.hasCitationError.total++;
+            if (pageLanguage === 'en') metrics.expertScored.hasCitationError.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.hasCitationError.fr++;
           } else if (highestCategory === 'hasError') {
             metrics.expertScored.hasError.total++;
             if (pageLanguage === 'en') metrics.expertScored.hasError.en++;
@@ -273,12 +284,18 @@ class MetricsService {
         // Process AI self-assessment
         if (interaction.autoEval?.expertFeedback) {
           // Defensive: ensure all aiScored properties exist before incrementing
-          ['total', 'correct', 'needsImprovement', 'hasError', 'harmful'].forEach(key => {
+          ['total', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'].forEach(key => {
             if (!metrics.aiScored[key]) metrics.aiScored[key] = { total: 0, en: 0, fr: 0 };
           });
           metrics.aiScored.total.total++;
           if (pageLanguage === 'en') metrics.aiScored.total.en++;
           if (pageLanguage === 'fr') metrics.aiScored.total.fr++;
+
+          // Check for citation errors first (separate category)
+          let hasCitationError = false;
+          if (interaction.autoEval.expertFeedback.citationScore !== null && interaction.autoEval.expertFeedback.citationScore === 0) {
+            hasCitationError = true;
+          }
 
           const feedbackFields = [
             { score: interaction.autoEval.expertFeedback.sentence1Score, harmful: interaction.autoEval.expertFeedback.sentence1Harmful },
@@ -299,22 +316,25 @@ class MetricsService {
             }
           });
 
-          // Include citationScore in the evaluation
-          if (interaction.autoEval.expertFeedback.citationScore !== null) {
+          // Include citationScore for non-error scoring (but not as hasError)
+          if (interaction.autoEval.expertFeedback.citationScore !== null && !hasCitationError) {
             const citationScore = interaction.autoEval.expertFeedback.citationScore;
-            if (citationScore === 0) {
-              highestCategory = 'hasError';
-            } else if (citationScore === 20 && highestCategory !== 'hasError') {
+            if (citationScore === 20 && highestCategory !== 'hasError') {
               highestCategory = 'needsImprovement';
             } else if (citationScore === 25 && highestCategory === null) {
               highestCategory = 'correct';
             }
           }
 
+          // Categorize based on priority: harmful > hasCitationError > hasError > needsImprovement > correct
           if (highestCategory === 'harmful') {
             metrics.aiScored.harmful.total++;
             if (pageLanguage === 'en') metrics.aiScored.harmful.en++;
             if (pageLanguage === 'fr') metrics.aiScored.harmful.fr++;
+          } else if (hasCitationError) {
+            metrics.aiScored.hasCitationError.total++;
+            if (pageLanguage === 'en') metrics.aiScored.hasCitationError.en++;
+            if (pageLanguage === 'fr') metrics.aiScored.hasCitationError.fr++;
           } else if (highestCategory === 'hasError') {
             metrics.aiScored.hasError.total++;
             if (pageLanguage === 'en') metrics.aiScored.hasError.en++;
