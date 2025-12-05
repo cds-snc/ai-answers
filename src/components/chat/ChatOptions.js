@@ -77,7 +77,7 @@ const ChatOptions = ({
               <select
                 id="workflow"
                 name="workflow"
-                value={workflow || ''}
+                value={workflow || 'Default'}
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >
