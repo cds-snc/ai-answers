@@ -19,9 +19,13 @@ const ChatOptions = ({
       <GcdsDetails className="hr" detailsTitle={safeT('homepage.chat.options.title')} tabIndex="0">
         {/* Admin-only controls */}
         <RoleBasedContent roles={['admin']}>
-          <div className="ai-toggle">
+          {/* Provider selection is hidden for now; Azure is forced as provider
+              We keep radio inputs in the DOM (visually hidden) so the selection
+              can be re-enabled easily in the future. */}
+          <div className="ai-toggle" aria-hidden="true">
             <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container">
+              {/* visually hide the options but keep them in DOM for future re-enable */}
+              <div className="ai-toggle_container" style={{ display: 'none' }}>
                 <legend className="ai-toggle_legend">
                   {safeT('homepage.chat.options.aiSelection.label')}
                 </legend>
@@ -31,7 +35,7 @@ const ChatOptions = ({
                     id="anthropic"
                     name="ai-selection"
                     value="anthropic"
-                    checked={selectedAI === 'anthropic'}
+                    checked={false}
                     onChange={handleAIToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -45,7 +49,7 @@ const ChatOptions = ({
                     id="openai"
                     name="ai-selection"
                     value="openai"
-                    checked={selectedAI === 'openai'}
+                    checked={false}
                     onChange={handleAIToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -57,7 +61,7 @@ const ChatOptions = ({
                     id="azure"
                     name="ai-selection"
                     value="azure"
-                    checked={selectedAI === 'azure'}
+                    checked={true}
                     onChange={handleAIToggle}
                     className="ai-toggle_radio-input"
                   />
