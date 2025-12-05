@@ -89,9 +89,13 @@ const ChatOptions = ({
             </div>
           </div>
 
-          <div className="search-toggle">
+          {/* Search selection is hidden for now; Google is forced as the search provider
+              We keep the radio inputs in the DOM (visually hidden) so this can be
+              re-enabled easily in the future. */}
+          <div className="search-toggle" aria-hidden="true">
             <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container">
+              {/* visually hide the options but keep them in DOM for future re-enable */}
+              <div className="ai-toggle_container" style={{ display: 'none' }}>
                 <legend className="ai-toggle_legend">
                   {safeT('homepage.chat.options.searchSelection.label')}
                 </legend>
@@ -101,7 +105,7 @@ const ChatOptions = ({
                     id="search-canadaca"
                     name="search-selection"
                     value="canadaca"
-                    checked={selectedSearch === 'canadaca'}
+                    checked={false}
                     onChange={handleSearchToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -115,7 +119,7 @@ const ChatOptions = ({
                     id="search-google"
                     name="search-selection"
                     value="google"
-                    checked={selectedSearch === 'google'}
+                    checked={true}
                     onChange={handleSearchToggle}
                     className="ai-toggle_radio-input"
                   />
