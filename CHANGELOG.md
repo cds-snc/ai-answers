@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.68.3](https://github.com/cds-snc/ai-answers/compare/v1.68.2...v1.68.3) (2025-12-05)
+
+
+### Bug Fixes
+
+* enhance chatId handling in session middleware with validation an… ([03f7d36](https://github.com/cds-snc/ai-answers/commit/03f7d3657882de177e8bf7067b302059ce64a106))
+* enhance chatId handling in session middleware with validation and error logging ([f5841df](https://github.com/cds-snc/ai-answers/commit/f5841dffaa26806d519ca23c7c08c560899dadb2))
+* streamline chatId handling in session middleware with improved logging and removal of redundant checks ([48b217b](https://github.com/cds-snc/ai-answers/commit/48b217ba69667d540e952ab3b4bd26e71e733f95))
+
 ## [1.68.2](https://github.com/cds-snc/ai-answers/compare/v1.68.1...v1.68.2) (2025-12-04)
 
 
