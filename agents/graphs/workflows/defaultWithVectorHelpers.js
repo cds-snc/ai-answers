@@ -237,9 +237,9 @@ export class DefaultWithVectorServerWorkflow {
       searchResults: searchResult.results || searchResult.searchResults || [],
     };
 
-    const contextResponse = await fetchJson(getProviderApiUrl(selectedAI, 'context'), {
+    const contextResponse = await fetchJson(getApiUrl('chat-context'), {
       method: 'POST',
-      body: JSON.stringify(contextPayload),
+      body: JSON.stringify({ ...contextPayload, provider: selectedAI }),
     });
 
     const parseField = (pattern) => {
@@ -346,7 +346,7 @@ export class DefaultWithVectorServerWorkflow {
         content: similarShortCircuit.answer?.content,
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
-  englishAnswer: englishAnswerText,
+        englishAnswer: englishAnswerText,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -391,9 +391,9 @@ export class DefaultWithVectorServerWorkflow {
       const answerText = similarJson.answer;
       const englishAnswerText = similarJson.englishAnswer || answerText;
       // Extract the instant-match ids returned by the API
-  // Accept either the new instantAnswer* fields or legacy names
-  const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
-  const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || similarJson.providedByInteractionId || null;
+      // Accept either the new instantAnswer* fields or legacy names
+      const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
+      const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || similarJson.providedByInteractionId || null;
       await ServerLoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
         similar: similarJson,
         instantAnswerChatId,
@@ -433,9 +433,9 @@ export class DefaultWithVectorServerWorkflow {
       lang,
     };
 
-    const response = await fetchJson(getProviderApiUrl(selectedAI, 'message'), {
+    const response = await fetchJson(getApiUrl('chat-message'), {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, provider: selectedAI }),
     });
 
     const parsed = parseAnswerResponse(response.content || '');

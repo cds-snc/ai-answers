@@ -1,5 +1,7 @@
 import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import { getGraphApp } from '../../agents/graphs/registry.js';
+import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 
 const REQUIRED_METHOD = 'POST';
 
