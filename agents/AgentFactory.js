@@ -307,21 +307,21 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
         openAIApiKey: process.env.OPENAI_API_KEY,
         modelName: cfg.name,
         temperature: cfg.temperature,
-        maxTokens: 2048,
+        maxTokens: 4000,
         timeout: cfg.timeoutMs,
       });
       break;
     }
     case 'azure': {
       // Use the Azure deployment mapped to the mini variant when available
-      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      const cfg = getModelConfig('azure', 'openai-gpt41');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
         apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
         azureOpenAIApiDeploymentName: cfg.name,
         temperature: cfg.temperature,
-        maxTokens: cfg.maxTokens,
+        maxTokens: 4000,
         timeout: cfg.timeoutMs,
       });
       break;
