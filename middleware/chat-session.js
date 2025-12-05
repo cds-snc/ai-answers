@@ -8,10 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
  */
 async function saveChatIdToSession(req, chatId, sessionId) {
   if (!req.session) return;
-  
+
   try {
     req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
     if (typeof req.session.save === 'function') {
+      console.log('[DEBUG] Saving session...', sessionId);
       await new Promise((resolve, reject) => {
         req.session.save((err) => err ? reject(err) : resolve());
       });
@@ -25,7 +26,7 @@ async function saveChatIdToSession(req, chatId, sessionId) {
 
 /**
  * Helper: Resolve/validate an incoming chatId against the current session.
- * Tries reload, sessionStore lookup, and adds the chatId to session if invalid.
+ * If chatId is not found in session, adds it to the session.
  * Always returns the chatId (never blocks the request).
  */
 async function resolveIncomingChatId(req, incomingChatId) {
@@ -37,58 +38,17 @@ async function resolveIncomingChatId(req, incomingChatId) {
 
   let isValid = hasChatId(session?.chatIds);
 
-  // Try reloading the session
-  if (!isValid && session && typeof session.reload === 'function') {
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      const delay = attempt * 1000;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      try {
-        await new Promise((resolve, reject) => session.reload((err) => err ? reject(err) : resolve()));
-        isValid = hasChatId(req.session?.chatIds);
-        if (isValid) {
-          console.log(`[session] Recovered chatId after reload (attempt ${attempt})`, incomingChatId);
-          break;
-        }
-      } catch (e) {
-        console.warn(`[session] Reload failed (attempt ${attempt})`, e);
-      }
-    }
-  }
-
-  // Try session store lookup
-  if (!isValid && req.sessionStore && typeof req.sessionStore.get === 'function') {
+  if (!isValid && session) {
+    // ChatId not found - add it to the session
+    console.log('[session] ChatId not found in session, adding it', incomingChatId);
     try {
-      const persisted = await new Promise((resolve, reject) => {
-        req.sessionStore.get(sessionId, (err, data) => err ? reject(err) : resolve(data));
-      });
-      const persistedChatIds = Array.isArray(persisted?.chatIds) ? persisted.chatIds.filter(Boolean) : [];
-      if (persistedChatIds.length && session) {
-        session.chatIds = persistedChatIds;
-        req.session.chatIds = persistedChatIds;
-      }
-      isValid = hasChatId(persistedChatIds);
-      if (isValid) {
-        console.log('[session] Recovered chatId from store lookup', incomingChatId);
-      }
+      await saveChatIdToSession(req, incomingChatId, sessionId);
+      console.log('[session] Successfully added chatId to session', incomingChatId);
+      isValid = true;
     } catch (e) {
-      console.warn('[session] sessionStore.get failed', e);
+      console.error('[session] Failed to add chatId to session', e);
+      return null;
     }
-  }
-
-  if (!isValid) {
-    // ChatId not found - log error and return null to block request
-    const userEmail = req.user?.email || req.session?.passport?.user?.email || req.session?.user?.email;
-    try {
-      console.error('[session] invalid_chatId - blocking request', { 
-        pid: process.pid, 
-        sessionId, 
-        incomingChatId, 
-        sessionChatIds: session?.chatIds,
-        userEmail 
-      });
-    } catch (e) { }
-    return null;
   }
 
   return incomingChatId;
@@ -114,7 +74,7 @@ export default function sessionMiddleware(options = {}) {
   return async function (req, res, next) {
     try {
       const managementEnabled = ChatSessionService.isManagementEnabled();
-      
+
       // Require session when management is enabled
       if (managementEnabled && !req.session) {
         res.statusCode = 403;
@@ -152,9 +112,9 @@ export default function sessionMiddleware(options = {}) {
               // Only block request when management is enabled
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
-              return res.end(JSON.stringify({ 
-                error: 'no_session', 
-                message: 'Could not add ChatId to session: ' + e.message 
+              return res.end(JSON.stringify({
+                error: 'no_session',
+                message: 'Could not add ChatId to session: ' + e.message
               }));
             }
             // Otherwise just log and continue
@@ -170,9 +130,9 @@ export default function sessionMiddleware(options = {}) {
             // ChatId validation failed - block request
             res.statusCode = 403;
             res.setHeader('Content-Type', 'application/json');
-            return res.end(JSON.stringify({ 
-              error: 'invalid_chatId', 
-              message: 'ChatId does not belong to session' 
+            return res.end(JSON.stringify({
+              error: 'invalid_chatId',
+              message: 'ChatId does not belong to session'
             }));
           }
         }
@@ -188,7 +148,7 @@ export default function sessionMiddleware(options = {}) {
       if (session) {
         req.sessionId = sessionId;
         req.visitorId = session.visitorId;
-        
+
         const rateLimiterSnapshot = req.rateLimiterSnapshot || session.rateLimiter;
         if (rateLimiterSnapshot) {
           ChatSessionMetricsService.recordRateLimiterSnapshot(sessionId, rateLimiterSnapshot);
