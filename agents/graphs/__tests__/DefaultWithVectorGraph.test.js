@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { defaultWithVectorGraphApp } from '../DefaultWithVectorGraph.js';
 import { SearchContextService } from '../../../services/SearchContextService.js';
 import { AnswerGenerationService } from '../../../services/AnswerGenerationService.js';
 import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js';
@@ -25,6 +24,11 @@ vi.mock('../../../services/InteractionPersistenceService.js', () => ({
 vi.mock('../../../services/UrlValidationService.js', () => ({
     UrlValidationService: { validateUrl: vi.fn() }
 }));
+
+vi.mock('../GraphEventLogger.js', () => ({
+    logGraphEvent: vi.fn().mockResolvedValue()
+}));
+
 
 // Mock helper internal services
 vi.mock('../services/contextService.js', () => ({
@@ -60,9 +64,20 @@ vi.mock('../../../services/ScenarioOverrideService.js', () => ({
     ScenarioOverrideService: { getActiveOverride: vi.fn().mockResolvedValue(null) }
 }));
 
+import { defaultWithVectorGraphApp } from '../DefaultWithVectorGraph.js';
+
 describe('DefaultWithVectorGraph Workflow', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        // Ensure pii mock returns canonical shape for helpers
+        const piiModule = await import('../services/piiService.js');
+        if (piiModule && piiModule.checkPII && typeof piiModule.checkPII.mockResolvedValue === 'function') {
+            piiModule.checkPII.mockResolvedValue({ blocked: false, pii: null });
+        }
+        const ctxAgent = await import('../../../services/ContextAgentService.js');
+        if (ctxAgent && ctxAgent.invokeContextAgent && typeof ctxAgent.invokeContextAgent.mockResolvedValue === 'function') {
+            ctxAgent.invokeContextAgent.mockResolvedValue({ message: 'context msg', model: 'gpt' });
+        }
 
         vi.spyOn(graphRequestContext, 'getStore').mockReturnValue({ user: { id: 'test-user' }, headers: {} });
 
@@ -106,5 +121,12 @@ describe('DefaultWithVectorGraph Workflow', () => {
         expect(SearchContextService.search).toHaveBeenCalled();
         expect(AnswerGenerationService.generateAnswer).toHaveBeenCalled();
         expect(InteractionPersistenceService.persistInteraction).toHaveBeenCalled();
+        const { logGraphEvent } = await import('../GraphEventLogger.js');
+        // init node should emit input and output logs
+        expect(logGraphEvent).toHaveBeenCalled();
+        const calls = logGraphEvent.mock.calls;
+        expect(calls.length).toBeGreaterThanOrEqual(2);
+        expect(calls[0][1]).toBe('node:init input');
+        expect(calls[1][1]).toBe('node:init output');
     });
 });

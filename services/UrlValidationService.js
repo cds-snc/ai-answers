@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Agent } from 'https';
 import ServerLoggingService from './ServerLoggingService.js';
+import { logGraphEvent } from '../agents/graphs/GraphEventLogger.js';
 
 function getHttpsAgent() {
     return new Agent({ rejectUnauthorized: false });
@@ -17,18 +18,18 @@ function getFinalUrl(response, url) {
 }
 
 function logCheck(url, response, method, chatId) {
-    ServerLoggingService.info(
-        `Checked URL: ${url} => ${response.status} (${getFinalUrl(response, url)}) [${method.toUpperCase()}]`,
-        chatId || 'system',
-        {
+    // Fire-and-forget log forwarding; do not await so callers remain sync
+    try {
+        logGraphEvent('info', `Checked URL: ${url} => ${response.status} (${getFinalUrl(response, url)}) [${method.toUpperCase()}]`, chatId || 'system', {
             url,
             status: response.status,
             finalUrl: getFinalUrl(response, url),
             method: method.toUpperCase(),
-        }
-    );
+        });
+    } catch (_e) {
+        // swallow to avoid affecting URL checks
+    }
 }
-
 async function checkUrlWithMethod(url, method = 'head', chatId) {
     const httpsAgent = getHttpsAgent();
     let result = {

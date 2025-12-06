@@ -94,6 +94,21 @@ export class DefaultWithVectorGraph {
           return { done: false };
         }
 
+        if (eventType === 'log' && parsedData) {
+          try {
+            const level = parsedData.level || 'log';
+            const payload = parsedData;
+            if (console && typeof console[level] === 'function') {
+              console[level](payload);
+            } else if (console && console.log) {
+              console.log(payload);
+            }
+          } catch (_e) {
+            // ignore client-side logging errors
+          }
+          return { done: false };
+        }
+
         if (eventType === 'result') {
           completed = true;
           if (parsedData) {

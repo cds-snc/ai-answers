@@ -76,7 +76,19 @@ async function handler(req, res) {
   };
 
   try {
-    await graphRequestContext.run({ headers: forwardedHeaders, user: req.user }, async () => {
+    const store = { headers: forwardedHeaders, user: req.user };
+    // Only enable graph event streaming for authenticated users
+    if (req.user) {
+      store.graphEventWriter = (eventName, data) => {
+        try {
+          writeEvent(res, eventName, data);
+        } catch (_err) {
+          // ignore writer errors
+        }
+      };
+    }
+
+    await graphRequestContext.run(store, async () => {
       const stream = await graphApp.stream(input, { streamMode: 'updates' });
       for await (const update of stream) {
         traverseForUpdates(update, handlers);

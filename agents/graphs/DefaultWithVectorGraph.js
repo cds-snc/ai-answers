@@ -1,5 +1,6 @@
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
+import { logGraphEvent } from './GraphEventLogger.js';
 import { DefaultWithVectorServerWorkflow, RedactionError, ShortQueryValidation } from './workflows/defaultWithVectorHelpers.js';
 
 import { graphRequestContext } from './requestContext.js';
@@ -44,12 +45,23 @@ const graph = new StateGraph(GraphState);
 
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
+  // Emit node input log (fire-and-forget)
+  logGraphEvent('info', 'node:init input', state.chatId, {
+    lang: state.lang,
+    referringUrl: state.referringUrl,
+    selectedAI: state.selectedAI,
+    userMessage: state.userMessage,
+  });
+
   await ServerLoggingService.info('Starting DefaultWithVectorGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
   });
-  return { startTime, status: WorkflowStatus.MODERATING_QUESTION };
+  const out = { startTime, status: WorkflowStatus.MODERATING_QUESTION };
+  // Emit node output log (fire-and-forget)
+  logGraphEvent('info', 'node:init output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('validate', async (state) => {
