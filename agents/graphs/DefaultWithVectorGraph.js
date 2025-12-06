@@ -175,6 +175,13 @@ graph.addNode('contextNode', async (state) => {
 });
 
 graph.addNode('shortCircuit', async (state) => {
+  // Emit input log for shortCircuit node
+  logGraphEvent('info', 'node:shortCircuit input', state.chatId, {
+    userMessage: state.userMessage,
+    translationData: state.translationData,
+    lang: state.lang,
+  });
+
   const detectedLang = state.translationData?.originalLanguage || state.lang;
   const similar = await workflow.checkSimilarAnswer({
     chatId: state.chatId,
@@ -210,18 +217,30 @@ graph.addNode('shortCircuit', async (state) => {
       await ServerLoggingService.error('Short-circuit persistence error', state.chatId, err);
     }
 
-    return {
+    const out = {
       status: WorkflowStatus.GENERATING_ANSWER,
       shortCircuitPayload: payload,
       confidenceRating: payload.confidenceRating,
       finalCitationUrl: payload.finalCitationUrl,
     };
+    // Emit output log for shortCircuit node
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: true, payload: out });
+    return out;
   }
 
-  return { status: WorkflowStatus.GENERATING_ANSWER };
+  const out = { status: WorkflowStatus.GENERATING_ANSWER };
+  // Emit output log for shortCircuit node when no short circuit detected
+  logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false });
+  return out;
 });
 
 graph.addNode('answerNode', async (state) => {
+  // Emit input log for answer node
+  logGraphEvent('info', 'node:answer input', state.chatId, {
+    selectedAI: state.selectedAI,
+    contextSummary: state.context?.summary || null,
+  });
+
   const answer = await workflow.sendAnswerRequest({
     selectedAI: state.selectedAI,
     conversationHistory: state.cleanedHistory,
@@ -230,12 +249,22 @@ graph.addNode('answerNode', async (state) => {
     referringUrl: state.referringUrl,
     chatId: state.chatId,
   });
-  return { answer };
+
+  const out = { answer };
+  // Emit output log for answer node
+  logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
+  return out;
 });
 
 graph.addNode('verifyNode', async (state) => {
   let finalCitationUrl = null;
   let confidenceRating = null;
+
+  // Emit input log for verifyNode
+  logGraphEvent('info', 'node:verify input', state.chatId, {
+    answer: state.answer,
+    shortCircuit: Boolean(state.shortCircuitPayload),
+  });
 
   if (state.answer && state.answer.answerType === 'normal') {
     const citationResult = await workflow.verifyCitation({
@@ -256,8 +285,7 @@ graph.addNode('verifyNode', async (state) => {
   const answerData = isShortCircuit ? state.shortCircuitPayload.answer : state.answer;
   const contextData = isShortCircuit ? state.shortCircuitPayload.context : state.context;
   const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
-
-  return {
+  const out = {
     status: WorkflowStatus.VERIFYING_CITATION,
     finalCitationUrl: finalCitationUrl ?? state.finalCitationUrl,
     confidenceRating: confidenceRating ?? state.confidenceRating,
@@ -269,6 +297,12 @@ graph.addNode('verifyNode', async (state) => {
       confidenceRating: confidenceRating ?? state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null,
     },
   };
+  // Emit output log for verifyNode
+  logGraphEvent('info', 'node:verify output', state.chatId, {
+    finalCitationUrl: out.finalCitationUrl,
+    confidenceRating: out.confidenceRating,
+  });
+  return out;
 });
 
 graph.addNode('persistNode', async (state) => {
@@ -276,6 +310,12 @@ graph.addNode('persistNode', async (state) => {
   const totalResponseTime = endTime - state.startTime;
 
   const isShortCircuit = Boolean(state.shortCircuitPayload);
+
+  // Emit input log for persistNode
+  logGraphEvent('info', 'node:persist input', state.chatId, {
+    isShortCircuit,
+    totalResponseTime,
+  });
 
   // Only persist if not a short circuit (short circuits are already persisted)
   if (!isShortCircuit) {
@@ -306,9 +346,12 @@ graph.addNode('persistNode', async (state) => {
 
   const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
 
-  return {
+  const out = {
     status: needsClarification ? WorkflowStatus.NEED_CLARIFICATION : WorkflowStatus.COMPLETE,
   };
+  // Emit output log for persistNode
+  logGraphEvent('info', 'node:persist output', state.chatId, out);
+  return out;
 });
 
 
