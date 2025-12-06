@@ -174,6 +174,9 @@ graph.addNode('answerNode', async (state) => {
 });
 
 graph.addNode('verifyNode', async (state) => {
+  let finalCitationUrl = null;
+  let confidenceRating = null;
+
   if (state.answer && state.answer.answerType === 'normal') {
     const citationResult = await workflow.verifyCitation({
       citationUrl: state.answer.citationUrl,
@@ -184,13 +187,28 @@ graph.addNode('verifyNode', async (state) => {
       chatId: state.chatId,
     });
 
-    return {
-      status: WorkflowStatus.VERIFYING_CITATION,
-      finalCitationUrl: citationResult.url || citationResult.fallbackUrl,
-      confidenceRating: citationResult.confidenceRating,
-    };
+    finalCitationUrl = citationResult.url || citationResult.fallbackUrl;
+    confidenceRating = citationResult.confidenceRating;
   }
-  return {};
+
+  // Build and return the result here so client gets it immediately
+  const isShortCircuit = Boolean(state.shortCircuitPayload);
+  const answerData = isShortCircuit ? state.shortCircuitPayload.answer : state.answer;
+  const contextData = isShortCircuit ? state.shortCircuitPayload.context : state.context;
+  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
+
+  return {
+    status: WorkflowStatus.VERIFYING_CITATION,
+    finalCitationUrl: finalCitationUrl ?? state.finalCitationUrl,
+    confidenceRating: confidenceRating ?? state.confidenceRating,
+    result: {
+      answer: answerData,
+      context: contextData,
+      question: state.userMessage,
+      citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
+      confidenceRating: confidenceRating ?? state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null,
+    },
+  };
 });
 
 graph.addNode('persistNode', async (state) => {
@@ -198,14 +216,14 @@ graph.addNode('persistNode', async (state) => {
   const totalResponseTime = endTime - state.startTime;
 
   const isShortCircuit = Boolean(state.shortCircuitPayload);
-  const answerData = isShortCircuit ? state.shortCircuitPayload.answer : state.answer;
-  const contextData = isShortCircuit ? state.shortCircuitPayload.context : state.context;
-  const finalCitationUrl = state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null;
-  const confidenceRating = state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null;
 
-  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
-
+  // Only persist if not a short circuit (short circuits are already persisted)
   if (!isShortCircuit) {
+    const answerData = state.answer;
+    const contextData = state.context;
+    const finalCitationUrl = state.finalCitationUrl ?? null;
+    const confidenceRating = state.confidenceRating ?? null;
+
     await workflow.persistInteraction({
       selectedAI: state.selectedAI,
       question: state.userMessage,
@@ -224,15 +242,10 @@ graph.addNode('persistNode', async (state) => {
 
   await ServerLoggingService.info('Workflow complete', state.chatId, { totalResponseTime });
 
+  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
+
   return {
     status: needsClarification ? WorkflowStatus.NEED_CLARIFICATION : WorkflowStatus.COMPLETE,
-    result: {
-      answer: answerData,
-      context: contextData,
-      question: state.userMessage,
-      citationUrl: finalCitationUrl,
-      confidenceRating,
-    },
   };
 });
 

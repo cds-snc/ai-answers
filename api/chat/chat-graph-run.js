@@ -108,8 +108,8 @@ async function handler(req, res) {
     const authorization = headers['authorization'];
     if (authorization) out['Authorization'] = authorization;
 
-    const fpId = headers['x-fp-id'];
-    if (fpId) out['x-fp-id'] = fpId;
+    const userAgent = headers['user-agent'];
+    if (userAgent) out['User-Agent'] = userAgent;
 
     return out;
   }

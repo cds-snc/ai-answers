@@ -5,8 +5,10 @@ import { checkPII } from '../services/piiService.js';
 import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
 import { translateQuestion } from '../services/translationService.js';
 import { graphRequestContext } from '../requestContext.js';
+import { parseResponse, parseSentences } from '../services/answerService.js';
+import { parseContextMessage } from '../services/contextService.js';
 
-const API_BASE = process.env.INTERNAL_API_URL || `http://127.0.0.1:${process.env.PORT || 3001}/api`;
+const API_BASE = process.env.INTERNAL_API_URL || `http://localhost:${process.env.PORT || 3001}/api`;
 
 class RedactionError extends Error {
   constructor(message, redactedText, redactedItems) {
@@ -26,131 +28,69 @@ function getProviderApiUrl(provider, endpoint) {
   return `${API_BASE}/${normalized}/${normalized}-${endpoint}`;
 }
 
-function parseSentences(text) {
-  const sentenceRegex = /<s-(\d+)>(.*?)<\/s-\d+>/g;
-  const sentences = [];
-  let match;
-  while ((match = sentenceRegex.exec(text)) !== null) {
-    const index = parseInt(match[1], 10) - 1;
-    if (index >= 0 && index < 4 && match[2].trim()) {
-      sentences[index] = match[2].trim();
-    }
-  }
-  if (sentences.length === 0 && text.trim()) {
-    sentences[0] = text.trim();
-  }
-  return Array(4).fill('').map((_, i) => sentences[i] || '');
-}
-
-
-function parseParagraphs(text) {
-  if (!text || typeof text !== 'string') return [];
-  return text
-    .split(/(?:\r?\n){2,}/)
-    .map(paragraph => paragraph.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-}
-
-function parseAnswerResponse(rawText = '') {
-  if (!rawText) {
-    return {
-      answerType: 'normal',
-      content: '',
-      paragraphs: [],
-      sentences: parseSentences(''),
-      citationHead: null,
-      citationUrl: null,
-      confidenceRating: null,
-      englishAnswer: null,
-    };
-  }
-
-  let answerType = 'normal';
-  let content = rawText;
-  let englishAnswer = null;
-  let citationHead = null;
-  let citationUrl = null;
-  let confidenceRating = null;
-
-  const stripTag = (str, regex) => str.replace(regex, '').trim();
-
-  const preliminaryRegex = /<preliminary-checks>[\s\S]*?<\/preliminary-checks>/gi;
-  content = stripTag(content, preliminaryRegex);
-
-  const confidenceMatch = /<confidence>([\s\S]*?)<\/confidence>/i.exec(content);
-  if (confidenceMatch) {
-    confidenceRating = confidenceMatch[1].trim();
-    content = stripTag(content, /<confidence>[\s\S]*?<\/confidence>/i);
-  }
-
-  const citationHeadMatch = /<citation-head>([\s\S]*?)<\/citation-head>/i.exec(content);
-  if (citationHeadMatch) {
-    citationHead = citationHeadMatch[1].trim();
-    content = stripTag(content, /<citation-head>[\s\S]*?<\/citation-head>/i);
-  }
-
-  const citationUrlMatch = /<citation-url>([\s\S]*?)<\/citation-url>/i.exec(content);
-  if (citationUrlMatch) {
-    citationUrl = citationUrlMatch[1].trim();
-    content = stripTag(content, /<citation-url>[\s\S]*?<\/citation-url>/i);
-  }
-
-  const englishMatch = /<english-answer>([\s\S]*?)<\/english-answer>/i.exec(content);
-  if (englishMatch) {
-    englishAnswer = englishMatch[1].trim();
-    content = stripTag(content, /<english-answer>[\s\S]*?<\/english-answer>/i);
-  }
-
-  const answerBlock = /<answer>([\s\S]*?)<\/answer>/i.exec(content);
-  if (answerBlock) {
-    content = answerBlock[1].trim();
-  }
-
-  const specialTags = {
-    'not-gc': /<not-gc>([\s\S]*?)<\/not-gc>/i,
-    'pt-muni': /<pt-muni>([\s\S]*?)<\/pt-muni>/i,
-    'clarifying-question': /<clarifying-question>([\s\S]*?)<\/clarifying-question>/i,
-  };
-
-  for (const [type, regex] of Object.entries(specialTags)) {
-    const match = regex.exec(content);
-    if (match) {
-      content = stripTag(content, regex);
-      answerType = type;
-    }
-  }
-
-  const paragraphs = parseParagraphs(content);
-  const sentences = parseSentences(content);
-
-  return {
-    answerType,
-    content: content.trim(),
-    paragraphs,
-    sentences,
-    citationHead,
-    citationUrl,
-    confidenceRating,
-    englishAnswer,
-  };
-}
+// Parsing functions removed - now using answerService.js and contextService.js
 async function fetchJson(url, options = {}) {
   const ctx = graphRequestContext.getStore();
   const forwardedHeaders = ctx?.headers || {};
-  const resp = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...forwardedHeaders,
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Request failed (${resp.status}): ${text}`);
+
+  const maxRetries = 3;
+  const baseDelay = 100; // Start with 100ms
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Set a generous timeout for AI requests (5 minutes)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
+    try {
+      if (attempt > 0) {
+        console.log(`[fetchJson] Retry attempt ${attempt + 1}/${maxRetries} for: ${url}`);
+      } else {
+        console.log(`[fetchJson] Making request to: ${url}`);
+      }
+      console.log(`[fetchJson] Forwarded headers:`, Object.keys(forwardedHeaders));
+
+      const resp = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Connection': 'keep-alive',
+          ...forwardedHeaders,
+          ...(options.headers || {}),
+        },
+        signal: options.signal || controller.signal,
+        ...options,
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log(`[fetchJson] Response status: ${resp.status}`);
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Request failed (${resp.status}): ${text}`);
+      }
+      return resp.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      const isLastAttempt = attempt === maxRetries - 1;
+      const isRetryableError = error.code === 'ECONNRESET' ||
+        error.code === 'ECONNREFUSED' ||
+        error.message?.includes('fetch failed');
+
+      if (isRetryableError && !isLastAttempt) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`[fetchJson] Retryable error (${error.code || error.message}), waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      console.error(`[fetchJson] Error calling ${url}:`, error.message, error.code);
+      if (error.name === 'AbortError') {
+        throw new Error(`Request to ${url} timed out after 5 minutes`);
+      }
+      throw error;
+    }
   }
-  return resp.json();
 }
 
 export class DefaultWithVectorServerWorkflow {
@@ -242,27 +182,24 @@ export class DefaultWithVectorServerWorkflow {
       body: JSON.stringify({ ...contextPayload, provider: selectedAI }),
     });
 
-    const parseField = (pattern) => {
-      const match = contextResponse.content?.match(pattern);
-      return match ? match[1] : null;
-    };
-
-    const contextData = {
-      topic: parseField(/<topic>([\s\S]*?)<\/topic>/),
-      topicUrl: parseField(/<topicUrl>([\s\S]*?)<\/topicUrl>/),
-      department: parseField(/<department>([\s\S]*?)<\/department>/),
-      departmentUrl: parseField(/<departmentUrl>([\s\S]*?)<\/departmentUrl>/),
+    // Use the service to parse the context response
+    const parsed = parseContextMessage({
+      message: contextResponse.message || '',
       searchResults: contextPayload.searchResults,
-      systemPrompt: contextPayload.systemPrompt || '',
       searchProvider,
       model: contextResponse.model,
       inputTokens: contextResponse.inputTokens,
       outputTokens: contextResponse.outputTokens,
+    });
+
+    const contextData = {
+      ...parsed,
+      systemPrompt: contextPayload.systemPrompt || '',
       query: searchResult.query,
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
       outputLang: this.determineOutputLang(lang, translationData),
-      originalLang: translationData.originalLanguage,
+      originalLang: translationData?.originalLanguage || lang,
     };
 
     const departmentKey = department || contextData.department;
@@ -424,31 +361,31 @@ export class DefaultWithVectorServerWorkflow {
 
   async sendAnswerRequest({ selectedAI, conversationHistory, lang, context, referringUrl, chatId }) {
     const payload = {
+      provider: selectedAI,
       message: context.translatedQuestion || context.translationData?.translatedText || '',
-      systemPrompt: context.systemPrompt || '',
       conversationHistory,
       chatId,
-      context,
-      referringUrl,
       lang,
+      department: context.department,
+      topic: context.topic,
+      topicUrl: context.topicUrl,
+      departmentUrl: context.departmentUrl,
+      searchResults: context.searchResults || [],
+      scenarioOverrideText: context.systemPrompt || '',
+      referringUrl,
     };
 
     const response = await fetchJson(getApiUrl('chat-message'), {
       method: 'POST',
-      body: JSON.stringify({ ...payload, provider: selectedAI }),
+      body: JSON.stringify(payload),
     });
 
-    const parsed = parseAnswerResponse(response.content || '');
+    // Use the service to parse the response
+    const parsed = parseResponse(response.content || '');
 
     return {
       ...response,
       ...parsed,
-      paragraphs: parsed.paragraphs || parseParagraphs(response.content || ''),
-      sentences: parsed.sentences || parseSentences(response.content || ''),
-      citationHead: parsed.citationHead ?? response.citationHead ?? null,
-      citationUrl: response.citationUrl ?? parsed.citationUrl ?? null,
-      confidenceRating: parsed.confidenceRating ?? response.confidenceRating ?? null,
-      tools: response.tools || [],
       questionLanguage: context.originalLang,
       englishQuestion: context.translatedQuestion,
     };
@@ -457,6 +394,7 @@ export class DefaultWithVectorServerWorkflow {
   async verifyCitation({ citationUrl, lang, question, department, translationF, chatId }) {
     const fallback = {
       isValid: false,
+      url: null,
       fallbackUrl: null,
       confidenceRating: '0.1',
     };
@@ -465,16 +403,16 @@ export class DefaultWithVectorServerWorkflow {
       return fallback;
     }
 
-    const searchUrl = new URL('util-check-url', API_BASE);
-    searchUrl.searchParams.set('url', citationUrl);
-    if (chatId) searchUrl.searchParams.set('chatId', chatId);
-
     try {
+      const searchUrl = new URL(`${API_BASE}/util/util-check-url`);
+      searchUrl.searchParams.set('url', citationUrl);
+      if (chatId) searchUrl.searchParams.set('chatId', chatId);
+
       const result = await fetchJson(searchUrl.toString());
       return {
         url: result.url || citationUrl,
-        fallbackUrl: result.fallbackUrl,
-        confidenceRating: result.confidenceRating || '0.5',
+        fallbackUrl: result.fallbackUrl || null,
+        confidenceRating: result.confidenceRating?.toString() || '0.5',
       };
     } catch (error) {
       await ServerLoggingService.error('Citation validation failed', chatId, error);
@@ -483,7 +421,7 @@ export class DefaultWithVectorServerWorkflow {
   }
 
   async persistInteraction(interactionData) {
-    await fetchJson(`${API_BASE}/db/db-persist-interaction`, {
+    await fetchJson(getApiUrl('chat-persist-interaction'), {
       method: 'POST',
       body: JSON.stringify(interactionData),
     });
