@@ -128,5 +128,14 @@ describe('DefaultWithVectorGraph Workflow', () => {
         expect(calls.length).toBeGreaterThanOrEqual(2);
         expect(calls[0][1]).toBe('node:init input');
         expect(calls[1][1]).toBe('node:init output');
+        const callNames = calls.map((c) => c[1]);
+        expect(callNames).toContain('node:validate input');
+        expect(callNames).toContain('node:validate output');
+        expect(callNames).toContain('node:redact input');
+        expect(callNames).toContain('node:redact output');
+        expect(callNames).toContain('node:translate input');
+        expect(callNames).toContain('node:translate output');
+        expect(callNames).toContain('node:context input');
+        expect(callNames).toContain('node:context output');
     });
 });

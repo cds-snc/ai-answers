@@ -65,9 +65,20 @@ graph.addNode('init', async (state) => {
 });
 
 graph.addNode('validate', async (state) => {
+  // Emit input log for validate node (fire-and-forget)
+  logGraphEvent('info', 'node:validate input', state.chatId, {
+    userMessage: state.userMessage,
+    conversationHistory: state.conversationHistory,
+    lang: state.lang,
+    department: state.department,
+  });
+
   try {
     workflow.validateShortQuery(state.conversationHistory, state.userMessage, state.lang, state.department);
-    return {};
+    const out = {};
+    // Emit output log for validate node (fire-and-forget)
+    logGraphEvent('info', 'node:validate output', state.chatId, out);
+    return out;
   } catch (error) {
     if (error instanceof ShortQueryValidation) {
       throw error;
@@ -78,8 +89,19 @@ graph.addNode('validate', async (state) => {
 
 graph.addNode('redact', async (state) => {
   try {
+    // Emit input log for redact node
+    logGraphEvent('info', 'node:redact input', state.chatId, {
+      userMessage: state.userMessage,
+      lang: state.lang,
+      selectedAI: state.selectedAI,
+    });
+
     const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-    return { redactedText };
+
+    const out = { redactedText };
+    // Emit output log for redact node
+    logGraphEvent('info', 'node:redact output', state.chatId, out);
+    return out;
   } catch (error) {
     if (error instanceof RedactionError) {
       throw error;
@@ -89,12 +111,31 @@ graph.addNode('redact', async (state) => {
 });
 
 graph.addNode('translate', async (state) => {
+  // Emit input log for translate node
   const translationContext = workflow.buildTranslationContext(state.conversationHistory);
+  logGraphEvent('info', 'node:translate input', state.chatId, {
+    redactedText: state.redactedText,
+    translationContext,
+    selectedAI: state.selectedAI,
+  });
+
   const translationData = await workflow.translateQuestion(state.redactedText, "en", state.selectedAI, translationContext);
-  return { translationData };
+
+  const out = { translationData };
+  // Emit output log for translate node
+  logGraphEvent('info', 'node:translate output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('contextNode', async (state) => {
+  // Emit input log for context node
+  logGraphEvent('info', 'node:context input', state.chatId, {
+    conversationHistory: state.conversationHistory,
+    translationData: state.translationData,
+    userMessage: state.userMessage,
+    lang: state.lang,
+  });
+
   const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
     conversationHistory: state.conversationHistory,
     department: state.department,
@@ -123,11 +164,14 @@ graph.addNode('contextNode', async (state) => {
     });
   }
 
-  return {
+  const out = {
     context,
     cleanedHistory,
     usedExistingContext,
   };
+  // Emit output log for context node
+  logGraphEvent('info', 'node:context output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('shortCircuit', async (state) => {
