@@ -297,6 +297,9 @@ export class DefaultWithVectorServerWorkflow {
       pageLanguage: lang,
       responseTime: totalResponseTimeSC,
       searchProvider,
+      // Optional: the matched chat and interaction identifiers (if available)
+      instantAnswerChatId: similarShortCircuit.instantAnswerChatId || null,
+      instantAnswerInteractionId: similarShortCircuit.instantAnswerInteractionId || null,
     };
   }
 
@@ -404,11 +407,11 @@ export class DefaultWithVectorServerWorkflow {
     }
 
     try {
-      const searchUrl = new URL(`${API_BASE}/util/util-check-url`);
-      searchUrl.searchParams.set('url', citationUrl);
-      if (chatId) searchUrl.searchParams.set('chatId', chatId);
+      // Build query string
+      const params = new URLSearchParams({ url: citationUrl });
+      if (chatId) params.set('chatId', chatId);
 
-      const result = await fetchJson(searchUrl.toString());
+      const result = await fetchJson(`${API_BASE}/util/util-check-url?${params.toString()}`);
       return {
         url: result.url || citationUrl,
         fallbackUrl: result.fallbackUrl || null,
