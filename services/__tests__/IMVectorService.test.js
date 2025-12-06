@@ -54,7 +54,7 @@ describe('IMVectorService', () => {
 
     // Mark 'q' as having expert feedback
     svc.qaMeta.set('p', { interactionId: 'i10', expertFeedbackId: null });
-    svc.qaMeta.set('q', { interactionId: 'i11', expertFeedbackId: 'ef-1' });
+    svc.qaMeta.set('q', { interactionId: 'i11', expertFeedbackId: 'ef-1', expertFeedbackScore: 100 });
     svc.qaMeta.set('r', { interactionId: 'i12', expertFeedbackId: null });
 
     const resultsPerQuestion = await svc.matchQuestions(['why is x'], { provider: 'openai', k: 3 });
