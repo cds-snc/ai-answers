@@ -8,8 +8,7 @@ import { graphRequestContext } from '../requestContext.js';
 import { parseResponse, parseSentences } from '../services/answerService.js';
 import { parseContextMessage } from '../services/contextService.js';
 
-const API_BASE = process.env.INTERNAL_API_URL || `http://localhost:${process.env.PORT || 3001}/api`;
-
+// RedactionError class
 class RedactionError extends Error {
   constructor(message, redactedText, redactedItems) {
     super(message);
@@ -19,19 +18,23 @@ class RedactionError extends Error {
   }
 }
 
+// Helper functions to construct API URLs
 function getApiUrl(endpoint) {
-  return `${API_BASE}/chat/${endpoint}`;
-}
-
-function getProviderApiUrl(provider, endpoint) {
-  const normalized = provider === 'claude' ? 'anthropic' : provider === 'azure-openai' ? 'azure' : provider;
-  return `${API_BASE}/${normalized}/${normalized}-${endpoint}`;
+  return `/chat/${endpoint}`;
 }
 
 // Parsing functions removed - now using answerService.js and contextService.js
 async function fetchJson(url, options = {}) {
   const ctx = graphRequestContext.getStore();
   const forwardedHeaders = ctx?.headers || {};
+
+  // Construct base URL from forwarded host header
+  const host = forwardedHeaders['host'] || forwardedHeaders['Host'] || 'localhost:3001';
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  const apiBase = `${protocol}://${host}/api`;
+
+  // If url is relative, prepend the base
+  const fullUrl = url.startsWith('http') ? url : `${apiBase}${url}`;
 
   const maxRetries = 3;
   const baseDelay = 100; // Start with 100ms
