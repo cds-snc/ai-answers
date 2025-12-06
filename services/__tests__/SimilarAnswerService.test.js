@@ -48,8 +48,7 @@ describe('SimilarAnswerService', () => {
         if (!process.env.MONGODB_URI) {
             await setup();
         }
-        vi.resetModules();
-        global.mongoose = { conn: null, promise: null };
+        // Ensure in-memory DB is available and connect
         const dbConnect = (await import('../../api/db/db-connect.js')).default;
         await dbConnect();
     });
@@ -153,6 +152,15 @@ describe('SimilarAnswerService', () => {
         };
 
         const result = await SimilarAnswerService.findSimilarAnswer(params);
+
+        // Debugging: log intermediate state when tests run in suite
+        // (helps diagnose intermittent failures during CI/local runs)
+        try {
+            // These internals are not exported; rely on mocks to infer behavior
+            // Log the AgentOrchestrator call and VectorService calls
+            console.log('VectorService.matchQuestions.calls=', VectorService.matchQuestions.mock.calls.length);
+            console.log('AgentOrchestratorService.invokeWithStrategy.calls=', AgentOrchestratorService.invokeWithStrategy.mock.calls.length);
+        } catch (e) { /* ignore logging errors */ }
 
         expect(result).toBeDefined();
         expect(result.answer).toContain('Answer 2');
