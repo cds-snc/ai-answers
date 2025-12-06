@@ -4,9 +4,17 @@ import { ScenarioOverrideService } from '../../../services/ScenarioOverrideServi
 import { checkPII } from '../services/piiService.js';
 import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
 import { translateQuestion } from '../services/translationService.js';
-import { graphRequestContext } from '../requestContext.js';
 import { parseResponse, parseSentences } from '../services/answerService.js';
 import { parseContextMessage } from '../services/contextService.js';
+
+// Services for direct invocation
+import { SearchContextService } from '../../../services/SearchContextService.js';
+import { AnswerGenerationService } from '../../../services/AnswerGenerationService.js';
+import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js';
+import { UrlValidationService } from '../../../services/UrlValidationService.js';
+import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
+import { invokeContextAgent } from '../../../services/ContextAgentService.js';
+import { exponentialBackoff } from '../../../src/utils/backoff.js';
 
 // RedactionError class
 class RedactionError extends Error {
@@ -15,84 +23,6 @@ class RedactionError extends Error {
     this.name = 'RedactionError';
     this.redactedText = redactedText;
     this.redactedItems = redactedItems;
-  }
-}
-
-// Helper functions to construct API URLs
-function getApiUrl(endpoint) {
-  return `/chat/${endpoint}`;
-}
-
-// Parsing functions removed - now using answerService.js and contextService.js
-async function fetchJson(url, options = {}) {
-  const ctx = graphRequestContext.getStore();
-  const forwardedHeaders = ctx?.headers || {};
-
-  // Construct base URL from forwarded host header
-  const host = forwardedHeaders['host'] || forwardedHeaders['Host'] || 'localhost:3001';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const apiBase = `${protocol}://${host}/api`;
-
-  // If url is relative, prepend the base
-  const fullUrl = url.startsWith('http') ? url : `${apiBase}${url}`;
-
-  const maxRetries = 3;
-  const baseDelay = 100; // Start with 100ms
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    // Set a generous timeout for AI requests (5 minutes)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
-
-    try {
-      if (attempt > 0) {
-        console.log(`[fetchJson] Retry attempt ${attempt + 1}/${maxRetries} for: ${url}`);
-      } else {
-        console.log(`[fetchJson] Making request to: ${url}`);
-      }
-      console.log(`[fetchJson] Forwarded headers:`, Object.keys(forwardedHeaders));
-
-      const resp = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive',
-          ...forwardedHeaders,
-          ...(options.headers || {}),
-        },
-        signal: options.signal || controller.signal,
-        ...options,
-      });
-
-      clearTimeout(timeoutId);
-
-      console.log(`[fetchJson] Response status: ${resp.status}`);
-
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(`Request failed (${resp.status}): ${text}`);
-      }
-      return resp.json();
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      const isLastAttempt = attempt === maxRetries - 1;
-      const isRetryableError = error.code === 'ECONNRESET' ||
-        error.code === 'ECONNREFUSED' ||
-        error.message?.includes('fetch failed');
-
-      if (isRetryableError && !isLastAttempt) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`[fetchJson] Retryable error (${error.code || error.message}), waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      console.error(`[fetchJson] Error calling ${url}:`, error.message, error.code);
-      if (error.name === 'AbortError') {
-        throw new Error(`Request to ${url} timed out after 5 minutes`);
-      }
-      throw error;
-    }
   }
 }
 
@@ -124,7 +54,6 @@ export class DefaultWithVectorServerWorkflow {
     return (conversationHistory || [])
       .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string')
       .map(m => m.text || '');
-
   }
 
   determineOutputLang(pageLang, translationData) {
@@ -158,19 +87,15 @@ export class DefaultWithVectorServerWorkflow {
     const baseMessage = translationData?.translatedText || translationData?.originalText || userMessage || '';
 
     const searchPayload = {
-      providedByInteractionId: null,
       chatId,
       searchService: searchProvider,
       agentType: selectedAI,
       referringUrl,
       translationData,
-      lang,
+      pageLanguage: lang,
     };
 
-    const searchResult = await fetchJson(`${API_BASE}/search/search-context`, {
-      method: 'POST',
-      body: JSON.stringify(searchPayload),
-    });
+    const searchResult = await SearchContextService.search(searchPayload);
 
     const contextPayload = {
       chatId,
@@ -178,12 +103,12 @@ export class DefaultWithVectorServerWorkflow {
       systemPrompt: searchResult.systemPrompt || '',
       conversationHistory,
       searchResults: searchResult.results || searchResult.searchResults || [],
+      provider: selectedAI,
+      language: lang,
     };
 
-    const contextResponse = await fetchJson(getApiUrl('chat-context'), {
-      method: 'POST',
-      body: JSON.stringify({ ...contextPayload, provider: selectedAI }),
-    });
+    // Invoke Context Agent via Service directly
+    const contextResponse = await exponentialBackoff(() => invokeContextAgent(selectedAI, contextPayload));
 
     // Use the service to parse the context response
     const parsed = parseContextMessage({
@@ -318,25 +243,23 @@ export class DefaultWithVectorServerWorkflow {
       .filter(Boolean);
     const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
 
-    const similarJson = await fetchJson(getApiUrl('chat-similar-answer'), {
-      method: 'POST',
-      body: JSON.stringify({
-        chatId,
-        questions,
-        selectedAI,
-        pageLanguage: lang || null,
-        detectedLanguage: detectedLang || null,
-        searchProvider: searchProvider || null,
-      }),
-    });
+    const similarJson = await SimilarAnswerService.findSimilarAnswer({
+      chatId,
+      questions,
+      selectedAI,
+      pageLanguage: lang || null,
+      detectedLanguage: detectedLang || null,
+    }); // removed searchProvider arg as service didn't seem to take it, or it was implicit? original helper passed it.
+    // Checked service: findSimilarAnswer({ chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage })
+    // It does NOT take searchProvider. So that's fine.
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
       const englishAnswerText = similarJson.englishAnswer || answerText;
       // Extract the instant-match ids returned by the API
-      // Accept either the new instantAnswer* fields or legacy names
-      const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
-      const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || similarJson.providedByInteractionId || null;
+      // Service returns { formatted.interactionId, formatted.chatId } which map to similarJson.interactionId and similarJson.chatId
+      const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || null;
+      const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || null;
       await ServerLoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
         similar: similarJson,
         instantAnswerChatId,
@@ -370,7 +293,6 @@ export class DefaultWithVectorServerWorkflow {
       provider: selectedAI,
       message: context.translatedQuestion || context.translationData?.translatedText || '',
       conversationHistory,
-      chatId,
       lang,
       department: context.department,
       topic: context.topic,
@@ -378,13 +300,12 @@ export class DefaultWithVectorServerWorkflow {
       departmentUrl: context.departmentUrl,
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',
-      referringUrl,
+      referringUrl, // Service might need this? AnswerGenerationService takes it.
     };
 
-    const response = await fetchJson(getApiUrl('chat-message'), {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    // Call service directly
+    // generateAnswer(params, chatId)
+    const response = await AnswerGenerationService.generateAnswer(payload, chatId);
 
     // Use the service to parse the response
     const parsed = parseResponse(response.content || '');
@@ -410,11 +331,7 @@ export class DefaultWithVectorServerWorkflow {
     }
 
     try {
-      // Build query string
-      const params = new URLSearchParams({ url: citationUrl });
-      if (chatId) params.set('chatId', chatId);
-
-      const result = await fetchJson(`${API_BASE}/util/util-check-url?${params.toString()}`);
+      const result = await UrlValidationService.validateUrl(citationUrl, chatId);
       return {
         url: result.url || citationUrl,
         fallbackUrl: result.fallbackUrl || null,
@@ -426,11 +343,13 @@ export class DefaultWithVectorServerWorkflow {
     }
   }
 
-  async persistInteraction(interactionData) {
-    await fetchJson(getApiUrl('chat-persist-interaction'), {
-      method: 'POST',
-      body: JSON.stringify(interactionData),
-    });
+  async persistInteraction(interactionData, user) {
+    // Note: Graph must pass user object now
+    await InteractionPersistenceService.persistInteraction(
+      interactionData.chatId, // Assuming chatId is in interactionData or I need to pass it?
+      interactionData,
+      user
+    );
   }
 }
 

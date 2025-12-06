@@ -2,6 +2,8 @@ import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { DefaultWithVectorServerWorkflow, RedactionError, ShortQueryValidation } from './workflows/defaultWithVectorHelpers.js';
 
+import { graphRequestContext } from './requestContext.js';
+
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
   GENERATING_ANSWER: 'generatingAnswer',
@@ -145,7 +147,9 @@ graph.addNode('shortCircuit', async (state) => {
     });
 
     try {
-      await workflow.persistInteraction(payload);
+      const ctx = graphRequestContext.getStore();
+      const user = ctx?.user;
+      await workflow.persistInteraction(payload, user);
     } catch (err) {
       await ServerLoggingService.error('Short-circuit persistence error', state.chatId, err);
     }
@@ -224,6 +228,8 @@ graph.addNode('persistNode', async (state) => {
     const finalCitationUrl = state.finalCitationUrl ?? null;
     const confidenceRating = state.confidenceRating ?? null;
 
+    const ctx = graphRequestContext.getStore();
+    const user = ctx?.user;
     await workflow.persistInteraction({
       selectedAI: state.selectedAI,
       question: state.userMessage,
@@ -237,7 +243,7 @@ graph.addNode('persistNode', async (state) => {
       pageLanguage: state.lang,
       responseTime: totalResponseTime,
       searchProvider: state.searchProvider,
-    });
+    }, user);
   }
 
   await ServerLoggingService.info('Workflow complete', state.chatId, { totalResponseTime });
@@ -249,10 +255,12 @@ graph.addNode('persistNode', async (state) => {
   };
 });
 
+
+
 graph.addConditionalEdges('shortCircuit', (state) =>
   state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
   {
-    skipAnswer: 'persistNode',
+    skipAnswer: 'verifyNode', // Fix: Go to verifyNode to construct result
     runAnswer: 'answerNode',
   },
 );
@@ -265,9 +273,12 @@ graph.addEdge('translate', 'contextNode');
 graph.addEdge('contextNode', 'shortCircuit');
 graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
-graph.addEdge('answerNode', 'persistNode');
+// Removed duplicate/incorrect edge answerNode -> persistNode
 
 graph.addEdge('persistNode', END);
+
+// ... (Update nodes logic)
+
 
 export const defaultWithVectorGraphApp = graph.compile();
 

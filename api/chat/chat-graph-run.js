@@ -76,7 +76,7 @@ async function handler(req, res) {
   };
 
   try {
-    await graphRequestContext.run({ headers: forwardedHeaders }, async () => {
+    await graphRequestContext.run({ headers: forwardedHeaders, user: req.user }, async () => {
       const stream = await graphApp.stream(input, { streamMode: 'updates' });
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
