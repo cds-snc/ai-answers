@@ -109,6 +109,7 @@
         "referringURL": "URL de référence :"
       },
       "textarea": {
+        "title": "Posez votre question ici.",
         "ariaLabel": {
           "first": "Posez une question sur Canada point ca",
           "followon": "Posez une question de suivi ou répondez",

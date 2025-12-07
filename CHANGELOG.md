@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.68.3](https://github.com/cds-snc/ai-answers/compare/v1.68.2...v1.68.3) (2025-12-05)
+
+
+### Bug Fixes
+
+* enhance chatId handling in session middleware with validation an… ([03f7d36](https://github.com/cds-snc/ai-answers/commit/03f7d3657882de177e8bf7067b302059ce64a106))
+* enhance chatId handling in session middleware with validation and error logging ([f5841df](https://github.com/cds-snc/ai-answers/commit/f5841dffaa26806d519ca23c7c08c560899dadb2))
+* streamline chatId handling in session middleware with improved logging and removal of redundant checks ([48b217b](https://github.com/cds-snc/ai-answers/commit/48b217ba69667d540e952ab3b4bd26e71e733f95))
+
+## [1.68.2](https://github.com/cds-snc/ai-answers/compare/v1.68.1...v1.68.2) (2025-12-04)
+
+
+### Bug Fixes
+
+* change conditional ([99c6252](https://github.com/cds-snc/ai-answers/commit/99c6252e9f3bd8adc491f5d981bfee91ef5b4b17))
+* remove unnecessary assignment in AnswerService for not-gc answer type ([32fa30c](https://github.com/cds-snc/ai-answers/commit/32fa30cdd36bc74321422b32354bee906641208f))
+* remove unnecessary assignment in AnswerService for not-gc answer… ([48804bc](https://github.com/cds-snc/ai-answers/commit/48804bcb0d2efd94b16d371cfc28d031ac2d58b3))
+
+## [1.68.1](https://github.com/cds-snc/ai-answers/compare/v1.68.0...v1.68.1) (2025-12-04)
+
+
+### Bug Fixes
+
+* malformed xml ([02db661](https://github.com/cds-snc/ai-answers/commit/02db6615fe8442d3baf4c0ac68381dc44405d84d))
+* malformed xml ([52f7436](https://github.com/cds-snc/ai-answers/commit/52f7436da91658263e392100ec611403e68abe13))
+
+## [1.68.0](https://github.com/cds-snc/ai-answers/compare/v1.67.0...v1.68.0) (2025-12-04)
+
+
+### Features
+
+* custom tooltip ([082c702](https://github.com/cds-snc/ai-answers/commit/082c70298d4acb81cee3ef10c6332bbf7ed3dd14))
+* custom validity ([015ade0](https://github.com/cds-snc/ai-answers/commit/015ade01dcd95a4e60ae71bda8188ab55e8acdbd))
+* fr ([13f85b8](https://github.com/cds-snc/ai-answers/commit/13f85b8c281ebfa2dc8c991216579136976d4142))
+* fr for tooltip ([52e8085](https://github.com/cds-snc/ai-answers/commit/52e8085bfd716cb8f742b1de226a89df6a0b4cc4))
+* fr meta ([4195dbd](https://github.com/cds-snc/ai-answers/commit/4195dbd60578916991fa8ce984f814688ad7e37a))
+* fr meta ([917f7ac](https://github.com/cds-snc/ai-answers/commit/917f7acd492bdce1cfe326f45aa2652f87e9179b))
+* javascript message fr ([d134716](https://github.com/cds-snc/ai-answers/commit/d134716a4bb61fcde2f124a444ccd9264380c8e9))
+* more missing metadata ([b311a24](https://github.com/cds-snc/ai-answers/commit/b311a24c1a25537d796e81961c70db6f36cb2f0e))
+* rmv tooltip - didn't work ([4e1cf42](https://github.com/cds-snc/ai-answers/commit/4e1cf426eb7fc8a2e06151a59e4e9be93c773564))
+* safeT ([55cb466](https://github.com/cds-snc/ai-answers/commit/55cb466a44ff55d5a16a01576d1f18c5a54e3300))
+* tooltip fr ([97c6f03](https://github.com/cds-snc/ai-answers/commit/97c6f035350cd0a7957d82c6a942262948222585))
+* tooltip fr ([f3e0e90](https://github.com/cds-snc/ai-answers/commit/f3e0e9025f103243172cd4d294eb105400d3e1af))
+* update lang tag ([4a99ccb](https://github.com/cds-snc/ai-answers/commit/4a99ccb46c9af80033b4b8c0961557f24c764e9f))
+
 ## [1.67.0](https://github.com/cds-snc/ai-answers/compare/v1.66.5...v1.67.0) (2025-12-03)
 
 
