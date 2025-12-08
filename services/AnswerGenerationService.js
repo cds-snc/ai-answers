@@ -32,6 +32,7 @@ async function invokeAgent({
     departmentUrl,
     searchResults,
     scenarioOverrideText,
+    similarQuestions,
 }, chatId) {
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
@@ -40,6 +41,7 @@ async function invokeAgent({
         topicUrl,
         searchResults,
         scenarioOverrideText,
+        similarQuestions,
     });
 
     const agent = await createChatAgent(provider, chatId);

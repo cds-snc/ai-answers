@@ -293,7 +293,7 @@ class DocDBVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100, language = null } = opts;
+  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -324,9 +324,16 @@ class DocDBVectorService {
       pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
       pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
       pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
-      // If a desired expertFeedbackRating was provided, require the populated expert feedback totalScore to match
+      // If a desired expertFeedbackRating was provided, apply comparison (eq by default for backwards compatibility)
       if (typeof expertFeedbackRating === 'number') {
-        pipeline.push({ $match: { 'ef.totalScore': expertFeedbackRating } });
+        const cmp = expertFeedbackComparison || 'eq';
+        if (cmp === 'lt') {
+          pipeline.push({ $match: { 'ef.totalScore': { $lt: expertFeedbackRating } } });
+        } else if (cmp === 'lte') {
+          pipeline.push({ $match: { 'ef.totalScore': { $lte: expertFeedbackRating } } });
+        } else { // eq
+          pipeline.push({ $match: { 'ef.totalScore': expertFeedbackRating } });
+        }
       }
       if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
       pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead', expertFeedbackScore: '$ef.totalScore' } });

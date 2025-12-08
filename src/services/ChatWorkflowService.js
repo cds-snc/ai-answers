@@ -116,9 +116,16 @@ export const ChatWorkflowService = {
         searchProvider,
         overrideUserId
       );
-    } else if (resolvedWorkflow === 'DefaultWithVectorGraph' || resolvedWorkflow === 'DefaultGraph') {
+    } else if (resolvedWorkflow === 'DefaultWithVectorGraph' || resolvedWorkflow === 'DefaultGraph' || resolvedWorkflow === 'InstantAndQAGraph') {
       const { default: GraphClient } = await import('../workflows/GraphClient.js');
-      const graphName = resolvedWorkflow === 'DefaultGraph' ? 'GenericWorkflowGraph' : 'DefaultWithVectorGraph';
+      let graphName;
+      if (resolvedWorkflow === 'DefaultGraph') {
+        graphName = 'GenericWorkflowGraph';
+      } else if (resolvedWorkflow === 'InstantAndQAGraph') {
+        graphName = 'InstantAndQAGraph';
+      } else {
+        graphName = 'DefaultWithVectorGraph';
+      }
       const implInstance = new GraphClient(graphName);
       return implInstance.processResponse(
         chatId,

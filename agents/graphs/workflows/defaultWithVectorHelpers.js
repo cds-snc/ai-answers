@@ -300,6 +300,7 @@ export class DefaultWithVectorServerWorkflow {
       departmentUrl: context.departmentUrl,
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',
+      similarQuestions: context.similarQuestions || '',
       referringUrl, // Service might need this? AnswerGenerationService takes it.
     };
 
