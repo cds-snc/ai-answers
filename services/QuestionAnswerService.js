@@ -75,13 +75,13 @@ class QuestionAnswerService {
   }
 
   async getSimilarQuestionsContext(question, opts = {}) {
-    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true } = opts;
+    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, provider = null } = opts;
     if (!question || typeof question !== 'string') return '';
 
     try {
       await dbConnect();
       const vectorService = await initVectorService();
-      const matches = await vectorService.matchQuestions([question], { k, threshold, expertFeedbackRating, expertFeedbackComparison, language });
+      const matches = await vectorService.matchQuestions([question], { provider, k, threshold, expertFeedbackRating, expertFeedbackComparison, language });
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);

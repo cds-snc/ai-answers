@@ -137,7 +137,7 @@ graph.addNode('contextNode', async (state) => {
   });
 
   const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
-    conversationHistory: state.conversationHistory,
+    conversationHistory: state.cleanedHistory || state.conversationHistory,
     department: state.department,
     overrideUserId: state.overrideUserId,
     translationData: state.translationData,
@@ -373,8 +373,8 @@ graph.addNode('persistNode', async (state) => {
 graph.addConditionalEdges('shortCircuit', (state) =>
   state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
   {
-    skipAnswer: 'verifyNode', // Fix: Go to verifyNode to construct result
-    runAnswer: 'answerNode',
+    skipAnswer: 'verifyNode', // Go to verifyNode to construct result
+    runAnswer: 'contextNode',
   },
 );
 
@@ -382,8 +382,8 @@ graph.addEdge(START, 'init');
 graph.addEdge('init', 'validate');
 graph.addEdge('validate', 'redact');
 graph.addEdge('redact', 'translate');
-graph.addEdge('translate', 'contextNode');
-graph.addEdge('contextNode', 'shortCircuit');
+graph.addEdge('translate', 'shortCircuit');
+graph.addEdge('contextNode', 'answerNode');
 graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
 // Removed duplicate/incorrect edge answerNode -> persistNode
