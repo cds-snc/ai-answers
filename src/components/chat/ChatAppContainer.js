@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, targetInteractionId = null, onSessionError }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null, onSessionError }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -675,14 +675,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleSendMessage={handleSendMessage}
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
-        handleSearchToggle={handleSearchToggle} // Add this line
+        handleSearchToggle={handleSearchToggle}
         workflow={workflow}
         handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
         selectedAI={selectedAI}
-        selectedSearch={selectedSearch} // Add this line
+        selectedSearch={selectedSearch}
         referringUrl={referringUrl}
+        chatCreatedAt={chatCreatedAt}
         turnCount={turnCount}
         showFeedback={showFeedback}
         displayStatus={displayStatus}

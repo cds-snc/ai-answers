@@ -176,6 +176,7 @@
         "fallbackText": "Unable to find a citation - use canada.ca search"
       },
       "review": {
+        "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:"
       }
     },
