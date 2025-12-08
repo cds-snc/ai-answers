@@ -3,6 +3,11 @@ const graphLoaders = {
     const mod = await import('./DefaultWithVectorGraph.js');
     return mod.defaultWithVectorGraphApp;
   },
+  // Generic workflow graph (used by client GraphClient when requesting GenericWorkflowGraph)
+  GenericWorkflowGraph: async () => {
+    const mod = await import('./DefaultGraph.js');
+    return mod.defaultGraphApp;
+  },
 };
 
 const graphCache = new Map();

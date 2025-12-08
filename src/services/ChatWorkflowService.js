@@ -96,11 +96,44 @@ export const ChatWorkflowService = {
 
     // Select workflow implementation based on the resolved workflow.
     // Default to DefaultWorkflow when unknown.
+    // Use the single GraphClient for graph-based client workflows to avoid duplicated code.
     let mod;
     if (resolvedWorkflow === 'DefaultWithVector') {
       mod = await import('../workflows/DefaultWithVector.js');
-    } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
-      mod = await import('../workflows/DefaultWithVectorGraph.js');
+      const Impl = mod.DefaultWithVector || mod.default;
+      const implInstance = new Impl();
+      return implInstance.processResponse(
+        chatId,
+        userMessage,
+        userMessageId,
+        conversationHistory,
+        lang,
+        department,
+        referringUrl,
+        selectedAI,
+        translationF,
+        onStatusUpdate,
+        searchProvider,
+        overrideUserId
+      );
+    } else if (resolvedWorkflow === 'DefaultWithVectorGraph' || resolvedWorkflow === 'DefaultGraph') {
+      const { default: GraphClient } = await import('../workflows/GraphClient.js');
+      const graphName = resolvedWorkflow === 'DefaultGraph' ? 'GenericWorkflowGraph' : 'DefaultWithVectorGraph';
+      const implInstance = new GraphClient(graphName);
+      return implInstance.processResponse(
+        chatId,
+        userMessage,
+        userMessageId,
+        conversationHistory,
+        lang,
+        department,
+        referringUrl,
+        selectedAI,
+        translationF,
+        onStatusUpdate,
+        searchProvider,
+        overrideUserId
+      );
     } else if (resolvedWorkflow === 'DefaultAlwaysContext') {
       mod = await import('../workflows/DefaultAlwaysContext.js');
     } else {
