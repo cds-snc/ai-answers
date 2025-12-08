@@ -130,7 +130,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           if (el && typeof el.scrollIntoView === 'function') {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             // also focus for accessibility
-            try { if (typeof el.focus === 'function') el.focus(); } catch(e) { /* ignore */ }
+            try { if (typeof el.focus === 'function') el.focus(); } catch (e) { /* ignore */ }
           }
         } catch (e) {
           // ignore scroll errors
@@ -273,7 +273,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           }
         } catch (err) {
           // fallback to openai if datastore call fails
-          if (mounted) setSelectedAI('openai');
+          if (mounted) setSelectedAI('azure');
         }
       }
     };

@@ -19,9 +19,13 @@ const ChatOptions = ({
       <GcdsDetails className="hr" detailsTitle={safeT('homepage.chat.options.title')} tabIndex="0">
         {/* Admin-only controls */}
         <RoleBasedContent roles={['admin']}>
-          <div className="ai-toggle">
+          {/* Provider selection is hidden for now; Azure is forced as provider
+              We keep radio inputs in the DOM (visually hidden) so the selection
+              can be re-enabled easily in the future. */}
+          <div className="ai-toggle" aria-hidden="true">
             <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container">
+              {/* visually hide the options but keep them in DOM for future re-enable */}
+              <div className="ai-toggle_container" style={{ display: 'none' }}>
                 <legend className="ai-toggle_legend">
                   {safeT('homepage.chat.options.aiSelection.label')}
                 </legend>
@@ -31,7 +35,7 @@ const ChatOptions = ({
                     id="anthropic"
                     name="ai-selection"
                     value="anthropic"
-                    checked={selectedAI === 'anthropic'}
+                    checked={false}
                     onChange={handleAIToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -45,7 +49,7 @@ const ChatOptions = ({
                     id="openai"
                     name="ai-selection"
                     value="openai"
-                    checked={selectedAI === 'openai'}
+                    checked={false}
                     onChange={handleAIToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -57,7 +61,7 @@ const ChatOptions = ({
                     id="azure"
                     name="ai-selection"
                     value="azure"
-                    checked={selectedAI === 'azure'}
+                    checked={true}
                     onChange={handleAIToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -73,7 +77,7 @@ const ChatOptions = ({
               <select
                 id="workflow"
                 name="workflow"
-                value={workflow || ''}
+                value={workflow}
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >
@@ -85,9 +89,13 @@ const ChatOptions = ({
             </div>
           </div>
 
-          <div className="search-toggle">
+          {/* Search selection is hidden for now; Google is forced as the search provider
+              We keep the radio inputs in the DOM (visually hidden) so this can be
+              re-enabled easily in the future. */}
+          <div className="search-toggle" aria-hidden="true">
             <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container">
+              {/* visually hide the options but keep them in DOM for future re-enable */}
+              <div className="ai-toggle_container" style={{ display: 'none' }}>
                 <legend className="ai-toggle_legend">
                   {safeT('homepage.chat.options.searchSelection.label')}
                 </legend>
@@ -97,7 +105,7 @@ const ChatOptions = ({
                     id="search-canadaca"
                     name="search-selection"
                     value="canadaca"
-                    checked={selectedSearch === 'canadaca'}
+                    checked={false}
                     onChange={handleSearchToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -111,7 +119,7 @@ const ChatOptions = ({
                     id="search-google"
                     name="search-selection"
                     value="google"
-                    checked={selectedSearch === 'google'}
+                    checked={true}
                     onChange={handleSearchToggle}
                     className="ai-toggle_radio-input"
                   />
