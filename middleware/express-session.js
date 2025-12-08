@@ -137,8 +137,31 @@ export default function createSessionMiddleware(app) {
           if (req && req.session && req.session.cookie && parentDomain) {
             req.session.cookie.domain = parentDomain;
           }
+
+          // Rewrite outgoing Set-Cookie header so we don't end up with
+          // both a host-only cookie and a domain-scoped cookie with the
+          // same name. We replace/augment the aianswers.sid cookie to
+          // include the computed parent domain when present.
+          const setCookieHeader = res.getHeader('Set-Cookie');
+          if (parentDomain && setCookieHeader) {
+            const cookies = Array.isArray(setCookieHeader) ? setCookieHeader.slice() : [String(setCookieHeader)];
+            const updated = cookies.map((c) => {
+              if (c.startsWith('aianswers.sid=')) {
+                // If cookie already has a Domain attribute, normalize it to the parentDomain
+                if (/;\s*Domain=/i.test(c)) {
+                  // Remove existing Domain attribute and append the desired one
+                  const withoutDomain = c.replace(/; *Domain=[^;]+/i, '');
+                  return withoutDomain + `; Domain=${parentDomain}`;
+                }
+                // No Domain present -> append desired Domain
+                return c + `; Domain=${parentDomain}`;
+              }
+              return c;
+            });
+            res.setHeader('Set-Cookie', updated);
+          }
         } catch (e) {
-          // ignore set-domain failures
+          // ignore header rewrite failures
         }
         next();
       });
@@ -151,8 +174,24 @@ export default function createSessionMiddleware(app) {
           if (req && req.session && req.session.cookie && parentDomain) {
             req.session.cookie.domain = parentDomain;
           }
+
+          const setCookieHeader = res.getHeader('Set-Cookie');
+          if (parentDomain && setCookieHeader) {
+            const cookies = Array.isArray(setCookieHeader) ? setCookieHeader.slice() : [String(setCookieHeader)];
+            const updated = cookies.map((c) => {
+              if (c.startsWith('aianswers.sid=')) {
+                if (/;\s*Domain=/i.test(c)) {
+                  const withoutDomain = c.replace(/; *Domain=[^;]+/i, '');
+                  return withoutDomain + `; Domain=${parentDomain}`;
+                }
+                return c + `; Domain=${parentDomain}`;
+              }
+              return c;
+            });
+            res.setHeader('Set-Cookie', updated);
+          }
         } catch (e) {
-          // ignore set-domain failures
+          // ignore header rewrite failures
         }
         next();
       });
