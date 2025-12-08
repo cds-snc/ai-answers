@@ -2122,7 +2122,6 @@ fieldset.gc-chckbxrdio {
 
 .filter-label {
   font-weight: 500;
-  color: #374151;
   font-size: 0.875rem;
 }
 
@@ -2222,6 +2221,9 @@ fieldset.gc-chckbxrdio {
   margin-bottom: 0.5rem;
 }
 
+.dt-container {
+  font-size: 80%; /* temp fix to resize */
+}
 /* Current selection styling */
 .current-selection {
   margin-top: 0.5rem;
