@@ -1,5 +1,7 @@
 import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import { getGraphApp } from '../../agents/graphs/registry.js';
+import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 
 const REQUIRED_METHOD = 'POST';
 
@@ -74,7 +76,19 @@ async function handler(req, res) {
   };
 
   try {
-    await graphRequestContext.run({ headers: forwardedHeaders }, async () => {
+    const store = { headers: forwardedHeaders, user: req.user };
+    // Only enable graph event streaming for authenticated users
+    if (req.user) {
+      store.graphEventWriter = (eventName, data) => {
+        try {
+          writeEvent(res, eventName, data);
+        } catch (_err) {
+          // ignore writer errors
+        }
+      };
+    }
+
+    await graphRequestContext.run(store, async () => {
       const stream = await graphApp.stream(input, { streamMode: 'updates' });
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
@@ -106,8 +120,8 @@ async function handler(req, res) {
     const authorization = headers['authorization'];
     if (authorization) out['Authorization'] = authorization;
 
-    const fpId = headers['x-fp-id'];
-    if (fpId) out['x-fp-id'] = fpId;
+    const userAgent = headers['user-agent'];
+    if (userAgent) out['User-Agent'] = userAgent;
 
     return out;
   }

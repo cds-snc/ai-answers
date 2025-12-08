@@ -55,7 +55,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         }
     }, [message]);
 
-    const handleNeverStaleToggle = useCallback(async (e) => {
+    const handleNeverStaleToggle = useCallback(async () => {
         try {
             setError(null);
             setUpdatingNeverStale(true);
@@ -77,7 +77,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         } catch (err) {
             // Revert optimistic update on error
             try {
-                const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
                 if (data && data.expertFeedback) {
                     setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: !data.expertFeedback.neverStale } });
                 } else if (message.interaction && message.interaction.expertFeedback) {

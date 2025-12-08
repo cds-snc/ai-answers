@@ -9,8 +9,6 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const email = searchParams.get('email');
-  const initialCode = searchParams.get('code') || '';
-  const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [message, setMessage] = useState('');

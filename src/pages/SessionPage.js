@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -16,7 +16,7 @@ const SessionPage = ({ lang: propLang }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -44,13 +44,13 @@ const SessionPage = ({ lang: propLang }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchSessions();
     const iv = setInterval(fetchSessions, 5000);
     return () => clearInterval(iv);
-  }, []);
+  }, [fetchSessions]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">

@@ -1,6 +1,9 @@
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
+import { logGraphEvent } from './GraphEventLogger.js';
 import { DefaultWithVectorServerWorkflow, RedactionError, ShortQueryValidation } from './workflows/defaultWithVectorHelpers.js';
+
+import { graphRequestContext } from './requestContext.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -42,18 +45,40 @@ const graph = new StateGraph(GraphState);
 
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
+  // Emit node input log (fire-and-forget)
+  logGraphEvent('info', 'node:init input', state.chatId, {
+    lang: state.lang,
+    referringUrl: state.referringUrl,
+    selectedAI: state.selectedAI,
+    userMessage: state.userMessage,
+  });
+
   await ServerLoggingService.info('Starting DefaultWithVectorGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
   });
-  return { startTime, status: WorkflowStatus.MODERATING_QUESTION };
+  const out = { startTime, status: WorkflowStatus.MODERATING_QUESTION };
+  // Emit node output log (fire-and-forget)
+  logGraphEvent('info', 'node:init output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('validate', async (state) => {
+  // Emit input log for validate node (fire-and-forget)
+  logGraphEvent('info', 'node:validate input', state.chatId, {
+    userMessage: state.userMessage,
+    conversationHistory: state.conversationHistory,
+    lang: state.lang,
+    department: state.department,
+  });
+
   try {
     workflow.validateShortQuery(state.conversationHistory, state.userMessage, state.lang, state.department);
-    return {};
+    const out = {};
+    // Emit output log for validate node (fire-and-forget)
+    logGraphEvent('info', 'node:validate output', state.chatId, out);
+    return out;
   } catch (error) {
     if (error instanceof ShortQueryValidation) {
       throw error;
@@ -64,8 +89,19 @@ graph.addNode('validate', async (state) => {
 
 graph.addNode('redact', async (state) => {
   try {
+    // Emit input log for redact node
+    logGraphEvent('info', 'node:redact input', state.chatId, {
+      userMessage: state.userMessage,
+      lang: state.lang,
+      selectedAI: state.selectedAI,
+    });
+
     const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-    return { redactedText };
+
+    const out = { redactedText };
+    // Emit output log for redact node
+    logGraphEvent('info', 'node:redact output', state.chatId, out);
+    return out;
   } catch (error) {
     if (error instanceof RedactionError) {
       throw error;
@@ -75,12 +111,31 @@ graph.addNode('redact', async (state) => {
 });
 
 graph.addNode('translate', async (state) => {
+  // Emit input log for translate node
   const translationContext = workflow.buildTranslationContext(state.conversationHistory);
+  logGraphEvent('info', 'node:translate input', state.chatId, {
+    redactedText: state.redactedText,
+    translationContext,
+    selectedAI: state.selectedAI,
+  });
+
   const translationData = await workflow.translateQuestion(state.redactedText, "en", state.selectedAI, translationContext);
-  return { translationData };
+
+  const out = { translationData };
+  // Emit output log for translate node
+  logGraphEvent('info', 'node:translate output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('contextNode', async (state) => {
+  // Emit input log for context node
+  logGraphEvent('info', 'node:context input', state.chatId, {
+    conversationHistory: state.conversationHistory,
+    translationData: state.translationData,
+    userMessage: state.userMessage,
+    lang: state.lang,
+  });
+
   const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
     conversationHistory: state.conversationHistory,
     department: state.department,
@@ -109,14 +164,24 @@ graph.addNode('contextNode', async (state) => {
     });
   }
 
-  return {
+  const out = {
     context,
     cleanedHistory,
     usedExistingContext,
   };
+  // Emit output log for context node
+  logGraphEvent('info', 'node:context output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('shortCircuit', async (state) => {
+  // Emit input log for shortCircuit node
+  logGraphEvent('info', 'node:shortCircuit input', state.chatId, {
+    userMessage: state.userMessage,
+    translationData: state.translationData,
+    lang: state.lang,
+  });
+
   const detectedLang = state.translationData?.originalLanguage || state.lang;
   const similar = await workflow.checkSimilarAnswer({
     chatId: state.chatId,
@@ -145,23 +210,37 @@ graph.addNode('shortCircuit', async (state) => {
     });
 
     try {
-      await workflow.persistInteraction(payload);
+      const ctx = graphRequestContext.getStore();
+      const user = ctx?.user;
+      await workflow.persistInteraction(payload, user);
     } catch (err) {
       await ServerLoggingService.error('Short-circuit persistence error', state.chatId, err);
     }
 
-    return {
+    const out = {
       status: WorkflowStatus.GENERATING_ANSWER,
       shortCircuitPayload: payload,
       confidenceRating: payload.confidenceRating,
       finalCitationUrl: payload.finalCitationUrl,
     };
+    // Emit output log for shortCircuit node
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: true, payload: out });
+    return out;
   }
 
-  return { status: WorkflowStatus.GENERATING_ANSWER };
+  const out = { status: WorkflowStatus.GENERATING_ANSWER };
+  // Emit output log for shortCircuit node when no short circuit detected
+  logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false });
+  return out;
 });
 
 graph.addNode('answerNode', async (state) => {
+  // Emit input log for answer node
+  logGraphEvent('info', 'node:answer input', state.chatId, {
+    selectedAI: state.selectedAI,
+    contextSummary: state.context?.summary || null,
+  });
+
   const answer = await workflow.sendAnswerRequest({
     selectedAI: state.selectedAI,
     conversationHistory: state.cleanedHistory,
@@ -170,10 +249,23 @@ graph.addNode('answerNode', async (state) => {
     referringUrl: state.referringUrl,
     chatId: state.chatId,
   });
-  return { answer };
+
+  const out = { answer };
+  // Emit output log for answer node
+  logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
+  return out;
 });
 
 graph.addNode('verifyNode', async (state) => {
+  let finalCitationUrl = null;
+  let confidenceRating = null;
+
+  // Emit input log for verifyNode
+  logGraphEvent('info', 'node:verify input', state.chatId, {
+    answer: state.answer,
+    shortCircuit: Boolean(state.shortCircuitPayload),
+  });
+
   if (state.answer && state.answer.answerType === 'normal') {
     const citationResult = await workflow.verifyCitation({
       citationUrl: state.answer.citationUrl,
@@ -184,13 +276,33 @@ graph.addNode('verifyNode', async (state) => {
       chatId: state.chatId,
     });
 
-    return {
-      status: WorkflowStatus.VERIFYING_CITATION,
-      finalCitationUrl: citationResult.url || citationResult.fallbackUrl,
-      confidenceRating: citationResult.confidenceRating,
-    };
+    finalCitationUrl = citationResult.url || citationResult.fallbackUrl;
+    confidenceRating = citationResult.confidenceRating;
   }
-  return {};
+
+  // Build and return the result here so client gets it immediately
+  const isShortCircuit = Boolean(state.shortCircuitPayload);
+  const answerData = isShortCircuit ? state.shortCircuitPayload.answer : state.answer;
+  const contextData = isShortCircuit ? state.shortCircuitPayload.context : state.context;
+  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
+  const out = {
+    status: WorkflowStatus.VERIFYING_CITATION,
+    finalCitationUrl: finalCitationUrl ?? state.finalCitationUrl,
+    confidenceRating: confidenceRating ?? state.confidenceRating,
+    result: {
+      answer: answerData,
+      context: contextData,
+      question: state.userMessage,
+      citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
+      confidenceRating: confidenceRating ?? state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null,
+    },
+  };
+  // Emit output log for verifyNode
+  logGraphEvent('info', 'node:verify output', state.chatId, {
+    finalCitationUrl: out.finalCitationUrl,
+    confidenceRating: out.confidenceRating,
+  });
+  return out;
 });
 
 graph.addNode('persistNode', async (state) => {
@@ -198,14 +310,22 @@ graph.addNode('persistNode', async (state) => {
   const totalResponseTime = endTime - state.startTime;
 
   const isShortCircuit = Boolean(state.shortCircuitPayload);
-  const answerData = isShortCircuit ? state.shortCircuitPayload.answer : state.answer;
-  const contextData = isShortCircuit ? state.shortCircuitPayload.context : state.context;
-  const finalCitationUrl = state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null;
-  const confidenceRating = state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null;
 
-  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
+  // Emit input log for persistNode
+  logGraphEvent('info', 'node:persist input', state.chatId, {
+    isShortCircuit,
+    totalResponseTime,
+  });
 
+  // Only persist if not a short circuit (short circuits are already persisted)
   if (!isShortCircuit) {
+    const answerData = state.answer;
+    const contextData = state.context;
+    const finalCitationUrl = state.finalCitationUrl ?? null;
+    const confidenceRating = state.confidenceRating ?? null;
+
+    const ctx = graphRequestContext.getStore();
+    const user = ctx?.user;
     await workflow.persistInteraction({
       selectedAI: state.selectedAI,
       question: state.userMessage,
@@ -219,27 +339,27 @@ graph.addNode('persistNode', async (state) => {
       pageLanguage: state.lang,
       responseTime: totalResponseTime,
       searchProvider: state.searchProvider,
-    });
+    }, user);
   }
 
   await ServerLoggingService.info('Workflow complete', state.chatId, { totalResponseTime });
 
-  return {
+  const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
+
+  const out = {
     status: needsClarification ? WorkflowStatus.NEED_CLARIFICATION : WorkflowStatus.COMPLETE,
-    result: {
-      answer: answerData,
-      context: contextData,
-      question: state.userMessage,
-      citationUrl: finalCitationUrl,
-      confidenceRating,
-    },
   };
+  // Emit output log for persistNode
+  logGraphEvent('info', 'node:persist output', state.chatId, out);
+  return out;
 });
+
+
 
 graph.addConditionalEdges('shortCircuit', (state) =>
   state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
   {
-    skipAnswer: 'persistNode',
+    skipAnswer: 'verifyNode', // Fix: Go to verifyNode to construct result
     runAnswer: 'answerNode',
   },
 );
@@ -252,9 +372,12 @@ graph.addEdge('translate', 'contextNode');
 graph.addEdge('contextNode', 'shortCircuit');
 graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
-graph.addEdge('answerNode', 'persistNode');
+// Removed duplicate/incorrect edge answerNode -> persistNode
 
 graph.addEdge('persistNode', END);
+
+// ... (Update nodes logic)
+
 
 export const defaultWithVectorGraphApp = graph.compile();
 

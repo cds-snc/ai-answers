@@ -6,11 +6,9 @@ import {
   GcdsLink,
 } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { usePageContext } from '../hooks/usePageParam.js';
 
 const AboutPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const { language } = usePageContext();
 
   return (
     <div className="mb-600 container-custom">
