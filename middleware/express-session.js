@@ -129,11 +129,33 @@ export default function createSessionMiddleware(app) {
     // Ensure any config changes are picked up before handling the request
     Promise.resolve(ensureSessionUpToDate()).then(() => {
       console.log(`[DEBUG] Session middleware executing for ${req.url}`);
-      sessionMiddleware(req, res, next);
+      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
+
+      // Run the session middleware and then set the cookie domain if available
+      sessionMiddleware(req, res, () => {
+        try {
+          if (req && req.session && req.session.cookie && parentDomain) {
+            req.session.cookie.domain = parentDomain;
+          }
+        } catch (e) {
+          // ignore set-domain failures
+        }
+        next();
+      });
     }).catch(() => {
       // If the ensure check fails, proceed with existing middleware
       console.log(`[DEBUG] Session middleware executing (fallback) for ${req.url}`);
-      sessionMiddleware(req, res, next);
+      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
+      sessionMiddleware(req, res, () => {
+        try {
+          if (req && req.session && req.session.cookie && parentDomain) {
+            req.session.cookie.domain = parentDomain;
+          }
+        } catch (e) {
+          // ignore set-domain failures
+        }
+        next();
+      });
     });
   };
 
