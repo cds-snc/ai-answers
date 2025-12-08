@@ -21,6 +21,39 @@ export async function resetSessionMiddleware() {
 }
 
 export default function createSessionMiddleware(app) {
+  const applyParentDomainToCookieHeaders = (res, parentDomain) => {
+    if (!parentDomain || typeof res.writeHead !== 'function' || res.__parentDomainCookieNormalized) return;
+    res.__parentDomainCookieNormalized = true;
+    const origWriteHead = res.writeHead.bind(res);
+
+    const rewriteSetCookie = () => {
+      try {
+        const setCookieHeader = res.getHeader('Set-Cookie');
+        if (!setCookieHeader) return;
+        const cookies = Array.isArray(setCookieHeader) ? setCookieHeader.slice() : [String(setCookieHeader)];
+        const lastIndexByName = {};
+        cookies.forEach((cookie, index) => {
+          const nameMatch = cookie.match(/^([^=;]+)=/);
+          if (nameMatch) lastIndexByName[nameMatch[1]] = index;
+        });
+        const updated = cookies.map((cookie, index) => {
+          if (!cookie.startsWith('aianswers.sid=')) return cookie;
+          if (lastIndexByName['aianswers.sid'] !== index) return null;
+          const withoutDomain = cookie.replace(/; *Domain=[^;]+/i, '');
+          return withoutDomain + `; Domain=${parentDomain}`;
+        }).filter(Boolean);
+        if (updated.length) res.setHeader('Set-Cookie', updated);
+      } catch (e) {
+        // ignore normalization failures
+      }
+    };
+
+    res.writeHead = function (...args) {
+      rewriteSetCookie();
+      return origWriteHead(...args);
+    };
+  };
+
   // Track current configuration so we can hot-swap when settings change
   let currentConfig = null;
 
@@ -129,11 +162,38 @@ export default function createSessionMiddleware(app) {
     // Ensure any config changes are picked up before handling the request
     Promise.resolve(ensureSessionUpToDate()).then(() => {
       console.log(`[DEBUG] Session middleware executing for ${req.url}`);
-      sessionMiddleware(req, res, next);
+      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
+
+      applyParentDomainToCookieHeaders(res, parentDomain);
+
+      // Run the session middleware and then set the cookie domain if available
+      sessionMiddleware(req, res, () => {
+        try {
+          if (req && req.session && req.session.cookie && parentDomain) {
+            req.session.cookie.domain = parentDomain;
+          }
+        } catch (e) {
+          // ignore set-domain failures
+        }
+        next();
+      });
     }).catch(() => {
       // If the ensure check fails, proceed with existing middleware
       console.log(`[DEBUG] Session middleware executing (fallback) for ${req.url}`);
-      sessionMiddleware(req, res, next);
+      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
+
+      applyParentDomainToCookieHeaders(res, parentDomain);
+
+      sessionMiddleware(req, res, () => {
+        try {
+          if (req && req.session && req.session.cookie && parentDomain) {
+            req.session.cookie.domain = parentDomain;
+          }
+        } catch (e) {
+          // ignore set-domain failures
+        }
+        next();
+      });
     });
   };
 
