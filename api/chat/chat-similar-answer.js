@@ -2,7 +2,6 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { VectorService, initVectorService } from '../../services/VectorServiceFactory.js';
 import dbConnect from '../../api/db/db-connect.js';
 import mongoose from 'mongoose';
-import EmbeddingService from '../../services/EmbeddingService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { rankerStrategy } from '../../agents/strategies/rankerStrategy.js';
 import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
@@ -18,7 +17,7 @@ async function handler(req, res) {
         return res.status(validated.error.code).end(validated.error.message);
     }
 
-    const { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
+    let { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
 
     try {
 
@@ -42,10 +41,16 @@ async function handler(req, res) {
             return res.json({});
         }
 
-        const formattedForEmbedding = EmbeddingService.formatQuestionsForEmbedding(candidateQuestions);
-        const formattedUserQuestions = EmbeddingService.formatQuestionsForEmbedding(questions);
+        // Clean up trailing whitespace/newline characters from question strings
+        const sanitizedCandidateQuestions = sanitizeQuestionArray(candidateQuestions);
+        const sanitizedUserQuestions = sanitizeQuestionArray(questions);
+        ServerLoggingService.info(`Invoking ranker with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
+            userQuestions: sanitizedUserQuestions,
+            candidateQuestions: sanitizedCandidateQuestions
+        });
+
         const createAgentFn = createRankerAdapter();
-        const rankResult = await callOrchestrator({ chatId, selectedAI, userQuestions: formattedUserQuestions, candidateQuestions: formattedForEmbedding, createAgentFn });
+        const rankResult = await callOrchestrator({ chatId, selectedAI, userQuestions: sanitizedUserQuestions, candidateQuestions: sanitizedCandidateQuestions, createAgentFn });
         const topIndex = interpretRankResult(rankResult);
 
         if (topIndex === -1) {
@@ -54,7 +59,7 @@ async function handler(req, res) {
         }
         const topRankerItem = (rankResult && Array.isArray(rankResult.results) && rankResult.results.length) ? rankResult.results[0] : null;
         const topChecks = (topRankerItem && typeof topRankerItem === 'object' && topRankerItem.checks) ? topRankerItem.checks : null;
-
+        ServerLoggingService.info(`Ranker selected index ${topIndex} as top candidate`, chatId, { topRankerItem, topChecks });
         // Choose the top-ranked entry from the ranker results. fall back to the first ordered entry or finalCandidates[0]
         const chosen = orderedEntries[topIndex];
         const formatted = formatAnswerFromChosen(chosen);
@@ -84,13 +89,29 @@ async function handler(req, res) {
         return res.status(500).json({ error: 'internal error' });
     }
 
+    // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
+    function sanitizeQuestionArray(arr) {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(q => {
+            if (typeof q !== 'string') return q;
+            let s = String(q);
+            // Replace escaped newline sequences like "\n" with a space
+            s = s.replace(/\\n+/g, ' ');
+            // Replace actual newline and carriage return characters with a space
+            s = s.replace(/[\r\n]+/g, ' ');
+            // Collapse multiple spaces/tabs into a single space
+            s = s.replace(/[ \t]+/g, ' ');
+            return s.trim();
+        }).filter(q => typeof q === 'string' && q.length > 0);
+    }
+
     function validateAndExtract(req) {
         if (req.method !== 'POST') return { error: { code: 405, message: `Method ${req.method} Not Allowed`, headers: { Allow: ['POST'] } } };
         const chatId = req.chatId || null;
         const questions = Array.isArray(req.body?.questions) ? req.body.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim()) : [];
         if (questions.length === 0) return { error: { code: 400, message: 'Missing questions' } };
         const selectedAI = req.body?.selectedAI || 'openai';
-        const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 14;
+        const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 90;
         const requestedRating = typeof req.body?.expertFeedbackRating === 'number' ? req.body.expertFeedbackRating : 100;
         // Accept new shape: pageLanguage + detectedLanguage. Fall back to legacy `language` if provided.
         const pageLanguage = typeof req.body?.pageLanguage === 'string' && req.body.pageLanguage.trim() ? req.body.pageLanguage.trim() : (typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null);
@@ -125,7 +146,6 @@ async function handler(req, res) {
     function applyRecencyFilter(matches, interactionById, recencyDays) {
         const cutoff = Date.now() - (recencyDays * 24 * 60 * 60 * 1000);
         const recent = [];
-        const older = [];
         for (const m of matches) {
             const it = interactionById[m.interactionId?.toString?.() || m.interactionId];
             if (!it || !it.answer) continue;
@@ -134,14 +154,12 @@ async function handler(req, res) {
             // If the interaction has expertFeedback populated and neverStale is true, always treat it as recent
             const ef = it.expertFeedback;
             const hasNeverStale = ef && (ef.neverStale === true || String(ef.neverStale) === 'true');
-            if (hasNeverStale) {
+            // Only include items that are explicitly neverStale or fall within the recency cutoff.
+            if (hasNeverStale || created >= cutoff) {
                 recent.push({ match: m, interaction: it });
-                continue;
             }
-
-            if (created >= cutoff) recent.push({ match: m, interaction: it }); else older.push({ match: m, interaction: it });
         }
-        return [...recent, ...older].slice(0, 5);
+        return recent.slice(0, 5);
     }
 
     async function buildQuestionFlows(finalCandidates) {
