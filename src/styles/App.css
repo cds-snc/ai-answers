@@ -2314,6 +2314,10 @@ fieldset.gc-chckbxrdio {
   }
 }
 
+    .admin-date {
+      font-size: 18px;
+      margin-left: 12px
+    }
     .referring-url-chat, #displayReferringURL {
 			font-size: 16px;
 			line-height: 1.55;

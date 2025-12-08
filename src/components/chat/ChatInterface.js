@@ -808,7 +808,7 @@ const ChatInterface = ({
       </div>
       {/* Show chat date at bottom for review mode */}
       {readOnly && chatCreatedAt && (
-        <div>
+        <div className="admin-date">
           <b>{safeT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
         </div>
       )}
