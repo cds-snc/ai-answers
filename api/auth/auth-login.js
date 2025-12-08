@@ -36,7 +36,7 @@ const loginHandler = (req, res, next) => {
           if (visitorId) req.session.visitorId = visitorId;
 
           // Set authenticated session TTL
-          const sessionTTLSetting = SettingsService.get('session.defaultTTLMinutes') || process.env.SESSION_TTL_MINUTES || '10';
+          const sessionTTLSetting = SettingsService.get('session.defaultTTLMinutes') || process.env.SESSION_TTL_MINUTES || '60';
           const authTTLSetting = SettingsService.get('session.authenticatedTTLMinutes') || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
           const parsedAuthMinutes = Number(authTTLSetting);
           const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : 60;
