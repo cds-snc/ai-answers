@@ -80,7 +80,7 @@ class DataStoreService {
 
 
 
-  static async getChatSession(newChat = false) {
+  static async getChatSession() {
     try {
       // Always creates a new chatId
       const url = getApiUrl('chat-create');

@@ -1,5 +1,5 @@
 import ContextService from '../ContextService.js';
-import { getProviderApiUrl, getApiUrl } from '../../utils/apiToUrl.js';
+import { getApiUrl } from '../../utils/apiToUrl.js';
 import { vi, describe, it, expect, beforeEach, beforeAll } from 'vitest';
 
 // Mock LoggingService to avoid auth and network calls
@@ -16,6 +16,7 @@ vi.mock('../ClientLoggingService.js', () => ({
 global.fetch = vi.fn();
 
 describe('ContextService', () => {
+  
   beforeAll(() => {
     global.localStorage = {
       getItem: vi.fn(),

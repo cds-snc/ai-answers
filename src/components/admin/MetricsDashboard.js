@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsButton, GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import '../../styles/App.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
