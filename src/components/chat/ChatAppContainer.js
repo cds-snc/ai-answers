@@ -635,12 +635,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         var result = window.adobeDataLayer.push({
                           event: 'customTracking',
                           link: {
-                            customCall: customCallValue
+                            customCall: customCallValue + '|' + chatId + '|' + interactionId
                           },
-                          // Keep contextual fields for debugging (non-breaking extra data)
-                          citationUrl: displayUrl,
-                          interactionId: interactionId,
-                          chatId: chatId,
                         });
                         console.log('Adobe Data Layer push result:', result);
                       }
