@@ -3,7 +3,11 @@ import { ChatWorkflowService } from '../services/ChatWorkflowService.js';
 
 import AuthService from '../services/AuthService.js';
 
-export class DefaultWithVectorGraph {
+export class GraphClient {
+  constructor(graphName = 'DefaultWithVectorGraph') {
+    this.graphName = graphName;
+  }
+
   async processResponse(
     chatId,
     userMessage,
@@ -23,7 +27,7 @@ export class DefaultWithVectorGraph {
 
     try {
       const payload = {
-        graph: 'DefaultWithVectorGraph',
+        graph: this.graphName,
         input: {
           chatId,
           userMessage,
@@ -38,8 +42,6 @@ export class DefaultWithVectorGraph {
           overrideUserId,
         },
       };
-
-
 
       const response = await AuthService.fetch(getApiUrl('chat-graph-run'), {
         method: 'POST',
@@ -194,5 +196,4 @@ export class DefaultWithVectorGraph {
   }
 }
 
-export default DefaultWithVectorGraph;
-
+export default GraphClient;

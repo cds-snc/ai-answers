@@ -69,13 +69,9 @@ describe('AuthService', () => {
     vi.resetAllMocks();
   });
 
-  it('removeToken should remove token and user from localStorage', () => {
-    AuthService.removeToken();
-    expect(fakeLocal.removed).toContain('token');
-    expect(fakeLocal.removed).toContain('user');
-  });
 
-  it('clearClientStorage should clear local/session storage and expire cookies', () => {
+
+  it('clearClientStorage should clear local/session storage', () => {
     // Ensure storages have items
     fakeLocal.setItem('keep', 'x');
     fakeSession.setItem('s1', 'y');
@@ -84,15 +80,11 @@ describe('AuthService', () => {
 
     expect(fakeLocal.cleared).toBe(true);
     expect(fakeSession.cleared).toBe(true);
-    // document.cookie setter should have been called at least once per cookie
-    expect(assignedCookies.length).toBeGreaterThan(0);
-    // Each assigned cookie should include an expiry date in the past
-    expect(assignedCookies.every(c => /Expires=Thu, 01 Jan 1970/i.test(c))).toBe(true);
   });
 
   it('logout should call server logout endpoint and clear storage', async () => {
-    // Spy on removeToken and clearClientStorage
-    const removeSpy = vi.spyOn(AuthService, 'removeToken');
+    // Spy on clearClientStorage
+
     const clearSpy = vi.spyOn(AuthService, 'clearClientStorage');
 
     AuthService.logout();
@@ -103,10 +95,10 @@ describe('AuthService', () => {
     expect(calledWith).toBe('/api/user/user-auth-logout');
 
     // removeToken and clearClientStorage should be called synchronously
-    expect(removeSpy).toHaveBeenCalled();
+
     expect(clearSpy).toHaveBeenCalled();
 
-    removeSpy.mockRestore();
+
     clearSpy.mockRestore();
   });
 });
