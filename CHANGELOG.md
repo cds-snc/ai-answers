@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.69.0](https://github.com/cds-snc/ai-answers/compare/v1.68.3...v1.69.0) (2025-12-09)
+
+
+### Features
+
+* date ([e767ca3](https://github.com/cds-snc/ai-answers/commit/e767ca343a81b5f556c31658529c5b78a3dedf37))
+* date and time ([c504865](https://github.com/cds-snc/ai-answers/commit/c5048654cae54081710ffd779d80448a524e6144))
+* date styles ([87ce1f9](https://github.com/cds-snc/ai-answers/commit/87ce1f99504e89ce4044b2391be767b648a84f3c))
+* enhance Adobe Data Layer tracking with additional identifiers ([c47b44c](https://github.com/cds-snc/ai-answers/commit/c47b44c6ab3fd6c5db579134288ee7c12a90ecaa))
+* enhance Adobe Data Layer tracking with additional identifiers ([13e98bd](https://github.com/cds-snc/ai-answers/commit/13e98bda969083b0f23c8785e53c264b098c80a0))
+* enhance ExpertFeedbackPanel to support English question and sentence display ([1775277](https://github.com/cds-snc/ai-answers/commit/1775277d8189209db3394de235de05794297333e))
+* fix class ([8243780](https://github.com/cds-snc/ai-answers/commit/8243780818421e39ac2217fc7f81423341dabc06))
+* implement gating for similar-answer check based on prior AI replies and add unit tests ([ae13236](https://github.com/cds-snc/ai-answers/commit/ae13236819970b0c17ee48a2f9e260670513738e))
+* introduce ChatAppContainer and ChatOptions components for chat functionality ([f8ac32d](https://github.com/cds-snc/ai-answers/commit/f8ac32d49a5939c649eddaa79a3d973d000d5fa8))
+* sanitize question inputs and update recencyDays default value ([91fc734](https://github.com/cds-snc/ai-answers/commit/91fc734b13d48aad9276f98dc157c2f7fb1f0073))
+* table text size ([1c71cad](https://github.com/cds-snc/ai-answers/commit/1c71cad9d0245a6b828cb55acfb4083fed7b2016))
+* table text size, add date and time ([219ac12](https://github.com/cds-snc/ai-answers/commit/219ac128651d43923964f7730a907c2f243cad4b))
+
+
+### Bug Fixes
+
+* hide search provider selection in ChatOptions and set Google as default ([d91fa6b](https://github.com/cds-snc/ai-answers/commit/d91fa6bc3ffe5774e8dbfbca339348c2d7e13c07))
+* increase maxTokens for Ranker and Azure agents and update model configuration ([ab3e2ec](https://github.com/cds-snc/ai-answers/commit/ab3e2ecabb05e72c65cafc9809ff02e7821543ea))
+* normalize Set-Cookie header to apply parent domain for session cookies ([9b9a4b3](https://github.com/cds-snc/ai-answers/commit/9b9a4b31e1c30b23b4bb505da42e7e543b0c8cf7))
+* set cookie domain based on parent domain in session middleware ([40572a1](https://github.com/cds-snc/ai-answers/commit/40572a1488e5806f87bca74abf81103898781193))
+* set cookie domain based on parent domain in session middleware ([7800df3](https://github.com/cds-snc/ai-answers/commit/7800df31a49c6c706aee33548b7466d859dc4106))
+* set default value for workflow selection in ChatOptions ([d12f7a8](https://github.com/cds-snc/ai-answers/commit/d12f7a8b3626da7f21391282aa65c9e17088c156))
+* update AI selection handling in ChatOptions to hide provider selection and set default values ([20baecd](https://github.com/cds-snc/ai-answers/commit/20baecdddaa3988a64383225a3b1c5aa7b947809))
+* update Set-Cookie header to ensure domain-scoped cookies are correctly set ([2e28235](https://github.com/cds-snc/ai-answers/commit/2e28235781129c4817cf3eeea505030478cb1f9e))
+
 ## [1.68.3](https://github.com/cds-snc/ai-answers/compare/v1.68.2...v1.68.3) (2025-12-05)
 
 
