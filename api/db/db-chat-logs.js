@@ -8,7 +8,7 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
-import { filterByPartnerEval, filterByAiEval } from '../utils/categorization.js';
+import { filterByPartnerEval, filterByAiEval, getChatFilterConditions } from '../utils/chat-filters.js';
 
 async function chatLogsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -210,56 +210,20 @@ async function chatLogsHandler(req, res) {
       });
 
       // Build AND filters
-      const andFilters = [];
-      if (department) {
-        const parts = department
-          .split('-')
-          .map(s => s.trim())
-          .filter(Boolean)
-          .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-        if (parts.length) {
-          andFilters.push({
-            'interactions.context.department': {
-              $regex: parts.join('|'),
-              $options: 'i'
-            }
-          });
-        }
-      }
-
-      // Handle URL filters - support both old referringUrl and new urlEn/urlFr
-      if (referringUrl) {
-        // Backwards compatibility: single referringUrl filter
-        const esc = referringUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        andFilters.push({
-          'interactions.referringUrl': { $regex: esc, $options: 'i' }
-        });
-      } else if (urlEn || urlFr) {
-        // New dual URL filter: match referringUrl containing EITHER urlEn OR urlFr
-        const urlOrConditions = [];
-        if (urlEn) {
-          const escEn = urlEn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          urlOrConditions.push({
-            'interactions.referringUrl': { $regex: escEn, $options: 'i' }
-          });
-        }
-        if (urlFr) {
-          const escFr = urlFr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          urlOrConditions.push({
-            'interactions.referringUrl': { $regex: escFr, $options: 'i' }
-          });
-        }
-        if (urlOrConditions.length > 0) {
-          andFilters.push({ $or: urlOrConditions });
-        }
-      }
-
-      // Handle answerType filter
-      if (answerType && answerType !== 'all') {
-        andFilters.push({
-          'interactions.answer.answerType': answerType
-        });
-      }
+      const allConditions = getChatFilterConditions({
+        department,
+        referringUrl,
+        urlEn,
+        urlFr,
+        userType,
+        answerType,
+        partnerEval,
+        aiEval
+      });
+      const andFilters = allConditions.filter(cond => {
+        // Exclude partnerEval and aiEval conditions since they are filtered post-query
+        return !cond.hasOwnProperty('interactions.partnerEval') && !cond.hasOwnProperty('interactions.aiEval');
+      });
 
       if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });
 

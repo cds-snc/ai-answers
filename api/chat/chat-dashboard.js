@@ -2,6 +2,7 @@
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -169,22 +170,7 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({
       $addFields: {
-        'interactions.partnerEval': {
-          $switch: {
-            branches: [
-              { case: { $eq: [{ $arrayElemAt: ['$expertFeedbackDocs.overallRating', 0] }, 'correct'] }, then: 'correct' },
-              { case: { $eq: [{ $arrayElemAt: ['$expertFeedbackDocs.overallRating', 0] }, 'incorrect'] }, then: 'incorrect' },
-              { case: { $eq: [{ $arrayElemAt: ['$expertFeedbackDocs.overallRating', 0] }, 'needsImprovement'] }, then: 'needsImprovement' }
-            ],
-            default: {
-              $cond: {
-                if: { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs', 0] }, false] },
-                then: 'other',
-                else: 'none'
-              }
-            }
-          }
-        },
+        'interactions.partnerEval': getPartnerEvalAggregationExpression(),
         'interactions.aiEval': {
           $switch: {
             branches: [
@@ -223,82 +209,8 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
 
-    const andFilters = [];
-
-    // Filter by userType if specified
-    if (userType === 'public') {
-      // Public users: user is null or doesn't exist
-      andFilters.push({
-        $or: [
-          { user: { $exists: false } },
-          { user: null }
-        ]
-      });
-    } else if (userType === 'admin') {
-      // Admin users: user exists and is not null
-      andFilters.push({
-        user: { $exists: true, $ne: null }
-      });
-    }
-    // If userType === 'all' or undefined, no additional filtering
-
-    if (department) {
-      const escapedDepartment = escapeRegex(department);
-      andFilters.push({
-        'interactions.context.department': {
-          $regex: escapedDepartment,
-          $options: 'i'
-        }
-      });
-    }
-
-    if (referringUrl) {
-      const escapedRef = escapeRegex(referringUrl);
-      andFilters.push({
-        'interactions.referringUrl': {
-          $regex: escapedRef,
-          $options: 'i'
-        }
-      });
-    }
-
-    if (urlEn) {
-      const escaped = escapeRegex(urlEn);
-      andFilters.push({
-        'interactions.referringUrl': {
-          $regex: escaped,
-          $options: 'i'
-        }
-      });
-    }
-
-    if (urlFr) {
-      const escaped = escapeRegex(urlFr);
-      andFilters.push({
-        'interactions.referringUrl': {
-          $regex: escaped,
-          $options: 'i'
-        }
-      });
-    }
-
-    if (answerType && answerType !== 'all') {
-      andFilters.push({
-        'interactions.answer.answerType': answerType
-      });
-    }
-
-    if (partnerEval && partnerEval !== 'all') {
-      andFilters.push({
-        'interactions.partnerEval': partnerEval
-      });
-    }
-
-    if (aiEval && aiEval !== 'all') {
-      andFilters.push({
-        'interactions.aiEval': aiEval
-      });
-    }
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
+    const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
       pipeline.push({ $match: { $and: andFilters } });
