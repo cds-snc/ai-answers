@@ -571,6 +571,7 @@
       "error": "Unable to load chat data.",
       "noResults": "Apply filters to load chat interactions.",
       "resultsSummary": "Showing {count} chats",
+      "totalCount": "Total matching chats: {total}",
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
       "columnFilterPlaceholder": "Filter",
@@ -585,7 +586,11 @@
         "questionCount": "Questions",
         "createdAt": "Created",
         "referringUrl": "Referring URL",
-        "date": "Date"
+        "date": "Date",
+        "userType": "User Type",
+        "answerType": "Answer Type",
+        "partnerEval": "Partner Eval",
+        "aiEval": "AI Eval"
       }
     },
     "evalDashboard": {

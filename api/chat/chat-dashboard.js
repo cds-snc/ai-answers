@@ -47,6 +47,11 @@ async function chatDashboardHandler(req, res) {
       department = '',
       referringUrl = '',
       userType = 'all',
+      urlEn = '',
+      urlFr = '',
+      answerType = '',
+      partnerEval = '',
+      aiEval = '',
       startDate,
       endDate,
       filterType,
@@ -62,12 +67,12 @@ async function chatDashboardHandler(req, res) {
     } = req.query;
 
     const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
-  const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
-  const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
-  const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
-  const orderBy = orderByParam || 'createdAt';
-  const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
-  const isDataTablesMode = length !== null; // when length provided, use offset/limit style
+    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
+    const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
+    const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
+    const orderBy = orderByParam || 'createdAt';
+    const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
+    const isDataTablesMode = length !== null; // when length provided, use offset/limit style
 
     // Build initial match for createdAt and optional lastId for pagination
     const pipeline = [];
@@ -109,6 +114,26 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({
       $lookup: {
+        from: 'answers',
+        localField: 'interactions.answer',
+        foreignField: '_id',
+        as: 'interactionAnswer'
+      }
+    });
+    pipeline.push({ $addFields: { 'interactions.answer': { $arrayElemAt: ['$interactionAnswer', 0] } } });
+
+    pipeline.push({
+      $lookup: {
+        from: 'evals',
+        localField: 'interactions.autoEval',
+        foreignField: '_id',
+        as: 'interactionEval'
+      }
+    });
+    pipeline.push({ $addFields: { 'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] } } });
+
+    pipeline.push({
+      $lookup: {
         from: 'contexts',
         localField: 'interactions.context',
         foreignField: '_id',
@@ -142,6 +167,44 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    pipeline.push({
+      $addFields: {
+        'interactions.partnerEval': {
+          $switch: {
+            branches: [
+              { case: { $eq: [{ $arrayElemAt: ['$expertFeedbackDocs.overallRating', 0] }, 'correct'] }, then: 'correct' },
+              { case: { $eq: [{ $arrayElemAt: ['$expertFeedbackDocs.overallRating', 0] }, 'incorrect'] }, then: 'incorrect' },
+              { case: { $eq: [{ $arrayElemAt: ['$expertFeedbackDocs.overallRating', 0] }, 'needsImprovement'] }, then: 'needsImprovement' }
+            ],
+            default: {
+              $cond: {
+                if: { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs', 0] }, false] },
+                then: 'other',
+                else: 'none'
+              }
+            }
+          }
+        },
+        'interactions.aiEval': {
+          $switch: {
+            branches: [
+              { case: { $eq: [{ $arrayElemAt: ['$interactionEval.hasMatches', 0] }, false] }, then: 'noMatch' },
+              { case: { $ne: [{ $arrayElemAt: ['$interactionEval.fallbackType', 0] }, null] }, then: 'fallback' },
+              { case: { $eq: [{ $arrayElemAt: ['$interactionEval.hasCitationError', 0] }, true] }, then: 'hasCitationError' },
+              { case: { $eq: [{ $arrayElemAt: ['$interactionEval.hasError', 0] }, true] }, then: 'hasError' }
+            ],
+            default: {
+              $cond: {
+                if: { $ifNull: [{ $arrayElemAt: ['$interactionEval', 0] }, false] },
+                then: 'normal',
+                else: 'none'
+              }
+            }
+          }
+        }
+      }
+    });
+
     // Lookup user who created the chat to include their email
     pipeline.push({
       $lookup: {
@@ -158,24 +221,23 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-  pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
 
     const andFilters = [];
 
     // Filter by userType if specified
     if (userType === 'public') {
-      // Public users: creatorEmail is null, empty, or doesn't exist
+      // Public users: user is null or doesn't exist
       andFilters.push({
         $or: [
-          { creatorEmail: { $exists: false } },
-          { creatorEmail: null },
-          { creatorEmail: '' }
+          { user: { $exists: false } },
+          { user: null }
         ]
       });
     } else if (userType === 'admin') {
-      // Admin users: creatorEmail exists and is not empty
+      // Admin users: user exists and is not null
       andFilters.push({
-        creatorEmail: { $exists: true, $ne: '', $ne: null }
+        user: { $exists: true, $ne: null }
       });
     }
     // If userType === 'all' or undefined, no additional filtering
@@ -200,6 +262,44 @@ async function chatDashboardHandler(req, res) {
       });
     }
 
+    if (urlEn) {
+      const escaped = escapeRegex(urlEn);
+      andFilters.push({
+        'interactions.referringUrl': {
+          $regex: escaped,
+          $options: 'i'
+        }
+      });
+    }
+
+    if (urlFr) {
+      const escaped = escapeRegex(urlFr);
+      andFilters.push({
+        'interactions.referringUrl': {
+          $regex: escaped,
+          $options: 'i'
+        }
+      });
+    }
+
+    if (answerType && answerType !== 'all') {
+      andFilters.push({
+        'interactions.answer.answerType': answerType
+      });
+    }
+
+    if (partnerEval && partnerEval !== 'all') {
+      andFilters.push({
+        'interactions.partnerEval': partnerEval
+      });
+    }
+
+    if (aiEval && aiEval !== 'all') {
+      andFilters.push({
+        'interactions.aiEval': aiEval
+      });
+    }
+
     if (andFilters.length) {
       pipeline.push({ $match: { $and: andFilters } });
     }
@@ -219,6 +319,18 @@ async function chatDashboardHandler(req, res) {
         },
         expertEmails: {
           $addToSet: '$interactions.expertEmail'
+        },
+        referringUrls: {
+          $addToSet: '$interactions.referringUrl'
+        },
+        answerTypes: {
+          $addToSet: '$interactions.answer.answerType'
+        },
+        partnerEvals: {
+          $addToSet: '$interactions.partnerEval'
+        },
+        aiEvals: {
+          $addToSet: '$interactions.aiEval'
         }
       }
     });
@@ -279,6 +391,17 @@ async function chatDashboardHandler(req, res) {
             }
           }
         },
+        referringUrl: { $arrayElemAt: ['$referringUrls', 0] },
+        answerType: { $arrayElemAt: ['$answerTypes', 0] },
+        partnerEval: { $arrayElemAt: ['$partnerEvals', 0] },
+        aiEval: { $arrayElemAt: ['$aiEvals', 0] },
+        userType: {
+          $cond: {
+            if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
+            then: 'admin',
+            else: 'public'
+          }
+        },
         pageLanguage: 1
       }
     });
@@ -311,12 +434,12 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $limit: limit });
     }
 
-  const results = await Chat.aggregate(pipeline).allowDiskUse(true);
+    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
 
     // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
-  const countPipeline = pipelineBeforeSortLimit.slice();
-  countPipeline.push({ $group: { _id: '$_id' } });
-  countPipeline.push({ $count: 'totalCount' });
+    const countPipeline = pipelineBeforeSortLimit.slice();
+    countPipeline.push({ $group: { _id: '$_id' } });
+    countPipeline.push({ $count: 'totalCount' });
     const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
@@ -327,7 +450,12 @@ async function chatDashboardHandler(req, res) {
       expertEmail: chat.expertEmail || '',
       creatorEmail: chat.creatorEmail || '',
       date: chat.createdAt ? chat.createdAt.toISOString() : null,
-      pageLanguage: chat.pageLanguage || ''
+      pageLanguage: chat.pageLanguage || '',
+      referringUrl: chat.referringUrl || '',
+      answerType: chat.answerType || '',
+      partnerEval: chat.partnerEval || '',
+      aiEval: chat.aiEval || '',
+      userType: chat.userType || 'public'
     }));
 
     if (isDataTablesMode) {

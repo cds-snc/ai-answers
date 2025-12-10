@@ -51,6 +51,7 @@
     "imvectordb": "^0.0.6",
     "install": "^0.13.0",
     "isbot": "^3.6.0",
+    "jquery": "^3.7.1",
     "js-tiktoken": "^1.0.21",
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",

@@ -8,6 +8,7 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
+import { filterByPartnerEval, filterByAiEval } from '../utils/categorization.js';
 
 async function chatLogsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -22,6 +23,15 @@ async function chatLogsHandler(req, res) {
       department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
        limit = 100, lastId, batchId,
     } = req.query;
+
+    // Validate eval category inputs
+    const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
+    if (partnerEval && !validCategories.includes(partnerEval)) {
+      return res.status(400).json({ error: 'Invalid partnerEval value' });
+    }
+    if (aiEval && !validCategories.includes(aiEval)) {
+      return res.status(400).json({ error: 'Invalid aiEval value' });
+    }
 
 
   let dateFilter = {};
@@ -282,6 +292,14 @@ async function chatLogsHandler(req, res) {
       pipeline.push({ $sort: { createdAt: -1 } });
 
       chats = await Chat.aggregate(pipeline);
+
+      // Apply post-query eval filters if requested
+      if (partnerEval && partnerEval !== 'all') {
+        chats = filterByPartnerEval(chats, partnerEval);
+      }
+      if (aiEval && aiEval !== 'all') {
+        chats = filterByAiEval(chats, aiEval);
+      }
     } else {
       // Non-aggregate branch
       // Apply batch filter if batchId is provided
@@ -298,6 +316,14 @@ async function chatLogsHandler(req, res) {
         .sort({ _id: 1 }) // Ensure consistent ordering for pagination
         .limit(Number(limit));
       chats = await query;
+
+      // Apply post-query eval filters in non-aggregate branch as well
+      if (partnerEval && partnerEval !== 'all') {
+        chats = filterByPartnerEval(chats, partnerEval);
+      }
+      if (aiEval && aiEval !== 'all') {
+        chats = filterByAiEval(chats, aiEval);
+      }
     }
 
     const response = {

@@ -625,7 +625,11 @@
         "questionCount": "Questions",
         "createdAt": "Créé",
         "referringUrl": "URL de référence",
-        "date": "Date et heure"
+        "date": "Date et heure",
+        "userType": "Type d'utilisateur",
+        "answerType": "Type de réponse",
+        "partnerEval": "Évaluation partenaire",
+        "aiEval": "Évaluation IA"
       }
     },
     "evalDashboard": {
