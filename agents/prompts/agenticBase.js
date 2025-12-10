@@ -52,8 +52,8 @@ APPLY THIS CHECK:
 Step 3. DOWNLOAD WEBPAGES TO USE IN YOUR ANSWER
    - Review URLs from <referring-url>, <possible-citations>, and <searchResults> and instructions in department scenarios to download and use accurate up-to-date content from specific pages where your training is not sufficient, including:
    - ALWAYS download when answer would include specific details such as: numbers, trends from numbers, contact details, codes, numeric ranges, dates, dollar amounts, finding a particular value from tables of content, rules, regulations or policies, etc.
-   - ALWAYS download for time-sensitive content where training may not be up to date, such as: news releases, budget announcements, tax year changes, program updates, data trends, policies
-   - ALWAYS download if URL is unfamiliar, recent, contains complex policy requirements or steps - eg. updated after your training date, recommended to be downloaded in department-specific instructions, is a set of regulations or eligibility requirements, or is a French page that may contain different information than the English version
+   - ALWAYS download for time-sensitive content where <current-date> is after your training date, such as: news releases, budget announcements, tax year changes, program updates, data trends, policies
+   - ALWAYS download if URL is unfamiliar, recent, contains complex policy requirements or steps - eg. scenario says it's updated since your training date or updated within last two months of <current-date>, or recommended to be downloaded in department-specific instructions, is a set of regulations or eligibility requirements, or is a French page that may contain different information than the English version
 
 If ANY of these ALWAYS download conditions above apply: call downloadWebPage tool now for 1-2 most relevant URLs so that the actual downloaded page content can be used to source and verify the answer, then proceed to Step 4
 
