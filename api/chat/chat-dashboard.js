@@ -2,7 +2,7 @@
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -131,7 +131,12 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionEval'
       }
     });
-    pipeline.push({ $addFields: { 'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] } } });
+    pipeline.push({
+      $addFields: {
+        'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] },
+        'interactions.autoEval': { $arrayElemAt: ['$interactionEval', 0] }
+      }
+    });
 
     pipeline.push({
       $lookup: {
@@ -170,24 +175,29 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({
       $addFields: {
+        'interactions.expertFeedback': { $arrayElemAt: ['$expertFeedbackDocs', 0] }
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'expertfeedbacks',
+        localField: 'interactions.autoEval.expertFeedback',
+        foreignField: '_id',
+        as: 'autoEvalExpertFeedbackDocs'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$autoEvalExpertFeedbackDocs', 0] }
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
         'interactions.partnerEval': getPartnerEvalAggregationExpression(),
-        'interactions.aiEval': {
-          $switch: {
-            branches: [
-              { case: { $eq: [{ $arrayElemAt: ['$interactionEval.hasMatches', 0] }, false] }, then: 'noMatch' },
-              { case: { $ne: [{ $arrayElemAt: ['$interactionEval.fallbackType', 0] }, null] }, then: 'fallback' },
-              { case: { $eq: [{ $arrayElemAt: ['$interactionEval.hasCitationError', 0] }, true] }, then: 'hasCitationError' },
-              { case: { $eq: [{ $arrayElemAt: ['$interactionEval.hasError', 0] }, true] }, then: 'hasError' }
-            ],
-            default: {
-              $cond: {
-                if: { $ifNull: [{ $arrayElemAt: ['$interactionEval', 0] }, false] },
-                then: 'normal',
-                else: 'none'
-              }
-            }
-          }
-        }
+        'interactions.aiEval': getAiEvalAggregationExpression()
       }
     });
 
