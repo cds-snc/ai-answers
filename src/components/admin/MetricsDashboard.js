@@ -6,10 +6,21 @@ import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 // Removed unused Recharts imports
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
-import FilterPanelV2 from './FilterPanelV2.js';
+import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';
 
 DataTable.use(DT);
+
+const FILTER_PANEL_STORAGE_KEY = 'metricsDashboard_filters_v1';
+
+const getDefaultDateRange = () => {
+  const end = new Date();
+  const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return {
+    startDate: start.toISOString(),
+    endDate: end.toISOString()
+  };
+};
 
 const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -52,12 +63,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleClearFilters = () => {
-    const today = new Date();
-    const todayFilters = {
-      startDate: today,
-      endDate: today
-    };
-    fetchMetrics(todayFilters);
+    fetchMetrics(getDefaultDateRange());
   };
 
   return (
@@ -68,11 +74,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      <FilterPanelV2
+      <FilterPanel
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}
-        storageKey="metricsDashboard_filters_v2"
+        storageKey={FILTER_PANEL_STORAGE_KEY}
       />
 
       {hasLoadedData && (

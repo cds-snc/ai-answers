@@ -219,7 +219,10 @@ export function getAiEvalAggregationExpression() {
   };
 }
 
-export function getChatFilterConditions(filters) {
+export function getChatFilterConditions(filters, options = {}) {
+  const { basePath = 'interactions' } = options;
+  const prefix = basePath ? `${basePath}.` : '';
+  const withPath = (field) => `${prefix}${field}`;
   const conditions = [];
 
   // userType
@@ -232,24 +235,24 @@ export function getChatFilterConditions(filters) {
   // department
   if (filters.department) {
     const escaped = escapeRegex(filters.department);
-    conditions.push({ 'interactions.context.department': { $regex: escaped, $options: 'i' } });
+    conditions.push({ [withPath('context.department')]: { $regex: escaped, $options: 'i' } });
   }
 
   // referringUrl
   if (filters.referringUrl) {
     const escaped = escapeRegex(filters.referringUrl);
-    conditions.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
+    conditions.push({ [withPath('referringUrl')]: { $regex: escaped, $options: 'i' } });
   }
 
   // urlEn and urlFr - combine both values using OR, then rely on $and at the top level
   const urlConditions = [];
   if (filters.urlEn) {
     const escaped = escapeRegex(filters.urlEn);
-    urlConditions.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
+    urlConditions.push({ [withPath('referringUrl')]: { $regex: escaped, $options: 'i' } });
   }
   if (filters.urlFr) {
     const escaped = escapeRegex(filters.urlFr);
-    urlConditions.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
+    urlConditions.push({ [withPath('referringUrl')]: { $regex: escaped, $options: 'i' } });
   }
   if (urlConditions.length === 1) {
     conditions.push(urlConditions[0]);
@@ -259,17 +262,17 @@ export function getChatFilterConditions(filters) {
 
   // answerType
   if (filters.answerType && filters.answerType !== 'all') {
-    conditions.push({ 'interactions.answer.answerType': filters.answerType });
+    conditions.push({ [withPath('answer.answerType')]: filters.answerType });
   }
 
   // partnerEval
   if (filters.partnerEval && filters.partnerEval !== 'all') {
-    conditions.push({ 'interactions.partnerEval': filters.partnerEval });
+    conditions.push({ [withPath('partnerEval')]: filters.partnerEval });
   }
 
   // aiEval
   if (filters.aiEval && filters.aiEval !== 'all') {
-    conditions.push({ 'interactions.aiEval': filters.aiEval });
+    conditions.push({ [withPath('aiEval')]: filters.aiEval });
   }
 
   return conditions;

@@ -3,6 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
+import { getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -55,6 +56,11 @@ async function evalDashboardHandler(req, res) {
       fallbackType,
       onlyEmpty,
       processed,
+      department = '',
+      referringUrl = '',
+      urlEn = '',
+      urlFr = '',
+      userType = 'all',
       answerType = '',
       partnerEval = '',
       aiEval = ''
@@ -205,17 +211,17 @@ async function evalDashboardHandler(req, res) {
       andFilters.push({ 'eval.fallbackType': { $regex: `^${escaped}$`, $options: 'i' } });
     }
 
-    if (answerType) {
-      const escaped = escapeRegex(answerType);
-      andFilters.push({ 'answer.answerType': { $regex: escaped, $options: 'i' } });
-    }
-
-    if (partnerEval && partnerEval !== 'all') {
-      andFilters.push({ partnerEval });
-    }
-
-    if (aiEval && aiEval !== 'all') {
-      andFilters.push({ aiEval });
+    const sharedFilters = getChatFilterConditions({
+      department,
+      referringUrl,
+      urlEn,
+      urlFr,
+      answerType,
+      partnerEval,
+      aiEval
+    }, { basePath: '' });
+    if (sharedFilters.length) {
+      andFilters.push(...sharedFilters);
     }
 
     if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });
