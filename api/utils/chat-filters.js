@@ -241,18 +241,20 @@ export function getChatFilterConditions(filters) {
     conditions.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
   }
 
-  // urlEn and urlFr
-  if (filters.urlEn || filters.urlFr) {
-    const urlOr = [];
-    if (filters.urlEn) {
-      const escaped = escapeRegex(filters.urlEn);
-      urlOr.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
-    }
-    if (filters.urlFr) {
-      const escaped = escapeRegex(filters.urlFr);
-      urlOr.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
-    }
-    if (urlOr.length) conditions.push({ $or: urlOr });
+  // urlEn and urlFr - combine both values using OR, then rely on $and at the top level
+  const urlConditions = [];
+  if (filters.urlEn) {
+    const escaped = escapeRegex(filters.urlEn);
+    urlConditions.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
+  }
+  if (filters.urlFr) {
+    const escaped = escapeRegex(filters.urlFr);
+    urlConditions.push({ 'interactions.referringUrl': { $regex: escaped, $options: 'i' } });
+  }
+  if (urlConditions.length === 1) {
+    conditions.push(urlConditions[0]);
+  } else if (urlConditions.length > 1) {
+    conditions.push({ $or: urlConditions });
   }
 
   // answerType

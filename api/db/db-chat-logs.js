@@ -18,8 +18,7 @@ async function chatLogsHandler(req, res) {
   try {
     await dbConnect();
     const {
-      days, startDate, endDate,
-      filterType, presetValue,
+      startDate, endDate,
       department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
        limit = 100, lastId, batchId,
     } = req.query;
