@@ -176,6 +176,7 @@
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
       },
       "review": {
+        "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :"
       }
     },
@@ -934,6 +935,8 @@
   },
   "reviewPanels": {
     "sentence": "Phrase",
+    "sentenceEnglish": "Phrase en anglais",
+    "englishQuestion": "Question en anglais",
     "expertScore": "Note de l'expert",
     "feedback": "Rétroaction",
     "expertFeedbackTitle": "Évaluation d'expert",

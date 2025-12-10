@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, targetInteractionId = null, onSessionError }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null, onSessionError }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -130,7 +130,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           if (el && typeof el.scrollIntoView === 'function') {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             // also focus for accessibility
-            try { if (typeof el.focus === 'function') el.focus(); } catch(e) { /* ignore */ }
+            try { if (typeof el.focus === 'function') el.focus(); } catch (e) { /* ignore */ }
           }
         } catch (e) {
           // ignore scroll errors
@@ -273,7 +273,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           }
         } catch (err) {
           // fallback to openai if datastore call fails
-          if (mounted) setSelectedAI('openai');
+          if (mounted) setSelectedAI('azure');
         }
       }
     };
@@ -635,12 +635,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         var result = window.adobeDataLayer.push({
                           event: 'customTracking',
                           link: {
-                            customCall: customCallValue
+                            customCall: customCallValue + '|' + chatId + '|' + interactionId
                           },
-                          // Keep contextual fields for debugging (non-breaking extra data)
-                          citationUrl: displayUrl,
-                          interactionId: interactionId,
-                          chatId: chatId,
                         });
                         console.log('Adobe Data Layer push result:', result);
                       }
@@ -675,14 +671,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleSendMessage={handleSendMessage}
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
-        handleSearchToggle={handleSearchToggle} // Add this line
+        handleSearchToggle={handleSearchToggle}
         workflow={workflow}
         handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
         selectedAI={selectedAI}
-        selectedSearch={selectedSearch} // Add this line
+        selectedSearch={selectedSearch}
         referringUrl={referringUrl}
+        chatCreatedAt={chatCreatedAt}
         turnCount={turnCount}
         showFeedback={showFeedback}
         displayStatus={displayStatus}

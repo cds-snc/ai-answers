@@ -2122,7 +2122,6 @@ fieldset.gc-chckbxrdio {
 
 .filter-label {
   font-weight: 500;
-  color: #374151;
   font-size: 0.875rem;
 }
 
@@ -2222,6 +2221,9 @@ fieldset.gc-chckbxrdio {
   margin-bottom: 0.5rem;
 }
 
+.dt-container {
+  font-size: 80%; /* temp fix to resize */
+}
 /* Current selection styling */
 .current-selection {
   margin-top: 0.5rem;
@@ -2312,6 +2314,10 @@ fieldset.gc-chckbxrdio {
   }
 }
 
+    .admin-date {
+      font-size: 18px;
+      margin-left: 12px
+    }
     .referring-url-chat, #displayReferringURL {
 			font-size: 16px;
 			line-height: 1.55;
@@ -2322,7 +2328,7 @@ fieldset.gc-chckbxrdio {
 			display: block;
      margin-bottom: 24px;
 		}
-		.field-container:focus-within .referring-url-chat, 
+		.field-container:focus-within .referring-url-chat,
 		.field-container:focus-within #displayReferringURL {
 			color: #0535d2;
 		}

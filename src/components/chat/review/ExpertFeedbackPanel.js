@@ -107,8 +107,45 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         sentences = answer.sentences;
     }
 
+    // Build english sentences array (falling back to several common locations)
+    let englishSentences = [];
+    if (typeof answer.englishAnswer === 'string' && answer.englishAnswer.trim().length > 0) {
+        // englishAnswer is a single string containing <s-1>..</s-1> tags
+        englishSentences = extractSentences(answer.englishAnswer);
+    } else if (Array.isArray(answer.paragraphsEnglish) && answer.paragraphsEnglish.length > 0) {
+        englishSentences = answer.paragraphsEnglish.flatMap(p => extractSentences(p));
+    } else if (Array.isArray(answer.sentencesEnglish) && answer.sentencesEnglish.length > 0) {
+        englishSentences = answer.sentencesEnglish;
+    } else if (Array.isArray(answer.sentences) && answer.sentences.length > 0 && data && Array.isArray(data.sentences)) {
+        // try to pull english text from data.sentences when present
+        englishSentences = data.sentences.map(s => {
+            const raw = s && (s.english || s.englishAnswer || s.englishText || null);
+            if (typeof raw === 'string') return raw;
+            if (raw && typeof raw === 'object') return raw.english || raw.text || raw.redactedQuestion || '';
+            return null;
+        });
+    } else if (data && Array.isArray(data.sentences)) {
+        englishSentences = data.sentences.map(s => {
+            const raw = s && (s.english || s.englishAnswer || s.englishText || null);
+            if (typeof raw === 'string') return raw;
+            if (raw && typeof raw === 'object') return raw.english || raw.text || raw.redactedQuestion || '';
+            return null;
+        });
+    }
+
     // Expert feedback may be attached in a few places
     const expert = interaction.expertFeedback || message.expertFeedback || {};
+
+    // Try to locate an English question (various possible fields) and normalize to string
+    const rawQuestion = interaction.questionEnglish || interaction.englishQuestion || interaction.question || answer.englishQuestion || answer.question || message.question || '';
+    let englishQuestion = '';
+    if (typeof rawQuestion === 'string') {
+        englishQuestion = rawQuestion;
+    } else if (rawQuestion && typeof rawQuestion === 'object') {
+        englishQuestion = rawQuestion.englishQuestion || rawQuestion.english || rawQuestion.redactedQuestion || rawQuestion.text || rawQuestion.question || '';
+    } else {
+        englishQuestion = '';
+    }
 
     const getExpertScore = (idx) => {
         // expert schema stores sentence scores as sentence1Score, sentence2Score...
@@ -154,6 +191,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                         const totalVal = (efSource && typeof efSource.totalScore !== 'undefined' && efSource.totalScore !== null) ? efSource.totalScore : computeTotal(efSource, sentenceCount);
                         return (
                             <div>
+                                    {/* English question shown above total score when available */}
+                                    {englishQuestion ? (
+                                        <div style={{ marginBottom: '6px' }}><strong>{t('reviewPanels.englishQuestion') || 'English question'}:</strong> {englishQuestion}</div>
+                                    ) : null}
                                 <div><strong>{t('reviewPanels.totalScore') || 'Total score'}:</strong> {totalVal !== null ? totalVal : (t('reviewPanels.notAvailable') || 'N/A')}</div>
                                 {/* Show expert email if available */}
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
@@ -168,6 +209,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                     <thead>
                         <tr>
                             <th>{t('reviewPanels.sentence') || 'Sentence'}</th>
+                            <th>{t('reviewPanels.sentenceEnglish') || 'Sentence English'}</th>
                             <th>{t('reviewPanels.expertScore') || 'Expert score'}</th>
                             <th>{t('homepage.expertRating.options.harmful') || 'Harmful'}</th>
                             <th>{t('homepage.expertRating.options.contentIssue') || 'Content Issue'}</th>
@@ -182,9 +224,20 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                             const harmfulVal = (typeof row.harmful !== 'undefined') ? row.harmful : (expert && expert[`sentence${i + 1}Harmful`]);
                             const contentIssueVal = (typeof row.contentIssue !== 'undefined') ? row.contentIssue : (expert && expert[`sentence${i + 1}ContentIssue`]);
 
+                            const rawEnglish = (row && (row.english || row.englishAnswer || row.englishText)) || (Array.isArray(answer.sentencesEnglish) && answer.sentencesEnglish[i]) || (englishSentences && englishSentences[i]) || null;
+                            let englishVal = null;
+                            if (typeof rawEnglish === 'string') {
+                                englishVal = rawEnglish;
+                            } else if (rawEnglish && typeof rawEnglish === 'object') {
+                                englishVal = rawEnglish.english || rawEnglish.text || rawEnglish.redactedQuestion || '';
+                            } else {
+                                englishVal = null;
+                            }
+
                             return (
                                 <tr key={`s-${i}`}>
                                     <td>{s || (t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{englishVal ? englishVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
                                     <td>{typeof scoreVal !== 'undefined' && scoreVal !== null ? scoreVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
                                     <td>{harmfulVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
                                     <td>{contentIssueVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
@@ -204,6 +257,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                             return (
                                 <tr key="citation-row" className="citation-row">
                                     <td>{t('reviewPanels.citation') || 'Citation'}</td>
+                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
                                     <td>{scoreCell}</td>
                                     <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
                                     <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
