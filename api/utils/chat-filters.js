@@ -81,7 +81,8 @@ export function getPartnerEvalAggregationExpression() {
   return {
     $cond: {
       if: { $eq: [{ $ifNull: ['$interactions.expertFeedback', null] }, null] },
-      then: '$$REMOVE',
+      // Amazon DocumentDB does not support $$REMOVE; return null instead
+      then: null,
       else: {
         $let: {
           vars: {
@@ -135,7 +136,8 @@ export function getPartnerEvalAggregationExpression() {
                       default: 'correct'
                     }
                   },
-                  else: '$$REMOVE'
+                  // When there is no score data, leave the value as null
+                  else: null
                 }
               }
             }
@@ -159,7 +161,8 @@ export function getAiEvalAggregationExpression() {
             { $eq: ['$$autoEval', null] },
             { $eq: ['$$ef', null] }
           ] },
-          then: '$$REMOVE',
+          // DocumentDB does not support $$REMOVE; return null instead
+          then: null,
           else: {
             $let: {
               vars: {
@@ -208,7 +211,7 @@ export function getAiEvalAggregationExpression() {
                       default: 'correct'
                     }
                   },
-                  else: '$$REMOVE'
+                  else: null
                 }
               }
             }
