@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.69.1](https://github.com/cds-snc/ai-answers/compare/v1.69.0...v1.69.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* prompt EI always apply ([56589c9](https://github.com/cds-snc/ai-answers/commit/56589c9f38ea11525c61d85f5f46388a093f371c))
+* prompt EI always apply ([822a7e7](https://github.com/cds-snc/ai-answers/commit/822a7e7ae246f3d66e5b2a6324ae799a6f55744f))
+
 ## [1.69.0](https://github.com/cds-snc/ai-answers/compare/v1.68.3...v1.69.0) (2025-12-09)
 
 
