@@ -184,7 +184,7 @@ const AppLayout = () => {
   // Update Open Graph meta tags based on current language
   useEffect(() => {
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
-    const title = currentLang === 'fr' ? 'Réponses IA' : 'AI Answers';
+    const title = currentLang === 'fr' ? 'Bêta : Réponses IA' : 'Beta: AI Answers';
     const description = currentLang === 'fr' 
       ? 'Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada.'
       : 'AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites.';
