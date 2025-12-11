@@ -1,6 +1,21 @@
-# Block all search engines and AI scrapers from indexing this experimental app
-User-agent: *
-Disallow: /
+# Allow major search engines to crawl so they can see noindex tags
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
 
 # Block specific AI scrapers
 User-agent: GPTBot
@@ -22,22 +37,6 @@ User-agent: Omgilibot
 Disallow: /
 
 User-agent: Google-Extended
-Disallow: /
-
-# Block major search engines
-User-agent: Bingbot
-Disallow: /
-
-User-agent: Slurp
-Disallow: /
-
-User-agent: DuckDuckBot
-Disallow: /
-
-User-agent: Baiduspider
-Disallow: /
-
-User-agent: YandexBot
 Disallow: /
 
 # Block social media crawlers
@@ -99,7 +98,7 @@ Disallow: /
 User-agent: WaybackMachine
 Disallow: /
 
-# Block Google's various bots
+# Block Google's other bots (but allow main Googlebot above)
 User-agent: Mediapartners-Google
 Disallow: /
 
@@ -115,14 +114,6 @@ Disallow: /
 User-agent: Googlebot-News
 Disallow: /
 
-User-agent: Googlebot-Mobile
+# Block everything else by default
+User-agent: *
 Disallow: /
-
-User-agent: Googlebot-Desktop
-Disallow: /
-
-User-agent: Googlebot
-Disallow: /
-
-# Crawl-delay for any bots that might ignore the above
-Crawl-delay: 10
