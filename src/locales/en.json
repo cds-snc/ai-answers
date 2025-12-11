@@ -110,6 +110,7 @@
         "referringURL": "Referring URL:"
       },
       "textarea": {
+        "title": "Ask your question here.",
         "ariaLabel": {
           "first": "Ask a Canada dot CA question",
           "followon": "Ask a follow-on question or reply",
