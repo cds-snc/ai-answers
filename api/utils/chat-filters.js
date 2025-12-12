@@ -7,6 +7,7 @@ export function categorizeExpertFeedback(expertFeedback) {
   if (!expertFeedback) return null;
 
   const hasCitationError = expertFeedback.citationScore === 0;
+  const totalScore = expertFeedback.totalScore;
 
   const feedbackFields = [
     { score: expertFeedback.sentence1Score, harmful: expertFeedback.sentence1Harmful },
@@ -31,6 +32,18 @@ export function categorizeExpertFeedback(expertFeedback) {
       highestCategory = 'correct';
     }
   });
+
+  // Consider totalScore when sentence-level scores are absent
+  if (totalScore !== null && totalScore !== undefined) {
+    hasAnyScore = true;
+    if (totalScore === 0 && highestCategory !== 'harmful') {
+      highestCategory = 'hasError';
+    } else if (totalScore === 80 && highestCategory !== 'harmful' && highestCategory !== 'hasError') {
+      highestCategory = 'needsImprovement';
+    } else if (totalScore === 100 && highestCategory === null) {
+      highestCategory = 'correct';
+    }
+  }
 
   if (expertFeedback.citationScore !== null && expertFeedback.citationScore !== undefined && !hasCitationError) {
     const citationScore = expertFeedback.citationScore;
@@ -57,24 +70,29 @@ export function categorizeAiEval(autoEval) {
   return categorizeExpertFeedback(autoEval.expertFeedback);
 }
 
+const filterInteractionsByCategory = (chat, category, evaluator) => {
+  const interactions = chat.interactions || [];
+  const filtered = interactions.filter(interaction => evaluator(interaction) === category);
+  if (!filtered.length) return null;
+  return { ...chat, interactions: filtered };
+};
+
 export function filterByPartnerEval(chats, category) {
   if (!category || category === 'all') return chats;
-  return chats.filter(chat => {
-    return chat.interactions && chat.interactions.some(interaction => {
-      const c = categorizeExpertFeedback(interaction.expertFeedback);
-      return c === category;
-    });
-  });
+  return chats.reduce((acc, chat) => {
+    const matched = filterInteractionsByCategory(chat, category, (interaction) => categorizeExpertFeedback(interaction.expertFeedback));
+    if (matched) acc.push(matched);
+    return acc;
+  }, []);
 }
 
 export function filterByAiEval(chats, category) {
   if (!category || category === 'all') return chats;
-  return chats.filter(chat => {
-    return chat.interactions && chat.interactions.some(interaction => {
-      const c = categorizeAiEval(interaction.autoEval);
-      return c === category;
-    });
-  });
+  return chats.reduce((acc, chat) => {
+    const matched = filterInteractionsByCategory(chat, category, (interaction) => categorizeAiEval(interaction.autoEval));
+    if (matched) acc.push(matched);
+    return acc;
+  }, []);
 }
 
 export function getPartnerEvalAggregationExpression() {
