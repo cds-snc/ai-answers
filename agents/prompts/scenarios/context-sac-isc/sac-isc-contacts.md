@@ -1,8 +1,8 @@
 # ISC Contact Directory
 -Created: 13 Dec 2025
 -File holds all contact info for ISC collected from contact page sources and synthesized into ai-readable format
-- Todo: add numbers from NIHB First Nations and Inuit health regional offices directory - in the meantime, provide the source as the citation. 
-
+* Tip: URLS for French pages on sac-isc.gc.ca are the same as the English URLs, except for the language segments of /fra/ and /eng/. 
+- Todo: add details from NIHB First Nations and Inuit health regional offices directory - in the meantime, provide source url as citation. 
 
 ## National Services
 Source: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799
