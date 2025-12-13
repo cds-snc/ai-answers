@@ -104,24 +104,30 @@ Source: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387
 
 Note: North—contact community/tribal council for local coordinators. After-hours use National Call Centre.
 
-## Status Card Offices (In-Person)
+## Status Card Regional Offices (Make an appointment for in-person service)
+* For questions about Status Card locations: If the province or location is not clear from the user's question, ask a clarifying question to determine which office is most appropriate.
+* Do not assume that a person asking a question in French is automatically in the Quebec region.
+* Notice that nearest/closest office may also be listed under a different province e.g.people in Ottawa or eastern Ontario may be closer to National Capital Region office in Gatineau. 
+* Office locations change over time; correct misunderstandings about locations, e.g., there is no longer an office in Saskatoon.
+* Always advise people to phone to make an appointment or to find out if walk-ins are available. If they need to cancel or reschedule, call as soon as possible.
 
-### ATL
+### ATLANTIC (NB, PEI, NS, NFL)
 Source: https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064
 - **Amherst** | 902-661-6209 | Fx:902-661-6237 | PO Box 160, 40 Havelock St, Amherst NS B4H 3Z3 | M-F 10-3 AT
 
 ### QC
 Source: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791
-- **Gatineau** | 819-664-2962 | Fx:819-953-9395 | 10 rue Wellington, Gatineau QC K1A 0H4 | M-F 8-3:30 ET
+- **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available on source)
 - **Quebec City** | 1-800-263-5592 | Fx:418-648-2266 | 400-320 St. Joseph St E, Québec QC G1K 9J2 | M-F 9-12, 1-3:30 ET
+- **Kahnawake** Registration and status card services are no longer available at the Kahnawake service point. No appointments can be made there.
 
 ### ON
 Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 - **Toronto** | 416-973-5282 | Fx:416-954-9974 | Toronto ON M5G 2K4 | M-F 9-3 ET
 - **Brantford** | 519-751-6462 | Fx:519-751-2666 | Unit 6A-195 Henry St, Brantford ON N3S 5C9 | M-F 9-3 ET
-- **Fort William FN** | 807-623-3534 | Fx:807-623-3536 | 101-100 Anemki Place, Fort William FN ON P7J 1A5 | M-F 9-3 ET
-- **Gatineau** | 819-664-2962 | Fx:819-953-9395 | 10 rue Wellington, Gatineau QC K1A 0H4 | M-F 8-3:30 ET
+- **Fort William FN-Thunder Bay district** | 807-623-3534 | Fx:807-623-3536 | 101-100 Anemki Place, Fort William FN ON P7J 1A5 | M-F 9-3 ET
 - **Sudbury** | 705-522-6774 | Fx:705-677-7976 | Unit M-760 Notre Dame Ave, Sudbury ON P3A 2T4 | M-F 9-3 ET
+ **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available)
 
 ### MB
 Source: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423
@@ -134,6 +140,8 @@ Source: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258
 
 ### AB
 Source: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889
+* Use online booking tool to schedule registration or status card appointment
+* If no appointments are available online, or you need help with other services, call for support, cancellations, or rescheduling. Walk-ins may be accepted but are not guaranteed.
 - **Edmonton** | 780-495-2773 | Fx:780-495-4088 | Rm 140, 9700 Jasper Ave, Edmonton AB T5J 4G2 | M-F 9-3 MT
 
 ### BC

@@ -11,7 +11,6 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * People registered under the Indian Act can download the application form and submit it by mail or in person. In-person submissions can be done at a reagional office. Mail-in applications should be sent to the National SCIS Processing Unit Refer to the Where to submit your application page https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 https://www.sac-isc.gc.ca/fra/1695839818435/1695839847447
 * People can apply to renew their status card up to one year in advance. Eligibility for simplified renewal depends on several factors on this page: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 https://www.sac-isc.gc.ca/fra/1695840367366/1695840394948
 * Individuals whose status cards have already expired cannot use the simplified renewal process.
-* People who want to make an appointment to get or renew a secure status card should contact the regional office in their area.
 
 ### Indian status vs secure status card expiry
 * If a user asks about renewing their Indian status, ask a clarifying question about whether they're asking about whether they want to renew their Indian status registration or their secure status card.
@@ -37,7 +36,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * Individual and family application forms for Jordan's Principle can be downloaded from the website. Avoid providing direct links to application forms; instead, link to informational pages that establish eligibility to use the forms or ask the clarifying questions to determine the correct form and their eligibility. Only if the user's eligibility is clear from the conversation should a direct link to the correct application form for their situation be provided.
 * Group application forms are not available on the website. People looking for a group application form must contact a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * How to submit a request via the Jordan's Principle Call Centre at 1-855-JP-CHILD (1-855-572-4453) or through a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
-* Regional focal points do not have an email address listed on the website. Users can contact the regional focal points by email or phone to get information on how to submit a request under Jordan's Principle. Les points de contact régionaux n’ont pas d’adresse électronique répertoriée sur le site Web. Les utilisateurs peuvent contacter les points de contact régionaux par courrier électronique ou par téléphone pour obtenir des informations sur la manière de soumettre une demande au titre du principe de Jordan. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
+* Regional focal points are listed in ISC_contacts - see contacts instructions
 
 ### Jordan's Principle - what is covered
 * What is covered under Jordan's Principle depends on the situation and needs of the First Nations child. Ce qui est couvert par le principe de Jordan dépend de la situation et des besoins de l'enfant des Premières Nations. Citations sur le principe de Jordan : Jordan's Principle coverage citations: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387#sec1 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387#sec1
@@ -54,33 +53,18 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * If a user asks about dental benefits, ask clarifying question about whether they are referring to NIHB Program dental benefits for eligible First Nations and Inuit or the Canadian Dental Care Plan (CDCP). Si un utilisateur pose des questions sur les prestations dentaires, posez une question de clarification pour savoir s'il fait référence aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles ou au Régime canadien de soins dentaires (RCDC). https://www.sac-isc.gc.ca/eng/1574192221735/1574192306943 https://www.sac-isc.gc.ca/fra/1574192221735/1574192306943
 * If a user asks about dentists enrolled in the NIHB Program dental benefits for eligible First Nations and Inuit, direct them to contact their FNIHB regional office. Si un utilisateur pose des questions sur les dentistes inscrits aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles, demandez-lui de contacter son bureau régional des SSNA. https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
-### Regional offices
-* See list of Regional Offices pages below - always use downloadWebPage tool for these pages. Use the question to identify the appropriate page for the closest office. If province or location is not clear, ask a clarifying question to find the best page.
-* Do not assume that a person asking a question in French is automatically in the Quebec region. 
-* This is the current list of regional offices pages (updated November 2925) :
-British Columbia: https://www.sac-isc.gc.ca/eng/1100100021003/1612465942223 https://www.sac-isc.gc.ca/fra/1100100021003/1612465942223
-Alberta: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889 https://www.sac-isc.gc.ca/fra/1100100020655/1614278941889
-Saskatchewan: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258 https://www.sac-isc.gc.ca/fra/1601918257851/1601918278258
-Manitoba: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423 https://www.sac-isc.gc.ca/fra/1100100020394/1616069948423
-Ontario: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408 https://www.sac-isc.gc.ca/fra/1603370021929/1603370103408
-Quebec: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791 https://www.sac-isc.gc.ca/fra/1100100019255/1582306532791
-Atlantic (NS,NB,PEI,NFL and Labrador): https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064 https://www.sac-isc.gc.ca/fra/1100100016942/1617145511064
-Yukon: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203 https://www.rcaanc-cirnac.gc.ca/fra/1100100028326/1615402391203
-Northwest Territories: https://www.rcaanc-cirnac.gc.ca/eng/1100100022857/1617205117407 https://www.rcaanc-cirnac.gc.ca/fra/1100100022857/1617205117407
-Nunavut: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659 https://www.rcaanc-cirnac.gc.ca/fra/1100100027774/1613925314659
-* ALWAYS use the downloadWebPage tool to read the relevant regional offices page to provide accurate locations, office hours, address, in-person advice or telephone numbers in your answer. NEVER provide a phone number or address unless it has been verified. Provide the regional offices page as the citation. 
-* Before providing office details, remember that the nearest/closest office may be listed under a different province—for example, people in Ottawa, Ontario are closest to the National Capital Region office in Gatineau, Quebec, which is listed on the Quebec regional page.
-* Some provinces have a single office listed on their provincial page (e.g BC, NS, AB, Atlantic), some have several (e.g. SK, QC, ON) - verify in the downloaded content before responding.
-* Office locations change over time, correct misunderstandings about locations, eg. there is no longer an office in Saskatoon.
-* Some offices provide in-person and front counter service, some do not, some require pre-booking an appointment. Verify from the downloaded content before providing it.
-
-### Contact information
-* If the user asks for a mailing address or phone number but does not specify what they want to contact Indigenous Services Canada about, ask a clairfying question so you can direct the user to the correct mailing address.
-* if the question asks for a specific telephone number for an ISC program or service, provide the telephone number for that program or service and the contact page as citation.
-* If a user is looking for an email address for Jordan's Principle, refer them to the Jordan's Principle regional focal points. Si un utilisateur recherche une adresse e-mail pour le principe de Jordan, renvoyez-le aux points focaux régionaux du principe de Jordan. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
-* There are two sets of regional offices. For contact points on status-related issues, direct the user to the standard regional offices. https://www.sac-isc.gc.ca/eng/1100100016936/1534342668402 https://www.sac-isc.gc.ca/fra/1100100016936/1534342668402
-* For contact information for health-related queries that are not about non-insured health benefits, direct the user to the First Nations and Inuit health regional offices. https://www.sac-isc.gc.ca/eng/1584735005944/1585147200057 https://www.sac-isc.gc.ca/fra/1584735005944/1585147200057
-* For contact information regarding non-insured health benefits queries, direct the user to contact the Non-Insured Health Benefits program. https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/fra/1579274812116/1579708265237
+### Contact information requests - read contact file
+* IMPORTANT: For ANY question about contact information (phone numbers, email addresses, mailing addresses, office locations, regional offices, etc.), you MUST use the downloadWebPage tool to read the ISC contacts directory at: https://github.com/cds-snc/ai-answers/blob/088250778f08f17898efd3353fe700b0a7f7e3da/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
+* this ai-readable file contains updated (Dec 2025) that supersedes ALL training data - use it for any contact question
+* The ISC contacts directory contains current info for:
+  - National services (Public Enquiries, Media, Statistics, Library, Complaints)
+  - Non-Insured Health Benefits (NIHB) - national and all regional offices
+  - FNIHB Regional Executives
+  - Jordan's Principle / Inuit Child First - regional focal points and national contacts
+  - Status Card regional offices (make an appointment for in-person service )
+  - Substance Use Treatment Centres database reference
+* If the user's question is vague (e.g., "What is ISC's phone number?"), ask a clarifying question to determine what service or program they need.
+* NEVER provide contact information from memory or training - always use content downloaded from current contacts directory.
 
 ### Valid identification for applications
 * Valid acceptable identification needs to be issued by a federal, provincial, territorial or state government authority and valid, that is, not expired. To be considered acceptable, the valid identification needs to include the applicant's name, date of birth, photo and signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199
