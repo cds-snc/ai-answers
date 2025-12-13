@@ -1,0 +1,157 @@
+# ISC Contact Directory
+-Created: 13 Dec 2025
+-File holds all contact info for ISC collected from contact page sources and synthesized into ai-readable format
+- Todo: add numbers from NIHB First Nations and Inuit health regional offices directory - in the meantime, provide the source as the citation. 
+
+
+## National Services
+Source: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799
+
+- **Public Enquiries** | 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET
+- **Media** | media@sac-isc.gc.ca
+- **Statistics** | nstat@sac-isc.gc.ca
+- **Library/Research** | 819-997-0811 | hqlibraryreference@sac-isc.gc.ca | M-F 8:30-4:30 ET
+- **Complaints (FN/Inuit/Métis orgs & funding)** | 1-855-504-6760 | cnap-nacc@rcaanc-cirnac.gc.ca | Fx:819-934-2352
+- **Website Feedback** | https://www.sac-isc.gc.ca/eng/1737652574327/1737652624699
+
+## NIHB (Non-Insured Health Benefits)
+Source: https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
+
+### National
+- **Dental predeterminations** | 1-855-618-6291 | Fx:1-855-618-6290
+- **Orthodontic predeterminations** | 1-866-227-0943 | Fx:1-866-227-0957
+- **Pharmacy prior approval** | 1-800-580-0950 | Fx:1-877-789-4379 | TTY:1-800-465-7735
+- **General questions** | nihb-ssna@sac-isc.gc.ca
+- **Express Scripts Canada (Client)** | 1-888-441-4777 | Fx:1-888-249-6098 | SMS:1-289-302-8770
+- **Express Scripts Canada (Provider)** | 1-888-511-4666 | Fx:1-855-622-0669
+
+### ATL (NB, NS, PE, NL)
+- **All NIHB** | 1-800-565-3294 | nihb-atlfnihb@sac-isc.gc.ca | 40 Havelock St, Amherst NS B4H 3Z3
+- **Transport & Vision** | Fx:1-800-377-9288
+- **Supplies & Mental Health** | Fx:1-866-963-7700
+
+### QC
+- **Vision, Supplies, Mental Health, Transport** | 1-514-283-1575 | 1-877-483-1575 | 1-855-244-4470 | Fx:1-514-283-7762 | Fx:1-855-244-4470 | 202-200 René-Lévesque Blvd W, Montreal QC H2Z 1X4
+
+### ON
+- **Client info line** | 1-800-640-0642 | Fx:1-800-806-6662 | 1455-10 Wellington St, Gatineau QC K1A 0H4
+- **Vision, Supplies, Mental Health (vendors/providers)** | 1-800-881-3921
+- **Transport - Ottawa** | 1-800-881-3921
+- **Transport - Sioux Lookout** | 1-888-283-8885
+- **Transport - Thunder Bay** | 1-807-343-5390 | 1-877-779-7749
+- **Transport - After hours** | 1-833-675-3081 | weekdays after 4pm, weekends, holidays
+- **Discharge travel (Sioux Lookout area)** | 1-833-633-8728
+
+### MB
+- **Supplies, Mental Health, Vision** | 1-800-665-8507 | Fx:1-800-289-5899 | 300-391 York Ave, Winnipeg MB R3C 4W1
+- **Transport** | 1-877-983-0911 | Fx:1-204-984-7834
+
+### SK
+- **All NIHB** | 1-866-885-3933 | sasknihb_inquiries@sac-isc.gc.ca | Alvin Hamilton Bldg, 098-1783 Hamilton St, Regina SK S4P 2B6
+- **Provider verification** | nihb-skverification-ssna-skverification@sac-isc.gc.ca
+
+### AB
+- **General inquiries** | 1-800-232-7301 | abnihbqa-qrssna@sac-isc.gc.ca | 630-9700 Jasper Ave, Edmonton AB T5J 4G2
+- **Supplies** | Fx:1-833-897-5805
+- **Transport** | 1-800-514-7106 | Fx:1-833-897-5806 | eru-ure@sac-isc.gc.ca
+- **Mental Health** | Fx:1-833-897-5808
+- **Vision** | Fx:1-833-897-5807
+
+### BC
+- **First Nations in BC** | FNHA | 1-855-550-5454
+- **Inuit & non-resident FN** | 1-800-232-7301
+
+### YT
+- **Transport & Mental Health** | 867-393-3800 | 1-866-362-6717 | Fx:1-867-667-3999 | Fx:1-866-225-0569 | 100-300 Main St, Whitehorse YT Y1A 2B5
+- **Vision & Supplies** | 1-888-332-9222 | Fx:1-800-949-2718 | 1455-10 Wellington St, Gatineau QC K1A 0H4
+
+### NWT
+- **Transport, Eye exams, Mental Health** | 1-800-661-0830 | PO Box 1320, Yellowknife NT X1A 2L9 (territorial govt)
+- **Eyewear & Supplies** | 1-888-332-9222 | Fx:1-800-949-2718 | 1455-10 Wellington St, Gatineau QC K1A 0H4
+
+### NU
+- **Transport, Eye exams, Mental Health** | 1-800-661-0833 | Nunavut Health Insurance Programs, Bag 3, Rankin Inlet NU X0C 0G0 (territorial govt)
+- **Eyewear & Supplies** | 1-888-332-9222 | Fx:1-800-949-2718 | 1455-10 Wellington St, Gatineau QC K1A 0H4
+
+## FNIHB Regional Executives
+Source: https://www.sac-isc.gc.ca/eng/1585423776975/1585423796964
+
+- **ATL** | 613-818-8459 | 1-800-567-9604 | 1816-1505 Barrington St, Halifax NS B3J 3Y6
+- **QC** | 1-800-567-9604 | 202-200 René-Lévesque Blvd W, Montreal QC H2Z 1X4
+- **ON** | 343-597-6828 | 1-800-567-9604 | Sir Charles Tupper Bldg, 2720 Riverside Dr, Ottawa ON K1A 0M2
+- **MB** | 1-800-567-9604 | 300-391 York Ave, Winnipeg MB R3C 4W1
+- **SK** | 306-780-6486 | Alvin Hamilton Bldg, 1783 Hamilton St, Regina SK S4P 2B6
+- **AB** | sac.ab_fnihb_reo.isc@sac-isc.gc.ca | 630-9700 Jasper Ave, Edmonton AB T5J 4C3
+- **BC (FNHA)** | 1-866-913-0033 | Info@fnha.ca | 501-100 Park Royal South, West Vancouver BC V7T 1A2 | M-F 8-4:30 PT
+- **North** | 1-866-509-1769 | 1455-10 Wellington, Gatineau QC K1A 0H4
+
+NIHB regional offices directory: https://www.sac-isc.gc.ca/eng/1584735005944/1585147200057 Services list for each region on source page.
+
+## Jordan's Principle / Inuit Child First
+Source: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387
+
+**National Call Centre (24/7)** | 1-855-572-4453 | JPCaseMgt-GestCasPJ@sac-isc.gc.ca | TTY:1-866-553-0554
+
+### Regional (M-F business hours) — Requests | Payments
+- **ATL** | 1-833-652-0210 | principedejordanatl-jordansprincipleatl@sac-isc.gc.ca | jordansprincipleatl_finance-principedejordan@sac-isc.gc.ca
+- **QC** | 1-833-725-7236 | principedejordan-qc-jordanprinciple@sac-isc.gc.ca | principedejordanfacturation-qc-jordanprincipleinvoicing@sac-isc.gc.ca
+- **ON** | 1-833-442-2429 | jordansprincipleon-principedejordan@sac-isc.gc.ca | principedejordanfinance-on-financejordansprinciple@sac-isc.gc.ca
+- **MB** | 1-833-725-8807 | jordansprinciplemb-principedejordan@sac-isc.gc.ca | fnihbfnihmbrjp-spnirmbdgspni@sac-isc.gc.ca
+- **SK** | 1-833-752-4453 | principedejordansk_admission-jordansprinciplesk_intake@sac-isc.gc.ca | jordansprinciplesask_finance-principedejordan@sac-isc.gc.ca
+- **AB** | 1-833-632-4453 | jordansprincipleab-principedejordan@sac-isc.gc.ca | (same)
+- **BC** | 778-951-0716 | principedejordancb-bcjordansprinciple@sac-isc.gc.ca | 778-951-0717 | paiementsprincipedejordancb-bcjordansprinciplepayments@sac-isc.gc.ca
+- **North** | 1-866-848-5846 | principedejordanrn-nrjordansprinciple@sac-isc.gc.ca | principedejordanfinancern-nrfinancejordansprinciple@sac-isc.gc.ca
+
+Note: North—contact community/tribal council for local coordinators. After-hours use National Call Centre.
+
+## Status Card Offices (In-Person)
+
+### ATL
+Source: https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064
+- **Amherst** | 902-661-6209 | Fx:902-661-6237 | PO Box 160, 40 Havelock St, Amherst NS B4H 3Z3 | M-F 10-3 AT
+
+### QC
+Source: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791
+- **Gatineau** | 819-664-2962 | Fx:819-953-9395 | 10 rue Wellington, Gatineau QC K1A 0H4 | M-F 8-3:30 ET
+- **Quebec City** | 1-800-263-5592 | Fx:418-648-2266 | 400-320 St. Joseph St E, Québec QC G1K 9J2 | M-F 9-12, 1-3:30 ET
+
+### ON
+Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
+- **Toronto** | 416-973-5282 | Fx:416-954-9974 | Toronto ON M5G 2K4 | M-F 9-3 ET
+- **Brantford** | 519-751-6462 | Fx:519-751-2666 | Unit 6A-195 Henry St, Brantford ON N3S 5C9 | M-F 9-3 ET
+- **Fort William FN** | 807-623-3534 | Fx:807-623-3536 | 101-100 Anemki Place, Fort William FN ON P7J 1A5 | M-F 9-3 ET
+- **Gatineau** | 819-664-2962 | Fx:819-953-9395 | 10 rue Wellington, Gatineau QC K1A 0H4 | M-F 8-3:30 ET
+- **Sudbury** | 705-522-6774 | Fx:705-677-7976 | Unit M-760 Notre Dame Ave, Sudbury ON P3A 2T4 | M-F 9-3 ET
+
+### MB
+Source: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423
+- **Winnipeg** | 1-833-983-5910 | Fx:1-204-983-2936 | 361 Hargrave St, Winnipeg MB R3B 2J9 | M-F 9-11:30 walk-in, 1-3 appt CT
+
+### SK
+Source: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258
+- **Regina** | 306-780-5392 | Fx:306-790-4634 | Rm 098, 1783 Hamilton St, Regina SK S4P 2B6 | M-F 9-12, 1-4 CT
+- **Prince Albert** | 306-953-8600 | Fx:306-953-8648 | 110-3601 5th Ave E, Prince Albert SK S6W 0A2 | M-F 9-12, 1-4 CT
+
+### AB
+Source: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889
+- **Edmonton** | 780-495-2773 | Fx:780-495-4088 | Rm 140, 9700 Jasper Ave, Edmonton AB T5J 4G2 | M-F 9-3 MT
+
+### BC
+Source: https://www.sac-isc.gc.ca/eng/1100100021003/1612465942223
+- **Vancouver** | 236-330-9961 | 1-800-665-9320 | Fx:604-775-7149 | 501-1138 Melville St, Vancouver BC V6E 4S3 | M-F 9-4:30 PT
+
+### NWT
+Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100022857/1617205117407
+- 867-669-2622 | Fx:867-669-2711 | M-F 10-12, 1-3 MT
+
+### YT
+Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203
+- **Whitehorse** | 867-667-3399 | 1-800-661-0451 | Fx:867-667-3384 | ytservicesclientele-clientservicesyt@rcaanc-cirnac.gc.ca | 122-300 Main St, Whitehorse YT Y1A 2B5 | M-F 8:30-4:30 MT
+
+### NU
+Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659
+- **Iqaluit** | 867-975-4500 | 1-800-567-9604 | Fx:867-975-4560 | aadnc.informernu-informnu.aandc@canada.ca | PO Box 2200, Iqaluit NU X0A 0H0
+
+## Substance Use Treatment Centres
+Source: https://www.sac-isc.gc.ca/eng/1576090254932/1576090371511
+Database at source URL.
