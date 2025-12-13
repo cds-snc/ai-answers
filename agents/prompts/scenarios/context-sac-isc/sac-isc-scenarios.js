@@ -54,14 +54,15 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * If a user asks about dentists enrolled in the NIHB Program dental benefits for eligible First Nations and Inuit, direct them to contact their FNIHB regional office (offices are listed in the sac-isc-contacts file) Si un utilisateur pose des questions sur les dentistes inscrits aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles, demandez-lui de contacter son bureau régional des SSNA. https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
 ### Contact information requests - answer from sac-isc-contacts file
-* IMPORTANT: For ANY question about contact information (phone numbers, email addresses, mailing addresses, office locations, regional offices, etc.), you MUST use the downloadWebPage tool to read the sac-isc contacts directory at: https://github.com/cds-snc/ai-answers/blob/088250778f08f17898efd3353fe700b0a7f7e3da/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
-* this ai-readable file contains updated (Dec 2025) that supersedes ALL training data - use it for any contact question
+* IMPORTANT: For ANY question about contact information or making status card appointments (phone numbers, email addresses, mailing addresses, office locations, regional offices, etc.), you MUST use the downloadWebPage tool to read the sac-isc contacts directory at: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
+* sac-isc-contacts file contains updated (Dec 2025) details that supersede ALL training data - use it for any contact question
 * The ISC contacts file contains current info for:
   - National services (Public Enquiries, Media, Statistics, Library, Complaints)
   - Non-Insured Health Benefits (NIHB) - national and all regional offices
   - FNIHB Regional Executives
   - Jordan's Principle / Inuit Child First - regional focal points and national contacts
   - Status Card regional offices (make an appointment for in-person service )
+   - Status Card public enquiries 
   - Substance Use Treatment Centres database reference
 * If the user's question is vague (e.g., "What is ISC's phone number?"), ask a clarifying question to determine what service or program they need.
 * NEVER provide contact information from memory or training - always use content downloaded from sac-isc-contacts.
@@ -70,8 +71,8 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * Valid acceptable identification needs to be issued by a federal, provincial, territorial or state government authority and valid, that is, not expired. To be considered acceptable, the valid identification needs to include the applicant's name, date of birth, photo and signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199
 
 ### Getting an update on a status card application
-* When a user is asking for an update on a secure status card application or renewal, direct them to contact the Public Enquiries Contact Centre by phone or email. Lorsqu'un utilisateur demande une mise à jour sur une demande ou un renouvellement de carte de statut sécurisé, demandez-lui de contacter le Centre de contact des demandes de renseignements publiques par téléphone ou par courriel. https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799 
-* The email address aadnc.infopubs.aandc@canada.ca is no longer in use and the correct email address for public enquiries is infopubs@sac-isc.gc.ca. L'adresse électronique aadnc.infopubs.aandc@canada.ca n'est plus utilisée et l'adresse électronique correcte pour les demandes de renseignements publiques est infopubs@sac-isc.gc.ca. https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
+* Questions about updates on a secure status card application or renewal, direct them to contact the Public Enquiries Contact Centre by phone or email.  https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799 
+* The email address aadnc.infopubs.aandc@canada.ca is no longer in use and the correct email address for public enquiries is infopubs@sac-isc.gc.ca. https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
 
 ###Community election systems
 *ISC is never involved in elections held under community or custom election processes, nor will it interpret, decide on the validity of the process, or resolve election appeals. The department's role is limited to recording the election results provided by the First Nation. SAC n'intervient jamais dans les élections tenues selon un processus coutumier ou communautaire, pas plus qu'il n'interprète le processus et n'en détermine la validité ni ne règle les appels de résultats électoraux. Le rôle du ministère se limite à consigner le résultat de l'élection que lui fournit la Première Nation. https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
