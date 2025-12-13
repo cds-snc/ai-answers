@@ -11,12 +11,22 @@ import MetricsService from '../../services/MetricsService.js';
 
 DataTable.use(DT);
 
+const FILTER_PANEL_STORAGE_KEY = 'metricsDashboard_filters_v1';
+
+const getDefaultDateRange = () => {
+  const end = new Date();
+  const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return {
+    startDate: start.toISOString(),
+    endDate: end.toISOString()
+  };
+};
+
 const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [metrics, setMetrics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
-  const [currentFilters, setCurrentFilters] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
 
   const fetchMetrics = async (filters = null) => {
@@ -49,18 +59,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleApplyFilters = (filters) => {
-    setCurrentFilters(filters);
     fetchMetrics(filters);
   };
 
   const handleClearFilters = () => {
-    const today = new Date();
-    const todayFilters = {
-      startDate: today,
-      endDate: today
-    };
-    setCurrentFilters(todayFilters);
-    fetchMetrics(todayFilters);
+    fetchMetrics(getDefaultDateRange());
   };
 
   return (
@@ -75,7 +78,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}
-        filters={currentFilters}
+        storageKey={FILTER_PANEL_STORAGE_KEY}
       />
 
       {hasLoadedData && (
@@ -266,6 +269,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                           frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.hasError.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                         },
                         {
+                          metric: t('metrics.dashboard.expertScored.hasCitationError'),
+                          count: metrics.expertScored.hasCitationError.total,
+                          percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.hasCitationError.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
+                          enCount: metrics.expertScored.hasCitationError.en,
+                          enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.hasCitationError.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
+                          frCount: metrics.expertScored.hasCitationError.fr,
+                          frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.hasCitationError.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
+                        },
+                        {
                           metric: t('metrics.dashboard.expertScored.harmful'),
                           count: metrics.expertScored.harmful.total,
                           percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.harmful.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
@@ -336,6 +348,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                           enPercentage: metrics.aiScored.total.en ? Math.round((metrics.aiScored.hasError.en / metrics.aiScored.total.en) * 100) + '%' : '0%',
                           frCount: metrics.aiScored.hasError.fr,
                           frPercentage: metrics.aiScored.total.fr ? Math.round((metrics.aiScored.hasError.fr / metrics.aiScored.total.fr) * 100) + '%' : '0%'
+                        },
+                        {
+                          metric: t('metrics.dashboard.aiScored.hasCitationError'),
+                          count: metrics.aiScored.hasCitationError.total,
+                          percentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.hasCitationError.total / metrics.aiScored.total.total) * 100) + '%' : '0%',
+                          enCount: metrics.aiScored.hasCitationError.en,
+                          enPercentage: metrics.aiScored.total.en ? Math.round((metrics.aiScored.hasCitationError.en / metrics.aiScored.total.en) * 100) + '%' : '0%',
+                          frCount: metrics.aiScored.hasCitationError.fr,
+                          frPercentage: metrics.aiScored.total.fr ? Math.round((metrics.aiScored.hasCitationError.fr / metrics.aiScored.total.fr) * 100) + '%' : '0%'
                         }
                       ]}
                       columns={[

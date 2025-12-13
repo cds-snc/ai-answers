@@ -1,11 +1,18 @@
-// FilterPanel.js
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+// FilterPanel.js - reimplemented using FilterPanelV2 UI
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import $ from 'jquery';
+import moment from 'moment';
+import 'daterangepicker';
+import 'daterangepicker/daterangepicker.css';
 
 const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storageKey = 'chatFilterPanelState_v1' }) => {
   const { t } = useTranslations();
-  
-  // Helper function to format date for datetime-local input
+  const dateRangePickerRef = useRef(null);
+  const dateRangePickerInstance = useRef(null);
+  const hasRestoredState = useRef(false);
+
+  // Helper function to format date for display (local time)
   const formatDateTimeLocal = (date) => {
     const d = new Date(date);
     const pad = (num) => String(num).padStart(2, '0');
@@ -16,7 +23,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     const minutes = pad(d.getMinutes());
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
-  // Helper to parse datetime-local input string into a local Date object
+
+  // Helper to parse datetime string into a local Date object
   const parseDateTimeLocal = (dateTimeLocal) => {
     if (!dateTimeLocal || typeof dateTimeLocal !== 'string') return null;
     const parts = dateTimeLocal.split('T');
@@ -31,30 +39,34 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
       dateArr.some(isNaN) ||
       timeArr.some(isNaN)
     ) return null;
+    // Explicitly create Date with local time components
     return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
   const STORAGE_KEY = storageKey;
 
-  // Default to last 24 hours
-  const getDefaultDates = useCallback(() => {
+  // Default to last 7 days (local time)
+  const getDefaultDates = () => {
     const end = new Date();
-    const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+    const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
     return {
       startDate: formatDateTimeLocal(start),
       endDate: formatDateTimeLocal(end)
     };
-  }, []);
+  };
 
+  // Store dates as strings (like original FilterPanel.js)
   const [dateRange, setDateRange] = useState(getDefaultDates());
-  const [filterType, setFilterType] = useState('preset');
-  const [presetValue, setPresetValue] = useState('1');
   const [department, setDepartment] = useState('');
-  const [referringUrl, setReferringUrl] = useState('');
+  const [urlEn, setUrlEn] = useState('');
+  const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState('all');
+  const [answerType, setAnswerType] = useState('all');
+  const [partnerEval, setPartnerEval] = useState('all');
+  const [aiEval, setAiEval] = useState('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Load saved state from localStorage (if available).
-  // Run on next tick so it overrides initial default/preset effects.
+  // Load saved state from localStorage
   useEffect(() => {
     try {
       if (typeof window === 'undefined' || !window.localStorage) return;
@@ -68,11 +80,31 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
           if (parsed.dateRange && parsed.dateRange.startDate && parsed.dateRange.endDate) {
             setDateRange(parsed.dateRange);
           }
-          if (parsed.filterType) setFilterType(parsed.filterType);
-          if (parsed.presetValue) setPresetValue(parsed.presetValue);
           if (typeof parsed.department === 'string') setDepartment(parsed.department);
-          if (typeof parsed.referringUrl === 'string') setReferringUrl(parsed.referringUrl);
+          if (typeof parsed.urlEn === 'string') setUrlEn(parsed.urlEn);
+          if (typeof parsed.urlFr === 'string') setUrlFr(parsed.urlFr);
           if (typeof parsed.userType === 'string') setUserType(parsed.userType);
+          if (typeof parsed.answerType === 'string') setAnswerType(parsed.answerType);
+          if (typeof parsed.partnerEval === 'string') setPartnerEval(parsed.partnerEval);
+          if (typeof parsed.aiEval === 'string') setAiEval(parsed.aiEval);
+          if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
+
+          // After restoring state, apply the filters to trigger initial load
+          const startObj = parsed.dateRange && parsed.dateRange.startDate ? parseDateTimeLocal(parsed.dateRange.startDate) : null;
+          const endObj = parsed.dateRange && parsed.dateRange.endDate ? parseDateTimeLocal(parsed.dateRange.endDate) : null;
+          const restoredFilters = {
+            startDate: startObj ? startObj.toISOString() : undefined,
+            endDate: endObj ? endObj.toISOString() : undefined,
+            department: parsed.department || '',
+            urlEn: parsed.urlEn || '',
+            urlFr: parsed.urlFr || '',
+            userType: parsed.userType || 'all',
+            answerType: parsed.answerType || 'all',
+            partnerEval: parsed.partnerEval || 'all',
+            aiEval: parsed.aiEval || 'all'
+          };
+          onApplyFilters(restoredFilters);
+          hasRestoredState.current = true;
         } catch (e) {
           // ignore
         }
@@ -83,11 +115,86 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
- 
+  // Initialize daterangepicker
+  useEffect(() => {
+    if (!dateRangePickerRef.current || dateRangePickerInstance.current) return;
 
-  // Department options based on systemPrompt modules
+    const locale = t('locale') === 'fr' ? 'fr' : 'en';
+    const isFrench = locale === 'fr';
+
+    // Parse current date range as local time
+    const startDateObj = parseDateTimeLocal(dateRange.startDate);
+    const endDateObj = parseDateTimeLocal(dateRange.endDate);
+
+    // Configure daterangepicker with explicit local time
+    const config = {
+      startDate: startDateObj ? moment(startDateObj) : moment().subtract(6, 'days'),
+      endDate: endDateObj ? moment(endDateObj) : moment(),
+      opens: 'left',
+      alwaysShowCalendars: true,
+      timePicker: true,
+      timePicker24Hour: true,
+      timePickerSeconds: false,
+      locale: {
+        format: 'YYYY/MM/DD HH:mm',
+        separator: ' - ',
+        applyLabel: isFrench ? 'Appliquer' : 'Apply',
+        cancelLabel: isFrench ? 'Annuler' : 'Cancel',
+        fromLabel: isFrench ? 'De' : 'From',
+        toLabel: isFrench ? 'À' : 'To',
+        customRangeLabel: isFrench ? 'Plage personnalisée' : 'Custom Range',
+        weekLabel: 'S',
+        daysOfWeek: isFrench
+          ? ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa']
+          : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+        monthNames: isFrench
+          ? ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+          : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        firstDay: isFrench ? 1 : 0
+      },
+      ranges: {
+        [isFrench ? 'Aujourd\'hui' : 'Today']: [moment().startOf('day'), moment().endOf('day')],
+        [isFrench ? 'Hier' : 'Yesterday']: [moment().subtract(1, 'days').startOf('day'), moment().subtract(1, 'days').endOf('day')],
+        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(6, 'days').startOf('day'), moment()],
+        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(29, 'days').startOf('day'), moment()],
+        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().endOf('month')],
+        [isFrench ? 'Le mois dernier' : 'Last Month']: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+      }
+    };
+
+    const $picker = $(dateRangePickerRef.current);
+    $picker.daterangepicker(config);
+
+    // Store instance
+    dateRangePickerInstance.current = $picker.data('daterangepicker');
+
+    // Handle date selection - convert moment to local time string
+    $picker.on('apply.daterangepicker', function(ev, picker) {
+      // Get moment objects from picker and convert to Date objects (local time)
+      const startDate = picker.startDate.toDate();
+      const endDate = picker.endDate.toDate();
+
+      // Format as local time strings (same as original FilterPanel.js)
+      const newRange = {
+        startDate: formatDateTimeLocal(startDate),
+        endDate: formatDateTimeLocal(endDate)
+      };
+      setDateRange(newRange);
+    });
+
+    // Cleanup
+    return () => {
+      if ($picker.data('daterangepicker')) {
+        $picker.off('apply.daterangepicker');
+        $picker.data('daterangepicker').remove();
+        dateRangePickerInstance.current = null;
+      }
+    };
+  }, [t]);
+
+  // Department options
   const departmentOptions = [
-    { value: '', label: t('admin.filters.allDepartments') },
+    { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
     { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
@@ -107,125 +214,102 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
 
   // User type options
   const userTypeOptions = [
-    { value: 'all', label: t('admin.filters.allUsers') || 'All' },
-    { value: 'public', label: t('admin.filters.publicUsers') || 'Public' },
-    { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin' }
+    { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
+    { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
+    { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
   ];
 
-  // Preset options
-  const presetOptions = useMemo(() => ([
-    { 
-      value: '1', 
-      label: t('admin.chatLogs.last1Day'), 
-      hours: 24 
-    },
-    { 
-      value: '7', 
-      label: t('admin.chatLogs.last7Days'), 
-      hours: 24 * 7 
-    },
-    { 
-      value: '30', 
-      label: t('admin.chatLogs.last30Days'), 
-      hours: 24 * 30 
-    },
-    { 
-      value: '60', 
-      label: t('admin.chatLogs.last60Days'), 
-      hours: 24 * 60 
-    },
-    { 
-      value: '90', 
-      label: t('admin.chatLogs.last90Days'), 
-      hours: 24 * 90 
-    },
-    { 
-      value: 'all', 
-      label: t('admin.chatLogs.allLogs'), 
-      hours: null 
-    }
-  ]), [t]);
+  // Answer type options
+  const answerTypeOptions = [
+    { value: 'all', label: t('admin.filters.allAnswerTypes') || 'All Answer Types' },
+    { value: 'not-gc', label: 'Not GC' },
+    { value: 'clarifying-question', label: 'Clarifying Question' },
+    { value: 'pt-muni', label: 'PT/Muni' },
+    { value: 'normal', label: 'Normal' }
+  ];
 
-  // Update date range when preset changes
-  useEffect(() => {
-    if (filterType === 'preset') {
-      // When switching to preset, reset custom date range to default
-      setDateRange(getDefaultDates());
-      if (presetValue !== 'all') {
-        const end = new Date();
-        const hours = presetOptions.find(opt => opt.value === presetValue)?.hours;
-        if (hours) {
-          const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
-          const newRange = {
-            startDate: formatDateTimeLocal(start),
-            endDate: formatDateTimeLocal(end)
-          };
-          setDateRange(newRange);
-        }
-      }
-    }
-    if (filterType === 'custom') {
-      // When switching to custom, clear preset value
-      setPresetValue('1');
-    }
-  }, [filterType, presetValue, getDefaultDates, presetOptions]);
+  // Partner evaluation options
+  const partnerEvalOptions = [
+    { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
+    { value: 'correct', label: t('metrics.dashboard.expertScored.correct') || 'Correct' },
+    { value: 'needsImprovement', label: t('metrics.dashboard.expertScored.needsImprovement') || 'Needs Improvement' },
+    { value: 'hasError', label: t('metrics.dashboard.expertScored.hasError') || 'Has Error' },
+    { value: 'hasCitationError', label: t('metrics.dashboard.expertScored.hasCitationError') || 'Has Citation Error' },
+    { value: 'harmful', label: t('metrics.dashboard.expertScored.harmful') || 'Harmful' }
+  ];
+
+  // AI evaluation options
+  const aiEvalOptions = [
+    { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
+    { value: 'correct', label: t('metrics.dashboard.aiScored.correct') || 'Correct' },
+    { value: 'needsImprovement', label: t('metrics.dashboard.aiScored.needsImprovement') || 'Needs Improvement' },
+    { value: 'hasError', label: t('metrics.dashboard.aiScored.hasError') || 'Has Error' },
+    { value: 'hasCitationError', label: t('metrics.dashboard.aiScored.hasCitationError') || 'Has Citation Error' }
+  ];
 
   const handleApply = () => {
-    let filters = {
-      department,
-      referringUrl,
-      userType,
-      filterType
-    };
-    if (filterType === 'preset') {
-      filters.presetValue = presetValue;
-      if (presetValue !== 'all') {
-        // Convert local datetime-local input to UTC ISO string
-        const startObj = parseDateTimeLocal(dateRange.startDate);
-        const endObj = parseDateTimeLocal(dateRange.endDate);
-        filters.startDate = startObj ? startObj.toISOString() : undefined;
-        filters.endDate = endObj ? endObj.toISOString() : undefined;
-      }
-      // If 'all', do not send startDate/endDate
-    } else if (filterType === 'custom') {
-      // Convert custom local datetime-local input to UTC ISO string
-      const startObj = parseDateTimeLocal(dateRange.startDate);
-      const endObj = parseDateTimeLocal(dateRange.endDate);
-      filters.startDate = startObj ? startObj.toISOString() : undefined;
-      filters.endDate = endObj ? endObj.toISOString() : undefined;
-    }
-    onApplyFilters(filters);
-  };
+    // Parse local datetime strings and convert to UTC ISO strings for backend
+    // (same approach as original FilterPanel.js)
+    const startObj = parseDateTimeLocal(dateRange.startDate);
+    const endObj = parseDateTimeLocal(dateRange.endDate);
 
-  // Also persist immediately when the user clicks Apply to avoid races
-  // where effects may not have flushed to localStorage before a reload.
-  const handleApplyWithPersist = () => {
+    const filters = {
+      startDate: startObj ? startObj.toISOString() : undefined,
+      endDate: endObj ? endObj.toISOString() : undefined,
+      department,
+      urlEn,
+      urlFr,
+      userType,
+      answerType,
+      partnerEval,
+      aiEval
+    };
+
+    // Persist to localStorage
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const payload = {
           dateRange,
-          filterType,
-          presetValue,
           department,
-          referringUrl,
-          userType
+          urlEn,
+          urlFr,
+          userType,
+          answerType,
+          partnerEval,
+          aiEval,
+          showAdvancedFilters
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       }
     } catch (err) {
       // ignore
     }
-    handleApply();
+
+    onApplyFilters(filters);
   };
 
   const handleClear = () => {
     const defaultDates = getDefaultDates();
     setDateRange(defaultDates);
-    setFilterType('preset');
-    setPresetValue('1');
     setDepartment('');
-    setReferringUrl('');
+    setUrlEn('');
+    setUrlFr('');
     setUserType('all');
+    setAnswerType('all');
+    setPartnerEval('all');
+    setAiEval('all');
+    setShowAdvancedFilters(false);
+
+    // Update daterangepicker
+    if (dateRangePickerInstance.current) {
+      const startObj = parseDateTimeLocal(defaultDates.startDate);
+      const endObj = parseDateTimeLocal(defaultDates.endDate);
+      if (startObj && endObj) {
+        dateRangePickerInstance.current.setStartDate(moment(startObj));
+        dateRangePickerInstance.current.setEndDate(moment(endObj));
+      }
+    }
+
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -233,70 +317,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     } catch (err) {
       // ignore
     }
+
     onClearFilters();
-  };
-
-  const handleDateChange = (field, value) => {
-    const newRange = { ...dateRange, [field]: value };
-    setDateRange(newRange);
-  };
-
-  const handlePresetChange = (value) => {
-    setPresetValue(value);
-  };
-
-  const handleFilterTypeChange = (type) => {
-    setFilterType(type);
-    if (type === 'preset') {
-      setDateRange(getDefaultDates());
-    } else if (type === 'custom') {
-      setPresetValue('1');
-    }
-  };
-
-  const quickSetToday = () => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    
-    const newRange = {
-      startDate: formatDateTimeLocal(start),
-      endDate: formatDateTimeLocal(end)
-    };
-    setDateRange(newRange);
-    setFilterType('custom');
-  };
-
-  const quickSetYesterday = () => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const start = new Date(yesterday);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(yesterday);
-    end.setHours(23, 59, 59, 999);
-    
-    const newRange = {
-      startDate: formatDateTimeLocal(start),
-      endDate: formatDateTimeLocal(end)
-    };
-    setDateRange(newRange);
-    setFilterType('custom');
-  };
-
-  const quickSetThisWeek = () => {
-    const now = new Date();
-    const start = new Date(now);
-    start.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    
-    const newRange = {
-      startDate: formatDateTimeLocal(start),
-      endDate: formatDateTimeLocal(end)
-    };
-    setDateRange(newRange);
-    setFilterType('custom');
   };
 
   if (!isVisible) return null;
@@ -304,239 +326,182 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
   return (
     <details className="filter-panel" open>
       <summary className="filter-panel-summary">
-        {t('admin.filters.title')}
+        {t('admin.filters.title') || 'Filters'}
       </summary>
       <div className="filter-panel-content">
         <div className="filter-grid">
-          {/* Left column - Date/Time Range */}
+          {/* Left column - Date Range and URL Filters */}
           <div className="filter-column">
             <div className="filter-row">
-              <label className="filter-label">
-                {t('admin.filters.dateRange')}
+              <label htmlFor="dateRangePicker" className="filter-label">
+                {t('admin.filters.dateRange') || 'Date Range'}
               </label>
-              
-              {/* Filter Type Toggle */}
-              <div className="mb-2">
-                <fieldset className="filter-fieldset">
-                  <legend className="filter-legend">
-                    {t('admin.dateRange.filterType')}
-                  </legend>
-                  <div className="filter-radio-group">
-                    <label className="filter-radio-item">
-                      <input
-                        type="radio"
-                        name="filter-type"
-                        value="preset"
-                        checked={filterType === 'preset'}
-                        onChange={(e) => handleFilterTypeChange(e.target.value)}
-                      />
-                      <span>{t('admin.dateRange.presetRanges')}</span>
-                    </label>
-                    <label className="filter-radio-item">
-                      <input
-                        type="radio"
-                        name="filter-type"
-                        value="custom"
-                        checked={filterType === 'custom'}
-                        onChange={(e) => handleFilterTypeChange(e.target.value)}
-                      />
-                      <span>{t('admin.dateRange.customRange')}</span>
-                    </label>
-                  </div>
-                </fieldset>
-              </div>
+              <input
+                ref={dateRangePickerRef}
+                type="text"
+                id="dateRangePicker"
+                className="filter-input"
+                readOnly
+                style={{ backgroundColor: 'white', cursor: 'pointer' }}
+              />
+            </div>
 
-              {/* Preset Options */}
-              {filterType === 'preset' && (
-                <div className="mb-2">
-                  <label htmlFor="preset-select" className="filter-label">
-                    {t('admin.dateRange.chooseRange')}
+            <div className="filter-row">
+              <label htmlFor="url-en" className="filter-label">
+                {t('admin.filters.urlEn') || 'URL (EN)'}
+              </label>
+              <input
+                type="text"
+                id="url-en"
+                value={urlEn}
+                onChange={(e) => setUrlEn(e.target.value)}
+                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                className="filter-input"
+              />
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="url-fr" className="filter-label">
+                {t('admin.filters.urlFr') || 'URL (FR)'}
+              </label>
+              <input
+                type="text"
+                id="url-fr"
+                value={urlFr}
+                onChange={(e) => setUrlFr(e.target.value)}
+                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                className="filter-input"
+              />
+            </div>
+          </div>
+
+          {/* Right column - Basic Filters */}
+          <div className="filter-column">
+            <div className="filter-row">
+              <label htmlFor="department" className="filter-label">
+                {t('admin.filters.department') || 'Department'}
+              </label>
+              <select
+                id="department"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="filter-select"
+              >
+                {departmentOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="user-type" className="filter-label">
+                {t('admin.filters.users') || 'User Type'}
+              </label>
+              <select
+                id="user-type"
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                className="filter-select"
+              >
+                {userTypeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Advanced Filters - Collapsible (Closed by default) */}
+            <details
+              className="filter-advanced-details"
+              open={showAdvancedFilters}
+              onToggle={(e) => setShowAdvancedFilters(e.target.open)}
+            >
+              <summary className="filter-advanced-summary">
+                {t('admin.filters.showAdvanced')}
+              </summary>
+              <div className="filter-advanced-section">
+                <div className="filter-row">
+                  <label htmlFor="answer-type" className="filter-label">
+                    {t('admin.filters.answerType') || 'Answer Type'}
                   </label>
                   <select
-                    id="preset-select"
-                    value={presetValue}
-                    onChange={(e) => handlePresetChange(e.target.value)}
+                    id="answer-type"
+                    value={answerType}
+                    onChange={(e) => setAnswerType(e.target.value)}
                     className="filter-select"
                   >
-                    {presetOptions.map(option => (
+                    {answerTypeOptions.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
 
-              {/* Custom Date/Time Range */}
-              {filterType === 'custom' && (
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="start-datetime" className="filter-label">
-                      {t('admin.dateRange.startDateTime')}
-                    </label>
-                    <input
-                      type="datetime-local"
-                      id="start-datetime"
-                      value={dateRange.startDate}
-                      onChange={(e) => handleDateChange('startDate', e.target.value)}
-                      className="filter-input"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="end-datetime" className="filter-label">
-                      {t('admin.dateRange.endDateTime')}
-                    </label>
-                    <input
-                      type="datetime-local"
-                      id="end-datetime"
-                      value={dateRange.endDate}
-                      onChange={(e) => handleDateChange('endDate', e.target.value)}
-                      className="filter-input"
-                    />
-                  </div>
-                  
-                  {/* Quick Set Buttons */}
-                  <div className="quick-set-buttons">
-                    <button
-                      onClick={quickSetToday}
-                      className="quick-set-button"
-                    >
-                      {t('admin.dateRange.today')}
-                    </button>
-                    <button
-                      onClick={quickSetYesterday}
-                      className="quick-set-button"
-                    >
-                      {t('admin.dateRange.yesterday')}
-                    </button>
-                    <button
-                      onClick={quickSetThisWeek}
-                      className="quick-set-button"
-                    >
-                      {t('admin.dateRange.thisWeek')}
-                    </button>
-                  </div>
+                <div className="filter-row">
+                  <label htmlFor="partner-eval" className="filter-label">
+                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                  </label>
+                  <select
+                    id="partner-eval"
+                    value={partnerEval}
+                    onChange={(e) => setPartnerEval(e.target.value)}
+                    className="filter-select"
+                  >
+                    {partnerEvalOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
 
-              {/* Current Selection Display */}
-              <div className="current-selection">
-                <h3>{t('admin.dateRange.currentSelection')}</h3>
-                <div className="current-selection-content">
-                  {filterType === 'preset' && presetValue !== 'all' && (
-                    <p>
-                      <strong>{t('admin.dateRange.period')}</strong>{' '}
-                      {presetOptions.find(opt => opt.value === presetValue)?.label}
-                    </p>
-                  )}
-                  {filterType === 'preset' && presetValue === 'all' && (
-                    <p>
-                      <strong>{t('admin.dateRange.period')}</strong>{' '}
-                      {t('admin.chatLogs.allLogs')}
-                    </p>
-                  )}
-                  {(filterType === 'custom' || (filterType === 'preset' && presetValue !== 'all')) && (
-                    <div className="space-y-1">
-                      <p>
-                        <strong>{t('admin.dateRange.from')}</strong>{' '}
-                        {(() => {
-                          const d = parseDateTimeLocal(dateRange.startDate);
-                          return d ? d.toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA') : t('admin.dateRange.invalidDate');
-                        })()}
-                      </p>
-                      <p>
-                        <strong>{t('admin.dateRange.to')}</strong>{' '}
-                        {(() => {
-                          const d = parseDateTimeLocal(dateRange.endDate);
-                          return d ? d.toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA') : t('admin.dateRange.invalidDate');
-                        })()}
-                      </p>
-                    </div>
-                  )}
+                <div className="filter-row">
+                  <label htmlFor="ai-eval" className="filter-label">
+                    {t('admin.filters.aiEval') || 'AI Evaluation'}
+                  </label>
+                  <select
+                    id="ai-eval"
+                    value={aiEval}
+                    onChange={(e) => setAiEval(e.target.value)}
+                    className="filter-select"
+                  >
+                    {aiEvalOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Right column - Department and Referring URL */}
-          <div className="filter-column">
-            <div className="filter-row">
-              <label htmlFor="department" className="filter-label">
-                {t('admin.filters.department')}
-              </label>
-              <div className="filter-field">
-                <select
-                  id="department"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="filter-select"
-                >
-                  {departmentOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="referring-url" className="filter-label">
-                {t('admin.filters.referringUrl')}
-              </label>
-              <div className="filter-field">
-                <input
-                  type="text"
-                  id="referring-url"
-                  value={referringUrl}
-                  onChange={(e) => setReferringUrl(e.target.value)}
-                  placeholder={t('admin.filters.referringUrlPlaceholder')}
-                  className="filter-input"
-                />
-              </div>
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="user-type" className="filter-label">
-                {t('admin.filters.users')}
-              </label>
-              <div className="filter-field">
-                <select
-                  id="user-type"
-                  value={userType}
-                  onChange={(e) => setUserType(e.target.value)}
-                  className="filter-select"
-                >
-                  {userTypeOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            </details>
           </div>
         </div>
 
         <div className="filter-actions">
           <button
             type="button"
-            onClick={handleApplyWithPersist}
+            onClick={handleApply}
             className="filter-button filter-button-primary"
           >
-            {t('admin.filters.apply')}
+            {t('admin.filters.apply') || 'Apply Filters'}
           </button>
           <button
             type="button"
             onClick={handleClear}
             className="filter-button filter-button-secondary"
           >
-            {t('admin.filters.clearAll')}
+            {t('admin.filters.clearAll') || 'Clear All'}
           </button>
         </div>
       </div>
     </details>
   );
 };
+
+
 
 export default FilterPanel;
