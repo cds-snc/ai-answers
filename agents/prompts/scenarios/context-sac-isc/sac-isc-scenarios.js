@@ -1,4 +1,19 @@
 export const SAC_ISC_SCENARIOS = `
+### Contact information - answer from sac-isc-contacts file
+* sac-isc-contacts file contains updated phone,address,email,fax details that supersede ALL training data - use it for ALL contact-related questions
+* sac-isc-contacts contains current info for:
+  - National services (Public Enquiries, Media, Statistics, Library, Complaints)
+  - Non-Insured Health Benefits (NIHB) - national and all regional offices and service lines
+  - FNIHB Regional Executives and services
+  - Jordan's Principle / Inuit Child First - regional focal points and national contacts
+  - Status Card regional offices (make an appointment for in-person service )
+  - Status Card public enquiries for status of applications and general questions
+  - Substance Use Treatment Centres list reference
+* If the user's question is vague (e.g., "What is ISC's phone number?"), ask a clarifying question to determine what service or program they need.
+* For answers that include a regional office or regional focal point or provincial office, ask a clarifying question about their city/town/province to provide an accurate response.
+* IMPORTANT: For ANY question where contact information is useful or necessary, or for making status card appointments (phone numbers, email addresses, mailing addresses, office locations, regional offices, etc.), you MUST use the downloadWebPage tool to read the sac-isc contacts directory at: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
+* NEVER provide contact information from memory or training - always use content downloaded from sac-isc-contacts.
+
 ### Questions about Indian status and secure status card processing time 
 * Indian status is the legal standing of a person who is registered under the Indian Act. People can apply for registration and a secure status card at the same time.
 * Questions about eligibility to register should be directed to the Find out if you are entitled to be registered under the Indian Act page: https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 https://www.sac-isc.gc.ca/fra/1710868412176/1710868541374
@@ -8,7 +23,9 @@ export const SAC_ISC_SCENARIOS = `
 Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https://www.sac-isc.gc.ca/fra/1710869258242/1710869294766
 
 ### Status cards - no online applications or renewal available
-* People registered under the Indian Act can download the application form and submit it by mail or in person. In-person submissions can be done at a reagional office. Mail-in applications should be sent to the National SCIS Processing Unit Refer to the Where to submit your application page https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 https://www.sac-isc.gc.ca/fra/1695839818435/1695839847447
+* People registered under the Indian Act can download the application form and submit it by mail or in person. 
+* Make in-person submission appointment at regional office (use downloadWebPage tool as instructed in contacts section). 
+* Mail-in applications should be sent to the National SCIS Processing Unit Refer to the Where to submit your application page https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 https://www.sac-isc.gc.ca/fra/1695839818435/1695839847447
 * People can apply to renew their status card up to one year in advance. Eligibility for simplified renewal depends on several factors on this page: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 https://www.sac-isc.gc.ca/fra/1695840367366/1695840394948
 * Individuals whose status cards have already expired cannot use the simplified renewal process.
 
@@ -36,7 +53,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * Individual and family application forms for Jordan's Principle can be downloaded from the website. Avoid providing direct links to application forms; instead, link to informational pages that establish eligibility to use the forms or ask the clarifying questions to determine the correct form and their eligibility. Only if the user's eligibility is clear from the conversation should a direct link to the correct application form for their situation be provided.
 * Group application forms are not available on the website. People looking for a group application form must contact a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * How to submit a request via the Jordan's Principle Call Centre at 1-855-JP-CHILD (1-855-572-4453) or through a regional focal point https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
-* Regional focal points are listed in sac-isc-contacts directory - see contacts instructions
+* Addresses and contacts for regional focal points are in sac-isc-contacts - see contacts instructions to download
 
 ### Jordan's Principle - what is covered
 * What is covered under Jordan's Principle depends on the situation and needs of the First Nations child. Ce qui est couvert par le principe de Jordan dépend de la situation et des besoins de l'enfant des Premières Nations. Citations sur le principe de Jordan : Jordan's Principle coverage citations: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387#sec1 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387#sec1
@@ -53,19 +70,6 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * If a user asks about dental benefits, ask clarifying question about whether they are referring to NIHB Program dental benefits for eligible First Nations and Inuit or the Canadian Dental Care Plan (CDCP). Si un utilisateur pose des questions sur les prestations dentaires, posez une question de clarification pour savoir s'il fait référence aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles ou au Régime canadien de soins dentaires (RCDC). https://www.sac-isc.gc.ca/eng/1574192221735/1574192306943 https://www.sac-isc.gc.ca/fra/1574192221735/1574192306943
 * If a user asks about dentists enrolled in the NIHB Program dental benefits for eligible First Nations and Inuit, direct them to contact their FNIHB regional office (offices are listed in the sac-isc-contacts file) Si un utilisateur pose des questions sur les dentistes inscrits aux prestations dentaires du Programme des SSNA pour les Premières Nations et les Inuits admissibles, demandez-lui de contacter son bureau régional des SSNA. https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
-### Contact information requests - answer from sac-isc-contacts file
-* IMPORTANT: For ANY question about contact information or making status card appointments (phone numbers, email addresses, mailing addresses, office locations, regional offices, etc.), you MUST use the downloadWebPage tool to read the sac-isc contacts directory at: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
-* sac-isc-contacts file contains updated (Dec 2025) details that supersede ALL training data - use it for any contact question
-* The ISC contacts file contains current info for:
-  - National services (Public Enquiries, Media, Statistics, Library, Complaints)
-  - Non-Insured Health Benefits (NIHB) - national and all regional offices
-  - FNIHB Regional Executives
-  - Jordan's Principle / Inuit Child First - regional focal points and national contacts
-  - Status Card regional offices (make an appointment for in-person service )
-   - Status Card public enquiries 
-  - Substance Use Treatment Centres database reference
-* If the user's question is vague (e.g., "What is ISC's phone number?"), ask a clarifying question to determine what service or program they need.
-* NEVER provide contact information from memory or training - always use content downloaded from sac-isc-contacts.
 
 ### Valid identification for applications
 * Valid acceptable identification needs to be issued by a federal, provincial, territorial or state government authority and valid, that is, not expired. To be considered acceptable, the valid identification needs to include the applicant's name, date of birth, photo and signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199
