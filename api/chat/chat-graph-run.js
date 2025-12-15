@@ -10,6 +10,43 @@ function writeEvent(res, event, data) {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+function buildGraphErrorPayload(error) {
+  const base = {
+    name: error?.name || 'Error',
+    message: error?.message || 'Graph execution failed',
+  };
+
+  if (error?.userMessage) {
+    base.userMessage = error.userMessage;
+  }
+
+  const fallbackUrl = typeof error?.fallbackUrl === 'string'
+    ? error.fallbackUrl
+    : error?.searchUrl?.fallbackUrl || null;
+  if (fallbackUrl) {
+    base.fallbackUrl = fallbackUrl;
+  }
+
+  if (error?.searchUrl && typeof error.searchUrl === 'string') {
+    base.searchUrl = error.searchUrl;
+  } else if (error?.searchUrl?.fallbackUrl) {
+    base.searchUrl = error.searchUrl.fallbackUrl;
+  }
+
+  if (error?.redactedText) {
+    base.redactedText = error.redactedText;
+  }
+  if (error?.redactedItems) {
+    base.redactedItems = error.redactedItems;
+  }
+
+  if (process.env.NODE_ENV !== 'production' && error?.stack) {
+    base.stack = error.stack;
+  }
+
+  return base;
+}
+
 function traverseForUpdates(value, handlers) {
   if (value == null) return;
   if (Array.isArray(value)) {
@@ -100,7 +137,12 @@ async function handler(req, res) {
   } catch (err) {
     streamError = err;
     if (!resultSent) {
-      writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+      try {
+        writeEvent(res, 'error', buildGraphErrorPayload(err));
+      } catch (_e) {
+        // fallback to minimal message if serialization fails
+        writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+      }
       resultSent = true;
     }
   } finally {

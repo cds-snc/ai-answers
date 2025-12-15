@@ -39,7 +39,8 @@ export class DefaultWithVectorServerWorkflow {
       throw new RedactionError('Blocked content detected', redactedText, redactedItems);
     }
     if (piiResult.pii !== null) {
-      throw new RedactionError('PII detected in user message', redactedText, redactedItems);
+      // Use the PII-aware redaction string returned by the PII checker
+      throw new RedactionError('PII detected in user message', piiResult.pii, redactedItems);
     }
     return { redactedText, redactedItems };
   }

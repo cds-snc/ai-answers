@@ -71,7 +71,7 @@ graph.addNode('validate', async (state) => {
   });
 
   try {
-    workflow.validateShortQuery(state.conversationHistory, state.userMessage, state.lang, state.department);
+    await workflow.validateShortQuery(state.conversationHistory, state.userMessage, state.lang, state.department);
     const out = {};
     logGraphEvent('info', 'node:validate output', state.chatId, out);
     return out;

@@ -1,5 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { ChatWorkflowService } from '../services/ChatWorkflowService.js';
+import { ChatWorkflowService, ShortQueryValidation, RedactionError } from '../services/ChatWorkflowService.js';
 
 import AuthService from '../services/AuthService.js';
 
@@ -120,8 +120,34 @@ export class GraphClient {
         }
 
         if (eventType === 'error') {
-          const errMessage = (parsedData && parsedData.message) || 'Graph execution failed';
-          throw new Error(errMessage);
+          // Expect a structured payload produced by the server (buildGraphErrorPayload)
+          if (parsedData && typeof parsedData === 'object') {
+            const errorName = parsedData.name || parsedData.type;
+            if (errorName === 'ShortQueryValidation') {
+              const fallbackUrl = parsedData.fallbackUrl || parsedData.searchUrl || '';
+              throw new ShortQueryValidation(
+                parsedData.message || 'Short query detected',
+                parsedData.userMessage || userMessage,
+                fallbackUrl
+              );
+            }
+            if (errorName === 'RedactionError') {
+              throw new RedactionError(
+                parsedData.message || 'Redaction error',
+                parsedData.redactedText || '',
+                parsedData.redactedItems || null
+              );
+            }
+            // Unknown named error: construct and throw Error with provided name
+            const err = new Error(parsedData.message || 'Graph execution failed');
+            err.name = parsedData.name || parsedData.type || err.name;
+            throw err;
+          }
+          // If server sent a plain string, throw it as an Error
+          if (typeof parsedData === 'string') {
+            throw new Error(parsedData);
+          }
+          throw new Error('Graph execution failed');
         }
 
         return { done: false };
