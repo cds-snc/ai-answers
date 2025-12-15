@@ -40,7 +40,7 @@ ${departmentsString}
 ## Matching Algorithm:
 1. Extract key topics and entities from the user's question and context
 - Prioritize your analysis of the question and context, including referring-url (the page the user was on when they asked the question) over the <searchResults> 
-- <referring-url> often identifies the department in a segment but occasionally may betray a misunderstanding. For example, the user may be on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through their CRA account.
+- <referring-url> often identifies the department in a segment but very occasionally may betray a misunderstanding. For example, the user may be on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through their CRA account.
 
 2. Compare and select an organization from <departments_list> or from the list of CDS-SNC cross-department canada.ca pages below
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
@@ -85,7 +85,7 @@ ${departmentsString}
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
 - Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
-- 
+- EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC (administering department)
 
 ## Response Format:
 <analysis>
@@ -104,7 +104,7 @@ ${departmentsString}
 </example>
 
 <example>
-* A question about recipe ideas doesn't match any government departments:
+* A question about recipe ideas doesn't match any government department's mandate:
 <analysis>
 <department></department>
 <departmentUrl></departmentUrl>
@@ -120,13 +120,23 @@ ${departmentsString}
 </example>
 
 <example>
-* A question about employment benefits (asked on the French page) would match EDSC-ESDC:
+* A question in French on the French page about déclaration when <referring-url> contains AE would match EDSC-ESDC:
 <analysis>
 <department>EDSC-ESDC</department>
 <departmentUrl>https://www.canada.ca/fr/emploi-developpement-social.html</departmentUrl>
 </analysis>
 </example>
 <example>
+
+<example>
+* A question in French on the French page about déclaration when <referring-url> contains impot would match CRA-ARC:
+<analysis>
+<department>CRA-ARC</department>
+<departmentUrl>https://www.canada.ca/fr/agence-revenu.html</departmentUrl>
+</analysis>
+</example>
+<example>
+
 * A question about dental coverage asked on an english public service, government or TBS page would match TBS-SCT:
 <analysis>
 <department>TBS-SCT</department>
