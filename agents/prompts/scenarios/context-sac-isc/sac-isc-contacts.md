@@ -85,8 +85,6 @@ Source: https://www.sac-isc.gc.ca/eng/1585423776975/1585423796964
 - **BC (FNHA)** | 1-866-913-0033 | Info@fnha.ca | 501-100 Park Royal South, West Vancouver BC V7T 1A2 | M-F 8-4:30 PT
 - **North** | 1-866-509-1769 | 1455-10 Wellington, Gatineau QC K1A 0H4
 
-NIHB regional offices directory: https://www.sac-isc.gc.ca/eng/1584735005944/1585147200057 Services list for each region on source page.
-
 ## Jordan's Principle / Inuit Child First
 Source: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387
 
@@ -117,7 +115,7 @@ Source: https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064
 
 ### QC
 Source: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791
-- **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available on source)
+- **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available)| Mail: 10 rue Wellington, Gatineau, QC K1A 0H4
 - **Quebec City** | 1-800-263-5592 | Fx:418-648-2266 | 400-320 St. Joseph St E, Québec QC G1K 9J2 | M-F 9-12, 1-3:30 ET
 - **Kahnawake** Registration and status card services are no longer available at the Kahnawake service point. No appointments can be made there.
 
@@ -127,7 +125,7 @@ Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 - **Brantford** | 519-751-6462 | Fx:519-751-2666 | Unit 6A-195 Henry St, Brantford ON N3S 5C9 | M-F 9-3 ET
 - **Fort William FN-Thunder Bay district** | 807-623-3534 | Fx:807-623-3536 | 101-100 Anemki Place, Fort William FN ON P7J 1A5 | M-F 9-3 ET
 - **Sudbury** | 705-522-6774 | Fx:705-677-7976 | Unit M-760 Notre Dame Ave, Sudbury ON P3A 2T4 | M-F 9-3 ET
- **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available)
+ **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | In-person service: 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available) | Mail: 10 rue Wellington, Gatineau, QC K1A 0H4
 
 ### MB
 Source: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423
@@ -160,6 +158,80 @@ Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659
 - **Iqaluit** | 867-975-4500 | 1-800-567-9604 | Fx:867-975-4560 | aadnc.informernu-informnu.aandc@canada.ca | PO Box 2200, Iqaluit NU X0A 0H0
 
+## FNIHB Regional Health Programs
+Source: https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
+ISC First Nations and Inuit Health Branch regional offices providing community health programs.
+* Services: ADI=Aboriginal Diabetes Initiative, AHSOR=Aboriginal Head Start on Reserve, IRS RHSP=Indian Residential Schools Resolution Health Support Program, MMIWG=Supports for Missing and Murdered Indigenous Women and Girls, IDS=Supports for Federal Indian Day School, FNCFS/JP=First Nations Child and Family Services and Jordan's Principle Settlement Trauma-Informed Health and Cultural Support Services
+
+### ATL
+Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
+- **ADI** | 506-851-7104 | Fx:506-851-7369
+- **AHSOR** | 902-407-7699 | Fx:902-426-8675
+- **Accreditation** | 902-426-0807 | Fx:902-426-8675
+- **Contribution Agreements** | 902-403-9386 | Fx:902-426-1425
+- **Health Assessment & Surveillance** | 902-426-5222 | Fx:902-426-8675
+- **Injury Prevention** | 902-443-1353 | Fx:902-426-8675
+- **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-866-414-8111
+
+### QC
+2nd Fl Guy Favreau Complex East Tower, 200 René-Lévesque Blvd W, Montreal QC H2Z 1X4
+- **ADI** | 514-283-9520
+- **AHSOR** | 514-283-0618 | Fx:514-283-8067
+- **Accreditation** | 514-496-3267 | Fx:514-283-7392
+- **Community Programs & Injury Prevention** | 514-283-5614 | Fx:514-283-8067
+- **Contribution Agreements** | 514-283-7365 | Fx:514-283-7392
+- **eHealth Solutions** | 514-496-5353 | Fx:514-283-7125
+- **Nurse Recruitment** | 514-496-4759 | Fx:514-283-3807
+- **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-877-583-2965
+
+### ON
+10 Wellington Suite 1455, Gatineau QC K1A 0H4 / Sir Charles Tupper Bldg Floor 4C
+- **ADI** | 613-866-9679 | Fx:613-946-4203
+- **AHSOR** | 613-797-5692 | Fx:613-952-7733
+- **Accreditation** | 613-862-3559 | 705-465-3246 | Fx:613-954-3883
+- **Contribution Agreements** | 613-952-0088 | Fx:613-952-5748
+- **eHealth** | 613-241-2751 | Fx:613-952-0177
+- **Nurse Recruitment** | 613-946-9399 | 1-877-494-4604 | Fx:613-948-9253
+- **IRS RHSP** | 1-888-301-6426 | Fx:1-877-430-3306
+- **MMIWG, IDS, FNCFS/JP** | 1-888-301-6426
+
+### MB
+391 York Ave Suite 300, Winnipeg MB R3C 4W1
+- **Accreditation** | 204-984-7245 | Fx:204-984-0471
+- **Community Programs (Mental Wellness, Chronic Disease, Children & Youth), Nursing & Health Funding** | 204-983-3172
+- **eHealth Solutions** | 204-984-7903 | Fx:204-983-0519
+- **Health counseling & vision** | 1-800-665-8507 | medical transport: 1-877-983-0911
+- **Nurse Recruitment** | 204-983-0988 | nurses_for_first_nations-infirmieres_pour_premieres_nations@hc-sc.gc.ca
+- **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-866-818-3505
+
+### SK
+Alvin Hamilton Bldg Rm 098, 1783 Hamilton St, Regina SK S4P 2B6
+- **ADI, AHSOR, Health Promotion & Disease Prevention** | 306-412-0007 | Fx:306-780-5965
+- **Accreditation** | 306-536-2925
+- **eHealth Solutions** | 1-877-772-7715
+- **Nursing Recruitment** | 306-216-5057 | skinfirmiercomms-sknursecomms@sac-isc.gc.ca
+- **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-866-250-1529
+
+### AB
+Canada Place Suite 630, 9700 Jasper Ave, Edmonton AB T5J 4G2
+- **ADI** | 780-495-4114
+- **AHSOR** | 780-495-0552 | Fx:780-495-7338
+- **Accreditation** | 780-495-4646 | Fx:780-495-2687
+- **Contribution Agreements** | 780-495-8789 | Fx:780-495-2687
+- **eHealth Solutions** | 780-566-8748 | Fx:780-492-8920
+- **Mental Wellness** | 780-495-4837
+- **Nurse Recruitment** | 780-442-7298 | 1-877-495-6556 | Fx:780-495-8728 | ab.nursing.recruitment@hc-sc.gc.ca
+- **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-888-495-6588
+
+### BC
+Health programming transferred to First Nations Health Authority (FNHA) on 1 Oct 2013.
+- **FNHA (all health services)** | 1-800-317-7878
+- **FNCFS/JP** | 1-800-317-7878
+
+### North (YT, NWT, NU)
+ISC Regional Delivery Sector - North | 1455-10 Wellington AL 6604C, Gatineau QC K1A 0H4
+- **Community-based health funding** | rdsnorth-prsnord@sac-isc.gc.ca
+
 ## Substance Use Treatment Centres
 Source: https://www.sac-isc.gc.ca/eng/1576090254932/1576090371511
-Database at source URL.
+List at source URL.
