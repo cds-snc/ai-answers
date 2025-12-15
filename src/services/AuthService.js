@@ -257,6 +257,12 @@ class AuthService {
     const user = await this.getUser();
     return user && requiredRoles.includes(user.role);
   }
+
+  // Synchronous helper that returns the cached user's id if available.
+  // Prefer using `getUser()` when you need to ensure the user is loaded.
+  static getUserId() {
+    return this.currentUser?.userId ?? null;
+  }
 }
 
 export default AuthService;
