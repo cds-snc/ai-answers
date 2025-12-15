@@ -149,7 +149,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
-  ]), [formatDate, lang, t]);
+  ]), [formatDate, t]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">

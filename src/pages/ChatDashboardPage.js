@@ -23,7 +23,7 @@ const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [rows, setRows] = useState([]); // retained for compatibility but unused in server-side mode
+  // server-side DataTable mode — local `rows` state removed (not used)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
@@ -246,7 +246,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'aiEval',
       render: (value) => escapeHtmlAttribute(value || '')
     }
-  ]), [formatDate, lang, t]);
+  ]), [formatDate, t]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
@@ -310,7 +310,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                 search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
                 searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
               },
-              stateSaveCallback: function (settings, data) {
+              stateSaveCallback: function (_settings, data) {
                 try {
                   if (typeof window !== 'undefined' && window.localStorage) {
                     window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
@@ -320,7 +320,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   // ignore
                 }
               },
-              stateLoadCallback: function (settings) {
+              stateLoadCallback: function () {
                 try {
                   if (typeof window !== 'undefined' && window.localStorage) {
                     const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
