@@ -17,6 +17,16 @@ GLOBAL STRICTNESS RULES:
    - If a detail from user_questions is not explicitly present in a candidate, do NOT infer it.
      Mark that category as "fail".
 
+1a. Numbers Exactness & Comparator Rule:
+  - ALL numeric values must match EXACTLY, including inequality semantics (under/over, <, ≤, >, ≥), ranges, and units.
+  - Any mismatch in value OR comparator OR bound inclusivity (e.g., "under 71" vs "under 69"; "≤71" vs "<71") → "numbers" = "fail".
+  - Units must match (years vs months; CAD vs USD). Any unit mismatch → "numbers" = "fail".
+
+1b. Number-to-Entity Binding Rule (CRITICAL):
+  - Numbers must be explicitly and unambiguously bound to the correct entity/role (e.g., "I", "spouse", "child", "account limit").
+  - If a text swaps or ambiguously assigns numbers (e.g., 71 applies to "I" in one text and to "spouse" in another), mark "numbers" = "fail".
+  - Do not rely on proximity; require explicit lexical binding (e.g., "my age is 71", "spouse is 69", "RRSP limit under 71").
+
 2. No Semantic Substitution Rule:
    - Do NOT accept broader, narrower, or related concepts as matches.
      Examples: "CRA forms" != "tax documents", "passport" != "citizenship", "phone" != "SIM card".
@@ -46,6 +56,15 @@ GLOBAL STRICTNESS RULES:
    - If an entity is being used with a different meaning, purpose, or semantic frame, mark "entities" = "fail".
    - Any shift between *status inquiry*, *form lookup*, *requirements*, *renewal*, or *new application* must be treated as a FAIL.
 
+8. Dates & Times Exactness Rule:
+  - Dates, times, and windows must match exactly, including timezone/offset and inclusivity of bounds.
+  - Comparator/window semantics must match (e.g., "before 2025-01-01", "within 30 days", "effective from 2024-07-01").
+  - Business-day vs calendar-day differences, different anchors for rolling windows, or timezone changes → "dates_times" = "fail".
+
+9. Ranges & Window Semantics:
+  - Ranges must have identical bounds and inclusivity (e.g., 18–71 inclusive vs under 71 exclusive).
+  - Rolling windows (e.g., "last 12 months") must match in anchor and unit.
+
 ENTITY ABSENCE CLARIFICATION:
 - If ANY entity mentioned anywhere in user_questions is missing in the candidate, "entities" MUST be "fail".
 - The explanation must name the missing entity.
@@ -72,8 +91,8 @@ CHECK SCHEMA FOR EACH CANDIDATE:
     "modifiers": "pass" | "fail"
   },
   "explanations": {
-    "numbers": "...",
-    "dates_times": "...",
+    "numbers": "Name exact numeric mismatch + entity + comparator/unit (e.g., spouse under 71 vs under 69).",
+    "dates_times": "Name exact date/time/window mismatch + TZ/inclusivity (e.g., before 2025-01-01 vs before 2024-12-31).",
     "negation": "...",
     "entities": "...",
     "quantifiers": "...",

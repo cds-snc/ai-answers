@@ -1,5 +1,74 @@
 # Changelog
 
+## [1.70.0](https://github.com/cds-snc/ai-answers/compare/v1.69.1...v1.70.0) (2025-12-15)
+
+
+### Features
+
+* add beta to title ([a0c007b](https://github.com/cds-snc/ai-answers/commit/a0c007b9aa6a7de36bdf417ddb5b0abff5431f99))
+* add beta to title ([6d99c94](https://github.com/cds-snc/ai-answers/commit/6d99c9438fc83179dc9ccd62dfa34d089d8ca03b))
+* enhance categorizeExpertFeedback and filtering functions for improved score handling ([da11152](https://github.com/cds-snc/ai-answers/commit/da111520f0f532ccf65e1b2bba397478948c861d))
+* enhance chat dashboard with AI evaluation and filtering capabilities ([9453238](https://github.com/cds-snc/ai-answers/commit/9453238f33e4f9f50fafbc143bf0236f5b8fff58))
+* enhance EvalDashboard with new filter handling and refactor filter logic ([476c5f4](https://github.com/cds-snc/ai-answers/commit/476c5f4d82b2a8fcc7b772ca8c457d473563d92e))
+* fix metadata, browser crawl for noindex, missing locale en ([59e2b4d](https://github.com/cds-snc/ai-answers/commit/59e2b4d9c58931dee0bc55acd97b6f43b959e14b))
+* implement FilterPanelV2 with new filtering capabilities and update backend logic ([aac6077](https://github.com/cds-snc/ai-answers/commit/aac607716af1c4e67a4da27bafb310189c7ddb61))
+* implement numeric comparison rule ([6c4defb](https://github.com/cds-snc/ai-answers/commit/6c4defba94158b858b2a590f1e4ecd327693434f))
+* implement numeric comparison rule ([0188612](https://github.com/cds-snc/ai-answers/commit/01886124de6e1898b31041b91414d009c87e60ee))
+* integrate local storage management for filter panel state in ChatLogsDashboard ([27058f8](https://github.com/cds-snc/ai-answers/commit/27058f81da74eb6cdd7f11ae0a000463c0a86e6c))
+* metadata ([a231e24](https://github.com/cds-snc/ai-answers/commit/a231e24e796feb26e13cb6f73195bba13398f6c5))
+
+
+### Bug Fixes
+
+* new filter panel ([0882507](https://github.com/cds-snc/ai-answers/commit/088250778f08f17898efd3353fe700b0a7f7e3da))
+* trial3 issues ([823ad20](https://github.com/cds-snc/ai-answers/commit/823ad20e31facad38dd841edd29f415ead2db795))
+* trial3 issues ([6f3ca33](https://github.com/cds-snc/ai-answers/commit/6f3ca33f34483abc0c5bf7a009a90f8f3b97c68d))
+* update aggregation expressions to return null instead of $$REMOVE for DocumentDB compatibility ([343e033](https://github.com/cds-snc/ai-answers/commit/343e033b0d4af96c18758f29272c461dce658f5f))
+
+
+### Code Refactoring
+
+* remove FilterPanelV2 component to streamline filter management ([ca837d9](https://github.com/cds-snc/ai-answers/commit/ca837d96523ba1eb5fa9b9555caac39f6b5626c6))
+* simplify query parameters and improve URL filtering logic in chat filters ([1ea4667](https://github.com/cds-snc/ai-answers/commit/1ea46670ab9ee32d63a5305bfd33aee2f969b87d))
+
+## [1.69.1](https://github.com/cds-snc/ai-answers/compare/v1.69.0...v1.69.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* prompt EI always apply ([56589c9](https://github.com/cds-snc/ai-answers/commit/56589c9f38ea11525c61d85f5f46388a093f371c))
+* prompt EI always apply ([822a7e7](https://github.com/cds-snc/ai-answers/commit/822a7e7ae246f3d66e5b2a6324ae799a6f55744f))
+
+## [1.69.0](https://github.com/cds-snc/ai-answers/compare/v1.68.3...v1.69.0) (2025-12-09)
+
+
+### Features
+
+* date ([e767ca3](https://github.com/cds-snc/ai-answers/commit/e767ca343a81b5f556c31658529c5b78a3dedf37))
+* date and time ([c504865](https://github.com/cds-snc/ai-answers/commit/c5048654cae54081710ffd779d80448a524e6144))
+* date styles ([87ce1f9](https://github.com/cds-snc/ai-answers/commit/87ce1f99504e89ce4044b2391be767b648a84f3c))
+* enhance Adobe Data Layer tracking with additional identifiers ([c47b44c](https://github.com/cds-snc/ai-answers/commit/c47b44c6ab3fd6c5db579134288ee7c12a90ecaa))
+* enhance Adobe Data Layer tracking with additional identifiers ([13e98bd](https://github.com/cds-snc/ai-answers/commit/13e98bda969083b0f23c8785e53c264b098c80a0))
+* enhance ExpertFeedbackPanel to support English question and sentence display ([1775277](https://github.com/cds-snc/ai-answers/commit/1775277d8189209db3394de235de05794297333e))
+* fix class ([8243780](https://github.com/cds-snc/ai-answers/commit/8243780818421e39ac2217fc7f81423341dabc06))
+* implement gating for similar-answer check based on prior AI replies and add unit tests ([ae13236](https://github.com/cds-snc/ai-answers/commit/ae13236819970b0c17ee48a2f9e260670513738e))
+* introduce ChatAppContainer and ChatOptions components for chat functionality ([f8ac32d](https://github.com/cds-snc/ai-answers/commit/f8ac32d49a5939c649eddaa79a3d973d000d5fa8))
+* sanitize question inputs and update recencyDays default value ([91fc734](https://github.com/cds-snc/ai-answers/commit/91fc734b13d48aad9276f98dc157c2f7fb1f0073))
+* table text size ([1c71cad](https://github.com/cds-snc/ai-answers/commit/1c71cad9d0245a6b828cb55acfb4083fed7b2016))
+* table text size, add date and time ([219ac12](https://github.com/cds-snc/ai-answers/commit/219ac128651d43923964f7730a907c2f243cad4b))
+
+
+### Bug Fixes
+
+* hide search provider selection in ChatOptions and set Google as default ([d91fa6b](https://github.com/cds-snc/ai-answers/commit/d91fa6bc3ffe5774e8dbfbca339348c2d7e13c07))
+* increase maxTokens for Ranker and Azure agents and update model configuration ([ab3e2ec](https://github.com/cds-snc/ai-answers/commit/ab3e2ecabb05e72c65cafc9809ff02e7821543ea))
+* normalize Set-Cookie header to apply parent domain for session cookies ([9b9a4b3](https://github.com/cds-snc/ai-answers/commit/9b9a4b31e1c30b23b4bb505da42e7e543b0c8cf7))
+* set cookie domain based on parent domain in session middleware ([40572a1](https://github.com/cds-snc/ai-answers/commit/40572a1488e5806f87bca74abf81103898781193))
+* set cookie domain based on parent domain in session middleware ([7800df3](https://github.com/cds-snc/ai-answers/commit/7800df31a49c6c706aee33548b7466d859dc4106))
+* set default value for workflow selection in ChatOptions ([d12f7a8](https://github.com/cds-snc/ai-answers/commit/d12f7a8b3626da7f21391282aa65c9e17088c156))
+* update AI selection handling in ChatOptions to hide provider selection and set default values ([20baecd](https://github.com/cds-snc/ai-answers/commit/20baecdddaa3988a64383225a3b1c5aa7b947809))
+* update Set-Cookie header to ensure domain-scoped cookies are correctly set ([2e28235](https://github.com/cds-snc/ai-answers/commit/2e28235781129c4817cf3eeea505030478cb1f9e))
+
 ## [1.68.3](https://github.com/cds-snc/ai-answers/compare/v1.68.2...v1.68.3) (2025-12-05)
 
 

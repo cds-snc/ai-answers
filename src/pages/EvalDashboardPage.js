@@ -19,6 +19,15 @@ const escapeHtmlAttribute = (value) => {
 
 const TABLE_STORAGE_KEY = `evalDashboard_tableState_v1_`;
 
+const getDefaultEvalFilters = () => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(now.getDate() - 7);
+  return {
+    startDate: start.toISOString(),
+    endDate: now.toISOString()
+  };
+};
 const EvalDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [loading, setLoading] = useState(false);
@@ -29,7 +38,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   const [recordsFiltered, setRecordsFiltered] = useState(0);
 
   const tableApiRef = useRef(null);
-  const filtersRef = useRef({});
+  const filtersRef = useRef(getDefaultEvalFilters());
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
   const FILTER_PANEL_STORAGE_KEY = 'evalFilterPanelState_v1';
@@ -61,57 +70,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
-  // On load, restore saved FilterPanel state (separate key from chat dashboard)
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const filters = {};
-          if (parsed) {
-            if (parsed.department) filters.department = parsed.department;
-            if (parsed.referringUrl) filters.referringUrl = parsed.referringUrl;
-            if (parsed.filterType) {
-              filters.filterType = parsed.filterType;
-              if (parsed.filterType === 'preset') {
-                filters.presetValue = parsed.presetValue;
-                if (parsed.presetValue !== 'all' && parsed.dateRange) {
-                  if (parsed.dateRange.startDate) {
-                    const sd = new Date(parsed.dateRange.startDate);
-                    if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
-                  }
-                  if (parsed.dateRange.endDate) {
-                    const ed = new Date(parsed.dateRange.endDate);
-                    if (!Number.isNaN(ed.getTime())) filters.endDate = ed.toISOString();
-                  }
-                }
-              } else if (parsed.filterType === 'custom' && parsed.dateRange) {
-                if (parsed.dateRange.startDate) {
-                  const sd = new Date(parsed.dateRange.startDate);
-                  if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
-                }
-                if (parsed.dateRange.endDate) {
-                  const ed = new Date(parsed.dateRange.endDate);
-                  if (!Number.isNaN(ed.getTime())) filters.endDate = ed.toISOString();
-                }
-              }
-            }
-          }
-          filtersRef.current = filters;
-          // mark ready to render table after we've restored filters
-          setTimeout(() => setDataTableReady(true), 0);
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-    // if no stored filters, still allow table to render
-    setTimeout(() => setDataTableReady(true), 0);
-  }, []);
-
   const handleApplyFilters = useCallback((filters) => {
-    filtersRef.current = filters || {};
+    const normalized = {
+      ...getDefaultEvalFilters(),
+      ...(filters || {})
+    };
+    filtersRef.current = normalized;
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
       else setTableKey((prev) => prev + 1);
@@ -126,7 +90,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       }
     } catch (e) { void e; }
     setTableKey((prev) => prev + 1);
-    filtersRef.current = {};
+    filtersRef.current = getDefaultEvalFilters();
     try { if (tableApiRef.current) tableApiRef.current.ajax.reload(); } catch (e) { void e; }
   }, [LOCAL_TABLE_STORAGE_KEY]);
 

@@ -8,6 +8,7 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
+import { filterByPartnerEval, filterByAiEval, getChatFilterConditions } from '../utils/chat-filters.js';
 
 async function chatLogsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -17,11 +18,19 @@ async function chatLogsHandler(req, res) {
   try {
     await dbConnect();
     const {
-      days, startDate, endDate,
-      filterType, presetValue,
-      department, referringUrl, userType,
+      startDate, endDate,
+      department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
        limit = 100, lastId, batchId,
     } = req.query;
+
+    // Validate eval category inputs
+    const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
+    if (partnerEval && !validCategories.includes(partnerEval)) {
+      return res.status(400).json({ error: 'Invalid partnerEval value' });
+    }
+    if (aiEval && !validCategories.includes(aiEval)) {
+      return res.status(400).json({ error: 'Invalid aiEval value' });
+    }
 
 
   let dateFilter = {};
@@ -76,8 +85,8 @@ async function chatLogsHandler(req, res) {
 
     let chats;
 
-    // If department or referringUrl filters are used, we use an aggregation pipeline
-    if (department || referringUrl) {
+    // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
+    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval) {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
@@ -200,29 +209,20 @@ async function chatLogsHandler(req, res) {
       });
 
       // Build AND filters
-      const andFilters = [];
-      if (department) {
-        const parts = department
-          .split('-')
-          .map(s => s.trim())
-          .filter(Boolean)
-          .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-        if (parts.length) {
-          andFilters.push({
-            'interactions.context.department': {
-              $regex: parts.join('|'),
-              $options: 'i'
-            }
-          });
-        }
-      }
-
-      if (referringUrl) {
-        const esc = referringUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        andFilters.push({
-          'interactions.referringUrl': { $regex: esc, $options: 'i' }
-        });
-      }
+      const allConditions = getChatFilterConditions({
+        department,
+        referringUrl,
+        urlEn,
+        urlFr,
+        userType,
+        answerType,
+        partnerEval,
+        aiEval
+      });
+      const andFilters = allConditions.filter(cond => {
+        // Exclude partnerEval and aiEval conditions since they are filtered post-query
+        return !cond.hasOwnProperty('interactions.partnerEval') && !cond.hasOwnProperty('interactions.aiEval');
+      });
 
       if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });
 
@@ -255,6 +255,14 @@ async function chatLogsHandler(req, res) {
       pipeline.push({ $sort: { createdAt: -1 } });
 
       chats = await Chat.aggregate(pipeline);
+
+      // Apply post-query eval filters if requested
+      if (partnerEval && partnerEval !== 'all') {
+        chats = filterByPartnerEval(chats, partnerEval);
+      }
+      if (aiEval && aiEval !== 'all') {
+        chats = filterByAiEval(chats, aiEval);
+      }
     } else {
       // Non-aggregate branch
       // Apply batch filter if batchId is provided
@@ -271,6 +279,14 @@ async function chatLogsHandler(req, res) {
         .sort({ _id: 1 }) // Ensure consistent ordering for pagination
         .limit(Number(limit));
       chats = await query;
+
+      // Apply post-query eval filters in non-aggregate branch as well
+      if (partnerEval && partnerEval !== 'all') {
+        chats = filterByPartnerEval(chats, partnerEval);
+      }
+      if (aiEval && aiEval !== 'all') {
+        chats = filterByAiEval(chats, aiEval);
+      }
     }
 
     const response = {

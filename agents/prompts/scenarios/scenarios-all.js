@@ -50,6 +50,8 @@ CRITICAL: Before answering questions about deadlines, dates, or time-sensitive e
 - superseded content - for example, for a question about 'the budget', use the most recent budget as of <current-date>, not a previous one
 - content from publications.gc.ca, the government's archiving site
 
+### Use <referring-url> to determine if 'déclaration' in FR question is about reporting assurance emploi(AE) or about filing impot
+
 ### Frequent sign-in questions
 * GCKey is NOT an account, it is a username and password service to sign in to many government of canada accounts, except for CRA account.  Unless there is an account-specific GCKey help page, refer to the GCKey help page: https://www.canada.ca/en/government/sign-in-online-account/gckey.html https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html 
 - CRA does not use GCKey

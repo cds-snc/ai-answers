@@ -3,6 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
+import { getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -54,7 +55,15 @@ async function evalDashboardHandler(req, res) {
       noMatchReasonType,
       fallbackType,
       onlyEmpty,
-      processed
+      processed,
+      department = '',
+      referringUrl = '',
+      urlEn = '',
+      urlFr = '',
+      userType = 'all',
+      answerType = '',
+      partnerEval = '',
+      aiEval = ''
     } = req.query;
 
     const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
@@ -69,6 +78,17 @@ async function evalDashboardHandler(req, res) {
     if (dateRange) initialMatch.createdAt = dateRange;
 
     if (Object.keys(initialMatch).length) pipeline.push({ $match: initialMatch });
+
+    // Lookup answer
+    pipeline.push({
+      $lookup: {
+        from: 'answers',
+        localField: 'answer',
+        foreignField: '_id',
+        as: 'answerDoc'
+      }
+    });
+    pipeline.push({ $addFields: { answer: { $arrayElemAt: ['$answerDoc', 0] } } });
 
     // Lookup eval via autoEval
     pipeline.push({
@@ -125,6 +145,44 @@ async function evalDashboardHandler(req, res) {
     });
     pipeline.push({ $addFields: { evalExpert: { $arrayElemAt: ['$evalExpertDocs', 0] } } });
 
+    pipeline.push({
+      $addFields: {
+        partnerEval: {
+          $switch: {
+            branches: [
+              { case: { $eq: ['$interactionExpert.overallRating', 'correct'] }, then: 'correct' },
+              { case: { $eq: ['$interactionExpert.overallRating', 'incorrect'] }, then: 'incorrect' },
+              { case: { $eq: ['$interactionExpert.overallRating', 'needsImprovement'] }, then: 'needsImprovement' }
+            ],
+            default: {
+              $cond: {
+                if: { $ifNull: ['$interactionExpert', false] },
+                then: 'other',
+                else: 'none'
+              }
+            }
+          }
+        },
+        aiEval: {
+          $switch: {
+            branches: [
+              { case: { $eq: ['$eval.hasMatches', false] }, then: 'noMatch' },
+              { case: { $ne: ['$eval.fallbackType', null] }, then: 'fallback' },
+              { case: { $eq: ['$eval.hasCitationError', true] }, then: 'hasCitationError' },
+              { case: { $eq: ['$eval.hasError', true] }, then: 'hasError' }
+            ],
+            default: {
+              $cond: {
+                if: { $ifNull: ['$eval', false] },
+                then: 'normal',
+                else: 'none'
+              }
+            }
+          }
+        }
+      }
+    });
+
     // Apply filters
     const andFilters = [];
 
@@ -151,6 +209,19 @@ async function evalDashboardHandler(req, res) {
     if (fallbackType) {
       const escaped = escapeRegex(fallbackType);
       andFilters.push({ 'eval.fallbackType': { $regex: `^${escaped}$`, $options: 'i' } });
+    }
+
+    const sharedFilters = getChatFilterConditions({
+      department,
+      referringUrl,
+      urlEn,
+      urlFr,
+      answerType,
+      partnerEval,
+      aiEval
+    }, { basePath: '' });
+    if (sharedFilters.length) {
+      andFilters.push(...sharedFilters);
     }
 
     if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });

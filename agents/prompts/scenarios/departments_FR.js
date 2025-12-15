@@ -1103,5 +1103,10 @@ export const departments_FR = [
     "name": "Agence de l'eau du Canada",
     "url": "https://www.canada.ca/fr/agence-eau-canada.html",
     "abbrKey": "CWA-AEC"
+  },
+      {
+    "name": "NORAD suivre le vol du Père Noël",
+    "url": "https://www.noradsanta.org/fr/",
+    "abbrKey": "NORAD-SANTA"
   }
 ];

@@ -25,6 +25,7 @@ const ChatInterface = ({
   selectedAI,
   selectedSearch,
   referringUrl,
+  chatCreatedAt,
   turnCount,
   showFeedback,
   displayStatus,
@@ -64,6 +65,17 @@ const ChatInterface = ({
     }
   }, []);
 
+  // Add formatChatDate helper function
+    const formatChatDate = useCallback((isoDateString) => {
+      if (!isoDateString) return '';
+      try {
+        // Extract YYYY-MM-DD from ISO 8601 format
+        return isoDateString.substring(0, 10);
+      } catch (error) {
+        console.error('Invalid date format:', error);
+        return isoDateString;
+      }
+    }, []);
 
   const [redactionAlert, setRedactionAlert] = useState("");
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
@@ -794,7 +806,14 @@ const ChatInterface = ({
       <div role="alert" className="sr-only">
         {redactionAlert}
       </div>
+      {/* Show chat date at bottom for review mode */}
+      {readOnly && chatCreatedAt && (
+        <div className="admin-date">
+          <b>{safeT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
+        </div>
+      )}
     </div>
+    
   );
 };
 
