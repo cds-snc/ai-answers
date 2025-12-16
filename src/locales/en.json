@@ -110,6 +110,7 @@
         "referringURL": "Referring URL:"
       },
       "textarea": {
+        "title": "Ask your question here.",
         "ariaLabel": {
           "first": "Ask a Canada dot CA question",
           "followon": "Ask a follow-on question or reply",
@@ -176,6 +177,7 @@
         "fallbackText": "Unable to find a citation - use canada.ca search"
       },
       "review": {
+        "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:"
       }
     },
@@ -480,19 +482,37 @@
       "clearAll": "Clear",
       "apply": "Apply",
       "loading": "Loading...",
-      "dateRange": "Date range",
+      "dateRange": "Date range (24-hour)",
       "days": "days",
       "allTime": "All time",
+      "allDates": "All Dates",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
       "referringUrl": "Referring URL",
       "referringUrlPlaceholder": "Enter referring URL...",
+      "urlEn": "Referring URL (EN)",
+      "urlFr": "Referring URL (FR)",
+      "urlPlaceholder": "Filter by full or partial URL",
       "department": "Department",
       "allDepartments": "All departments",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
       "adminUsers": "Admin",
+      "answerType": "Answer Type",
+      "allAnswerTypes": "All Answer Types",
+      "partnerEval": "Partner Evaluation",
+      "allPartnerEvals": "All",
+      "aiEval": "AI Evaluation",
+      "allAiEvals": "All",
       "activeFilters": "Active filters",
-      "noActiveFilters": "No active filters"
+      "noActiveFilters": "No active filters",
+      "showAdvanced": "See more filters",
+      "hideAdvanced": "See less filters"
     },
     "dateRange": {
       "title": "Select time period",
@@ -553,6 +573,7 @@
       "error": "Unable to load chat data.",
       "noResults": "Apply filters to load chat interactions.",
       "resultsSummary": "Showing {count} chats",
+      "totalCount": "Total matching chats: {total}",
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
       "columnFilterPlaceholder": "Filter",
@@ -567,7 +588,11 @@
         "questionCount": "Questions",
         "createdAt": "Created",
         "referringUrl": "Referring URL",
-        "date": "Date"
+        "date": "Date",
+        "userType": "User Type",
+        "answerType": "Answer Type",
+        "partnerEval": "Partner Eval",
+        "aiEval": "AI Eval"
       }
     },
     "evalDashboard": {
@@ -988,6 +1013,7 @@
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
         "hasError": "Has error",
+        "hasCitationError": "Has citation error",
         "hasErrorPercent": "Has error (%)",
         "harmful": "Coded as harmful"
       },
@@ -997,7 +1023,8 @@
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error"
+        "hasError": "Has error",
+        "hasCitationError": "Has citation error"
       },
       "userScored": {
         "title": "End-user feedback",

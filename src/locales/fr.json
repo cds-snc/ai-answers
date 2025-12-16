@@ -176,6 +176,7 @@
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
       },
       "review": {
+        "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :"
       }
     },
@@ -518,19 +519,37 @@
       "clearAll": "Effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
-      "dateRange": "Plage de dates",
+      "dateRange": "Plage de dates (24 heures)",
       "days": "jours",
       "allTime": "Tout le temps",
+      "allDates": "Toutes les dates",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "last7Days": "7 derniers jours",
+      "last30Days": "30 derniers jours",
+      "thisMonth": "Ce mois-ci",
+      "lastMonth": "Le mois dernier",
       "referringUrl": "URL de référence",
       "referringUrlPlaceholder": "Entrez l'URL de référence...",
+      "urlEn": "URL de référence (EN)",
+      "urlFr": "URL de référence (FR)",
+      "urlPlaceholder": "Filtrer par URL complète ou partielle",
       "department": "Département",
       "allDepartments": "Tous les départements",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
       "adminUsers": "Administrateur",
+      "answerType": "Type de réponse",
+      "allAnswerTypes": "Tous les types de réponses",
+      "partnerEval": "Évaluation partenaire",
+      "allPartnerEvals": "Tous",
+      "aiEval": "Évaluation IA",
+      "allAiEvals": "Tous",
       "activeFilters": "Filtres actifs",
-      "noActiveFilters": "Aucun filtre actif"
+      "noActiveFilters": "Aucun filtre actif",
+      "showAdvanced": "Voir plus de filtres",
+      "hideAdvanced": "Voir moins de filtres"
     },
     "dateRange": {
       "title": "Sélectionner la période",
@@ -607,7 +626,11 @@
         "questionCount": "Questions",
         "createdAt": "Créé",
         "referringUrl": "URL de référence",
-        "date": "Date et heure"
+        "date": "Date et heure",
+        "userType": "Type d'utilisateur",
+        "answerType": "Type de réponse",
+        "partnerEval": "Évaluation partenaire",
+        "aiEval": "Évaluation IA"
       }
     },
     "evalDashboard": {
@@ -992,6 +1015,7 @@
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur",
+        "hasCitationError": "Contient une erreur de citation",
         "hasErrorPercent": "Contient une erreur (%)",
         "harmful": "Codé comme nuisible"
       },
@@ -1001,7 +1025,8 @@
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur"
+        "hasError": "Contient une erreur",
+        "hasCitationError": "Contient une erreur de citation"
       },
       "userScored": {
         "title": "Rétroaction des utilisateurs",

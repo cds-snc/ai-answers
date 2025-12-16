@@ -82,6 +82,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           if (parsed) {
             if (parsed.department) filters.department = parsed.department;
             if (parsed.referringUrl) filters.referringUrl = parsed.referringUrl;
+            if (parsed.urlEn) filters.urlEn = parsed.urlEn;
+            if (parsed.urlFr) filters.urlFr = parsed.urlFr;
+            if (parsed.userType) filters.userType = parsed.userType;
+            if (parsed.answerType) filters.answerType = parsed.answerType;
+            if (parsed.partnerEval) filters.partnerEval = parsed.partnerEval;
+            if (parsed.aiEval) filters.aiEval = parsed.aiEval;
             if (parsed.filterType) {
               filters.filterType = parsed.filterType;
               if (parsed.filterType === 'preset') {
@@ -214,6 +220,31 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       title: t('admin.chatDashboard.columns.date', 'Date'),
       data: 'date',
       render: (value) => formatDate(value)
+    },
+    {
+      title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'),
+      data: 'referringUrl',
+      render: (value) => escapeHtmlAttribute(value || '')
+    },
+    {
+      title: t('admin.chatDashboard.columns.userType', 'User Type'),
+      data: 'userType',
+      render: (value) => escapeHtmlAttribute(value || '')
+    },
+    {
+      title: t('admin.chatDashboard.columns.answerType', 'Answer Type'),
+      data: 'answerType',
+      render: (value) => escapeHtmlAttribute(value || '')
+    },
+    {
+      title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'),
+      data: 'partnerEval',
+      render: (value) => escapeHtmlAttribute(value || '')
+    },
+    {
+      title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'),
+      data: 'aiEval',
+      render: (value) => escapeHtmlAttribute(value || '')
     }
   ]), [formatDate, lang, t]);
 

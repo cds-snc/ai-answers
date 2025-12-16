@@ -10,6 +10,8 @@ import FilterPanel from './FilterPanel.js';
 
 DataTable.use(DT);
 
+const FILTER_PANEL_STORAGE_KEY = 'chatLogsFilterPanelState_v1';
+
 const ChatLogsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [logs, setLogs] = useState([]);
@@ -69,6 +71,13 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       endDate: today
     };
     fetchLogs(todayFilters);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(FILTER_PANEL_STORAGE_KEY);
+      }
+    } catch (err) {
+      // ignore
+    }
   };
 
   const filename = (ext) => {
@@ -120,6 +129,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
           onApplyFilters={handleApplyFilters}
           onClearFilters={handleClearFilters}
           isVisible={true}
+          storageKey={FILTER_PANEL_STORAGE_KEY}
         />
       )}
 

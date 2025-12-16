@@ -2,6 +2,7 @@
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -47,6 +48,11 @@ async function chatDashboardHandler(req, res) {
       department = '',
       referringUrl = '',
       userType = 'all',
+      urlEn = '',
+      urlFr = '',
+      answerType = '',
+      partnerEval = '',
+      aiEval = '',
       startDate,
       endDate,
       filterType,
@@ -62,12 +68,12 @@ async function chatDashboardHandler(req, res) {
     } = req.query;
 
     const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
-  const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
-  const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
-  const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
-  const orderBy = orderByParam || 'createdAt';
-  const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
-  const isDataTablesMode = length !== null; // when length provided, use offset/limit style
+    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
+    const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
+    const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
+    const orderBy = orderByParam || 'createdAt';
+    const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
+    const isDataTablesMode = length !== null; // when length provided, use offset/limit style
 
     // Build initial match for createdAt and optional lastId for pagination
     const pipeline = [];
@@ -109,6 +115,31 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({
       $lookup: {
+        from: 'answers',
+        localField: 'interactions.answer',
+        foreignField: '_id',
+        as: 'interactionAnswer'
+      }
+    });
+    pipeline.push({ $addFields: { 'interactions.answer': { $arrayElemAt: ['$interactionAnswer', 0] } } });
+
+    pipeline.push({
+      $lookup: {
+        from: 'evals',
+        localField: 'interactions.autoEval',
+        foreignField: '_id',
+        as: 'interactionEval'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] },
+        'interactions.autoEval': { $arrayElemAt: ['$interactionEval', 0] }
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
         from: 'contexts',
         localField: 'interactions.context',
         foreignField: '_id',
@@ -142,6 +173,34 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    pipeline.push({
+      $addFields: {
+        'interactions.expertFeedback': { $arrayElemAt: ['$expertFeedbackDocs', 0] }
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'expertfeedbacks',
+        localField: 'interactions.autoEval.expertFeedback',
+        foreignField: '_id',
+        as: 'autoEvalExpertFeedbackDocs'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$autoEvalExpertFeedbackDocs', 0] }
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.partnerEval': getPartnerEvalAggregationExpression(),
+        'interactions.aiEval': getAiEvalAggregationExpression()
+      }
+    });
+
     // Lookup user who created the chat to include their email
     pipeline.push({
       $lookup: {
@@ -158,47 +217,10 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-  pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
 
-    const andFilters = [];
-
-    // Filter by userType if specified
-    if (userType === 'public') {
-      // Public users: creatorEmail is null, empty, or doesn't exist
-      andFilters.push({
-        $or: [
-          { creatorEmail: { $exists: false } },
-          { creatorEmail: null },
-          { creatorEmail: '' }
-        ]
-      });
-    } else if (userType === 'admin') {
-      // Admin users: creatorEmail exists and is not empty
-      andFilters.push({
-        creatorEmail: { $exists: true, $ne: '', $ne: null }
-      });
-    }
-    // If userType === 'all' or undefined, no additional filtering
-
-    if (department) {
-      const escapedDepartment = escapeRegex(department);
-      andFilters.push({
-        'interactions.context.department': {
-          $regex: escapedDepartment,
-          $options: 'i'
-        }
-      });
-    }
-
-    if (referringUrl) {
-      const escapedRef = escapeRegex(referringUrl);
-      andFilters.push({
-        'interactions.referringUrl': {
-          $regex: escapedRef,
-          $options: 'i'
-        }
-      });
-    }
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
+    const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
       pipeline.push({ $match: { $and: andFilters } });
@@ -219,6 +241,18 @@ async function chatDashboardHandler(req, res) {
         },
         expertEmails: {
           $addToSet: '$interactions.expertEmail'
+        },
+        referringUrls: {
+          $addToSet: '$interactions.referringUrl'
+        },
+        answerTypes: {
+          $addToSet: '$interactions.answer.answerType'
+        },
+        partnerEvals: {
+          $addToSet: '$interactions.partnerEval'
+        },
+        aiEvals: {
+          $addToSet: '$interactions.aiEval'
         }
       }
     });
@@ -279,6 +313,17 @@ async function chatDashboardHandler(req, res) {
             }
           }
         },
+        referringUrl: { $arrayElemAt: ['$referringUrls', 0] },
+        answerType: { $arrayElemAt: ['$answerTypes', 0] },
+        partnerEval: { $arrayElemAt: ['$partnerEvals', 0] },
+        aiEval: { $arrayElemAt: ['$aiEvals', 0] },
+        userType: {
+          $cond: {
+            if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
+            then: 'admin',
+            else: 'public'
+          }
+        },
         pageLanguage: 1
       }
     });
@@ -311,12 +356,12 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $limit: limit });
     }
 
-  const results = await Chat.aggregate(pipeline).allowDiskUse(true);
+    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
 
     // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
-  const countPipeline = pipelineBeforeSortLimit.slice();
-  countPipeline.push({ $group: { _id: '$_id' } });
-  countPipeline.push({ $count: 'totalCount' });
+    const countPipeline = pipelineBeforeSortLimit.slice();
+    countPipeline.push({ $group: { _id: '$_id' } });
+    countPipeline.push({ $count: 'totalCount' });
     const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
@@ -327,7 +372,12 @@ async function chatDashboardHandler(req, res) {
       expertEmail: chat.expertEmail || '',
       creatorEmail: chat.creatorEmail || '',
       date: chat.createdAt ? chat.createdAt.toISOString() : null,
-      pageLanguage: chat.pageLanguage || ''
+      pageLanguage: chat.pageLanguage || '',
+      referringUrl: chat.referringUrl || '',
+      answerType: chat.answerType || '',
+      partnerEval: chat.partnerEval || '',
+      aiEval: chat.aiEval || '',
+      userType: chat.userType || 'public'
     }));
 
     if (isDataTablesMode) {

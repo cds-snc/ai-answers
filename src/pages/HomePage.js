@@ -76,6 +76,8 @@ const HomePage = ({ lang = "en" }) => {
   const [chatId, setChatId] = useState(reviewChatId || null);
   const [initialMessages, setInitialMessages] = useState([]);
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
+  const [chatCreatedAt, setChatCreatedAt] = useState(null);
+
   // Capture client-side referrer (if available) so we can pass it into the
   // chat component for new chats. Keep this safe for SSR/tests by guarding
   // access to `document`. Do NOT forward same-site/self referrers (they come
@@ -172,6 +174,11 @@ const HomePage = ({ lang = "en" }) => {
           // Find the first non-empty referringUrl from any interaction
           const foundReferringUrl = chat.interactions.find(inter => inter?.referringUrl)?.referringUrl;
           setReviewReferringUrl(foundReferringUrl || null);
+
+          // Extract createdAt date
+          const chatDate = chat.createdAt;
+          setChatCreatedAt(chatDate);
+
           const msgs = [];
           chat.interactions.forEach((inter) => {
             if (inter && inter.question) {
@@ -195,6 +202,7 @@ const HomePage = ({ lang = "en" }) => {
         .catch((err) => {
           setInitialMessages([]);
           setReviewReferringUrl(null);
+          setChatCreatedAt(null);
           console.error("Failed to load chat", err);
         });
       // capture any interaction id from the hash so the chat can scroll to it
@@ -258,6 +266,7 @@ const HomePage = ({ lang = "en" }) => {
           // Pass saved review value separately, and clientReferrer separately.
           // ChatAppContainer will prefer pageUrl when present and ignore clientReferrer.
           initialReferringUrl={reviewReferringUrl}
+          chatCreatedAt={chatCreatedAt} 
           clientReferrer={clientReferrer}
           targetInteractionId={targetInteractionId}
           onSessionError={handleSessionError}
