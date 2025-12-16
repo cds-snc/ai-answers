@@ -113,9 +113,7 @@ async function chatLogsHandler(req, res) {
 
       pipeline.push({
         $addFields: {
-          user: {
-            email: { $arrayElemAt: ['$user.email', 0] }
-          }
+          user: { $arrayElemAt: ['$user', 0] }
         }
       });
 
