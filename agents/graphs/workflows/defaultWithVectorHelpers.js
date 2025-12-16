@@ -36,7 +36,7 @@ export class DefaultWithVectorServerWorkflow {
     const { redactedText, redactedItems } = redactionService.redactText(userMessage, lang);
     const piiResult = await checkPII({ chatId, message: userMessage, agentType: selectedAI });
     if (piiResult.blocked) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
+      throw new RedactionError('Blocked content detected in translation', '#############', redactedItems);
     }
     if (piiResult.pii !== null) {
       // Use the PII-aware redaction string returned by the PII checker
