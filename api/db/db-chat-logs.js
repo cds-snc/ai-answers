@@ -105,11 +105,8 @@ async function chatLogsHandler(req, res) {
       pipeline.push({
         $lookup: {
           from: 'users',
-          let: { userId: '$user' },
-          pipeline: [
-            { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-            { $project: { email: 1 } }
-          ],
+          localField: 'user',
+          foreignField: '_id',
           as: 'user'
         }
       });
