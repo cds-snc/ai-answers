@@ -1,7 +1,7 @@
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
-import { DefaultWithVectorServerWorkflow } from './workflows/defaultWithVectorHelpers.js';
+import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 
 import { graphRequestContext } from './requestContext.js';
 
@@ -13,7 +13,7 @@ const WorkflowStatus = {
   COMPLETE: 'complete',
 };
 
-const workflow = new DefaultWithVectorServerWorkflow();
+const workflow = new GraphWorkflowHelper();
 
 const GraphState = Annotation.Root({
   chatId: Annotation(),

@@ -26,7 +26,7 @@ class RedactionError extends Error {
   }
 }
 
-export class DefaultWithVectorServerWorkflow {
+export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
     validateShortQueryOrThrow(conversationHistory, userMessage, lang, department);
   }
@@ -376,10 +376,3 @@ export class DefaultWithVectorServerWorkflow {
 }
 
 export { RedactionError, ShortQueryValidation };
-
-
-
-
-
-
-
