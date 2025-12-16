@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.70.1](https://github.com/cds-snc/ai-answers/compare/v1.70.0...v1.70.1) (2025-12-16)
+
+
+### Bug Fixes
+
+* resolve batch restart error ([47292f3](https://github.com/cds-snc/ai-answers/commit/47292f337654ac2d01af00a87f06219b6c1663cb))
+* resolve batch restart error ([585603a](https://github.com/cds-snc/ai-answers/commit/585603a2e0778440778a02875fa69dfedf670dbd))
+* resolve race condition in scenario handling ([efa7e7c](https://github.com/cds-snc/ai-answers/commit/efa7e7c65114a51a3c98906ff14a5b429a20c4ca))
+* resolve race condition in scenario handling ([48314ef](https://github.com/cds-snc/ai-answers/commit/48314efeaf0b366c6482ab3af44bdbbaee6b48ff))
+* update user email logging functionality ([a144bcc](https://github.com/cds-snc/ai-answers/commit/a144bcc8ca9fa77feea4126f86639c6359661341))
+* update user email logging functionality ([8d4edc5](https://github.com/cds-snc/ai-answers/commit/8d4edc50115b7a0a2e736b7cdbe49d3733fda84e))
+
 ## [1.70.0](https://github.com/cds-snc/ai-answers/compare/v1.69.1...v1.70.0) (2025-12-15)
 
 
