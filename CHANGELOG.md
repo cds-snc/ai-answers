@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.70.2](https://github.com/cds-snc/ai-answers/compare/v1.70.1...v1.70.2) (2025-12-16)
+
+
+### Bug Fixes
+
+* enhance user email logging functionality ([3a96f85](https://github.com/cds-snc/ai-answers/commit/3a96f85867035c4c909914004f683874c0081f10))
+* improve user email logging functionality ([cdede33](https://github.com/cds-snc/ai-answers/commit/cdede33b03117b20399dd96d07f434235502138c))
+* improve user email logging functionality ([2471dae](https://github.com/cds-snc/ai-answers/commit/2471daedf831e02a3b173a0b15e7dd3880430724))
+
 ## [1.70.1](https://github.com/cds-snc/ai-answers/compare/v1.70.0...v1.70.1) (2025-12-16)
 
 
