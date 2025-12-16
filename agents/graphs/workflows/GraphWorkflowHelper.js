@@ -353,7 +353,16 @@ export class GraphWorkflowHelper {
     }
 
     try {
-      const result = await UrlValidationService.validateUrl(citationUrl, chatId);
+      // Use the new formatting-only validator (no live HTTP checks). Pass
+      // args in the expected order: (url, lang, question, department, t, chatId).
+      const result = await UrlValidationService.validateUrlFormatting(
+        citationUrl,
+        lang,
+        question,
+        department,
+        translationF,
+        chatId
+      );
       return {
         url: result.url || citationUrl,
         fallbackUrl: result.fallbackUrl || null,

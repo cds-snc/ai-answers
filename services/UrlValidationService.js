@@ -87,3 +87,64 @@ export const UrlValidationService = {
     // Expose internals for testing if needed
     __private__: { checkUrlWithMethod, isKnown404, getFinalUrl }
 };
+
+// --- NEW: Lightweight formatting-only validation (bottom of file for visibility) ---
+function isCanadaCaDomain(url) {
+  return url.startsWith('https://www.canada.ca') || url.startsWith('http://www.canada.ca');
+}
+
+function generateFallbackSearchUrl(lang, question, department, t) {
+  const encodedQuestion = encodeURIComponent(question || '');
+  let searchUrl;
+
+  switch (department?.toLowerCase()) {
+    case 'isc':
+      searchUrl =
+        lang === 'en'
+          ? `https://www.canada.ca/${lang}/indigenous-services-canada/search.html?q=${encodedQuestion}&wb-srch-sub=`
+          : `https://www.canada.ca/${lang}/services-autochtones-canada/rechercher.html?q=${encodedQuestion}&wb-srch-sub=`;
+      break;
+    case 'cra':
+      searchUrl =
+        lang === 'en'
+          ? `https://www.canada.ca/${lang}/revenue-agency/search.html?q=${encodedQuestion}&wb-srch-sub=`
+          : `https://www.canada.ca/${lang}/agence-revenu/rechercher.html?q=${encodedQuestion}&wb-srch-sub=`;
+      break;
+    case 'ircc':
+      searchUrl =
+        lang === 'en'
+          ? `https://www.canada.ca/${lang}/services/immigration-citizenship/search.html?q=${encodedQuestion}&wb-srch-sub=`
+          : `https://www.canada.ca/${lang}/services/immigration-citoyennete/rechercher.html?q=${encodedQuestion}&wb-srch-sub=`;
+      break;
+    default:
+      searchUrl = `https://www.canada.ca/${lang || 'en'}/sr/srb.html?q=${encodedQuestion}&wb-srch-sub=`;
+  }
+
+  return {
+    isValid: false,
+    fallbackUrl: searchUrl,
+    fallbackText: t ? t('homepage.chat.citation.fallbackText') : undefined,
+    confidenceRating: '0.1',
+  };
+}
+
+// Expose a formatting-only validator as an additional method so callers can
+// opt-in without changing the default live-check behaviour.
+UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', question = '', department = undefined, t = null, chatId = null) {
+  if (!url) {
+    return generateFallbackSearchUrl(lang, question, department, t);
+  }
+
+  let checkResult = { isValid: true };
+
+  // NOTE: kept intentionally lightweight and non-networking.
+  if ((checkResult.isValid && isCanadaCaDomain(url)) || !isCanadaCaDomain(url)) {
+    return {
+      isValid: true,
+      url: url,
+      confidenceRating: checkResult.confidenceRating || '0.5',
+    };
+  }
+
+  return generateFallbackSearchUrl(lang, question, department, t);
+};
