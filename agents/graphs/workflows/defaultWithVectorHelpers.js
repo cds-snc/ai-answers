@@ -3,7 +3,7 @@ import { redactionService } from '../services/redactionService.js';
 import { ScenarioOverrideService } from '../../../services/ScenarioOverrideService.js';
 import { checkPII } from '../services/piiService.js';
 import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
-import { translateQuestion } from '../services/translationService.js';
+import { translateQuestion as translateService } from '../services/translationService.js';
 import { parseResponse, parseSentences } from '../services/answerService.js';
 import { parseContextMessage } from '../services/contextService.js';
 
@@ -46,7 +46,12 @@ export class DefaultWithVectorServerWorkflow {
   }
 
   async translateQuestion(text, lang, selectedAI, translationContext = []) {
-    return translateQuestion({ text, desiredLanguage: lang, selectedAI, translationContext });
+    const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
+    if (resp && resp.blocked === true) {
+      await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
+      throw new RedactionError('Blocked content detected in translation', '#############', null);
+    }
+    return resp;
   }
 
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent
@@ -290,11 +295,26 @@ export class DefaultWithVectorServerWorkflow {
   }
 
   async sendAnswerRequest({ selectedAI, conversationHistory, lang, context, referringUrl, chatId }) {
+    const normalizeOutputLang = (l) => {
+      if (!l) return '';
+      const m = String(l).toLowerCase();
+      if (m === 'fr' || m === 'fra') return 'fra';
+      if (m === 'en' || m === 'eng') return 'eng';
+      return m;
+    };
+
+    const baseMessage = context.translatedQuestion || context.translationData?.translatedText || '';
+    const outputLangToken = normalizeOutputLang(context.outputLang || context.originalLang || lang);
+    const header = `\n<output-lang>${outputLangToken}</output-lang>`;
+    let message = `${baseMessage}${header}`;
+    message = `${message}${referringUrl && String(referringUrl).trim() ? `\n<referring-url>${String(referringUrl).trim()}</referring-url>` : ''}`;
+
     const payload = {
       provider: selectedAI,
-      message: context.translatedQuestion || context.translationData?.translatedText || '',
+      message: message,
       conversationHistory,
-      lang,
+      // Ensure the generator receives the normalized desired output language
+      lang: context.outputLang || context.originalLang || lang,
       department: context.department,
       topic: context.topic,
       topicUrl: context.topicUrl,
@@ -302,7 +322,7 @@ export class DefaultWithVectorServerWorkflow {
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',
       similarQuestions: context.similarQuestions || '',
-      referringUrl, // Service might need this? AnswerGenerationService takes it.
+      referringUrl, // Service uses this; keep passed through to generator
     };
 
     // Call service directly
