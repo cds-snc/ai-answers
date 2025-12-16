@@ -400,7 +400,7 @@ class BatchService {
                 try {
                   const rowIndex = entry?.rowIndex ?? original?.rowIndex ?? i;
                   await this.upsertBatchItems(batchId, [
-                    { rowIndex, shortQuery: true, originalData: original },
+                    { rowIndex, error: message, originalData: original },
                   ]);
                 } catch (persistErr) {
                   console.error('Failed to persist shortQuery for batch item:', persistErr);
