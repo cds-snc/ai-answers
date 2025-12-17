@@ -5,7 +5,7 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
   try {
-    const { department = '', departmentUrl = '', topic = '', topicUrl = '', searchResults = '', scenarioOverrideText = '' } = options || {};
+    const { department = '', departmentUrl = '', topic = '', topicUrl = '', searchResults = '', scenarioOverrideText = '', similarQuestions = '' } = options || {};
 
     const currentDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', {
       weekday: 'long',
@@ -20,6 +20,9 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
     let promptParts = [];
     promptParts.push(ROLE);
     promptParts.push(`## General Instructions for All Departments\n${SCENARIOS}`);
+    if (similarQuestions && typeof similarQuestions === 'string' && similarQuestions.trim().length) {
+      promptParts.push(`## Verified Similar Questions\nUse these past Q/A pairs with expert feedback to avoid repeating mistakes.\n- Scores are expert ratings (lower = more issues).\n- Follow feedback notes and fix cited problems.\n- Prefer answers that satisfy citation expectations.\n${similarQuestions}`);
+    }
 
     // Department-specific scenarios: mimic client behavior by using a content object
     let content = { scenarios: '' };

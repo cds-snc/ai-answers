@@ -1,7 +1,5 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
-import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
-import { createTranslationAgent } from '../../agents/AgentFactory.js';
-import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
+import { translateQuestion as translateService } from '../../services/TranslationAgentService.js';
 import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 
@@ -17,36 +15,23 @@ async function handler(req, res) {
   const selectedAI = req.body?.selectedAI || 'openai';
 
   try {
-    const createAgentFn = async (agentType, chatId) => {
-      // AgentFactory's createTranslationAgent returns a low-latency LLM instance
-      return await createTranslationAgent(agentType, chatId);
-    };
-
-    const resp = await AgentOrchestratorService.invokeWithStrategy({
+    // Delegate to the shared translation service used by the graph workflows.
+    const resp = await translateService({
+      text,
+      desiredLanguage: desired_language,
+      selectedAI,
       chatId: req.chatId,
-      agentType: selectedAI,
-      request: { text, desired_language, translation_context },
-      createAgentFn,
-      strategy: translationStrategy,
+      translationContext: translation_context,
     });
-    const result = resp?.result || null;
 
-    // Normalize the agent's response here so callers receive a consistent shape.
-    // Ensure originalText is always present and handle the no-translation no-op form.
-    let normalized = null;
-    if (result && result.noTranslation === true) {
-      normalized = {
-        originalLanguage: result.originalLanguage || null,
-        translatedLanguage: desired_language,
-        translatedText: text,
-        noTranslation: true,
-        originalText: text,
-        translation_context: translation_context,
-      };
-    } else {
-      normalized = Object.assign({}, result || {}, { originalText: text, translation_context });
+    // If the translation service indicates blocked content, forward that.
+    if (resp && resp.blocked === true) {
+      ServerLoggingService.info('translate blocked - returning minimal blocked response', req.chatId, { resp });
+      return res.json({ blocked: true });
     }
 
+    // Ensure returned shape includes originalText and translation_context for callers
+    const normalized = Object.assign({}, resp || {}, { originalText: resp && resp.originalText ? resp.originalText : text, translation_context });
     ServerLoggingService.info('translate result', req.chatId, { result: normalized });
     return res.json(normalized);
   } catch (err) {

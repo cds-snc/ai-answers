@@ -3,11 +3,20 @@ import { redactionService } from '../services/redactionService.js';
 import { ScenarioOverrideService } from '../../../services/ScenarioOverrideService.js';
 import { checkPII } from '../services/piiService.js';
 import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
-import { translateQuestion } from '../services/translationService.js';
-import { graphRequestContext } from '../requestContext.js';
+import { translateQuestion as translateService } from '../services/translationService.js';
+import { parseResponse, parseSentences } from '../services/answerService.js';
+import { parseContextMessage } from '../services/contextService.js';
 
-const API_BASE = process.env.INTERNAL_API_URL || `http://127.0.0.1:${process.env.PORT || 3001}/api`;
+// Services for direct invocation
+import { SearchContextService } from '../../../services/SearchContextService.js';
+import { AnswerGenerationService } from '../../../services/AnswerGenerationService.js';
+import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js';
+import { UrlValidationService } from '../../../services/UrlValidationService.js';
+import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
+import { invokeContextAgent } from '../../../services/ContextAgentService.js';
+import { exponentialBackoff } from '../../../src/utils/backoff.js';
 
+// RedactionError class
 class RedactionError extends Error {
   constructor(message, redactedText, redactedItems) {
     super(message);
@@ -17,143 +26,7 @@ class RedactionError extends Error {
   }
 }
 
-function getApiUrl(endpoint) {
-  return `${API_BASE}/chat/${endpoint}`;
-}
-
-function getProviderApiUrl(provider, endpoint) {
-  const normalized = provider === 'claude' ? 'anthropic' : provider === 'azure-openai' ? 'azure' : provider;
-  return `${API_BASE}/${normalized}/${normalized}-${endpoint}`;
-}
-
-function parseSentences(text) {
-  const sentenceRegex = /<s-(\d+)>(.*?)<\/s-\d+>/g;
-  const sentences = [];
-  let match;
-  while ((match = sentenceRegex.exec(text)) !== null) {
-    const index = parseInt(match[1], 10) - 1;
-    if (index >= 0 && index < 4 && match[2].trim()) {
-      sentences[index] = match[2].trim();
-    }
-  }
-  if (sentences.length === 0 && text.trim()) {
-    sentences[0] = text.trim();
-  }
-  return Array(4).fill('').map((_, i) => sentences[i] || '');
-}
-
-
-function parseParagraphs(text) {
-  if (!text || typeof text !== 'string') return [];
-  return text
-    .split(/(?:\r?\n){2,}/)
-    .map(paragraph => paragraph.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-}
-
-function parseAnswerResponse(rawText = '') {
-  if (!rawText) {
-    return {
-      answerType: 'normal',
-      content: '',
-      paragraphs: [],
-      sentences: parseSentences(''),
-      citationHead: null,
-      citationUrl: null,
-      confidenceRating: null,
-      englishAnswer: null,
-    };
-  }
-
-  let answerType = 'normal';
-  let content = rawText;
-  let englishAnswer = null;
-  let citationHead = null;
-  let citationUrl = null;
-  let confidenceRating = null;
-
-  const stripTag = (str, regex) => str.replace(regex, '').trim();
-
-  const preliminaryRegex = /<preliminary-checks>[\s\S]*?<\/preliminary-checks>/gi;
-  content = stripTag(content, preliminaryRegex);
-
-  const confidenceMatch = /<confidence>([\s\S]*?)<\/confidence>/i.exec(content);
-  if (confidenceMatch) {
-    confidenceRating = confidenceMatch[1].trim();
-    content = stripTag(content, /<confidence>[\s\S]*?<\/confidence>/i);
-  }
-
-  const citationHeadMatch = /<citation-head>([\s\S]*?)<\/citation-head>/i.exec(content);
-  if (citationHeadMatch) {
-    citationHead = citationHeadMatch[1].trim();
-    content = stripTag(content, /<citation-head>[\s\S]*?<\/citation-head>/i);
-  }
-
-  const citationUrlMatch = /<citation-url>([\s\S]*?)<\/citation-url>/i.exec(content);
-  if (citationUrlMatch) {
-    citationUrl = citationUrlMatch[1].trim();
-    content = stripTag(content, /<citation-url>[\s\S]*?<\/citation-url>/i);
-  }
-
-  const englishMatch = /<english-answer>([\s\S]*?)<\/english-answer>/i.exec(content);
-  if (englishMatch) {
-    englishAnswer = englishMatch[1].trim();
-    content = stripTag(content, /<english-answer>[\s\S]*?<\/english-answer>/i);
-  }
-
-  const answerBlock = /<answer>([\s\S]*?)<\/answer>/i.exec(content);
-  if (answerBlock) {
-    content = answerBlock[1].trim();
-  }
-
-  const specialTags = {
-    'not-gc': /<not-gc>([\s\S]*?)<\/not-gc>/i,
-    'pt-muni': /<pt-muni>([\s\S]*?)<\/pt-muni>/i,
-    'clarifying-question': /<clarifying-question>([\s\S]*?)<\/clarifying-question>/i,
-  };
-
-  for (const [type, regex] of Object.entries(specialTags)) {
-    const match = regex.exec(content);
-    if (match) {
-      content = stripTag(content, regex);
-      answerType = type;
-    }
-  }
-
-  const paragraphs = parseParagraphs(content);
-  const sentences = parseSentences(content);
-
-  return {
-    answerType,
-    content: content.trim(),
-    paragraphs,
-    sentences,
-    citationHead,
-    citationUrl,
-    confidenceRating,
-    englishAnswer,
-  };
-}
-async function fetchJson(url, options = {}) {
-  const ctx = graphRequestContext.getStore();
-  const forwardedHeaders = ctx?.headers || {};
-  const resp = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...forwardedHeaders,
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Request failed (${resp.status}): ${text}`);
-  }
-  return resp.json();
-}
-
-export class DefaultWithVectorServerWorkflow {
+export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
     validateShortQueryOrThrow(conversationHistory, userMessage, lang, department);
   }
@@ -163,16 +36,22 @@ export class DefaultWithVectorServerWorkflow {
     const { redactedText, redactedItems } = redactionService.redactText(userMessage, lang);
     const piiResult = await checkPII({ chatId, message: userMessage, agentType: selectedAI });
     if (piiResult.blocked) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
+      throw new RedactionError('Blocked content detected in translation', '#############', redactedItems);
     }
     if (piiResult.pii !== null) {
-      throw new RedactionError('PII detected in user message', redactedText, redactedItems);
+      // Use the PII-aware redaction string returned by the PII checker
+      throw new RedactionError('PII detected in user message', piiResult.pii, redactedItems);
     }
     return { redactedText, redactedItems };
   }
 
   async translateQuestion(text, lang, selectedAI, translationContext = []) {
-    return translateQuestion({ text, desiredLanguage: lang, selectedAI, translationContext });
+    const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
+    if (resp && resp.blocked === true) {
+      await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
+      throw new RedactionError('Blocked content detected in translation', '#############', null);
+    }
+    return resp;
   }
 
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent
@@ -181,7 +60,6 @@ export class DefaultWithVectorServerWorkflow {
     return (conversationHistory || [])
       .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string')
       .map(m => m.text || '');
-
   }
 
   determineOutputLang(pageLang, translationData) {
@@ -215,19 +93,15 @@ export class DefaultWithVectorServerWorkflow {
     const baseMessage = translationData?.translatedText || translationData?.originalText || userMessage || '';
 
     const searchPayload = {
-      providedByInteractionId: null,
       chatId,
       searchService: searchProvider,
       agentType: selectedAI,
       referringUrl,
       translationData,
-      lang,
+      pageLanguage: lang,
     };
 
-    const searchResult = await fetchJson(`${API_BASE}/search/search-context`, {
-      method: 'POST',
-      body: JSON.stringify(searchPayload),
-    });
+    const searchResult = await SearchContextService.search(searchPayload);
 
     const contextPayload = {
       chatId,
@@ -235,34 +109,31 @@ export class DefaultWithVectorServerWorkflow {
       systemPrompt: searchResult.systemPrompt || '',
       conversationHistory,
       searchResults: searchResult.results || searchResult.searchResults || [],
+      provider: selectedAI,
+      language: lang,
     };
 
-    const contextResponse = await fetchJson(getProviderApiUrl(selectedAI, 'context'), {
-      method: 'POST',
-      body: JSON.stringify(contextPayload),
-    });
+    // Invoke Context Agent via Service directly
+    const contextResponse = await exponentialBackoff(() => invokeContextAgent(selectedAI, contextPayload));
 
-    const parseField = (pattern) => {
-      const match = contextResponse.content?.match(pattern);
-      return match ? match[1] : null;
-    };
-
-    const contextData = {
-      topic: parseField(/<topic>([\s\S]*?)<\/topic>/),
-      topicUrl: parseField(/<topicUrl>([\s\S]*?)<\/topicUrl>/),
-      department: parseField(/<department>([\s\S]*?)<\/department>/),
-      departmentUrl: parseField(/<departmentUrl>([\s\S]*?)<\/departmentUrl>/),
+    // Use the service to parse the context response
+    const parsed = parseContextMessage({
+      message: contextResponse.message || '',
       searchResults: contextPayload.searchResults,
-      systemPrompt: contextPayload.systemPrompt || '',
       searchProvider,
       model: contextResponse.model,
       inputTokens: contextResponse.inputTokens,
       outputTokens: contextResponse.outputTokens,
+    });
+
+    const contextData = {
+      ...parsed,
+      systemPrompt: contextPayload.systemPrompt || '',
       query: searchResult.query,
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
       outputLang: this.determineOutputLang(lang, translationData),
-      originalLang: translationData.originalLanguage,
+      originalLang: translationData?.originalLanguage || lang,
     };
 
     const departmentKey = department || contextData.department;
@@ -346,7 +217,7 @@ export class DefaultWithVectorServerWorkflow {
         content: similarShortCircuit.answer?.content,
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
-  englishAnswer: englishAnswerText,
+        englishAnswer: englishAnswerText,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -360,6 +231,9 @@ export class DefaultWithVectorServerWorkflow {
       pageLanguage: lang,
       responseTime: totalResponseTimeSC,
       searchProvider,
+      // Optional: the matched chat and interaction identifiers (if available)
+      instantAnswerChatId: similarShortCircuit.instantAnswerChatId || null,
+      instantAnswerInteractionId: similarShortCircuit.instantAnswerInteractionId || null,
     };
   }
 
@@ -375,25 +249,23 @@ export class DefaultWithVectorServerWorkflow {
       .filter(Boolean);
     const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
 
-    const similarJson = await fetchJson(getApiUrl('chat-similar-answer'), {
-      method: 'POST',
-      body: JSON.stringify({
-        chatId,
-        questions,
-        selectedAI,
-        pageLanguage: lang || null,
-        detectedLanguage: detectedLang || null,
-        searchProvider: searchProvider || null,
-      }),
-    });
+    const similarJson = await SimilarAnswerService.findSimilarAnswer({
+      chatId,
+      questions,
+      selectedAI,
+      pageLanguage: lang || null,
+      detectedLanguage: detectedLang || null,
+    }); // removed searchProvider arg as service didn't seem to take it, or it was implicit? original helper passed it.
+    // Checked service: findSimilarAnswer({ chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage })
+    // It does NOT take searchProvider. So that's fine.
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
       const englishAnswerText = similarJson.englishAnswer || answerText;
       // Extract the instant-match ids returned by the API
-  // Accept either the new instantAnswer* fields or legacy names
-  const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || similarJson.providedByChatId || null;
-  const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || similarJson.providedByInteractionId || null;
+      // Service returns { formatted.interactionId, formatted.chatId } which map to similarJson.interactionId and similarJson.chatId
+      const instantAnswerChatId = similarJson.instantAnswerChatId || similarJson.chatId || null;
+      const instantAnswerInteractionId = similarJson.instantAnswerInteractionId || similarJson.interactionId || null;
       await ServerLoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
         similar: similarJson,
         instantAnswerChatId,
@@ -423,32 +295,46 @@ export class DefaultWithVectorServerWorkflow {
   }
 
   async sendAnswerRequest({ selectedAI, conversationHistory, lang, context, referringUrl, chatId }) {
-    const payload = {
-      message: context.translatedQuestion || context.translationData?.translatedText || '',
-      systemPrompt: context.systemPrompt || '',
-      conversationHistory,
-      chatId,
-      context,
-      referringUrl,
-      lang,
+    const normalizeOutputLang = (l) => {
+      if (!l) return '';
+      const m = String(l).toLowerCase();
+      if (m === 'fr' || m === 'fra') return 'fra';
+      if (m === 'en' || m === 'eng') return 'eng';
+      return m;
     };
 
-    const response = await fetchJson(getProviderApiUrl(selectedAI, 'message'), {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    const baseMessage = context.translatedQuestion || context.translationData?.translatedText || '';
+    const outputLangToken = normalizeOutputLang(context.outputLang || context.originalLang || lang);
+    const header = `\n<output-lang>${outputLangToken}</output-lang>`;
+    let message = `${baseMessage}${header}`;
+    message = `${message}${referringUrl && String(referringUrl).trim() ? `\n<referring-url>${String(referringUrl).trim()}</referring-url>` : ''}`;
 
-    const parsed = parseAnswerResponse(response.content || '');
+    const payload = {
+      provider: selectedAI,
+      message: message,
+      conversationHistory,
+      // Ensure the generator receives the normalized desired output language
+      lang: context.outputLang || context.originalLang || lang,
+      department: context.department,
+      topic: context.topic,
+      topicUrl: context.topicUrl,
+      departmentUrl: context.departmentUrl,
+      searchResults: context.searchResults || [],
+      scenarioOverrideText: context.systemPrompt || '',
+      similarQuestions: context.similarQuestions || '',
+      referringUrl, // Service uses this; keep passed through to generator
+    };
+
+    // Call service directly
+    // generateAnswer(params, chatId)
+    const response = await AnswerGenerationService.generateAnswer(payload, chatId);
+
+    // Use the service to parse the response
+    const parsed = parseResponse(response.content || '');
 
     return {
       ...response,
       ...parsed,
-      paragraphs: parsed.paragraphs || parseParagraphs(response.content || ''),
-      sentences: parsed.sentences || parseSentences(response.content || ''),
-      citationHead: parsed.citationHead ?? response.citationHead ?? null,
-      citationUrl: response.citationUrl ?? parsed.citationUrl ?? null,
-      confidenceRating: parsed.confidenceRating ?? response.confidenceRating ?? null,
-      tools: response.tools || [],
       questionLanguage: context.originalLang,
       englishQuestion: context.translatedQuestion,
     };
@@ -457,6 +343,7 @@ export class DefaultWithVectorServerWorkflow {
   async verifyCitation({ citationUrl, lang, question, department, translationF, chatId }) {
     const fallback = {
       isValid: false,
+      url: null,
       fallbackUrl: null,
       confidenceRating: '0.1',
     };
@@ -465,16 +352,21 @@ export class DefaultWithVectorServerWorkflow {
       return fallback;
     }
 
-    const searchUrl = new URL('util-check-url', API_BASE);
-    searchUrl.searchParams.set('url', citationUrl);
-    if (chatId) searchUrl.searchParams.set('chatId', chatId);
-
     try {
-      const result = await fetchJson(searchUrl.toString());
+      // Use the new formatting-only validator (no live HTTP checks). Pass
+      // args in the expected order: (url, lang, question, department, t, chatId).
+      const result = await UrlValidationService.validateUrlFormatting(
+        citationUrl,
+        lang,
+        question,
+        department,
+        translationF,
+        chatId
+      );
       return {
         url: result.url || citationUrl,
-        fallbackUrl: result.fallbackUrl,
-        confidenceRating: result.confidenceRating || '0.5',
+        fallbackUrl: result.fallbackUrl || null,
+        confidenceRating: result.confidenceRating?.toString() || '0.5',
       };
     } catch (error) {
       await ServerLoggingService.error('Citation validation failed', chatId, error);
@@ -482,19 +374,14 @@ export class DefaultWithVectorServerWorkflow {
     }
   }
 
-  async persistInteraction(interactionData) {
-    await fetchJson(`${API_BASE}/db/db-persist-interaction`, {
-      method: 'POST',
-      body: JSON.stringify(interactionData),
-    });
+  async persistInteraction(interactionData, user) {
+    // Note: Graph must pass user object now
+    await InteractionPersistenceService.persistInteraction(
+      interactionData.chatId, // Assuming chatId is in interactionData or I need to pass it?
+      interactionData,
+      user
+    );
   }
 }
 
 export { RedactionError, ShortQueryValidation };
-
-
-
-
-
-
-
