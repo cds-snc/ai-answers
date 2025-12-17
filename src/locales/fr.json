@@ -397,6 +397,12 @@
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios"
     },
+    "viewChat": {
+      "title": "Voir le chat par ID",
+      "label": "ID de chat",
+      "placeholder": "Entrez l'ID du chat",
+      "button": "Afficher le chat"
+    },
     "evalPage": {
       "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
       "similarityDescription": "Cette approche évalue automatiquement les nouvelles interactions en trouvant des interactions évaluées par des experts similaires et en transférant les notes et explications. Si la correspondance au niveau des phrases échoue, le système utilisera un repli basé sur une correspondance question+réponse très similaire avec une note élevée.",

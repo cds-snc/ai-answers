@@ -5,6 +5,7 @@ import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
+const DEFAULT_DAYS = 7;
 
 const getDateRange = (query) => {
   const { startDate, endDate, filterType, presetValue } = query;
@@ -29,8 +30,9 @@ const getDateRange = (query) => {
     }
   }
 
+  // Default to last 7 days to match FilterPanel clear-state
   const now = new Date();
-  const start = new Date(now.getTime() - HOURS_IN_DAY * 60 * 60 * 1000);
+  const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
   return { $gte: start, $lte: now };
 };
 
@@ -97,6 +99,18 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: initialMatch });
     }
 
+    // Trim early to only the fields we need downstream
+    pipeline.push({
+      $project: {
+        chatId: 1,
+        user: 1,
+        interactions: 1,
+        createdAt: 1,
+        pageLanguage: 1
+      }
+    });
+
+    // DocumentDB-safe lookups (single-field joins)
     pipeline.push({
       $lookup: {
         from: 'interactions',
@@ -201,6 +215,24 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    pipeline.push({
+      $project: {
+        // Inclusion-only projection to avoid invalid mixed include/exclude
+        chatId: 1,
+        user: 1,
+        createdAt: 1,
+        pageLanguage: 1,
+        interactions: {
+          context: { department: '$interactions.context.department' },
+          expertEmail: '$interactions.expertEmail',
+          referringUrl: '$interactions.referringUrl',
+          answer: { answerType: '$interactions.answer.answerType' },
+          partnerEval: '$interactions.partnerEval',
+          aiEval: '$interactions.aiEval'
+        }
+      }
+    });
+
     // Lookup user who created the chat to include their email
     pipeline.push({
       $lookup: {
@@ -217,7 +249,7 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    pipeline.push({ $project: { creator: 0 } });
 
     const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
     const andFilters = getChatFilterConditions(filters);

@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.70.5](https://github.com/cds-snc/ai-answers/compare/v1.70.4...v1.70.5) (2025-12-17)
+
+
+### Bug Fixes
+
+* enhance chat loading speed by optimizing database lookups and query structure ([a4ced08](https://github.com/cds-snc/ai-answers/commit/a4ced08d379d8a8629c61528c195e3f5d909000c))
+* improve chat loading speed by optimizing query parameters ([5195137](https://github.com/cds-snc/ai-answers/commit/51951376e0cf1917a922fb49f755ae86a4fe7088))
+* improve chat loading speed by optimizing query parameters ([5744464](https://github.com/cds-snc/ai-answers/commit/574446461fa10a99b4f706a52c2e6541779b5b49))
+* optimize chat loading speed by refining query handling and filters ([8af3f30](https://github.com/cds-snc/ai-answers/commit/8af3f3066dd341bd7b7731276d0ec58ba6c68b92))
+
+## [1.70.4](https://github.com/cds-snc/ai-answers/compare/v1.70.3...v1.70.4) (2025-12-17)
+
+
+### Miscellaneous Chores
+
+* update localization files for English and French ([524ec19](https://github.com/cds-snc/ai-answers/commit/524ec19aaec2c331d19bec4ad520a62e809bfad9))
+* update localization files for English and French ([c5b5eb1](https://github.com/cds-snc/ai-answers/commit/c5b5eb1686b00c2c06c720c7e2ed3f8e33611062))
+
 ## [1.70.3](https://github.com/cds-snc/ai-answers/compare/v1.70.2...v1.70.3) (2025-12-17)
 
 

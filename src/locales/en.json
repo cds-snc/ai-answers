@@ -360,6 +360,12 @@
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios"
     },
+    "viewChat": {
+      "title": "View chat by ID",
+      "label": "Chat ID",
+      "placeholder": "Enter chat id",
+      "button": "View chat"
+    },
     "evalPage": {
       "similarityTitle": "Similarity-Based Expert Feedback Transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
