@@ -10,6 +10,9 @@ import {
 } from '../../middleware/auth.js';
 import { filterByPartnerEval, filterByAiEval, getChatFilterConditions } from '../utils/chat-filters.js';
 
+const HOURS_IN_DAY = 24;
+const DEFAULT_DAYS = 7;
+
 async function chatLogsHandler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -36,6 +39,10 @@ async function chatLogsHandler(req, res) {
   let dateFilter = {};
     if (startDate && endDate) {
       dateFilter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    } else {
+      const now = new Date();
+      const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
+      dateFilter.createdAt = { $gte: start, $lte: now };
     }
 
     if (lastId && lastId !== 'null' && lastId !== null) {
