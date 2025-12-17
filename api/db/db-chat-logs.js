@@ -222,6 +222,26 @@ async function chatLogsHandler(req, res) {
         }
       });
 
+      // Trim heavy fields before grouping to reduce payload
+      pipeline.push({
+        $project: {
+          'interactions.answer.embedding': 0,
+          'interactions.answer.sentenceEmbeddings': 0,
+          'interactions.answer.sentences': 0,
+          'interactions.answer.citation': 0,
+          'interactions.answer.tools': 0,
+          'interactions.answer.content': 0,
+          'interactions.answer.body': 0,
+          'interactions.autoEval.raw': 0,
+          'interactions.context_doc': 0,
+          'interactions.expertFeedback_doc': 0,
+          'interactions.publicFeedback_doc': 0,
+          'interactions.question_doc': 0,
+          user: 1,
+          interactions: 1
+        }
+      });
+
       // Build AND filters
       const allConditions = getChatFilterConditions({
         department,

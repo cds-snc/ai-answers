@@ -217,7 +217,25 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    // Trim heavy fields early to reduce payload (only answerType/expertEmail/context refs needed for grouping)
+    pipeline.push({
+      $project: {
+        interactionContext: 0,
+        expertFeedbackDocs: 0,
+        interactionAnswer: 0,
+        interactionEval: 0,
+        autoEvalExpertFeedbackDocs: 0,
+        creator: 0,
+        'interactions.answer.embedding': 0,
+        'interactions.answer.sentenceEmbeddings': 0,
+        'interactions.answer.sentences': 0,
+        'interactions.answer.citation': 0,
+        'interactions.answer.tools': 0,
+        'interactions.answer.content': 0,
+        'interactions.answer.body': 0,
+        'interactions.autoEval.raw': 0
+      }
+    });
 
     const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
     const andFilters = getChatFilterConditions(filters);
