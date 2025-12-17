@@ -97,11 +97,101 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: initialMatch });
     }
 
+    // Trim early to only the fields we need downstream
+    pipeline.push({
+      $project: {
+        chatId: 1,
+        user: 1,
+        interactions: 1,
+        createdAt: 1,
+        pageLanguage: 1
+      }
+    });
+
+    // Consolidated lookup to interactions with tight projections
     pipeline.push({
       $lookup: {
         from: 'interactions',
-        localField: 'interactions',
-        foreignField: '_id',
+        let: { interactionIds: '$interactions' },
+        pipeline: [
+          { $match: { $expr: { $in: ['$_id', '$$interactionIds'] } } },
+          { $project: { answer: 1, autoEval: 1, context: 1, expertFeedback: 1, referringUrl: 1 } },
+          {
+            $lookup: {
+              from: 'answers',
+              localField: 'answer',
+              foreignField: '_id',
+              as: 'answer'
+            }
+          },
+          {
+            $addFields: {
+              answer: {
+                $let: {
+                  vars: { ans: { $arrayElemAt: ['$answer', 0] } },
+                  in: { _id: '$$ans._id', answerType: '$$ans.answerType' }
+                }
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: 'evals',
+              localField: 'autoEval',
+              foreignField: '_id',
+              as: 'autoEval'
+            }
+          },
+          { $addFields: { autoEval: { $arrayElemAt: ['$autoEval', 0] } } },
+          {
+            $lookup: {
+              from: 'contexts',
+              localField: 'context',
+              foreignField: '_id',
+              as: 'context'
+            }
+          },
+          {
+            $addFields: {
+              context: {
+                $let: {
+                  vars: { ctx: { $arrayElemAt: ['$context', 0] } },
+                  in: { department: '$$ctx.department' }
+                }
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: 'expertfeedbacks',
+              localField: 'expertFeedback',
+              foreignField: '_id',
+              as: 'expertFeedback'
+            }
+          },
+          { $addFields: { expertFeedback: { $arrayElemAt: ['$expertFeedback', 0] } } },
+          {
+            $lookup: {
+              from: 'expertfeedbacks',
+              localField: 'autoEval.expertFeedback',
+              foreignField: '_id',
+              as: 'autoEvalExpertFeedback'
+            }
+          },
+          {
+            $addFields: {
+              autoEval: {
+                $cond: {
+                  if: { $gt: [{ $size: '$autoEvalExpertFeedback' }, 0] },
+                  then: { expertFeedback: { $arrayElemAt: ['$autoEvalExpertFeedback', 0] } },
+                  else: { $ifNull: ['$autoEval', null] }
+                }
+              },
+              expertEmail: { $ifNull: ['$expertFeedback.expertEmail', ''] }
+            }
+          },
+          { $project: { autoEvalExpertFeedback: 0 } }
+        ],
         as: 'interactions'
       }
     });
@@ -110,87 +200,6 @@ async function chatDashboardHandler(req, res) {
       $unwind: {
         path: '$interactions',
         preserveNullAndEmptyArrays: true
-      }
-    });
-
-    pipeline.push({
-      $lookup: {
-        from: 'answers',
-        localField: 'interactions.answer',
-        foreignField: '_id',
-        as: 'interactionAnswer'
-      }
-    });
-    pipeline.push({ $addFields: { 'interactions.answer': { $arrayElemAt: ['$interactionAnswer', 0] } } });
-
-    pipeline.push({
-      $lookup: {
-        from: 'evals',
-        localField: 'interactions.autoEval',
-        foreignField: '_id',
-        as: 'interactionEval'
-      }
-    });
-    pipeline.push({
-      $addFields: {
-        'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] },
-        'interactions.autoEval': { $arrayElemAt: ['$interactionEval', 0] }
-      }
-    });
-
-    pipeline.push({
-      $lookup: {
-        from: 'contexts',
-        localField: 'interactions.context',
-        foreignField: '_id',
-        as: 'interactionContext'
-      }
-    });
-
-    pipeline.push({
-      $addFields: {
-        'interactions.context': { $arrayElemAt: ['$interactionContext', 0] }
-      }
-    });
-
-    pipeline.push({
-      $lookup: {
-        from: 'expertfeedbacks',
-        localField: 'interactions.expertFeedback',
-        foreignField: '_id',
-        as: 'expertFeedbackDocs'
-      }
-    });
-
-    pipeline.push({
-      $addFields: {
-        'interactions.expertEmail': {
-          $ifNull: [
-            { $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] },
-            ''
-          ]
-        }
-      }
-    });
-
-    pipeline.push({
-      $addFields: {
-        'interactions.expertFeedback': { $arrayElemAt: ['$expertFeedbackDocs', 0] }
-      }
-    });
-
-    pipeline.push({
-      $lookup: {
-        from: 'expertfeedbacks',
-        localField: 'interactions.autoEval.expertFeedback',
-        foreignField: '_id',
-        as: 'autoEvalExpertFeedbackDocs'
-      }
-    });
-
-    pipeline.push({
-      $addFields: {
-        'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$autoEvalExpertFeedbackDocs', 0] }
       }
     });
 
@@ -205,8 +214,11 @@ async function chatDashboardHandler(req, res) {
     pipeline.push({
       $lookup: {
         from: 'users',
-        localField: 'user',
-        foreignField: '_id',
+        let: { userId: '$user' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
+          { $project: { email: 1 } }
+        ],
         as: 'creator'
       }
     });
@@ -217,7 +229,7 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    pipeline.push({ $project: { creator: 0 } });
 
     const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
     const andFilters = getChatFilterConditions(filters);
