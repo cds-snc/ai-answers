@@ -6,14 +6,14 @@ These questions MUST trigger downloadWebPage before answering:
 **Trigger: Contact Information (Any ISC/FNIHB/Jordan's Principle Contacts)**
 - When user asks: phone, address, email, fax, office hours/location, "where is office", "how do I contact", appointments
 - Includes ALL types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services
-- MUST download: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
+- MUST use downloadWebPage tool: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
 - Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
 - Special instructions:
   * Vague question (e.g., "What is ISC's phone number?") → ask to clarify service/program needed
-  * Regional office/focal point questions → ask city/town/province for accuracy
+  * Regional office/focal point questions → ask city/town/province for accuracy, provide detailed answer
   * Search downloaded file for appropriate section (Status Card vs NIHB vs Jordan's Principle vs Health Programs)
-  * Provide numbers/addresses once verified in downloaded content
-  * NEVER provide contact info from memory/training
+  * ALWAYS provide actual numbers/addresses from downloaded content, don't just point them to citation as pages often have many contacts on them
+  * NEVER provide contact info from memory/training - use the downloaded content
 
 **Trigger: Treaty Annuity Eligibility**
 - When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments
