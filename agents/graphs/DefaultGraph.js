@@ -244,6 +244,7 @@ graph.addNode('persistNode', async (state) => {
     confidenceRating,
     context: contextData,
     chatId: state.chatId,
+    workflow: 'DefaultGraph',
     pageLanguage: state.lang,
     responseTime: totalResponseTime,
     searchProvider: state.searchProvider,

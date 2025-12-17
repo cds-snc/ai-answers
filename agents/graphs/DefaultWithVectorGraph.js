@@ -226,7 +226,7 @@ graph.addNode('shortCircuit', async (state) => {
     try {
       const ctx = graphRequestContext.getStore();
       const user = ctx?.user;
-      await workflow.persistInteraction(payload, user);
+      await workflow.persistInteraction({ ...payload, workflow: 'DefaultWithVectorGraph' }, user);
     } catch (err) {
       await ServerLoggingService.error('Short-circuit persistence error', state.chatId, err);
     }
@@ -350,6 +350,7 @@ graph.addNode('persistNode', async (state) => {
       confidenceRating,
       context: contextData,
       chatId: state.chatId,
+      workflow: 'DefaultWithVectorGraph',
       pageLanguage: state.lang,
       responseTime: totalResponseTime,
       searchProvider: state.searchProvider,

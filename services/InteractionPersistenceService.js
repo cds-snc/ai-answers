@@ -65,6 +65,8 @@ export const InteractionPersistenceService = {
         // Persist optional instant-match identifiers from short-circuit flow
         dbInteraction.instantAnswerChatId = interaction.instantAnswerChatId || '';
         dbInteraction.instantAnswerInteractionId = interaction.instantAnswerInteractionId || '';
+        // Persist workflow name when provided by callers
+        dbInteraction.workflow = interaction.workflow || '';
 
         const context = new Context();
         Object.assign(context, interaction.context || {});

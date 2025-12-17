@@ -131,6 +131,7 @@ export class DefaultAlwaysContext {
       confidenceRating: confidenceRating,
       context: context,
       chatId: chatId,
+      workflow: 'DefaultAlwaysContext',
       pageLanguage: lang,
       responseTime: totalResponseTime,
       searchProvider: searchProvider
