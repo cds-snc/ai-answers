@@ -353,17 +353,27 @@ async function chatDashboardHandler(req, res) {
       if (start > 0) pipeline.push({ $skip: start });
       pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
     } else {
-      pipeline.push({ $limit: limit });
+      // Fetch one extra to determine if there are more results
+      pipeline.push({ $limit: limit + 1 });
     }
 
     const results = await Chat.aggregate(pipeline).allowDiskUse(true);
 
-    // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
-    const countPipeline = pipelineBeforeSortLimit.slice();
-    countPipeline.push({ $group: { _id: '$_id' } });
-    countPipeline.push({ $count: 'totalCount' });
-    const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
-    const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
+    // Calculate totalCount only for DataTables mode (required for pagination UI)
+    let totalCount = 0;
+    let hasMore = false;
+    
+    if (isDataTablesMode) {
+      const countPipeline = pipelineBeforeSortLimit.slice();
+      countPipeline.push({ $group: { _id: '$_id' } });
+      countPipeline.push({ $count: 'totalCount' });
+      const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
+      totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
+    } else {
+      // For cursor-based pagination, check if we got extra record
+      hasMore = results.length > limit;
+      if (hasMore) results.pop(); // Remove the extra record
+    }
 
     const chats = results.map((chat) => ({
       _id: chat._id ? String(chat._id) : '',
@@ -392,9 +402,14 @@ async function chatDashboardHandler(req, res) {
     }
 
     // Cursor-based response for batch loading
-    const nextLastId = chats.length > 0 && chats.length === limit ? chats[chats.length - 1]._id : null;
-    const progress = totalCount > 0 ? `${Math.min(Math.round((chats.length / totalCount) * 100), 100)}%` : '100%';
-    return res.status(200).json({ success: true, logs: chats, lastId: nextLastId, totalCount, progress });
+    const nextLastId = hasMore && chats.length > 0 ? chats[chats.length - 1]._id : null;
+    return res.status(200).json({ 
+      success: true, 
+      logs: chats, 
+      lastId: nextLastId, 
+      hasMore,
+      totalCount: isDataTablesMode ? totalCount : undefined 
+    });
   } catch (error) {
     console.error('Failed to fetch chat dashboard data', error);
     return res.status(500).json({

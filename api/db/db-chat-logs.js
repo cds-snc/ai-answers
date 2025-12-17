@@ -49,8 +49,6 @@ async function chatLogsHandler(req, res) {
       dateFilter.user = { $exists: true };
     }
     // If userType is 'all' or undefined, no filter is applied
-   
-    const totalCount = await Chat.countDocuments(dateFilter);
 
     const chatPopulate = [
       { path: 'user', select: 'email' },
@@ -269,7 +267,8 @@ async function chatLogsHandler(req, res) {
       });
       pipeline.push({ $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { interactions: '$interactions', department: '$department', pageLanguage: '$pageLanguage', chatId: '$chatId' }] } } });
       pipeline.push({ $sort: { createdAt: -1 } });
-      pipeline.push({ $limit: Number(limit) });
+      // Fetch one extra to determine if there are more results
+      pipeline.push({ $limit: Number(limit) + 1 });
 
       chats = await Chat.aggregate(pipeline).allowDiskUse(true);
 
@@ -294,7 +293,7 @@ async function chatLogsHandler(req, res) {
       let query = Chat.find(dateFilter)
         .populate(chatPopulate)
         .sort({ _id: 1 }) // Ensure consistent ordering for pagination
-        .limit(Number(limit));
+        .limit(Number(limit) + 1); // Fetch one extra to determine if there are more results
       chats = await query;
 
       // Apply post-query eval filters in non-aggregate branch as well
@@ -306,11 +305,17 @@ async function chatLogsHandler(req, res) {
       }
     }
 
+    // Check if there are more results
+    const hasMore = chats.length > Number(limit);
+    if (hasMore) {
+      chats.pop(); // Remove the extra record
+    }
+
     const response = {
       success: true,
       logs: chats,
       lastId: chats.length ? chats[chats.length - 1]._id.toString() : null,
-      totalCount
+      hasMore
     };
     return res.status(200).json(response);
 
