@@ -32,7 +32,7 @@ export const EDSC_ESDC_SCENARIOS = `
 * Changes for layoffs after April 2025 (waiting period waived, unemployment rate adjusted, separation earnings suspended - Dec 2025): https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
 * For EI maximums and weeks, verify via downloadWebPage: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
 * NEVER predict payment arrival. EI payment dates don't use benefits calendar, depend on factors described here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
-
+* Forgotten or expired temporary password: start a new application, can't request new one
 
 ### Canadian Dental Care Plan (CDCP) - pages updated Dec 2025
 * Apply online via CDCP Apply button (1 application per family for children under 18) or via MSCA: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html
