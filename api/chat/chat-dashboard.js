@@ -5,6 +5,7 @@ import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
+const DEFAULT_DAYS = 7;
 
 const getDateRange = (query) => {
   const { startDate, endDate, filterType, presetValue } = query;
@@ -29,8 +30,9 @@ const getDateRange = (query) => {
     }
   }
 
+  // Default to last 7 days to match FilterPanel clear-state
   const now = new Date();
-  const start = new Date(now.getTime() - HOURS_IN_DAY * 60 * 60 * 1000);
+  const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
   return { $gte: start, $lte: now };
 };
 
@@ -108,90 +110,12 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    // Consolidated lookup to interactions with tight projections
+    // DocumentDB-safe lookups (single-field joins)
     pipeline.push({
       $lookup: {
         from: 'interactions',
-        let: { interactionIds: '$interactions' },
-        pipeline: [
-          { $match: { $expr: { $in: ['$_id', '$$interactionIds'] } } },
-          { $project: { answer: 1, autoEval: 1, context: 1, expertFeedback: 1, referringUrl: 1 } },
-          {
-            $lookup: {
-              from: 'answers',
-              localField: 'answer',
-              foreignField: '_id',
-              as: 'answer'
-            }
-          },
-          {
-            $addFields: {
-              answer: {
-                $let: {
-                  vars: { ans: { $arrayElemAt: ['$answer', 0] } },
-                  in: { _id: '$$ans._id', answerType: '$$ans.answerType' }
-                }
-              }
-            }
-          },
-          {
-            $lookup: {
-              from: 'evals',
-              localField: 'autoEval',
-              foreignField: '_id',
-              as: 'autoEval'
-            }
-          },
-          { $addFields: { autoEval: { $arrayElemAt: ['$autoEval', 0] } } },
-          {
-            $lookup: {
-              from: 'contexts',
-              localField: 'context',
-              foreignField: '_id',
-              as: 'context'
-            }
-          },
-          {
-            $addFields: {
-              context: {
-                $let: {
-                  vars: { ctx: { $arrayElemAt: ['$context', 0] } },
-                  in: { department: '$$ctx.department' }
-                }
-              }
-            }
-          },
-          {
-            $lookup: {
-              from: 'expertfeedbacks',
-              localField: 'expertFeedback',
-              foreignField: '_id',
-              as: 'expertFeedback'
-            }
-          },
-          { $addFields: { expertFeedback: { $arrayElemAt: ['$expertFeedback', 0] } } },
-          {
-            $lookup: {
-              from: 'expertfeedbacks',
-              localField: 'autoEval.expertFeedback',
-              foreignField: '_id',
-              as: 'autoEvalExpertFeedback'
-            }
-          },
-          {
-            $addFields: {
-              autoEval: {
-                $cond: {
-                  if: { $gt: [{ $size: '$autoEvalExpertFeedback' }, 0] },
-                  then: { expertFeedback: { $arrayElemAt: ['$autoEvalExpertFeedback', 0] } },
-                  else: { $ifNull: ['$autoEval', null] }
-                }
-              },
-              expertEmail: { $ifNull: ['$expertFeedback.expertEmail', ''] }
-            }
-          },
-          { $project: { autoEvalExpertFeedback: 0 } }
-        ],
+        localField: 'interactions',
+        foreignField: '_id',
         as: 'interactions'
       }
     });
@@ -204,9 +128,108 @@ async function chatDashboardHandler(req, res) {
     });
 
     pipeline.push({
+      $lookup: {
+        from: 'answers',
+        localField: 'interactions.answer',
+        foreignField: '_id',
+        as: 'interactionAnswer'
+      }
+    });
+    pipeline.push({ $addFields: { 'interactions.answer': { $arrayElemAt: ['$interactionAnswer', 0] } } });
+
+    pipeline.push({
+      $lookup: {
+        from: 'evals',
+        localField: 'interactions.autoEval',
+        foreignField: '_id',
+        as: 'interactionEval'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] },
+        'interactions.autoEval': { $arrayElemAt: ['$interactionEval', 0] }
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'contexts',
+        localField: 'interactions.context',
+        foreignField: '_id',
+        as: 'interactionContext'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.context': { $arrayElemAt: ['$interactionContext', 0] }
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'expertfeedbacks',
+        localField: 'interactions.expertFeedback',
+        foreignField: '_id',
+        as: 'expertFeedbackDocs'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.expertEmail': {
+          $ifNull: [
+            { $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] },
+            ''
+          ]
+        }
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.expertFeedback': { $arrayElemAt: ['$expertFeedbackDocs', 0] }
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'expertfeedbacks',
+        localField: 'interactions.autoEval.expertFeedback',
+        foreignField: '_id',
+        as: 'autoEvalExpertFeedbackDocs'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$autoEvalExpertFeedbackDocs', 0] }
+      }
+    });
+
+    pipeline.push({
       $addFields: {
         'interactions.partnerEval': getPartnerEvalAggregationExpression(),
         'interactions.aiEval': getAiEvalAggregationExpression()
+      }
+    });
+
+    pipeline.push({
+      $project: {
+        // Inclusion-only projection to avoid invalid mixed include/exclude
+        chatId: 1,
+        user: 1,
+        createdAt: 1,
+        pageLanguage: 1,
+        interactions: {
+          context: { department: '$interactions.context.department' },
+          expertEmail: '$interactions.expertEmail',
+          referringUrl: '$interactions.referringUrl',
+          answer: { answerType: '$interactions.answer.answerType' },
+          partnerEval: '$interactions.partnerEval',
+          aiEval: '$interactions.aiEval'
+        }
       }
     });
 
@@ -214,11 +237,8 @@ async function chatDashboardHandler(req, res) {
     pipeline.push({
       $lookup: {
         from: 'users',
-        let: { userId: '$user' },
-        pipeline: [
-          { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-          { $project: { email: 1 } }
-        ],
+        localField: 'user',
+        foreignField: '_id',
         as: 'creator'
       }
     });
