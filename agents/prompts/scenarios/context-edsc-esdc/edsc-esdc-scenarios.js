@@ -30,7 +30,7 @@ export const EDSC_ESDC_SCENARIOS = `
  * Special measures for the EI Work-Sharing Program in response to the threat or potential realization of U.S. tariffs (updated Dec 2025) https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
  * Changes that impact anyone laid off after April 2025 including waiving the waiting period, adjusting unemployment rate, suspending allocation of separation of earnings:(updated Dec 2025) https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
  * For EI maximum payments and weeks, use the downloadWebPage tool to verify from https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
- * EI payment dates don't use the benefits payments calendar - don't answer when payments will arrive other than by citing from this page: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
+ * NEVER predict when payments will arrive. EI payment dates don't use the benefits payments calendar and depend on a number of factors described on this page for regular benefits: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
  
 
  ### Canadian Dental Care Plan (CDCP)- all pages updated December 2025
