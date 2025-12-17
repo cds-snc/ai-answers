@@ -1,5 +1,69 @@
 # Changelog
 
+## [1.70.3](https://github.com/cds-snc/ai-answers/compare/v1.70.2...v1.70.3) (2025-12-17)
+
+
+### Bug Fixes
+
+* additional earnings ([c9c1ce3](https://github.com/cds-snc/ai-answers/commit/c9c1ce332739f2bf82268ef878315c0944449af8))
+* EI prompt updates ([2442e48](https://github.com/cds-snc/ai-answers/commit/2442e48277605c26bcc67ab5e2da2686833332af))
+* EI prompt updates ([03ac6d9](https://github.com/cds-snc/ai-answers/commit/03ac6d92888801b45a88aadb1c0956baba5acd09))
+* reduce token load ([268191b](https://github.com/cds-snc/ai-answers/commit/268191b9879db633c560f076f11fda0d302d58c4))
+* temp password issue ([6abdb13](https://github.com/cds-snc/ai-answers/commit/6abdb13064eb8f44fa4676898bd75db6394b835d))
+* tweak payment dates section ([87d2d73](https://github.com/cds-snc/ai-answers/commit/87d2d7303c2295625170855d88465e6023fb9679))
+
+## [1.70.2](https://github.com/cds-snc/ai-answers/compare/v1.70.1...v1.70.2) (2025-12-16)
+
+
+### Bug Fixes
+
+* enhance user email logging functionality ([3a96f85](https://github.com/cds-snc/ai-answers/commit/3a96f85867035c4c909914004f683874c0081f10))
+* improve user email logging functionality ([cdede33](https://github.com/cds-snc/ai-answers/commit/cdede33b03117b20399dd96d07f434235502138c))
+* improve user email logging functionality ([2471dae](https://github.com/cds-snc/ai-answers/commit/2471daedf831e02a3b173a0b15e7dd3880430724))
+
+## [1.70.1](https://github.com/cds-snc/ai-answers/compare/v1.70.0...v1.70.1) (2025-12-16)
+
+
+### Bug Fixes
+
+* resolve batch restart error ([47292f3](https://github.com/cds-snc/ai-answers/commit/47292f337654ac2d01af00a87f06219b6c1663cb))
+* resolve batch restart error ([585603a](https://github.com/cds-snc/ai-answers/commit/585603a2e0778440778a02875fa69dfedf670dbd))
+* resolve race condition in scenario handling ([efa7e7c](https://github.com/cds-snc/ai-answers/commit/efa7e7c65114a51a3c98906ff14a5b429a20c4ca))
+* resolve race condition in scenario handling ([48314ef](https://github.com/cds-snc/ai-answers/commit/48314efeaf0b366c6482ab3af44bdbbaee6b48ff))
+* update user email logging functionality ([a144bcc](https://github.com/cds-snc/ai-answers/commit/a144bcc8ca9fa77feea4126f86639c6359661341))
+* update user email logging functionality ([8d4edc5](https://github.com/cds-snc/ai-answers/commit/8d4edc50115b7a0a2e736b7cdbe49d3733fda84e))
+
+## [1.70.0](https://github.com/cds-snc/ai-answers/compare/v1.69.1...v1.70.0) (2025-12-15)
+
+
+### Features
+
+* add beta to title ([a0c007b](https://github.com/cds-snc/ai-answers/commit/a0c007b9aa6a7de36bdf417ddb5b0abff5431f99))
+* add beta to title ([6d99c94](https://github.com/cds-snc/ai-answers/commit/6d99c9438fc83179dc9ccd62dfa34d089d8ca03b))
+* enhance categorizeExpertFeedback and filtering functions for improved score handling ([da11152](https://github.com/cds-snc/ai-answers/commit/da111520f0f532ccf65e1b2bba397478948c861d))
+* enhance chat dashboard with AI evaluation and filtering capabilities ([9453238](https://github.com/cds-snc/ai-answers/commit/9453238f33e4f9f50fafbc143bf0236f5b8fff58))
+* enhance EvalDashboard with new filter handling and refactor filter logic ([476c5f4](https://github.com/cds-snc/ai-answers/commit/476c5f4d82b2a8fcc7b772ca8c457d473563d92e))
+* fix metadata, browser crawl for noindex, missing locale en ([59e2b4d](https://github.com/cds-snc/ai-answers/commit/59e2b4d9c58931dee0bc55acd97b6f43b959e14b))
+* implement FilterPanelV2 with new filtering capabilities and update backend logic ([aac6077](https://github.com/cds-snc/ai-answers/commit/aac607716af1c4e67a4da27bafb310189c7ddb61))
+* implement numeric comparison rule ([6c4defb](https://github.com/cds-snc/ai-answers/commit/6c4defba94158b858b2a590f1e4ecd327693434f))
+* implement numeric comparison rule ([0188612](https://github.com/cds-snc/ai-answers/commit/01886124de6e1898b31041b91414d009c87e60ee))
+* integrate local storage management for filter panel state in ChatLogsDashboard ([27058f8](https://github.com/cds-snc/ai-answers/commit/27058f81da74eb6cdd7f11ae0a000463c0a86e6c))
+* metadata ([a231e24](https://github.com/cds-snc/ai-answers/commit/a231e24e796feb26e13cb6f73195bba13398f6c5))
+
+
+### Bug Fixes
+
+* new filter panel ([0882507](https://github.com/cds-snc/ai-answers/commit/088250778f08f17898efd3353fe700b0a7f7e3da))
+* trial3 issues ([823ad20](https://github.com/cds-snc/ai-answers/commit/823ad20e31facad38dd841edd29f415ead2db795))
+* trial3 issues ([6f3ca33](https://github.com/cds-snc/ai-answers/commit/6f3ca33f34483abc0c5bf7a009a90f8f3b97c68d))
+* update aggregation expressions to return null instead of $$REMOVE for DocumentDB compatibility ([343e033](https://github.com/cds-snc/ai-answers/commit/343e033b0d4af96c18758f29272c461dce658f5f))
+
+
+### Code Refactoring
+
+* remove FilterPanelV2 component to streamline filter management ([ca837d9](https://github.com/cds-snc/ai-answers/commit/ca837d96523ba1eb5fa9b9555caac39f6b5626c6))
+* simplify query parameters and improve URL filtering logic in chat filters ([1ea4667](https://github.com/cds-snc/ai-answers/commit/1ea46670ab9ee32d63a5305bfd33aee2f969b87d))
+
 ## [1.69.1](https://github.com/cds-snc/ai-answers/compare/v1.69.0...v1.69.1) (2025-12-10)
 
 

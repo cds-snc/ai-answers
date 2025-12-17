@@ -101,6 +101,22 @@ async function chatLogsHandler(req, res) {
 
       pipeline.push({ $unwind: '$interactions' });
 
+      // Populate user like the non-aggregate branch so email is available
+      pipeline.push({
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user'
+        }
+      });
+
+      pipeline.push({
+        $addFields: {
+          user: { $arrayElemAt: ['$user', 0] }
+        }
+      });
+
       pipeline.push({
         $lookup: {
           from: 'contexts',

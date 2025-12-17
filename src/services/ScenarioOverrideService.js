@@ -9,7 +9,7 @@ class ScenarioOverrideServiceClass {
 
   _isAuthenticated() {
     try {
-      return !!AuthService.getUser();
+      return !!AuthService.currentUser;
     } catch (error) {
       return false;
     }

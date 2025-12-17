@@ -421,7 +421,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         }
       ]);
       let startMs;
-      const overrideUserId = (AuthService.getUserId ? AuthService.getUserId() : (AuthService.getUser()?.userId ?? null));
+      const overrideUserId = AuthService.getUserId ? AuthService.getUserId() : (AuthService.currentUser?.userId ?? null);
       try {
         const aiMessageId = messageIdCounter.current++;
         startMs = Date.now();

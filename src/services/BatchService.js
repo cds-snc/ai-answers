@@ -275,7 +275,7 @@ class BatchService {
 
     const total = entries.length || 0;
     const results = new Array(total);
-    const overrideUserId = AuthService.getUserId ? AuthService.getUserId() : (AuthService.getUser()?.userId ?? null);
+    const overrideUserId = AuthService.getUserId ? AuthService.getUserId() : (AuthService.currentUser?.userId ?? null);
 
     let index = 0;
     // We'll poll the server for stats instead of persisting counts from the client.
@@ -400,7 +400,7 @@ class BatchService {
                 try {
                   const rowIndex = entry?.rowIndex ?? original?.rowIndex ?? i;
                   await this.upsertBatchItems(batchId, [
-                    { rowIndex, shortQuery: true, originalData: original },
+                    { rowIndex, error: message, originalData: original },
                   ]);
                 } catch (persistErr) {
                   console.error('Failed to persist shortQuery for batch item:', persistErr);
