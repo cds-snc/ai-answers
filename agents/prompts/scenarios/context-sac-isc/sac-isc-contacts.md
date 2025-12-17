@@ -1,13 +1,12 @@
 # ISC Contact Directory
 -Created: 13 Dec 2025
--File holds all contact info for ISC collected from contact page sources and synthesized into ai-readable format
+-File holds all contact info for ISC collected from contact page sources into ai-readable format
 * Tip: URLS for French pages on sac-isc.gc.ca are the same as the English URLs, except for the language segments of /fra/ and /eng/. 
-- Todo: add details from NIHB First Nations and Inuit health regional offices directory - in the meantime, provide source url as citation. 
 
 ## National Services
 Source: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799
 
-- **Public Enquiries** | 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET
+- **Public Enquiries and status card application status** | 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET 
 - **Media** | media@sac-isc.gc.ca
 - **Statistics** | nstat@sac-isc.gc.ca
 - **Library/Research** | 819-997-0811 | hqlibraryreference@sac-isc.gc.ca | M-F 8:30-4:30 ET

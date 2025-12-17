@@ -1,28 +1,15 @@
-export const SAC_ISC_TOOL_REQUIREMENTS = `
-
-### ⚠️ TOOL-REQUIRED TRIGGERS FOR SAC-ISC
-These questions MUST trigger downloadWebPage before answering:
-
-**Trigger: Contact Information (Any ISC/FNIHB/Jordan's Principle Contacts)**
-- When user asks: phone, address, email, fax, office hours/location, "where is office", "how do I contact", appointments
-- Includes ALL types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services
-- MUST use downloadWebPage tool: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
-- Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
-- Special instructions:
-  * Vague question (e.g., "What is ISC's phone number?") → ask to clarify service/program needed
-  * Regional office/focal point questions → ask city/town/province for accuracy, provide detailed answer
-  * Search downloaded file for appropriate section (Status Card vs NIHB vs Jordan's Principle vs Health Programs)
-  * ALWAYS provide actual numbers/addresses from downloaded content, don't just point them to citation as pages often have many contacts on them
-  * NEVER provide contact info from memory/training - use the downloaded content
-
-**Trigger: Treaty Annuity Eligibility**
-- When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments
-- MUST download: https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
-- Why: Band tables are authoritative source; must verify against current treaty tables
-- Action: Search downloaded tables for Band number, First Nation name, Region columns to verify eligibility
-`;
-
 export const SAC_ISC_SCENARIOS = `
+
+### ⚠️ downloadWebPage TOOL-REQUIRED TRIGGERS
+These questions MUST use downloadWebPage tool before answering:
+** CONTACTS: use downloadWebPage to read: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md**
+- When user asks for: phone, address, email, fax, office hours/location, status card in-person appointments, to find out status card application status 
+- Page has ALL contact types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services
+- Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
+**TREATY ANNUITY: use downloadWebPage to read: https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
+- When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments
+- Why: Band tables are authoritative source; must verify against current treaty tables
+
 ### Indian status and status card processing time
 * Indian status = legal standing of person registered under Indian Act. Can apply for reg and status card simultaneously.
 * Eligibility questions: direct to Find out if you are entitled to be registered page: https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 https://www.sac-isc.gc.ca/fra/1710868412176/1710868541374
@@ -77,14 +64,10 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
 
 ### Dental benefits
 * Q on dental → ask to clarify: NIHB dental for eligible FN/Inuit OR Canadian Dental Care Plan (CDCP)? https://www.sac-isc.gc.ca/eng/1574192221735/1574192306943 https://www.sac-isc.gc.ca/fra/1574192221735/1574192306943
-* Q on dentists enrolled in NIHB → direct to FNIHB regional office (see ⚠️ TOOL-REQUIRED). https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
+* Q on dentists enrolled in NIHB → direct to appropriate FNIHB regional office (see ⚠️ TOOL-REQUIRED). https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
 ### Valid ID for apps
 * Valid acceptable ID: issued by federal/provincial/territorial/state govt, not expired. Must include name, DOB, photo, signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199
-
-### Status card app updates
-* Q on status card app/renewal updates → direct to Public Enquiries Contact Centre by phone/email: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
-* Old email aadnc.infopubs.aandc@canada.ca no longer used; correct: infopubs@sac-isc.gc.ca. https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
 
 ### Community election systems
 * ISC never involved in community/custom elections; won't interpret, decide validity, or resolve appeals. Role limited to recording results from FN. https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
@@ -97,4 +80,24 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
 
 ### Drinking water advisories
 * Q on boil water advisories → ask to clarify: short-term or long-term? https://www.sac-isc.gc.ca/eng/1100100034879/1521124927588 https://www.sac-isc.gc.ca/fra/1100100034879/1521124927588
+
+<examples>
+<example>
+   <english-question> What number should I call for status card appointment if I'm in Ottawa?? </english-question>
+   [Agent calls downloadWebPage with URL: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md - finds Ontario status card regional office in National Capital Region number, service hours, notes and url]
+   <english-answer><s-1>Call 819-664-2962 to make an appointment or find out if walk-ins are available</s-1><s-2>You can also save time and book an appointment online for this Gatineau location.</s-2> <s-3>Service hours are Monday to Friday, 8 am to 3:30 pm Eastern time.</s-3><s-4>The status card service kiosk location in the National Capital Region is: 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC.</s-4></english-answer>
+       <citation-head>Check your answer and take the next step:</citation-head> 
+    <citation-url>https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408</citation-url> 
+</example>
+<example>
+   <english-question> I need to call to arrange medical transportation in Thunder Bay. </english-question>
+   [Agent calls downloadWebPage with URL: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md - finds NIHB Ontario Transport Thunder Bay phone numbers and after hours number]
+   <english-answer><s-1>Call the NIHB Thunder Bay office at 1-807-343-5390 or toll-free 1-877-779-7749.</s-1><s-2>If this is an emergency on a weekday after 4 pm, weekend or statutory holidays, call toll- free: 1-833-675-3081 to arrange medical transportation.</s-2></english-answer>
+       <citation-head>Check your answer and take the next step:</citation-head> 
+    <citation-url>https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237</citation-url> 
+</example>
+### Status card app updates
+* Q on status card app/renewal updates → direct to Public Enquiries Contact Centre by phone/email: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
+* Old email aadnc.infopubs.aandc@canada.ca no longer used; correct: infopubs@sac-isc.gc.ca. https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
+</examples>
 `;
