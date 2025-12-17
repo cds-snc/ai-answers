@@ -269,8 +269,9 @@ async function chatLogsHandler(req, res) {
       });
       pipeline.push({ $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { interactions: '$interactions', department: '$department', pageLanguage: '$pageLanguage', chatId: '$chatId' }] } } });
       pipeline.push({ $sort: { createdAt: -1 } });
+      pipeline.push({ $limit: Number(limit) });
 
-      chats = await Chat.aggregate(pipeline);
+      chats = await Chat.aggregate(pipeline).allowDiskUse(true);
 
       // Apply post-query eval filters if requested
       if (partnerEval && partnerEval !== 'all') {
