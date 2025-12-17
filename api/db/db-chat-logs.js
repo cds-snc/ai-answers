@@ -268,9 +268,21 @@ async function chatLogsHandler(req, res) {
         }
       });
       pipeline.push({ $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { interactions: '$interactions', department: '$department', pageLanguage: '$pageLanguage', chatId: '$chatId' }] } } });
-      pipeline.push({ $sort: { createdAt: -1 } });
 
-      chats = await Chat.aggregate(pipeline);
+      // Use $facet to get count and results in one query
+      pipeline.push({
+        $facet: {
+          metadata: [{ $count: 'totalCount' }],
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $limit: Number(limit) }
+          ]
+        }
+      });
+
+      const [facetResult] = await Chat.aggregate(pipeline).allowDiskUse(true);
+      const aggregateTotalCount = facetResult?.metadata[0]?.totalCount || 0;
+      chats = facetResult?.data || [];
 
       // Apply post-query eval filters if requested
       if (partnerEval && partnerEval !== 'all') {
@@ -279,6 +291,14 @@ async function chatLogsHandler(req, res) {
       if (aiEval && aiEval !== 'all') {
         chats = filterByAiEval(chats, aiEval);
       }
+
+      const response = {
+        success: true,
+        logs: chats,
+        lastId: chats.length ? chats[chats.length - 1]._id.toString() : null,
+        totalCount: aggregateTotalCount
+      };
+      return res.status(200).json(response);
     } else {
       // Non-aggregate branch
       // Apply batch filter if batchId is provided
@@ -303,14 +323,16 @@ async function chatLogsHandler(req, res) {
       if (aiEval && aiEval !== 'all') {
         chats = filterByAiEval(chats, aiEval);
       }
+
+      const response = {
+        success: true,
+        logs: chats,
+        lastId: chats.length ? chats[chats.length - 1]._id.toString() : null,
+        totalCount
+      };
     }
 
-    const response = {
-      success: true,
-      logs: chats,
-      lastId: chats.length ? chats[chats.length - 1]._id.toString() : null,
-      totalCount
-    };
+    return res.status(200).json(response);
     return res.status(200).json(response);
 
   } catch (error) {

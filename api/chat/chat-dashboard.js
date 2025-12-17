@@ -334,9 +334,6 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: searchFilter });
     }
 
-    // Keep a copy of pipeline before adding sort/limit to calculate totalCount
-    const pipelineBeforeSortLimit = pipeline.slice();
-
     // Dynamic sort mapping
     const sortFieldMap = {
       createdAt: 'createdAt',
@@ -347,23 +344,29 @@ async function chatDashboardHandler(req, res) {
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
-    pipeline.push(sortStage);
 
-    if (isDataTablesMode) {
-      if (start > 0) pipeline.push({ $skip: start });
-      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
-    } else {
-      pipeline.push({ $limit: limit });
-    }
+    // Use $facet to get count and paginated results in one query
+    pipeline.push({
+      $facet: {
+        metadata: [
+          { $group: { _id: '$_id' } },
+          { $count: 'totalCount' }
+        ],
+        data: [
+          sortStage,
+          ...(isDataTablesMode ? [
+            ...(start > 0 ? [{ $skip: start }] : []),
+            { $limit: Math.min(Math.max(length, 1), 2000) }
+          ] : [
+            { $limit: limit }
+          ])
+        ]
+      }
+    });
 
-    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
-
-    // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
-    const countPipeline = pipelineBeforeSortLimit.slice();
-    countPipeline.push({ $group: { _id: '$_id' } });
-    countPipeline.push({ $count: 'totalCount' });
-    const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
-    const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
+    const [facetResult] = await Chat.aggregate(pipeline).allowDiskUse(true);
+    const totalCount = facetResult?.metadata[0]?.totalCount || 0;
+    const results = facetResult?.data || [];
 
     const chats = results.map((chat) => ({
       _id: chat._id ? String(chat._id) : '',
