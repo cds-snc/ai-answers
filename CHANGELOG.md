@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.70.3](https://github.com/cds-snc/ai-answers/compare/v1.70.2...v1.70.3) (2025-12-17)
+
+
+### Bug Fixes
+
+* additional earnings ([c9c1ce3](https://github.com/cds-snc/ai-answers/commit/c9c1ce332739f2bf82268ef878315c0944449af8))
+* EI prompt updates ([2442e48](https://github.com/cds-snc/ai-answers/commit/2442e48277605c26bcc67ab5e2da2686833332af))
+* EI prompt updates ([03ac6d9](https://github.com/cds-snc/ai-answers/commit/03ac6d92888801b45a88aadb1c0956baba5acd09))
+* reduce token load ([268191b](https://github.com/cds-snc/ai-answers/commit/268191b9879db633c560f076f11fda0d302d58c4))
+* temp password issue ([6abdb13](https://github.com/cds-snc/ai-answers/commit/6abdb13064eb8f44fa4676898bd75db6394b835d))
+* tweak payment dates section ([87d2d73](https://github.com/cds-snc/ai-answers/commit/87d2d7303c2295625170855d88465e6023fb9679))
+
 ## [1.70.2](https://github.com/cds-snc/ai-answers/compare/v1.70.1...v1.70.2) (2025-12-16)
 
 
