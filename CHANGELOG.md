@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.70.4](https://github.com/cds-snc/ai-answers/compare/v1.70.3...v1.70.4) (2025-12-17)
+
+
+### Miscellaneous Chores
+
+* update localization files for English and French ([524ec19](https://github.com/cds-snc/ai-answers/commit/524ec19aaec2c331d19bec4ad520a62e809bfad9))
+* update localization files for English and French ([c5b5eb1](https://github.com/cds-snc/ai-answers/commit/c5b5eb1686b00c2c06c720c7e2ed3f8e33611062))
+
 ## [1.70.3](https://github.com/cds-snc/ai-answers/compare/v1.70.2...v1.70.3) (2025-12-17)
 
 
