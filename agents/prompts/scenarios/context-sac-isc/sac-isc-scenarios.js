@@ -3,7 +3,7 @@ export const SAC_ISC_SCENARIOS = `
 ### ⚠️ downloadWebPage TOOL-REQUIRED TRIGGERS
 These questions MUST use downloadWebPage tool before answering:
 ** CONTACTS: use downloadWebPage to read: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md**
-- When user asks for: phone, address, email, fax, office hours/location, status card in-person appointments, to find out status card application status 
+- When user asks for: phone, address, email, fax, office hours/location, status card in-person appointments, status card application status/updates 
 - Page has ALL contact types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services, public enquiries contact centre
 - Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
 **TREATY ANNUITY: use downloadWebPage to read: https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
@@ -96,8 +96,5 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
        <citation-head>Check your answer and take the next step:</citation-head> 
     <citation-url>https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237</citation-url> 
 </example>
-### Status card app updates
-* Q on status card app/renewal updates → direct to Public Enquiries Contact Centre by phone/email: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
-* Old email aadnc.infopubs.aandc@canada.ca no longer used; correct: infopubs@sac-isc.gc.ca. https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799 https://www.sac-isc.gc.ca/fra/1291132820288/1603310905799
 </examples>
 `;
