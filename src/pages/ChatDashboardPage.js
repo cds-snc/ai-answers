@@ -19,11 +19,31 @@ const escapeHtmlAttribute = (value) => {
     .replace(/>/g, '&gt;');
 };
 
+const formatDateForApi = (value) => {
+  if (!value) return undefined;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  const pad = (num) => String(num).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+};
+
+const getTimezoneOffsetMinutes = (value) => {
+  const date = value ? new Date(value) : new Date();
+  const offset = date.getTimezoneOffset();
+  return Number.isFinite(offset) ? offset : undefined;
+};
+
 const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [rows, setRows] = useState([]); // retained for compatibility but unused in server-side mode
+  // `rows` was retained for compatibility in older code but is unused in server-side mode
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
@@ -72,7 +92,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, []);
 
   useEffect(() => {
-    // On load, if we have a saved FilterPanel state, restore it to filtersRef
+    // On load, restore saved FilterPanel state (only keys the new panel actually stores)
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
@@ -81,48 +101,35 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           const filters = {};
           if (parsed) {
             if (parsed.department) filters.department = parsed.department;
-            if (parsed.referringUrl) filters.referringUrl = parsed.referringUrl;
             if (parsed.urlEn) filters.urlEn = parsed.urlEn;
             if (parsed.urlFr) filters.urlFr = parsed.urlFr;
             if (parsed.userType) filters.userType = parsed.userType;
             if (parsed.answerType) filters.answerType = parsed.answerType;
             if (parsed.partnerEval) filters.partnerEval = parsed.partnerEval;
             if (parsed.aiEval) filters.aiEval = parsed.aiEval;
-            if (parsed.filterType) {
-              filters.filterType = parsed.filterType;
-              if (parsed.filterType === 'preset') {
-                filters.presetValue = parsed.presetValue;
-                if (parsed.presetValue !== 'all' && parsed.dateRange) {
-                  if (parsed.dateRange.startDate) {
-                    const sd = new Date(parsed.dateRange.startDate);
-                    if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
-                  }
-                  if (parsed.dateRange.endDate) {
-                    const ed = new Date(parsed.dateRange.endDate);
-                    if (!Number.isNaN(ed.getTime())) filters.endDate = ed.toISOString();
-                  }
-                }
-              } else if (parsed.filterType === 'custom' && parsed.dateRange) {
-                if (parsed.dateRange.startDate) {
-                  const sd = new Date(parsed.dateRange.startDate);
-                  if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
-                }
-                if (parsed.dateRange.endDate) {
-                  const ed = new Date(parsed.dateRange.endDate);
-                  if (!Number.isNaN(ed.getTime())) filters.endDate = ed.toISOString();
-                }
+            // FilterPanel stores a `dateRange` object with local datetime strings; convert when present
+            if (parsed.dateRange) {
+              if (parsed.dateRange.startDate) {
+                const sd = new Date(parsed.dateRange.startDate);
+                if (!Number.isNaN(sd.getTime())) filters.startDate = formatDateForApi(sd);
               }
+              if (parsed.dateRange.endDate) {
+                const ed = new Date(parsed.dateRange.endDate);
+                if (!Number.isNaN(ed.getTime())) filters.endDate = formatDateForApi(ed);
+              }
+            }
+            const tzOffset = getTimezoneOffsetMinutes(parsed?.dateRange?.startDate || parsed?.dateRange?.endDate);
+            if (tzOffset !== undefined) {
+              filters.timezoneOffsetMinutes = tzOffset;
             }
           }
           filtersRef.current = filters;
-          // mark ready to render table after we've restored filters
-          setTimeout(() => setDataTableReady(true), 0);
         }
       }
     } catch (e) {
-      // ignore
+      // ignore corrupt localStorage entries
     }
-    // if no stored filters, still allow table to render
+    // mark ready to render table after attempting to restore filters
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
@@ -130,7 +137,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   // existing table UI params (page/order/search). Only clear table params
   // when the user explicitly clears filters.
   const handleApplyFilters = useCallback((filters) => {
-    filtersRef.current = filters || {};
+    const enrichedFilters = { ...(filters || {}) };
+    const tzOffset = getTimezoneOffsetMinutes(enrichedFilters.startDate || enrichedFilters.endDate);
+    if (tzOffset !== undefined) {
+      enrichedFilters.timezoneOffsetMinutes = tzOffset;
+    }
+    filtersRef.current = enrichedFilters;
     // trigger table reload if available
     try {
       if (tableApiRef.current) {
@@ -144,7 +156,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  const handleClearFilters = useCallback(() => {
+  const handleClearFilters = useCallback((filtersFromPanel) => {
     // Clear saved table state so the DataTable resets to defaults.
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -158,7 +170,14 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
     // force DataTable re-init so restored state is reset
     setTableKey((prev) => prev + 1);
-    filtersRef.current = {};
+    if (filtersFromPanel) {
+      const enrichedFilters = { ...filtersFromPanel };
+      const tzOffset = getTimezoneOffsetMinutes(enrichedFilters.startDate || enrichedFilters.endDate);
+      if (tzOffset !== undefined) {
+        enrichedFilters.timezoneOffsetMinutes = tzOffset;
+      }
+      filtersRef.current = enrichedFilters;
+    }
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
     } catch (e) { void e; }
@@ -341,8 +360,18 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   const orderBy = orderByForColumn(dtOrder.column);
                   const orderDir = dtOrder.dir || 'desc';
                   const searchValue = (dtParams.search && dtParams.search.value) || '';
+                  const currentFilters = filtersRef.current || {};
+
+                  const normalizedFilters = { ...currentFilters };
+                  const normalizedStart = formatDateForApi(currentFilters.startDate);
+                  const normalizedEnd = formatDateForApi(currentFilters.endDate);
+                  if (normalizedStart) normalizedFilters.startDate = normalizedStart;
+                  if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
+                  const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
+                  if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
+
                   const query = {
-                    ...filtersRef.current,
+                    ...normalizedFilters,
                     start: dtParams.start || 0,
                     length: dtParams.length || 10,
                     orderBy,

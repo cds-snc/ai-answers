@@ -4,36 +4,54 @@ import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
-const HOURS_IN_DAY = 24;
-const DEFAULT_DAYS = 7;
+const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
-const getDateRange = (query) => {
-  const { startDate, endDate, filterType, presetValue } = query;
+const parseLocalDateTime = (value, { timezoneOffsetMinutes = 0, endOfDayIfNoTime = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const match = value.match(DATE_TIME_REGEX);
+  if (!match) return null;
 
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-      return { $gte: start, $lte: end };
-    }
+  const [, yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr, msStr] = match;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const hasTime = hourStr !== undefined && minuteStr !== undefined;
+  const hour = hasTime ? Number(hourStr) : endOfDayIfNoTime ? 23 : 0;
+  const minute = hasTime ? Number(minuteStr) : endOfDayIfNoTime ? 59 : 0;
+  const second = hasTime ? Number(secondStr || 0) : endOfDayIfNoTime ? 59 : 0;
+  const millisecond = hasTime ? Number(msStr || 0) : endOfDayIfNoTime ? 999 : 0;
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) || month < 1 || month > 12 ||
+    !Number.isFinite(day) || day < 1 || day > 31 ||
+    !Number.isFinite(hour) || hour < 0 || hour > 23 ||
+    !Number.isFinite(minute) || minute < 0 || minute > 59 ||
+    !Number.isFinite(second) || second < 0 || second > 59 ||
+    !Number.isFinite(millisecond) || millisecond < 0 || millisecond > 999
+  ) {
+    return null;
   }
 
-  if (filterType === 'preset') {
-    if (presetValue === 'all') {
-      return null;
-    }
-    const hours = Number(presetValue) * HOURS_IN_DAY;
-    if (!Number.isNaN(hours) && hours > 0) {
-      const now = new Date();
-      const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
-      return { $gte: start, $lte: now };
-    }
-  }
+  const offset = Number.isFinite(timezoneOffsetMinutes) ? timezoneOffsetMinutes : 0;
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute, second, millisecond) + (offset * 60 * 1000);
+  const parsed = new Date(utcMs);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+};
 
-  // Default to last 7 days to match FilterPanel clear-state
-  const now = new Date();
-  const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
-  return { $gte: start, $lte: now };
+const parseFallbackDate = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
+  if (!startDate || !endDate) return null;
+  const start = parseLocalDateTime(startDate, { timezoneOffsetMinutes }) || parseFallbackDate(startDate);
+  const end = parseLocalDateTime(endDate, { timezoneOffsetMinutes, endOfDayIfNoTime: true }) || parseFallbackDate(endDate);
+  if (!start || !end) return null;
+  return { $gte: start, $lte: end };
 };
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -57,8 +75,6 @@ async function chatDashboardHandler(req, res) {
       aiEval = '',
       startDate,
       endDate,
-      filterType,
-      presetValue,
       limit: limitParam,
       lastId: lastIdParam,
       start: startParam,
@@ -66,10 +82,15 @@ async function chatDashboardHandler(req, res) {
       orderBy: orderByParam,
       orderDir: orderDirParam,
       draw: drawParam,
-      search: searchParam
+      search: searchParam,
+      timezoneOffsetMinutes: timezoneOffsetParam
     } = req.query;
 
-    const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
+    const parsedTimezoneOffset = Number.isFinite(parseInt(timezoneOffsetParam, 10)) ? parseInt(timezoneOffsetParam, 10) : undefined;
+    const dateRange = getDateRange({ startDate, endDate, timezoneOffsetMinutes: parsedTimezoneOffset });
+    if (!dateRange) {
+      return res.status(400).json({ error: 'startDate and endDate are required and must be valid dates' });
+    }
     const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
     const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
     const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
