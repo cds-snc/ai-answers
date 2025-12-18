@@ -5,8 +5,8 @@
 
 ## National Services
 Source: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799
-
-- **Public Enquiries and status card application status** | 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET 
+* always provide all contact details for national services as page has many listed
+- **General public enquiries and status card application status contact centre** | 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET 
 - **Media** | media@sac-isc.gc.ca
 - **Statistics** | nstat@sac-isc.gc.ca
 - **Library/Research** | 819-997-0811 | hqlibraryreference@sac-isc.gc.ca | M-F 8:30-4:30 ET

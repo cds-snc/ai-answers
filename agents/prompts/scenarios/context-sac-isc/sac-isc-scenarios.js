@@ -4,7 +4,7 @@ export const SAC_ISC_SCENARIOS = `
 These questions MUST use downloadWebPage tool before answering:
 ** CONTACTS: use downloadWebPage to read: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md**
 - When user asks for: phone, address, email, fax, office hours/location, status card in-person appointments, to find out status card application status 
-- Page has ALL contact types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services
+- Page has ALL contact types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services, public enquiries contact centre
 - Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
 **TREATY ANNUITY: use downloadWebPage to read: https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
 - When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments
