@@ -10,7 +10,6 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
   const { t } = useTranslations();
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
-  const hasRestoredState = useRef(false);
 
   // Helper function to format date for display (local time)
   const formatDateTimeLocal = (date) => {
@@ -104,13 +103,50 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             aiEval: parsed.aiEval || 'all'
           };
           onApplyFilters(restoredFilters);
-          hasRestoredState.current = true;
         } catch (e) {
           // ignore
         }
       }, 0);
     } catch (err) {
       // ignore corrupt localStorage entries
+    }
+    // If no saved state was present, persist defaults and apply them so the
+    // dashboard always receives date filters (even on first load).
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const existing = window.localStorage.getItem(STORAGE_KEY);
+        if (!existing) {
+          const payload = {
+            dateRange,
+            department: '',
+            urlEn: '',
+            urlFr: '',
+            userType: 'all',
+            answerType: 'all',
+            partnerEval: 'all',
+            aiEval: 'all',
+            showAdvancedFilters: false
+          };
+          try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) { /* ignore */ }
+          // call onApplyFilters with ISO dates
+          const startObj = parseDateTimeLocal(dateRange.startDate);
+          const endObj = parseDateTimeLocal(dateRange.endDate);
+          const defaultFilters = {
+            startDate: startObj ? startObj.toISOString() : undefined,
+            endDate: endObj ? endObj.toISOString() : undefined,
+            department: '',
+            urlEn: '',
+            urlFr: '',
+            userType: 'all',
+            answerType: 'all',
+            partnerEval: 'all',
+            aiEval: 'all'
+          };
+          onApplyFilters(defaultFilters);
+        }
+      }
+    } catch (e) {
+      // ignore
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -312,13 +348,42 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
 
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(STORAGE_KEY);
+        // Persist default filter state rather than removing it so defaults
+        // (including the default date range) are always stored.
+        const payload = {
+          dateRange: defaultDates,
+          department: '',
+          urlEn: '',
+          urlFr: '',
+          userType: 'all',
+          answerType: 'all',
+          partnerEval: 'all',
+          aiEval: 'all',
+          showAdvancedFilters: false
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       }
     } catch (err) {
       // ignore
     }
 
-    onClearFilters();
+    // Apply default filters to the dashboard and also notify parent to clear
+    // table state.
+    const startObj = parseDateTimeLocal(defaultDates.startDate);
+    const endObj = parseDateTimeLocal(defaultDates.endDate);
+    const defaultFilters = {
+      startDate: startObj ? startObj.toISOString() : undefined,
+      endDate: endObj ? endObj.toISOString() : undefined,
+      department: '',
+      urlEn: '',
+      urlFr: '',
+      userType: 'all',
+      answerType: 'all',
+      partnerEval: 'all',
+      aiEval: 'all'
+    };
+    onApplyFilters(defaultFilters);
+    onClearFilters(defaultFilters);
   };
 
   if (!isVisible) return null;
