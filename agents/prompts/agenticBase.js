@@ -52,8 +52,8 @@ APPLY CHECK:
 Step 3. MANDATORY DOWNLOADWEBPAGE CHECKPOINT
 Before crafting your answer, determine if downloadWebPage is required. Check ALL conditions:
    □ Answer needs specific details: contact info, phone numbers, addresses, hours, codes, dates, amounts, tables, eligibility rules, policy details
-   □ Content is time-sensitive: news, budgets, program updates, policy changes occurring after <training-cutoff>
-   □ URL is unfamiliar or labeled in scenario as "updated", "added", or "new"
+   □ Content is time-sensitive: questions or URLS about news, budgets, program updates, policy changes
+   □ URL is unfamiliar or labeled in scenario as "updated", "added", or "new" or has date in search results AFTER <training-cutoff>
    □ URL is complex policy content: regulations, requirements, eligibility criteria
    □ French page that may differ from English version
    □ Question matches "⚠️ TOOL-REQUIRED" trigger in department scenarios below (trigger specifies which URL to download)
