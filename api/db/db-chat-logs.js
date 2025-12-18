@@ -111,8 +111,6 @@ async function chatLogsHandler(req, res) {
     }
     // If userType is 'all' or undefined, no filter is applied
    
-    const totalCount = await Chat.countDocuments(dateFilter);
-
     const chatPopulate = [
       { path: 'user', select: 'email' },
       {
@@ -145,6 +143,7 @@ async function chatLogsHandler(req, res) {
     ];
 
     let chats;
+    let totalCount = 0;
 
     // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
     if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval) {
@@ -340,6 +339,8 @@ async function chatLogsHandler(req, res) {
       if (aiEval && aiEval !== 'all') {
         chats = filterByAiEval(chats, aiEval);
       }
+
+      totalCount = chats.length;
     } else {
       // Non-aggregate branch
       // Apply batch filter if batchId is provided
@@ -351,19 +352,31 @@ async function chatLogsHandler(req, res) {
           : { _id: { $in: batchChatIds } };
       }
 
-      let query = Chat.find(dateFilter)
+      const limitedQuery = Chat.find(dateFilter)
         .populate(chatPopulate)
         .sort({ _id: 1 }) // Ensure consistent ordering for pagination
         .limit(Number(limit));
-      chats = await query;
 
-      // Apply post-query eval filters in non-aggregate branch as well
+      const fullQuery = Chat.find(dateFilter)
+        .populate(chatPopulate)
+        .sort({ _id: 1 });
+
+      const [limitedChats, fullChats] = await Promise.all([limitedQuery, fullQuery]);
+
+      let filteredLimited = limitedChats;
+      let filteredFull = fullChats;
+
       if (partnerEval && partnerEval !== 'all') {
-        chats = filterByPartnerEval(chats, partnerEval);
+        filteredLimited = filterByPartnerEval(filteredLimited, partnerEval);
+        filteredFull = filterByPartnerEval(filteredFull, partnerEval);
       }
       if (aiEval && aiEval !== 'all') {
-        chats = filterByAiEval(chats, aiEval);
+        filteredLimited = filterByAiEval(filteredLimited, aiEval);
+        filteredFull = filterByAiEval(filteredFull, aiEval);
       }
+
+      chats = filteredLimited;
+      totalCount = filteredFull.length;
     }
 
     const response = {
