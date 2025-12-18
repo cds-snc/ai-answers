@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.70.7](https://github.com/cds-snc/ai-answers/compare/v1.70.6...v1.70.7) (2025-12-18)
+
+
+### Bug Fixes
+
+* copy/pasta error ([679b964](https://github.com/cds-snc/ai-answers/commit/679b964d83a481d0418173f4e1c5f2bd9c711856))
+* date tweaks ([2288922](https://github.com/cds-snc/ai-answers/commit/2288922f6fa436da460c3806c947877c5a2af00b))
+* optimize chat loading speed by refining document count retrieval and query execution ([a7c3649](https://github.com/cds-snc/ai-answers/commit/a7c36491b95c4a1d5f614e6732eaf86475bcc713))
+* optimize chat loading speed by refining document count retrieval… ([de1d803](https://github.com/cds-snc/ai-answers/commit/de1d803a4795429db0734bd5489bf9ac1c81a927))
+
 ## [1.70.6](https://github.com/cds-snc/ai-answers/compare/v1.70.5...v1.70.6) (2025-12-18)
 
 
