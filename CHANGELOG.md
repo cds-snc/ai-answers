@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.70.6](https://github.com/cds-snc/ai-answers/compare/v1.70.5...v1.70.6) (2025-12-18)
+
+
+### Bug Fixes
+
+* enhance chat loading speed by optimizing date handling and timez… ([4719f5f](https://github.com/cds-snc/ai-answers/commit/4719f5ffeeb8f7711670b60db51d7c1a0b26f58b))
+* enhance chat loading speed by optimizing date handling and timezone support ([fef4063](https://github.com/cds-snc/ai-answers/commit/fef406380a4db6b04c72f63295e767e2c4a2110c))
+
 ## [1.70.5](https://github.com/cds-snc/ai-answers/compare/v1.70.4...v1.70.5) (2025-12-17)
 
 
