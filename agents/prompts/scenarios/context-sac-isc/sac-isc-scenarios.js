@@ -19,8 +19,8 @@ These questions MUST use downloadWebPage tool before answering:
 Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https://www.sac-isc.gc.ca/fra/1710869258242/1710869294766
 
 ### Status cards - no online apps/renewal
-* Registered persons: download form, submit by mail or in-person.
-* In-person appointment: see ⚠️ TOOL-REQUIRED for contacts.
+* Registered persons: download form, submit by mail or in-person only with photo and all documents, no email or online.
+* In-person appointment and mailing address: see ⚠️ TOOL-REQUIRED for contacts.
 * Mail-in: send to National SCIS Processing Unit. See Where to submit: https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 https://www.sac-isc.gc.ca/fra/1695839818435/1695839847447
 * Renewal: apply up to 1 year advance. Simplified renewal eligibility: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 https://www.sac-isc.gc.ca/fra/1695840367366/1695840394948
 * Expired cards cannot use simplified renewal.
