@@ -101,25 +101,30 @@ Source: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387
 
 Note: North—contact community/tribal council for local coordinators. After-hours use National Call Centre.
 
-## Status Card Regional Offices (Make an appointment for in-person service)
-* For questions about Status Card locations: If the province or location is not clear from the user's question, ask a clarifying question to determine which office is most appropriate.
+## Status Card 
+* For questions about Status Card in-person locations: If the province or location is not clear from the user's question, ask a clarifying question to determine which office is most appropriate.
 * Do not assume that a person asking a question in French is automatically in the Quebec region.
 * Notice that nearest/closest office may also be listed under a different province e.g.people in Ottawa or eastern Ontario may be closer to National Capital Region office in Gatineau. 
 * Office locations change over time; correct misunderstandings about locations, e.g., there is no longer an office in Saskatoon.
 * Always advise people to phone to make an appointment or to find out if walk-ins are available. If they need to cancel or reschedule, call as soon as possible.
-* Submit status card applications mail: National SCIS Processing Unit, Indigenous Services Canada, 10 rue Wellington, Gatineau QC K1A 0H4 OR for persons affected by known sex-based inequities in the Indian Act, mail: Application Processing Unit, Indigenous Services Canada, Box 6700 Winnipeg MB R3C 5R5
+* Email submission not available - submit in-person or by mail with all accompanying documents and photos
 
-### ATLANTIC (NB, PEI, NS, NFL)
+### NATIONAL mail submission
+* Submit status card applications by mail: National SCIS Processing Unit, Indigenous Services Canada, 10 rue Wellington, Gatineau QC K1A 0H4 OR for persons affected by known sex-based inequities in the Indian Act, mail: Application Processing Unit, Indigenous Services Canada, Box 6700 Winnipeg MB R3C 5R5
+
+### Regional Offices (Make an appointment for in-person service)
+
+* ATLANTIC (NB, PEI, NS, NFL)
 Source: https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064
 - **Amherst** | 902-661-6209 | Fx:902-661-6237 | PO Box 160, 40 Havelock St, Amherst NS B4H 3Z3 | M-F 10-3 AT
 
-### QC
+* QC
 Source: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791
 - **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available)| Mail: 10 rue Wellington, Gatineau, QC K1A 0H4
 - **Quebec City** | 1-800-263-5592 | Fx:418-648-2266 | 400-320 St. Joseph St E, Québec QC G1K 9J2 | M-F 9-12, 1-3:30 ET
 - **Kahnawake** Registration and status card services are no longer available at the Kahnawake service point. No appointments can be made there.
 
-### ON
+* ON
 Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 - **Toronto** | 416-973-5282 | Fx:416-954-9974 | Toronto ON M5G 2K4 | M-F 9-3 ET
 - **Brantford** | 519-751-6462 | Fx:519-751-2666 | Unit 6A-195 Henry St, Brantford ON N3S 5C9 | M-F 9-3 ET
@@ -127,34 +132,34 @@ Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 - **Sudbury** | 705-522-6774 | Fx:705-677-7976 | Unit M-760 Notre Dame Ave, Sudbury ON P3A 2T4 | M-F 9-3 ET
  **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | In-person service: 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available) | Mail: 10 rue Wellington, Gatineau, QC K1A 0H4
 
-### MB
+* MB
 Source: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423
 - **Winnipeg** | 1-833-983-5910 | Fx:1-204-983-2936 | 361 Hargrave St, Winnipeg MB R3B 2J9 | M-F 9-11:30 walk-in, 1-3 appt CT
 
-### SK
+* SK
 Source: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258
 - **Regina** | 306-780-5392 | Fx:306-790-4634 | Rm 098, 1783 Hamilton St, Regina SK S4P 2B6 | M-F 9-12, 1-4 CT
 - **Prince Albert** | 306-953-8600 | Fx:306-953-8648 | 110-3601 5th Ave E, Prince Albert SK S6W 0A2 | M-F 9-12, 1-4 CT
 
-### AB
+* AB
 Source: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889
 * Use online booking tool to schedule registration or status card appointment
 * If no appointments are available online, or you need help with other services, call for support, cancellations, or rescheduling. Walk-ins may be accepted but are not guaranteed.
 - **Edmonton** | 780-495-2773 | Fx:780-495-4088 | Rm 140, 9700 Jasper Ave, Edmonton AB T5J 4G2 | M-F 9-3 MT
 
-### BC
+* BC
 Source: https://www.sac-isc.gc.ca/eng/1100100021003/1612465942223
 - **Vancouver** | 236-330-9961 | 1-800-665-9320 | Fx:604-775-7149 | 501-1138 Melville St, Vancouver BC V6E 4S3 | M-F 9-4:30 PT
 
-### NWT
+* NWT
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100022857/1617205117407
 - 867-669-2622 | Fx:867-669-2711 | M-F 10-12, 1-3 MT
 
-### YT
+* YT
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203
 - **Whitehorse** | 867-667-3399 | 1-800-661-0451 | Fx:867-667-3384 | ytservicesclientele-clientservicesyt@rcaanc-cirnac.gc.ca | 122-300 Main St, Whitehorse YT Y1A 2B5 | M-F 8:30-4:30 MT
 
-### NU
+* NU
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659
 - **Iqaluit** | 867-975-4500 | 1-800-567-9604 | Fx:867-975-4560 | aadnc.informernu-informnu.aandc@canada.ca | PO Box 2200, Iqaluit NU X0A 0H0
 
