@@ -1074,8 +1074,8 @@
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
-    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test.",
-    "description2": "If you're happy with the changes, alert the DTO team, copy the edited version for them, and they'll push the changes into the live AI Answers product.",
+    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. Make sure you haven't added ambiguity! Keep it terse to reduce cognitive load on the AI. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test. Test with multiple questions multiple times.",
+    "description2": "If you're happy with the changes, alert the AI Answers team, copy and paste the edited version for them, and they'll make and push the changes into the live AI Answers product.",
     "sections": {
       "editOverride": "Edit",
       "visualDiff": "Visual diff (side-by-side)"
