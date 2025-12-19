@@ -107,7 +107,7 @@ Note: North—contact community/tribal council for local coordinators. After-hou
 * Notice that nearest/closest office may also be listed under a different province e.g.people in Ottawa or eastern Ontario may be closer to National Capital Region office in Gatineau. 
 * Office locations change over time; correct misunderstandings about locations, e.g., there is no longer an office in Saskatoon.
 * Always advise people to phone to make an appointment or to find out if walk-ins are available. If they need to cancel or reschedule, call as soon as possible.
-* Email submission not available - submit in-person or by mail with all accompanying documents
+* Email submission not available - submit in-person or by mail with all accompanying documents and photos
 
 ### NATIONAL mail submission
 * Submit status card applications by mail: National SCIS Processing Unit, Indigenous Services Canada, 10 rue Wellington, Gatineau QC K1A 0H4 OR for persons affected by known sex-based inequities in the Indian Act, mail: Application Processing Unit, Indigenous Services Canada, Box 6700 Winnipeg MB R3C 5R5
