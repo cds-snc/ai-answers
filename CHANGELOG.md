@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.70.8](https://github.com/cds-snc/ai-answers/compare/v1.70.7...v1.70.8) (2025-12-19)
+
+
+### Bug Fixes
+
+* isc issue status cards ([f97e6d5](https://github.com/cds-snc/ai-answers/commit/f97e6d53c3c40d74da44151eca6e6e82e36b903b))
+* isc issue status cards -  ([9864e37](https://github.com/cds-snc/ai-answers/commit/9864e3710e83ef9f2dba2ea66fc05720e070265d))
+* tweak re photo ([f63c12b](https://github.com/cds-snc/ai-answers/commit/f63c12b8bbda1ef35c04e9b3ad51f3ad6f10ab0a))
+
 ## [1.70.7](https://github.com/cds-snc/ai-answers/compare/v1.70.6...v1.70.7) (2025-12-18)
 
 
