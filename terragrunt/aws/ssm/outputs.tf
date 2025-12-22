@@ -71,3 +71,8 @@ output "adobe_analytics_url_arn" {
   description = "ARN of the Adobe Analytics URL parameter"
   value       = aws_ssm_parameter.adobe_analytics_url.arn
 }
+
+output "session_secret_arn" {
+  description = "ARN of the session secret parameter"
+  value       = aws_ssm_parameter.session_secret.arn
+}
