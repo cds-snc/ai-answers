@@ -47,6 +47,10 @@ locals {
     {
       "name"      = "REACT_APP_ADOBE_ANALYTICS_URL"
       "valueFrom" = var.adobe_analytics_url_arn
+    },
+    {
+      "name"      = "CONVERSATION_INTEGRITY_SECRET"
+      "valueFrom" = var.conversation_integrity_secret_arn
     }
   ]
 }

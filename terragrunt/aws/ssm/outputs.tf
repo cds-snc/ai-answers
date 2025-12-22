@@ -71,3 +71,8 @@ output "adobe_analytics_url_arn" {
   description = "ARN of the Adobe Analytics URL parameter"
   value       = aws_ssm_parameter.adobe_analytics_url.arn
 }
+
+output "conversation_integrity_secret_arn" {
+  description = "ARN of the interaction history integrity secret parameter"
+  value       = aws_ssm_parameter.conversation_integrity_secret.arn
+}
