@@ -63,7 +63,7 @@ Imagine a malicious user tries to change their first question to "What is the se
 
 ## Architecture
 
-The integrity logic follows a **Service-Oriented** pattern. We use a dedicated service for the cryptographic logic and a middleware/wrapper layer for request-level security enforcement.
+The integrity logic follows a **Service-Oriented** pattern, but is **globally enforced** via the chat session middleware.
 
 ### 1. Integrity Service (`services/ConversationIntegrityService.js`)
 Centralizes all cryptographic math:
@@ -71,25 +71,25 @@ Centralizes all cryptographic math:
 -   `verifyHistory(history, signature)`: Compares a received signature against a fresh calculation.
 -   **Security**: Uses the `CONVERSATION_INTEGRITY_SECRET` provided via environment variables.
 
-### 2. Integrity Middleware (`middleware/conversationHistory-integrity.js`)
-A light Express wrapper that acts as a per-route guard:
--   Extracts `conversationHistory` and `historySignature` from `req.body`.
--   Delegates verification to the `ConversationIntegrityService`.
+### 2. Session Middleware Integration (`middleware/chat-session.js`)
+Integrity is now **baked into `withSession`**:
+-   Any endpoint using the `withSession` wrapper automatically projects against history tampering.
+-   **Mechanism**: If `req.method` is `POST` and `conversationHistory` is present, `withSession` validates the `historySignature` before executing the route handler.
 -   **Enforcement**: Returns a `403 Forbidden` if the signature is missing (for non-empty history) or invalid.
 
 ### 3. Backend Implementation (Protected Routes)
-The following endpoints implement integrity checks:
+The following endpoints are protected by default because they use `withSession`:
 
-#### [MODIFY] [chat-message.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-message.js)
--   **Verification**: Wrapped with `conversationHistoryIntegrity`.
--   **Signing**: Uses the service to compute the new $H_1$ signature after generating a response.
+#### [chat-message.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-message.js)
+-   **Verification**: Automatic via `withSession`.
+-   **Signing**: Still manual in the handler to compute the *new* $H_1$ signature after generating a response.
 
-#### [MODIFY] [chat-similar-answer.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-similar-answer.js)
--   **Verification**: Wrapped with `conversationHistoryIntegrity`.
--   **Signing**: If a similar answer is found, computes and returns the signature for the new history state (Current History + AI Similar Answer).
+#### [chat-similar-answer.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-similar-answer.js)
+-   **Verification**: Automatic via `withSession`.
+-   **Signing**: If a similar answer is found, computes and returns the signature for the new history state.
 
-#### [MODIFY] [chat-graph-run.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-graph-run.js)
--   **Verification**: Wrapped with `conversationHistoryIntegrity`. Supports nested `input` payload.
+#### [chat-graph-run.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-graph-run.js)
+-   **Verification**: Automatic via `withSession`. Supports nested `input` payload.
 -   **Signing**: Computes and returns the signature in the SSE `result` event.
 
 ### 4. Frontend Implementation (`src/services/AnswerService.js`)
