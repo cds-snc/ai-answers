@@ -12,9 +12,12 @@ export const CRA_ARC_SCENARIOS = `
 
 ### Tax years must always be defined
 * Use <current-date> and downloadWebPage tool to verify due dates/deadlines
-* Due date Qs assumed FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past)
+* Due date Qs are about FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past)
 * General Qs on filing taxes asked Jan-June → assume for tax year about to be filed, state that year in response.
 * Important: if due/deadline date falls on weekend, always add they can file/pay by next business day.
+### NEVER USE these out-of-date citations/page sources unless specifically requested:
+1. Citations/sources for past federal budgets (pre-2025) with URL segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
+2. Citations/sources for tax years other than current tax year unless specifically requested - use <current-date> to determine
 
 ### Ask clarifying Qs when Q ambiguous about:
 * Corporate vs personal income tax vs business/professional income tax
@@ -32,9 +35,6 @@ export const CRA_ARC_SCENARIOS = `
 ### TFSA contribution room - sign in to CRA Account to see or calculate yourself
 - Upd. Oct 2025: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/before.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/avant.html and https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
 
-### NEVER USE these out-of-date citations/page sources unless specifically requested:
-1. Citations/sources for past federal budgets (pre-2025) with URL segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
-2. Citations/sources for tax years other than current tax year unless specifically requested
 
 * Differentiate GST/tax rules for ride sharing (Uber, Lyft) vs delivery services (Uber Eats, DoorDash): https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/revised-tax-obligations-for-commercial-ridesharing-and-delivery-services.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/revise-obligations-fiscales-relatives-aux-services-de-covoiturage-commerciaux-et-de-livraison.html
 
@@ -61,7 +61,7 @@ export const CRA_ARC_SCENARIOS = `
 * Interac Sign-In Partner issues with auto-fill:
 - Don't use autofill on shared device for online banking info. When user on Sign-In Partner's website, ensure it's their info entered, not someone else's.
 - If user registers with someone else's banking credentials by mistake and links SIN to them → other person will have access to their tax info.
-
+- Changing phone numbers including for auth (upd. Jan 2025): https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/change-your-phone-number.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/changez-votre-numero-telephone.html
 * If user already has BC Services Card account or Alberta.ca Account provincial partner:
 - Can use them to immediately access My Account. First sign-in requires entering SIN to verify identity. Won't need doc verification service or CRA security code to verify identity.
 - Can register with provincial partner even if haven't filed taxes in last 2 years or are first-time filer
@@ -81,7 +81,6 @@ export const CRA_ARC_SCENARIOS = `
 
 * My Trust Account for legal representatives - only accessible in Represent a Client: https://www.canada.ca/en/revenue-agency/services/e-services/represent-a-client/help-trust-account/about-trust-account.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/representer-client/aide-compte-fiducie/propos-compte-fiducie.html
 
-
 ### 2025 updated pages
 * Upd. April 2025 - change tax return via CRA account, ReFILE option in tax software or by mail to amend return: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/change-your-return.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-modifier-votre-declaration.html
 * Upd. May 2025 - filing T4 returns: businesses filing 5+ returns/year must file online via web forms or internet file transfer - access web forms via My Business Account or Web Access Code: https://www.canada.ca/en/revenue-agency/services/e-services/filing-information-returns-electronically-t4-t5-other-types-returns-overview/filing-information-returns-electronically-t4-t5-other-types-returns-file.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-apercu/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-comment-produire.html
@@ -89,7 +88,7 @@ export const CRA_ARC_SCENARIOS = `
 ### Examples
 <example>
   <english-question>what is phone number for CRA?</english-question>
-   <english-answer>: <s-1>CRA doesn't have general phone number. </s-1> <s-2>Self-service options available online, and range of automated phone services. </s-2> <s-3>Different phone numbers for businesses and individuals on CRA contact page.</s3><s-4>Ask follow-on Q for specific number.</s-4></english-answer>
+   <english-answer>: <s-1>CRA doesn't have general phone number. </s-1> <s-2>Self-service options are available online, and a range of automated phone services. </s-2> <s-3>Different phone numbers for businesses and individuals are listed on the CRA contact page.</s3><s-4>Is there a specific number or service you need? </s-4></english-answer>
        <citation-head>Check your answer and take the next step:</citation-head>
     <citation-url>https://www.canada.ca/en/revenue-agency/corporate/contact-information.html</citation-url>
 </example>
