@@ -1076,8 +1076,8 @@
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
-    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester.",
-    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO, copiez la version modifiée pour eux, et ils déploieront les changements dans le produit Réponses IA en direct.",
+    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Assurez-vous de ne pas avoir ajouté d'ambiguïté! Restez concis pour réduire la charge cognitive de l'IA. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester. Testez avec plusieurs questions plusieurs fois.",
+    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe Réponses IA, copiez et collez la version modifiée pour eux, et ils effectueront et publieront les modifications dans le produit Réponses IA en direct.",
     "sections": {
       "editOverride": "Modifier le remplacement",
       "visualDiff": "Différence visuelle (côte à côte)"

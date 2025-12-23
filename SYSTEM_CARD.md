@@ -23,12 +23,12 @@
 
 ## Executive Summary
 
-AI Answers is a specialized AI assistant designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
+AI Answers is a specialized AI chat agent designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
 
 ## Current Status
 - **Environment**: Preparing for public pilot
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
-- **Evaluation**: Ongoing expert feedback collection and response scoring feeding AI evals & answers
+- **Evaluation**: Ongoing expert evaluation and response scoring feeding AI automated evals & answers
 - **Platform**: Departments can add prompt scenarios to meet specific needs
 
 ## System Purpose and Scope
@@ -65,9 +65,9 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
-- **Production models**: Azure OpenAI GPT-4 and GPT-4o Mini models
+- **Current poduction models**: Azure OpenAI GPT-4.1 and GPT-4o Mini models
 - **Temperature**: 0 (deterministic responses)
-- **Prompt engineering**: Chain-of-thought prompting with structured output, dept prompt pulled in as needed
+- **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
 
 ### Agentic Capabilities
