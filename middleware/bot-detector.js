@@ -35,6 +35,8 @@ async function detectBot(ua, ip) {
 
 export default async function botDetector(req, res, next) {
   try {
+    // Disable bot detection during automated tests
+    if (process.env.NODE_ENV === 'test') return next();
     const ua = req?.headers?.['user-agent'] || '';
     if (!ua) return next();
 

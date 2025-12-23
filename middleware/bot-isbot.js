@@ -4,6 +4,8 @@ import isbot from 'isbot';
 // Should run after session and fingerprint presence checks so we still have session data.
 export default function botIsBot(req, res, next) {
   try {
+    // Disable isbot-based rejection during automated tests
+    if (process.env.NODE_ENV === 'test') return next();
     const ua = (req && req.headers && (req.headers['user-agent'] || req.headers['User-Agent'])) || '';
     if (!ua) return next();
 
