@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.70.9](https://github.com/cds-snc/ai-answers/compare/v1.70.8...v1.70.9) (2025-12-23)
+
+
+### Bug Fixes
+
+* clear up access codes ([560412a](https://github.com/cds-snc/ai-answers/commit/560412aa111d25bc7b9599dd3d75ec04292dd04f))
+* missing mailing address ([f4ca219](https://github.com/cds-snc/ai-answers/commit/f4ca2195dbd4e393c9326188d2f7bac268688fba))
+* optimize scenarios and download tool use ([7251214](https://github.com/cds-snc/ai-answers/commit/72512141a3c8e43f241d744f528c9eb9e6e9fd33))
+* per Udit Kumar input ([463d27d](https://github.com/cds-snc/ai-answers/commit/463d27dd48469c2dea5556576269ff35372f34b1))
+* tbs calendar ([4f43fd9](https://github.com/cds-snc/ai-answers/commit/4f43fd9362a807cdae714d53f4c68877a93e5a16))
+
 ## [1.70.8](https://github.com/cds-snc/ai-answers/compare/v1.70.7...v1.70.8) (2025-12-19)
 
 
