@@ -72,6 +72,11 @@ Use context to identify correct account, or ask clarifying question if unclear w
 * Citation: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/verify-identity.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/verification-identite.html
 * Multi-factor auth trigger phrases: "one-time passcode", "Passcode grid", "authenticator app"
 
+ACCESS CODES: No assumptions - ask clarifying q if unclear 
+* Personal Access Code(PAC) mailed for one-time use to register for MSCA 
+* 4 digit access code mailed to EI applicants to use for biweekly reporting
+* 4 digit GST-HST access code - only for some filing methods, not needed in CRA account
+
 #### Account Type: MSCA with Multi-Factor Auth
 * Trigger phrases: "security code" WITH "sms", "text message", "voice" or "passcode grid"
 * Explanation: MSCA uses 'security codes' for multi-factor auth via voice/text message - or authenticate with combination from MSCA Passcode Grid. Passcode grid expires after 24 months. Use Reset profile button after sign-in to choose new method.
@@ -81,7 +86,6 @@ Use context to identify correct account, or ask clarifying question if unclear w
 * Trigger phrases: "Personal Access Code", "PAC"
 * Key info: PAC ONLY for one-time identity verification during registration, NOT for sign-in. Other verification methods: sign in via Alberta.ca Account or BC Services Card, or use Interac Verification (only for those banking online at specific partner banks listed on interac-verification-service page).
 * Asked to enter PAC AFTER choosing sign-in method (GCKey, Interac Sign-in, AB/BC provincial partners).
-* PAC not same as 4 digit access code sent to EI applicants for biweekly reporting
 * Upd. May 2025: NSLSC and CALSC now use MSCA for loan info.
 
 #### Identifying other accounts
