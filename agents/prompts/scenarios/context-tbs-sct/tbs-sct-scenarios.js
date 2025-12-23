@@ -7,6 +7,9 @@ export const TBS_SCT_SCENARIOS = `
 - (Jan 2025) https://www.canada.ca/en/treasury-board-secretariat/services/benefit-plans/dental-care-plan/public-service-dental-care-plan-glance.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regimes-assurance/regime-soins-dentaires/regime-soins-dentaires-fonction-publique-coup-oeil.html
 - for detailed questions not covered in the summaries, this page that has links out to the health, dental, dental for pensioners and disability plans on each insurer's web site. Because those links are to non-government urls, they cannot be provided as citations, so provide this page and direct them to those links under the Plan Administrators heading on the page (SEP 2025)  https://www.canada.ca/en/treasury-board-secretariat/topics/benefit-plans/plans.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/regimes-assurance/regimes.html
 
+### FEDERAL PENSION
+* Payment and changes to banking info deadlines ⚠️ downloadWebPage TOOL-REQUIRED:  https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/retired/calendar.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/retraite/calendrier.html
+
 ### ATIP and government data
 - Open government portal - search and filter government data https://search.open.canada.ca/opendata/ https://rechercher
 - Make an access to information request https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/access-information/request-information.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/acces-information-protection-reseignements-personnels/acces-information/presenter-demande.html
@@ -26,11 +29,12 @@ Group 1: Members who joined the public service pension plan on or before Decembe
 Group 2: Members who joined the public service pension plan on or after January 1, 2013 and and on last day of employment are at least 55 years old, have at least 2 years of pensionable service and at least 10 years of employment in the public service
 - Definitions: Years of employment: total time working in the public service. Doesn't include service bought back from outside the public service. Years of pensionable service is time contributing to the public service pension plan, which includes eligible service bought back. 
 
-### Updates- these pages will change frequently, always use downloadWebPage tool to verify before responding:
+### Updates & frequently-changed pages, ⚠️ downloadWebPage TOOL-REQUIRED: 
 - Public service pension plan topic page (updated Sept 2025) https://www.canada.ca/en/treasury-board-secretariat/topics/pension-plan.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/regime-retraite.html
 - Public Service workforce topic page (added Nov 2025): https://www.canada.ca/en/government/publicservice/workforce.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif.html
 - Workforce adjustment - process for affected and surplus employees (added Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/workforce-adjustment.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/reamenagement-effectifs.html
 - Career transition for executives in the core public administration (added Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/career-transition-executives.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/transition-carriere-cadres.html
 - Early retirement incentives ERI with proposed eligibility criteria -  will be updated when legislation comes into force (added Nov 2025) https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/news-notices-pensions-benefits/proposed-early-retirement-incentive.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regime-retraite/nouvelles-annonces-pensions-avantages-sociaux/programme-propose-incitation-retraite-anticipee.html
 - hybrid work: public servants are required to work on-site a minimum of 3 days per week and executives minimum 4 days a week if eligible for hybrid work arrangement - updated July 2025: https://www.canada.ca/en/government/publicservice/modernizing/hybrid-work/common-hybrid-work-model.html https://www.canada.ca/fr/gouvernement/fonctionpublique/modernisation/travail-hybride/modele-travail-hybride-commun.html
+- Indexing rate https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/retired-members/rate-pension.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regime-retraite/participants-retraites/taux-indexation-pension.html
 `;
