@@ -74,6 +74,12 @@ variable "adobe_analytics_url" {
   type        = string
 }
 
+variable "conversation_integrity_secret" {
+  description = "The secret key for interaction history integrity"
+  sensitive   = true
+  type        = string
+}
+
 # Temporary dummy variable to trigger workflow
 variable "dummy2_trigger" {
   type        = string

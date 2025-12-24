@@ -38,11 +38,19 @@ const AnswerService = {
       conversationHistory: conversationHistory,
     });
 
+    // Extract historySignature from the last AI message in history
+    const lastAiMessage = [...conversationHistory].reverse().find(m => m.sender === 'ai');
+    const historySignature = lastAiMessage?.historySignature ||
+      lastAiMessage?.interaction?.historySignature ||
+      lastAiMessage?.interaction?.answer?.historySignature ||
+      null;
+
     // Send structured context to the server and let it build the system prompt.
     return {
       provider: provider,
       message: message,
       conversationHistory: conversationHistory,
+      historySignature: historySignature,
       chatId: chatId,
       lang: lang,
       department: context?.department || '',
@@ -199,7 +207,7 @@ const AnswerService = {
       englishAnswer.includes("An answer to your question wasn't found on Government of Canada websites.")
     ) {
       answerType = 'not-gc';
-      
+
     }
 
     const confidenceRatingRegex = /<confidence>(.*?)<\/confidence>/s;

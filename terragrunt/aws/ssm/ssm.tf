@@ -139,3 +139,14 @@ resource "aws_ssm_parameter" "adobe_analytics_url" {
     Terraform  = true
   }
 }
+
+resource "aws_ssm_parameter" "conversation_integrity_secret" {
+  name  = "conversation_integrity_secret"
+  type  = "SecureString"
+  value = var.conversation_integrity_secret
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}

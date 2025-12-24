@@ -37,6 +37,25 @@ vi.mock('../../../agents/AgentFactory.js', () => ({
   createRankerAgent: vi.fn(),
 }));
 
+vi.mock('../../../middleware/chat-session.js', () => ({
+  withSession: vi.fn((handler) => async (req, res) => {
+    req.chatId = 'test-chat';
+    return handler(req, res);
+  }),
+}));
+
+vi.mock('../../../services/ServerLoggingService.js', () => ({
+  default: {
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+vi.mock('../../../middleware/auth.js', () => ({
+  withOptionalUser: vi.fn((handler) => handler),
+}));
+
 // Do not mock db-connect here; we will connect mongoose to the in-memory server
 
 describe('chat-similar-answer handler', () => {
@@ -66,7 +85,7 @@ describe('chat-similar-answer handler', () => {
     // Clear database state before each test
     try {
       await reset();
-    } catch (_) {}
+    } catch (_) { }
 
     // Ensure Answer, Question and Interaction models are registered (db-connect imports them already)
     const AnswerModel = mongoose.model('Answer');
@@ -116,14 +135,16 @@ describe('chat-similar-answer handler', () => {
     // Expect the orchestrator to have been invoked with formatted questions
     expect(mockInvokeWithStrategy).toHaveBeenCalled();
 
-    // With a single-turn query (index 0), select the first turn answer from the chosen flow
+    // select the matched turn answer from the chosen flow
     expect(res.json).toHaveBeenCalled();
     const responseBody = res.json.mock.calls[0][0];
     expect(responseBody).toBeDefined();
-    expect(responseBody.answer).toContain('Answer 1');
-    expect(responseBody.englishAnswer).toBe('Answer 1');
-    expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000001');
+    expect(responseBody.answer).toContain('Answer 2');
+    expect(responseBody.englishAnswer).toBe('Answer 2');
+    expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000002');
     expect(responseBody.reRanked).toBe(true);
+    expect(responseBody.historySignature).toBeDefined();
+    expect(typeof responseBody.historySignature).toBe('string');
   });
 
   it('uses questions array (conversation history) when provided', async () => {
@@ -139,13 +160,11 @@ describe('chat-similar-answer handler', () => {
     expect(Array.isArray(firstArgList)).toBe(true);
     expect(firstArgList).toEqual(questions);
 
-    // Ensure orchestrator receives formatted userQuestions string (EmbeddingService formats and labels)
+    // Ensure orchestrator receives sanitized userQuestions array
     expect(mockInvokeWithStrategy).toHaveBeenCalled();
     const orchestratorArg = mockInvokeWithStrategy.mock.calls[0][0];
-    expect(typeof orchestratorArg.request.userQuestions).toBe('string');
-    expect(orchestratorArg.request.userQuestions).toContain('FORMATTED:');
-    expect(orchestratorArg.request.userQuestions).toContain('How do I apply?');
-    expect(orchestratorArg.request.userQuestions).toContain('What documents are required?');
+    expect(Array.isArray(orchestratorArg.request.userQuestions)).toBe(true);
+    expect(orchestratorArg.request.userQuestions).toEqual(questions);
 
     // Should still return a response body
     expect(res.json).toHaveBeenCalled();
@@ -155,12 +174,14 @@ describe('chat-similar-answer handler', () => {
     // Ensure ranker returns an ordering that includes both candidates,
     // so the selector can pick the one with enough turns (index 1)
     mockInvokeWithStrategy.mockReset();
-    mockInvokeWithStrategy.mockResolvedValue({ results: [
-      // First result fails a check, so interpretRankResult skips it
-      { index: 0, checks: { numbers: 'fail', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
-      // Second result passes, so index 1 is selected
-      { index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }
-    ] });
+    mockInvokeWithStrategy.mockResolvedValue({
+      results: [
+        // First result fails a check, so interpretRankResult skips it
+        { index: 0, checks: { numbers: 'fail', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
+        // Second result passes, so index 1 is selected
+        { index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }
+      ]
+    });
 
     const req = { method: 'POST', body: { questions: ['What is SCIS?', 'Where are the forms?'], selectedAI: 'openai', language: 'en' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
@@ -173,6 +194,7 @@ describe('chat-similar-answer handler', () => {
     // Expect the answer to be for the second turn (interaction 2)
     expect(responseBody.answer).toContain('Answer 2');
     expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000002');
+    expect(responseBody.historySignature).toBeDefined();
   });
 
   it('returns empty when ranker yields no usable result (continue normal flow)', async () => {

@@ -17,8 +17,18 @@ services:
       # Note: quote the path because it contains a space. Use forward slashes
       # for compatibility with Docker on Windows.
       - 'C:/mongodb data:/data/db'
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      # Bind mount for Qdrant storage on Windows
+      # Use forward slashes and quote the path for compatibility
+      - 'C:/qdrant_data:/qdrant/storage'
 
-# We're using a host bind mount (no named Docker volume). Make sure the
+# We're using host bind mounts (no named Docker volumes). Make sure the
 # C: drive (or the specific host path) is shared with Docker Desktop
 # (Settings > Resources > File Sharing) and that permissions allow Docker
-# to write to the folder. You can create the folder manually if needed.
+# to write to the folder. You can create the folders manually if needed.
