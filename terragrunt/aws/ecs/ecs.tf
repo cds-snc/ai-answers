@@ -47,6 +47,10 @@ locals {
     {
       "name"      = "REACT_APP_ADOBE_ANALYTICS_URL"
       "valueFrom" = var.adobe_analytics_url_arn
+    },
+    {
+      "name"      = "SESSION_SECRET"
+      "valueFrom" = var.session_secret_arn
     }
   ]
 }

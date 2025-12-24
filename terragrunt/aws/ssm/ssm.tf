@@ -139,3 +139,13 @@ resource "aws_ssm_parameter" "adobe_analytics_url" {
     Terraform  = true
   }
 }
+resource "aws_ssm_parameter" "session_secret" {
+  name  = "session_secret"
+  type  = "SecureString"
+  value = var.session_secret
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
