@@ -2333,55 +2333,36 @@ fieldset.gc-chckbxrdio {
 			color: #0535d2;
 		}
 
-/* ChatLogsDashboard.css */
 
-/* Table container with horizontal scrolling */
-.chat-logs-table-container {
-  width: 100%;
+/* Table container with horizontal scrolling - full width breakout */
+.chat-dashboard-table-container {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   overflow-x: auto;
   margin-block-start: var(--gcds-spacing-200);
   border: 1px solid var(--gcds-color-grayscale-300);
   border-radius: var(--gcds-border-radius);
-}
-
-/* DataTables styling */
-.chat-logs-table {
-  width: 100% !important;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+  padding: var(--gcds-spacing-200);
 }
 
 /* Zebra striping for table rows */
+.chat-dashboard-table tbody tr:nth-child(odd) {
+  background-color: var(--gcds-color-grayscale-0);
+}
+
+.chat-dashboard-table tbody tr:nth-child(even) {
+  background-color: var(--gcds-color-grayscale-50);
+}
+
+/* Zebra striping for table rows
 .chat-logs-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-color-grayscale-0);
 }
 
 .chat-logs-table tbody tr:nth-child(even) {
   background-color: var(--gcds-color-grayscale-50);
-}
-
-/* Hover effect for rows */
-.chat-logs-table tbody tr:hover {
-  background-color: var(--gcds-color-blue-100) !important;
-}
-
-/* Table header styling */
-.chat-logs-table thead th {
-  background-color: var(--gcds-color-blue-900);
-  color: var(--gcds-color-grayscale-01);
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-100);
-  text-align: left;
-  font-weight: 600;
-  border-bottom: 2px solid var(--gcds-color-blue-900);
-  white-space: nowrap;
-}
-
-/* Table cell styling */
-.chat-logs-table tbody td {
-  padding: var(--gcds-spacing-125) var(--gcds-spacing-100);
-  border-bottom: 1px solid var(--gcds-color-grayscale-300);
-  vertical-align: top;
-}
+} */
 
 /* Base label styles */
 .label {
