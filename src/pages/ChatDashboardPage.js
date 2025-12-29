@@ -62,12 +62,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     [lang]
   );
 
-  // Helper function to truncate URL to path only
+  // Helper function to truncate URL to path only (max 3 segments)
   const truncateUrl = useCallback((url) => {
     if (!url) return '';
     try {
       const urlObj = new URL(url);
-      return urlObj.pathname;
+      const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
+      
+      // Keep only the last 3 path segments
+      const truncatedParts = pathParts.slice(-3);
+      
+      return '/' + truncatedParts.join('/');
     } catch {
       return url;
     }

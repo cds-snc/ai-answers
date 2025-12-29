@@ -2386,9 +2386,9 @@ fieldset.gc-chckbxrdio {
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-75) var(--gcds-spacing-100);
-  border-radius: var(--gcds-border-radius);
-  font-size: 16px;
+  padding: var(--gcds-spacing-50) var(--gcds-spacing-150);
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -2396,38 +2396,32 @@ fieldset.gc-chckbxrdio {
 .label.public {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
-  border: 1px solid var(--gcds-color-blue-500);
 }
 
 .label.admin {
   background-color: #E1BEE7;
   color: #6A1B9A;
-  border: 1px solid #9C27B0;
 }
 
 .label.not-gc {
   background-color: #B2DFDB;
   color: #00695C;
-  border: 1px solid #009688;
 }
 
 /* Answer type labels */
 .label.normal {
-  background-color: var(--gcds-color-blue-750);
-  color: var(--gcds-color-grayscale-01);
-  border: 1px solid var(--gcds-color-blue-700);
+  background-color: var(--gcds-color-grayscale-50);
+  color: var(--gcds-color-grayscale-700);
 }
 
 .label.clarifying-question {
   background-color: #F3E5F5;
   color: #7B1FA2;
-  border: 1px solid #BA68C8;
 }
 
 .label.pt-muni {
   background-color: #E0F2F1;
   color: #004D40;
-  border: 1px solid #00796B;
 }
 
 /* Evaluation labels */
