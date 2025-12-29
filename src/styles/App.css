@@ -2332,3 +2332,138 @@ fieldset.gc-chckbxrdio {
 		.field-container:focus-within #displayReferringURL {
 			color: #0535d2;
 		}
+
+/* ChatLogsDashboard.css */
+
+/* Table container with horizontal scrolling */
+.chat-logs-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-block-start: var(--gcds-spacing-200);
+  border: 1px solid var(--gcds-color-grayscale-300);
+  border-radius: var(--gcds-border-radius);
+}
+
+/* DataTables styling */
+.chat-logs-table {
+  width: 100% !important;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+/* Zebra striping for table rows */
+.chat-logs-table tbody tr:nth-child(odd) {
+  background-color: var(--gcds-color-grayscale-01);
+}
+
+.chat-logs-table tbody tr:nth-child(even) {
+  background-color: var(--gcds-color-grayscale-50);
+}
+
+/* Hover effect for rows */
+.chat-logs-table tbody tr:hover {
+  background-color: var(--gcds-color-blue-100) !important;
+}
+
+/* Table header styling */
+.chat-logs-table thead th {
+  background-color: var(--gcds-color-blue-900);
+  color: var(--gcds-color-grayscale-01);
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-100);
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--gcds-color-blue-900);
+  white-space: nowrap;
+}
+
+/* Table cell styling */
+.chat-logs-table tbody td {
+  padding: var(--gcds-spacing-125) var(--gcds-spacing-100);
+  border-bottom: 1px solid var(--gcds-color-grayscale-300);
+  vertical-align: top;
+}
+
+/* Base label styles */
+.label {
+  display: inline-block;
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-100);
+  border-radius: var(--gcds-border-radius);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* User Type Labels */
+.label.public {
+  background-color: var(--gcds-color-blue-100);
+  color: var(--gcds-color-blue-650);
+  border: 1px solid var(--gcds-color-blue-500);
+}
+
+.label.admin {
+  background-color: #E1BEE7;
+  color: #6A1B9A;
+  border: 1px solid #9C27B0;
+}
+
+.label.not-gc {
+  background-color: #B2DFDB;
+  color: #00695C;
+  border: 1px solid #009688;
+}
+
+/* Answer Type Labels */
+.label.normal {
+  background-color: var(--gcds-color-blue-750);
+  color: var(--gcds-color-grayscale-01);
+  border: 1px solid var(--gcds-color-blue-700);
+}
+
+.label.clarifying-question {
+  background-color: #F3E5F5;
+  color: #7B1FA2;
+  border: 1px solid #BA68C8;
+}
+
+.label.pt-muni {
+  background-color: #E0F2F1;
+  color: #004D40;
+  border: 1px solid #00796B;
+}
+
+/* Evaluation labels */
+
+/* Correct (Green) */
+.label.correct {
+  background-color: var(--gcds-color-green-100);
+  color: var(--gcds-color-green-700);
+  border: 1px solid var(--gcds-color-green-500);
+}
+
+/* Needs Improvement (Yellow) */
+.label.needsImprovement {
+  background-color: var(--gcds-color-yellow-100);
+  color: var(--gcds-color-grayscale-900);
+  border: 1px solid var(--gcds-color-yellow-500);
+}
+
+/* All Errors (Red) */
+.label.hasError,
+.label.hasCitationError,
+.label.harmful {
+  background-color: var(--gcds-color-red-100);
+  color: var(--gcds-color-red-700);
+  border: 1px solid var(--gcds-color-red-500);
+}
+
+/* Loading indicator styling */
+.loading-indicator {
+  background-color: var(--gcds-color-yellow-100);
+  border: 1px solid var(--gcds-color-yellow-500);
+  border-radius: var(--gcds-border-radius);
+  padding: var(--gcds-spacing-200);
+  margin-block-end: var(--gcds-spacing-200);
+  text-align: center;
+  font-weight: 600;
+  color: var(--gcds-color-grayscale-900);
+}

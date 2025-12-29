@@ -21,6 +21,110 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const [, _setProgress] = useState('0%');
   const [totalCount, setTotalCount] = useState(0);
 
+  // Helper function to truncate admin page URL
+  const truncateAdminUrl = (url) => {
+    if (!url) return '';
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname;
+    } catch {
+      return url;
+    }
+  };
+
+  // Helper function to truncate email
+    const truncateEmail = (email) => {
+    if (!email) return '';
+    return email.split('@')[0];
+  };
+
+const columns = [
+  {
+    title: t('admin.chatLogs.columns.chatId') || 'Chat ID',
+    data: 'chatId',
+    render: (data) => data || ''
+  },
+  {
+    title: t('admin.chatLogs.columns.department') || 'Department',
+    data: 'department',
+    render: (data) => data || ''
+  },
+  {
+    title: t('admin.chatLogs.columns.pageLanguage') || 'Page',
+    data: 'pageLanguage',
+    render: (value) => {
+      if (!value) return '';
+      const normalized = value.toLowerCase().includes('fr') ? 'FR' : 'EN';
+      return normalized;
+    }
+  },
+  {
+    title: t('admin.chatLogs.columns.expertEmail') || 'Expert Email',
+    data: 'expertEmail',
+    render: (data) => truncateEmail(data)
+  },
+  {
+    title: t('admin.chatLogs.columns.creatorEmail') || 'Creator Email',
+    data: 'creatorEmail',
+    render: (data) => truncateEmail(data)
+  },
+  {
+    title: t('admin.chatLogs.columns.date') || 'Date',
+    data: 'date',
+    render: (data) => {
+      if (!data) return '';
+      const date = new Date(data);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}/${month}/${day}<br/>${hours}:${minutes}`;
+    }
+  },
+  {
+    title: t('admin.chatLogs.columns.referringUrl') || 'Referring URL',
+    data: 'referringUrl',
+    render: (data) => {
+      if (!data) return '<span style="font-style: italic; color: #666;">none</span>';
+      const truncated = truncateAdminUrl(data);
+      return truncated;
+    }
+  },
+  {
+    title: t('admin.chatLogs.columns.userType') || 'User Type',
+    data: 'userType',
+    render: (data) => {
+      const type = data || 'public';
+      return `<span class="label ${type}">${type}</span>`;
+    }
+  },
+  {
+    title: t('admin.chatLogs.columns.answerType') || 'Answer Type',
+    data: 'answerType',
+    render: (data) => {
+      const type = data || 'normal';
+      return `<span class="label ${type}">${type}</span>`;
+    }
+  },
+  {
+    title: t('admin.chatLogs.columns.partnerEval') || 'Partner Eval',
+    data: 'partnerEval',
+    render: (data) => {
+      if (!data) return '';
+      return `<span class="label ${data}">${data}</span>`;
+    }
+  },
+  {
+    title: t('admin.chatLogs.columns.aiEval') || 'AI Eval',
+    data: 'aiEval',
+    render: (data) => {
+      if (!data) return '';
+      return `<span class="label ${data}">${data}</span>`;
+    }
+  }
+];
+
   const fetchLogs = async (filters = null, append = false) => {
     setLoading(true);
     if (!append) {
@@ -105,35 +209,36 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     ExportService.export(logs, filename('xlsx'));
   };
 
-  return (
-    <div className="space-y-6">
-      {loading && (
-        <div className="loading-indicator">
-          Loading logs: {totalCount} records left to load
-        </div>
-      )}
-      {!hasLoadedData && (
-        <div className="bg-white shadow rounded-lg p-4">
-          <GcdsButton
-            onClick={handleGetLogs}
-            disabled={loading}
-            className="me-400 hydrated"
-          >
-            {loading ? t('admin.chatLogs.loading') : t('admin.chatLogs.getLogs')}
-          </GcdsButton>
-        </div>
-      )}
+return (
+  <div className="space-y-6">
+    {loading && (
+      <div className="loading-indicator">
+        Loading logs: {totalCount} records left to load
+      </div>
+    )}
+    {!hasLoadedData && (
+      <div className="bg-white shadow rounded-lg p-4">
+        <GcdsButton
+          onClick={handleGetLogs}
+          disabled={loading}
+          className="me-400 hydrated"
+        >
+          {loading ? t('admin.chatLogs.loading') : t('admin.chatLogs.getLogs')}
+        </GcdsButton>
+      </div>
+    )}
 
-      {showFilterPanel && (
-        <FilterPanel
-          onApplyFilters={handleApplyFilters}
-          onClearFilters={handleClearFilters}
-          isVisible={true}
-          storageKey={FILTER_PANEL_STORAGE_KEY}
-        />
-      )}
+    {showFilterPanel && (
+      <FilterPanel
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        isVisible={true}
+        storageKey={FILTER_PANEL_STORAGE_KEY}
+      />
+    )}
 
-      {logs.length > 0 && hasLoadedData && (
+    {logs.length > 0 && hasLoadedData && (
+      <>
         <div className="flex items-center gap-4 flex-wrap">
           <div className="mrgn-tp-1r">
             {t('admin.chatLogs.found')} {logs.length} {t('admin.chatLogs.interactionsFound')}
@@ -161,9 +266,25 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
             {t('admin.chatLogs.downloadExcel')}
           </GcdsButton>
         </div>
-      )}
-    </div>
-  );
+        
+        <div className="chat-logs-table-container">
+          <DataTable
+            data={logs}
+            columns={columns}
+            className="display chat-logs-table"
+            options={{
+              paging: true,
+              searching: true,
+              ordering: true,
+              order: [[5, 'desc']],
+              scrollX: true
+            }}
+          />
+        </div>
+      </>
+    )}
+  </div>
+);
 };
 
 export default ChatLogsDashboard;
