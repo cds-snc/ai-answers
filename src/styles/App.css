@@ -2455,15 +2455,3 @@ fieldset.gc-chckbxrdio {
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
 }
-
-/* Loading indicator styling */
-.loading-indicator {
-  background-color: var(--gcds-color-yellow-100);
-  border: 1px solid var(--gcds-color-yellow-500);
-  border-radius: var(--gcds-border-radius);
-  padding: var(--gcds-spacing-200);
-  margin-block-end: var(--gcds-spacing-200);
-  text-align: center;
-  font-weight: 600;
-  color: var(--gcds-color-grayscale-900);
-}
