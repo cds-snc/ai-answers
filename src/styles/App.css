@@ -2367,7 +2367,7 @@ fieldset.gc-chckbxrdio {
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-50) var(--gcds-spacing-50);
+  padding: var(--gcds-spacing-25) var(--gcds-spacing-50);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
