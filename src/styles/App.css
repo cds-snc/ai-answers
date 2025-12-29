@@ -2353,7 +2353,7 @@ fieldset.gc-chckbxrdio {
 
 /* Zebra striping for table rows */
 .chat-logs-table tbody tr:nth-child(odd) {
-  background-color: var(--gcds-color-grayscale-01);
+  background-color: var(--gcds-color-grayscale-0);
 }
 
 .chat-logs-table tbody tr:nth-child(even) {
@@ -2386,7 +2386,7 @@ fieldset.gc-chckbxrdio {
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-50) var(--gcds-spacing-150);
+  padding: var(--gcds-spacing-50) var(--gcds-spacing-50);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
@@ -2410,7 +2410,7 @@ fieldset.gc-chckbxrdio {
 
 /* Answer type labels */
 .label.normal {
-  background-color: var(--gcds-color-grayscale-50);
+  background-color: var(--gcds-color-grayscale-100);
   color: var(--gcds-color-grayscale-700);
 }
 
@@ -2430,14 +2430,12 @@ fieldset.gc-chckbxrdio {
 .label.correct {
   background-color: var(--gcds-color-green-100);
   color: var(--gcds-color-green-700);
-  border: 1px solid var(--gcds-color-green-500);
 }
 
 /* Needs improvement (yellow) */
 .label.needsImprovement {
   background-color: var(--gcds-color-yellow-100);
   color: var(--gcds-color-grayscale-900);
-  border: 1px solid var(--gcds-color-yellow-500);
 }
 
 /* All errors (red) */
