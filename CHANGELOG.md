@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.71.0](https://github.com/cds-snc/ai-answers/compare/v1.70.9...v1.71.0) (2025-12-29)
+
+
+### Features
+
+* admin filter improvements ([617b38e](https://github.com/cds-snc/ai-answers/commit/617b38e0ea49593bfb342a55ec55ad108477c8ee))
+* admin filter table improvements ([d8a3541](https://github.com/cds-snc/ai-answers/commit/d8a354124e4faae18ec55036d970c268d00607f9))
+* changes to right file ([23675c1](https://github.com/cds-snc/ai-answers/commit/23675c14b82baabf1ef1cae7dfe7b2aec9076de1))
+* cleanup ([7c1ec25](https://github.com/cds-snc/ai-answers/commit/7c1ec25d22f90dd0cef1a0324b08b587556dd0c4))
+* css ([1b66b74](https://github.com/cds-snc/ai-answers/commit/1b66b74b930e63e440e9ea88066c1bd86119a2ee))
+* css ([8560989](https://github.com/cds-snc/ai-answers/commit/8560989ef28af93fb65641f6aebe11df2e29ba65))
+* css ([f3b4174](https://github.com/cds-snc/ai-answers/commit/f3b4174f9f5630c15f90cb09b55352f5b310a89e))
+* fix css ([8994337](https://github.com/cds-snc/ai-answers/commit/89943377339ae81f47f8cfa07e2a21a380cbafd1))
+* pills ([92e300e](https://github.com/cds-snc/ai-answers/commit/92e300ea0a3cdce7c362f38f8bee027f2034b9b5))
+* reduce contrast ([aa1a965](https://github.com/cds-snc/ai-answers/commit/aa1a965a36d394fb4ff9300a8236ae03db56ad51))
+* rmv ([5a7a9a4](https://github.com/cds-snc/ai-answers/commit/5a7a9a4f72dd495a3ba4d8b9f72553a5c73e974a))
+* spacing ([887229e](https://github.com/cds-snc/ai-answers/commit/887229ec7e2d14f4060369f51efa963f4e3b41b8))
+* spacing ([5bb89e8](https://github.com/cds-snc/ai-answers/commit/5bb89e80f049072c4eb077533fe71ddb1aace59b))
+* spacing ([98dbdc3](https://github.com/cds-snc/ai-answers/commit/98dbdc3a95683835a68ca3b7244bba91791785f8))
+* spacing ([6e9482b](https://github.com/cds-snc/ai-answers/commit/6e9482bccb27ff85d3bbfe48917f1ac8c00c203a))
+* test ([e2a622b](https://github.com/cds-snc/ai-answers/commit/e2a622b1384bea8b05355142d18582957b172283))
+* tighten fonts ([a6efc4d](https://github.com/cds-snc/ai-answers/commit/a6efc4d18bcf74da307d2bb55968d5ca58be5249))
+* wrong css link ([a35bc31](https://github.com/cds-snc/ai-answers/commit/a35bc3196f882fe50e42c30e1680ad004ce42a10))
+
 ## [1.70.9](https://github.com/cds-snc/ai-answers/compare/v1.70.8...v1.70.9) (2025-12-23)
 
 
