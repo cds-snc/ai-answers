@@ -2388,12 +2388,11 @@ fieldset.gc-chckbxrdio {
   display: inline-block;
   padding: var(--gcds-spacing-75) var(--gcds-spacing-100);
   border-radius: var(--gcds-border-radius);
-  font-size: 0.85rem;
+  font-size: 16px;
   font-weight: 500;
-  text-transform: capitalize;
 }
 
-/* User Type Labels */
+/* User type labels */
 .label.public {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
@@ -2412,7 +2411,7 @@ fieldset.gc-chckbxrdio {
   border: 1px solid #009688;
 }
 
-/* Answer Type Labels */
+/* Answer type labels */
 .label.normal {
   background-color: var(--gcds-color-blue-750);
   color: var(--gcds-color-grayscale-01);
@@ -2433,21 +2432,21 @@ fieldset.gc-chckbxrdio {
 
 /* Evaluation labels */
 
-/* Correct (Green) */
+/* Correct (green) */
 .label.correct {
   background-color: var(--gcds-color-green-100);
   color: var(--gcds-color-green-700);
   border: 1px solid var(--gcds-color-green-500);
 }
 
-/* Needs Improvement (Yellow) */
+/* Needs improvement (yellow) */
 .label.needsImprovement {
   background-color: var(--gcds-color-yellow-100);
   color: var(--gcds-color-grayscale-900);
   border: 1px solid var(--gcds-color-yellow-500);
 }
 
-/* All Errors (Red) */
+/* All errors (red) */
 .label.hasError,
 .label.hasCitationError,
 .label.harmful {
