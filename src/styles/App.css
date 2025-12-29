@@ -2337,8 +2337,8 @@ fieldset.gc-chckbxrdio {
 /* Table container with horizontal scrolling - full width breakout */
 .chat-dashboard-table-container {
   width: 90vw;
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: calc(50% - 45vw);
+  margin-right: calc(50% - 45vw);
   overflow-x: auto;
   margin-block-start: var(--gcds-spacing-200);
   border: 1px solid var(--gcds-color-grayscale-300);
@@ -2367,7 +2367,7 @@ fieldset.gc-chckbxrdio {
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-50) var(--gcds-spacing-50);
+  padding: var(--gcds-spacing-25) var(--gcds-spacing-25);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
