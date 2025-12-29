@@ -2332,3 +2332,87 @@ fieldset.gc-chckbxrdio {
 		.field-container:focus-within #displayReferringURL {
 			color: #0535d2;
 		}
+
+
+/* Table container with horizontal scrolling - full width breakout */
+.chat-dashboard-table-container {
+  width: 90vw;
+  margin-left: calc(50% - 45vw);
+  margin-right: calc(50% - 45vw);
+  overflow-x: auto;
+  margin-block-start: var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-200);
+}
+
+/* Zebra striping for table rows */
+.chat-dashboard-table tbody tr:nth-child(odd) {
+  background-color: var(--gcds-link-light);
+}
+
+.chat-dashboard-table tbody tr:nth-child(even) {
+  background-color: var(--gcds-color-grayscale-50);
+}
+
+/* Base label styles */
+.label {
+  display: inline-block;
+  padding: var(--gcds-spacing-25) var(--gcds-spacing-50);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* User type labels */
+.label.public {
+  background-color: var(--gcds-color-blue-100);
+  color: var(--gcds-color-blue-650);
+}
+
+.label.admin {
+  background-color: #E1BEE7;
+  color: #6A1B9A;
+}
+
+.label.not-gc {
+  background-color: #B2DFDB;
+  color: #00695C;
+}
+
+/* Answer type labels */
+.label.normal {
+  background-color: var(--gcds-color-grayscale-100);
+  color: var(--gcds-color-grayscale-700);
+}
+
+.label.clarifying-question {
+  background-color: #F3E5F5;
+  color: #7B1FA2;
+}
+
+.label.pt-muni {
+  background-color: #E0F2F1;
+  color: #004D40;
+}
+
+/* Evaluation labels */
+
+/* Correct (green) */
+.label.correct {
+  background-color: var(--gcds-color-green-100);
+  color: var(--gcds-color-green-700);
+}
+
+/* Needs improvement (yellow) */
+.label.needsImprovement {
+  background-color: var(--gcds-color-yellow-100);
+  color: var(--gcds-color-grayscale-900);
+}
+
+/* All errors (red) */
+.label.hasError,
+.label.hasCitationError,
+.label.harmful {
+  background-color: var(--gcds-color-red-100);
+  color: var(--gcds-color-red-700);
+  border: 1px solid var(--gcds-color-red-500);
+}

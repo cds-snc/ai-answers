@@ -5,6 +5,7 @@ import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
+import '../styles/App.css';
 
 DataTable.use(DT);
 
@@ -43,7 +44,6 @@ const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  // `rows` was retained for compatibility in older code but is unused in server-side mode
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
@@ -62,22 +62,44 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     [lang]
   );
 
+  // Helper function to truncate URL to path only (max 3 segments)
+  const truncateUrl = useCallback((url) => {
+    if (!url) return '';
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
+      
+      // Keep only the last 3 path segments
+      const truncatedParts = pathParts.slice(-3);
+      
+      return '/' + truncatedParts.join('/');
+    } catch {
+      return url;
+    }
+  }, []);
+
+  // Helper function to truncate email to username only
+  const truncateEmail = useCallback((email) => {
+    if (!email) return '';
+    return email.split('@')[0];
+  }, []);
+
+  // Helper function to format date as YYYY/MM/DD with time on separate line
   const formatDate = useCallback((dateStr) => {
     if (!dateStr) return '';
     try {
       const date = new Date(dateStr);
-      return new Intl.DateTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}/${month}/${day}<br/>${hours}:${minutes}`;
     } catch (err) {
       console.error('Failed to format date', err);
       return dateStr;
     }
-  }, [lang]);
+  }, []);
 
   // Map DataTables column index to API orderBy fields
   const orderByForColumn = useCallback((colIdx) => {
@@ -92,7 +114,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, []);
 
   useEffect(() => {
-    // On load, restore saved FilterPanel state (only keys the new panel actually stores)
+    // On load, restore saved FilterPanel state
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
@@ -107,7 +129,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
             if (parsed.answerType) filters.answerType = parsed.answerType;
             if (parsed.partnerEval) filters.partnerEval = parsed.partnerEval;
             if (parsed.aiEval) filters.aiEval = parsed.aiEval;
-            // FilterPanel stores a `dateRange` object with local datetime strings; convert when present
             if (parsed.dateRange) {
               if (parsed.dateRange.startDate) {
                 const sd = new Date(parsed.dateRange.startDate);
@@ -129,13 +150,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       // ignore corrupt localStorage entries
     }
-    // mark ready to render table after attempting to restore filters
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
-  // When user applies filters, fetch with those filters but keep any
-  // existing table UI params (page/order/search). Only clear table params
-  // when the user explicitly clears filters.
   const handleApplyFilters = useCallback((filters) => {
     const enrichedFilters = { ...(filters || {}) };
     const tzOffset = getTimezoneOffsetMinutes(enrichedFilters.startDate || enrichedFilters.endDate);
@@ -143,12 +160,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       enrichedFilters.timezoneOffsetMinutes = tzOffset;
     }
     filtersRef.current = enrichedFilters;
-    // trigger table reload if available
     try {
       if (tableApiRef.current) {
         tableApiRef.current.ajax.reload();
       } else {
-        // if table not ready, force re-init
         setTableKey((prev) => prev + 1);
       }
     } catch (e) {
@@ -157,10 +172,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, []);
 
   const handleClearFilters = useCallback((filtersFromPanel) => {
-    // Clear saved table state so the DataTable resets to defaults.
+    // Clear saved table state
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        // remove both the per-lang key and the base key for backwards compat
         try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
         try { window.localStorage.removeItem(TABLE_STORAGE_KEY); } catch (e) { void e; }
         console.debug && console.debug('ChatDashboard: cleared local table storage', LOCAL_TABLE_STORAGE_KEY, TABLE_STORAGE_KEY);
@@ -168,7 +182,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       void e;
     }
-    // force DataTable re-init so restored state is reset
     setTableKey((prev) => prev + 1);
     if (filtersFromPanel) {
       const enrichedFilters = { ...filtersFromPanel };
@@ -200,21 +213,20 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       render: (value, type, row) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
-        // Use the chat's original pageLanguage, fallback to 'en' if not available
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
         return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
       }
     },
     {
       title: t('admin.chatDashboard.columns.department', 'Department'),
-      data: 'department'
+      data: 'department',
+      render: (value) => escapeHtmlAttribute(value || '')
     },
     {
       title: t('admin.chatDashboard.columns.pageLanguage', 'Page'),
       data: 'pageLanguage',
       render: (value) => {
         if (!value) return '';
-        // Display just 'en' or 'fr' in uppercase for readability
         const normalized = value.toLowerCase().includes('fr') ? 'FR' : 'EN';
         return escapeHtmlAttribute(normalized);
       }
@@ -223,16 +235,14 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       title: t('admin.chatDashboard.columns.expertEmail', 'Expert email'),
       data: 'expertEmail',
       render: (value) => {
-        // Only show expert email (from expertFeedback), no fallback to creatorEmail
-        return escapeHtmlAttribute(value || '');
+        return escapeHtmlAttribute(truncateEmail(value || ''));
       }
     },
     {
       title: t('admin.chatDashboard.columns.creatorEmail', 'Creator email'),
       data: 'creatorEmail',
       render: (value) => {
-        // Only show creator email (chat.user), no fallback to expertEmail
-        return escapeHtmlAttribute(value || '');
+        return escapeHtmlAttribute(truncateEmail(value || ''));
       }
     },
     {
@@ -243,29 +253,44 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'),
       data: 'referringUrl',
-      render: (value) => escapeHtmlAttribute(value || '')
+      render: (value) => {
+        if (!value) return '<span style="font-style: italic; color: #666;">none</span>';
+        return escapeHtmlAttribute(truncateUrl(value));
+      }
     },
     {
       title: t('admin.chatDashboard.columns.userType', 'User Type'),
       data: 'userType',
-      render: (value) => escapeHtmlAttribute(value || '')
+      render: (value) => {
+        const type = value || 'public';
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(type)}</span>`;
+      }
     },
     {
       title: t('admin.chatDashboard.columns.answerType', 'Answer Type'),
       data: 'answerType',
-      render: (value) => escapeHtmlAttribute(value || '')
+      render: (value) => {
+        const type = value || 'normal';
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(type)}</span>`;
+      }
     },
     {
       title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'),
       data: 'partnerEval',
-      render: (value) => escapeHtmlAttribute(value || '')
+      render: (value) => {
+        if (!value) return '';
+        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(value)}</span>`;
+      }
     },
     {
       title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'),
       data: 'aiEval',
-      render: (value) => escapeHtmlAttribute(value || '')
+      render: (value) => {
+        if (!value) return '';
+        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(value)}</span>`;
+      }
     }
-  ]), [formatDate, lang, t]);
+  ]), [formatDate, truncateEmail, truncateUrl, t]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
@@ -303,7 +328,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       {!loading && !error && (
         <div className="mt-400">
-          {/* A hint is shown regardless; DataTables server-side will handle empty states */}
           {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
         </div>
       )}
@@ -314,106 +338,109 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           <div>{totalSummary}</div>
         </div>
         {dataTableReady ? (
-          <DataTable
-            key={tableKey}
-            columns={columns}
-            options={{
-              processing: true,
-              serverSide: true,
-              paging: true,
-              searching: true,
-              ordering: true,
-              order: [[4, 'desc']], // default to date desc
-              stateSave: true,
-              language: {
-                search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
-                searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
-              },
-              stateSaveCallback: function (settings, data) {
-                try {
-                  if (typeof window !== 'undefined' && window.localStorage) {
-                    window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
-                    console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
+          <div className="chat-dashboard-table-container">
+            <DataTable
+              key={tableKey}
+              columns={columns}
+              className="display chat-dashboard-table"
+              options={{
+                processing: true,
+                serverSide: true,
+                paging: true,
+                searching: true,
+                ordering: true,
+                order: [[5, 'desc']], // default to date desc
+                scrollX: true,
+                stateSave: true,
+                language: {
+                  search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
+                  searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
+                },
+                stateSaveCallback: function (settings, data) {
+                  try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                      window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
+                      console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
+                    }
+                  } catch (e) {
+                    // ignore
                   }
-                } catch (e) {
-                  // ignore
-                }
-              },
-              stateLoadCallback: function (settings) {
-                try {
-                  if (typeof window !== 'undefined' && window.localStorage) {
-                    const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                    const parsed = stored ? JSON.parse(stored) : null;
-                    console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
-                    return parsed;
+                },
+                stateLoadCallback: function (settings) {
+                  try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                      const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
+                      const parsed = stored ? JSON.parse(stored) : null;
+                      console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
+                      return parsed;
+                    }
+                  } catch (e) {
+                    // ignore
                   }
-                } catch (e) {
-                  // ignore
-                }
-                return null;
-              },
-              ajax: async (dtParams, callback) => {
-                try {
-                  setLoading(true);
-                  setError(null);
-                  const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
-                  const orderBy = orderByForColumn(dtOrder.column);
-                  const orderDir = dtOrder.dir || 'desc';
-                  const searchValue = (dtParams.search && dtParams.search.value) || '';
-                  const currentFilters = filtersRef.current || {};
+                  return null;
+                },
+                ajax: async (dtParams, callback) => {
+                  try {
+                    setLoading(true);
+                    setError(null);
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
+                    const orderBy = orderByForColumn(dtOrder.column);
+                    const orderDir = dtOrder.dir || 'desc';
+                    const searchValue = (dtParams.search && dtParams.search.value) || '';
+                    const currentFilters = filtersRef.current || {};
 
-                  const normalizedFilters = { ...currentFilters };
-                  const normalizedStart = formatDateForApi(currentFilters.startDate);
-                  const normalizedEnd = formatDateForApi(currentFilters.endDate);
-                  if (normalizedStart) normalizedFilters.startDate = normalizedStart;
-                  if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
-                  const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
-                  if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
+                    const normalizedFilters = { ...currentFilters };
+                    const normalizedStart = formatDateForApi(currentFilters.startDate);
+                    const normalizedEnd = formatDateForApi(currentFilters.endDate);
+                    if (normalizedStart) normalizedFilters.startDate = normalizedStart;
+                    if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
+                    const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
+                    if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
 
-                  const query = {
-                    ...normalizedFilters,
-                    start: dtParams.start || 0,
-                    length: dtParams.length || 10,
-                    orderBy,
-                    orderDir,
-                    draw: dtParams.draw || 0
-                  };
-                  if (searchValue) {
-                    query.search = searchValue;
+                    const query = {
+                      ...normalizedFilters,
+                      start: dtParams.start || 0,
+                      length: dtParams.length || 10,
+                      orderBy,
+                      orderDir,
+                      draw: dtParams.draw || 0
+                    };
+                    if (searchValue) {
+                      query.search = searchValue;
+                    }
+                    const result = await DashboardService.getChatDashboard(query);
+                    setRecordsTotal(result?.recordsTotal || 0);
+                    setRecordsFiltered(result?.recordsFiltered || 0);
+                    callback({
+                      draw: dtParams.draw || 0,
+                      recordsTotal: result?.recordsTotal || 0,
+                      recordsFiltered: result?.recordsFiltered || 0,
+                      data: Array.isArray(result?.data) ? result.data : []
+                    });
+                  } catch (err) {
+                    console.error('Failed to load chat dashboard data', err);
+                    setError(err.message || String(err));
+                    callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                  } finally {
+                    setLoading(false);
                   }
-                  const result = await DashboardService.getChatDashboard(query);
-                  setRecordsTotal(result?.recordsTotal || 0);
-                  setRecordsFiltered(result?.recordsFiltered || 0);
-                  callback({
-                    draw: dtParams.draw || 0,
-                    recordsTotal: result?.recordsTotal || 0,
-                    recordsFiltered: result?.recordsFiltered || 0,
-                    data: Array.isArray(result?.data) ? result.data : []
-                  });
-                } catch (err) {
-                  console.error('Failed to load chat dashboard data', err);
-                  setError(err.message || String(err));
-                  callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
-                } finally {
-                  setLoading(false);
+                },
+                initComplete: function () {
+                  try {
+                    const api = this.api();
+                    tableApiRef.current = api;
+                    console.debug && console.debug('ChatDashboard: DataTable initComplete');
+                    api.on('xhr.dt', function (_e, _settings, json) {
+                      try {
+                        setRecordsTotal((json && json.recordsTotal) || 0);
+                        setRecordsFiltered((json && json.recordsFiltered) || 0);
+                      } catch (e) { /* ignore */ }
+                    });
+                  } catch (e) { /* ignore */ }
                 }
-              },
-              initComplete: function () {
-                try {
-                  const api = this.api();
-                  tableApiRef.current = api;
-                  console.debug && console.debug('ChatDashboard: DataTable initComplete');
-                  // Update counts after each xhr
-                  api.on('xhr.dt', function (_e, _settings, json) {
-                    try {
-                      setRecordsTotal((json && json.recordsTotal) || 0);
-                      setRecordsFiltered((json && json.recordsFiltered) || 0);
-                    } catch (e) { /* ignore */ }
-                  });
-                } catch (e) { /* ignore */ }
-              }
-            }}
-          />
+              }}
+            />
+          </div>
         ) : (
           <div>Initializing table...</div>
         )}
