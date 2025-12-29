@@ -5,7 +5,7 @@ import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
-import '../styles/ChatDashboardPage.css';
+import '../styles/App.css';
 
 DataTable.use(DT);
 
