@@ -2346,11 +2346,11 @@ fieldset.gc-chckbxrdio {
 
 /* Zebra striping for table rows */
 .chat-dashboard-table tbody tr:nth-child(odd) {
-  background-color: var(--gcds-color-grayscale-0);
+  background-color: var(--gcds-link-light);
 }
 
 .chat-dashboard-table tbody tr:nth-child(even) {
-  background-color: var(--gcds-color-grayscale-50);
+  background-color: var(--gcds-color-grayscale-0);
 }
 
 /* Zebra striping for table rows
@@ -2365,7 +2365,7 @@ fieldset.gc-chckbxrdio {
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-50) var(--gcds-spacing-150);
+  padding: var(--gcds-spacing-25) var(--gcds-spacing-50);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
