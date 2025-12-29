@@ -2349,9 +2349,9 @@ fieldset.gc-chckbxrdio {
   background-color: var(--gcds-link-light);
 }
 
-.chat-dashboard-table tbody tr:nth-child(even) {
+/* .chat-dashboard-table tbody tr:nth-child(even) {
   background-color: var(--gcds-color-grayscale-50);
-}
+} */
 
 /* Base label styles */
 .label {
