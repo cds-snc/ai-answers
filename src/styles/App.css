@@ -2350,17 +2350,8 @@ fieldset.gc-chckbxrdio {
 }
 
 .chat-dashboard-table tbody tr:nth-child(even) {
-  background-color: var(--gcds-color-grayscale-0);
-}
-
-/* Zebra striping for table rows
-.chat-logs-table tbody tr:nth-child(odd) {
-  background-color: var(--gcds-color-grayscale-0);
-}
-
-.chat-logs-table tbody tr:nth-child(even) {
   background-color: var(--gcds-color-grayscale-50);
-} */
+}
 
 /* Base label styles */
 .label {
