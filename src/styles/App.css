@@ -2336,9 +2336,9 @@ fieldset.gc-chckbxrdio {
 
 /* Table container with horizontal scrolling - full width breakout */
 .chat-dashboard-table-container {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 90vw;
+  margin-left: auto;
+  margin-right: auto;
   overflow-x: auto;
   margin-block-start: var(--gcds-spacing-200);
   border: 1px solid var(--gcds-color-grayscale-300);
@@ -2367,7 +2367,7 @@ fieldset.gc-chckbxrdio {
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-25) var(--gcds-spacing-50);
+  padding: var(--gcds-spacing-50) var(--gcds-spacing-50);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
@@ -2426,8 +2426,4 @@ fieldset.gc-chckbxrdio {
   background-color: var(--gcds-color-red-100);
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
-}
-
-.dt-column-title {
-  font-size: 14px !important;
 }
