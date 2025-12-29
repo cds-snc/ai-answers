@@ -2448,3 +2448,8 @@ fieldset.gc-chckbxrdio {
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
 }
+
+.dt-column-title {
+  font-family: "Lato", sans-serif;
+  font-size: 14px !important;
+}
