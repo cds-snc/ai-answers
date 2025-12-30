@@ -308,7 +308,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-400">
+      <p className="mb-0 small-text">
         {t('admin.chatDashboard.description', 'Filter chat interactions and explore details in the table below.')}
       </p>
 
