@@ -603,13 +603,13 @@
     "labels": {
       "userType": {
         "public": "public",
-        "admin": "admin",
-        "not-gc": "not-GC"
+        "admin": "admin"
       },
       "answerType": {
         "normal": "normal",
         "clarifying-question": "clarifying",
-        "pt-muni": "pt-muni"
+        "pt-muni": "pt-muni",
+        "not-gc": "not-GC"
       },
       "evaluation": {
         "correct": "correct",

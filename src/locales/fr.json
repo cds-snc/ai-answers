@@ -641,13 +641,13 @@
       "labels": {
         "userType": {
           "public": "public",
-          "admin": "admin",
-          "not-gc": "non-GC"
+          "admin": "admin"
         },
         "answerType": {
           "normal": "normal",
           "clarifying-question": "clarification",
-          "pt-muni": "pt-muni"
+          "pt-muni": "pt-muni",
+          "not-gc": "non-GC"
         },
         "evaluation": {
           "correct": "correct",
