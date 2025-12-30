@@ -2222,7 +2222,7 @@ fieldset.gc-chckbxrdio {
 }
 
 .dt-container {
-  font-size: 80%; /* temp fix to resize */
+  font-size: 70%; /* temp fix to resize */
 }
 /* Current selection styling */
 .current-selection {
