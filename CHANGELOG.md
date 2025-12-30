@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.72.0](https://github.com/cds-snc/ai-answers/compare/v1.71.0...v1.72.0) (2025-12-30)
+
+
+### Features
+
+* Alt colours in filter admin ([30704ab](https://github.com/cds-snc/ai-answers/commit/30704aba0e6fae35d2c54aac88d4bcc3d2bf7a95))
+* css weird ([8c7d465](https://github.com/cds-snc/ai-answers/commit/8c7d465bfc5cc3f6d95fe49af8f965055052d926))
+
 ## [1.71.0](https://github.com/cds-snc/ai-answers/compare/v1.70.9...v1.71.0) (2025-12-29)
 
 
