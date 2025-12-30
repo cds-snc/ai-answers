@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.74.0](https://github.com/cds-snc/ai-answers/compare/v1.73.0...v1.74.0) (2025-12-30)
+
+
+### Features
+
+* admin filter improvements ([0de5758](https://github.com/cds-snc/ai-answers/commit/0de575831697c6c23b463ef199283fb6b566aade))
+* admin filter improvements ([7ba4f23](https://github.com/cds-snc/ai-answers/commit/7ba4f23badee4f14df7bfde08e4e27db8bc97ef1))
+* cleanup ([18b26cd](https://github.com/cds-snc/ai-answers/commit/18b26cd91ab8c3d749688941e7c786bdc978a95f))
+* fix hover/focus ([0526799](https://github.com/cds-snc/ai-answers/commit/0526799aea3e44aac8e45a40e97876dc2060cc45))
+
 ## [1.73.0](https://github.com/cds-snc/ai-answers/compare/v1.72.0...v1.73.0) (2025-12-30)
 
 
