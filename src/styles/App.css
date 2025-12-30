@@ -2095,6 +2095,17 @@ fieldset.gc-chckbxrdio {
   background: #f3f4f6;
 }
 
+.filter-panel-summary:focus,
+.filter-panel-summary:focus:hover {
+  background-color: var(--gcds-details-focus-background);
+  border-radius: var(--gcds-details-focus-border-radius);
+  box-shadow: var(--gcds-details-focus-box-shadow);
+  color: var(--gcds-details-focus-text);
+  outline: var(--gcds-details-focus-outline);
+  outline-offset: var(--gcds-details-focus-outline-offset);
+  text-decoration: none;
+}
+
 .filter-panel-content {
   padding: 1rem 0rem 1rem 0rem;
 }
