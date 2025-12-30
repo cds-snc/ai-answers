@@ -599,7 +599,26 @@
         "answerType": "Answer Type",
         "partnerEval": "Partner Eval",
         "aiEval": "AI Eval"
+      },
+    "labels": {
+      "userType": {
+        "public": "public",
+        "admin": "admin",
+        "not-gc": "not-GC"
+      },
+      "answerType": {
+        "normal": "normal",
+        "clarifying-question": "clarifying",
+        "pt-muni": "pt-muni"
+      },
+      "evaluation": {
+        "correct": "correct",
+        "needsImprovement": "needs improvement",
+        "hasError": "error",
+        "hasCitationError": "citation error",
+        "harmful": "harmful"
       }
+    }
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",

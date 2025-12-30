@@ -258,12 +258,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         return escapeHtmlAttribute(truncateUrl(value));
       }
     },
-    {
+      {
       title: t('admin.chatDashboard.columns.userType', 'User Type'),
       data: 'userType',
       render: (value) => {
         const type = value || 'public';
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(type)}</span>`;
+        const label = t(`admin.chatDashboard.labels.userType.${type}`, type);
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -271,7 +272,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'answerType',
       render: (value) => {
         const type = value || 'normal';
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(type)}</span>`;
+        const label = t(`admin.chatDashboard.labels.answerType.${type}`, type);
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -279,7 +281,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'partnerEval',
       render: (value) => {
         if (!value) return '';
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(value)}</span>`;
+        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
+        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -287,7 +290,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'aiEval',
       render: (value) => {
         if (!value) return '';
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(value)}</span>`;
+        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
+        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
       }
     }
   ]), [formatDate, truncateEmail, truncateUrl, t]);
@@ -326,16 +330,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && !error && (
-        <div className="mt-400">
+      {!loading && !error && recordsFiltered === 0 && recordsTotal === 0 && (
+        <p className="chat-dashboard-no-results">
           {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
-        </div>
+        </p>
       )}
 
-      <div className="mt-400">
-        <div className="mb-200">
-          <div>{resultsSummary}</div>
-          <div>{totalSummary}</div>
+      <div className="mt-200">
+        <div className="chat-dashboard-summary" role="status" aria-live="polite">
+            <output>{resultsSummary}</output>
+            <output>{totalSummary}</output>
         </div>
         {dataTableReady ? (
           <div className="chat-dashboard-table-container">

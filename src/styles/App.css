@@ -2222,7 +2222,7 @@ fieldset.gc-chckbxrdio {
 }
 
 .dt-container {
-  font-size: 80%; /* temp fix to resize */
+  font-size: 70%; /* temp fix to resize */
 }
 /* Current selection styling */
 .current-selection {
@@ -2380,7 +2380,7 @@ fieldset.gc-chckbxrdio {
 
 /* Answer type labels */
 .label.normal {
-  background-color: var(--gcds-color-grayscale-100);
+  background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
 
@@ -2415,4 +2415,16 @@ fieldset.gc-chckbxrdio {
   background-color: var(--gcds-color-red-100);
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
+}
+
+/* Table summary stats */
+.chat-dashboard-summary {
+  display: flex;
+  gap: var(--gcds-spacing-200);
+  font-size: 14px;
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.chat-dashboard-no-results {
+  font-size: 14px;
 }

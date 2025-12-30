@@ -637,6 +637,25 @@
         "answerType": "Type de réponse",
         "partnerEval": "Évaluation partenaire",
         "aiEval": "Évaluation IA"
+      },
+      "labels": {
+        "userType": {
+          "public": "public",
+          "admin": "admin",
+          "not-gc": "non-GC"
+        },
+        "answerType": {
+          "normal": "normal",
+          "clarifying-question": "clarification",
+          "pt-muni": "pt-muni"
+        },
+        "evaluation": {
+          "correct": "correct",
+          "needsImprovement": "nécessite amélioration",
+          "hasError": "erreur",
+          "hasCitationError": "erreur de citation",
+          "harmful": "nuisible"
+        }
       }
     },
     "evalDashboard": {
