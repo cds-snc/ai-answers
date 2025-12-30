@@ -34,6 +34,12 @@ variable "docdb_username_arn" {
   type        = string
 }
 
+
+variable "s3_bucket_arn" {
+  description = "ARN of the S3 bucket to grant access to"
+  type        = string
+}
+
 variable "docdb_password_arn" {
   description = "The arn of the document db password parameter"
   type        = string
