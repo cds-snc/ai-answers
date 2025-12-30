@@ -1,3 +1,7 @@
+param(
+  [string]$TestFile = ""
+)
+
 # Run Playwright E2E tests with full environment setup and debugging
 
 Write-Host "========================================" -ForegroundColor Cyan
@@ -25,10 +29,17 @@ Write-Host ""
 Write-Host "Ensure server is running with NODE_ENV=test mode" -ForegroundColor Yellow
 Write-Host ""
 
-# Start the server in background so Playwright can hit localhost:3001
-Write-Host "Starting server (node server/server.js) in background..." -ForegroundColor Green
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir '..')
+
+# Disable 2FA in the database
+Write-Host "Disabling 2FA for testing..." -ForegroundColor Yellow
+$disableScript = Join-Path $repoRoot 'scripts\disable-2fa.js'
+Start-Process -FilePath 'node' -ArgumentList $disableScript -WorkingDirectory $repoRoot -NoNewWindow -Wait
+
+# Start the server in background so Playwright can hit localhost:3001
+Write-Host "Starting server (node server/server.js) in background..." -ForegroundColor Green
 $serverPath = Join-Path $repoRoot 'server\server.js'
 $serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru
 Write-Host "Server process started with PID $($serverProc.Id)" -ForegroundColor Green
@@ -40,7 +51,8 @@ while ($waited -lt $maxWait) {
   try {
     $resp = Invoke-WebRequest -Uri 'http://localhost:3001' -UseBasicParsing -TimeoutSec 3
     if ($resp.StatusCode -eq 200) { break }
-  } catch {
+  }
+  catch {
     # ignore
   }
   Start-Sleep -Seconds 1
@@ -57,12 +69,22 @@ Write-Host "Server is ready after $waited seconds" -ForegroundColor Green
 Write-Host "Starting Playwright E2E Tests..." -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 
-npx playwright test `
-  --workers=1 `
-  --trace=on `
-  --reporter=html `
-  --reporter=list `
-  tests/e2e/chat-test.spec.js
+if ($TestFile) {
+  Write-Host "Running specific test: $TestFile" -ForegroundColor Cyan
+  npx playwright test $TestFile `
+    --workers=1 `
+    --trace=on `
+    --reporter=html `
+    --reporter=list
+}
+else {
+  Write-Host "Running ALL tests" -ForegroundColor Cyan
+  npx playwright test `
+    --workers=1 `
+    --trace=on `
+    --reporter=html `
+    --reporter=list
+}
 
 # Capture exit code
 $exitCode = $LASTEXITCODE
@@ -71,7 +93,8 @@ Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 if ($exitCode -eq 0) {
   Write-Host "Tests PASSED" -ForegroundColor Green
-} else {
+}
+else {
   Write-Host "Tests FAILED (exit code: $exitCode)" -ForegroundColor Red
 }
 Write-Host "========================================" -ForegroundColor Cyan
