@@ -330,16 +330,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && !error && (
-        <div className="mt-400">
+      {!loading && !error && recordsFiltered === 0 && recordsTotal === 0 && (
+        <p className="chat-dashboard-no-results">
           {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
-        </div>
+        </p>
       )}
 
-      <div className="mt-400">
-        <div className="mb-200">
-          <div>{resultsSummary}</div>
-          <div>{totalSummary}</div>
+      <div className="mt-200">
+        <div className="chat-dashboard-summary" role="status" aria-live="polite">
+            <output>{resultsSummary}</output>
+            <output>{totalSummary}</output>
         </div>
         {dataTableReady ? (
           <div className="chat-dashboard-table-container">

@@ -2416,3 +2416,16 @@ fieldset.gc-chckbxrdio {
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
 }
+
+/* Table summary stats */
+.chat-dashboard-summary {
+  display: flex;
+  gap: var(--gcds-spacing-200);
+  font-size: 14px;
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.chat-dashboard-no-results {
+  margin-top: var(--gcds-spacing-400);
+  font-size: 14px;
+}
