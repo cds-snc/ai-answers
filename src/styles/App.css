@@ -2426,6 +2426,5 @@ fieldset.gc-chckbxrdio {
 }
 
 .chat-dashboard-no-results {
-  margin-top: var(--gcds-spacing-400);
   font-size: 14px;
 }
