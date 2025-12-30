@@ -102,6 +102,13 @@ module "ai_answers" {
   ]
   container_read_only_root_filesystem = false
 
+  container_environment = [
+    {
+      name  = "S3_BUCKET_NAME"
+      value = var.s3_bucket_name
+    }
+  ]
+
   # Task definition
   task_name          = "${var.product_name}-task"
   task_exec_role_arn = var.iam_role_ai-answers-ecs-role_arn
