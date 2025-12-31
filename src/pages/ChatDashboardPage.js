@@ -371,14 +371,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               <output>{totalSummary}</output>
             </div>
           </div>
-          {loadTime && (
-            <div style={{ fontSize: '0.9em', color: '#666', textAlign: 'right' }}>
-              <div>{t('admin.chatDashboard.loadTimeTotal', 'Total time')}: {(loadTime.total / 1000).toFixed(2)}s</div>
-              <div style={{ fontSize: '0.85em', opacity: 0.8 }}>
-                {t('admin.chatDashboard.loadTimeBackend', 'Backend')}: {(loadTime.backend / 1000).toFixed(2)}s
-              </div>
-            </div>
-          )}
+
         </div>
         {dataTableReady ? (
           <div className="chat-dashboard-table-container">
@@ -493,6 +486,14 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           </div>
         ) : (
           <div>Initializing table...</div>
+        )}
+        {loadTime && (
+          <div className="mt-200" style={{ fontSize: '0.9em', color: '#666', textAlign: 'right' }}>
+            <div>{t('admin.chatDashboard.loadTimeTotal', 'Total time')}: {(loadTime.total / 1000).toFixed(2)}s</div>
+            <div style={{ fontSize: '0.85em', opacity: 0.8 }}>
+              {t('admin.chatDashboard.loadTimeBackend', 'Backend')}: {(loadTime.backend / 1000).toFixed(2)}s
+            </div>
+          </div>
         )}
       </div>
     </GcdsContainer >
