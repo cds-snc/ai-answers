@@ -2079,12 +2079,10 @@ fieldset.gc-chckbxrdio {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .filter-panel-summary {
-  padding: 1rem 1.5rem;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   cursor: pointer;
@@ -2097,21 +2095,30 @@ fieldset.gc-chckbxrdio {
   background: #f3f4f6;
 }
 
+.filter-panel-summary:focus,
+.filter-panel-summary:focus:hover {
+  background-color: var(--gcds-details-focus-background);
+  border-radius: var(--gcds-details-focus-border-radius);
+  box-shadow: var(--gcds-details-focus-box-shadow);
+  color: var(--gcds-details-focus-text);
+  outline: var(--gcds-details-focus-outline);
+  outline-offset: var(--gcds-details-focus-outline-offset);
+  text-decoration: none;
+}
+
 .filter-panel-content {
-  padding: 1.5rem;
+  padding: 1rem 0rem 1rem 0rem;
 }
 
 .filter-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
 .filter-row {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
 .filter-column {
@@ -2144,6 +2151,10 @@ fieldset.gc-chckbxrdio {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-advanced-details {
+  font-size: 16px;
 }
 
 /* Quick set buttons styling */
@@ -2222,7 +2233,7 @@ fieldset.gc-chckbxrdio {
 }
 
 .dt-container {
-  font-size: 80%; /* temp fix to resize */
+  font-size: 70%; /* temp fix to resize */
 }
 /* Current selection styling */
 .current-selection {
@@ -2262,7 +2273,6 @@ fieldset.gc-chckbxrdio {
   gap: 0.75rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
 }
 
 .filter-button {
@@ -2380,7 +2390,7 @@ fieldset.gc-chckbxrdio {
 
 /* Answer type labels */
 .label.normal {
-  background-color: var(--gcds-color-grayscale-100);
+  background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
 
@@ -2415,4 +2425,20 @@ fieldset.gc-chckbxrdio {
   background-color: var(--gcds-color-red-100);
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
+}
+
+/* Table summary stats */
+.chat-dashboard-summary {
+  display: flex;
+  gap: var(--gcds-spacing-200);
+  font-size: 14px;
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.chat-dashboard-no-results {
+  font-size: 14px;
+}
+
+.small-text {
+  font-size: 16px;
 }

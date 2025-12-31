@@ -639,7 +639,26 @@
         "aiEval": "Évaluation IA"
       },
       "loadTimeTotal": "Temps total",
-      "loadTimeBackend": "Backend"
+      "loadTimeBackend": "Backend",
+      "labels": {
+        "userType": {
+          "public": "public",
+          "admin": "admin"
+        },
+        "answerType": {
+          "normal": "normal",
+          "clarifying-question": "clarification",
+          "pt-muni": "pt-muni",
+          "not-gc": "non-GC"
+        },
+        "evaluation": {
+          "correct": "correct",
+          "needsImprovement": "nécessite amélioration",
+          "hasError": "erreur",
+          "hasCitationError": "erreur de citation",
+          "harmful": "nuisible"
+        }
+      }
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",

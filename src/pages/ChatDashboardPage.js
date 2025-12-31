@@ -282,7 +282,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'userType',
       render: (value) => {
         const type = value || 'public';
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(type)}</span>`;
+        const label = t(`admin.chatDashboard.labels.userType.${type}`, type);
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -290,7 +291,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'answerType',
       render: (value) => {
         const type = value || 'normal';
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(type)}</span>`;
+        const label = t(`admin.chatDashboard.labels.answerType.${type}`, type);
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -298,7 +300,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'partnerEval',
       render: (value) => {
         if (!value) return '';
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(value)}</span>`;
+        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
+        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -306,7 +309,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'aiEval',
       render: (value) => {
         if (!value) return '';
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(value)}</span>`;
+        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
+        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
       }
     }
   ]), [formatDate, truncateEmail, truncateUrl, t]);
@@ -323,7 +327,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText >
       </nav >
 
-      <p className="mb-400">
+      <p className="mb-0 small-text">
         {t('admin.chatDashboard.description', 'Filter chat interactions and explore details in the table below.')}
       </p>
 
@@ -359,9 +363,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       <div className="mt-400">
         <div className="mb-200" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <div>{resultsSummary}</div>
-            <div>{totalSummary}</div>
+          <div role="status" aria-live="polite">
+            <div className="chat-dashboard-summary">
+              <output>{resultsSummary}</output>
+            </div>
+            <div className="chat-dashboard-summary">
+              <output>{totalSummary}</output>
+            </div>
           </div>
           {loadTime && (
             <div style={{ fontSize: '0.9em', color: '#666', textAlign: 'right' }}>

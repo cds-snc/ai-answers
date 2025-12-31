@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.73.0](https://github.com/cds-snc/ai-answers/compare/v1.72.0...v1.73.0) (2025-12-30)
+
+
+### Features
+
+* cleanup dashboard ([23ad497](https://github.com/cds-snc/ai-answers/commit/23ad49739a3d91ab5e23dde4a5864a116d7bf862))
+* css ([ab9f485](https://github.com/cds-snc/ai-answers/commit/ab9f4852fffee495334cc9dfdf7d76b6bf11ad11))
+* css ([c0a30fe](https://github.com/cds-snc/ai-answers/commit/c0a30fed6bcc69fb8e4cbf7190ff86fc02b9cc8a))
+* translation for labels ([6001db3](https://github.com/cds-snc/ai-answers/commit/6001db3f9644cf4a8f0c1ff595c885ae81f023e0))
+* translation for labels in filter table ([3a0c014](https://github.com/cds-snc/ai-answers/commit/3a0c0144d7df161440086ea8456e9f31610c0ac7))
+
 ## [1.72.0](https://github.com/cds-snc/ai-answers/compare/v1.71.0...v1.72.0) (2025-12-30)
 
 
