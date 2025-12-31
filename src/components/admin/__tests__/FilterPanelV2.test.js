@@ -1,7 +1,6 @@
-import { vi, beforeEach, it, expect } from 'vitest';
+import { vi, beforeEach, afterEach, it, expect } from 'vitest';
 import React from 'react';
 import { render, fireEvent, cleanup } from '@testing-library/react';
-import { vi, beforeEach, afterEach, it, expect } from 'vitest';
 
 // We avoid importing the real `FilterPanelV2` (JSX transform issues in this test env).
 // Instead create a small mock component that mimics the serialization behavior
@@ -94,7 +93,7 @@ const FilterPanelV2 = ({ onApplyFilters, onClearFilters, isVisible = true, stora
 
 beforeEach(() => {
   // Ensure a clean localStorage between tests
-  try { window.localStorage.clear(); } catch (e) {}
+  try { window.localStorage.clear(); } catch (e) { }
 });
 afterEach(() => cleanup());
 
@@ -115,7 +114,7 @@ it('serializes persisted local date strings to ISO and preserves fields (no DOM)
     showAdvancedFilters: true
   };
 
-  try { window.localStorage.setItem(storageKey, JSON.stringify(persisted)); } catch (e) {}
+  try { window.localStorage.setItem(storageKey, JSON.stringify(persisted)); } catch (e) { }
 
   const startISO = parseDateTimeLocal(startLocal).toISOString();
   const endISO = parseDateTimeLocal(endLocal).toISOString();

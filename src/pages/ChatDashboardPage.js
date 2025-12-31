@@ -55,7 +55,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
 
-  const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
+  const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang} `;
   const FILTER_PANEL_STORAGE_KEY = 'chatFilterPanelState_v1';
 
   const numberFormatter = useMemo(
@@ -194,12 +194,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // Clear saved table state
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
-        try { window.localStorage.removeItem(TABLE_STORAGE_KEY); } catch (e) { void e; }
-        console.debug && console.debug('ChatDashboard: cleared local table storage', LOCAL_TABLE_STORAGE_KEY, TABLE_STORAGE_KEY);
+        window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY);
+        window.localStorage.removeItem(TABLE_STORAGE_KEY);
+        console.debug('ChatDashboard: cleared local table storage', LOCAL_TABLE_STORAGE_KEY, TABLE_STORAGE_KEY);
       }
     } catch (e) {
-      void e;
+      // ignore
     }
     setTableKey((prev) => prev + 1);
     if (filtersFromPanel) {
@@ -229,7 +229,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
       data: 'chatId',
-      render: (value, type, row) => {
+      render: (value, _type, row) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
@@ -317,11 +317,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>
+          <GcdsLink href={`/ ${lang}/admin`}>
             {t('common.backToAdmin', 'Back to Admin')}
-          </GcdsLink>
-        </GcdsText>
-      </nav>
+          </GcdsLink >
+        </GcdsText >
+      </nav >
 
       <p className="mb-400">
         {t('admin.chatDashboard.description', 'Filter chat interactions and explore details in the table below.')}
@@ -333,23 +333,29 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         isVisible={true}
       />
 
-      {loading && (
-        <div className="mt-400" role="status">
-          {t('admin.chatDashboard.loading', 'Loading chats...')}
-        </div>
-      )}
+      {
+        loading && (
+          <div className="mt-400" role="status">
+            {t('admin.chatDashboard.loading', 'Loading chats...')}
+          </div>
+        )
+      }
 
-      {error && (
-        <div className="mt-400 error" role="alert">
-          {t('admin.chatDashboard.error', 'Unable to load chat data.')} {String(error)}
-        </div>
-      )}
+      {
+        error && (
+          <div className="mt-400 error" role="alert">
+            {t('admin.chatDashboard.error', 'Unable to load chat data.')} {String(error)}
+          </div>
+        )
+      }
 
-      {!loading && !error && (
-        <div className="mt-400">
-          {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
-        </div>
-      )}
+      {
+        !loading && !error && (
+          <div className="mt-400">
+            {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
+          </div>
+        )
+      }
 
       <div className="mt-400">
         <div className="mb-200" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -385,22 +391,22 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
                   searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
                 },
-                stateSaveCallback: function (settings, data) {
+                stateSaveCallback: function (_, data) {
                   try {
                     if (typeof window !== 'undefined' && window.localStorage) {
                       window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
-                      console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
+                      console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
                     }
                   } catch (e) {
                     // ignore
                   }
                 },
-                stateLoadCallback: function (settings) {
+                stateLoadCallback: function () {
                   try {
                     if (typeof window !== 'undefined' && window.localStorage) {
                       const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
                       const parsed = stored ? JSON.parse(stored) : null;
-                      console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
+                      console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
                       return parsed;
                     }
                   } catch (e) {
@@ -481,7 +487,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           <div>Initializing table...</div>
         )}
       </div>
-    </GcdsContainer>
+    </GcdsContainer >
   );
 };
 
