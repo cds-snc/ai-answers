@@ -17,6 +17,8 @@ $env:DANGEROUSLY_DISABLE_HOST_CHECK = "true"
 $env:MONGODB_URI = "mongodb://127.0.0.1:27017/dev-database?authSource=admin&retryWrites=true&w=majority"
 $env:JWT_SECRET_KEY = "5a6a2e1a5fa4930ede02be93b0aeee2e"
 $env:USER_AGENT = "ai-answers"
+# Set a dummy key to prevent server crash in test mode
+$env:GC_NOTIFY_API_KEY = "test_key-00000000-0000-0000-0000-000000000000-00000000-0000-0000-0000-000000000000"
 
 # Output environment variables for verification
 Write-Host "`nEnvironment Variables:" -ForegroundColor Green
@@ -26,30 +28,48 @@ Write-Host "  SESSION_SECRET: $($env:SESSION_SECRET)"
 Write-Host "  FP_PEPPER: $($env:FP_PEPPER)"
 Write-Host ""
 
-Write-Host "Ensure server is running with NODE_ENV=test mode" -ForegroundColor Yellow
-Write-Host ""
-
-
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir '..')
 
-# Disable 2FA in the database
+# 1. Build the frontend (required for server to serve pages)
+$buildPath = Join-Path $repoRoot 'build'
+if (-not (Test-Path $buildPath)) {
+  Write-Host "Build folder missing. Building frontend (npm run build)..." -ForegroundColor Yellow
+  # Run build from root
+  Push-Location $repoRoot
+  npm run build
+  Pop-Location
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "Frontend build failed!" -ForegroundColor Red
+    exit 1
+  }
+}
+
+# 2. Disable 2FA in the database
 Write-Host "Disabling 2FA for testing..." -ForegroundColor Yellow
 $disableScript = Join-Path $repoRoot 'scripts\disable-2fa.js'
 Start-Process -FilePath 'node' -ArgumentList $disableScript -WorkingDirectory $repoRoot -NoNewWindow -Wait
 
-# Start the server in background so Playwright can hit localhost:3001
+# 3. Start the server in background
 Write-Host "Starting server (node server/server.js) in background..." -ForegroundColor Green
 $serverPath = Join-Path $repoRoot 'server\server.js'
-$serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru
-Write-Host "Server process started with PID $($serverProc.Id)" -ForegroundColor Green
+$stdoutLog = Join-Path $repoRoot 'server_stdout.log'
+$stderrLog = Join-Path $repoRoot 'server_stderr.log'
 
-# Wait up to 30s for server to respond on http://localhost:3001
-$maxWait = 30
+# Clear old logs
+"" > $stdoutLog
+"" > $stderrLog
+
+$serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru -NoNewWindow -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
+Write-Host "Server process started with PID $($serverProc.Id). Logging to server_stdout.log and server_stderr.log" -ForegroundColor Green
+
+# 4. Wait up to 60s for server to respond on http://localhost:3001/health
+$maxWait = 60
 $waited = 0
+Write-Host "Waiting for server to become ready..." -ForegroundColor Yellow
 while ($waited -lt $maxWait) {
   try {
-    $resp = Invoke-WebRequest -Uri 'http://localhost:3001' -UseBasicParsing -TimeoutSec 3
+    $resp = Invoke-WebRequest -Uri 'http://localhost:3001/health' -UseBasicParsing -TimeoutSec 3
     if ($resp.StatusCode -eq 200) { break }
   }
   catch {
@@ -60,30 +80,41 @@ while ($waited -lt $maxWait) {
 }
 if ($waited -ge $maxWait) {
   Write-Host "Server did not become ready after $maxWait seconds" -ForegroundColor Red
+  Write-Host "Check server_stdout.log and server_stderr.log for details." -ForegroundColor Yellow
   Stop-Process -Id $serverProc.Id -ErrorAction SilentlyContinue
   exit 1
 }
 Write-Host "Server is ready after $waited seconds" -ForegroundColor Green
 
-# Run Playwright tests headless with maximum debugging
+# 5. Run Playwright tests
 Write-Host "Starting Playwright E2E Tests..." -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 
+$finalTestPath = ""
 if ($TestFile) {
-  Write-Host "Running specific test: $TestFile" -ForegroundColor Cyan
-  npx playwright test $TestFile `
-    --workers=1 `
-    --trace=on `
-    --reporter=html `
-    --reporter=list
+  # Try to find the test file
+  if (Test-Path $TestFile) {
+    $finalTestPath = $TestFile
+  }
+  elseif (Test-Path (Join-Path "tests/e2e" $TestFile)) {
+    $finalTestPath = (Join-Path "tests/e2e" $TestFile)
+  }
+  elseif (Test-Path (Join-Path "tests/e2e" ($TestFile + ".spec.js"))) {
+    $finalTestPath = (Join-Path "tests/e2e" ($TestFile + ".spec.js"))
+  }
+}
+
+if ($finalTestPath) {
+  $finalTestPath = $finalTestPath.Replace('\', '/')
+  Write-Host "Running specific test: $finalTestPath" -ForegroundColor Cyan
+  npx playwright test $finalTestPath --workers=1 --trace=on --reporter=list
 }
 else {
+  if ($TestFile) {
+    Write-Host "Could not find test file: $TestFile. Running ALL tests instead." -ForegroundColor Yellow
+  }
   Write-Host "Running ALL tests" -ForegroundColor Cyan
-  npx playwright test `
-    --workers=1 `
-    --trace=on `
-    --reporter=html `
-    --reporter=list
+  npx playwright test --workers=1 --trace=on --reporter=list
 }
 
 # Capture exit code
@@ -99,7 +130,7 @@ else {
 }
 Write-Host "========================================" -ForegroundColor Cyan
 
-# Stop the test server we started (if running)
+# Stop the test server
 if ($serverProc -and $serverProc.Id) {
   Write-Host "Stopping server process $($serverProc.Id)..." -ForegroundColor Yellow
   Stop-Process -Id $serverProc.Id -ErrorAction SilentlyContinue

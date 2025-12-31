@@ -637,7 +637,9 @@
         "answerType": "Type de réponse",
         "partnerEval": "Évaluation partenaire",
         "aiEval": "Évaluation IA"
-      }
+      },
+      "loadTimeTotal": "Temps total",
+      "loadTimeBackend": "Backend"
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",

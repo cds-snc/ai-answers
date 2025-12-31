@@ -61,8 +61,13 @@ async function chatDashboardHandler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
+  const startTime = Date.now();
+  const timings = {};
+
   try {
+    const dbStart = Date.now();
     await dbConnect();
+    timings.dbConnect = Date.now() - dbStart;
 
     const {
       department = '',
@@ -98,24 +103,47 @@ async function chatDashboardHandler(req, res) {
     const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
     const isDataTablesMode = length !== null; // when length provided, use offset/limit style
 
-    // Build initial match for createdAt and optional lastId for pagination
-    const pipeline = [];
+    // BUILD INITIAL MATCH (High Performance Early Filtering)
+    // We apply every filter that exists directly on the Chat document here
+    // to avoid joining interactions/users for documents that won't be returned.
     const initialMatch = {};
+
+    // 1. Date Range Filter
     if (dateRange) {
       initialMatch.createdAt = dateRange;
     }
 
+    // 2. User Type Filter (Admin vs Public)
+    if (userType === 'public') {
+      initialMatch.user = { $exists: false };
+    } else if (userType === 'admin') {
+      initialMatch.user = { $exists: true, $ne: null };
+    }
+
+    // 3. Page Language Filter
+    if (urlEn && !urlFr) {
+      initialMatch.pageLanguage = { $regex: 'en', $options: 'i' };
+    } else if (urlFr && !urlEn) {
+      initialMatch.pageLanguage = { $regex: 'fr', $options: 'i' };
+    }
+
+    // 4. Search Filter (Chat ID)
+    if (searchParam) {
+      initialMatch.chatId = { $regex: escapeRegex(searchParam), $options: 'i' };
+    }
+
+    // 5. Pagination Cursor
     let lastId = null;
     if (!isDataTablesMode && lastIdParam) {
       try {
-        lastId = mongoose.Types.ObjectId(lastIdParam);
-        // For descending sort, get documents with _id < lastId
+        lastId = new mongoose.Types.ObjectId(lastIdParam);
         initialMatch._id = { $lt: lastId };
       } catch (err) {
         return res.status(400).json({ error: 'Invalid lastId' });
       }
     }
 
+    const pipeline = [];
     if (Object.keys(initialMatch).length) {
       pipeline.push({ $match: initialMatch });
     }
@@ -140,6 +168,7 @@ async function chatDashboardHandler(req, res) {
         as: 'interactions'
       }
     });
+
 
     pipeline.push({
       $unwind: {
@@ -272,15 +301,12 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({ $project: { creator: 0 } });
 
-    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
+    const filters = { department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
     const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
       pipeline.push({ $match: { $and: andFilters } });
     }
-
-    // Handle search parameter for chatId (after grouping, so applied separately)
-    const searchFilter = searchParam ? { chatId: { $regex: escapeRegex(searchParam), $options: 'i' } } : null;
 
     pipeline.push({
       $group: {
@@ -382,15 +408,8 @@ async function chatDashboardHandler(req, res) {
     });
 
 
-    // Apply search filter if present (after $project stage)
-    if (searchFilter) {
-      pipeline.push({ $match: searchFilter });
-    }
-
-    // Keep a copy of pipeline before adding sort/limit to calculate totalCount
-    const pipelineBeforeSortLimit = pipeline.slice();
-
     // Dynamic sort mapping
+
     const sortFieldMap = {
       createdAt: 'createdAt',
       chatId: 'chatId',
@@ -400,6 +419,13 @@ async function chatDashboardHandler(req, res) {
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
+
+    // Keep a copy of pipeline before adding sort/limit to calculate totalCount
+    // (DocumentDB does not support $facet so we must run two queries)
+    const countPipeline = pipeline.slice();
+    countPipeline.push({ $group: { _id: '$_id' } });
+    countPipeline.push({ $count: 'totalCount' });
+
     pipeline.push(sortStage);
 
     if (isDataTablesMode) {
@@ -409,13 +435,14 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $limit: limit });
     }
 
-    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
+    const queryStart = Date.now();
+    const [results, countResult] = await Promise.all([
+      Chat.aggregate(pipeline).allowDiskUse(true),
+      Chat.aggregate(countPipeline).allowDiskUse(true)
+    ]);
+    timings.mainQuery = Date.now() - queryStart;
 
-    // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
-    const countPipeline = pipelineBeforeSortLimit.slice();
-    countPipeline.push({ $group: { _id: '$_id' } });
-    countPipeline.push({ $count: 'totalCount' });
-    const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
+    // Total count comes from the separate count query
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
     const chats = results.map((chat) => ({
@@ -433,6 +460,13 @@ async function chatDashboardHandler(req, res) {
       userType: chat.userType || 'public'
     }));
 
+    timings.total = Date.now() - startTime;
+
+    if (timings.total > 2000) {
+      console.warn('[ChatDashboard SLOW QUERY]', timings, { query: req.query });
+    }
+
+
     if (isDataTablesMode) {
       // DataTables server-side response format
       const draw = Number.isFinite(parseInt(drawParam, 10)) ? parseInt(drawParam, 10) : 0;
@@ -440,19 +474,21 @@ async function chatDashboardHandler(req, res) {
         draw,
         recordsTotal: totalCount,
         recordsFiltered: totalCount,
-        data: chats
+        data: chats,
+        _performance: timings
       });
     }
 
     // Cursor-based response for batch loading
     const nextLastId = chats.length > 0 && chats.length === limit ? chats[chats.length - 1]._id : null;
     const progress = totalCount > 0 ? `${Math.min(Math.round((chats.length / totalCount) * 100), 100)}%` : '100%';
-    return res.status(200).json({ success: true, logs: chats, lastId: nextLastId, totalCount, progress });
+    return res.status(200).json({ success: true, logs: chats, lastId: nextLastId, totalCount, progress, _performance: timings });
   } catch (error) {
     console.error('Failed to fetch chat dashboard data', error);
     return res.status(500).json({
       error: 'Failed to fetch chat dashboard data',
-      details: error.message
+      details: error.message,
+      _performance: { total: Date.now() - startTime }
     });
   }
 }

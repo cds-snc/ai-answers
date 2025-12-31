@@ -50,6 +50,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [loadTime, setLoadTime] = useState(null);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -68,10 +69,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     try {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
-      
+
       // Keep only the last 3 path segments
       const truncatedParts = pathParts.slice(-3);
-      
+
       return '/' + truncatedParts.join('/');
     } catch {
       return url;
@@ -115,6 +116,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
   useEffect(() => {
     // On load, restore saved FilterPanel state
+    let filtersLoaded = false;
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
@@ -143,6 +145,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
             if (tzOffset !== undefined) {
               filters.timezoneOffsetMinutes = tzOffset;
             }
+            // Only consider filters loaded if we have dates
+            if (filters.startDate && filters.endDate) {
+              filtersLoaded = true;
+            }
           }
           filtersRef.current = filters;
         }
@@ -150,6 +156,19 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       // ignore corrupt localStorage entries
     }
+
+    // If no dates were loaded from localStorage, set default dates (last 7 days)
+    if (!filtersLoaded || !filtersRef.current.startDate || !filtersRef.current.endDate) {
+      const endDate = new Date();
+      const startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      filtersRef.current = {
+        ...filtersRef.current,
+        startDate: formatDateForApi(startDate),
+        endDate: formatDateForApi(endDate),
+        timezoneOffsetMinutes: getTimezoneOffsetMinutes(startDate)
+      };
+    }
+
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
@@ -333,9 +352,19 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       )}
 
       <div className="mt-400">
-        <div className="mb-200">
-          <div>{resultsSummary}</div>
-          <div>{totalSummary}</div>
+        <div className="mb-200" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <div>{resultsSummary}</div>
+            <div>{totalSummary}</div>
+          </div>
+          {loadTime && (
+            <div style={{ fontSize: '0.9em', color: '#666', textAlign: 'right' }}>
+              <div>{t('admin.chatDashboard.loadTimeTotal', 'Total time')}: {(loadTime.total / 1000).toFixed(2)}s</div>
+              <div style={{ fontSize: '0.85em', opacity: 0.8 }}>
+                {t('admin.chatDashboard.loadTimeBackend', 'Backend')}: {(loadTime.backend / 1000).toFixed(2)}s
+              </div>
+            </div>
+          )}
         </div>
         {dataTableReady ? (
           <div className="chat-dashboard-table-container">
@@ -380,6 +409,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   return null;
                 },
                 ajax: async (dtParams, callback) => {
+                  const startTime = performance.now();
                   try {
                     setLoading(true);
                     setError(null);
@@ -409,10 +439,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       query.search = searchValue;
                     }
                     const result = await DashboardService.getChatDashboard(query);
+                    const duration = performance.now() - startTime;
+                    setLoadTime({
+                      total: duration,
+                      backend: result?._performance?.total || result?._performance?.mainQuery || 0
+                    });
+
                     setRecordsTotal(result?.recordsTotal || 0);
                     setRecordsFiltered(result?.recordsFiltered || 0);
                     callback({
-                      draw: dtParams.draw || 0,
+                      draw: result?.draw || dtParams.draw || 0,
                       recordsTotal: result?.recordsTotal || 0,
                       recordsFiltered: result?.recordsFiltered || 0,
                       data: Array.isArray(result?.data) ? result.data : []

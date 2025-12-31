@@ -599,7 +599,9 @@
         "answerType": "Answer Type",
         "partnerEval": "Partner Eval",
         "aiEval": "AI Eval"
-      }
+      },
+      "loadTimeTotal": "Total time",
+      "loadTimeBackend": "Backend"
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
