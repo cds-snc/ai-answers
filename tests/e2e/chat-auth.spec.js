@@ -86,6 +86,10 @@ test.describe('Authenticated AI Answers Testing', () => {
 
         console.log('Login successful, redirected to:', url);
 
+        // Wait for page to fully load
+        await page.waitForTimeout(5000);
+        console.log('Page loaded, waiting 5 seconds for full initialization');
+
         // 2. Perform Chat Interaction
 
         // Wait for the textarea
@@ -93,22 +97,19 @@ test.describe('Authenticated AI Answers Testing', () => {
         await page.waitForSelector('textarea#message', { timeout: 30000 });
 
         const textarea = page.locator('textarea#message');
+        console.log('Typing in the question...');
         await textarea.focus();
         await page.keyboard.type('What is SCIS? (Authenticated Test)');
 
+        // Ensure the value is correctly set before proceeding
+        await expect(textarea).toHaveValue('What is SCIS? (Authenticated Test)');
+        console.log('Question field verified');
+
+        // Wait a moment for React state to update
+        await page.waitForTimeout(500);
         // Click send
         console.log('Clicking send...');
         const sendButton = page.locator('.btn-primary-send');
-
-        // Ensure button is enabled
-        try {
-            await expect(sendButton).toBeEnabled({ timeout: 10000 });
-        } catch (e) {
-            console.log('Send button not enabled:', e.message);
-            console.log('Button disabled, forcing input event...');
-            await textarea.dispatchEvent('input', { bubbles: true });
-            await page.waitForTimeout(500);
-        }
 
         await sendButton.click();
 
