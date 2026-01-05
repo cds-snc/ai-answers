@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm"]
+  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm", "../s3"]
 }
 
 dependency "iam" {
@@ -105,8 +105,16 @@ inputs = {
   gc_notify_api_key_arn            = dependency.ssm.outputs.gc_notify_api_key_arn
   google_search_engine_id_arn      = dependency.ssm.outputs.google_search_engine_id_arn
   adobe_analytics_url_arn          = dependency.ssm.outputs.adobe_analytics_url_arn
-  #fargate_cpu                      = 2048  
-  #fargate_memory                   = 16384  
+  s3_bucket_name                   = dependency.s3.outputs.bucket_name
+}
+
+dependency "s3" {
+  config_path = "../s3"
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    bucket_name = "mock-bucket-name"
+  }
 }
 
 include {
