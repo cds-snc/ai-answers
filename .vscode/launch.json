@@ -51,6 +51,40 @@
       "autoAttachChildProcesses": true,
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug All Tests (Vitest)",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": [
+        "run",
+        "--inspect-brk",
+        "--no-file-parallelism"
+      ],
+      "autoAttachChildProcesses": true,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Playwright E2E Tests (Headed)",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": [
+        "test",
+        "tests/e2e/chat-test.spec.js",
+        "--browser=chromium"
+      ],
+      "runtimeArgs": [
+        "--inspect-brk"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "test",
+        "PWDEBUG": "1"
+      }
     }
   ],
   "compounds": [

@@ -21,7 +21,7 @@ export const getParentDomain = (host, nodeEnv = process.env.NODE_ENV) => {
 };
 
 export const getCookieOptions = (req, maxAge) => {
-  const isSecure = process.env.NODE_ENV !== 'development';
+  const isSecure = (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test');
   const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
 
   return {
