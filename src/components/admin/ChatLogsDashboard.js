@@ -127,8 +127,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       {showPanel && (
         <>
           {/* Export Options - Above Filter Panel */}
-          <div className="export-controls bg-white shadow rounded-lg p-4 mb-10">
-            <h3 className="mrgn-bttm-md">{t('admin.chatLogs.title')}</h3>
+          <div className="export-controls bg-white shadow rounded-lg p-4 mb-600">
             <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription') || 'Select export options, configure filters, then click Apply to download.'}</p>
 
             <div className="flex items-center gap-4 flex-wrap">
