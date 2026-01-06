@@ -3,6 +3,8 @@ import { User } from '../../models/user.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import crypto from 'crypto';
+import os from 'os';
+
 
 const resetPasswordHandler = async (req, res) => {
   try {
@@ -15,7 +17,7 @@ const resetPasswordHandler = async (req, res) => {
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
 
     if (!user) {
-      console.warn('[auth-reset-password] User not found for email:', email);
+      console.warn(`[auth-reset-password][${os.hostname()}] User not found for email:`, email);
       return res.status(404).json({ success: false, message: 'user not found' });
     }
 
@@ -23,16 +25,16 @@ const resetPasswordHandler = async (req, res) => {
     const now = new Date();
     const isExpired = user.resetPasswordExpires && user.resetPasswordExpires < now;
 
-    console.debug('[auth-reset-password] Validating token for:', email);
-    console.debug('[auth-reset-password] Received token prefix:', String(token).slice(0, 16), 'length:', String(token).length);
-    console.debug('[auth-reset-password] Stored Token exists:', !!user.resetPasswordToken);
-    console.debug('[auth-reset-password] Stored Expiry:', user.resetPasswordExpires);
-    console.debug('[auth-reset-password] Current Time:', now);
-    console.debug('[auth-reset-password] Is Expired:', isExpired);
+    console.debug(`[auth-reset-password][${os.hostname()}] Validating token for:`, email);
+    console.debug(`[auth-reset-password][${os.hostname()}] Received token prefix:`, String(token).slice(0, 16), 'length:', String(token).length);
+    console.debug(`[auth-reset-password][${os.hostname()}] Stored Token exists:`, !!user.resetPasswordToken);
+    console.debug(`[auth-reset-password][${os.hostname()}] Stored Expiry:`, user.resetPasswordExpires);
+    console.debug(`[auth-reset-password][${os.hostname()}] Current Time:`, now);
+    console.debug(`[auth-reset-password][${os.hostname()}] Is Expired:`, isExpired);
 
     // Validate reset token by comparing stored hash with hash of provided token
     if (!user.resetPasswordToken || !user.resetPasswordExpires || isExpired) {
-      console.warn('[auth-reset-password] Validation failed: token missing or expired', {
+      console.warn(`[auth-reset-password][${os.hostname()}] Validation failed: token missing or expired`, {
         hasToken: !!user.resetPasswordToken,
         hasExpiry: !!user.resetPasswordExpires,
         isExpired
@@ -49,7 +51,7 @@ const resetPasswordHandler = async (req, res) => {
       if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
         tokenMatches = true;
       } else {
-        console.warn('[auth-reset-password] Hash mismatch', {
+        console.warn(`[auth-reset-password][${os.hostname()}] Hash mismatch`, {
           storedHashPrefix: String(user.resetPasswordToken).slice(0, 8),
           computedHashPrefix: tokenHash.slice(0, 8),
           aLen: a.length,
@@ -57,7 +59,7 @@ const resetPasswordHandler = async (req, res) => {
         });
       }
     } catch (e) {
-      console.error('[auth-reset-password] crypto comparison error:', e);
+      console.error(`[auth-reset-password][${os.hostname()}] crypto comparison error:`, e);
       tokenMatches = false;
     }
 
@@ -80,9 +82,9 @@ const resetPasswordHandler = async (req, res) => {
     try {
       await user.save();
     } catch (saveErr) {
-      console.error('[auth-reset-password] Failed to save user after password update:', saveErr);
+      console.error(`[auth-reset-password][${os.hostname()}] Failed to save user after password update:`, saveErr);
       if (saveErr.name === 'ValidationError') {
-        console.error('[auth-reset-password] Validation Errors:', saveErr.errors);
+        console.error(`[auth-reset-password][${os.hostname()}] Validation Errors:`, saveErr.errors);
       }
       throw saveErr; // Let the outer catch handle it
     }
@@ -105,12 +107,12 @@ const resetPasswordHandler = async (req, res) => {
       }
     } catch (e) {
       // don't fail the reset if notification fails
-      console.error('failed to send post-reset notification', e);
+      console.error(`[auth-reset-password][${os.hostname()}] failed to send post-reset notification`, e);
     }
 
     return res.status(200).json({ success: true, message: 'password reset' });
   } catch (err) {
-    console.error('reset-password handler error', err);
+    console.error(`[auth-reset-password][${os.hostname()}] reset-password handler error`, err);
     return res.status(500).json({ success: false, error: 'failed to reset password' });
   }
 };

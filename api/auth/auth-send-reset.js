@@ -3,6 +3,7 @@ import { User } from '../../models/user.js';
 import GCNotifyService from '../../services/GCNotifyService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import crypto from 'crypto';
+import os from 'os';
 
 const sendResetHandler = async (req, res) => {
   try {
@@ -13,11 +14,6 @@ const sendResetHandler = async (req, res) => {
     }
 
     await dbConnect();
-    const user = await User.findOne({ email: String(email).toLowerCase().trim() });
-    if (!user) {
-      // Generic response
-      return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
-    }
 
     // Generate single-use token and expiry (15 minutes)
     const token = crypto.randomBytes(32).toString('hex');
@@ -25,26 +21,32 @@ const sendResetHandler = async (req, res) => {
 
     // Store only a hash of the token in the database for security
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    user.resetPasswordToken = tokenHash;
-    user.resetPasswordExpires = expires;
 
-    console.debug('[auth-send-reset] Generated token (plaintext):', token);
-    console.debug('[auth-send-reset] Generated hash:', tokenHash);
-    console.debug('[auth-send-reset] Expiry set to:', expires);
+    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request for: ${email}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Generated hash for storage: ${tokenHash}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Expiry set to: ${expires.toISOString()}`);
 
-    try {
-      await user.save();
-      console.info('[auth-send-reset] User saved successfully with new reset token');
-    } catch (saveErr) {
-      console.error('[auth-send-reset] Failed to save user with reset token:', saveErr);
-      if (saveErr.name === 'ValidationError') {
-        console.error('[auth-send-reset] Validation Errors:', saveErr.errors);
-      }
-      throw saveErr;
+    // Use findOneAndUpdate to ensure atomic update and avoid stale loaded documents overwriting on .save()
+    const user = await User.findOneAndUpdate(
+      { email: String(email).toLowerCase().trim() },
+      {
+        $set: {
+          resetPasswordToken: tokenHash,
+          resetPasswordExpires: expires
+        }
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      // Generic response for security
+      console.warn(`[auth-send-reset][${os.hostname()}] No user found with email: ${email}`);
+      return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
+    console.info(`[auth-send-reset][${os.hostname()}] User token updated atomically.`);
+
     // Compose reset link (client will have a route to handle verification)
-    // Prefer configured site.baseUrl setting, fall back to FRONTEND_URL env var
     let configuredBase = '';
     try {
       configuredBase = SettingsService.get('site.baseUrl') || process.env.FRONTEND_URL || '';
@@ -54,13 +56,12 @@ const sendResetHandler = async (req, res) => {
     const normalizedBase = String(configuredBase || '').replace(/\/$/, '');
     const linkPath = `/en/reset-verify?email=${encodeURIComponent(user.email)}&token=${encodeURIComponent(token)}`;
     const resetLink = normalizedBase ? `${normalizedBase}${linkPath}` : linkPath;
-    console.debug('[auth-send-reset] Generated Reset Link:', resetLink);
 
-    // Resolve template id from settings or env
+    console.debug(`[auth-send-reset][${os.hostname()}] Final Reset Link: ${resetLink}`);
+
     const tpl = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
     const personalisation = {
       name: user.email || '',
-      // The template should include the reset link. The link contains the plaintext token.
       reset_link: resetLink
     };
 
@@ -68,16 +69,15 @@ const sendResetHandler = async (req, res) => {
       try {
         await GCNotifyService.sendEmail({ email: user.email, personalisation, templateId: tpl });
       } catch (e) {
-        console.error('Failed to send reset email', e);
-        // We still return generic response to caller
+        console.error(`[auth-send-reset][${os.hostname()}] Failed to send email via GC Notify:`, e);
       }
     } else {
-      console.error('Reset template id missing; not sending email');
+      console.error(`[auth-send-reset][${os.hostname()}] Reset template ID missing.`);
     }
 
     return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
   } catch (err) {
-    console.error('send-reset handler error', err);
+    console.error(`[auth-send-reset][${os.hostname()}] Handler error:`, err);
     return res.status(500).json({ success: false, error: 'failed to request reset' });
   }
 };
