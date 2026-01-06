@@ -64,7 +64,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           <input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={isLoading} />
         </div>
 
-        <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.complete.submitting') || 'Submitting...' : t('reset.complete.submit') || 'Set password'}</button>
+        <button type="submit" className={styles.submit_button} disabled={isLoading || !token || !email}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.complete.submit') || 'Set password'}</button>
       </form>
       <div className={styles['auth-links']}>
         <Link to={`/${lang}/signin`}>{t('login.form.signinLink') || 'Back to sign in'}</Link>

@@ -1,14 +1,15 @@
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
-import TwoFAService from '../../services/TwoFAService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import crypto from 'crypto';
 
 const resetPasswordHandler = async (req, res) => {
   try {
-    const { email, token, code, password } = req.body || {};
-    if (!email || !token || !password) return res.status(400).json({ success: false, message: 'email, token and password required' });
+    const { email, token, password } = req.body || {};
+    if (!email || !token || !password || token === 'undefined' || token === 'null') {
+      return res.status(400).json({ success: false, message: 'email, token and password required' });
+    }
 
     await dbConnect();
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
@@ -23,6 +24,7 @@ const resetPasswordHandler = async (req, res) => {
     const isExpired = user.resetPasswordExpires && user.resetPasswordExpires < now;
 
     console.debug('[auth-reset-password] Validating token for:', email);
+    console.debug('[auth-reset-password] Received token prefix:', String(token).slice(0, 16), 'length:', String(token).length);
     console.debug('[auth-reset-password] Stored Token exists:', !!user.resetPasswordToken);
     console.debug('[auth-reset-password] Stored Expiry:', user.resetPasswordExpires);
     console.debug('[auth-reset-password] Current Time:', now);
@@ -95,7 +97,7 @@ const resetPasswordHandler = async (req, res) => {
       const tpl = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
       const personalisation = {
         name: user.email || '',
-        // Template implementer may want a different template for success notifications; we reuse the same if available
+        reset_link: '', // provide empty string to satisfy template requirements if same template is used
       };
       if (tpl) {
         // send a simple notification (re-using template) — template should be configured appropriately
