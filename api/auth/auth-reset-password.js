@@ -43,7 +43,7 @@ const resetPasswordHandler = async (req, res) => {
       encoding: 'base32',
       token: code,
       step: 30,
-      window: 2 // Allow 2 steps before/after (60-90 second window)
+      window: 20 // Allow ~10 minutes window (20 * 30s)
     });
 
     if (!isValid) {

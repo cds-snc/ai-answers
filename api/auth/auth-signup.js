@@ -1,5 +1,6 @@
 import { User } from '../../models/user.js';
 import dbConnect from '../db/db-connect.js';
+import speakeasy from 'speakeasy';
 
 const signupHandler = async (req, res) => {
   try {
@@ -27,12 +28,18 @@ const signupHandler = async (req, res) => {
     const userCount = await User.countDocuments();
     const isFirstUser = userCount === 0;
 
+    // Generate secrets immediately to avoid race conditions later
+    const twoFASecret = speakeasy.generateSecret({ length: 20 }).base32;
+    const resetPasswordSecret = speakeasy.generateSecret({ length: 20 }).base32;
+
     // Create new user (automatically active if first user)
     const user = new User({
       email,
       password,
-      role: "admin",
-      active: isFirstUser // First user is automatically active
+      role: isFirstUser ? "admin" : "partner",
+      active: isFirstUser, // First user is automatically active
+      twoFASecret,
+      resetPasswordSecret
     });
     await user.save();
 

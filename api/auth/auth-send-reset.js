@@ -30,12 +30,9 @@ const sendResetHandler = async (req, res) => {
       const secret = speakeasy.generateSecret({ length: 32 });
       console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
 
-      // Use findOneAndUpdate for atomic operation
-      user = await User.findOneAndUpdate(
-        { email: String(email).toLowerCase().trim() },
-        { $set: { resetPasswordSecret: secret.base32 } },
-        { new: true, writeConcern: { w: 'majority' } }
-      );
+      user.resetPasswordSecret = secret.base32;
+      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
+      await user.save();
     } else {
       console.debug(`[auth-send-reset][${os.hostname()}] Using existing resetPasswordSecret for user`);
     }
