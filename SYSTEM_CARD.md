@@ -25,11 +25,28 @@
 
 AI Answers is a specialized AI chat agent designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
 
+![AI Answers System Architecture Diagram](docs/images/system_diagram_v2_EN.jpg)
+
+<details>
+<summary>Image Description (Alt Text)</summary>
+
+The diagram is divided into two horizontal swim lanes.
+
+**Top lane – "Commercial chat solution (e.g. ChatGPT)":**
+
+A linear pipeline flows left to right: Question → Input Guardrails (Generic/Harm) → Context block containing "Conversation" and "Search" (labelled "Generic/not GC specific") → Large Language Models (icons for Gemini, Claude, OpenAI) → Output Guardrails (Generic/Harm) → Answer.
+
+**Bottom lane – "AI Answers solution":**
+
+Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and "Internal uses" (Content design). Both feed into Input Guardrails (Privacy/Harm). The context block is larger and labelled "GC specific," containing six elements: GC System instructions, Conversation, Departmental instructions, Search (GC only), GC & dept skills/tools, and Web Content (GC only). An additional component, "SME Evaluations," sits below the context block and feeds into a "Continuous evaluation" loop. The context feeds into the same set of LLMs, which connect to an "Agents" node. Agents pass through Output Guardrails (Accuracy/Harm/Bias) before producing the Answer. Arrows from the Continuous evaluation loop return to both the Agents and the Context block, indicating iterative refinement.
+
+</details>
+
 ## Current Status
-- **Environment**: Preparing for public pilot
+- **Environment**: Beta-testing on Canada.ca 
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Evaluation**: Ongoing expert evaluation and response scoring feeding AI automated evals & answers
-- **Platform**: Departments can add prompt scenarios to meet specific needs
+- **Platform**: Departments can add prompts and files to meet specific needs
 
 ## System Purpose and Scope
 
