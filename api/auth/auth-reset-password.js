@@ -14,7 +14,7 @@ const resetPasswordHandler = async (req, res) => {
     }
 
     await dbConnect();
-    const user = await User.findOne({ email: String(email).toLowerCase().trim() });
+    const user = await User.findOne({ email: String(email).toLowerCase().trim() }).read('primary');
 
     if (!user) {
       console.warn(`[auth-reset-password][${os.hostname()}] User not found for email:`, email);

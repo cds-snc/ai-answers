@@ -35,7 +35,10 @@ const sendResetHandler = async (req, res) => {
           resetPasswordExpires: expires
         }
       },
-      { new: true }
+      {
+        new: true,
+        writeConcern: { w: 'majority' }
+      }
     );
 
     if (!user) {
