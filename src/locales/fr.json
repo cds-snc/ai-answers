@@ -867,6 +867,7 @@
       "azure": "Azure OpenAI"
     },
     "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données",
+    "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",

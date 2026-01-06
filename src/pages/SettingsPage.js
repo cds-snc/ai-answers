@@ -13,6 +13,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingDeployment, setSavingDeployment] = useState(false);
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // New state for provider (openai | azure)
   const [provider, setProvider] = useState('openai');
@@ -71,6 +73,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDeploymentMode(mode);
       const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
       setVectorServiceType(type);
+      const url = await DataStoreService.getSetting('site.baseUrl', '');
+      setBaseUrl(url ?? '');
       // Load provider setting
       const providerSetting = await DataStoreService.getSetting('provider', 'openai');
       setProvider(providerSetting);
@@ -325,6 +329,20 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleBaseUrlChange = (e) => {
+    setBaseUrl(e.target.value);
+  };
+
+  const handleBaseUrlBlur = async () => {
+    setSavingBaseUrl(true);
+    try {
+      const current = await saveAndVerify('site.baseUrl', baseUrl, (v) => v ?? '');
+      setBaseUrl(current);
+    } finally {
+      setSavingBaseUrl(false);
+    }
+  };
+
   const handleTwoFAEnabledChange = async (e) => {
     const newValue = e.target.value;
     setTwoFAEnabled(newValue);
@@ -380,6 +398,19 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="available">{t('settings.statuses.available', 'Available')}</option>
             <option value="unavailable">{t('settings.statuses.unavailable', 'Unavailable')}</option>
           </select>
+
+          <label htmlFor="base-url" className="mb-200 display-block mt-400">
+            {t('settings.baseUrlLabel', 'Base URL (e.g. https://example.com)')}
+          </label>
+          <input
+            id="base-url"
+            type="text"
+            value={baseUrl}
+            onChange={handleBaseUrlChange}
+            onBlur={handleBaseUrlBlur}
+            disabled={savingBaseUrl}
+            className="w-full"
+          />
 
           <label htmlFor="deployment-mode" className="mb-200 display-block mt-400">
             {t('settings.deploymentModeLabel', 'Deployment Mode')}
