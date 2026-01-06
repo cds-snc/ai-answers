@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.76.0](https://github.com/cds-snc/ai-answers/compare/v1.75.0...v1.76.0) (2026-01-06)
+
+
+### Features
+
+* Implement password reset functionality, including sending reset emails and verifying tokens to update passwords. ([c1ef84c](https://github.com/cds-snc/ai-answers/commit/c1ef84c6401d8c5c68e1df9b5f95b1820afa6b65))
+* implement TOTP-based password reset functionality across API, models, and UI. ([4e0bbb1](https://github.com/cds-snc/ai-answers/commit/4e0bbb151944a4bca54606822d5d94f492150738))
+* Implement user signup, password reset, and two-factor authentication services. ([9214b5d](https://github.com/cds-snc/ai-answers/commit/9214b5dc62f0e62a7cc228fd68ebce51fcd82cc7))
+
 ## [1.75.0](https://github.com/cds-snc/ai-answers/compare/v1.74.1...v1.75.0) (2026-01-06)
 
 
