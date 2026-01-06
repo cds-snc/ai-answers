@@ -12,21 +12,53 @@ const resetPasswordHandler = async (req, res) => {
 
     await dbConnect();
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
-    if (!user) return res.status(404).json({ success: false, message: 'user not found' });
+
+    if (!user) {
+      console.warn('[auth-reset-password] User not found for email:', email);
+      return res.status(404).json({ success: false, message: 'user not found' });
+    }
+
+    // Debug: Log token comparison info (masking token for security in production-like envs if needed, but here we need details)
+    const now = new Date();
+    const isExpired = user.resetPasswordExpires && user.resetPasswordExpires < now;
+
+    console.debug('[auth-reset-password] Validating token for:', email);
+    console.debug('[auth-reset-password] Stored Token exists:', !!user.resetPasswordToken);
+    console.debug('[auth-reset-password] Stored Expiry:', user.resetPasswordExpires);
+    console.debug('[auth-reset-password] Current Time:', now);
+    console.debug('[auth-reset-password] Is Expired:', isExpired);
 
     // Validate reset token by comparing stored hash with hash of provided token
-    if (!user.resetPasswordToken || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+    if (!user.resetPasswordToken || !user.resetPasswordExpires || isExpired) {
+      console.warn('[auth-reset-password] Validation failed: token missing or expired', {
+        hasToken: !!user.resetPasswordToken,
+        hasExpiry: !!user.resetPasswordExpires,
+        isExpired
+      });
       return res.status(400).json({ success: false, message: 'invalid or expired token' });
     }
+
     const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
     let tokenMatches = false;
     try {
       const a = Buffer.from(String(user.resetPasswordToken), 'hex');
       const b = Buffer.from(tokenHash, 'hex');
-      if (a.length === b.length && crypto.timingSafeEqual(a, b)) tokenMatches = true;
+
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+        tokenMatches = true;
+      } else {
+        console.warn('[auth-reset-password] Hash mismatch', {
+          storedHashPrefix: String(user.resetPasswordToken).slice(0, 8),
+          computedHashPrefix: tokenHash.slice(0, 8),
+          aLen: a.length,
+          bLen: b.length
+        });
+      }
     } catch (e) {
+      console.error('[auth-reset-password] crypto comparison error:', e);
       tokenMatches = false;
     }
+
     if (!tokenMatches) {
       return res.status(400).json({ success: false, message: 'invalid or expired token' });
     }
@@ -42,7 +74,16 @@ const resetPasswordHandler = async (req, res) => {
     // Clear reset artifacts
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
-    await user.save();
+
+    try {
+      await user.save();
+    } catch (saveErr) {
+      console.error('[auth-reset-password] Failed to save user after password update:', saveErr);
+      if (saveErr.name === 'ValidationError') {
+        console.error('[auth-reset-password] Validation Errors:', saveErr.errors);
+      }
+      throw saveErr; // Let the outer catch handle it
+    }
 
     // Optionally: revoke sessions — not fully implemented because sessions are in-memory/service-scoped
     try {
