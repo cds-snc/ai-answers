@@ -131,7 +131,7 @@ async function verify2FACode({ userOrId, code } = {}) {
     secret: secret,
     encoding: 'base32',
     token: token,
-    window: 2 // Allow +/- 2 time steps (60 seconds) for clock skew
+    window: 20 // Allow +/- 20 time steps (~10 minutes) for email delays
   });
 
   if (!isValid) return { success: false, reason: 'mismatch' };

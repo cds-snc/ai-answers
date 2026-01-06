@@ -38,16 +38,12 @@ const userSchema = new mongoose.Schema({
     default: null,
   },
   // Password reset fields
-  resetPasswordToken: {
+  // Permanent secret for TOTP password reset codes
+  resetPasswordSecret: {
     type: String,
     default: null,
   },
-  resetPasswordExpires: {
-    type: Date,
-    default: null,
-  },
-  // Fallback email OTP for password reset (if user doesn't use TOTP/WebAuthn)
-  // (legacy) email OTP fields removed — email OTP fallback is no longer used
+
 }, {
   timestamps: true,
   versionKey: false,
