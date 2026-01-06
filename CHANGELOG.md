@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.74.1](https://github.com/cds-snc/ai-answers/compare/v1.74.0...v1.74.1) (2026-01-06)
+
+
+### Bug Fixes
+
+* Add base URL back to settings for proper password reset ([d408eef](https://github.com/cds-snc/ai-answers/commit/d408eefb813d02125b62d1d94f852c5c1e02edeb))
+* User role not set to partner ([045510c](https://github.com/cds-snc/ai-answers/commit/045510cc4109a2b5383b14a753d46b5da3c81a12))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @langchain/core from 0.3.75 to 0.3.80 ([4919327](https://github.com/cds-snc/ai-answers/commit/4919327f82c3f42e22a8abbc8bfbd45f91de6c0f))
+* **deps:** bump qs and express ([81a9904](https://github.com/cds-snc/ai-answers/commit/81a9904c11147f37b3aa8c4495f1eb06d9fe4458))
+* **deps:** bump qs and express ([75aedb4](https://github.com/cds-snc/ai-answers/commit/75aedb498a02d9c991e0868e02bfec369ed5390a))
+* **deps:** bump storybook from 8.6.14 to 8.6.15 ([fda57b1](https://github.com/cds-snc/ai-answers/commit/fda57b1cc8ecf6de246fe0f0888996e07323fbb3))
+
 ## [1.74.0](https://github.com/cds-snc/ai-answers/compare/v1.73.0...v1.74.0) (2025-12-30)
 
 
