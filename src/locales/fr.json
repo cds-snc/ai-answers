@@ -720,11 +720,16 @@
       "downloadCsv": "Télécharger CSV",
       "downloadExcel": "Télécharger Excel",
       "found": "Trouvé",
-      "interactionsFound": "chats. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
+      "interactionsFound": "chats. Sélectionnez une vue et un format, puis exportez.",
       "date": "Date",
       "chatId": "ID de chat",
       "interactions": "Interactions",
-      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)"
+      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)",
+      "exportView": "Vue d'exportation",
+      "exportFormat": "Format",
+      "export": "Exporter",
+      "exporting": "Exportation en cours...",
+      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger."
     }
   },
   "signup": {

@@ -662,11 +662,16 @@
       "downloadCsv": "Download CSV",
       "downloadExcel": "Download Excel",
       "found": "Found",
-      "interactionsFound": "chats. Download the logs to see the full set and details.",
+      "interactionsFound": "chats. Select a view and format, then export.",
       "date": "Date",
       "chatId": "Chat ID",
       "interactions": "Interactions",
-      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)"
+      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)",
+      "exportView": "Export View",
+      "exportFormat": "Format",
+      "export": "Export",
+      "exporting": "Exporting...",
+      "exportDescription": "Select export options, configure filters below, then click Export to download."
     },
     "deleteChat": {
       "title": "Delete a chat from the logs",

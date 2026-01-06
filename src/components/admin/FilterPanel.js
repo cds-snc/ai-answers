@@ -6,7 +6,7 @@ import moment from 'moment';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 
-const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storageKey = 'chatFilterPanelState_v1' }) => {
+const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storageKey = 'chatFilterPanelState_v1', applyButtonText, applyDisabled = false, skipAutoApply = false }) => {
   const { t } = useTranslations();
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
@@ -102,7 +102,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             partnerEval: parsed.partnerEval || 'all',
             aiEval: parsed.aiEval || 'all'
           };
-          onApplyFilters(restoredFilters);
+          if (!skipAutoApply) {
+            onApplyFilters(restoredFilters);
+          }
         } catch (e) {
           // ignore
         }
@@ -142,7 +144,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             partnerEval: 'all',
             aiEval: 'all'
           };
-          onApplyFilters(defaultFilters);
+          if (!skipAutoApply) {
+            onApplyFilters(defaultFilters);
+          }
         }
       }
     } catch (e) {
@@ -205,7 +209,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     dateRangePickerInstance.current = $picker.data('daterangepicker');
 
     // Handle date selection - convert moment to local time string
-    $picker.on('apply.daterangepicker', function(ev, picker) {
+    $picker.on('apply.daterangepicker', function (ev, picker) {
       // Get moment objects from picker and convert to Date objects (local time)
       const startDate = picker.startDate.toDate();
       const endDate = picker.endDate.toDate();
@@ -551,8 +555,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             type="button"
             onClick={handleApply}
             className="filter-button filter-button-primary"
+            disabled={applyDisabled}
           >
-            {t('admin.filters.apply') || 'Apply Filters'}
+            {applyButtonText || t('admin.filters.apply') || 'Apply Filters'}
           </button>
           <button
             type="button"
