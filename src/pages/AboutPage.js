@@ -1,3 +1,20 @@
+/**
+ * About Page
+ *
+ * CONTENT EDITING:
+ * The text content for this page is stored in markdown files that can be
+ * easily edited without touching this code:
+ *
+ *   - English: public/content/about-en.md
+ *   - French:  public/content/about-fr.md
+ *
+ * The markdown files use h2 headings (##) to define sections. Each section
+ * is automatically parsed and rendered in the appropriate place on this page.
+ *
+ * To edit content, simply modify the markdown files. Changes will appear
+ * after rebuilding or restarting the dev server.
+ */
+
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
