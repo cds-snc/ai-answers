@@ -27,8 +27,21 @@ const sendResetHandler = async (req, res) => {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     user.resetPasswordToken = tokenHash;
     user.resetPasswordExpires = expires;
-    // Legacy: no email OTP fallback anymore; no per-reset OTP to clear
-    await user.save();
+
+    console.debug('[auth-send-reset] Generated token (plaintext):', token);
+    console.debug('[auth-send-reset] Generated hash:', tokenHash);
+    console.debug('[auth-send-reset] Expiry set to:', expires);
+
+    try {
+      await user.save();
+      console.info('[auth-send-reset] User saved successfully with new reset token');
+    } catch (saveErr) {
+      console.error('[auth-send-reset] Failed to save user with reset token:', saveErr);
+      if (saveErr.name === 'ValidationError') {
+        console.error('[auth-send-reset] Validation Errors:', saveErr.errors);
+      }
+      throw saveErr;
+    }
 
     // Compose reset link (client will have a route to handle verification)
     // Prefer configured site.baseUrl setting, fall back to FRONTEND_URL env var
@@ -41,6 +54,7 @@ const sendResetHandler = async (req, res) => {
     const normalizedBase = String(configuredBase || '').replace(/\/$/, '');
     const linkPath = `/en/reset-verify?email=${encodeURIComponent(user.email)}&token=${encodeURIComponent(token)}`;
     const resetLink = normalizedBase ? `${normalizedBase}${linkPath}` : linkPath;
+    console.debug('[auth-send-reset] Generated Reset Link:', resetLink);
 
     // Resolve template id from settings or env
     const tpl = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID || null;
