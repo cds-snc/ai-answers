@@ -16,7 +16,7 @@ const ResetRequestPage = ({ lang = 'en' }) => {
     setIsLoading(true);
     setMessage('');
     try {
-      await AuthService.sendReset(email);
+      await AuthService.sendReset(email, lang);
       setMessage(t('reset.request.sent') || 'If that account exists, we sent a reset email.');
       // Optionally redirect to signin after a short delay
       setTimeout(() => navigate(`/${lang}/signin`), 3000);
