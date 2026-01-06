@@ -7,27 +7,25 @@ import styles from '../styles/auth.module.css';
 const ResetVerifyPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const code = searchParams.get('code');
   const email = searchParams.get('email');
   const [mode, setMode] = useState('unknown');
-  const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // We could call an endpoint to check token validity and whether user has TOTP enabled.
-    // For simplicity we'll let the reset-password endpoint validate token later. Show UI to either ask for TOTP or allow sending email OTP.
-    if (!token || !email) {
+    // Redirect directly to reset-complete with code and email
+    if (!code || !email) {
       setMessage(t('reset.verify.invalidLink') || 'Invalid or missing reset link');
       setMode('invalid');
       return;
     }
     setMode('ready');
-  }, [token, email, t]);
+  }, [code, email, t]);
   const gotoSetPassword = () => {
-    // navigate to set-password screen; pass token and email via query
-    navigate(`/${lang}/reset-complete?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
+    // Navigate to set-password screen; pass code and email via query
+    navigate(`/${lang}/reset-complete?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
   };
 
   return (
