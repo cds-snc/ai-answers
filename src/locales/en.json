@@ -600,25 +600,25 @@
         "partnerEval": "Partner Eval",
         "aiEval": "AI Eval"
       },
-    "labels": {
-      "userType": {
-        "public": "public",
-        "admin": "admin"
-      },
-      "answerType": {
-        "normal": "normal",
-        "clarifying-question": "clarifying",
-        "pt-muni": "pt-muni",
-        "not-gc": "not-GC"
-      },
-      "evaluation": {
-        "correct": "correct",
-        "needsImprovement": "needs improvement",
-        "hasError": "error",
-        "hasCitationError": "citation error",
-        "harmful": "harmful"
+      "labels": {
+        "userType": {
+          "public": "public",
+          "admin": "admin"
+        },
+        "answerType": {
+          "normal": "normal",
+          "clarifying-question": "clarifying",
+          "pt-muni": "pt-muni",
+          "not-gc": "not-GC"
+        },
+        "evaluation": {
+          "correct": "correct",
+          "needsImprovement": "needs improvement",
+          "hasError": "error",
+          "hasCitationError": "citation error",
+          "harmful": "harmful"
+        }
       }
-    }
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
@@ -832,6 +832,7 @@
       "azure": "Azure OpenAI"
     },
     "logChatsToDatabaseLabel": "Log chats to database",
+    "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
