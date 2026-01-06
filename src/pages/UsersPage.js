@@ -202,7 +202,7 @@ const UsersPage = ({ lang }) => {
       render: (data) => new Date(data).toLocaleDateString()
     },
     {
-      title: t('users.columns.action'),
+      title: t('users.columns.actions'),
       data: null,
       defaultContent: '',
     },
