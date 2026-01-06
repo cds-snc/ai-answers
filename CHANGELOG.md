@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.75.0](https://github.com/cds-snc/ai-answers/compare/v1.74.1...v1.75.0) (2026-01-06)
+
+
+### Features
+
+* add authentication service with fetch header logic, user manage… ([926234b](https://github.com/cds-snc/ai-answers/commit/926234b4a5c85ad6a434cbff44ab2ca00eb15612))
+* add authentication service with fetch header logic, user management page, and internationalized AI Answers UI ([3a18601](https://github.com/cds-snc/ai-answers/commit/3a186011fed29b81d8264d4f5204195747694043))
+
 ## [1.74.1](https://github.com/cds-snc/ai-answers/compare/v1.74.0...v1.74.1) (2026-01-06)
 
 
