@@ -506,65 +506,67 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                   </select>
                 </div>
 
-                <div className="filter-row">
-                  <fieldset>
-                    <legend className="filter-label">
-                      {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                    </legend>
-                    <div className="filter-checkbox-group">
-                      {partnerEvalOptions
-                        .filter(option => option.value !== 'all')
-                        .map(option => (
-                          <label key={option.value} className="filter-checkbox-label">
-                            <input
-                              type="checkbox"
-                              value={option.value}
-                              checked={partnerEval.includes(option.value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setPartnerEval([...partnerEval, option.value]);
-                                } else {
-                                  setPartnerEval(partnerEval.filter(v => v !== option.value));
-                                }
-                              }}
-                              className="filter-checkbox"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                    </div>
-                  </fieldset>
-                </div>
+              <div className="filter-row">
+                <details className="filter-checkbox-details">
+                  <summary className="filter-label">
+                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                    {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+                  </summary>
+                  <div className="filter-checkbox-group">
+                    {partnerEvalOptions
+                      .filter(option => option.value !== 'all')
+                      .map(option => (
+                        <label key={option.value} className="filter-checkbox-label">
+                          <input
+                            type="checkbox"
+                            value={option.value}
+                            checked={partnerEval.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setPartnerEval([...partnerEval, option.value]);
+                              } else {
+                                setPartnerEval(partnerEval.filter(v => v !== option.value));
+                              }
+                            }}
+                            className="filter-checkbox"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                  </div>
+                </details>
+              </div>
 
-                <div className="filter-row">
-                  <fieldset>
-                    <legend className="filter-label">
-                      {t('admin.filters.aiEval') || 'AI Evaluation'}
-                    </legend>
-                    <div className="filter-checkbox-group">
-                      {aiEvalOptions
-                        .filter(option => option.value !== 'all')
-                        .map(option => (
-                          <label key={option.value} className="filter-checkbox-label">
-                            <input
-                              type="checkbox"
-                              value={option.value}
-                              checked={aiEval.includes(option.value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setAiEval([...aiEval, option.value]);
-                                } else {
-                                  setAiEval(aiEval.filter(v => v !== option.value));
-                                }
-                              }}
-                              className="filter-checkbox"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                    </div>
-                  </fieldset>
-                </div>
+              <div className="filter-row">
+                <details className="filter-checkbox-details">
+                  <summary className="filter-label">
+                    {t('admin.filters.aiEval') || 'AI Evaluation'}
+                    {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+                  </summary>
+                  <div className="filter-checkbox-group">
+                    {aiEvalOptions
+                      .filter(option => option.value !== 'all')
+                      .map(option => (
+                        <label key={option.value} className="filter-checkbox-label">
+                          <input
+                            type="checkbox"
+                            value={option.value}
+                            checked={aiEval.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAiEval([...aiEval, option.value]);
+                              } else {
+                                setAiEval(aiEval.filter(v => v !== option.value));
+                              }
+                            }}
+                            className="filter-checkbox"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                  </div>
+                </details>
+              </div>
               </div>
             </details>
           </div>
