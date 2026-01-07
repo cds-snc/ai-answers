@@ -403,6 +403,19 @@ async function chatExportHandler(req, res) {
             const pipeline = [];
             if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
+            // Early projection to reduce document size through pipeline
+            pipeline.push({
+                $project: {
+                    chatId: 1,
+                    interactions: 1,
+                    user: 1,
+                    createdAt: 1,
+                    pageLanguage: 1,
+                    aiProvider: 1,
+                    searchProvider: 1
+                }
+            });
+
             // ... (Standard lookups for User, Interactions, Context) ...
             // I'll reuse the standard lookups from previous implementation, checking for optimizations.
             pipeline.push({
