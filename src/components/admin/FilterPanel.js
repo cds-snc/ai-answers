@@ -60,9 +60,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState('all');
-  const [answerType, setAnswerType] = useState('all');
-  const [partnerEval, setPartnerEval] = useState('all');
-  const [aiEval, setAiEval] = useState('all');
+  const [answerType, setAnswerType] = useState([]);
+  const [partnerEval, setPartnerEval] = useState([]);
+  const [aiEval, setAiEval] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Load saved state from localStorage
@@ -83,9 +83,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
           if (typeof parsed.urlEn === 'string') setUrlEn(parsed.urlEn);
           if (typeof parsed.urlFr === 'string') setUrlFr(parsed.urlFr);
           if (typeof parsed.userType === 'string') setUserType(parsed.userType);
-          if (typeof parsed.answerType === 'string') setAnswerType(parsed.answerType);
-          if (typeof parsed.partnerEval === 'string') setPartnerEval(parsed.partnerEval);
-          if (typeof parsed.aiEval === 'string') setAiEval(parsed.aiEval);
+          if (Array.isArray(parsed.answerType)) setAnswerType(parsed.answerType);
+          if (Array.isArray(parsed.partnerEval)) setPartnerEval(parsed.partnerEval);
+          if (Array.isArray(parsed.aiEval)) setAiEval(parsed.aiEval);
           if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
 
           // After restoring state, apply the filters to trigger initial load
@@ -98,9 +98,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             urlEn: parsed.urlEn || '',
             urlFr: parsed.urlFr || '',
             userType: parsed.userType || 'all',
-            answerType: parsed.answerType || 'all',
-            partnerEval: parsed.partnerEval || 'all',
-            aiEval: parsed.aiEval || 'all'
+            answerType: Array.isArray(parsed.answerType) && parsed.answerType.length > 0 ? parsed.answerType.join(',') : 'all',
+            partnerEval: Array.isArray(parsed.partnerEval) && parsed.partnerEval.length > 0 ? parsed.partnerEval.join(',') : 'all',
+            aiEval: Array.isArray(parsed.aiEval) && parsed.aiEval.length > 0 ? parsed.aiEval.join(',') : 'all'
           };
           onApplyFilters(restoredFilters);
         } catch (e) {
@@ -122,9 +122,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             urlEn: '',
             urlFr: '',
             userType: 'all',
-            answerType: 'all',
-            partnerEval: 'all',
-            aiEval: 'all',
+            answerType: [],
+            partnerEval: [],
+            aiEval: [],
             showAdvancedFilters: false
           };
           try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) { /* ignore */ }
@@ -228,6 +228,32 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     };
   }, [t]);
 
+  // Prevent nested details from closing parent details
+  const handleNestedToggle = (e) => {
+    e.stopPropagation();
+  };
+
+  // Handle "All" checkbox for answer types
+  const handleAnswerTypeAll = (checked) => {
+    if (checked) {
+      setAnswerType([]);
+    }
+  };
+
+  // Handle "All" checkbox for partner eval
+  const handlePartnerEvalAll = (checked) => {
+    if (checked) {
+      setPartnerEval([]);
+    }
+  };
+
+  // Handle "All" checkbox for AI eval
+  const handleAiEvalAll = (checked) => {
+    if (checked) {
+      setAiEval([]);
+    }
+  };
+
   // Department options
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
@@ -296,9 +322,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
       urlEn,
       urlFr,
       userType,
-      answerType,
-      partnerEval,
-      aiEval
+      answerType: answerType.length > 0 ? answerType.join(',') : 'all',
+      partnerEval: partnerEval.length > 0 ? partnerEval.join(',') : 'all',
+      aiEval: aiEval.length > 0 ? aiEval.join(',') : 'all'
     };
 
     // Persist to localStorage
@@ -331,9 +357,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     setUrlEn('');
     setUrlFr('');
     setUserType('all');
-    setAnswerType('all');
-    setPartnerEval('all');
-    setAiEval('all');
+    setAnswerType([]);
+    setPartnerEval([]);
+    setAiEval([]);
     setShowAdvancedFilters(false);
 
     // Update daterangepicker
@@ -356,9 +382,9 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
           urlEn: '',
           urlFr: '',
           userType: 'all',
-          answerType: 'all',
-          partnerEval: 'all',
-          aiEval: 'all',
+          answerType: [],
+          partnerEval: [],
+          aiEval: [], 
           showAdvancedFilters: false
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -487,60 +513,124 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
               <summary className="filter-advanced-summary">
                 {t('admin.filters.showAdvanced')}
               </summary>
-              <div className="filter-advanced-section">
-                <div className="filter-row">
-                  <label htmlFor="answer-type" className="filter-label">
+              <div className="filter-advanced-section mt-100">
+               <div className="filter-row">
+                <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
+                  <summary className="filter-label">
                     {t('admin.filters.answerType') || 'Answer Type'}
-                  </label>
-                  <select
-                    id="answer-type"
-                    value={answerType}
-                    onChange={(e) => setAnswerType(e.target.value)}
-                    className="filter-select"
-                  >
-                    {answerTypeOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-row">
-                  <label htmlFor="partner-eval" className="filter-label">
+                    {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
+                  </summary>
+                  <div className="filter-checkbox-group">
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={answerType.length === 0}
+                        onChange={(e) => handleAnswerTypeAll(e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      {t('admin.filters.allAnswerTypes') || 'All Answer Types'}
+                    </label>
+                    {answerTypeOptions
+                      .filter(option => option.value !== 'all')
+                      .map(option => (
+                        <label key={option.value} className="filter-checkbox-label">
+                          <input
+                            type="checkbox"
+                            value={option.value}
+                            checked={answerType.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAnswerType([...answerType, option.value]);
+                              } else {
+                                setAnswerType(answerType.filter(v => v !== option.value));
+                              }
+                            }}
+                            className="filter-checkbox"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                  </div>
+                </details>
+              </div>
+              <div className="filter-row">
+                <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
+                  <summary className="filter-label">
                     {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                  </label>
-                  <select
-                    id="partner-eval"
-                    value={partnerEval}
-                    onChange={(e) => setPartnerEval(e.target.value)}
-                    className="filter-select"
-                  >
-                    {partnerEvalOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-row">
-                  <label htmlFor="ai-eval" className="filter-label">
+                    {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+                  </summary>
+                  <div className="filter-checkbox-group">
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={partnerEval.length === 0}
+                        onChange={(e) => handlePartnerEvalAll(e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      {t('admin.filters.allPartnerEvals') || 'All'}
+                    </label>
+                    {partnerEvalOptions
+                      .filter(option => option.value !== 'all')
+                      .map(option => (
+                        <label key={option.value} className="filter-checkbox-label">
+                          <input
+                            type="checkbox"
+                            value={option.value}
+                            checked={partnerEval.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setPartnerEval([...partnerEval, option.value]);
+                              } else {
+                                setPartnerEval(partnerEval.filter(v => v !== option.value));
+                              }
+                            }}
+                            className="filter-checkbox"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                  </div>
+                </details>
+              </div>
+              <div className="filter-row mb-100">
+                <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
+                  <summary className="filter-label">
                     {t('admin.filters.aiEval') || 'AI Evaluation'}
-                  </label>
-                  <select
-                    id="ai-eval"
-                    value={aiEval}
-                    onChange={(e) => setAiEval(e.target.value)}
-                    className="filter-select"
-                  >
-                    {aiEvalOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+                  </summary>
+                  <div className="filter-checkbox-group">
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={aiEval.length === 0}
+                        onChange={(e) => handleAiEvalAll(e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      {t('admin.filters.allAiEvals') || 'All'}
+                    </label>
+                    {aiEvalOptions
+                      .filter(option => option.value !== 'all')
+                      .map(option => (
+                        <label key={option.value} className="filter-checkbox-label">
+                          <input
+                            type="checkbox"
+                            value={option.value}
+                            checked={aiEval.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAiEval([...aiEval, option.value]);
+                              } else {
+                                setAiEval(aiEval.filter(v => v !== option.value));
+                              }
+                            }}
+                            className="filter-checkbox"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                  </div>
+                </details>
+              </div>
               </div>
             </details>
           </div>
