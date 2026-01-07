@@ -592,7 +592,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                   </div>
                 </details>
               </div>
-              <div className="filter-row">
+              <div className="filter-row mb-100">
                 <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
                   <summary className="filter-label">
                     {t('admin.filters.aiEval') || 'AI Evaluation'}
