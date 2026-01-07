@@ -2453,7 +2453,7 @@ fieldset.gc-chckbxrdio {
   display: flex;
   align-items: center;
   gap: var(--gcds-spacing-100);
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
 }
 

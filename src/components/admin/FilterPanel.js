@@ -233,6 +233,27 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     e.stopPropagation();
   };
 
+  // Handle "All" checkbox for answer types
+  const handleAnswerTypeAll = (checked) => {
+    if (checked) {
+      setAnswerType([]);
+    }
+  };
+
+  // Handle "All" checkbox for partner eval
+  const handlePartnerEvalAll = (checked) => {
+    if (checked) {
+      setPartnerEval([]);
+    }
+  };
+
+  // Handle "All" checkbox for AI eval
+  const handleAiEvalAll = (checked) => {
+    if (checked) {
+      setAiEval([]);
+    }
+  };
+
   // Department options
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
@@ -492,7 +513,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
               <summary className="filter-advanced-summary">
                 {t('admin.filters.showAdvanced')}
               </summary>
-              <div className="filter-advanced-section">
+              <div className="filter-advanced-section mt-100">
                <div className="filter-row">
                 <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
                   <summary className="filter-label">
@@ -500,6 +521,15 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                     {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
                   </summary>
                   <div className="filter-checkbox-group">
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={answerType.length === 0}
+                        onChange={(e) => handleAnswerTypeAll(e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      {t('admin.filters.allAnswerTypes') || 'All Answer Types'}
+                    </label>
                     {answerTypeOptions
                       .filter(option => option.value !== 'all')
                       .map(option => (
@@ -530,6 +560,15 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                     {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
                   </summary>
                   <div className="filter-checkbox-group">
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={partnerEval.length === 0}
+                        onChange={(e) => handlePartnerEvalAll(e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      {t('admin.filters.allPartnerEvals') || 'All'}
+                    </label>
                     {partnerEvalOptions
                       .filter(option => option.value !== 'all')
                       .map(option => (
@@ -553,7 +592,6 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                   </div>
                 </details>
               </div>
-
               <div className="filter-row">
                 <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
                   <summary className="filter-label">
@@ -561,6 +599,15 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                     {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
                   </summary>
                   <div className="filter-checkbox-group">
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={aiEval.length === 0}
+                        onChange={(e) => handleAiEvalAll(e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      {t('admin.filters.allAiEvals') || 'All'}
+                    </label>
                     {aiEvalOptions
                       .filter(option => option.value !== 'all')
                       .map(option => (
