@@ -474,11 +474,25 @@ async function chatExportHandler(req, res) {
             // auto-eval-debug: needs FULL doc
 
             pipeline.push({ $lookup: { from: 'evals', localField: 'interactions.autoEval', foreignField: '_id', as: 'interactions.autoEval' } });
-            pipeline.push({ $unwind: { path: '$interactions.autoEval', preserveNullAndEmptyArrays: true } });
+            // Use $arrayElemAt instead of $unwind for single-element array (more efficient)
+            pipeline.push({ $addFields: { 'interactions.autoEval': { $arrayElemAt: ['$interactions.autoEval', 0] } } });
 
             // AutoEval ExpertFeedback (needed for 'default' view 'autoEval.expertFeedback.totalScore')
             pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'interactions.autoEval.expertFeedback', foreignField: '_id', as: 'interactions.autoEval.expertFeedback' } });
             pipeline.push({ $addFields: { 'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$interactions.autoEval.expertFeedback', 0] } } });
+
+            // For non-debug views, slim autoEval to only keep expertFeedback.totalScore
+            if (view !== 'auto-eval-debug') {
+                pipeline.push({
+                    $addFields: {
+                        'interactions.autoEval': {
+                            expertFeedback: {
+                                totalScore: '$interactions.autoEval.expertFeedback.totalScore'
+                            }
+                        }
+                    }
+                });
+            }
 
             // Filtering Logic
             const allCondition = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval });
