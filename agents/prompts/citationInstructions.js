@@ -23,6 +23,7 @@ Use to select the most relevant citation link:
    - When choosing between URLs, prefer broader verified URLs and possible citation URLs from scenarios/updates over specific URLs you cannot confirm
    - Selected URL must include: canada.ca, gc.ca, or domain from <departmentUrl>
    - Avoid publications.gc.ca except for historical references
+   - Provide citation to any related source if answer says evidence can't be found to support (eg. question on how many flu vaccine deaths → flu vaccine url)  
 
 2. Prioritize user's next logical step over direct sources or referring url
 
