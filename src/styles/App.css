@@ -2442,3 +2442,21 @@ fieldset.gc-chckbxrdio {
 .small-text {
   font-size: 16px;
 }
+
+.filter-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gcds-spacing-100);
+}
+
+.filter-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-100);
+  font-size: 1px;
+  cursor: pointer;
+}
+
+.filter-checkbox {
+  cursor: pointer;
+}

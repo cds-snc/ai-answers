@@ -61,8 +61,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
   const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState('all');
   const [answerType, setAnswerType] = useState('all');
-  const [partnerEval, setPartnerEval] = useState('all');
-  const [aiEval, setAiEval] = useState('all');
+  const [partnerEval, setPartnerEval] = useState([]);
+  const [aiEval, setAiEval] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Load saved state from localStorage
@@ -84,8 +84,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
           if (typeof parsed.urlFr === 'string') setUrlFr(parsed.urlFr);
           if (typeof parsed.userType === 'string') setUserType(parsed.userType);
           if (typeof parsed.answerType === 'string') setAnswerType(parsed.answerType);
-          if (typeof parsed.partnerEval === 'string') setPartnerEval(parsed.partnerEval);
-          if (typeof parsed.aiEval === 'string') setAiEval(parsed.aiEval);
+          if (Array.isArray(parsed.partnerEval)) setPartnerEval(parsed.partnerEval);
+          if (Array.isArray(parsed.aiEval)) setAiEval(parsed.aiEval);
           if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
 
           // After restoring state, apply the filters to trigger initial load
@@ -297,8 +297,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
       urlFr,
       userType,
       answerType,
-      partnerEval,
-      aiEval
+      partnerEval: partnerEval.length > 0 ? partnerEval.join(',') : 'all',
+      aiEval: aiEval.length > 0 ? aiEval.join(',') : 'all'
     };
 
     // Persist to localStorage
@@ -332,8 +332,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
     setUrlFr('');
     setUserType('all');
     setAnswerType('all');
-    setPartnerEval('all');
-    setAiEval('all');
+    setPartnerEval([]);
+    setAiEval([]);
     setShowAdvancedFilters(false);
 
     // Update daterangepicker
@@ -507,39 +507,63 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                 </div>
 
                 <div className="filter-row">
-                  <label htmlFor="partner-eval" className="filter-label">
-                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                  </label>
-                  <select
-                    id="partner-eval"
-                    value={partnerEval}
-                    onChange={(e) => setPartnerEval(e.target.value)}
-                    className="filter-select"
-                  >
-                    {partnerEvalOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <fieldset>
+                    <legend className="filter-label">
+                      {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                    </legend>
+                    <div className="filter-checkbox-group">
+                      {partnerEvalOptions
+                        .filter(option => option.value !== 'all')
+                        .map(option => (
+                          <label key={option.value} className="filter-checkbox-label">
+                            <input
+                              type="checkbox"
+                              value={option.value}
+                              checked={partnerEval.includes(option.value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setPartnerEval([...partnerEval, option.value]);
+                                } else {
+                                  setPartnerEval(partnerEval.filter(v => v !== option.value));
+                                }
+                              }}
+                              className="filter-checkbox"
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                    </div>
+                  </fieldset>
                 </div>
 
                 <div className="filter-row">
-                  <label htmlFor="ai-eval" className="filter-label">
-                    {t('admin.filters.aiEval') || 'AI Evaluation'}
-                  </label>
-                  <select
-                    id="ai-eval"
-                    value={aiEval}
-                    onChange={(e) => setAiEval(e.target.value)}
-                    className="filter-select"
-                  >
-                    {aiEvalOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <fieldset>
+                    <legend className="filter-label">
+                      {t('admin.filters.aiEval') || 'AI Evaluation'}
+                    </legend>
+                    <div className="filter-checkbox-group">
+                      {aiEvalOptions
+                        .filter(option => option.value !== 'all')
+                        .map(option => (
+                          <label key={option.value} className="filter-checkbox-label">
+                            <input
+                              type="checkbox"
+                              value={option.value}
+                              checked={aiEval.includes(option.value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAiEval([...aiEval, option.value]);
+                                } else {
+                                  setAiEval(aiEval.filter(v => v !== option.value));
+                                }
+                              }}
+                              className="filter-checkbox"
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                    </div>
+                  </fieldset>
                 </div>
               </div>
             </details>
