@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.77.0](https://github.com/cds-snc/ai-answers/compare/v1.76.0...v1.77.0) (2026-01-07)
+
+
+### Features
+
+* add concept images to system card ([b8ec3d8](https://github.com/cds-snc/ai-answers/commit/b8ec3d8bdfa7d33c48258997914feb434ce87c57))
+* move about content to md files ([0d099c3](https://github.com/cds-snc/ai-answers/commit/0d099c3c17b72b280585df1bebac590962bc8c7a))
+
 ## [1.76.0](https://github.com/cds-snc/ai-answers/compare/v1.75.0...v1.76.0) (2026-01-06)
 
 
