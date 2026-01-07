@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm"]
+  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm", "../ssm_endpoints"]
 }
 
 dependency "iam" {

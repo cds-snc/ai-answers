@@ -51,6 +51,9 @@ inputs = {
   gc_notify_api_key_arn        = dependency.ssm.outputs.gc_notify_api_key_arn
   google_search_engine_id_arn  = dependency.ssm.outputs.google_search_engine_id_arn
   adobe_analytics_url_arn      = dependency.ssm.outputs.adobe_analytics_url_arn
+  
+  # Enable ECS Exec support for staging (allows SSM session to containers)
+  enable_ecs_exec = true
 }
 
 include {
