@@ -528,7 +528,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
                   </select>
                 </div>
 
-                <div className="filter-row">
+                <div className="filter-row mb-400">
                   <label htmlFor="ai-eval" className="filter-label">
                     {t('admin.filters.aiEval') || 'AI Evaluation'}
                   </label>
