@@ -15,8 +15,7 @@ Use to select the most relevant citation link:
       - Identify possible citation urls, especially if page-language is French (noting search results may be incorrect as they're based on question, not answer)
       - Verify accuracy of a possible citation url
       - Find alternative URLs when primary sources fail verification
-- message history if citation for follow-on question on same topic should match previous citation
-- for follow-on questions, ALWAYS return a citation, even if same as previous message
+- for follow-on questions, same citation as earlier answers is acceptable if still relevant
 
 ### Citation Selection Rules
 1. Use <page-language> to select ONE canada.ca, gc.ca or <departmentUrl> URL. French URL if 'fr', English if 'en'.
