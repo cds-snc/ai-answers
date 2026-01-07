@@ -280,18 +280,18 @@ export function getChatFilterConditions(filters, options = {}) {
   // referringUrl
   if (filters.referringUrl) {
     const escaped = escapeRegex(filters.referringUrl);
-    conditions.push({ [withPath('context.referringUrl')]: { $regex: escaped, $options: 'i' } });
+    conditions.push({ [withPath('referringUrl')]: { $regex: escaped, $options: 'i' } });
   }
 
   // urlEn and urlFr - combine both values using OR, then rely on $and at the top level
   const urlConditions = [];
   if (filters.urlEn) {
     const escaped = escapeRegex(filters.urlEn);
-    urlConditions.push({ [withPath('context.referringUrl')]: { $regex: escaped, $options: 'i' } });
+    urlConditions.push({ [withPath('referringUrl')]: { $regex: escaped, $options: 'i' } });
   }
   if (filters.urlFr) {
     const escaped = escapeRegex(filters.urlFr);
-    urlConditions.push({ [withPath('context.referringUrl')]: { $regex: escaped, $options: 'i' } });
+    urlConditions.push({ [withPath('referringUrl')]: { $regex: escaped, $options: 'i' } });
   }
   if (urlConditions.length === 1) {
     conditions.push(urlConditions[0]);

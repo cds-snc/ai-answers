@@ -233,7 +233,7 @@ function flattenInteraction(chat, interaction, view) {
             createdAt: interaction.createdAt ? new Date(interaction.createdAt).toISOString() : (chat.createdAt ? new Date(chat.createdAt).toISOString() : ''),
 
             pageLanguage: get(interaction, 'context.pageLanguage') || chat.pageLanguage || '',
-            referringUrl: get(interaction, 'context.referringUrl') || '', // Context usually has it
+            referringUrl: get(interaction, 'referringUrl') || '', // Context usually has it
             questionLanguage: get(interaction, 'question.language'),
             redactedQuestion: get(interaction, 'question.redactedQuestion') || get(interaction, 'question.question') || '', // Fallback to raw if redacted missing? No, request said redactedQuestion.
             aiService: chat.aiProvider || '',
