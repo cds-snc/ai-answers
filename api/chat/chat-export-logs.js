@@ -443,6 +443,18 @@ async function chatExportHandler(req, res) {
                 }
             });
 
+            // Remove temporary lookup fields to prevent them from appearing in export
+            pipeline.push({
+                $project: {
+                    'interactions.context_doc': 0,
+                    'interactions.expertFeedback_doc': 0,
+                    'interactions.publicFeedback_doc': 0,
+                    'interactions.question_doc': 0,
+                    'interactions.answer_doc': 0,
+                    'interactions.answer.citation_doc': 0
+                }
+            });
+
             // AutoEval (CONDITIONAL / OPTIMIZED)
             // default: needs expertFeedback.totalScore
             // tools: same
