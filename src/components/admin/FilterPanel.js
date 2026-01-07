@@ -99,8 +99,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             urlFr: parsed.urlFr || '',
             userType: parsed.userType || 'all',
             answerType: parsed.answerType || 'all',
-            partnerEval: parsed.partnerEval || 'all',
-            aiEval: parsed.aiEval || 'all'
+            partnerEval: Array.isArray(parsed.partnerEval) && parsed.partnerEval.length > 0 ? parsed.partnerEval.join(',') : 'all',
+            aiEval: Array.isArray(parsed.aiEval) && parsed.aiEval.length > 0 ? parsed.aiEval.join(',') : 'all'
           };
           onApplyFilters(restoredFilters);
         } catch (e) {
@@ -123,8 +123,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
             urlFr: '',
             userType: 'all',
             answerType: 'all',
-            partnerEval: 'all',
-            aiEval: 'all',
+            partnerEval: [],
+            aiEval: [],
             showAdvancedFilters: false
           };
           try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) { /* ignore */ }
