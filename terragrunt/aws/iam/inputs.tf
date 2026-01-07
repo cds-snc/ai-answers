@@ -63,3 +63,9 @@ variable "adobe_analytics_url_arn" {
   description = "The ARN of the Adobe Analytics URL SSM parameter"
   type        = string
 }
+
+variable "enable_ecs_exec" {
+  description = "Whether to attach SSM Managed Instance Core policy for ECS Exec support"
+  type        = bool
+  default     = false
+}

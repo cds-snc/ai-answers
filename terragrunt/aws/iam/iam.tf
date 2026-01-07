@@ -66,3 +66,10 @@ resource "aws_iam_policy_attachment" "ai-answers-ssm-policy" {
   policy_arn = aws_iam_policy.ai-answers-ssm-policy.arn
   roles      = [aws_iam_role.ai-answers-ecs-role.name]
 }
+
+# Attach SSM Managed Instance Core policy for ECS Exec support (staging only)
+resource "aws_iam_role_policy_attachment" "ai-answers-ssm-managed-instance-core" {
+  count      = var.enable_ecs_exec ? 1 : 0
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
