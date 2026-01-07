@@ -357,8 +357,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false, storag
           urlFr: '',
           userType: 'all',
           answerType: 'all',
-          partnerEval: 'all',
-          aiEval: 'all',
+          partnerEval: [],
+          aiEval: [], 
           showAdvancedFilters: false
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
