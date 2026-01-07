@@ -817,7 +817,7 @@
       "role": "Rôle",
       "status": "Statut",
       "createdAt": "Créé le",
-      "action": "Action"
+      "actions": "Action"
     },
     "status": {
       "active": "Actif",

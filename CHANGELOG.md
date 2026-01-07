@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.77.0](https://github.com/cds-snc/ai-answers/compare/v1.76.0...v1.77.0) (2026-01-07)
+
+
+### Features
+
+* add concept images to system card ([b8ec3d8](https://github.com/cds-snc/ai-answers/commit/b8ec3d8bdfa7d33c48258997914feb434ce87c57))
+* move about content to md files ([0d099c3](https://github.com/cds-snc/ai-answers/commit/0d099c3c17b72b280585df1bebac590962bc8c7a))
+
+## [1.76.0](https://github.com/cds-snc/ai-answers/compare/v1.75.0...v1.76.0) (2026-01-06)
+
+
+### Features
+
+* Implement password reset functionality, including sending reset emails and verifying tokens to update passwords. ([c1ef84c](https://github.com/cds-snc/ai-answers/commit/c1ef84c6401d8c5c68e1df9b5f95b1820afa6b65))
+* implement TOTP-based password reset functionality across API, models, and UI. ([4e0bbb1](https://github.com/cds-snc/ai-answers/commit/4e0bbb151944a4bca54606822d5d94f492150738))
+* Implement user signup, password reset, and two-factor authentication services. ([9214b5d](https://github.com/cds-snc/ai-answers/commit/9214b5dc62f0e62a7cc228fd68ebce51fcd82cc7))
+
+## [1.75.0](https://github.com/cds-snc/ai-answers/compare/v1.74.1...v1.75.0) (2026-01-06)
+
+
+### Features
+
+* add authentication service with fetch header logic, user manage… ([926234b](https://github.com/cds-snc/ai-answers/commit/926234b4a5c85ad6a434cbff44ab2ca00eb15612))
+* add authentication service with fetch header logic, user management page, and internationalized AI Answers UI ([3a18601](https://github.com/cds-snc/ai-answers/commit/3a186011fed29b81d8264d4f5204195747694043))
+
 ## [1.74.1](https://github.com/cds-snc/ai-answers/compare/v1.74.0...v1.74.1) (2026-01-06)
 
 

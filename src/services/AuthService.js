@@ -15,7 +15,7 @@ class AuthService {
     const headers = { ...options.headers };
 
     // Set Content-Type for requests with body
-    if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && options.body && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
 
