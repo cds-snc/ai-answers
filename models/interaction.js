@@ -61,10 +61,10 @@ const InteractionSchema = new mongoose.Schema({
 });
 
 // Middleware to handle cascading delete of related documents when an interaction is deleted
-InteractionSchema.pre('deleteMany', async function() {
+InteractionSchema.pre('deleteMany', async function () {
   // Get the interactions that will be deleted
   const interactions = await this.model.find(this.getFilter());
-  
+
   // Extract all the IDs of related documents
   const answerIds = interactions.map(i => i.answer).filter(Boolean);
   const questionIds = interactions.map(i => i.question).filter(Boolean);
@@ -88,7 +88,13 @@ InteractionSchema.pre('deleteMany', async function() {
   ]);
 });
 
-// Index expertFeedback for quick lookup of interactions that have expert feedback
+// Indexes for quick lookup during dashboard aggregations
 InteractionSchema.index({ expertFeedback: 1 });
+InteractionSchema.index({ answer: 1 });
+InteractionSchema.index({ autoEval: 1 });
+InteractionSchema.index({ context: 1 });
+InteractionSchema.index({ referringUrl: 1 });
+InteractionSchema.index({ createdAt: 1 });
+InteractionSchema.index({ question: 1 });
 
 export const Interaction = mongoose.models.Interaction || mongoose.model('Interaction', InteractionSchema);
