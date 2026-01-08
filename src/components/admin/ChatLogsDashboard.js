@@ -113,6 +113,15 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
   return (
     <div className="space-y-6">
+      {exporting && (
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('admin.chatLogs.exporting', 'Exporting...')} {t('admin.chatLogs.exportingMessage', 'Please wait while your file is being generated.')}</span>
+          </div>
+        </div>
+      )}
+
       {!showPanel && (
         <div className="bg-white shadow rounded-lg p-4">
           <GcdsButton
@@ -171,13 +180,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                 </select>
               </div>
             </div>
-
-            {exporting && (
-              <div className="mrgn-tp-md">
-                <strong>{t('admin.chatLogs.exporting') || 'Exporting...'}</strong>
-                <span className="mrgn-lft-sm">Please wait while your file is being generated.</span>
-              </div>
-            )}
           </div>
 
           {/* Filter Panel - Apply triggers export */}

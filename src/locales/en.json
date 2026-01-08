@@ -671,6 +671,7 @@
       "exportFormat": "Format",
       "export": "Export",
       "exporting": "Exporting...",
+      "exportingMessage": "Please wait while your file is being generated.",
       "exportDescription": "Select export options, configure filters below, then click Export to download."
     },
     "deleteChat": {
@@ -1011,6 +1012,7 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
+      "loading": "Loading metrics...",
       "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
       "inputTokens": "Input tokens",

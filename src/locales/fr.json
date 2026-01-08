@@ -729,6 +729,7 @@
       "exportFormat": "Format",
       "export": "Exporter",
       "exporting": "Exportation en cours...",
+      "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
       "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger."
     }
   },
@@ -1016,6 +1017,7 @@
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
+      "loading": "Chargement des métriques...",
       "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
       "inputTokens": "Jetons d'entrée",
