@@ -390,13 +390,19 @@ async function chatDashboardHandler(req, res) {
     // Keep a copy of pipeline before adding sort/limit to calculate totalCount
     const pipelineBeforeSortLimit = pipeline.slice();
 
-    // Dynamic sort mapping
+    // Dynamic sort mapping - all columns that can be sorted on
     const sortFieldMap = {
       createdAt: 'createdAt',
       chatId: 'chatId',
       department: 'department',
       expertEmail: 'expertEmail',
-      creatorEmail: 'creatorEmail'
+      creatorEmail: 'creatorEmail',
+      pageLanguage: 'pageLanguage',
+      referringUrl: 'referringUrl',
+      userType: 'userType',
+      answerType: 'answerType',
+      partnerEval: 'partnerEval',
+      aiEval: 'aiEval'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };

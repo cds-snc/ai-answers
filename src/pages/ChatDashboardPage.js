@@ -106,9 +106,15 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     switch (colIdx) {
       case 0: return 'chatId';
       case 1: return 'department';
-      case 2: return 'expertEmail';
-      case 3: return 'creatorEmail';
-      case 4: return 'createdAt';
+      case 2: return 'pageLanguage';
+      case 3: return 'expertEmail';
+      case 4: return 'creatorEmail';
+      case 5: return 'createdAt';
+      case 6: return 'referringUrl';
+      case 7: return 'userType';
+      case 8: return 'answerType';
+      case 9: return 'partnerEval';
+      case 10: return 'aiEval';
       default: return 'createdAt';
     }
   }, []);
