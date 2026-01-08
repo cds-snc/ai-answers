@@ -68,10 +68,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     try {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
-      
+
       // Keep only the last 3 path segments
       const truncatedParts = pathParts.slice(-3);
-      
+
       return '/' + truncatedParts.join('/');
     } catch {
       return url;
@@ -258,7 +258,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         return escapeHtmlAttribute(truncateUrl(value));
       }
     },
-      {
+    {
       title: t('admin.chatDashboard.columns.userType', 'User Type'),
       data: 'userType',
       render: (value) => {
@@ -319,8 +319,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       />
 
       {loading && (
-        <div className="mt-400" role="status">
-          {t('admin.chatDashboard.loading', 'Loading chats...')}
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('admin.chatDashboard.loading', 'Loading chats...')}</span>
+          </div>
         </div>
       )}
 
@@ -338,8 +341,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       <div className="mt-200">
         <div className="chat-dashboard-summary" role="status" aria-live="polite">
-            <output>{resultsSummary}</output>
-            <output>{totalSummary}</output>
+          <output>{resultsSummary}</output>
+          <output>{totalSummary}</output>
         </div>
         {dataTableReady ? (
           <div className="chat-dashboard-table-container">
