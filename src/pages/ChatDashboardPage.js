@@ -309,119 +309,119 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </p>
       )}
 
-      <div className="mt-200">
-        <div className="chat-dashboard-summary" role="status" aria-live="polite">
-          <output>{resultsSummary}</output>
-          <output>{totalSummary}</output>
-        </div>
-        {hasAppliedFilters && dataTableReady ? (
-          <div className="chat-dashboard-table-container">
-            <DataTable
-              key={tableKey}
-              columns={columns}
-              className="display chat-dashboard-table"
-              options={{
-                processing: true,
-                serverSide: true,
-                paging: true,
-                searching: true,
-                ordering: true,
-                order: [[5, 'desc']], // default to date desc
-                scrollX: true,
-                stateSave: true,
-                language: {
-                  search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
-                  searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
-                },
-                stateSaveCallback: function (settings, data) {
-                  try {
-                    if (typeof window !== 'undefined' && window.localStorage) {
-                      window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
-                      console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
-                    }
-                  } catch (e) {
-                    // ignore
-                  }
-                },
-                stateLoadCallback: function (settings) {
-                  try {
-                    if (typeof window !== 'undefined' && window.localStorage) {
-                      const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                      const parsed = stored ? JSON.parse(stored) : null;
-                      console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
-                      return parsed;
-                    }
-                  } catch (e) {
-                    // ignore
-                  }
-                  return null;
-                },
-                ajax: async (dtParams, callback) => {
-                  try {
-                    setLoading(true);
-                    setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
-                    const orderBy = orderByForColumn(dtOrder.column);
-                    const orderDir = dtOrder.dir || 'desc';
-                    const searchValue = (dtParams.search && dtParams.search.value) || '';
-                    const currentFilters = filtersRef.current || {};
-
-                    const normalizedFilters = { ...currentFilters };
-                    const normalizedStart = formatDateForApi(currentFilters.startDate);
-                    const normalizedEnd = formatDateForApi(currentFilters.endDate);
-                    if (normalizedStart) normalizedFilters.startDate = normalizedStart;
-                    if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
-                    const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
-                    if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
-
-                    const query = {
-                      ...normalizedFilters,
-                      start: dtParams.start || 0,
-                      length: dtParams.length || 10,
-                      orderBy,
-                      orderDir,
-                      draw: dtParams.draw || 0
-                    };
-                    if (searchValue) {
-                      query.search = searchValue;
-                    }
-                    const result = await DashboardService.getChatDashboard(query);
-                    setRecordsTotal(result?.recordsTotal || 0);
-                    setRecordsFiltered(result?.recordsFiltered || 0);
-                    callback({
-                      draw: dtParams.draw || 0,
-                      recordsTotal: result?.recordsTotal || 0,
-                      recordsFiltered: result?.recordsFiltered || 0,
-                      data: Array.isArray(result?.data) ? result.data : []
-                    });
-                  } catch (err) {
-                    console.error('Failed to load chat dashboard data', err);
-                    setError(err.message || String(err));
-                    callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
-                  } finally {
-                    setLoading(false);
-                  }
-                },
-                initComplete: function () {
-                  try {
-                    const api = this.api();
-                    tableApiRef.current = api;
-                    console.debug && console.debug('ChatDashboard: DataTable initComplete');
-                    api.on('xhr.dt', function (_e, _settings, json) {
-                      try {
-                        setRecordsTotal((json && json.recordsTotal) || 0);
-                        setRecordsFiltered((json && json.recordsFiltered) || 0);
-                      } catch (e) { /* ignore */ }
-                    });
-                  } catch (e) { /* ignore */ }
-                }
-              }}
-            />
+      {hasAppliedFilters && (
+        <div className="mt-200">
+          <div className="chat-dashboard-summary" role="status" aria-live="polite">
+            <output>{resultsSummary}</output>
+            <output>{totalSummary}</output>
           </div>
-        ) : (
-          <div>Initializing table...</div>
-        )}
-      </div>
+          {dataTableReady && (
+            <div className="chat-dashboard-table-container">
+              <DataTable
+                key={tableKey}
+                columns={columns}
+                className="display chat-dashboard-table"
+                options={{
+                  processing: true,
+                  serverSide: true,
+                  paging: true,
+                  searching: true,
+                  ordering: true,
+                  order: [[5, 'desc']], // default to date desc
+                  scrollX: true,
+                  stateSave: true,
+                  language: {
+                    search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
+                    searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
+                  },
+                  stateSaveCallback: function (settings, data) {
+                    try {
+                      if (typeof window !== 'undefined' && window.localStorage) {
+                        window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
+                        console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
+                      }
+                    } catch (e) {
+                      // ignore
+                    }
+                  },
+                  stateLoadCallback: function (settings) {
+                    try {
+                      if (typeof window !== 'undefined' && window.localStorage) {
+                        const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
+                        const parsed = stored ? JSON.parse(stored) : null;
+                        console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
+                        return parsed;
+                      }
+                    } catch (e) {
+                      // ignore
+                    }
+                    return null;
+                  },
+                  ajax: async (dtParams, callback) => {
+                    try {
+                      setLoading(true);
+                      setError(null);
+                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
+                      const orderBy = orderByForColumn(dtOrder.column);
+                      const orderDir = dtOrder.dir || 'desc';
+                      const searchValue = (dtParams.search && dtParams.search.value) || '';
+                      const currentFilters = filtersRef.current || {};
+
+                      const normalizedFilters = { ...currentFilters };
+                      const normalizedStart = formatDateForApi(currentFilters.startDate);
+                      const normalizedEnd = formatDateForApi(currentFilters.endDate);
+                      if (normalizedStart) normalizedFilters.startDate = normalizedStart;
+                      if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
+                      const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
+                      if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
+
+                      const query = {
+                        ...normalizedFilters,
+                        start: dtParams.start || 0,
+                        length: dtParams.length || 10,
+                        orderBy,
+                        orderDir,
+                        draw: dtParams.draw || 0
+                      };
+                      if (searchValue) {
+                        query.search = searchValue;
+                      }
+                      const result = await DashboardService.getChatDashboard(query);
+                      setRecordsTotal(result?.recordsTotal || 0);
+                      setRecordsFiltered(result?.recordsFiltered || 0);
+                      callback({
+                        draw: dtParams.draw || 0,
+                        recordsTotal: result?.recordsTotal || 0,
+                        recordsFiltered: result?.recordsFiltered || 0,
+                        data: Array.isArray(result?.data) ? result.data : []
+                      });
+                    } catch (err) {
+                      console.error('Failed to load chat dashboard data', err);
+                      setError(err.message || String(err));
+                      callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                    } finally {
+                      setLoading(false);
+                    }
+                  },
+                  initComplete: function () {
+                    try {
+                      const api = this.api();
+                      tableApiRef.current = api;
+                      console.debug && console.debug('ChatDashboard: DataTable initComplete');
+                      api.on('xhr.dt', function (_e, _settings, json) {
+                        try {
+                          setRecordsTotal((json && json.recordsTotal) || 0);
+                          setRecordsFiltered((json && json.recordsFiltered) || 0);
+                        } catch (e) { /* ignore */ }
+                      });
+                    } catch (e) { /* ignore */ }
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </GcdsContainer>
   );
 };
