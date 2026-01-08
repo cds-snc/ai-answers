@@ -397,6 +397,18 @@
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios"
     },
+    "database": {
+      "createIndexes": "Créer/Reconstruire des index",
+      "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
+      "createIndexesButton": "Reconstruire tous les index",
+      "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
+      "createIndexesError": "Échec de la création des index: {error}",
+      "backfillSecrets": "Remplir les secrets des utilisateurs",
+      "backfillSecretsDescription": "Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.",
+      "backfillSecretsButton": "Remplir les secrets",
+      "backfillSecretsSuccess": "Remplissage terminé. Utilisateurs mis à jour: {updatedCount}",
+      "backfillSecretsError": "Échec du remplissage des secrets: {error}"
+    },
     "viewChat": {
       "title": "Voir le chat par ID",
       "label": "ID de chat",

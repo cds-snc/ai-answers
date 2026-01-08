@@ -360,6 +360,18 @@
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios"
     },
+    "database": {
+      "createIndexes": "Create/Rebuild Indexes",
+      "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
+      "createIndexesButton": "Rebuild All Indexes",
+      "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
+      "createIndexesError": "Create indexes failed: {error}",
+      "backfillSecrets": "Backfill User Secrets",
+      "backfillSecretsDescription": "Generate 2FA and reset password secrets for existing users that are missing them.",
+      "backfillSecretsButton": "Backfill Secrets",
+      "backfillSecretsSuccess": "Backfill complete. Updated users: {updatedCount}",
+      "backfillSecretsError": "Backfill secrets failed: {error}"
+    },
     "viewChat": {
       "title": "View chat by ID",
       "label": "Chat ID",

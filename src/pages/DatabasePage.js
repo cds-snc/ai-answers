@@ -21,6 +21,8 @@ const DatabasePage = ({ lang }) => {
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
+  const [isCreatingIndexes, setIsCreatingIndexes] = useState(false);
+  const [isBackfillingSecrets, setIsBackfillingSecrets] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
@@ -506,6 +508,69 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
+  const handleCreateIndexes = async () => {
+    const confirmed = window.confirm(
+      lang === 'en'
+        ? 'This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?'
+        : 'Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsCreatingIndexes(true);
+      setMessage('');
+
+      const result = await DataStoreService.createIndexes();
+
+      const successCount = result.results.success ? result.results.success.length : 0;
+      const failCount = result.results.failed ? result.results.failed.length : 0;
+
+      setMessage(lang === 'en'
+        ? `Indexes created/rebuilt successfully. Success: ${successCount}, Failed: ${failCount}`
+        : `Index créés/reconstruits avec succès. Succès: ${successCount}, Échec: ${failCount}`
+      );
+    } catch (error) {
+      setMessage(lang === 'en'
+        ? `Create indexes failed: ${error.message}`
+        : `Échec de la création des index: ${error.message}`
+      );
+      console.error('Create indexes error:', error);
+    } finally {
+      setIsCreatingIndexes(false);
+    }
+  };
+
+  const handleBackfillSecrets = async () => {
+    const confirmed = window.confirm(
+      lang === 'en'
+        ? 'This will generate 2FA and reset password secrets for any users who are missing them. Are you sure you want to continue?'
+        : 'Cela générera des secrets 2FA et de réinitialisation de mot de passe pour tous les utilisateurs qui en manquent. Êtes-vous sûr de vouloir continuer?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsBackfillingSecrets(true);
+      setMessage('');
+
+      const result = await DataStoreService.backfillUserSecrets();
+
+      setMessage(lang === 'en'
+        ? `Backfill complete. Updated users: ${result.updatedCount}`
+        : `Remplissage terminé. Utilisateurs mis à jour: ${result.updatedCount}`
+      );
+    } catch (error) {
+      setMessage(lang === 'en'
+        ? `Backfill secrets failed: ${error.message}`
+        : `Échec du remplissage des secrets: ${error.message}`
+      );
+      console.error('Backfill secrets error:', error);
+    } finally {
+      setIsBackfillingSecrets(false);
+    }
+  };
+
   return (
     <GcdsContainer size="xl" centered>
       <GcdsHeading tag="h1">Database Management</GcdsHeading>
@@ -724,6 +789,44 @@ const DatabasePage = ({ lang }) => {
               : (lang === 'en' ? 'Import Database' : 'Importer la base de données')}
           </GcdsButton>
         </form>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Create/Rebuild Indexes' : 'Créer/Reconstruire des index'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.'
+            : 'Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleCreateIndexes}
+          disabled={isCreatingIndexes}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isCreatingIndexes
+            ? (lang === 'en' ? 'Creating Indexes...' : 'Création des index...')
+            : (lang === 'en' ? 'Rebuild All Indexes' : 'Reconstruire tous les index')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Backfill User Secrets' : 'Remplir les secrets des utilisateurs'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Generate 2FA and reset password secrets for existing users that are missing them.'
+            : 'Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleBackfillSecrets}
+          disabled={isBackfillingSecrets}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isBackfillingSecrets
+            ? (lang === 'en' ? 'Backfilling...' : 'Remplissage...')
+            : (lang === 'en' ? 'Backfill Secrets' : 'Remplir les secrets')}
+        </GcdsButton>
       </div>
 
       <div className="mb-400">
