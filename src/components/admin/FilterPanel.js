@@ -11,7 +11,7 @@ const FilterPanel = ({
   onClearFilters,
   isVisible = false,
   storageKey = 'chatFilterPanelState_v1',
-  skipAutoApply = false,
+  skipAutoApply = true,
   applyButtonText = null,
   applyDisabled = false
 }) => {
@@ -120,8 +120,8 @@ const FilterPanel = ({
     } catch (err) {
       // ignore corrupt localStorage entries
     }
-    // If no saved state was present, persist defaults and apply them so the
-    // dashboard always receives date filters (even on first load).
+    // If no saved state was present, persist defaults. They will be applied 
+    // to the dashboard on first load only if skipAutoApply is false.
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const existing = window.localStorage.getItem(STORAGE_KEY);
