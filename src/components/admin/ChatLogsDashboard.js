@@ -6,7 +6,7 @@ import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
 
-const FILTER_PANEL_STORAGE_KEY = 'chatLogsFilterPanelState_v1';
+
 
 // View options for export
 const VIEW_OPTIONS = [
@@ -102,13 +102,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleClearFilters = () => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(FILTER_PANEL_STORAGE_KEY);
-      }
-    } catch (err) {
-      // ignore
-    }
+    // No-op since we no longer persist filter state
   };
 
   return (
@@ -187,7 +181,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
             onApplyFilters={handleApplyFilters}
             onClearFilters={handleClearFilters}
             isVisible={true}
-            storageKey={FILTER_PANEL_STORAGE_KEY}
             applyButtonText={exporting ? (t('admin.chatLogs.exporting') || 'Exporting...') : (t('admin.chatLogs.export') || 'Export')}
             applyDisabled={exporting}
             autoApply={false}

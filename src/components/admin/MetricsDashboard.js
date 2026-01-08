@@ -11,7 +11,7 @@ import MetricsService from '../../services/MetricsService.js';
 
 DataTable.use(DT);
 
-const FILTER_PANEL_STORAGE_KEY = 'metricsDashboard_filters_v1';
+
 
 const getDefaultDateRange = () => {
   const end = new Date();
@@ -81,7 +81,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}
-        storageKey={FILTER_PANEL_STORAGE_KEY}
       />
 
       {hasLoadedData && (

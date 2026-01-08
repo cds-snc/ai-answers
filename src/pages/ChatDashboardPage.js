@@ -56,7 +56,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const filtersRef = useRef({});
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-  const FILTER_PANEL_STORAGE_KEY = 'chatFilterPanelState_v1';
 
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
@@ -121,42 +120,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, []);
 
   useEffect(() => {
-    // On load, restore saved FilterPanel state
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const filters = {};
-          if (parsed) {
-            if (parsed.department) filters.department = parsed.department;
-            if (parsed.urlEn) filters.urlEn = parsed.urlEn;
-            if (parsed.urlFr) filters.urlFr = parsed.urlFr;
-            if (parsed.userType) filters.userType = parsed.userType;
-            if (parsed.answerType) filters.answerType = parsed.answerType;
-            if (parsed.partnerEval) filters.partnerEval = parsed.partnerEval;
-            if (parsed.aiEval) filters.aiEval = parsed.aiEval;
-            if (parsed.dateRange) {
-              if (parsed.dateRange.startDate) {
-                const sd = new Date(parsed.dateRange.startDate);
-                if (!Number.isNaN(sd.getTime())) filters.startDate = formatDateForApi(sd);
-              }
-              if (parsed.dateRange.endDate) {
-                const ed = new Date(parsed.dateRange.endDate);
-                if (!Number.isNaN(ed.getTime())) filters.endDate = formatDateForApi(ed);
-              }
-            }
-            const tzOffset = getTimezoneOffsetMinutes(parsed?.dateRange?.startDate || parsed?.dateRange?.endDate);
-            if (tzOffset !== undefined) {
-              filters.timezoneOffsetMinutes = tzOffset;
-            }
-          }
-          filtersRef.current = filters;
-        }
-      }
-    } catch (e) {
-      // ignore corrupt localStorage entries
-    }
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
@@ -185,7 +148,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       if (typeof window !== 'undefined' && window.localStorage) {
         try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
         try { window.localStorage.removeItem(TABLE_STORAGE_KEY); } catch (e) { void e; }
-        console.debug && console.debug('ChatDashboard: cleared local table storage', LOCAL_TABLE_STORAGE_KEY, TABLE_STORAGE_KEY);
       }
     } catch (e) {
       void e;
@@ -222,7 +184,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       }
     },
     {

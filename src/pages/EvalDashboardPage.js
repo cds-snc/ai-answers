@@ -42,7 +42,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   const filtersRef = useRef(getDefaultEvalFilters());
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-  const FILTER_PANEL_STORAGE_KEY = 'evalFilterPanelState_v1';
 
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
@@ -88,7 +87,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
-        try { window.localStorage.removeItem(FILTER_PANEL_STORAGE_KEY); } catch (e) { void e; }
       }
     } catch (e) { void e; }
     setTableKey((prev) => prev + 1);
@@ -118,7 +116,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       },
       searchable: true,
       orderable: true
@@ -135,7 +133,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         const prefixedId = id ? `interactionId${id}` : '';
         const hash = `#interaction=${encodeURIComponent(prefixedId)}`;
         // If we have a chatId, link to review page with chat + interaction hash, otherwise just show the id
-        if (safeChat) return `<a href="/${chatLang}?chat=${safeChat}&review=1${hash}">${escapeHtmlAttribute(id)}</a>`;
+        if (safeChat) return `<a href="/${chatLang}?chat=${safeChat}&review=1${hash}" target="_blank" rel="noopener noreferrer">${escapeHtmlAttribute(id)}</a>`;
         return escapeHtmlAttribute(id);
       },
       searchable: true,
@@ -165,7 +163,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
       <p className="mb-400">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
 
-      <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} storageKey={FILTER_PANEL_STORAGE_KEY} />
+      <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
