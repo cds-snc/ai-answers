@@ -39,31 +39,37 @@ async function countEmbeddingsMissingRefs(limit = 0) {
     { $lookup: { from: 'questions', localField: 'questionId', foreignField: '_id', as: 'question' } },
     { $lookup: { from: 'answers', localField: 'answerId', foreignField: '_id', as: 'answer' } },
     // mark missing flags
-    { $addFields: {
-      missingChat: { $eq: [ { $size: '$chat' }, 0 ] },
-      missingInteraction: { $eq: [ { $size: '$interaction' }, 0 ] },
-      missingQuestion: { $eq: [ { $size: '$question' }, 0 ] },
-      missingAnswer: { $eq: [ { $size: '$answer' }, 0 ] }
-    } },
+    {
+      $addFields: {
+        missingChat: { $eq: [{ $size: '$chat' }, 0] },
+        missingInteraction: { $eq: [{ $size: '$interaction' }, 0] },
+        missingQuestion: { $eq: [{ $size: '$question' }, 0] },
+        missingAnswer: { $eq: [{ $size: '$answer' }, 0] }
+      }
+    },
     // Only keep documents that have at least one missing ref
-    { $match: { $or: [ { missingChat: true }, { missingInteraction: true }, { missingQuestion: true }, { missingAnswer: true } ] } },
+    { $match: { $or: [{ missingChat: true }, { missingInteraction: true }, { missingQuestion: true }, { missingAnswer: true }] } },
     // Facet to get counts and samples
-    { $facet: {
-      counts: [
-        { $group: {
-          _id: null,
-          total: { $sum: 1 },
-          missingChat: { $sum: { $cond: [ '$missingChat', 1, 0 ] } },
-          missingInteraction: { $sum: { $cond: [ '$missingInteraction', 1, 0 ] } },
-          missingQuestion: { $sum: { $cond: [ '$missingQuestion', 1, 0 ] } },
-          missingAnswer: { $sum: { $cond: [ '$missingAnswer', 1, 0 ] } }
-        } }
-      ],
-      samples: [
-        { $project: { _id:1, chatId:1, interactionId:1, questionId:1, answerId:1, missingChat:1, missingInteraction:1, missingQuestion:1, missingAnswer:1 } },
-        { $limit: limit }
-      ]
-    } }
+    {
+      $facet: {
+        counts: [
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              missingChat: { $sum: { $cond: ['$missingChat', 1, 0] } },
+              missingInteraction: { $sum: { $cond: ['$missingInteraction', 1, 0] } },
+              missingQuestion: { $sum: { $cond: ['$missingQuestion', 1, 0] } },
+              missingAnswer: { $sum: { $cond: ['$missingAnswer', 1, 0] } }
+            }
+          }
+        ],
+        samples: [
+          { $project: { _id: 1, chatId: 1, interactionId: 1, questionId: 1, answerId: 1, missingChat: 1, missingInteraction: 1, missingQuestion: 1, missingAnswer: 1 } },
+          { $limit: limit }
+        ]
+      }
+    }
   ];
 
   const res = await Embedding.aggregate(pipeline).allowDiskUse(true).exec();
@@ -76,7 +82,7 @@ async function countEmbeddingsMissingRefs(limit = 0) {
     missingInteraction: counts.missingInteraction || 0,
     missingQuestion: counts.missingQuestion || 0,
     missingAnswer: counts.missingAnswer || 0
-  } : { missingChat:0, missingInteraction:0, missingQuestion:0, missingAnswer:0 };
+  } : { missingChat: 0, missingInteraction: 0, missingQuestion: 0, missingAnswer: 0 };
 
   return { count, breakdown, samples };
 }
@@ -88,7 +94,7 @@ async function countSentenceEmbeddingOrphans(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } });
-  pipeline.push({ $match: { $expr: { $eq: [ { $size: '$parent' }, 0 ] } } });
+  pipeline.push({ $match: { $expr: { $eq: [{ $size: '$parent' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await SentenceEmbedding.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -97,8 +103,8 @@ async function countSentenceEmbeddingOrphans(limit = 0) {
   if (limit) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } });
-    samplePipeline.push({ $match: { $expr: { $eq: [ { $size: '$parent' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, parentEmbeddingId:1, sentenceIndex:1 } });
+    samplePipeline.push({ $match: { $expr: { $eq: [{ $size: '$parent' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, parentEmbeddingId: 1, sentenceIndex: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await SentenceEmbedding.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -170,7 +176,7 @@ async function countEvalInvalidInteraction(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'interactions', localField: 'matchedInteractionId', foreignField: '_id', as: 'interactionDoc' } });
-  pipeline.push({ $match: { matchedInteractionId: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$interactionDoc' }, 0 ] } } });
+  pipeline.push({ $match: { matchedInteractionId: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$interactionDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Eval.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -179,8 +185,8 @@ async function countEvalInvalidInteraction(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'interactions', localField: 'matchedInteractionId', foreignField: '_id', as: 'interactionDoc' } });
-    samplePipeline.push({ $match: { matchedInteractionId: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$interactionDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, matchedInteractionId:1 } });
+    samplePipeline.push({ $match: { matchedInteractionId: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$interactionDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, matchedInteractionId: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Eval.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -195,7 +201,7 @@ async function countOrphanInteractions(limit = 0) {
   // Find Interaction documents that are not referenced in any Chat.interactions array
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'chats', localField: '_id', foreignField: 'interactions', as: 'chatDoc' } });
-  pipeline.push({ $match: { $expr: { $eq: [ { $size: '$chatDoc' }, 0 ] } } });
+  pipeline.push({ $match: { $expr: { $eq: [{ $size: '$chatDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Interaction.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -204,8 +210,8 @@ async function countOrphanInteractions(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'chats', localField: '_id', foreignField: 'interactions', as: 'chatDoc' } });
-    samplePipeline.push({ $match: { $expr: { $eq: [ { $size: '$chatDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, createdAt:1, answer:1, question:1 } });
+    samplePipeline.push({ $match: { $expr: { $eq: [{ $size: '$chatDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, createdAt: 1, answer: 1, question: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Interaction.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -221,7 +227,7 @@ async function countAnswersMissingEmbedding(limit = 0) {
   // Left lookup embeddings by answer._id
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'embeddings', localField: '_id', foreignField: 'answerId', as: 'emb' } });
-  pipeline.push({ $match: { $expr: { $eq: [ { $size: '$emb' }, 0 ] } } });
+  pipeline.push({ $match: { $expr: { $eq: [{ $size: '$emb' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Answer.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -230,8 +236,8 @@ async function countAnswersMissingEmbedding(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'embeddings', localField: '_id', foreignField: 'answerId', as: 'emb' } });
-    samplePipeline.push({ $match: { $expr: { $eq: [ { $size: '$emb' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, content:1 } });
+    samplePipeline.push({ $match: { $expr: { $eq: [{ $size: '$emb' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, content: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Answer.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -245,7 +251,7 @@ async function countBatchItemsMissingBatch(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'batches', localField: 'batch', foreignField: '_id', as: 'batchDoc' } });
-  pipeline.push({ $match: { $expr: { $eq: [ { $size: '$batchDoc' }, 0 ] } } });
+  pipeline.push({ $match: { $expr: { $eq: [{ $size: '$batchDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await BatchItem.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -254,8 +260,8 @@ async function countBatchItemsMissingBatch(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'batches', localField: 'batch', foreignField: '_id', as: 'batchDoc' } });
-    samplePipeline.push({ $match: { $expr: { $eq: [ { $size: '$batchDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, rowIndex:1, chat:1 } });
+    samplePipeline.push({ $match: { $expr: { $eq: [{ $size: '$batchDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, rowIndex: 1, chat: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await BatchItem.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -269,7 +275,7 @@ async function countBatchesWithoutItems(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'batchitems', localField: '_id', foreignField: 'batch', as: 'items' } });
-  pipeline.push({ $match: { $expr: { $eq: [ { $size: '$items' }, 0 ] } } });
+  pipeline.push({ $match: { $expr: { $eq: [{ $size: '$items' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Batch.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -278,8 +284,8 @@ async function countBatchesWithoutItems(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'batchitems', localField: '_id', foreignField: 'batch', as: 'items' } });
-    samplePipeline.push({ $match: { $expr: { $eq: [ { $size: '$items' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, name:1 } });
+    samplePipeline.push({ $match: { $expr: { $eq: [{ $size: '$items' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, name: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Batch.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -299,14 +305,18 @@ async function countInteractionMissingChildren(limit = 0) {
   pipeline.push({ $lookup: { from: 'evals', localField: 'autoEval', foreignField: '_id', as: 'evalDoc' } });
   pipeline.push({ $lookup: { from: 'contexts', localField: 'context', foreignField: '_id', as: 'contextDoc' } });
 
-  pipeline.push({ $match: { $or: [
-    { $and: [ { answer: { $exists: true } }, { $expr: { $eq: [ { $size: '$answerDoc' }, 0 ] } } ] },
-    { $and: [ { question: { $exists: true } }, { $expr: { $eq: [ { $size: '$questionDoc' }, 0 ] } } ] },
-    { $and: [ { expertFeedback: { $exists: true } }, { $expr: { $eq: [ { $size: '$expertFeedbackDoc' }, 0 ] } } ] },
-    { $and: [ { publicFeedback: { $exists: true } }, { $expr: { $eq: [ { $size: '$publicFeedbackDoc' }, 0 ] } } ] },
-    { $and: [ { autoEval: { $exists: true } }, { $expr: { $eq: [ { $size: '$evalDoc' }, 0 ] } } ] },
-    { $and: [ { context: { $exists: true } }, { $expr: { $eq: [ { $size: '$contextDoc' }, 0 ] } } ] }
-  ] } });
+  pipeline.push({
+    $match: {
+      $or: [
+        { $and: [{ answer: { $exists: true } }, { $expr: { $eq: [{ $size: '$answerDoc' }, 0] } }] },
+        { $and: [{ question: { $exists: true } }, { $expr: { $eq: [{ $size: '$questionDoc' }, 0] } }] },
+        { $and: [{ expertFeedback: { $exists: true } }, { $expr: { $eq: [{ $size: '$expertFeedbackDoc' }, 0] } }] },
+        { $and: [{ publicFeedback: { $exists: true } }, { $expr: { $eq: [{ $size: '$publicFeedbackDoc' }, 0] } }] },
+        { $and: [{ autoEval: { $exists: true } }, { $expr: { $eq: [{ $size: '$evalDoc' }, 0] } }] },
+        { $and: [{ context: { $exists: true } }, { $expr: { $eq: [{ $size: '$contextDoc' }, 0] } }] }
+      ]
+    }
+  });
 
   pipeline.push({ $count: 'count' });
   const res = await Interaction.aggregate(pipeline).allowDiskUse(true).exec();
@@ -315,7 +325,7 @@ async function countInteractionMissingChildren(limit = 0) {
   let samples = [];
   if (limit && count > 0) {
     const samplePipeline = pipeline.slice(0, -1);
-    samplePipeline.push({ $project: { _id:1, interactionId:1, answer:1, question:1, expertFeedback:1, publicFeedback:1, autoEval:1, context:1 } });
+    samplePipeline.push({ $project: { _id: 1, interactionId: 1, answer: 1, question: 1, expertFeedback: 1, publicFeedback: 1, autoEval: 1, context: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Interaction.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -329,7 +339,7 @@ async function countEvalInvalidExpertFeedback(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'expertFeedback', foreignField: '_id', as: 'expertFeedbackDoc' } });
-  pipeline.push({ $match: { expertFeedback: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$expertFeedbackDoc' }, 0 ] } } });
+  pipeline.push({ $match: { expertFeedback: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$expertFeedbackDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Eval.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -338,8 +348,8 @@ async function countEvalInvalidExpertFeedback(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'expertFeedback', foreignField: '_id', as: 'expertFeedbackDoc' } });
-    samplePipeline.push({ $match: { expertFeedback: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$expertFeedbackDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, expertFeedback:1 } });
+    samplePipeline.push({ $match: { expertFeedback: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$expertFeedbackDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, expertFeedback: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Eval.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -353,7 +363,7 @@ async function countScenarioOverrideMissingUser(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'userDoc' } });
-  pipeline.push({ $match: { $expr: { $eq: [ { $size: '$userDoc' }, 0 ] } } });
+  pipeline.push({ $match: { $expr: { $eq: [{ $size: '$userDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await ScenarioOverride.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -362,8 +372,8 @@ async function countScenarioOverrideMissingUser(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'userDoc' } });
-    samplePipeline.push({ $match: { $expr: { $eq: [ { $size: '$userDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, userId:1, departmentKey:1 } });
+    samplePipeline.push({ $match: { $expr: { $eq: [{ $size: '$userDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, userId: 1, departmentKey: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await ScenarioOverride.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -377,7 +387,7 @@ async function countChatInvalidUser(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'userDoc' } });
-  pipeline.push({ $match: { user: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$userDoc' }, 0 ] } } });
+  pipeline.push({ $match: { user: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$userDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Chat.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -386,8 +396,8 @@ async function countChatInvalidUser(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'userDoc' } });
-    samplePipeline.push({ $match: { user: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$userDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, chatId:1, user:1 } });
+    samplePipeline.push({ $match: { user: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$userDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, chatId: 1, user: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Chat.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -402,7 +412,7 @@ async function countLogsChatIdMissingChat(limit = 0) {
 
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'chats', localField: 'chatId', foreignField: 'chatId', as: 'chatDoc' } });
-  pipeline.push({ $match: { chatId: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$chatDoc' }, 0 ] } } });
+  pipeline.push({ $match: { chatId: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$chatDoc' }, 0] } } });
   pipeline.push({ $count: 'count' });
   const res = await Logs.aggregate(pipeline).allowDiskUse(true).exec();
   const count = (res && res[0] && res[0].count) ? res[0].count : 0;
@@ -411,8 +421,8 @@ async function countLogsChatIdMissingChat(limit = 0) {
   if (limit && count > 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'chats', localField: 'chatId', foreignField: 'chatId', as: 'chatDoc' } });
-    samplePipeline.push({ $match: { chatId: { $exists: true, $ne: null }, $expr: { $eq: [ { $size: '$chatDoc' }, 0 ] } } });
-    samplePipeline.push({ $project: { _id:1, chatId:1, logLevel:1, message:1 } });
+    samplePipeline.push({ $match: { chatId: { $exists: true, $ne: null }, $expr: { $eq: [{ $size: '$chatDoc' }, 0] } } });
+    samplePipeline.push({ $project: { _id: 1, chatId: 1, logLevel: 1, message: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Logs.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -430,12 +440,16 @@ async function countSentenceEmbeddingIndexIssues(limit = 0) {
   // lookup answer via parent.answerId
   pipeline.push({ $lookup: { from: 'answers', localField: 'parent.answerId', foreignField: '_id', as: 'answer' } });
   // Conditions: parent missing OR answer missing OR sentenceIndex < 0 OR sentenceIndex >= size(answer.sentences)
-  pipeline.push({ $match: { $or: [
-    { $expr: { $eq: [ { $size: '$parent' }, 0 ] } },
-    { $expr: { $eq: [ { $size: '$answer' }, 0 ] } },
-    { sentenceIndex: { $lt: 0 } },
-    { $expr: { $gt: [ '$sentenceIndex', { $subtract: [ { $size: { $ifNull: [ { $arrayElemAt: [ '$answer.sentences', 0 ] }, [] ] } }, 1 ] } ] } }
-  ] } });
+  pipeline.push({
+    $match: {
+      $or: [
+        { $expr: { $eq: [{ $size: '$parent' }, 0] } },
+        { $expr: { $eq: [{ $size: '$answer' }, 0] } },
+        { sentenceIndex: { $lt: 0 } },
+        { $expr: { $gt: ['$sentenceIndex', { $subtract: [{ $size: { $ifNull: [{ $arrayElemAt: ['$answer.sentences', 0] }, []] } }, 1] }] } }
+      ]
+    }
+  });
 
   pipeline.push({ $count: 'count' });
   const res = await SentenceEmbedding.aggregate(pipeline).allowDiskUse(true).exec();
@@ -446,13 +460,17 @@ async function countSentenceEmbeddingIndexIssues(limit = 0) {
     const samplePipeline = [];
     samplePipeline.push({ $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } });
     samplePipeline.push({ $lookup: { from: 'answers', localField: 'parent.answerId', foreignField: '_id', as: 'answer' } });
-    samplePipeline.push({ $match: { $or: [
-      { $expr: { $eq: [ { $size: '$parent' }, 0 ] } },
-      { $expr: { $eq: [ { $size: '$answer' }, 0 ] } },
-      { sentenceIndex: { $lt: 0 } },
-      { $expr: { $gt: [ '$sentenceIndex', { $subtract: [ { $size: { $ifNull: [ { $arrayElemAt: [ '$answer.sentences', 0 ] }, [] ] } }, 1 ] } ] } }
-    ] } });
-    samplePipeline.push({ $project: { _id:1, parentEmbeddingId:1, sentenceIndex:1 } });
+    samplePipeline.push({
+      $match: {
+        $or: [
+          { $expr: { $eq: [{ $size: '$parent' }, 0] } },
+          { $expr: { $eq: [{ $size: '$answer' }, 0] } },
+          { sentenceIndex: { $lt: 0 } },
+          { $expr: { $gt: ['$sentenceIndex', { $subtract: [{ $size: { $ifNull: [{ $arrayElemAt: ['$answer.sentences', 0] }, []] } }, 1] }] } }
+        ]
+      }
+    });
+    samplePipeline.push({ $project: { _id: 1, parentEmbeddingId: 1, sentenceIndex: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await SentenceEmbedding.aggregate(samplePipeline).allowDiskUse(true).exec();
   }
@@ -489,6 +507,38 @@ async function countParentInvalidChildren(parentModelName, childField, childColl
   }
 
   return { count, samples };
+}
+
+async function countDuplicateKeys(limit = 0) {
+  const models = [
+    { name: 'SessionState', field: 'sessionId', label: 'SessionState sessionId' },
+    { name: 'User', field: 'email', label: 'User email' },
+    { name: 'Setting', field: 'key', label: 'Setting key' }
+  ];
+
+  let totalCount = 0;
+  let allSamples = [];
+
+  for (const m of models) {
+    const Model = mongoose.models[m.name];
+    if (!Model) continue;
+
+    const pipeline = [
+      { $group: { _id: `$${m.field}`, count: { $sum: 1 }, docIds: { $push: '$_id' } } },
+      { $match: { count: { $gt: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: limit || 10 }
+    ];
+
+    const groups = await Model.aggregate(pipeline).allowDiskUse(true).exec();
+    for (const g of groups) {
+      totalCount++;
+      // Format sample as a string for easy display in the existing UI
+      allSamples.push(`${m.label}: "${g._id}" (Count: ${g.count})`);
+    }
+  }
+
+  return { count: totalCount, samples: allSamples.slice(0, limit || 10) };
 }
 
 async function databaseIntegrityHandler(req, res) {
@@ -581,6 +631,10 @@ async function databaseIntegrityHandler(req, res) {
       }
       case 'chatInvalidInteractions': {
         const out = await countParentInvalidChildren('Chat', 'interactions', 'interactions', l);
+        return res.status(200).json({ check, ...out });
+      }
+      case 'duplicateKeys': {
+        const out = await countDuplicateKeys(l);
         return res.status(200).json({ check, ...out });
       }
       case 'answerInvalidTools': {

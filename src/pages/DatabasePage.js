@@ -660,7 +660,8 @@ const DatabasePage = ({ lang }) => {
               { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
               { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
               { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
-              { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' }
+              { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' },
+              { id: 'duplicateKeys', label: 'Duplicate Keys (Index Violations)' }
             ].map(check => (
               <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>{check.label}</div>
