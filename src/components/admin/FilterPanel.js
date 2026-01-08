@@ -11,7 +11,7 @@ const FilterPanel = ({
   onClearFilters,
   isVisible = false,
   storageKey = 'chatFilterPanelState_v1',
-  skipAutoApply = true,
+  autoApply = false,
   applyButtonText = null,
   applyDisabled = false
 }) => {
@@ -96,8 +96,8 @@ const FilterPanel = ({
           if (Array.isArray(parsed.aiEval)) setAiEval(parsed.aiEval);
           if (typeof parsed.showAdvancedFilters === 'boolean') setShowAdvancedFilters(parsed.showAdvancedFilters);
 
-          // After restoring state, apply the filters to trigger initial load (if not skipped)
-          if (!skipAutoApply) {
+          // After restoring state, apply the filters to trigger initial load (if enabled)
+          if (autoApply) {
             const startObj = parsed.dateRange && parsed.dateRange.startDate ? parseDateTimeLocal(parsed.dateRange.startDate) : null;
             const endObj = parsed.dateRange && parsed.dateRange.endDate ? parseDateTimeLocal(parsed.dateRange.endDate) : null;
             const restoredFilters = {
@@ -121,7 +121,7 @@ const FilterPanel = ({
       // ignore corrupt localStorage entries
     }
     // If no saved state was present, persist defaults. They will be applied 
-    // to the dashboard on first load only if skipAutoApply is false.
+    // to the dashboard on first load only if autoApply is true.
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const existing = window.localStorage.getItem(STORAGE_KEY);
@@ -139,7 +139,7 @@ const FilterPanel = ({
           };
           try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) { /* ignore */ }
 
-          if (!skipAutoApply) {
+          if (autoApply) {
             // call onApplyFilters with ISO dates
             const startObj = parseDateTimeLocal(dateRange.startDate);
             const endObj = parseDateTimeLocal(dateRange.endDate);
@@ -421,7 +421,7 @@ const FilterPanel = ({
       aiEval: 'all'
     };
 
-    if (!skipAutoApply) {
+    if (autoApply) {
       onApplyFilters(defaultFilters);
     }
     onClearFilters(defaultFilters);

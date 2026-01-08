@@ -190,7 +190,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
             storageKey={FILTER_PANEL_STORAGE_KEY}
             applyButtonText={exporting ? (t('admin.chatLogs.exporting') || 'Exporting...') : (t('admin.chatLogs.export') || 'Export')}
             applyDisabled={exporting}
-            skipAutoApply={true}
+            autoApply={false}
           />
         </>
       )}

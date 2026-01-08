@@ -36,6 +36,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
@@ -76,6 +77,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       ...(filters || {})
     };
     filtersRef.current = normalized;
+    setHasAppliedFilters(true);
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
       else setTableKey((prev) => prev + 1);
@@ -178,7 +180,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
       <div className="mt-400">
         <div className="mb-200"><div>{resultsSummary}</div><div>{totalSummary}</div></div>
-        {dataTableReady ? (
+        {hasAppliedFilters && dataTableReady ? (
           <DataTable
             key={tableKey}
             columns={columns}

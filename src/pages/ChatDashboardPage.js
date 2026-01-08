@@ -50,6 +50,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -166,6 +167,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       enrichedFilters.timezoneOffsetMinutes = tzOffset;
     }
     filtersRef.current = enrichedFilters;
+    setHasAppliedFilters(true);
     try {
       if (tableApiRef.current) {
         tableApiRef.current.ajax.reload();
@@ -350,7 +352,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           <output>{resultsSummary}</output>
           <output>{totalSummary}</output>
         </div>
-        {dataTableReady ? (
+        {hasAppliedFilters && dataTableReady ? (
           <div className="chat-dashboard-table-container">
             <DataTable
               key={tableKey}
