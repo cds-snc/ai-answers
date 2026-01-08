@@ -6,7 +6,7 @@ import {
     authMiddleware,
     withProtection
 } from '../../middleware/auth.js';
-import { filterByPartnerEval, filterByAiEval, getChatFilterConditions } from '../utils/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../utils/chat-filters.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';
@@ -357,6 +357,41 @@ async function chatExportHandler(req, res) {
             return res.status(400).json({ error: `Invalid view: ${view}` });
         }
 
+        // Validate eval category inputs (supports comma-separated multi-select)
+        const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
+        const validAnswerTypes = ['all', 'not-gc', 'clarifying-question', 'pt-muni', 'normal'];
+
+        const validateCategories = (input, paramName, validValues) => {
+            if (!input || input === 'all') return true;
+            const values = input.split(',').map(v => v.trim()).filter(Boolean);
+            const invalid = values.filter(v => !validValues.includes(v));
+            if (invalid.length > 0) {
+                return `Invalid ${paramName} values: ${invalid.join(', ')}`;
+            }
+            return true;
+        };
+
+        if (partnerEval) {
+            const validation = validateCategories(partnerEval, 'partnerEval', validCategories);
+            if (validation !== true) {
+                return res.status(400).json({ error: validation });
+            }
+        }
+
+        if (aiEval) {
+            const validation = validateCategories(aiEval, 'aiEval', validCategories);
+            if (validation !== true) {
+                return res.status(400).json({ error: validation });
+            }
+        }
+
+        if (answerType) {
+            const validation = validateCategories(answerType, 'answerType', validAnswerTypes);
+            if (validation !== true) {
+                return res.status(400).json({ error: validation });
+            }
+        }
+
         const dateFilter = {};
         if (startDate && endDate) {
             const range = buildDateRange({ startDate, endDate, timezoneOffsetMinutes });
@@ -494,11 +529,17 @@ async function chatExportHandler(req, res) {
                 });
             }
 
-            // Filtering Logic
-            const allCondition = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval });
-            // remove partner/ai eval filter conditions as they're done in JS
-            const andFilters = allCondition.filter(cond => !cond.hasOwnProperty('interactions.partnerEval') && !cond.hasOwnProperty('interactions.aiEval'));
-            if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });
+            // Add computed partnerEval and aiEval fields for filtering
+            pipeline.push({
+                $addFields: {
+                    'interactions.partnerEval': getPartnerEvalAggregationExpression(),
+                    'interactions.aiEval': getAiEvalAggregationExpression()
+                }
+            });
+
+            // Filtering Logic - now includes all conditions including partnerEval and aiEval
+            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval });
+            if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });
 
             // Reconstruct Chat Object Structure
             pipeline.push({
@@ -522,12 +563,8 @@ async function chatExportHandler(req, res) {
 
             chats = await Chat.aggregate(pipeline);
 
-            // JS Post-filters
-            if (partnerEval && partnerEval !== 'all') chats = filterByPartnerEval(chats, partnerEval);
-            if (aiEval && aiEval !== 'all') chats = filterByAiEval(chats, aiEval);
-
         } else {
-            // Non-Aggregate Optimized Path
+            // Non-Aggregate Optimized Path - used when no filters are specified
             if (batchId) {
                 const bItems = await BatchItem.find({ batch: batchId }).select('chat');
                 const bIds = bItems.map(i => i.chat);
@@ -537,9 +574,6 @@ async function chatExportHandler(req, res) {
             chats = await Chat.find(dateFilter)
                 .populate(chatPopulate)
                 .lean(); // Use lean for performance since we flatten anyway
-
-            if (partnerEval && partnerEval !== 'all') chats = filterByPartnerEval(chats, partnerEval);
-            if (aiEval && aiEval !== 'all') chats = filterByAiEval(chats, aiEval);
         }
 
         // Flatten & Headers

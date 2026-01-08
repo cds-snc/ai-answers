@@ -409,13 +409,17 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $limit: limit });
     }
 
-    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
-
-    // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
+    // Build count pipeline before modifying main pipeline with sort/limit
     const countPipeline = pipelineBeforeSortLimit.slice();
     countPipeline.push({ $group: { _id: '$_id' } });
     countPipeline.push({ $count: 'totalCount' });
-    const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
+
+    // Run data and count queries in parallel for better performance
+    const [results, countResult] = await Promise.all([
+      Chat.aggregate(pipeline).allowDiskUse(true),
+      Chat.aggregate(countPipeline).allowDiskUse(true)
+    ]);
+
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
     const chats = results.map((chat) => ({
