@@ -43,7 +43,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           const logsChunk = data.logs || [];
           allLogs = allLogs.concat(logsChunk);
           setTotalCount(allLogs.length);
-          lastId = data.lastId || null; 
+          lastId = data.lastId || null;
         } else {
           throw new Error(data.error || 'Failed to fetch metrics');
         }
@@ -69,8 +69,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   return (
     <GcdsContainer size="xl" className="space-y-6">
       {loading && (
-        <div className="loading-indicator">
-          Loading metrics: {totalCount} total records
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('metrics.dashboard.loading', 'Loading metrics...')} {totalCount > 0 && `(${totalCount} records)`}</span>
+          </div>
         </div>
       )}
 
@@ -311,7 +314,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   <h3 className="mb-300">{t('metrics.dashboard.aiScored.title')}</h3>
                   <GcdsText className="mb-300">{t('metrics.dashboard.aiScored.description')}</GcdsText>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                   <DataTable
+                    <DataTable
                       data={[
                         {
                           metric: t('metrics.dashboard.aiScored.total'),
@@ -380,7 +383,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   </div>
                 </div>
               </div>
-          
+
 
               <EndUserFeedbackSection t={t} metrics={metrics} />
               <div className="bg-gray-50 p-4 rounded-lg mb-600">
