@@ -925,7 +925,7 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.allComplete ? 'green' : 'orange' }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.anyBuilding ? 'blue' : indexStatus.allComplete ? 'green' : 'orange' }}>
               {indexStatus.message}
             </div>
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
@@ -943,8 +943,19 @@ const DatabasePage = ({ lang }) => {
                     <td style={{ paddingRight: 16 }}>{col.collection}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
-                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'error' ? 'red' : 'orange' }}>
-                      {col.status}{col.error ? `: ${col.error}` : ''}
+                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'building' ? 'blue' : col.status === 'error' ? 'red' : 'orange' }}>
+                      {col.status}
+                      {col.status === 'building' && col.building?.length > 0 && (
+                        <span style={{ marginLeft: 8, fontSize: 11 }}>
+                          ({col.building.map(b => b.progress != null ? `${b.progress}%` : 'in progress').join(', ')})
+                        </span>
+                      )}
+                      {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
+                        <span style={{ marginLeft: 8, fontSize: 11, fontStyle: 'italic' }}>
+                          Missing: {col.missingIndexes.join('; ')}
+                        </span>
+                      )}
+                      {col.error ? `: ${col.error}` : ''}
                     </td>
                   </tr>
                 ))}
