@@ -14,6 +14,28 @@ class MetricsService {
     }
   }
 
+  /**
+   * Fetch pre-calculated metrics from server (memory-optimized)
+   * @param {Object} filters - Filter options (startDate, endDate, timezoneOffsetMinutes)
+   * @returns {Promise<Object>} Pre-calculated metrics object
+   */
+  static async getCalculatedMetrics(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams(filters).toString();
+      const response = await AuthService.fetch(getApiUrl(`db-metrics-dashboard?${queryParams}`));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get calculated metrics');
+      }
+      const data = await response.json();
+      return data.metrics;
+    } catch (error) {
+      console.error('Error getting calculated metrics:', error);
+      throw error;
+    }
+  }
+
+
 
   static calculateMetrics = (logs) => {
     // Use a local Set to track unique chatIds

@@ -24,32 +24,17 @@ const getDefaultDateRange = () => {
 
 const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [metrics, setMetrics] = useState([]);
+  const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
 
   const fetchMetrics = async (filters = null) => {
     setLoading(true);
-    setMetrics([]);
-    setTotalCount(0);
-    let allLogs = [];
-    let lastId = null;
-    const limit = 500;
+    setMetrics(null);
     try {
-      do {
-        const data = await MetricsService.getChatLogs(filters || {}, limit, lastId);
-        if (data.success) {
-          const logsChunk = data.logs || [];
-          allLogs = allLogs.concat(logsChunk);
-          setTotalCount(allLogs.length);
-          lastId = data.lastId || null;
-        } else {
-          throw new Error(data.error || 'Failed to fetch metrics');
-        }
-      } while (lastId);
-      const metricsResult = MetricsService.calculateMetrics(allLogs);
-      setMetrics(metricsResult || []);
+      // Use server-side aggregation (memory-optimized)
+      const metricsResult = await MetricsService.getCalculatedMetrics(filters || getDefaultDateRange());
+      setMetrics(metricsResult || {});
       setHasLoadedData(true);
     } catch (error) {
       console.error('Error fetching metrics:', error);
@@ -72,7 +57,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         <div className="loading-overlay" role="status" aria-live="polite">
           <div className="loading-overlay-content">
             <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('metrics.dashboard.loading', 'Loading metrics...')} {totalCount > 0 && `(${totalCount} records)`}</span>
+            <span>{t('metrics.dashboard.loading', 'Loading metrics...')}</span>
           </div>
         </div>
       )}
@@ -89,7 +74,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             <div className="p-4">
               <GcdsText>Loading metrics...</GcdsText>
             </div>
-          ) : metrics.totalSessions > 0 ? (
+          ) : metrics && metrics.totalSessions > 0 ? (
             <div className="p-4">
               <h2 className="mt-400 mb-400">{t('metrics.dashboard.title')}</h2>
               <div>
