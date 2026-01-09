@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.78.0](https://github.com/cds-snc/ai-answers/compare/v1.77.0...v1.78.0) (2026-01-09)
+
+
+### Features
+
+* add indexes to database schema ([3835b12](https://github.com/cds-snc/ai-answers/commit/3835b121289d224536c09aae72645e2c0d9d0364))
+* add new columns to sort. ([a64004c](https://github.com/cds-snc/ai-answers/commit/a64004c81dc516c01caa5552805f98964befae97))
+* add server-side streaming export for chat logs with configurable views and data flattening. ([39cf9e4](https://github.com/cds-snc/ai-answers/commit/39cf9e48fe380b0974067d09163b6f364f5f14cd))
+* Add server-side streaming export for chat logs with multiple views and filtering options. ([cbf9e9b](https://github.com/cds-snc/ai-answers/commit/cbf9e9bd2902d8f3629788929993d8841dc2bc26))
+* all checked function ([f261394](https://github.com/cds-snc/ai-answers/commit/f2613945a8a7f5718005115a576ccc63aaef54b4))
+* answer type also checkboxes ([4253fc0](https://github.com/cds-snc/ai-answers/commit/4253fc0692851618bc003f07cf04fba9b3c71723))
+* change to checkboxes ([d8c8438](https://github.com/cds-snc/ai-answers/commit/d8c843892f46f8da9692d955a037ab3e1e10dc2e))
+* change to checkboxes ([3cb89ef](https://github.com/cds-snc/ai-answers/commit/3cb89ef615ee3d458af216f9f1779e7c59c5fab1))
+* checkboxes ([4aace64](https://github.com/cds-snc/ai-answers/commit/4aace6402399f023ed4686d2f7f006a3bc65eb83))
+* checkboxes ([e626d31](https://github.com/cds-snc/ai-answers/commit/e626d31f223daad4c29697bedb0fbea0bfb96049))
+* database integrity checks ([128a8ff](https://github.com/cds-snc/ai-answers/commit/128a8ffea485e4c86dc023bb5aecb0c84f8669ed))
+* detail/summary for checkboxes ([b6a7d70](https://github.com/cds-snc/ai-answers/commit/b6a7d7003bd8628c991c78653e85596db2e369a7))
+* Implement server-side streaming chat log export with support for multiple formats, views, and filtering options. ([eee22ca](https://github.com/cds-snc/ai-answers/commit/eee22caf4c2eedfe7a2e0194496875e2bebeb75b))
+* mb ([bc2e0ce](https://github.com/cds-snc/ai-answers/commit/bc2e0cee6288f68daa9b47f232ddb8190aaab257))
+* optimie dashbaord queries ([bbf7a8f](https://github.com/cds-snc/ai-answers/commit/bbf7a8fe259a4a29becd1e6e8a20554c6f9372dc))
+* optimize query ([d583b69](https://github.com/cds-snc/ai-answers/commit/d583b6990dc60e654fabfd4344a150621e53523a))
+* recreate database indexes ([ae0716d](https://github.com/cds-snc/ai-answers/commit/ae0716dcf13290e030f32d40f6f3695c346c4530))
+* remove auto load ([b47afb3](https://github.com/cds-snc/ai-answers/commit/b47afb3b8e1dab723dd7de5035d08db173134fec))
+* standardize the loading of records. ([a7c7be7](https://github.com/cds-snc/ai-answers/commit/a7c7be709e0521049b590ffd2367fbf154e3d082))
+
+
+### Bug Fixes
+
+* clean up citation instructions ([8294d70](https://github.com/cds-snc/ai-answers/commit/8294d70f5985ecdce808b7c146e0095ba7f55c54))
+* don't autoload the page ([b628ffe](https://github.com/cds-snc/ai-answers/commit/b628ffe1d4ff7b973af14548a55db8f46b175038))
+* false premise citation ([88781ae](https://github.com/cds-snc/ai-answers/commit/88781ae18b58d98c54757f3502cc918f5a0a9a63))
+* follow-on ([035a54b](https://github.com/cds-snc/ai-answers/commit/035a54b7fa851f3b86c7a9a6d154658b24191cd8))
+* localization ([0e704ea](https://github.com/cds-snc/ai-answers/commit/0e704ea7f243463c78db11e24a2c7e764a21782d))
+* overlay should stay visible on page ([2c4dec1](https://github.com/cds-snc/ai-answers/commit/2c4dec17c7950ba19387fa1e833443da2b41eb13))
+* remoe cached values for panel ([e9dab56](https://github.com/cds-snc/ai-answers/commit/e9dab56467e110e8acd2ecc1678d6918007a7042))
+* remove duplicate keys from database. ([a69c2d0](https://github.com/cds-snc/ai-answers/commit/a69c2d018d3de401133e7bea71f349b15c690015))
+* remove totals when no apply ([4a65e04](https://github.com/cds-snc/ai-answers/commit/4a65e04251dba614e03c8d53c1ffd628cb653cc6))
+* translation ([90d54ec](https://github.com/cds-snc/ai-answers/commit/90d54ec53e26e9554d584f3101a9a2d0af71e991))
+* translation in manipulation ([c19cbaa](https://github.com/cds-snc/ai-answers/commit/c19cbaa6e943ed82a6f41d3ba16299963986f396))
+* typo-manipulation ([2a9bdd4](https://github.com/cds-snc/ai-answers/commit/2a9bdd46f7c55794313fea106bde21ef1673a84d))
+
 ## [1.77.0](https://github.com/cds-snc/ai-answers/compare/v1.76.0...v1.77.0) (2026-01-07)
 
 
