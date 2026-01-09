@@ -29,6 +29,7 @@ env:
   TF_VAR_gc_notify_api_key: ${{ secrets.GC_NOTIFY_API_KEY}}
   TF_VAR_google_search_engine_id: ${{ secrets.GOOGLE_SEARCH_ENGINE_ID}}
   TF_VAR_adobe_analytics_url: ${{ secrets.ADOBE_ANALYTICS_URL}}
+  TF_VAR_session_secret: ${{ secrets.SESSION_SECRET}}
   TF_VAR_conversation_integrity_secret: ${{ secrets.CONVERSATION_INTEGRITY_SECRET}}
 
 permissions:
