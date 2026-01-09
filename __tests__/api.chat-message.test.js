@@ -8,8 +8,21 @@ vi.mock('../agents/AgentFactory.js', () => ({
     createChatAgent: vi.fn(),
 }));
 vi.mock('../services/ServerLoggingService.js', () => ({
-    info: vi.fn(),
-    error: vi.fn(),
+    default: {
+        info: vi.fn(),
+        error: vi.fn(),
+    }
+}));
+
+// Mock the security middleware to stay out of the way of unit tests
+vi.mock('../middleware/chat-session.js', () => ({
+    withSession: vi.fn((handler) => async (req, res) => {
+        req.chatId = req.body?.chatId || 'test-chat';
+        return handler(req, res);
+    }),
+}));
+vi.mock('../middleware/auth.js', () => ({
+    withOptionalUser: vi.fn((handler) => handler),
 }));
 
 const mockAgent = {
@@ -64,6 +77,7 @@ describe('api/chat/chat-message handler', () => {
             outputTokens: 5,
             model: 'gpt-4',
             tools: {},
+            historySignature: expect.any(String),
         });
     });
 

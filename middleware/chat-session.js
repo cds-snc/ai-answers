@@ -2,6 +2,7 @@ import ChatSessionService from '../services/ChatSessionService.js';
 import ChatSessionMetricsService from '../services/ChatSessionMetricsService.js';
 import dbConnect from '../api/db/db-connect.js';
 import { v4 as uuidv4 } from 'uuid';
+import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
 
 /**
  * Helper: Add a chatId to the session and save.
@@ -185,11 +186,62 @@ export function ensureSession(req, res, options = {}) {
   });
 }
 
+/**
+ * Integrity Check: Protect against history tampering on POST requests.
+ * @returns {boolean} - True if integrity check passes or is not applicable, false if it fails and response was sent.
+ */
+export function validateConversationIntegrity(req, res) {
+  if (req.method !== 'POST') return true;
+
+  const body = req.body || {};
+  const input = body.input || body;
+  const history = input.conversationHistory;
+
+  // Only block if history exists but signature is missing/invalid
+  if (Array.isArray(history) && history.length > 0) {
+    // Extract signature: check top-level, then dig into last AI interaction
+    const lastAi = [...history].reverse().find(m => m.sender === 'ai' || (m.interaction && m.interaction.answer));
+    const signature = input.historySignature ||
+      lastAi?.historySignature ||
+      lastAi?.interaction?.historySignature ||
+      lastAi?.interaction?.answer?.historySignature ||
+      history[0]?.interaction?.answer?.historySignature;
+
+    if (!signature) {
+      console.warn('[Integrity] Missing historySignature for non-empty history', { chatId: req.chatId });
+      res.status(403).json({
+        error: 'missing_signature',
+        message: 'Conversation history signature missing'
+      });
+      return false;
+    }
+
+    const isValid = ConversationIntegrityService.verifyHistory(history, signature);
+    if (!isValid) {
+      console.error('[Integrity] Signature mismatch!', {
+        received: signature,
+        historyLength: history.length,
+        chatId: req.chatId
+      });
+      res.status(403).json({
+        error: 'invalid_signature',
+        message: 'Conversation history integrity check failed'
+      });
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function withSession(handler, options = {}) {
   return async function (req, res) {
     try {
       const ok = await ensureSession(req, res, options);
       if (!ok) return;
+
+      if (!validateConversationIntegrity(req, res)) return;
+
       return handler(req, res);
     } catch (e) {
       if (console && console.error) console.error('withSession error', e);
