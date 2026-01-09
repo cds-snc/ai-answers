@@ -37,6 +37,7 @@ const DatabasePage = ({ lang }) => {
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
   const [isCheckingIndexStatus, setIsCheckingIndexStatus] = useState(false);
   const [indexStatus, setIndexStatus] = useState(null);
+  const [creationDetails, setCreationDetails] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -529,11 +530,13 @@ const DatabasePage = ({ lang }) => {
       const successCount = result.results.success ? result.results.success.length : 0;
       const failCount = result.results.failed ? result.results.failed.length : 0;
 
+      setCreationDetails(result.results);
       setMessage(lang === 'en'
         ? `Indexes created/rebuilt successfully. Success: ${successCount}, Failed: ${failCount}`
         : `Index créés/reconstruits avec succès. Succès: ${successCount}, Échec: ${failCount}`
       );
     } catch (error) {
+      setCreationDetails(null);
       setMessage(lang === 'en'
         ? `Create indexes failed: ${error.message}`
         : `Échec de la création des index: ${error.message}`
@@ -848,6 +851,21 @@ const DatabasePage = ({ lang }) => {
             ? (lang === 'en' ? 'Creating Indexes...' : 'Création des index...')
             : (lang === 'en' ? 'Rebuild All Indexes' : 'Reconstruire tous les index')}
         </GcdsButton>
+        {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
+          <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
+            <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
+              {lang === 'en' ? 'Index creation failed for the following collections:' : 'La création d\'index a échoué pour les collections suivantes :'}
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
+              {creationDetails.failed.map((f, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>
+                  <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
+                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>(Code {f.code})</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="mb-400">

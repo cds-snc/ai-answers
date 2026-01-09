@@ -158,9 +158,10 @@ async function databaseManagementHandler(req, res) {
         } catch (error) {
           results.failed.push({
             collection: model.modelName,
-            error: error.message
+            error: error.message,
+            code: error.code // Include MongoDB error code if available (e.g., 11000 for duplicate key)
           });
-          console.warn(`Error creating indexes for ${model.modelName}:`, error.message);
+          console.error(`[IndexBuildError] Failed to create indexes for ${model.modelName}:`, error);
         }
       }));
 
