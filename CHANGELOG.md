@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.79.0](https://github.com/cds-snc/ai-answers/compare/v1.78.0...v1.79.0) (2026-01-09)
+
+
+### Features
+
+* check status of index rebuilding. ([474e4b6](https://github.com/cds-snc/ai-answers/commit/474e4b6b6036b4764405884901afc3043e38fb2a))
+* check status of index rebuilding. ([c722376](https://github.com/cds-snc/ai-answers/commit/c7223767945a5d5cc292d1864e3e0251c73410d3))
+
+
+### Bug Fixes
+
+* query optimization no redudant data ([7ec951e](https://github.com/cds-snc/ai-answers/commit/7ec951ee3a647d3b31f93b3794e42fa7614bdf44))
+
 ## [1.78.0](https://github.com/cds-snc/ai-answers/compare/v1.77.0...v1.78.0) (2026-01-09)
 
 
