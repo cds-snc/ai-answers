@@ -118,9 +118,9 @@ inputs = {
   gc_notify_api_key_arn            = dependency.ssm.outputs.gc_notify_api_key_arn
   google_search_engine_id_arn      = dependency.ssm.outputs.google_search_engine_id_arn
   adobe_analytics_url_arn          = dependency.ssm.outputs.adobe_analytics_url_arn
-  session_secret_arn               = dependency.ssm.outputs.session_secret_arn
+  session_secret_arn                = dependency.ssm.outputs.session_secret_arn
   conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
-  redis_url                        = dependency.elasticache.outputs.redis_url
+  redis_url                         = dependency.elasticache.outputs.redis_url
   fargate_cpu                      = 4096  # Override default for production
   fargate_memory                   = 8192  # Override default for production
 }
