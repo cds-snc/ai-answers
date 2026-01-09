@@ -131,7 +131,9 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    // DocumentDB-safe lookups (single-field joins)
+    // DocumentDB-safe lookups (single-field joins) with immediate projections to minimize memory
+
+    // Lookup interactions - only need referringUrl, answer, context, expertFeedback, autoEval refs
     pipeline.push({
       $lookup: {
         from: 'interactions',
@@ -148,6 +150,21 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    // Project interaction to only needed fields immediately
+    pipeline.push({
+      $addFields: {
+        'interactions': {
+          _id: '$interactions._id',
+          referringUrl: '$interactions.referringUrl',
+          answer: '$interactions.answer',
+          context: '$interactions.context',
+          expertFeedback: '$interactions.expertFeedback',
+          autoEval: '$interactions.autoEval'
+        }
+      }
+    });
+
+    // Lookup answers - only need answerType
     pipeline.push({
       $lookup: {
         from: 'answers',
@@ -156,23 +173,14 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionAnswer'
       }
     });
-    pipeline.push({ $addFields: { 'interactions.answer': { $arrayElemAt: ['$interactionAnswer', 0] } } });
-
-    pipeline.push({
-      $lookup: {
-        from: 'evals',
-        localField: 'interactions.autoEval',
-        foreignField: '_id',
-        as: 'interactionEval'
-      }
-    });
+    // Extract only answerType immediately
     pipeline.push({
       $addFields: {
-        'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] },
-        'interactions.autoEval': { $arrayElemAt: ['$interactionEval', 0] }
+        'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.answerType', 0] }, ''] }
       }
     });
 
+    // Lookup contexts - only need department
     pipeline.push({
       $lookup: {
         from: 'contexts',
@@ -181,13 +189,14 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionContext'
       }
     });
-
+    // Extract only department immediately
     pipeline.push({
       $addFields: {
-        'interactions.context': { $arrayElemAt: ['$interactionContext', 0] }
+        'interactions.department': { $ifNull: [{ $arrayElemAt: ['$interactionContext.department', 0] }, ''] }
       }
     });
 
+    // Lookup expertFeedbacks for partner eval - only need totalScore and sentence scores
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
@@ -196,43 +205,84 @@ async function chatDashboardHandler(req, res) {
         as: 'expertFeedbackDocs'
       }
     });
-
+    // Extract only needed fields immediately
     pipeline.push({
       $addFields: {
-        'interactions.expertEmail': {
-          $ifNull: [
-            { $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] },
-            ''
-          ]
+        'interactions.expertEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] },
+        'interactions.expertFeedbackData': {
+          totalScore: { $arrayElemAt: ['$expertFeedbackDocs.totalScore', 0] },
+          sentence1Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence1Score', 0] },
+          sentence2Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence2Score', 0] },
+          sentence3Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence3Score', 0] },
+          sentence4Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence4Score', 0] },
+          citationScore: { $arrayElemAt: ['$expertFeedbackDocs.citationScore', 0] },
+          sentence1Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence1Harmful', 0] },
+          sentence2Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence2Harmful', 0] },
+          sentence3Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence3Harmful', 0] },
+          sentence4Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence4Harmful', 0] }
         }
       }
     });
 
+    // Lookup evals - only need the expertFeedback reference
+    pipeline.push({
+      $lookup: {
+        from: 'evals',
+        localField: 'interactions.autoEval',
+        foreignField: '_id',
+        as: 'interactionEval'
+      }
+    });
+    // Extract only expertFeedback ref
     pipeline.push({
       $addFields: {
-        'interactions.expertFeedback': { $arrayElemAt: ['$expertFeedbackDocs', 0] }
+        'interactions.autoEvalExpertFeedbackRef': { $arrayElemAt: ['$interactionEval.expertFeedback', 0] }
       }
     });
 
+    // Lookup autoEval's expertFeedback - only need totalScore and scores
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
-        localField: 'interactions.autoEval.expertFeedback',
+        localField: 'interactions.autoEvalExpertFeedbackRef',
         foreignField: '_id',
         as: 'autoEvalExpertFeedbackDocs'
       }
     });
-
+    // Extract only needed fields for aiEval computation
     pipeline.push({
       $addFields: {
-        'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$autoEvalExpertFeedbackDocs', 0] }
+        'interactions.autoEvalFeedbackData': {
+          totalScore: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.totalScore', 0] },
+          sentence1Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence1Score', 0] },
+          sentence2Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence2Score', 0] },
+          sentence3Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence3Score', 0] },
+          sentence4Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence4Score', 0] },
+          citationScore: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.citationScore', 0] },
+          sentence1Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence1Harmful', 0] },
+          sentence2Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence2Harmful', 0] },
+          sentence3Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence3Harmful', 0] },
+          sentence4Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence4Harmful', 0] }
+        }
       }
     });
 
+    // Clean up temporary lookup arrays to free memory before $group
+    pipeline.push({
+      $project: {
+        interactionAnswer: 0,
+        interactionContext: 0,
+        expertFeedbackDocs: 0,
+        interactionEval: 0,
+        autoEvalExpertFeedbackDocs: 0
+      }
+    });
+
+    // Compute partnerEval and aiEval using the extracted minimal data
     pipeline.push({
       $addFields: {
-        'interactions.partnerEval': getPartnerEvalAggregationExpression(),
-        'interactions.aiEval': getAiEvalAggregationExpression()
+        'interactions.partnerEval': getPartnerEvalAggregationExpression('$interactions.expertFeedbackData'),
+        'interactions.aiEval': getAiEvalAggregationExpression('$interactions.autoEvalFeedbackData')
       }
     });
 
@@ -244,10 +294,10 @@ async function chatDashboardHandler(req, res) {
         createdAt: 1,
         pageLanguage: 1,
         interactions: {
-          context: { department: '$interactions.context.department' },
+          department: '$interactions.department',
           expertEmail: '$interactions.expertEmail',
           referringUrl: '$interactions.referringUrl',
-          answer: { answerType: '$interactions.answer.answerType' },
+          answerType: '$interactions.answerType',
           partnerEval: '$interactions.partnerEval',
           aiEval: '$interactions.aiEval'
         }
@@ -290,7 +340,7 @@ async function chatDashboardHandler(req, res) {
         creatorEmail: { $first: '$creatorEmail' },
         pageLanguage: { $first: '$pageLanguage' },
         departments: {
-          $addToSet: '$interactions.context.department'
+          $addToSet: '$interactions.department'
         },
         expertEmails: {
           $addToSet: '$interactions.expertEmail'
@@ -299,7 +349,7 @@ async function chatDashboardHandler(req, res) {
           $addToSet: '$interactions.referringUrl'
         },
         answerTypes: {
-          $addToSet: '$interactions.answer.answerType'
+          $addToSet: '$interactions.answerType'
         },
         partnerEvals: {
           $addToSet: '$interactions.partnerEval'

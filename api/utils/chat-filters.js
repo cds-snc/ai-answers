@@ -81,16 +81,16 @@ const filterInteractionsByCategory = (chat, category, evaluator) => {
 // Filtering now happens in the aggregation pipeline using computed fields
 // via getPartnerEvalAggregationExpression() and getAiEvalAggregationExpression().
 
-export function getPartnerEvalAggregationExpression() {
+export function getPartnerEvalAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
   return {
     $cond: {
-      if: { $eq: [{ $ifNull: ['$interactions.expertFeedback', null] }, null] },
+      if: { $eq: [{ $ifNull: [feedbackPath, null] }, null] },
       // Amazon DocumentDB does not support $$REMOVE; return null instead
       then: null,
       else: {
         $let: {
           vars: {
-            ef: { $ifNull: ['$interactions.expertFeedback', null] }
+            ef: { $ifNull: [feedbackPath, null] }
           },
           in: {
             $let: {
@@ -160,21 +160,15 @@ export function getPartnerEvalAggregationExpression() {
   };
 }
 
-export function getAiEvalAggregationExpression() {
+export function getAiEvalAggregationExpression(feedbackPath = '$interactions.autoEval.expertFeedback') {
   return {
     $let: {
       vars: {
-        autoEval: { $ifNull: ['$interactions.autoEval', null] },
-        ef: { $ifNull: ['$interactions.autoEval.expertFeedback', null] }
+        ef: { $ifNull: [feedbackPath, null] }
       },
       in: {
         $cond: {
-          if: {
-            $or: [
-              { $eq: ['$$autoEval', null] },
-              { $eq: ['$$ef', null] }
-            ]
-          },
+          if: { $eq: ['$$ef', null] },
           // DocumentDB does not support $$REMOVE; return null instead
           then: null,
           else: {
@@ -260,7 +254,7 @@ export function getChatFilterConditions(filters, options = {}) {
   // department
   if (filters.department) {
     const escaped = escapeRegex(filters.department);
-    conditions.push({ [withPath('context.department')]: { $regex: escaped, $options: 'i' } });
+    conditions.push({ [withPath('department')]: { $regex: escaped, $options: 'i' } });
   }
 
   // referringUrl
@@ -290,10 +284,10 @@ export function getChatFilterConditions(filters, options = {}) {
     const types = filters.answerType.split(',').map(t => t.trim()).filter(Boolean);
     if (types.length === 1) {
       // Single value: exact match (more efficient than $in with one value)
-      conditions.push({ [withPath('answer.answerType')]: types[0] });
+      conditions.push({ [withPath('answerType')]: types[0] });
     } else if (types.length > 1) {
       // Multiple values: use $in operator
-      conditions.push({ [withPath('answer.answerType')]: { $in: types } });
+      conditions.push({ [withPath('answerType')]: { $in: types } });
     }
   }
 
