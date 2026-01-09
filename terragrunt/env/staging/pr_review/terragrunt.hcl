@@ -23,7 +23,7 @@ dependency "database" {
   config_path = "../database"
   mock_outputs = {
     aws_docdb_security_group_id = "sg-00000000"
-    docdb_uri_arn = "arn:aws:ssm:ca-central-1:123456789012:parameter/docdb_uri"
+    docdb_uri_arn               = "arn:aws:ssm:ca-central-1:123456789012:parameter/docdb_uri"
   }
 }
 
