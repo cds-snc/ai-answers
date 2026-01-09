@@ -32,4 +32,8 @@ const expertFeedbackSchema = new Schema({
     id: false,
 });
 
+// Indexes for quick lookup during dashboard aggregations
+expertFeedbackSchema.index({ expertEmail: 1 });
+expertFeedbackSchema.index({ createdAt: 1 });
+
 export const ExpertFeedback = mongoose.models.ExpertFeedback || mongoose.model('ExpertFeedback', expertFeedbackSchema);

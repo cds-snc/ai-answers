@@ -149,3 +149,14 @@ resource "aws_ssm_parameter" "session_secret" {
     Terraform  = true
   }
 }
+
+resource "aws_ssm_parameter" "conversation_integrity_secret" {
+  name  = "conversation_integrity_secret"
+  type  = "SecureString"
+  value = var.conversation_integrity_secret
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}

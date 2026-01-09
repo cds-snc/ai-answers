@@ -137,3 +137,8 @@ variable "session_secret_arn" {
   description = "ARN of the Session Secret parameter"
   type        = string
 }
+
+variable "conversation_integrity_secret_arn" {
+  description = "ARN of the Interaction history integrity secret parameter"
+  type        = string
+}

@@ -397,6 +397,18 @@
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios"
     },
+    "database": {
+      "createIndexes": "Créer/Reconstruire des index",
+      "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
+      "createIndexesButton": "Reconstruire tous les index",
+      "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
+      "createIndexesError": "Échec de la création des index: {error}",
+      "backfillSecrets": "Remplir les secrets des utilisateurs",
+      "backfillSecretsDescription": "Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.",
+      "backfillSecretsButton": "Remplir les secrets",
+      "backfillSecretsSuccess": "Remplissage terminé. Utilisateurs mis à jour: {updatedCount}",
+      "backfillSecretsError": "Échec du remplissage des secrets: {error}"
+    },
     "viewChat": {
       "title": "Voir le chat par ID",
       "label": "ID de chat",
@@ -637,6 +649,25 @@
         "answerType": "Type de réponse",
         "partnerEval": "Évaluation partenaire",
         "aiEval": "Évaluation IA"
+      },
+      "labels": {
+        "userType": {
+          "public": "public",
+          "admin": "admin"
+        },
+        "answerType": {
+          "normal": "normal",
+          "clarifying-question": "clarification",
+          "pt-muni": "pt-muni",
+          "not-gc": "non-GC"
+        },
+        "evaluation": {
+          "correct": "correct",
+          "needsImprovement": "nécessite amélioration",
+          "hasError": "erreur",
+          "hasCitationError": "erreur de citation",
+          "harmful": "nuisible"
+        }
       }
     },
     "evalDashboard": {
@@ -701,11 +732,17 @@
       "downloadCsv": "Télécharger CSV",
       "downloadExcel": "Télécharger Excel",
       "found": "Trouvé",
-      "interactionsFound": "chats. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
+      "interactionsFound": "chats. Sélectionnez une vue et un format, puis exportez.",
       "date": "Date",
       "chatId": "ID de chat",
       "interactions": "Interactions",
-      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)"
+      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)",
+      "exportView": "Vue d'exportation",
+      "exportFormat": "Format",
+      "export": "Exporter",
+      "exporting": "Exportation en cours...",
+      "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
+      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger."
     }
   },
   "signup": {
@@ -793,7 +830,7 @@
       "role": "Rôle",
       "status": "Statut",
       "createdAt": "Créé le",
-      "action": "Action"
+      "actions": "Action"
     },
     "status": {
       "active": "Actif",
@@ -848,6 +885,7 @@
       "azure": "Azure OpenAI"
     },
     "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données",
+    "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
@@ -991,6 +1029,7 @@
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
+      "loading": "Chargement des métriques...",
       "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
       "inputTokens": "Jetons d'entrée",
@@ -1076,8 +1115,8 @@
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
-    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester.",
-    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO, copiez la version modifiée pour eux, et ils déploieront les changements dans le produit Réponses IA en direct.",
+    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Assurez-vous de ne pas avoir ajouté d'ambiguïté! Restez concis pour réduire la charge cognitive de l'IA. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester. Testez avec plusieurs questions plusieurs fois.",
+    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe Réponses IA, copiez et collez la version modifiée pour eux, et ils effectueront et publieront les modifications dans le produit Réponses IA en direct.",
     "sections": {
       "editOverride": "Modifier le remplacement",
       "visualDiff": "Différence visuelle (côte à côte)"

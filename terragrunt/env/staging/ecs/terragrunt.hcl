@@ -79,6 +79,7 @@ dependency "ssm" {
     google_search_engine_id_arn  = ""
     adobe_analytics_url_arn      = ""
     session_secret_arn           = ""
+    conversation_integrity_secret_arn = ""
   }
 }
 
@@ -107,6 +108,7 @@ inputs = {
   google_search_engine_id_arn      = dependency.ssm.outputs.google_search_engine_id_arn
   adobe_analytics_url_arn          = dependency.ssm.outputs.adobe_analytics_url_arn
   session_secret_arn               = dependency.ssm.outputs.session_secret_arn
+  conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
   #fargate_cpu                      = 2048  
   #fargate_memory                   = 16384  
 }

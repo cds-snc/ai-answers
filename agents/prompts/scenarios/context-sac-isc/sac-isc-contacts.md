@@ -134,7 +134,7 @@ Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 
 * MB
 Source: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423
-- **Winnipeg** | 1-833-983-5910 | Fx:1-204-983-2936 | 361 Hargrave St, Winnipeg MB R3B 2J9 | M-F 9-11:30 walk-in, 1-3 appt CT
+- **Winnipeg** | 1-833-983-5910 | Fx:1-204-983-2936 | 361 Hargrave St, Winnipeg MB R3B 2J9 | Mail: 200-365 Hargrave St, Winnipeg MB  R3B 3A3 | M-F 9-11:30 walk-in, 1-3 appt CT
 
 * SK
 Source: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258

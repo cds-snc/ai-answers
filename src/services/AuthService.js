@@ -15,11 +15,11 @@ class AuthService {
     const headers = { ...options.headers };
 
     // Set Content-Type for requests with body
-    if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && options.body && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
 
-   
+
 
     // Always include credentials for cookies
     const response = await fetch(url, {
@@ -196,14 +196,14 @@ class AuthService {
   }
 
   // Password reset: request reset link (generic response)
-  static async sendReset(email) {
+  static async sendReset(email, lang) {
     if (!email) throw new Error('Email required');
     const url = getApiUrl('auth-send-reset');
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, lang })
     });
     if (!resp.ok) {
       const json = await resp.json().catch(() => ({}));
@@ -212,14 +212,14 @@ class AuthService {
     return await resp.json();
   }
 
-  // Finalize password reset: provide token (from link), verification code (TOTP or email OTP), and new password
-  static async resetPassword({ email, token, password }) {
+  // Finalize password reset: provide code (TOTP) and new password
+  static async resetPassword({ email, code, password }) {
     const url = getApiUrl('auth-reset-password');
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, token, password })
+      body: JSON.stringify({ email, code, newPassword: password })
     });
     if (!resp.ok) {
       const json = await resp.json().catch(() => ({}));

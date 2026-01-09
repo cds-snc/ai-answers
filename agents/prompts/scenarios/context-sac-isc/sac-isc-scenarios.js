@@ -40,6 +40,9 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
 * Criteria unclear → NEVER attempt answer; direct to About guarantors: https://www.sac-isc.gc.ca/eng/1517001167059/1572461679730 https://www.sac-isc.gc.ca/eng/1517001167059/1572461679730
 * Guarantor for child <2: must know parent/guardian 2+ years.
 
+### Finding a band number
+* First 3 digits of registration number on secure status card identify the First Nation, or band, with which someone is affiliated https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766
+
 ### Required documents
 * Documents vary by circumstances. Unclear if reg vs status card → ask to clarify.
 * Reg documents: https://www.sac-isc.gc.ca/eng/1710868681038/1710868708332

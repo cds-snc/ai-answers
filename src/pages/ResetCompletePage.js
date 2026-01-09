@@ -7,10 +7,8 @@ import styles from '../styles/auth.module.css';
 const ResetCompletePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const code = searchParams.get('code');
   const email = searchParams.get('email');
-  const initialCode = searchParams.get('code') || '';
-  const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [message, setMessage] = useState('');
@@ -18,10 +16,10 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!token || !email) {
+    if (!code || !email) {
       setMessage(t('reset.complete.invalid') || 'Invalid reset link');
     }
-  }, [token, email, t]);
+  }, [code, email, t]);
 
   const submit = async (e) => {
     e && e.preventDefault();
@@ -36,9 +34,8 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     }
     setIsLoading(true);
     try {
-      // No OTP fallback: submit only email, token and new password. If the account has TOTP enabled
-      // the server will return an error indicating 2FA is required.
-      await AuthService.resetPassword({ email, token, password });
+      // TOTP-based password reset
+      await AuthService.resetPassword({ email, code, password });
       setMessage(t('reset.complete.success') || 'Password updated. Redirecting to sign in...');
       setTimeout(() => navigate(`/${lang}/signin`), 2500);
     } catch (err) {
@@ -64,7 +61,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           <input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={isLoading} />
         </div>
 
-        <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.complete.submitting') || 'Submitting...' : t('reset.complete.submit') || 'Set password'}</button>
+        <button type="submit" className={styles.submit_button} disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.complete.submit') || 'Set password'}</button>
       </form>
       <div className={styles['auth-links']}>
         <Link to={`/${lang}/signin`}>{t('login.form.signinLink') || 'Back to sign in'}</Link>

@@ -21,6 +21,8 @@ const DatabasePage = ({ lang }) => {
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
+  const [isCreatingIndexes, setIsCreatingIndexes] = useState(false);
+  const [isBackfillingSecrets, setIsBackfillingSecrets] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
@@ -32,6 +34,9 @@ const DatabasePage = ({ lang }) => {
   const fileInputRef = useRef(null);
   const [checksRunning, setChecksRunning] = useState({});
   const [checksResults, setChecksResults] = useState({});
+  const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
+  const [isCheckingIndexStatus, setIsCheckingIndexStatus] = useState(false);
+  const [indexStatus, setIndexStatus] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -506,6 +511,69 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
+  const handleCreateIndexes = async () => {
+    const confirmed = window.confirm(
+      lang === 'en'
+        ? 'This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?'
+        : 'Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsCreatingIndexes(true);
+      setMessage('');
+
+      const result = await DataStoreService.createIndexes();
+
+      const successCount = result.results.success ? result.results.success.length : 0;
+      const failCount = result.results.failed ? result.results.failed.length : 0;
+
+      setMessage(lang === 'en'
+        ? `Indexes created/rebuilt successfully. Success: ${successCount}, Failed: ${failCount}`
+        : `Index créés/reconstruits avec succès. Succès: ${successCount}, Échec: ${failCount}`
+      );
+    } catch (error) {
+      setMessage(lang === 'en'
+        ? `Create indexes failed: ${error.message}`
+        : `Échec de la création des index: ${error.message}`
+      );
+      console.error('Create indexes error:', error);
+    } finally {
+      setIsCreatingIndexes(false);
+    }
+  };
+
+  const handleBackfillSecrets = async () => {
+    const confirmed = window.confirm(
+      lang === 'en'
+        ? 'This will generate 2FA and reset password secrets for any users who are missing them. Are you sure you want to continue?'
+        : 'Cela générera des secrets 2FA et de réinitialisation de mot de passe pour tous les utilisateurs qui en manquent. Êtes-vous sûr de vouloir continuer?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsBackfillingSecrets(true);
+      setMessage('');
+
+      const result = await DataStoreService.backfillUserSecrets();
+
+      setMessage(lang === 'en'
+        ? `Backfill complete. Updated users: ${result.updatedCount}`
+        : `Remplissage terminé. Utilisateurs mis à jour: ${result.updatedCount}`
+      );
+    } catch (error) {
+      setMessage(lang === 'en'
+        ? `Backfill secrets failed: ${error.message}`
+        : `Échec du remplissage des secrets: ${error.message}`
+      );
+      console.error('Backfill secrets error:', error);
+    } finally {
+      setIsBackfillingSecrets(false);
+    }
+  };
+
   return (
     <GcdsContainer size="xl" centered>
       <GcdsHeading tag="h1">Database Management</GcdsHeading>
@@ -595,7 +663,8 @@ const DatabasePage = ({ lang }) => {
               { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
               { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
               { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
-              { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' }
+              { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' },
+              { id: 'duplicateKeys', label: 'Duplicate Keys (Index Violations)' }
             ].map(check => (
               <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>{check.label}</div>
@@ -642,6 +711,42 @@ const DatabasePage = ({ lang }) => {
                     </div>
                   ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
                 </div>
+                {/* Add Remove Duplicates button only for duplicateKeys check */}
+                {check.id === 'duplicateKeys' && (
+                  <GcdsButton
+                    onClick={async () => {
+                      if (!window.confirm(
+                        lang === 'en'
+                          ? 'This will delete older duplicate records, keeping only the newest. Are you sure?'
+                          : 'Cela supprimera les anciens enregistrements en double, ne gardant que les plus récents. Êtes-vous sûr?'
+                      )) return;
+                      try {
+                        setIsRemovingDuplicates(true);
+                        setMessage('');
+                        const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
+                          method: 'DELETE'
+                        });
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
+                        setMessage(lang === 'en'
+                          ? `Removed ${json.deletedCount} duplicate records`
+                          : `Supprimé ${json.deletedCount} enregistrements en double`);
+                        // Refresh the check results
+                        setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
+                      } catch (err) {
+                        setMessage(`Remove duplicates failed: ${err.message}`);
+                      } finally {
+                        setIsRemovingDuplicates(false);
+                      }
+                    }}
+                    disabled={isRemovingDuplicates}
+                    variant="danger"
+                  >
+                    {isRemovingDuplicates
+                      ? (lang === 'en' ? 'Removing...' : 'Suppression...')
+                      : (lang === 'en' ? 'Remove Duplicates' : 'Supprimer les doublons')}
+                  </GcdsButton>
+                )}
               </div>
             ))}
           </div>
@@ -727,6 +832,44 @@ const DatabasePage = ({ lang }) => {
       </div>
 
       <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Create/Rebuild Indexes' : 'Créer/Reconstruire des index'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.'
+            : 'Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleCreateIndexes}
+          disabled={isCreatingIndexes}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isCreatingIndexes
+            ? (lang === 'en' ? 'Creating Indexes...' : 'Création des index...')
+            : (lang === 'en' ? 'Rebuild All Indexes' : 'Reconstruire tous les index')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Backfill User Secrets' : 'Remplir les secrets des utilisateurs'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Generate 2FA and reset password secrets for existing users that are missing them.'
+            : 'Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleBackfillSecrets}
+          disabled={isBackfillingSecrets}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isBackfillingSecrets
+            ? (lang === 'en' ? 'Backfilling...' : 'Remplissage...')
+            : (lang === 'en' ? 'Backfill Secrets' : 'Remplir les secrets')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index'}</GcdsHeading>
         <GcdsText>
           {lang === 'en'
@@ -743,6 +886,72 @@ const DatabasePage = ({ lang }) => {
             ? (lang === 'en' ? 'Dropping Indexes...' : 'Suppression des index...')
             : (lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index')}
         </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Check Index Status' : 'Vérifier l\'état des index'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Check the current status of all database indexes across all collections.'
+            : 'Vérifier l\'état actuel de tous les index de base de données pour toutes les collections.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={async () => {
+            try {
+              setIsCheckingIndexStatus(true);
+              setIndexStatus(null);
+              setMessage('');
+              const res = await AuthService.fetch(getApiUrl('db-database-management'), {
+                method: 'PATCH'
+              });
+              const json = await res.json();
+              if (!res.ok) throw new Error(json.message || 'Check failed');
+              setIndexStatus(json);
+            } catch (err) {
+              setMessage(lang === 'en'
+                ? `Index status check failed: ${err.message}`
+                : `Échec de la vérification de l'état des index: ${err.message}`);
+            } finally {
+              setIsCheckingIndexStatus(false);
+            }
+          }}
+          disabled={isCheckingIndexStatus}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isCheckingIndexStatus
+            ? (lang === 'en' ? 'Checking...' : 'Vérification...')
+            : (lang === 'en' ? 'Check Index Status' : 'Vérifier l\'état des index')}
+        </GcdsButton>
+        {indexStatus && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.allComplete ? 'green' : 'orange' }}>
+              {indexStatus.message}
+            </div>
+            <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', paddingRight: 16 }}>Collection</th>
+                  <th style={{ textAlign: 'right', paddingRight: 16 }}>Current</th>
+                  <th style={{ textAlign: 'right', paddingRight: 16 }}>Expected</th>
+                  <th style={{ textAlign: 'left' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {indexStatus.collections?.map(col => (
+                  <tr key={col.collection}>
+                    <td style={{ paddingRight: 16 }}>{col.collection}</td>
+                    <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
+                    <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
+                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'error' ? 'red' : 'orange' }}>
+                      {col.status}{col.error ? `: ${col.error}` : ''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="mb-400">

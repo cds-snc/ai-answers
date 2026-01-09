@@ -76,3 +76,8 @@ output "session_secret_arn" {
   description = "ARN of the session secret parameter"
   value       = aws_ssm_parameter.session_secret.arn
 }
+
+output "conversation_integrity_secret_arn" {
+  description = "ARN of the interaction history integrity secret parameter"
+  value       = aws_ssm_parameter.conversation_integrity_secret.arn
+}

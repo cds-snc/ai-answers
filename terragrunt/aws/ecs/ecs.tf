@@ -51,6 +51,10 @@ locals {
     {
       "name"      = "SESSION_SECRET"
       "valueFrom" = var.session_secret_arn
+    },
+    {
+      "name"      = "CONVERSATION_INTEGRITY_SECRET"
+      "valueFrom" = var.conversation_integrity_secret_arn
     }
   ]
 }

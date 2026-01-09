@@ -79,7 +79,7 @@ async function evalDashboardHandler(req, res) {
 
     if (Object.keys(initialMatch).length) pipeline.push({ $match: initialMatch });
 
-    // Lookup answer
+    // Lookup answer - only need answerType
     pipeline.push({
       $lookup: {
         from: 'answers',
@@ -88,9 +88,14 @@ async function evalDashboardHandler(req, res) {
         as: 'answerDoc'
       }
     });
-    pipeline.push({ $addFields: { answer: { $arrayElemAt: ['$answerDoc', 0] } } });
+    // Extract only answerType immediately
+    pipeline.push({
+      $addFields: {
+        answerType: { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] }
+      }
+    });
 
-    // Lookup eval via autoEval
+    // Lookup eval - only need processed, hasMatches, fallbackType, noMatchReasonType, expertFeedback ref
     pipeline.push({
       $lookup: {
         from: 'evals',
@@ -99,9 +104,22 @@ async function evalDashboardHandler(req, res) {
         as: 'evalDoc'
       }
     });
-    pipeline.push({ $addFields: { eval: { $arrayElemAt: ['$evalDoc', 0] } } });
+    // Extract only needed fields immediately
+    pipeline.push({
+      $addFields: {
+        eval: {
+          processed: { $arrayElemAt: ['$evalDoc.processed', 0] },
+          hasMatches: { $arrayElemAt: ['$evalDoc.hasMatches', 0] },
+          fallbackType: { $arrayElemAt: ['$evalDoc.fallbackType', 0] },
+          noMatchReasonType: { $arrayElemAt: ['$evalDoc.noMatchReasonType', 0] },
+          hasCitationError: { $arrayElemAt: ['$evalDoc.hasCitationError', 0] },
+          hasError: { $arrayElemAt: ['$evalDoc.hasError', 0] },
+          expertFeedback: { $arrayElemAt: ['$evalDoc.expertFeedback', 0] }
+        }
+      }
+    });
 
-    // Lookup parent chat (chat that contains this interaction)
+    // Lookup parent chat - only need chatId, pageLanguage, user
     pipeline.push({
       $lookup: {
         from: 'chats',
@@ -110,9 +128,16 @@ async function evalDashboardHandler(req, res) {
         as: 'chatDoc'
       }
     });
-    pipeline.push({ $addFields: { chat: { $arrayElemAt: ['$chatDoc', 0] } } });
+    // Extract only needed fields immediately
+    pipeline.push({
+      $addFields: {
+        chatId: { $ifNull: [{ $arrayElemAt: ['$chatDoc.chatId', 0] }, ''] },
+        pageLanguage: { $ifNull: [{ $arrayElemAt: ['$chatDoc.pageLanguage', 0] }, ''] },
+        chatUser: { $arrayElemAt: ['$chatDoc.user', 0] }
+      }
+    });
 
-    // Lookup context for department
+    // Lookup context - only need department
     pipeline.push({
       $lookup: {
         from: 'contexts',
@@ -121,9 +146,14 @@ async function evalDashboardHandler(req, res) {
         as: 'contextDoc'
       }
     });
-    pipeline.push({ $addFields: { context: { $arrayElemAt: ['$contextDoc', 0] } } });
+    // Extract only department immediately
+    pipeline.push({
+      $addFields: {
+        department: { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] }
+      }
+    });
 
-    // Lookup expert feedback attached directly to the interaction (if any)
+    // Lookup expert feedback attached directly to the interaction - only need expertEmail, overallRating
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
@@ -132,9 +162,18 @@ async function evalDashboardHandler(req, res) {
         as: 'interactionExpertDocs'
       }
     });
-    pipeline.push({ $addFields: { interactionExpert: { $arrayElemAt: ['$interactionExpertDocs', 0] } } });
+    // Extract only needed fields immediately
+    pipeline.push({
+      $addFields: {
+        interactionExpert: {
+          expertEmail: { $arrayElemAt: ['$interactionExpertDocs.expertEmail', 0] },
+          overallRating: { $arrayElemAt: ['$interactionExpertDocs.overallRating', 0] }
+        },
+        hasInteractionExpert: { $gt: [{ $size: '$interactionExpertDocs' }, 0] }
+      }
+    });
 
-    // Lookup expert feedback attached to the auto eval (if any)
+    // Lookup expert feedback attached to the auto eval - only need expertEmail
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
@@ -143,7 +182,26 @@ async function evalDashboardHandler(req, res) {
         as: 'evalExpertDocs'
       }
     });
-    pipeline.push({ $addFields: { evalExpert: { $arrayElemAt: ['$evalExpertDocs', 0] } } });
+    // Extract only needed fields immediately
+    pipeline.push({
+      $addFields: {
+        evalExpert: {
+          expertEmail: { $arrayElemAt: ['$evalExpertDocs.expertEmail', 0] }
+        }
+      }
+    });
+
+    // Clean up temporary lookup arrays to free memory
+    pipeline.push({
+      $project: {
+        answerDoc: 0,
+        evalDoc: 0,
+        chatDoc: 0,
+        contextDoc: 0,
+        interactionExpertDocs: 0,
+        evalExpertDocs: 0
+      }
+    });
 
     pipeline.push({
       $addFields: {
@@ -237,14 +295,13 @@ async function evalDashboardHandler(req, res) {
         interactionId: { $ifNull: ['$interactionId', ''] },
         _id: 1,
         createdAt: 1,
-        chatId: { $ifNull: ['$chat.chatId', ''] },
-        pageLanguage: { $ifNull: ['$chat.pageLanguage', ''] },
-        department: { $ifNull: ['$context.department', ''] },
+        chatId: 1,  // Already extracted at top level
+        pageLanguage: 1,  // Already extracted at top level
+        department: 1,  // Already extracted at top level
         // Indicate whether an auto-generated eval exists for this interaction
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
         // Only consider expert feedback attached directly to the interaction
-        // (do NOT count expert feedback that is only referenced from the Eval document)
-        hasExpertEval: { $cond: [{ $ifNull: ['$interactionExpert', false] }, true, false] },
+        hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
         expertEmail: { $ifNull: ['$interactionExpert.expertEmail', ''] },
         processed: '$eval.processed',

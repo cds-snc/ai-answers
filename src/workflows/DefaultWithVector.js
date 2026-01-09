@@ -75,46 +75,46 @@ export class DefaultWithVector {
       } : null
     });
 
-      // run short-circuit similar-answer check using detected/original language from translation
-      const detectedLang = (translationData && translationData.originalLanguage) || lang;
+    // run short-circuit similar-answer check using detected/original language from translation
+    const detectedLang = (translationData && translationData.originalLanguage) || lang;
 
-      // Determine whether there is any prior AI reply in the original conversation history.
-      // If there is an AI reply, we skip the similar-answer short-circuit and let the normal
-      // LLM flow proceed. Filter out programmatic redaction/system messages by excluding
-      // items with `m.error`.
-      const safeOriginalHistory = (conversationHistory || []).filter(m => m && !m.error);
-      const hasAIReply = safeOriginalHistory.some(m => m.sender === 'ai' || (m.interaction && m.interaction.answer));
+    // Determine whether there is any prior AI reply in the original conversation history.
+    // If there is an AI reply, we skip the similar-answer short-circuit and let the normal
+    // LLM flow proceed. Filter out programmatic redaction/system messages by excluding
+    // items with `m.error`.
+    const safeOriginalHistory = (conversationHistory || []).filter(m => m && !m.error);
+    const hasAIReply = safeOriginalHistory.some(m => m.sender === 'ai' || (m.interaction && m.interaction.answer));
 
-      if (!hasAIReply) {
-        const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, cleanedHistory, onStatusUpdate, selectedAI, lang, detectedLang);
-        if (similarShortCircuit) {
-          await LoggingService.info(chatId, 'Short-circuited similar-answer check succeeded:', { similarShortCircuit });
+    if (!hasAIReply) {
+      const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, cleanedHistory, onStatusUpdate, selectedAI, lang, detectedLang);
+      if (similarShortCircuit) {
+        await LoggingService.info(chatId, 'Short-circuited similar-answer check succeeded:', { similarShortCircuit });
 
-          const endTimeSC = Date.now();
-          const payload = this.buildShortCircuitPayload({ similarShortCircuit, startTime, endTime: endTimeSC, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider, contextOverride: preContext });
+        const endTimeSC = Date.now();
+        const payload = this.buildShortCircuitPayload({ similarShortCircuit, startTime, endTime: endTimeSC, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider, contextOverride: preContext });
 
-          // Persist payload (fire-and-forget) and short-circuit the workflow
-          try {
-            DataStoreService.persistInteraction(payload);
-          } catch (e) {
-            await LoggingService.info(chatId, 'Short-circuit persistence error (non-blocking):', { error: e && e.message });
-          }
-
-          // Return structured short-circuit result to UI using the same shape as normal flow
-          await LoggingService.info(chatId, 'Short-circuit total response time:', {
-            totalResponseTime: `${endTimeSC - startTime} ms`,
-          });
-          return {
-            answer: payload.answer,
-            context: payload.context,
-            question: payload.question,
-            citationUrl: payload.finalCitationUrl,
-            confidenceRating: payload.confidenceRating,
-          };
+        // Persist payload (fire-and-forget) and short-circuit the workflow
+        try {
+          DataStoreService.persistInteraction(payload);
+        } catch (e) {
+          await LoggingService.info(chatId, 'Short-circuit persistence error (non-blocking):', { error: e && e.message });
         }
-      } else {
-        await LoggingService.info(chatId, 'Skipping similar-answer check because prior AI reply exists in conversation history.');
+
+        // Return structured short-circuit result to UI using the same shape as normal flow
+        await LoggingService.info(chatId, 'Short-circuit total response time:', {
+          totalResponseTime: `${endTimeSC - startTime} ms`,
+        });
+        return {
+          answer: payload.answer,
+          context: payload.context,
+          question: payload.question,
+          citationUrl: payload.finalCitationUrl,
+          confidenceRating: payload.confidenceRating,
+        };
       }
+    } else {
+      await LoggingService.info(chatId, 'Skipping similar-answer check because prior AI reply exists in conversation history.');
+    }
 
     // Decide/derive context for the normal flow
     const context = await ContextService.deriveContext(
@@ -242,7 +242,8 @@ export class DefaultWithVector {
         questionLanguage: (translationData && translationData.originalLanguage) || lang,
         englishQuestion: (translationData && translationData.translatedText) || userMessage,
         tools: [],
-        citationUrl: aiCitationUrl
+        citationUrl: aiCitationUrl,
+        historySignature: similarShortCircuit.historySignature || null
       },
       finalCitationUrl: providedCitationUrl,
       confidenceRating: similarShortCircuit.confidenceRating || similarShortCircuit.similarity || null,
@@ -322,10 +323,14 @@ export class DefaultWithVector {
         .filter(q => q);
       const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
 
+      // Extract historySignature from the last AI message in history
+      const lastAiMessage = [...(conversationHistory || [])].reverse().find(m => m.sender === 'ai');
+      const historySignature = lastAiMessage?.historySignature || lastAiMessage?.interaction?.historySignature || null;
+
       const similarResp = await AuthService.fetch(getApiUrl('chat-similar-answer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, questions, selectedAI, pageLanguage: pageLang || null, detectedLanguage: detectedLang || null })
+        body: JSON.stringify({ chatId, questions, conversationHistory, historySignature, selectedAI, pageLanguage: pageLang || null, detectedLanguage: detectedLang || null })
       });
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
@@ -356,14 +361,15 @@ export class DefaultWithVector {
               // expose the source chat/interaction ids returned by the matcher
               instantAnswerChatId: instantAnswerChatId,
               instantAnswerInteractionId: instantAnswerInteractionId,
-              similarity: similarJson.similarity || null
-              ,
+              similarity: similarJson.similarity || null,
+              historySignature: similarJson.historySignature || null,
               citationHead: (similarJson.citation && similarJson.citation.citationHead) || null
             },
             context: null,
             question: userMessage,
             citationUrl: (similarJson.citation && (similarJson.citation.providedCitationUrl || similarJson.citation.aiCitationUrl)) || null,
             confidenceRating: similarJson.similarity || null,
+            historySignature: similarJson.historySignature || null,
             // include full citation info for persistence contract
             sourceCitation: similarJson.citation || null,
             // expose matched ids for persistence/traceability (from API)

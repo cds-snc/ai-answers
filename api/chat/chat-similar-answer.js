@@ -8,6 +8,7 @@ import { translationStrategy } from '../../agents/strategies/translationStrategy
 import { createRankerAgent, createTranslationAgent } from '../../agents/AgentFactory.js';
 import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import ConversationIntegrityService from '../../services/ConversationIntegrityService.js';
 
 // --- Main handler (composed of the helpers above) ---
 async function handler(req, res) {
@@ -17,7 +18,7 @@ async function handler(req, res) {
         return res.status(validated.error.code).end(validated.error.message);
     }
 
-    let { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
+    let { chatId, questions, conversationHistory = [], selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
 
     try {
 
@@ -82,7 +83,12 @@ async function handler(req, res) {
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
             citation: formatted.citation || null,
-            rankerTop: { index: topIndex, checks: topChecks }
+            rankerTop: { index: topIndex, checks: topChecks },
+            historySignature: ConversationIntegrityService.calculateSignature([
+                ...conversationHistory,
+                { sender: 'user', text: Array.isArray(questions) ? questions[questions.length - 1] : '' },
+                { sender: 'ai', text: formatted.text }
+            ])
         });
     } catch (err) {
         ServerLoggingService.error('Error in chat-similar-answer', 'chat-similar-answer', err);
@@ -117,7 +123,10 @@ async function handler(req, res) {
         const pageLanguage = typeof req.body?.pageLanguage === 'string' && req.body.pageLanguage.trim() ? req.body.pageLanguage.trim() : (typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null);
         const detectedLanguage = typeof req.body?.detectedLanguage === 'string' && req.body.detectedLanguage.trim() ? req.body.detectedLanguage.trim() : null;
         if (!pageLanguage) return { error: { code: 400, message: 'Missing pageLanguage' } };
-        return { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage };
+
+        const conversationHistory = req.body?.conversationHistory || [];
+
+        return { chatId, questions, conversationHistory, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage };
     }
 
 
