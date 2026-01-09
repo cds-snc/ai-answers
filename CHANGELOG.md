@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.79.2](https://github.com/cds-snc/ai-answers/compare/v1.79.1...v1.79.2) (2026-01-09)
+
+
+### Bug Fixes
+
+* session variables ([9abf555](https://github.com/cds-snc/ai-answers/commit/9abf555a7cedfdf81473d8bdf2d6a4bae32a04b8))
+* session variables ([5005a3f](https://github.com/cds-snc/ai-answers/commit/5005a3fbc5af1fb4061edb548d8e89616cb28361))
+
 ## [1.79.1](https://github.com/cds-snc/ai-answers/compare/v1.79.0...v1.79.1) (2026-01-09)
 
 
