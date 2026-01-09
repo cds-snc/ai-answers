@@ -31,7 +31,11 @@ describe('chat-similar-answer handler', () => {
   });
 
   it('delegates to SimilarAnswerService and returns JSON', async () => {
-    const mockResult = { answer: 'Similar Answer', interactionId: '123' };
+    const mockResult = {
+      answer: 'Similar Answer',
+      interactionId: '123',
+      historySignature: 'abc123'
+    };
     SimilarAnswerService.findSimilarAnswer.mockResolvedValue(mockResult);
 
     const req = {
@@ -63,9 +67,43 @@ describe('chat-similar-answer handler', () => {
       pageLanguage: 'en',
       chatId: 'test-chat',
       recencyDays: 365,
-      requestedRating: 5
+      requestedRating: 5,
+      conversationHistory: []
     }));
     expect(res.json).toHaveBeenCalledWith(mockResult);
+  });
+
+  it('returns result with historySignature from service', async () => {
+    const mockResult = {
+      answer: 'Test Answer',
+      interactionId: '456',
+      reRanked: true,
+      historySignature: 'signature123'
+    };
+    SimilarAnswerService.findSimilarAnswer.mockResolvedValue(mockResult);
+
+    const req = {
+      method: 'POST',
+      body: {
+        questions: ['Test question'],
+        selectedAI: 'openai',
+        pageLanguage: 'en',
+        conversationHistory: [{ sender: 'user', text: 'Previous question' }]
+      }
+    };
+
+    const res = {
+      json: vi.fn(),
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      end: vi.fn()
+    };
+
+    await handler(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      historySignature: 'signature123'
+    }));
   });
 
   it('returns 500 if service fails', async () => {
@@ -90,5 +128,21 @@ describe('chat-similar-answer handler', () => {
     const res = { setHeader: vi.fn(), status: vi.fn().mockReturnThis(), end: vi.fn() };
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(405);
+  });
+
+  it('returns empty object when service returns null', async () => {
+    SimilarAnswerService.findSimilarAnswer.mockResolvedValue(null);
+
+    const req = { method: 'POST', body: { questions: ['Q'], pageLanguage: 'en' } };
+    const res = {
+      json: vi.fn(),
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      end: vi.fn()
+    };
+
+    await handler(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({});
   });
 });

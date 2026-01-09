@@ -8,7 +8,59 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
-import { filterByPartnerEval, filterByAiEval, getChatFilterConditions } from '../utils/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../utils/chat-filters.js';
+
+const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
+
+const parseLocalDateTime = (value, { timezoneOffsetMinutes = 0, endOfDayIfNoTime = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const match = value.match(DATE_TIME_REGEX);
+  if (!match) return null;
+
+  const [, yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr, msStr] = match;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const hasTime = hourStr !== undefined && minuteStr !== undefined;
+  const hour = hasTime ? Number(hourStr) : endOfDayIfNoTime ? 23 : 0;
+  const minute = hasTime ? Number(minuteStr) : endOfDayIfNoTime ? 59 : 0;
+  const second = hasTime ? Number(secondStr || 0) : endOfDayIfNoTime ? 59 : 0;
+  const millisecond = hasTime ? Number(msStr || 0) : endOfDayIfNoTime ? 999 : 0;
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) || month < 1 || month > 12 ||
+    !Number.isFinite(day) || day < 1 || day > 31 ||
+    !Number.isFinite(hour) || hour < 0 || hour > 23 ||
+    !Number.isFinite(minute) || minute < 0 || minute > 59 ||
+    !Number.isFinite(second) || second < 0 || second > 59 ||
+    !Number.isFinite(millisecond) || millisecond < 0 || millisecond > 999
+  ) {
+    return null;
+  }
+
+  const offset = Number.isFinite(timezoneOffsetMinutes) ? timezoneOffsetMinutes : 0;
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute, second, millisecond) + (offset * 60 * 1000);
+  const parsed = new Date(utcMs);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const parseFallbackDate = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const buildDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
+  if (!startDate || !endDate) return null;
+  const start = parseLocalDateTime(startDate, { timezoneOffsetMinutes }) || parseFallbackDate(startDate);
+  const end = parseLocalDateTime(endDate, { timezoneOffsetMinutes, endOfDayIfNoTime: true }) || parseFallbackDate(endDate);
+  if (!start || !end) return null;
+  return { $gte: start, $lte: end };
+};
+
+const HOURS_IN_DAY = 24;
+const DEFAULT_DAYS = 7;
 
 async function chatLogsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -20,22 +72,51 @@ async function chatLogsHandler(req, res) {
     const {
       startDate, endDate,
       department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
-       limit = 100, lastId, batchId,
+      timezoneOffsetMinutes,
+      limit = 100, lastId, batchId,
     } = req.query;
 
-    // Validate eval category inputs
+    // Validate eval category inputs (supports comma-separated multi-select)
     const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
-    if (partnerEval && !validCategories.includes(partnerEval)) {
-      return res.status(400).json({ error: 'Invalid partnerEval value' });
+    const validAnswerTypes = ['all', 'not-gc', 'clarifying-question', 'pt-muni', 'normal'];
+
+    const validateCategories = (input, paramName, validValues) => {
+      if (!input || input === 'all') return true;
+      const values = input.split(',').map(v => v.trim()).filter(Boolean);
+      const invalid = values.filter(v => !validValues.includes(v));
+      if (invalid.length > 0) {
+        return `Invalid ${paramName} values: ${invalid.join(', ')}`;
+      }
+      return true;
+    };
+
+    const partnerEvalValidation = validateCategories(partnerEval, 'partnerEval', validCategories);
+    if (partnerEvalValidation !== true) {
+      return res.status(400).json({ error: partnerEvalValidation });
     }
-    if (aiEval && !validCategories.includes(aiEval)) {
-      return res.status(400).json({ error: 'Invalid aiEval value' });
+
+    const aiEvalValidation = validateCategories(aiEval, 'aiEval', validCategories);
+    if (aiEvalValidation !== true) {
+      return res.status(400).json({ error: aiEvalValidation });
+    }
+
+    const answerTypeValidation = validateCategories(answerType, 'answerType', validAnswerTypes);
+    if (answerTypeValidation !== true) {
+      return res.status(400).json({ error: answerTypeValidation });
     }
 
 
-  let dateFilter = {};
+    let dateFilter = {};
     if (startDate && endDate) {
-      dateFilter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+      const parsedRange = buildDateRange({ startDate, endDate, timezoneOffsetMinutes: Number.isFinite(parseInt(timezoneOffsetMinutes, 10)) ? parseInt(timezoneOffsetMinutes, 10) : undefined });
+      if (!parsedRange) {
+        return res.status(400).json({ error: 'startDate and endDate are required and must be valid dates (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)' });
+      }
+      dateFilter.createdAt = parsedRange;
+    } else {
+      const now = new Date();
+      const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
+      dateFilter.createdAt = { $gte: start, $lte: now };
     }
 
     if (lastId && lastId !== 'null' && lastId !== null) {
@@ -49,8 +130,6 @@ async function chatLogsHandler(req, res) {
       dateFilter.user = { $exists: true };
     }
     // If userType is 'all' or undefined, no filter is applied
-   
-    const totalCount = await Chat.countDocuments(dateFilter);
 
     const chatPopulate = [
       { path: 'user', select: 'email' },
@@ -84,6 +163,7 @@ async function chatLogsHandler(req, res) {
     ];
 
     let chats;
+    let totalCount = 0;
 
     // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
     if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval) {
@@ -224,7 +304,15 @@ async function chatLogsHandler(req, res) {
         }
       });
 
-      // Build AND filters
+      // Add computed partnerEval and aiEval fields for filtering
+      pipeline.push({
+        $addFields: {
+          'interactions.partnerEval': getPartnerEvalAggregationExpression(),
+          'interactions.aiEval': getAiEvalAggregationExpression()
+        }
+      });
+
+      // Build AND filters - now includes all conditions including partnerEval and aiEval
       const allConditions = getChatFilterConditions({
         department,
         referringUrl,
@@ -235,12 +323,8 @@ async function chatLogsHandler(req, res) {
         partnerEval,
         aiEval
       });
-      const andFilters = allConditions.filter(cond => {
-        // Exclude partnerEval and aiEval conditions since they are filtered post-query
-        return !cond.hasOwnProperty('interactions.partnerEval') && !cond.hasOwnProperty('interactions.aiEval');
-      });
 
-      if (andFilters.length) pipeline.push({ $match: { $and: andFilters } });
+      if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });
 
       pipeline.push({
         $group: {
@@ -272,37 +356,38 @@ async function chatLogsHandler(req, res) {
 
       chats = await Chat.aggregate(pipeline);
 
-      // Apply post-query eval filters if requested
-      if (partnerEval && partnerEval !== 'all') {
-        chats = filterByPartnerEval(chats, partnerEval);
-      }
-      if (aiEval && aiEval !== 'all') {
-        chats = filterByAiEval(chats, aiEval);
-      }
+      totalCount = chats.length;
     } else {
-      // Non-aggregate branch
+      // Non-aggregate branch - used when no filters are specified
       // Apply batch filter if batchId is provided
       if (batchId) {
         const batchChatItems = await BatchItem.find({ batch: batchId }).select('chat');
         const batchChatIds = batchChatItems.filter(item => item.chat).map(item => item.chat);
         dateFilter = Object.keys(dateFilter).length
-          ? { $and: [ dateFilter, { _id: { $in: batchChatIds } } ] }
+          ? { $and: [dateFilter, { _id: { $in: batchChatIds } }] }
           : { _id: { $in: batchChatIds } };
       }
 
-      let query = Chat.find(dateFilter)
-        .populate(chatPopulate)
-        .sort({ _id: 1 }) // Ensure consistent ordering for pagination
-        .limit(Number(limit));
-      chats = await query;
+      // Use optimized count pipeline with Promise.all for parallel execution
+      const dataPipeline = [
+        { $match: dateFilter },
+        { $sort: { _id: 1 } },
+        { $limit: Number(limit) }
+      ];
 
-      // Apply post-query eval filters in non-aggregate branch as well
-      if (partnerEval && partnerEval !== 'all') {
-        chats = filterByPartnerEval(chats, partnerEval);
-      }
-      if (aiEval && aiEval !== 'all') {
-        chats = filterByAiEval(chats, aiEval);
-      }
+      const countPipeline = [
+        { $match: dateFilter },
+        { $count: 'total' }
+      ];
+
+      const [chatsResult, countResult] = await Promise.all([
+        Chat.aggregate(dataPipeline),
+        Chat.aggregate(countPipeline)
+      ]);
+
+      // Populate the results
+      chats = await Chat.populate(chatsResult, chatPopulate);
+      totalCount = countResult[0]?.total || 0;
     }
 
     const response = {

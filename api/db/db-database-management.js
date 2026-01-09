@@ -10,14 +10,14 @@ import fs from 'fs';
 import crypto from 'crypto'; // Import crypto for generating UUIDs
 
 async function databaseManagementHandler(req, res) {
-  if (!['GET', 'POST', 'DELETE'].includes(req.method)) {
-    res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+  if (!['GET', 'POST', 'DELETE', 'PUT', 'PATCH'].includes(req.method)) {
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']);
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   try {
     const connection = await dbConnect();
-    
+
     // Get all registered models from Mongoose
     const collections = Object.keys(mongoose.models).reduce((acc, modelName) => {
       acc[modelName.toLowerCase()] = mongoose.models[modelName];
@@ -101,8 +101,8 @@ async function databaseManagementHandler(req, res) {
 
         // Initialize skipped examples container (up to 10)
         if (!stats.skippedExamples) stats.skippedExamples = [];
-      // Process all complete lines in this chunk, applying the optional collectionFilter
-      await processLines(lines, collections, stats, collectionFilter);
+        // Process all complete lines in this chunk, applying the optional collectionFilter
+        await processLines(lines, collections, stats, collectionFilter);
 
         // If this is the last chunk, the client should have sent any remaining incomplete line as a complete line
         const responsePayload = {
@@ -113,7 +113,7 @@ async function databaseManagementHandler(req, res) {
         if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
           responsePayload.message = 'Database import completed.';
         }
-  return res.status(200).json(responsePayload);
+        return res.status(200).json(responsePayload);
       } catch (err) {
         console.error('Error processing chunk:', err);
         return res.status(500).json({ message: 'Error processing upload chunk', error: err.message });
@@ -139,16 +139,77 @@ async function databaseManagementHandler(req, res) {
         }
       }));
 
-      return res.status(200).json({ 
+      return res.status(200).json({
         message: 'Database indexes dropped successfully',
         results
+      });
+    } else if (req.method === 'PUT') {
+      // Create/Rebuild indexes
+      const results = {
+        success: [],
+        failed: []
+      };
+
+      await Promise.all(Object.values(collections).map(async model => {
+        try {
+          await model.createIndexes();
+          results.success.push(model.modelName);
+          console.log(`Created indexes for ${model.modelName}`);
+        } catch (error) {
+          results.failed.push({
+            collection: model.modelName,
+            error: error.message
+          });
+          console.warn(`Error creating indexes for ${model.modelName}:`, error.message);
+        }
+      }));
+
+      return res.status(200).json({
+        message: 'Database indexes created successfully',
+        results
+      });
+    } else if (req.method === 'PATCH') {
+      // Check index status for all collections
+      const indexStatus = [];
+
+      for (const model of Object.values(collections)) {
+        try {
+          const indexes = await model.collection.indexes();
+          // Get expected indexes from schema
+          const schemaIndexes = model.schema.indexes() || [];
+          const expectedCount = schemaIndexes.length + 1; // +1 for _id index
+
+          indexStatus.push({
+            collection: model.modelName,
+            currentIndexCount: indexes.length,
+            expectedIndexCount: expectedCount,
+            indexes: indexes.map(idx => ({
+              name: idx.name,
+              keys: Object.keys(idx.key || {})
+            })),
+            status: indexes.length >= expectedCount ? 'complete' : 'incomplete'
+          });
+        } catch (error) {
+          indexStatus.push({
+            collection: model.modelName,
+            error: error.message,
+            status: 'error'
+          });
+        }
+      }
+
+      const allComplete = indexStatus.every(s => s.status === 'complete');
+      return res.status(200).json({
+        message: allComplete ? 'All indexes are complete' : 'Some indexes may be incomplete',
+        allComplete,
+        collections: indexStatus
       });
     }
   } catch (error) {
     console.error('Database management error:', error);
-    return res.status(500).json({ 
-      message: 'Database operation failed', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Database operation failed',
+      error: error.message
     });
   }
 }
@@ -156,11 +217,11 @@ async function databaseManagementHandler(req, res) {
 async function processLines(lines, collections, stats, collectionFilter = () => true) {
   // Group operations by collection for bulk processing
   const operationsByCollection = {};
-  
+
   // Prepare bulk operations
   for (const line of lines) {
     if (!line.trim()) continue;
-    
+
     try {
       const { collection, doc } = JSON.parse(line);
       if (!collection) {
@@ -186,7 +247,7 @@ async function processLines(lines, collections, stats, collectionFilter = () => 
         stats.failed++;
         continue;
       }
-      
+
       // Ensure createdAt and updatedAt are Date objects if they exist as strings
       if (doc.createdAt && typeof doc.createdAt === 'string') {
         doc.createdAt = new Date(doc.createdAt);
@@ -199,28 +260,44 @@ async function processLines(lines, collections, stats, collectionFilter = () => 
       if (!operationsByCollection[collectionName]) {
         operationsByCollection[collectionName] = [];
       }
-      
+
+      // Collections with unique fields should use those fields as the filter
+      // to prevent duplicate imports when _id differs but unique field matches
+      const uniqueKeyMap = {
+        user: 'email',
+        setting: 'key',
+        sessionstate: 'sessionId'
+      };
+
+      const uniqueField = uniqueKeyMap[collectionName];
+      let filter;
+      if (uniqueField && doc[uniqueField]) {
+        filter = { [uniqueField]: doc[uniqueField] };
+      } else {
+        filter = { _id: doc._id };
+      }
+
       // Use $set to preserve timestamps for all collections
       operationsByCollection[collectionName].push({
         updateOne: {
-          filter: { _id: doc._id },
+          filter,
           update: { $set: doc }, // doc now has Date objects for timestamps if they were strings
           upsert: true
         }
       });
-      
+
     } catch (err) {
       stats.failed++;
       console.error('Import parsing error:', err.message);
     }
   }
-  
+
   // Execute bulk operations for each collection
   const BATCH_SIZE = 500; // Optimal batch size for MongoDB
-  
+
   for (const [collectionName, operations] of Object.entries(operationsByCollection)) {
     const model = collections[collectionName];
-    
+
     try {
       // Process in optimized batches
       for (let i = 0; i < operations.length; i += BATCH_SIZE) {
@@ -228,7 +305,7 @@ async function processLines(lines, collections, stats, collectionFilter = () => 
         // Disable timestamps so createdAt/updatedAt are preserved for all collections
         const bulkOptions = { ordered: false, timestamps: false };
         const result = await model.bulkWrite(batch, bulkOptions);
-        
+
         // Update stats with batch results
         stats.inserted += (result.upsertedCount + result.modifiedCount);
       }

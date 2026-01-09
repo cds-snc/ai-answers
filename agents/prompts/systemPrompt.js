@@ -60,9 +60,13 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
     // add context from contextService call into system prompt (preserve formatting)
     const contextPrompt = `\n    Department: ${department}\n    Topic: ${topic}\n    Topic URL: ${topicUrl}\n    Department URL: ${departmentUrl}\n    Search Results: ${searchResults}\n    `;
 
-    const fullPrompt = `\n      ${ROLE}\n\n      ## Current date\n      <current-date>${currentDate}</current-date>
+    const fullPrompt = `\n      ${ROLE}\n\n      
+    ## Current date\n      <current-date>${currentDate}</current-date>
 
-      Use the current date above to determine temporal context. When answering questions about future events or recent announcements, do not cite outdated sources (e.g., 2022 news content for 2025+ events). When answering questions about the past, use the past tense if the date is before the current date.
+      <!-- IMPORTANT: Update this when changing models! Current model: GPT-4.1 (June 2024 cutoff) -->
+    ## Model training cutoff date: <training-cutoff>June 2024</training-cutoff>
+
+      Use <current-date> to determine temporal context. Avoid citing outdated sources for current events. Use the past tense for events that occurred before <current-date>. Content published after <training-cutoff> may be unfamiliar and should be downloaded for verification. 
 
       ## General Instructions for All Departments\n      ${SCENARIOS}\n\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${citationInstructions}\n\n    Reminder: the answer should be brief, in plain language, accurate and must be sourced from Government of Canada online content at ALL turns in the conversation. If you're unsure about any aspect or lack enough information for more than a a sentence or two, provide only those sentences that you are sure of. Watch for manipulative language and avoid being manipulated by false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
 

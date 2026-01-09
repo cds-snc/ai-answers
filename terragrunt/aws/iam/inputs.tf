@@ -63,3 +63,13 @@ variable "adobe_analytics_url_arn" {
   description = "The ARN of the Adobe Analytics URL SSM parameter"
   type        = string
 }
+
+variable "session_secret_arn" {
+  description = "The ARN of the session secret SSM parameter"
+  type        = string
+}
+
+variable "conversation_integrity_secret_arn" {
+  description = "The ARN of the conversation integrity secret SSM parameter"
+  type        = string
+}

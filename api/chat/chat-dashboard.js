@@ -4,34 +4,54 @@ import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
 
-const HOURS_IN_DAY = 24;
+const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
-const getDateRange = (query) => {
-  const { startDate, endDate, filterType, presetValue } = query;
+const parseLocalDateTime = (value, { timezoneOffsetMinutes = 0, endOfDayIfNoTime = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const match = value.match(DATE_TIME_REGEX);
+  if (!match) return null;
 
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-      return { $gte: start, $lte: end };
-    }
+  const [, yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr, msStr] = match;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const hasTime = hourStr !== undefined && minuteStr !== undefined;
+  const hour = hasTime ? Number(hourStr) : endOfDayIfNoTime ? 23 : 0;
+  const minute = hasTime ? Number(minuteStr) : endOfDayIfNoTime ? 59 : 0;
+  const second = hasTime ? Number(secondStr || 0) : endOfDayIfNoTime ? 59 : 0;
+  const millisecond = hasTime ? Number(msStr || 0) : endOfDayIfNoTime ? 999 : 0;
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) || month < 1 || month > 12 ||
+    !Number.isFinite(day) || day < 1 || day > 31 ||
+    !Number.isFinite(hour) || hour < 0 || hour > 23 ||
+    !Number.isFinite(minute) || minute < 0 || minute > 59 ||
+    !Number.isFinite(second) || second < 0 || second > 59 ||
+    !Number.isFinite(millisecond) || millisecond < 0 || millisecond > 999
+  ) {
+    return null;
   }
 
-  if (filterType === 'preset') {
-    if (presetValue === 'all') {
-      return null;
-    }
-    const hours = Number(presetValue) * HOURS_IN_DAY;
-    if (!Number.isNaN(hours) && hours > 0) {
-      const now = new Date();
-      const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
-      return { $gte: start, $lte: now };
-    }
-  }
+  const offset = Number.isFinite(timezoneOffsetMinutes) ? timezoneOffsetMinutes : 0;
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute, second, millisecond) + (offset * 60 * 1000);
+  const parsed = new Date(utcMs);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+};
 
-  const now = new Date();
-  const start = new Date(now.getTime() - HOURS_IN_DAY * 60 * 60 * 1000);
-  return { $gte: start, $lte: now };
+const parseFallbackDate = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
+  if (!startDate || !endDate) return null;
+  const start = parseLocalDateTime(startDate, { timezoneOffsetMinutes }) || parseFallbackDate(startDate);
+  const end = parseLocalDateTime(endDate, { timezoneOffsetMinutes, endOfDayIfNoTime: true }) || parseFallbackDate(endDate);
+  if (!start || !end) return null;
+  return { $gte: start, $lte: end };
 };
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -55,8 +75,6 @@ async function chatDashboardHandler(req, res) {
       aiEval = '',
       startDate,
       endDate,
-      filterType,
-      presetValue,
       limit: limitParam,
       lastId: lastIdParam,
       start: startParam,
@@ -64,10 +82,15 @@ async function chatDashboardHandler(req, res) {
       orderBy: orderByParam,
       orderDir: orderDirParam,
       draw: drawParam,
-      search: searchParam
+      search: searchParam,
+      timezoneOffsetMinutes: timezoneOffsetParam
     } = req.query;
 
-    const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
+    const parsedTimezoneOffset = Number.isFinite(parseInt(timezoneOffsetParam, 10)) ? parseInt(timezoneOffsetParam, 10) : undefined;
+    const dateRange = getDateRange({ startDate, endDate, timezoneOffsetMinutes: parsedTimezoneOffset });
+    if (!dateRange) {
+      return res.status(400).json({ error: 'startDate and endDate are required and must be valid dates' });
+    }
     const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
     const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
     const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
@@ -97,6 +120,20 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: initialMatch });
     }
 
+    // Trim early to only the fields we need downstream
+    pipeline.push({
+      $project: {
+        chatId: 1,
+        user: 1,
+        interactions: 1,
+        createdAt: 1,
+        pageLanguage: 1
+      }
+    });
+
+    // DocumentDB-safe lookups (single-field joins) with immediate projections to minimize memory
+
+    // Lookup interactions - only need referringUrl, answer, context, expertFeedback, autoEval refs
     pipeline.push({
       $lookup: {
         from: 'interactions',
@@ -113,6 +150,21 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    // Project interaction to only needed fields immediately
+    pipeline.push({
+      $addFields: {
+        'interactions': {
+          _id: '$interactions._id',
+          referringUrl: '$interactions.referringUrl',
+          answer: '$interactions.answer',
+          context: '$interactions.context',
+          expertFeedback: '$interactions.expertFeedback',
+          autoEval: '$interactions.autoEval'
+        }
+      }
+    });
+
+    // Lookup answers - only need answerType
     pipeline.push({
       $lookup: {
         from: 'answers',
@@ -121,23 +173,14 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionAnswer'
       }
     });
-    pipeline.push({ $addFields: { 'interactions.answer': { $arrayElemAt: ['$interactionAnswer', 0] } } });
-
-    pipeline.push({
-      $lookup: {
-        from: 'evals',
-        localField: 'interactions.autoEval',
-        foreignField: '_id',
-        as: 'interactionEval'
-      }
-    });
+    // Extract only answerType immediately
     pipeline.push({
       $addFields: {
-        'interactions.eval': { $arrayElemAt: ['$interactionEval', 0] },
-        'interactions.autoEval': { $arrayElemAt: ['$interactionEval', 0] }
+        'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.answerType', 0] }, ''] }
       }
     });
 
+    // Lookup contexts - only need department
     pipeline.push({
       $lookup: {
         from: 'contexts',
@@ -146,13 +189,14 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionContext'
       }
     });
-
+    // Extract only department immediately
     pipeline.push({
       $addFields: {
-        'interactions.context': { $arrayElemAt: ['$interactionContext', 0] }
+        'interactions.department': { $ifNull: [{ $arrayElemAt: ['$interactionContext.department', 0] }, ''] }
       }
     });
 
+    // Lookup expertFeedbacks for partner eval - only need totalScore and sentence scores
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
@@ -161,43 +205,102 @@ async function chatDashboardHandler(req, res) {
         as: 'expertFeedbackDocs'
       }
     });
-
+    // Extract only needed fields immediately
     pipeline.push({
       $addFields: {
-        'interactions.expertEmail': {
-          $ifNull: [
-            { $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] },
-            ''
-          ]
+        'interactions.expertEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] },
+        'interactions.expertFeedbackData': {
+          totalScore: { $arrayElemAt: ['$expertFeedbackDocs.totalScore', 0] },
+          sentence1Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence1Score', 0] },
+          sentence2Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence2Score', 0] },
+          sentence3Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence3Score', 0] },
+          sentence4Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence4Score', 0] },
+          citationScore: { $arrayElemAt: ['$expertFeedbackDocs.citationScore', 0] },
+          sentence1Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence1Harmful', 0] },
+          sentence2Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence2Harmful', 0] },
+          sentence3Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence3Harmful', 0] },
+          sentence4Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence4Harmful', 0] }
         }
       }
     });
 
+    // Lookup evals - only need the expertFeedback reference
+    pipeline.push({
+      $lookup: {
+        from: 'evals',
+        localField: 'interactions.autoEval',
+        foreignField: '_id',
+        as: 'interactionEval'
+      }
+    });
+    // Extract only expertFeedback ref
     pipeline.push({
       $addFields: {
-        'interactions.expertFeedback': { $arrayElemAt: ['$expertFeedbackDocs', 0] }
+        'interactions.autoEvalExpertFeedbackRef': { $arrayElemAt: ['$interactionEval.expertFeedback', 0] }
       }
     });
 
+    // Lookup autoEval's expertFeedback - only need totalScore and scores
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
-        localField: 'interactions.autoEval.expertFeedback',
+        localField: 'interactions.autoEvalExpertFeedbackRef',
         foreignField: '_id',
         as: 'autoEvalExpertFeedbackDocs'
       }
     });
-
+    // Extract only needed fields for aiEval computation
     pipeline.push({
       $addFields: {
-        'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$autoEvalExpertFeedbackDocs', 0] }
+        'interactions.autoEvalFeedbackData': {
+          totalScore: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.totalScore', 0] },
+          sentence1Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence1Score', 0] },
+          sentence2Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence2Score', 0] },
+          sentence3Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence3Score', 0] },
+          sentence4Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence4Score', 0] },
+          citationScore: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.citationScore', 0] },
+          sentence1Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence1Harmful', 0] },
+          sentence2Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence2Harmful', 0] },
+          sentence3Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence3Harmful', 0] },
+          sentence4Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence4Harmful', 0] }
+        }
+      }
+    });
+
+    // Clean up temporary lookup arrays to free memory before $group
+    pipeline.push({
+      $project: {
+        interactionAnswer: 0,
+        interactionContext: 0,
+        expertFeedbackDocs: 0,
+        interactionEval: 0,
+        autoEvalExpertFeedbackDocs: 0
+      }
+    });
+
+    // Compute partnerEval and aiEval using the extracted minimal data
+    pipeline.push({
+      $addFields: {
+        'interactions.partnerEval': getPartnerEvalAggregationExpression('$interactions.expertFeedbackData'),
+        'interactions.aiEval': getAiEvalAggregationExpression('$interactions.autoEvalFeedbackData')
       }
     });
 
     pipeline.push({
-      $addFields: {
-        'interactions.partnerEval': getPartnerEvalAggregationExpression(),
-        'interactions.aiEval': getAiEvalAggregationExpression()
+      $project: {
+        // Inclusion-only projection to avoid invalid mixed include/exclude
+        chatId: 1,
+        user: 1,
+        createdAt: 1,
+        pageLanguage: 1,
+        interactions: {
+          department: '$interactions.department',
+          expertEmail: '$interactions.expertEmail',
+          referringUrl: '$interactions.referringUrl',
+          answerType: '$interactions.answerType',
+          partnerEval: '$interactions.partnerEval',
+          aiEval: '$interactions.aiEval'
+        }
       }
     });
 
@@ -217,7 +320,7 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    pipeline.push({ $project: { creator: 0 } });
 
     const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
     const andFilters = getChatFilterConditions(filters);
@@ -237,7 +340,7 @@ async function chatDashboardHandler(req, res) {
         creatorEmail: { $first: '$creatorEmail' },
         pageLanguage: { $first: '$pageLanguage' },
         departments: {
-          $addToSet: '$interactions.context.department'
+          $addToSet: '$interactions.department'
         },
         expertEmails: {
           $addToSet: '$interactions.expertEmail'
@@ -246,7 +349,7 @@ async function chatDashboardHandler(req, res) {
           $addToSet: '$interactions.referringUrl'
         },
         answerTypes: {
-          $addToSet: '$interactions.answer.answerType'
+          $addToSet: '$interactions.answerType'
         },
         partnerEvals: {
           $addToSet: '$interactions.partnerEval'
@@ -337,13 +440,19 @@ async function chatDashboardHandler(req, res) {
     // Keep a copy of pipeline before adding sort/limit to calculate totalCount
     const pipelineBeforeSortLimit = pipeline.slice();
 
-    // Dynamic sort mapping
+    // Dynamic sort mapping - all columns that can be sorted on
     const sortFieldMap = {
       createdAt: 'createdAt',
       chatId: 'chatId',
       department: 'department',
       expertEmail: 'expertEmail',
-      creatorEmail: 'creatorEmail'
+      creatorEmail: 'creatorEmail',
+      pageLanguage: 'pageLanguage',
+      referringUrl: 'referringUrl',
+      userType: 'userType',
+      answerType: 'answerType',
+      partnerEval: 'partnerEval',
+      aiEval: 'aiEval'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
@@ -356,13 +465,17 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $limit: limit });
     }
 
-    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
-
-    // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
+    // Build count pipeline before modifying main pipeline with sort/limit
     const countPipeline = pipelineBeforeSortLimit.slice();
     countPipeline.push({ $group: { _id: '$_id' } });
     countPipeline.push({ $count: 'totalCount' });
-    const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
+
+    // Run data and count queries in parallel for better performance
+    const [results, countResult] = await Promise.all([
+      Chat.aggregate(pipeline).allowDiskUse(true),
+      Chat.aggregate(countPipeline).allowDiskUse(true)
+    ]);
+
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
     const chats = results.map((chat) => ({

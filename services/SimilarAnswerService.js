@@ -6,6 +6,7 @@ import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js'
 import { rankerStrategy } from '../agents/strategies/rankerStrategy.js';
 import { translationStrategy } from '../agents/strategies/translationStrategy.js';
 import { createRankerAgent, createTranslationAgent } from '../agents/AgentFactory.js';
+import ConversationIntegrityService from './ConversationIntegrityService.js';
 
 // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
 function sanitizeQuestionArray(arr) {
@@ -247,6 +248,7 @@ export const SimilarAnswerService = {
     async findSimilarAnswer({
         chatId,
         questions,
+        conversationHistory = [],
         selectedAI,
         recencyDays = 3650,
         requestedRating,
@@ -306,6 +308,13 @@ export const SimilarAnswerService = {
         // Return the selected answer and include the persisted `interactionId` string (if present)
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, chatId: formatted.chatId, sourceSimilarity: chosen.match?.similarity });
 
+        // Calculate signature for conversation integrity verification
+        const historySignature = ConversationIntegrityService.calculateSignature([
+            ...conversationHistory,
+            { sender: 'user', text: Array.isArray(questions) ? questions[questions.length - 1] : '' },
+            { sender: 'ai', text: formatted.text }
+        ]);
+
         return {
             answer: formatted.text,
             englishAnswer: formatted.englishAnswer || null,
@@ -314,7 +323,8 @@ export const SimilarAnswerService = {
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
             citation: formatted.citation || null,
-            rankerTop: { index: topIndex, checks: topChecks }
+            rankerTop: { index: topIndex, checks: topChecks },
+            historySignature
         };
     }
 };

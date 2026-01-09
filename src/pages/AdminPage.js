@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsContainer, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
 import DeleteChatSection from '../components/admin/DeleteChatSection.js';
@@ -11,6 +12,8 @@ import { RoleBasedContent } from '../components/RoleBasedUI.js';
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout, currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [lookupChatId, setLookupChatId] = useState('');
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -128,6 +131,38 @@ const AdminPage = ({ lang = 'en' }) => {
           </li>
         </ul>
       </nav>
+
+      {/* Quick chat lookup for admins and partners */}
+      <RoleBasedContent roles={["admin", "partner"]}>
+        <section className="mb-400">
+          <h2 className="mt-400 mb-200">{t('admin.viewChat.title', 'View chat by ID')}</h2>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!lookupChatId) return;
+              navigate(`/${lang}?chat=${encodeURIComponent(lookupChatId)}&review=1`);
+            }}
+          >
+            <label htmlFor="view-chat-id" className="sr-only">
+              {t('admin.viewChat.label', 'Chat ID')}
+            </label>
+            <div className="flex gap-400">
+              <input
+                id="view-chat-id"
+                name="view-chat-id"
+                type="text"
+                className="form-control"
+                value={lookupChatId}
+                onChange={(e) => setLookupChatId(e.target.value)}
+                placeholder={t('admin.viewChat.placeholder', 'Enter chat id')}
+              />
+              <GcdsButton type="submit" disabled={!lookupChatId.trim()}>
+                {t('admin.viewChat.button', 'View chat')}
+              </GcdsButton>
+            </div>
+          </form>
+        </section>
+      </RoleBasedContent>
 
       <DeleteChatSection lang={lang} />
 

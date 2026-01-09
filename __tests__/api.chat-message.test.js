@@ -37,6 +37,7 @@ describe('api/chat/chat-message handler', () => {
             content: 'Service Response',
             inputTokens: 10,
             outputTokens: 5,
+            historySignature: 'abc123',
         };
         AnswerGenerationService.generateAnswer.mockResolvedValue(mockResult);
 

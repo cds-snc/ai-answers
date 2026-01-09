@@ -35,8 +35,11 @@ function validateAndExtract(req) {
     const pageLanguage = typeof req.body?.pageLanguage === 'string' && req.body.pageLanguage.trim() ? req.body.pageLanguage.trim() : (typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null);
     const detectedLanguage = typeof req.body?.detectedLanguage === 'string' && req.body.detectedLanguage.trim() ? req.body.detectedLanguage.trim() : null;
     if (!pageLanguage) return { error: { code: 400, message: 'Missing pageLanguage' } };
-    return { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage };
+
+    // Include conversationHistory for integrity signature calculation
+    const conversationHistory = req.body?.conversationHistory || [];
+
+    return { chatId, questions, conversationHistory, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage };
 }
 
 export default withOptionalUser(withSession(handler));
-

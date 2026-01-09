@@ -36,10 +36,14 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
   };
 
   it('renders date range into pipeline when startDate/endDate provided', async () => {
-    const start = '2025-12-01T00:00:00.000Z';
-    const end = '2025-12-10T23:59:59.000Z';
-    await runHandler({ startDate: start, endDate: end });
+    const start = '2025-12-01';
+    const end = '2025-12-10';
+    const timezoneOffsetMinutes = 300; // UTC-05:00 local time
+    await runHandler({ startDate: start, endDate: end, timezoneOffsetMinutes });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const matchStage = Array.isArray(capturedPipeline) ? capturedPipeline.find((stage) => stage && stage.$match && stage.$match.createdAt) : null;
+    expect(matchStage?.$match?.createdAt?.$gte?.toISOString()).toBe('2025-12-01T05:00:00.000Z');
+    expect(matchStage?.$match?.createdAt?.$lte?.toISOString()).toBe('2025-12-11T04:59:59.999Z');
     expect(pipelineIncludes('2025-12-01')).toBe(true);
     expect(pipelineIncludes('2025-12-10')).toBe(true);
   });

@@ -2,6 +2,7 @@ import { createChatAgent } from '../agents/AgentFactory.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { ToolTrackingHandler } from '../agents/ToolTrackingHandler.js';
 import { buildAnswerSystemPrompt } from '../agents/prompts/systemPrompt.js';
+import ConversationIntegrityService from './ConversationIntegrityService.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
@@ -72,6 +73,15 @@ async function invokeAgent({
             model: lastMessage.response_metadata.model_name,
             tools: toolUsage,
         };
+
+        // Calculate signature for conversation integrity verification
+        const finalHistory = [
+            ...conversationHistory,
+            { sender: 'user', text: message },
+            { sender: 'ai', text: lastMessage.content }
+        ];
+        response.historySignature = ConversationIntegrityService.calculateSignature(finalHistory);
+
         ServerLoggingService.info(`${provider} chat request completed`, chatId, response);
         return response;
     }

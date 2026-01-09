@@ -360,6 +360,24 @@
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios"
     },
+    "database": {
+      "createIndexes": "Create/Rebuild Indexes",
+      "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
+      "createIndexesButton": "Rebuild All Indexes",
+      "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
+      "createIndexesError": "Create indexes failed: {error}",
+      "backfillSecrets": "Backfill User Secrets",
+      "backfillSecretsDescription": "Generate 2FA and reset password secrets for existing users that are missing them.",
+      "backfillSecretsButton": "Backfill Secrets",
+      "backfillSecretsSuccess": "Backfill complete. Updated users: {updatedCount}",
+      "backfillSecretsError": "Backfill secrets failed: {error}"
+    },
+    "viewChat": {
+      "title": "View chat by ID",
+      "label": "Chat ID",
+      "placeholder": "Enter chat id",
+      "button": "View chat"
+    },
     "evalPage": {
       "similarityTitle": "Similarity-Based Expert Feedback Transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
@@ -593,6 +611,25 @@
         "answerType": "Answer Type",
         "partnerEval": "Partner Eval",
         "aiEval": "AI Eval"
+      },
+      "labels": {
+        "userType": {
+          "public": "public",
+          "admin": "admin"
+        },
+        "answerType": {
+          "normal": "normal",
+          "clarifying-question": "clarifying",
+          "pt-muni": "pt-muni",
+          "not-gc": "not-GC"
+        },
+        "evaluation": {
+          "correct": "correct",
+          "needsImprovement": "needs improvement",
+          "hasError": "error",
+          "hasCitationError": "citation error",
+          "harmful": "harmful"
+        }
       }
     },
     "evalDashboard": {
@@ -637,11 +674,17 @@
       "downloadCsv": "Download CSV",
       "downloadExcel": "Download Excel",
       "found": "Found",
-      "interactionsFound": "chats. Download the logs to see the full set and details.",
+      "interactionsFound": "chats. Select a view and format, then export.",
       "date": "Date",
       "chatId": "Chat ID",
       "interactions": "Interactions",
-      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)"
+      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)",
+      "exportView": "Export View",
+      "exportFormat": "Format",
+      "export": "Export",
+      "exporting": "Exporting...",
+      "exportingMessage": "Please wait while your file is being generated.",
+      "exportDescription": "Select export options, configure filters below, then click Export to download."
     },
     "deleteChat": {
       "title": "Delete a chat from the logs",
@@ -749,10 +792,7 @@
       "role": "Role",
       "status": "Status",
       "createdAt": "Created At",
-      "updatedAt": "Updated at",
-      "totalScore": "Score",
-      "referringUrl": "Referring URL",
-      "interactionUpdatedAt": "Date of Chat"
+      "actions": "Action"
     },
     "status": {
       "active": "Active",
@@ -807,6 +847,7 @@
       "azure": "Azure OpenAI"
     },
     "logChatsToDatabaseLabel": "Log chats to database",
+    "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
@@ -983,6 +1024,7 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
+      "loading": "Loading metrics...",
       "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
       "inputTokens": "Input tokens",
@@ -1068,8 +1110,8 @@
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
-    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test.",
-    "description2": "If you're happy with the changes, alert the DTO team, copy the edited version for them, and they'll push the changes into the live AI Answers product.",
+    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. Make sure you haven't added ambiguity! Keep it terse to reduce cognitive load on the AI. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test. Test with multiple questions multiple times.",
+    "description2": "If you're happy with the changes, alert the AI Answers team, copy and paste the edited version for them, and they'll make and push the changes into the live AI Answers product.",
     "sections": {
       "editOverride": "Edit",
       "visualDiff": "Visual diff (side-by-side)"
