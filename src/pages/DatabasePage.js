@@ -34,6 +34,7 @@ const DatabasePage = ({ lang }) => {
   const fileInputRef = useRef(null);
   const [checksRunning, setChecksRunning] = useState({});
   const [checksResults, setChecksResults] = useState({});
+  const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -708,6 +709,42 @@ const DatabasePage = ({ lang }) => {
                     </div>
                   ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
                 </div>
+                {/* Add Remove Duplicates button only for duplicateKeys check */}
+                {check.id === 'duplicateKeys' && (
+                  <GcdsButton
+                    onClick={async () => {
+                      if (!window.confirm(
+                        lang === 'en'
+                          ? 'This will delete older duplicate records, keeping only the newest. Are you sure?'
+                          : 'Cela supprimera les anciens enregistrements en double, ne gardant que les plus récents. Êtes-vous sûr?'
+                      )) return;
+                      try {
+                        setIsRemovingDuplicates(true);
+                        setMessage('');
+                        const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
+                          method: 'DELETE'
+                        });
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
+                        setMessage(lang === 'en'
+                          ? `Removed ${json.deletedCount} duplicate records`
+                          : `Supprimé ${json.deletedCount} enregistrements en double`);
+                        // Refresh the check results
+                        setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
+                      } catch (err) {
+                        setMessage(`Remove duplicates failed: ${err.message}`);
+                      } finally {
+                        setIsRemovingDuplicates(false);
+                      }
+                    }}
+                    disabled={isRemovingDuplicates}
+                    variant="danger"
+                  >
+                    {isRemovingDuplicates
+                      ? (lang === 'en' ? 'Removing...' : 'Suppression...')
+                      : (lang === 'en' ? 'Remove Duplicates' : 'Supprimer les doublons')}
+                  </GcdsButton>
+                )}
               </div>
             ))}
           </div>

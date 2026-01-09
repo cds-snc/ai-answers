@@ -225,10 +225,26 @@ async function processLines(lines, collections, stats, collectionFilter = () => 
         operationsByCollection[collectionName] = [];
       }
 
+      // Collections with unique fields should use those fields as the filter
+      // to prevent duplicate imports when _id differs but unique field matches
+      const uniqueKeyMap = {
+        user: 'email',
+        setting: 'key',
+        sessionstate: 'sessionId'
+      };
+
+      const uniqueField = uniqueKeyMap[collectionName];
+      let filter;
+      if (uniqueField && doc[uniqueField]) {
+        filter = { [uniqueField]: doc[uniqueField] };
+      } else {
+        filter = { _id: doc._id };
+      }
+
       // Use $set to preserve timestamps for all collections
       operationsByCollection[collectionName].push({
         updateOne: {
-          filter: { _id: doc._id },
+          filter,
           update: { $set: doc }, // doc now has Date objects for timestamps if they were strings
           upsert: true
         }

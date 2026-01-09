@@ -227,7 +227,7 @@ app.post('/api/db/db-generate-embeddings', generateEmbeddingsHandler);
 app.post('/api/db/db-generate-evals', generateEvalsHandler);
 app.all('/api/db/db-database-management', dbDatabaseManagementHandler);
 app.delete('/api/db/db-delete-system-logs', dbDeleteSystemLogsHandler);
-app.get('/api/db/db-integrity-checks', dbIntegrityChecksHandler);
+app.all('/api/db/db-integrity-checks', dbIntegrityChecksHandler);
 app.all('/api/setting/setting-handler', settingHandler);
 app.get('/api/setting/setting-public-handler', settingPublicHandler);
 app.get('/api/db/db-expert-feedback-count', dbExpertFeedbackCountHandler);

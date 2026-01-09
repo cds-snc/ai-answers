@@ -541,9 +541,79 @@ async function countDuplicateKeys(limit = 0) {
   return { count: totalCount, samples: allSamples.slice(0, limit || 10) };
 }
 
+async function removeDuplicateKeys() {
+  const models = [
+    { name: 'SessionState', field: 'sessionId', label: 'SessionState sessionId' },
+    { name: 'User', field: 'email', label: 'User email' },
+    { name: 'Setting', field: 'key', label: 'Setting key' }
+  ];
+
+  let totalDeleted = 0;
+  const details = [];
+
+  for (const m of models) {
+    const Model = mongoose.models[m.name];
+    if (!Model) continue;
+
+    // Find duplicates grouped by the unique field
+    const pipeline = [
+      {
+        $group: {
+          _id: `$${m.field}`,
+          count: { $sum: 1 },
+          docs: { $push: { _id: '$_id', createdAt: '$createdAt', updatedAt: '$updatedAt' } }
+        }
+      },
+      { $match: { count: { $gt: 1 } } }
+    ];
+
+    const groups = await Model.aggregate(pipeline).allowDiskUse(true).exec();
+
+    for (const g of groups) {
+      // Sort docs by updatedAt or createdAt descending (newest first)
+      const sortedDocs = g.docs.sort((a, b) => {
+        const dateA = a.updatedAt || a.createdAt || new Date(0);
+        const dateB = b.updatedAt || b.createdAt || new Date(0);
+        return new Date(dateB) - new Date(dateA);
+      });
+
+      // Keep the first (newest), delete the rest
+      const idsToDelete = sortedDocs.slice(1).map(d => d._id);
+
+      if (idsToDelete.length > 0) {
+        await Model.deleteMany({ _id: { $in: idsToDelete } });
+        totalDeleted += idsToDelete.length;
+        details.push(`${m.label}: "${g._id}" - deleted ${idsToDelete.length} duplicates`);
+      }
+    }
+  }
+
+  return { deletedCount: totalDeleted, details: details.slice(0, 20) };
+}
+
 async function databaseIntegrityHandler(req, res) {
+  if (req.method === 'DELETE') {
+    // Handle DELETE for removing duplicates
+    try {
+      await dbConnect();
+      const { action } = req.query;
+      if (action === 'removeDuplicates') {
+        const result = await removeDuplicateKeys();
+        return res.status(200).json({
+          success: true,
+          message: `Removed ${result.deletedCount} duplicate records`,
+          ...result
+        });
+      }
+      return res.status(400).json({ message: 'Unknown action' });
+    } catch (error) {
+      console.error('Remove duplicates error:', error);
+      return res.status(500).json({ message: 'Remove duplicates failed', error: error.message });
+    }
+  }
+
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET']);
+    res.setHeader('Allow', ['GET', 'DELETE']);
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
