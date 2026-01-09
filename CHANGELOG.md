@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.79.1](https://github.com/cds-snc/ai-answers/compare/v1.79.0...v1.79.1) (2026-01-09)
+
+
+### Bug Fixes
+
+* add session_secret to github ([ada4427](https://github.com/cds-snc/ai-answers/commit/ada442770aaf1fa3bca5f5211848cd3ad57dfad0))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @smithy/config-resolver, @aws-sdk/client-sagemaker and @aws-sdk/credential-providers in /server ([ba3a20b](https://github.com/cds-snc/ai-answers/commit/ba3a20bb6e193bd8c0d33bdeef4a85b34ab8db74))
+
 ## [1.79.0](https://github.com/cds-snc/ai-answers/compare/v1.78.0...v1.79.0) (2026-01-09)
 
 
