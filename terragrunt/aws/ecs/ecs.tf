@@ -78,6 +78,12 @@ module "ai_answers" {
   container_port             = 3001
   container_host_port        = 3001
   container_secrets          = local.container_secrets
+  container_environment = [
+    {
+      name  = "REDIS_URL"
+      value = var.redis_url
+    }
+  ]
   container_linux_parameters = {}
   container_ulimits = [
     {

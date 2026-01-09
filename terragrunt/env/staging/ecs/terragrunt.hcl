@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm"]
+  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm", "../elasticache"]
 }
 
 dependency "iam" {
@@ -83,6 +83,16 @@ dependency "ssm" {
   }
 }
 
+dependency "elasticache" {
+  config_path = "../elasticache"
+
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    redis_url = "redis://localhost:6379"
+  }
+}
+
 inputs = {
   iam_role_ai-answers-ecs-role_arn = dependency.iam.outputs.iam_role_ai-answers-ecs-role_arn
   ai-answers-ecs-policy_attachment = dependency.iam.outputs.ai-answers-ecs-policy_attachment
@@ -109,6 +119,7 @@ inputs = {
   adobe_analytics_url_arn          = dependency.ssm.outputs.adobe_analytics_url_arn
   session_secret_arn               = dependency.ssm.outputs.session_secret_arn
   conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
+  redis_url                        = dependency.elasticache.outputs.redis_url
   #fargate_cpu                      = 2048  
   #fargate_memory                   = 16384  
 }
