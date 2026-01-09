@@ -10,8 +10,8 @@ import fs from 'fs';
 import crypto from 'crypto'; // Import crypto for generating UUIDs
 
 async function databaseManagementHandler(req, res) {
-  if (!['GET', 'POST', 'DELETE', 'PUT'].includes(req.method)) {
-    res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PUT']);
+  if (!['GET', 'POST', 'DELETE', 'PUT', 'PATCH'].includes(req.method)) {
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']);
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
@@ -167,6 +167,42 @@ async function databaseManagementHandler(req, res) {
       return res.status(200).json({
         message: 'Database indexes created successfully',
         results
+      });
+    } else if (req.method === 'PATCH') {
+      // Check index status for all collections
+      const indexStatus = [];
+
+      for (const model of Object.values(collections)) {
+        try {
+          const indexes = await model.collection.indexes();
+          // Get expected indexes from schema
+          const schemaIndexes = model.schema.indexes() || [];
+          const expectedCount = schemaIndexes.length + 1; // +1 for _id index
+
+          indexStatus.push({
+            collection: model.modelName,
+            currentIndexCount: indexes.length,
+            expectedIndexCount: expectedCount,
+            indexes: indexes.map(idx => ({
+              name: idx.name,
+              keys: Object.keys(idx.key || {})
+            })),
+            status: indexes.length >= expectedCount ? 'complete' : 'incomplete'
+          });
+        } catch (error) {
+          indexStatus.push({
+            collection: model.modelName,
+            error: error.message,
+            status: 'error'
+          });
+        }
+      }
+
+      const allComplete = indexStatus.every(s => s.status === 'complete');
+      return res.status(200).json({
+        message: allComplete ? 'All indexes are complete' : 'Some indexes may be incomplete',
+        allComplete,
+        collections: indexStatus
       });
     }
   } catch (error) {

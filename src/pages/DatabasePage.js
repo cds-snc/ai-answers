@@ -35,6 +35,8 @@ const DatabasePage = ({ lang }) => {
   const [checksRunning, setChecksRunning] = useState({});
   const [checksResults, setChecksResults] = useState({});
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
+  const [isCheckingIndexStatus, setIsCheckingIndexStatus] = useState(false);
+  const [indexStatus, setIndexStatus] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -884,6 +886,72 @@ const DatabasePage = ({ lang }) => {
             ? (lang === 'en' ? 'Dropping Indexes...' : 'Suppression des index...')
             : (lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index')}
         </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Check Index Status' : 'Vérifier l\'état des index'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Check the current status of all database indexes across all collections.'
+            : 'Vérifier l\'état actuel de tous les index de base de données pour toutes les collections.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={async () => {
+            try {
+              setIsCheckingIndexStatus(true);
+              setIndexStatus(null);
+              setMessage('');
+              const res = await AuthService.fetch(getApiUrl('db-database-management'), {
+                method: 'PATCH'
+              });
+              const json = await res.json();
+              if (!res.ok) throw new Error(json.message || 'Check failed');
+              setIndexStatus(json);
+            } catch (err) {
+              setMessage(lang === 'en'
+                ? `Index status check failed: ${err.message}`
+                : `Échec de la vérification de l'état des index: ${err.message}`);
+            } finally {
+              setIsCheckingIndexStatus(false);
+            }
+          }}
+          disabled={isCheckingIndexStatus}
+          variant="secondary"
+          className="mb-200"
+        >
+          {isCheckingIndexStatus
+            ? (lang === 'en' ? 'Checking...' : 'Vérification...')
+            : (lang === 'en' ? 'Check Index Status' : 'Vérifier l\'état des index')}
+        </GcdsButton>
+        {indexStatus && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.allComplete ? 'green' : 'orange' }}>
+              {indexStatus.message}
+            </div>
+            <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', paddingRight: 16 }}>Collection</th>
+                  <th style={{ textAlign: 'right', paddingRight: 16 }}>Current</th>
+                  <th style={{ textAlign: 'right', paddingRight: 16 }}>Expected</th>
+                  <th style={{ textAlign: 'left' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {indexStatus.collections?.map(col => (
+                  <tr key={col.collection}>
+                    <td style={{ paddingRight: 16 }}>{col.collection}</td>
+                    <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
+                    <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
+                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'error' ? 'red' : 'orange' }}>
+                      {col.status}{col.error ? `: ${col.error}` : ''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="mb-400">
