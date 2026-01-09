@@ -7,7 +7,7 @@ import { SettingsService } from './SettingsService.js';
 // When using TOTP we do not store transient codes. We store a per-user secret.
 
 function generateSecret() {
-  const secret = speakeasy.generateSecret({ length: 32 });
+  const secret = speakeasy.generateSecret({ length: 20 });
   return secret.base32; // Return base32 encoded secret for storage
 }
 

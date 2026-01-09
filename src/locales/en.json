@@ -360,6 +360,18 @@
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios"
     },
+    "database": {
+      "createIndexes": "Create/Rebuild Indexes",
+      "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
+      "createIndexesButton": "Rebuild All Indexes",
+      "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
+      "createIndexesError": "Create indexes failed: {error}",
+      "backfillSecrets": "Backfill User Secrets",
+      "backfillSecretsDescription": "Generate 2FA and reset password secrets for existing users that are missing them.",
+      "backfillSecretsButton": "Backfill Secrets",
+      "backfillSecretsSuccess": "Backfill complete. Updated users: {updatedCount}",
+      "backfillSecretsError": "Backfill secrets failed: {error}"
+    },
     "viewChat": {
       "title": "View chat by ID",
       "label": "Chat ID",
@@ -662,11 +674,17 @@
       "downloadCsv": "Download CSV",
       "downloadExcel": "Download Excel",
       "found": "Found",
-      "interactionsFound": "chats. Download the logs to see the full set and details.",
+      "interactionsFound": "chats. Select a view and format, then export.",
       "date": "Date",
       "chatId": "Chat ID",
       "interactions": "Interactions",
-      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)"
+      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)",
+      "exportView": "Export View",
+      "exportFormat": "Format",
+      "export": "Export",
+      "exporting": "Exporting...",
+      "exportingMessage": "Please wait while your file is being generated.",
+      "exportDescription": "Select export options, configure filters below, then click Export to download."
     },
     "deleteChat": {
       "title": "Delete a chat from the logs",
@@ -1006,6 +1024,7 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
+      "loading": "Loading metrics...",
       "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
       "inputTokens": "Input tokens",

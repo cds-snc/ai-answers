@@ -36,12 +36,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-  const FILTER_PANEL_STORAGE_KEY = 'evalFilterPanelState_v1';
 
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
@@ -76,6 +76,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       ...(filters || {})
     };
     filtersRef.current = normalized;
+    setHasAppliedFilters(true);
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
       else setTableKey((prev) => prev + 1);
@@ -86,7 +87,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
-        try { window.localStorage.removeItem(FILTER_PANEL_STORAGE_KEY); } catch (e) { void e; }
       }
     } catch (e) { void e; }
     setTableKey((prev) => prev + 1);
@@ -112,11 +112,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-  const interactionId = row.interactionId || row._id || '';
-  // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
-  const prefixed = interactionId ? `interactionId${interactionId}` : '';
-  const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
+        const interactionId = row.interactionId || row._id || '';
+        // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
+        const prefixed = interactionId ? `interactionId${interactionId}` : '';
+        const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       },
       searchable: true,
       orderable: true
@@ -129,11 +129,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         if (!id) return '';
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
         const safeChat = escapeHtmlAttribute(row.chatId || '');
-  // link to the prefixed DOM id used in the chat UI
-  const prefixedId = id ? `interactionId${id}` : '';
-  const hash = `#interaction=${encodeURIComponent(prefixedId)}`;
+        // link to the prefixed DOM id used in the chat UI
+        const prefixedId = id ? `interactionId${id}` : '';
+        const hash = `#interaction=${encodeURIComponent(prefixedId)}`;
         // If we have a chatId, link to review page with chat + interaction hash, otherwise just show the id
-        if (safeChat) return `<a href="/${chatLang}?chat=${safeChat}&review=1${hash}">${escapeHtmlAttribute(id)}</a>`;
+        if (safeChat) return `<a href="/${chatLang}?chat=${safeChat}&review=1${hash}" target="_blank" rel="noopener noreferrer">${escapeHtmlAttribute(id)}</a>`;
         return escapeHtmlAttribute(id);
       },
       searchable: true,
@@ -163,138 +163,145 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
       <p className="mb-400">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
 
-  <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} storageKey={FILTER_PANEL_STORAGE_KEY} />
+      <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
-      {loading && (<div className="mt-400" role="status">{t('admin.evalDashboard.loading', 'Loading evaluations...')}</div>)}
+      {loading && (
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('admin.evalDashboard.loading', 'Loading evaluations...')}</span>
+          </div>
+        </div>
+      )}
 
       {error && (<div className="mt-400 error" role="alert">{t('admin.evalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
 
-      <div className="mt-400">
-        <div className="mb-200"><div>{resultsSummary}</div><div>{totalSummary}</div></div>
-        {dataTableReady ? (
-          <DataTable
-            key={tableKey}
-            columns={columns}
-            options={{
-              processing: true,
-              serverSide: true,
-              paging: true,
-              searching: true,
-              ordering: true,
-              order: [[11, 'desc']],
-              stateSave: true,
-              language: {
-                search: t('admin.evalDashboard.searchLabel', 'Search'),
-                searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter search term...')
-              },
-              // Add per-column header inputs
-              initComplete: function () {
-                try {
-                  const api = this.api();
-                  tableApiRef.current = api;
-                  const debounce = (fn, wait = 300) => {
-                    let t = null;
-                    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
-                  };
-                  api.columns().every(function (idx) {
-                    const column = this;
-                    const colInfo = column.settings()[0].aoColumns[idx] || {};
-                    const colData = colInfo.data || '';
-                    if (!colInfo.searchable) return;
-                    const headerEl = column.header(); // DOM element
-                    if (!headerEl) return;
-                    const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
-                    if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
-                    const filterContainer = document.createElement('div');
-                    filterContainer.className = 'dt-col-filter-container';
-                    filterContainer.style.marginTop = '4px';
-                    const booleanCols = ['hasAutoEval', 'hasExpertEval', 'processed', 'hasMatches'];
-                    if (booleanCols.includes(colData)) {
-                      const sel = document.createElement('select');
-                      sel.className = 'dt-col-search';
-                      const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.evalDashboard.columns.any','Any'); sel.appendChild(optAny);
-                      const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes','Yes'); sel.appendChild(optYes);
-                      const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no','No'); sel.appendChild(optNo);
-                      sel.addEventListener('change', function () {
-                        column.search(this.value).draw();
-                      });
-                      filterContainer.appendChild(sel);
-                    } else {
-                      const input = document.createElement('input');
-                      input.type = 'search';
-                      input.className = 'dt-col-search';
-                      input.placeholder = t('admin.evalDashboard.columnFilterPlaceholder','Filter');
-                      input.addEventListener('input', debounce(function (e) {
-                        column.search(e.target.value).draw();
-                      }, 350));
-                      filterContainer.appendChild(input);
-                    }
-                    // prevent clicks inside the filter container from sorting the column
-                    const stopSort = (event) => event.stopPropagation();
-                    filterContainer.addEventListener('click', stopSort);
-                    filterContainer.addEventListener('mousedown', stopSort);
-                    headerEl.appendChild(filterContainer);
-                  });
-                  api.on('xhr.dt', function (_e, _settings, json) {
-                    try { setRecordsTotal((json && json.recordsTotal) || 0); setRecordsFiltered((json && json.recordsFiltered) || 0); } catch (e) { /* ignore */ }
-                  });
-                } catch (e) { /* ignore initComplete errors */ }
-              },
-              // ajax collects per-column searches and sends them to backend
-              ajax: async (dtParams, callback) => {
-                try {
-                  setLoading(true);
-                  setError(null);
-                  const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 11, dir: 'desc' };
-                  const orderByMap = ['chatId','interactionId','department','pageLanguage','hasAutoEval','hasExpertEval','expertEmail','processed','hasMatches','fallbackType','noMatchReasonType','createdAt'];
-                  const orderBy = orderByMap[dtOrder.column] || 'createdAt';
-                  const orderDir = dtOrder.dir || 'desc';
-                  const searchValue = (dtParams.search && dtParams.search.value) || '';
-                  const columnSearches = {};
-                  if (Array.isArray(dtParams.columns)) {
-                    dtParams.columns.forEach((col) => {
-                      const val = col && col.search && String(col.search.value || '').trim();
-                      if (val) {
-                        const colName = col.data || null;
-                        if (colName) columnSearches[colName] = val;
+      {hasAppliedFilters && (
+        <div className="mt-400">
+          <div className="mb-200"><div>{resultsSummary}</div><div>{totalSummary}</div></div>
+          {dataTableReady && (
+            <DataTable
+              key={tableKey}
+              columns={columns}
+              options={{
+                processing: true,
+                serverSide: true,
+                paging: true,
+                searching: true,
+                ordering: true,
+                order: [[11, 'desc']],
+                stateSave: true,
+                language: {
+                  search: t('admin.evalDashboard.searchLabel', 'Search'),
+                  searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter search term...')
+                },
+                // Add per-column header inputs
+                initComplete: function () {
+                  try {
+                    const api = this.api();
+                    tableApiRef.current = api;
+                    const debounce = (fn, wait = 300) => {
+                      let t = null;
+                      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+                    };
+                    api.columns().every(function (idx) {
+                      const column = this;
+                      const colInfo = column.settings()[0].aoColumns[idx] || {};
+                      const colData = colInfo.data || '';
+                      if (!colInfo.searchable) return;
+                      const headerEl = column.header(); // DOM element
+                      if (!headerEl) return;
+                      const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
+                      if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
+                      const filterContainer = document.createElement('div');
+                      filterContainer.className = 'dt-col-filter-container';
+                      filterContainer.style.marginTop = '4px';
+                      const booleanCols = ['hasAutoEval', 'hasExpertEval', 'processed', 'hasMatches'];
+                      if (booleanCols.includes(colData)) {
+                        const sel = document.createElement('select');
+                        sel.className = 'dt-col-search';
+                        const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.evalDashboard.columns.any', 'Any'); sel.appendChild(optAny);
+                        const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
+                        const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
+                        sel.addEventListener('change', function () {
+                          column.search(this.value).draw();
+                        });
+                        filterContainer.appendChild(sel);
+                      } else {
+                        const input = document.createElement('input');
+                        input.type = 'search';
+                        input.className = 'dt-col-search';
+                        input.placeholder = t('admin.evalDashboard.columnFilterPlaceholder', 'Filter');
+                        input.addEventListener('input', debounce(function (e) {
+                          column.search(e.target.value).draw();
+                        }, 350));
+                        filterContainer.appendChild(input);
                       }
+                      // prevent clicks inside the filter container from sorting the column
+                      const stopSort = (event) => event.stopPropagation();
+                      filterContainer.addEventListener('click', stopSort);
+                      filterContainer.addEventListener('mousedown', stopSort);
+                      headerEl.appendChild(filterContainer);
                     });
+                    api.on('xhr.dt', function (_e, _settings, json) {
+                      try { setRecordsTotal((json && json.recordsTotal) || 0); setRecordsFiltered((json && json.recordsFiltered) || 0); } catch (e) { /* ignore */ }
+                    });
+                  } catch (e) { /* ignore initComplete errors */ }
+                },
+                // ajax collects per-column searches and sends them to backend
+                ajax: async (dtParams, callback) => {
+                  try {
+                    setLoading(true);
+                    setError(null);
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 11, dir: 'desc' };
+                    const orderByMap = ['chatId', 'interactionId', 'department', 'pageLanguage', 'hasAutoEval', 'hasExpertEval', 'expertEmail', 'processed', 'hasMatches', 'fallbackType', 'noMatchReasonType', 'createdAt'];
+                    const orderBy = orderByMap[dtOrder.column] || 'createdAt';
+                    const orderDir = dtOrder.dir || 'desc';
+                    const searchValue = (dtParams.search && dtParams.search.value) || '';
+                    const columnSearches = {};
+                    if (Array.isArray(dtParams.columns)) {
+                      dtParams.columns.forEach((col) => {
+                        const val = col && col.search && String(col.search.value || '').trim();
+                        if (val) {
+                          const colName = col.data || null;
+                          if (colName) columnSearches[colName] = val;
+                        }
+                      });
+                    }
+                    const query = {
+                      ...filtersRef.current,
+                      start: dtParams.start || 0,
+                      length: dtParams.length || 10,
+                      orderBy,
+                      orderDir,
+                      draw: dtParams.draw || 0
+                    };
+                    if (searchValue) query.search = searchValue;
+                    if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
+                    const result = await EvaluationService.getEvalDashboard(query);
+                    setRecordsTotal(result?.recordsTotal || 0);
+                    setRecordsFiltered(result?.recordsFiltered || 0);
+                    callback({ draw: dtParams.draw || 0, recordsTotal: result?.recordsTotal || 0, recordsFiltered: result?.recordsFiltered || 0, data: Array.isArray(result?.data) ? result.data : [] });
+                  } catch (err) {
+                    console.error('Failed to load eval dashboard data', err);
+                    setError(err.message || String(err));
+                    callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                  } finally {
+                    setLoading(false);
                   }
-                  const query = {
-                    ...filtersRef.current,
-                    start: dtParams.start || 0,
-                    length: dtParams.length || 10,
-                    orderBy,
-                    orderDir,
-                    draw: dtParams.draw || 0
-                  };
-                  if (searchValue) query.search = searchValue;
-                  if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
-                  const result = await EvaluationService.getEvalDashboard(query);
-                  setRecordsTotal(result?.recordsTotal || 0);
-                  setRecordsFiltered(result?.recordsFiltered || 0);
-                  callback({ draw: dtParams.draw || 0, recordsTotal: result?.recordsTotal || 0, recordsFiltered: result?.recordsFiltered || 0, data: Array.isArray(result?.data) ? result.data : [] });
-                } catch (err) {
-                  console.error('Failed to load eval dashboard data', err);
-                  setError(err.message || String(err));
-                  callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
-                } finally {
-                  setLoading(false);
+                },
+                stateSaveCallback: function (settings, data) {
+                  try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data)); } catch (e) { void e; }
+                },
+                stateLoadCallback: function () {
+                  try { if (typeof window !== 'undefined' && window.localStorage) return JSON.parse(window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY)); } catch (e) { void e; }
+                  return null;
                 }
-              },
-              stateSaveCallback: function (settings, data) {
-                try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data)); } catch (e) { void e; }
-              },
-              stateLoadCallback: function () {
-                try { if (typeof window !== 'undefined' && window.localStorage) return JSON.parse(window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY)); } catch (e) { void e; }
-                return null;
-              }
-            }}
-          />
-        ) : (
-          <div>Initializing table...</div>
-        )}
-      </div>
+              }}
+            />
+          )}
+        </div>
+      )}
     </GcdsContainer>
   );
 };

@@ -22,6 +22,7 @@
     "@langchain/langgraph": "^0.2.33",
     "@langchain/openai": "^0.5.4",
     "@mozilla/readability": "^0.6.0",
+    "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -43,8 +44,10 @@
     "diff": "^8.0.2",
     "dotenv": "^16.5.0",
     "duck-duck-scrape": "^2.2.6",
+    "exceljs": "^4.4.0",
     "express": "^4.22.1",
     "express-session": "^1.18.2",
+    "fast-csv": "^5.0.5",
     "flat": "^6.0.1",
     "googleapis": "^144.0.0",
     "http-proxy-middleware": "^3.0.5",
@@ -94,7 +97,8 @@
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
-    "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\""
+    "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
+    "test:e2e": "cross-env NODE_ENV=test dotenv -e .env powershell ./scripts/run-e2e-tests.ps1"
   },
   "eslintConfig": {
     "extends": [

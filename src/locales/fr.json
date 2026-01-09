@@ -397,6 +397,18 @@
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios"
     },
+    "database": {
+      "createIndexes": "Créer/Reconstruire des index",
+      "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
+      "createIndexesButton": "Reconstruire tous les index",
+      "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
+      "createIndexesError": "Échec de la création des index: {error}",
+      "backfillSecrets": "Remplir les secrets des utilisateurs",
+      "backfillSecretsDescription": "Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.",
+      "backfillSecretsButton": "Remplir les secrets",
+      "backfillSecretsSuccess": "Remplissage terminé. Utilisateurs mis à jour: {updatedCount}",
+      "backfillSecretsError": "Échec du remplissage des secrets: {error}"
+    },
     "viewChat": {
       "title": "Voir le chat par ID",
       "label": "ID de chat",
@@ -720,11 +732,17 @@
       "downloadCsv": "Télécharger CSV",
       "downloadExcel": "Télécharger Excel",
       "found": "Trouvé",
-      "interactionsFound": "chats. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
+      "interactionsFound": "chats. Sélectionnez une vue et un format, puis exportez.",
       "date": "Date",
       "chatId": "ID de chat",
       "interactions": "Interactions",
-      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)"
+      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)",
+      "exportView": "Vue d'exportation",
+      "exportFormat": "Format",
+      "export": "Exporter",
+      "exporting": "Exportation en cours...",
+      "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
+      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger."
     }
   },
   "signup": {
@@ -1011,6 +1029,7 @@
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
+      "loading": "Chargement des métriques...",
       "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
       "inputTokens": "Jetons d'entrée",

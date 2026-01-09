@@ -37,8 +37,8 @@ sentenceMatchTraceSchema.add({
 });
 
 const evalSchema = new Schema({
-    expertFeedback: { 
-        type: Schema.Types.ObjectId, 
+    expertFeedback: {
+        type: Schema.Types.ObjectId,
         ref: 'ExpertFeedback',
         required: false
     },
@@ -88,10 +88,13 @@ const evalSchema = new Schema({
     },
     fallbackCompareChecks: { type: Schema.Types.Mixed, required: false, default: null },
     fallbackCompareRaw: { type: Schema.Types.Mixed, required: false, default: null }
-}, { 
-    timestamps: true, 
+}, {
+    timestamps: true,
     versionKey: false,
     id: false
 });
+
+// Index for quick lookup during dashboard aggregations
+evalSchema.index({ expertFeedback: 1 });
 
 export const Eval = mongoose.models.Eval || mongoose.model('Eval', evalSchema);

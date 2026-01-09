@@ -50,12 +50,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-  const FILTER_PANEL_STORAGE_KEY = 'chatFilterPanelState_v1';
 
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
@@ -68,10 +68,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     try {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
-      
+
       // Keep only the last 3 path segments
       const truncatedParts = pathParts.slice(-3);
-      
+
       return '/' + truncatedParts.join('/');
     } catch {
       return url;
@@ -106,50 +106,20 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     switch (colIdx) {
       case 0: return 'chatId';
       case 1: return 'department';
-      case 2: return 'expertEmail';
-      case 3: return 'creatorEmail';
-      case 4: return 'createdAt';
+      case 2: return 'pageLanguage';
+      case 3: return 'expertEmail';
+      case 4: return 'creatorEmail';
+      case 5: return 'createdAt';
+      case 6: return 'referringUrl';
+      case 7: return 'userType';
+      case 8: return 'answerType';
+      case 9: return 'partnerEval';
+      case 10: return 'aiEval';
       default: return 'createdAt';
     }
   }, []);
 
   useEffect(() => {
-    // On load, restore saved FilterPanel state
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const filters = {};
-          if (parsed) {
-            if (parsed.department) filters.department = parsed.department;
-            if (parsed.urlEn) filters.urlEn = parsed.urlEn;
-            if (parsed.urlFr) filters.urlFr = parsed.urlFr;
-            if (parsed.userType) filters.userType = parsed.userType;
-            if (parsed.answerType) filters.answerType = parsed.answerType;
-            if (parsed.partnerEval) filters.partnerEval = parsed.partnerEval;
-            if (parsed.aiEval) filters.aiEval = parsed.aiEval;
-            if (parsed.dateRange) {
-              if (parsed.dateRange.startDate) {
-                const sd = new Date(parsed.dateRange.startDate);
-                if (!Number.isNaN(sd.getTime())) filters.startDate = formatDateForApi(sd);
-              }
-              if (parsed.dateRange.endDate) {
-                const ed = new Date(parsed.dateRange.endDate);
-                if (!Number.isNaN(ed.getTime())) filters.endDate = formatDateForApi(ed);
-              }
-            }
-            const tzOffset = getTimezoneOffsetMinutes(parsed?.dateRange?.startDate || parsed?.dateRange?.endDate);
-            if (tzOffset !== undefined) {
-              filters.timezoneOffsetMinutes = tzOffset;
-            }
-          }
-          filtersRef.current = filters;
-        }
-      }
-    } catch (e) {
-      // ignore corrupt localStorage entries
-    }
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
@@ -160,6 +130,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       enrichedFilters.timezoneOffsetMinutes = tzOffset;
     }
     filtersRef.current = enrichedFilters;
+    setHasAppliedFilters(true);
     try {
       if (tableApiRef.current) {
         tableApiRef.current.ajax.reload();
@@ -177,7 +148,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       if (typeof window !== 'undefined' && window.localStorage) {
         try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
         try { window.localStorage.removeItem(TABLE_STORAGE_KEY); } catch (e) { void e; }
-        console.debug && console.debug('ChatDashboard: cleared local table storage', LOCAL_TABLE_STORAGE_KEY, TABLE_STORAGE_KEY);
       }
     } catch (e) {
       void e;
@@ -214,7 +184,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       }
     },
     {
@@ -258,7 +228,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         return escapeHtmlAttribute(truncateUrl(value));
       }
     },
-      {
+    {
       title: t('admin.chatDashboard.columns.userType', 'User Type'),
       data: 'userType',
       render: (value) => {
@@ -319,8 +289,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       />
 
       {loading && (
-        <div className="mt-400" role="status">
-          {t('admin.chatDashboard.loading', 'Loading chats...')}
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('admin.chatDashboard.loading', 'Loading chats...')}</span>
+          </div>
         </div>
       )}
 
@@ -336,119 +309,119 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </p>
       )}
 
-      <div className="mt-200">
-        <div className="chat-dashboard-summary" role="status" aria-live="polite">
+      {hasAppliedFilters && (
+        <div className="mt-200">
+          <div className="chat-dashboard-summary" role="status" aria-live="polite">
             <output>{resultsSummary}</output>
             <output>{totalSummary}</output>
-        </div>
-        {dataTableReady ? (
-          <div className="chat-dashboard-table-container">
-            <DataTable
-              key={tableKey}
-              columns={columns}
-              className="display chat-dashboard-table"
-              options={{
-                processing: true,
-                serverSide: true,
-                paging: true,
-                searching: true,
-                ordering: true,
-                order: [[5, 'desc']], // default to date desc
-                scrollX: true,
-                stateSave: true,
-                language: {
-                  search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
-                  searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
-                },
-                stateSaveCallback: function (settings, data) {
-                  try {
-                    if (typeof window !== 'undefined' && window.localStorage) {
-                      window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
-                      console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
-                    }
-                  } catch (e) {
-                    // ignore
-                  }
-                },
-                stateLoadCallback: function (settings) {
-                  try {
-                    if (typeof window !== 'undefined' && window.localStorage) {
-                      const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                      const parsed = stored ? JSON.parse(stored) : null;
-                      console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
-                      return parsed;
-                    }
-                  } catch (e) {
-                    // ignore
-                  }
-                  return null;
-                },
-                ajax: async (dtParams, callback) => {
-                  try {
-                    setLoading(true);
-                    setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
-                    const orderBy = orderByForColumn(dtOrder.column);
-                    const orderDir = dtOrder.dir || 'desc';
-                    const searchValue = (dtParams.search && dtParams.search.value) || '';
-                    const currentFilters = filtersRef.current || {};
-
-                    const normalizedFilters = { ...currentFilters };
-                    const normalizedStart = formatDateForApi(currentFilters.startDate);
-                    const normalizedEnd = formatDateForApi(currentFilters.endDate);
-                    if (normalizedStart) normalizedFilters.startDate = normalizedStart;
-                    if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
-                    const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
-                    if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
-
-                    const query = {
-                      ...normalizedFilters,
-                      start: dtParams.start || 0,
-                      length: dtParams.length || 10,
-                      orderBy,
-                      orderDir,
-                      draw: dtParams.draw || 0
-                    };
-                    if (searchValue) {
-                      query.search = searchValue;
-                    }
-                    const result = await DashboardService.getChatDashboard(query);
-                    setRecordsTotal(result?.recordsTotal || 0);
-                    setRecordsFiltered(result?.recordsFiltered || 0);
-                    callback({
-                      draw: dtParams.draw || 0,
-                      recordsTotal: result?.recordsTotal || 0,
-                      recordsFiltered: result?.recordsFiltered || 0,
-                      data: Array.isArray(result?.data) ? result.data : []
-                    });
-                  } catch (err) {
-                    console.error('Failed to load chat dashboard data', err);
-                    setError(err.message || String(err));
-                    callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
-                  } finally {
-                    setLoading(false);
-                  }
-                },
-                initComplete: function () {
-                  try {
-                    const api = this.api();
-                    tableApiRef.current = api;
-                    console.debug && console.debug('ChatDashboard: DataTable initComplete');
-                    api.on('xhr.dt', function (_e, _settings, json) {
-                      try {
-                        setRecordsTotal((json && json.recordsTotal) || 0);
-                        setRecordsFiltered((json && json.recordsFiltered) || 0);
-                      } catch (e) { /* ignore */ }
-                    });
-                  } catch (e) { /* ignore */ }
-                }
-              }}
-            />
           </div>
-        ) : (
-          <div>Initializing table...</div>
-        )}
-      </div>
+          {dataTableReady && (
+            <div className="chat-dashboard-table-container">
+              <DataTable
+                key={tableKey}
+                columns={columns}
+                className="display chat-dashboard-table"
+                options={{
+                  processing: true,
+                  serverSide: true,
+                  paging: true,
+                  searching: true,
+                  ordering: true,
+                  order: [[5, 'desc']], // default to date desc
+                  scrollX: true,
+                  stateSave: true,
+                  language: {
+                    search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
+                    searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
+                  },
+                  stateSaveCallback: function (settings, data) {
+                    try {
+                      if (typeof window !== 'undefined' && window.localStorage) {
+                        window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
+                        console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
+                      }
+                    } catch (e) {
+                      // ignore
+                    }
+                  },
+                  stateLoadCallback: function (settings) {
+                    try {
+                      if (typeof window !== 'undefined' && window.localStorage) {
+                        const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
+                        const parsed = stored ? JSON.parse(stored) : null;
+                        console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
+                        return parsed;
+                      }
+                    } catch (e) {
+                      // ignore
+                    }
+                    return null;
+                  },
+                  ajax: async (dtParams, callback) => {
+                    try {
+                      setLoading(true);
+                      setError(null);
+                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
+                      const orderBy = orderByForColumn(dtOrder.column);
+                      const orderDir = dtOrder.dir || 'desc';
+                      const searchValue = (dtParams.search && dtParams.search.value) || '';
+                      const currentFilters = filtersRef.current || {};
+
+                      const normalizedFilters = { ...currentFilters };
+                      const normalizedStart = formatDateForApi(currentFilters.startDate);
+                      const normalizedEnd = formatDateForApi(currentFilters.endDate);
+                      if (normalizedStart) normalizedFilters.startDate = normalizedStart;
+                      if (normalizedEnd) normalizedFilters.endDate = normalizedEnd;
+                      const tzOffset = getTimezoneOffsetMinutes(currentFilters.startDate || currentFilters.endDate);
+                      if (tzOffset !== undefined) normalizedFilters.timezoneOffsetMinutes = tzOffset;
+
+                      const query = {
+                        ...normalizedFilters,
+                        start: dtParams.start || 0,
+                        length: dtParams.length || 10,
+                        orderBy,
+                        orderDir,
+                        draw: dtParams.draw || 0
+                      };
+                      if (searchValue) {
+                        query.search = searchValue;
+                      }
+                      const result = await DashboardService.getChatDashboard(query);
+                      setRecordsTotal(result?.recordsTotal || 0);
+                      setRecordsFiltered(result?.recordsFiltered || 0);
+                      callback({
+                        draw: dtParams.draw || 0,
+                        recordsTotal: result?.recordsTotal || 0,
+                        recordsFiltered: result?.recordsFiltered || 0,
+                        data: Array.isArray(result?.data) ? result.data : []
+                      });
+                    } catch (err) {
+                      console.error('Failed to load chat dashboard data', err);
+                      setError(err.message || String(err));
+                      callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                    } finally {
+                      setLoading(false);
+                    }
+                  },
+                  initComplete: function () {
+                    try {
+                      const api = this.api();
+                      tableApiRef.current = api;
+                      console.debug && console.debug('ChatDashboard: DataTable initComplete');
+                      api.on('xhr.dt', function (_e, _settings, json) {
+                        try {
+                          setRecordsTotal((json && json.recordsTotal) || 0);
+                          setRecordsFiltered((json && json.recordsFiltered) || 0);
+                        } catch (e) { /* ignore */ }
+                      });
+                    } catch (e) { /* ignore */ }
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </GcdsContainer>
   );
 };
