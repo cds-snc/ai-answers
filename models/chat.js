@@ -42,10 +42,10 @@ ChatSchema.pre('findOneAndDelete', async function () {
     await Interaction.deleteMany({ _id: { $in: chat.interactions } });
 });
 
-export const Chat = mongoose.models.Chat || mongoose.model('Chat', ChatSchema);
-
 // Indexes to speed up lookups from interaction -> chat and filtering by pageLanguage
 ChatSchema.index({ interactions: 1 });
 ChatSchema.index({ pageLanguage: 1 });
 ChatSchema.index({ createdAt: 1 });
 ChatSchema.index({ user: 1 });
+
+export const Chat = mongoose.models.Chat || mongoose.model('Chat', ChatSchema);
