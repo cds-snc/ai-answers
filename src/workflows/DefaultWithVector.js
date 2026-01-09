@@ -184,6 +184,7 @@ export class DefaultWithVector {
       confidenceRating: confidenceRating,
       context: context,
       chatId: chatId,
+      workflow: 'DefaultWithVector',
       pageLanguage: lang,
       responseTime: totalResponseTime,
       searchProvider: searchProvider
@@ -250,6 +251,7 @@ export class DefaultWithVector {
       context: scContext,
       chatId: chatId,
       pageLanguage: lang,
+      workflow: 'DefaultWithVector',
       responseTime: totalResponseTimeSC,
       searchProvider: searchProvider
       ,
@@ -257,6 +259,7 @@ export class DefaultWithVector {
       instantAnswerChatId: similarShortCircuit.instantAnswerChatId || null,
       instantAnswerInteractionId: similarShortCircuit.instantAnswerInteractionId || null
     };
+    
 
     return payload;
   }

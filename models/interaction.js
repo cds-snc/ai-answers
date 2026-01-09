@@ -24,6 +24,11 @@ const InteractionSchema = new mongoose.Schema({
     required: false,
     default: ''
   },
+  workflow: {
+    type: String,
+    required: false,
+    default: ''
+  },
   answer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Answer',

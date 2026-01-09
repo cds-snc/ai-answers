@@ -85,6 +85,8 @@ const ChatOptions = ({
                 <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
                 <option value="DefaultWithVector">DefaultWithVector</option>
                 <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
+                  <option value="InstantAndQAGraph">InstantAndQAGraph</option>
+                <option value="DefaultGraph">DefaultGraph</option>
               </select>
             </div>
           </div>

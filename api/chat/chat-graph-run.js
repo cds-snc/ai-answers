@@ -1,11 +1,50 @@
 import { withSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import { getGraphApp } from '../../agents/graphs/registry.js';
+import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 
 const REQUIRED_METHOD = 'POST';
 
 function writeEvent(res, event, data) {
   res.write(`event: ${event}\n`);
   res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+function buildGraphErrorPayload(error) {
+  const base = {
+    name: error?.name || 'Error',
+    message: error?.message || 'Graph execution failed',
+  };
+
+  if (error?.userMessage) {
+    base.userMessage = error.userMessage;
+  }
+
+  const fallbackUrl = typeof error?.fallbackUrl === 'string'
+    ? error.fallbackUrl
+    : error?.searchUrl?.fallbackUrl || null;
+  if (fallbackUrl) {
+    base.fallbackUrl = fallbackUrl;
+  }
+
+  if (error?.searchUrl && typeof error.searchUrl === 'string') {
+    base.searchUrl = error.searchUrl;
+  } else if (error?.searchUrl?.fallbackUrl) {
+    base.searchUrl = error.searchUrl.fallbackUrl;
+  }
+
+  if (error?.redactedText) {
+    base.redactedText = error.redactedText;
+  }
+  if (error?.redactedItems) {
+    base.redactedItems = error.redactedItems;
+  }
+
+  if (process.env.NODE_ENV !== 'production' && error?.stack) {
+    base.stack = error.stack;
+  }
+
+  return base;
 }
 
 function traverseForUpdates(value, handlers) {
@@ -74,7 +113,19 @@ async function handler(req, res) {
   };
 
   try {
-    await graphRequestContext.run({ headers: forwardedHeaders }, async () => {
+    const store = { headers: forwardedHeaders, user: req.user };
+    // Only enable graph event streaming for authenticated users
+    if (req.user) {
+      store.graphEventWriter = (eventName, data) => {
+        try {
+          writeEvent(res, eventName, data);
+        } catch (_err) {
+          // ignore writer errors
+        }
+      };
+    }
+
+    await graphRequestContext.run(store, async () => {
       const stream = await graphApp.stream(input, { streamMode: 'updates' });
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
@@ -86,7 +137,12 @@ async function handler(req, res) {
   } catch (err) {
     streamError = err;
     if (!resultSent) {
-      writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+      try {
+        writeEvent(res, 'error', buildGraphErrorPayload(err));
+      } catch (_e) {
+        // fallback to minimal message if serialization fails
+        writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+      }
       resultSent = true;
     }
   } finally {
@@ -106,8 +162,8 @@ async function handler(req, res) {
     const authorization = headers['authorization'];
     if (authorization) out['Authorization'] = authorization;
 
-    const fpId = headers['x-fp-id'];
-    if (fpId) out['x-fp-id'] = fpId;
+    const userAgent = headers['user-agent'];
+    if (userAgent) out['User-Agent'] = userAgent;
 
     return out;
   }
