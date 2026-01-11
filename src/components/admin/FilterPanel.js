@@ -211,6 +211,7 @@ const FilterPanel = ({
     { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
     { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
     { value: 'SAC-ISC', label: 'SAC-ISC' },
+    { value: 'StatCan', label: 'StatCan' },
     { value: 'TBS-SCT', label: 'TBS-SCT' }
   ];
 
