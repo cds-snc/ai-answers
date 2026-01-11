@@ -5,7 +5,8 @@
 Canada.ca AI Answers is a specialized AI chat agent designed to help users of Government of Canada websites. Everyday, thousands of people tell us via the Page Feedback Tool that they aren't finding the answers they need on Canada.ca. This custom AI service can provide brief answers to user questions from the entire online ecosystem of federal government services, programs, and websites.
 
 The AI Answers service began as an experiment in late 2024 by the Canada.ca Experience Office (CEO). Later, in invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits. 
-- For more about the first trial, see [AI Answers: Enterprise-scale trial for Canada.ca] (https://blog.canada.ca/2025/12/17/ai-answers.html)
+- For more about the first trial, see [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
+
 
 Beta-testing in collaboration with partner organizations began in November 2025 and continues towards an expanded rollout in 2026. 
 
