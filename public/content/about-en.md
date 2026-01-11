@@ -2,21 +2,18 @@
 
 ## Overview
 
-AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.
+Canada.ca AI Answers is a specialized AI chat agent designed to help users of Government of Canada websites. Everyday, thousands of people tell us via the Page Feedback Tool that they aren't finding the answers they need on Canada.ca. This custom AI service can provide brief answers to user questions from the entire online ecosystem of federal government services, programs, and websites.
 
-In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.
+The AI Answers service began as an experiment in late 2024 by the Canada.ca Experience Office (CEO). Later, in invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits. 
+- For more about the first trial, see [AI Answers: Enterprise-scale trial for Canada.ca] (https://blog.canada.ca/2025/12/17/ai-answers.html)
 
-Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations to produce automated AI evaluations, and improve answer quality.
+Beta-testing in collaboration with partner organizations began in November 2025 and continues towards an expanded rollout in 2026. 
 
-AI Answers is designed, operated and maintained by the Canadian Digital Service.
-
-The service began as an experiment in late 2024 by the Canada.ca design team. AI Answers is currently undergoing invitation-only trials on high-traffic Canada.ca pages. We analyze results after each trial to improve both product and processes with our partner institutions. An expanded rollout is planned for 2026.
-
-Current AI model: Microsoft Azure OpenAI
+Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation, metrics, user management, and settings. The innovative evaluation system leverages subject-matter expert(SME) evaluations of questions and answers.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
 
 ## Accessibility and Usability
 
-Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.
+Users can be overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.
 
 These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.
 
