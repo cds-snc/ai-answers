@@ -34,6 +34,14 @@ export class GraphWorkflowHelper {
   async processRedaction(userMessage, lang, chatId, selectedAI) {
     await redactionService.ensureInitialized(lang);
     const { redactedText, redactedItems } = redactionService.redactText(userMessage, lang);
+
+    // Check if any blocking-type redactions were applied (profanity, threat, manipulation)
+    const blockingTypes = ['profanity', 'threat', 'manipulation'];
+    const hasBlockingRedaction = redactedItems.some(item => blockingTypes.includes(item.type));
+    if (hasBlockingRedaction) {
+      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
+    }
+
     const piiResult = await checkPII({ chatId, message: userMessage, agentType: selectedAI });
     if (piiResult.blocked) {
       throw new RedactionError('Blocked content detected in translation', '#############', redactedItems);

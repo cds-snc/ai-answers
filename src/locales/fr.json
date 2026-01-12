@@ -242,11 +242,6 @@
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
     }
   },
-  "settings": {
-    "general": {
-      "title": "Paramètres généraux"
-    }
-  },
   "aboutPage": {
     "title": "À propos de Canada.ca Réponses IA",
     "overview": {
@@ -928,6 +923,13 @@
       "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
       "rateLimitRefill": "Recharge du quota (requêtes/min)",
       "authenticatedRateLimitRefill": "Recharge du quota authentifié (requêtes/min)"
+    },
+    "redaction": {
+      "title": "Paramètres de rédaction",
+      "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
+      "profanity": "Gros mots",
+      "threat": "Menaces",
+      "manipulation": "Manipulation"
     }
   },
   "outage": {
