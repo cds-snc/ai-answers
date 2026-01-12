@@ -81,7 +81,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
       // Validate default workflow against known options
-      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'Default');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
@@ -467,7 +467,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph'];
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
               } finally {
@@ -476,10 +476,12 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingDefaultWorkflow}
           >
-            <option value="Default">{t('settings.defaultWorkflow.options.Default', 'Default')}</option>
-            <option value="DefaultAlwaysContext">{t('settings.defaultWorkflow.options.DefaultAlwaysContext', 'DefaultAlwaysContext')}</option>
-            <option value="DefaultWithVector">{t('settings.defaultWorkflow.options.DefaultWithVector', 'DefaultWithVector')}</option>
-            <option value="DefaultWithVectorGraph">{t('settings.defaultWorkflow.options.DefaultWithVectorGraph', 'DefaultWithVectorGraph')}</option>
+            <option value="Default">Default</option>
+            <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
+            <option value="DefaultWithVector">DefaultWithVector</option>
+            <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
+            <option value="InstantAndQAGraph">InstantAndQAGraph</option>
+            <option value="DefaultGraph">DefaultGraph</option>
           </select>
           <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
             {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
