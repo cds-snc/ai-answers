@@ -206,11 +206,6 @@
       "intro": "Rate the sentences in the answer, or the citation, or both"
     }
   },
-  "settings": {
-    "general": {
-      "title": "General settings"
-    }
-  },
   "aboutPage": {
     "title": "About Canada.ca AI Answers",
     "overview": {
@@ -890,6 +885,13 @@
       "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (requests)",
       "rateLimitRefill": "Rate limit refill (requests per min)",
       "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
+    },
+    "redaction": {
+      "title": "Redaction Settings",
+      "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
+      "profanity": "Profanity",
+      "threat": "Threats",
+      "manipulation": "Manipulation"
     }
   },
   "outage": {
