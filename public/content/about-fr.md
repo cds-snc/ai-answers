@@ -4,13 +4,13 @@
 
 Canada.ca Réponses IA est un agent de discussion IA spécialisé conçu pour aider les utilisateurs des sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent via l'outil de rétroaction sur la page qu'elles ne trouvent pas les réponses dont elles ont besoin sur Canada.ca. Ce service d'IA personnalisé peut fournir de brèves réponses aux questions des utilisateurs provenant de l'ensemble de l'écosystème en ligne des services, programmes et sites Web du gouvernement fédéral.
 
-Le service Réponses IA a débuté comme une expérience à la fin de 2024 par le Bureau de l'expérience Canada.ca. Par la suite, lors d'essais sur invitation sur des pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement. 82 % des commentaires de plus de 250 utilisateurs des essais étaient positifs, et soulignaient les économies de temps et d'efforts, ainsi que l'évitement des appels et des visites au bureau. 
-- Pour en savoir plus sur le premier essai, voir [Réponses IA : Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
-
+Le service Réponses IA a débuté comme une expérience à la fin de 2024 par le Bureau de l'expérience Canada.ca. Par la suite, lors d'essais sur invitation sur des pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement.  
 
 Les essais bêta en collaboration avec les organisations partenaires ont commencé en novembre 2025 et se poursuivent vers un déploiement élargi en 2026.
 
 Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation humaine, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts en la matière (EM) des questions et réponses. Les évaluations sont utilisées pour améliorer la qualité des réponses et pour produire des évaluations IA automatisées de questions similaires.
+
+- Pour en savoir plus sur le premier essai, voir [Réponses IA : Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 
 ## Accessibilité et convivialité
 
