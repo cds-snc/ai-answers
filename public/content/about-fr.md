@@ -50,4 +50,4 @@ Pour des informations détaillées sur le fonctionnement de Réponses IA, nos me
 
 ## Contactez-nous
 
-[Utiliser le formulaire de contact du Service numérique canadien](https://blogue.canada.ca/contactez-nous.html)
+[Utiliser le formulaire de contact du Bureau de l'expérience Canada.ca](https://blogue.canada.ca/contactez-nous.html)

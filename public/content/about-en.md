@@ -50,4 +50,4 @@ For detailed information about how AI Answers works, our safety measures, evalua
 
 ## Contact us
 
-[Use the Canadian Digital Service contact form](https://blog.canada.ca/contact-us)
+[Use the Canada.ca Experience Office contact form](https://blog.canada.ca/contact-us)
