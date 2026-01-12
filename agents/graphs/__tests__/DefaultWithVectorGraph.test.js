@@ -89,7 +89,8 @@ describe('DefaultWithVectorGraph Workflow', () => {
         AnswerGenerationService.generateAnswer.mockResolvedValue({
             content: 'Generated Answer',
             answerType: 'normal',
-            citationUrl: 'https://example.com'
+            citationUrl: 'https://example.com',
+            historySignature: 'sig-123'
         });
 
         SimilarAnswerService.findSimilarAnswer.mockResolvedValue(null);
@@ -117,6 +118,7 @@ describe('DefaultWithVectorGraph Workflow', () => {
         // The answerNode returns { answer: { ... } }
         // Verify result structure
         expect(resultState.status).toBe('complete');
+        expect(resultState.result.historySignature).toBe('sig-123');
 
         expect(SearchContextService.search).toHaveBeenCalled();
         expect(AnswerGenerationService.generateAnswer).toHaveBeenCalled();

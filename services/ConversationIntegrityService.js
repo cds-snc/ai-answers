@@ -39,13 +39,26 @@ class ConversationIntegrityService {
         if (!Array.isArray(history)) return '';
 
         const lines = [];
-        for (const m of history) {
+        for (let i = 0; i < history.length; i++) {
+            const m = history[i];
+
             if (m.interaction) {
                 const q = this.normalizeText(m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question);
                 const a = this.normalizeText(m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer);
                 lines.push(`user:${q}`);
                 lines.push(`ai:${a}`);
             } else {
+                // Check redundancy: If this is a user message and the NEXT message has an interaction,
+                // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
+                // This handles the [User, AI(with interaction)] pattern common in client state.
+                const isUser = (m.sender === 'user' || m.role === 'user');
+                if (isUser && i + 1 < history.length) {
+                    const next = history[i + 1];
+                    if (next.interaction) {
+                        continue;
+                    }
+                }
+
                 const role = m.sender || m.role || '';
                 const text = this.normalizeText(m.text || m.content || '');
                 lines.push(`${role}:${text}`);

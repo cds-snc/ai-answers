@@ -324,6 +324,7 @@ graph.addNode('verifyNode', async (state) => {
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
       confidenceRating: confidenceRating ?? state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null,
+      historySignature: answerData?.historySignature ?? null,
     },
   };
   logGraphEvent('info', 'node:verify output', state.chatId, {

@@ -182,7 +182,7 @@ export class GraphWorkflowHelper {
         overrideUserId,
         chatId,
       });
-      return { context: updatedContext, usedExistingContext: true, conversationHistory: aiHistory };
+      return { context: updatedContext, usedExistingContext: true, conversationHistory: safeHistory };
     }
 
     const minimalContext = {
@@ -192,7 +192,7 @@ export class GraphWorkflowHelper {
       systemPrompt: '',
     };
 
-    return { context: minimalContext, usedExistingContext: false, conversationHistory: aiHistory };
+    return { context: minimalContext, usedExistingContext: false, conversationHistory: safeHistory };
   }
 
   buildShortCircuitPayload({ similarShortCircuit, startTime, endTime, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider, contextOverride = null }) {
