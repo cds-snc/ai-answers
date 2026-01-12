@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.79.3](https://github.com/cds-snc/ai-answers/compare/v1.79.2...v1.79.3) (2026-01-12)
+
+
+### Bug Fixes
+
+* add blog to About ([18780b8](https://github.com/cds-snc/ai-answers/commit/18780b8da148ddfeb42ba29387f4abcc7362ec38))
+* add statcan partner ([5d830cd](https://github.com/cds-snc/ai-answers/commit/5d830cdebf0a11a8013af60af7b3b8ea822e84ae))
+* add statcan partner ([76f5c60](https://github.com/cds-snc/ai-answers/commit/76f5c60492aede3cef4960aafd1b7b22b6732595))
+* change cds to ceo ([3a52cbc](https://github.com/cds-snc/ai-answers/commit/3a52cbc258f41d8dc0cfd3df4b6ad9e35be26754))
+* contact form label ([a2985e9](https://github.com/cds-snc/ai-answers/commit/a2985e9ed622d223abff536dd1fdc762286e35bf))
+* move blog link ([57682da](https://github.com/cds-snc/ai-answers/commit/57682da5bfbfe69bf25ae3636a68e8a0b5dec071))
+* translation ([ce0eb30](https://github.com/cds-snc/ai-answers/commit/ce0eb309bd3c1d376cd43d1d78b37ddd1fd549eb))
+* typo on about ([0fdabc0](https://github.com/cds-snc/ai-answers/commit/0fdabc06b9a014a3205d1779936c658c4b82dfa9))
+
 ## [1.79.2](https://github.com/cds-snc/ai-answers/compare/v1.79.1...v1.79.2) (2026-01-09)
 
 
