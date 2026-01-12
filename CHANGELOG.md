@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.79.4](https://github.com/cds-snc/ai-answers/compare/v1.79.3...v1.79.4) (2026-01-12)
+
+
+### Bug Fixes
+
+* pi check model and information is done in canada only ([3aa4fa6](https://github.com/cds-snc/ai-answers/commit/3aa4fa681ebc7b399e52b7e0031ec4c7a844be48))
+* pi check model and information is done in canada only ([85e8879](https://github.com/cds-snc/ai-answers/commit/85e8879e1545a59c265af5aedb6046276dbc70d5))
+
 ## [1.79.3](https://github.com/cds-snc/ai-answers/compare/v1.79.2...v1.79.3) (2026-01-12)
 
 
