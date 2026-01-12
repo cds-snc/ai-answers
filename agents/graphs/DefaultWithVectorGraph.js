@@ -309,6 +309,7 @@ graph.addNode('verifyNode', async (state) => {
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
       confidenceRating: confidenceRating ?? state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null,
+      historySignature: answerData?.historySignature ?? null,
     },
   };
   // Emit output log for verifyNode
