@@ -50,6 +50,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-sac-isc/sac-isc-scenarios.js');
     return mod.SAC_ISC_SCENARIOS || '';
   },
+  'StatCan': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-statcan/statcan-scenarios.js');
+    return mod.STATCAN_SCENARIOS || '';
+  },
   'TBS-SCT': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');
     return mod.TBS_SCT_SCENARIOS || '';
