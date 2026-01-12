@@ -26,6 +26,15 @@ export class GraphClient {
     let reader = null;
 
     try {
+      // Extract historySignature from the last AI message in history
+      const lastAiMessage = Array.isArray(conversationHistory)
+        ? [...conversationHistory].reverse().find(m => m.sender === 'ai' || (m.interaction && m.interaction.answer))
+        : null;
+      const historySignature = lastAiMessage?.historySignature ||
+        lastAiMessage?.interaction?.historySignature ||
+        lastAiMessage?.interaction?.answer?.historySignature ||
+        null;
+
       const payload = {
         graph: this.graphName,
         input: {
@@ -33,6 +42,7 @@ export class GraphClient {
           userMessage,
           userMessageId,
           conversationHistory,
+          historySignature,
           lang,
           department,
           referringUrl,
