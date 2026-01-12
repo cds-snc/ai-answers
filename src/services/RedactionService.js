@@ -40,9 +40,9 @@ class RedactionService {
 
   async loadWords(lang, type) {
     try {
-      // Use DataStoreService.getSetting instead of custom API
+      // Use DataStoreService.getPublicSetting instead of private getSetting for client-side use
       const key = `redaction.${type}.${lang}`;
-      const val = await DataStoreService.getSetting(key);
+      const val = await DataStoreService.getPublicSetting(key);
       if (!val) return [];
 
       const words = val.split(',').map(s => s.trim()).filter(Boolean);

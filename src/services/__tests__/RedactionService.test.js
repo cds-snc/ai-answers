@@ -13,7 +13,8 @@ vi.mock('../ClientLoggingService.js', () => ({
 
 vi.mock('../DataStoreService.js', () => ({
     default: {
-        getSetting: vi.fn()
+        getSetting: vi.fn(),
+        getPublicSetting: vi.fn()
     }
 }));
 
@@ -35,13 +36,13 @@ describe('Client RedactionService', () => {
             'redaction.threat.en': 'kill,hurt',
             'redaction.manipulation.en': 'ignore,bypass'
         };
-        DataStoreService.getSetting.mockImplementation((key) => mockSettings[key] || '');
+        DataStoreService.getPublicSetting.mockImplementation((key) => mockSettings[key] || '');
 
         await redactionService.initialize('en');
 
-        expect(DataStoreService.getSetting).toHaveBeenCalledWith('redaction.profanity.en');
-        expect(DataStoreService.getSetting).toHaveBeenCalledWith('redaction.threat.en');
-        expect(DataStoreService.getSetting).toHaveBeenCalledWith('redaction.manipulation.en');
+        expect(DataStoreService.getPublicSetting).toHaveBeenCalledWith('redaction.profanity.en');
+        expect(DataStoreService.getPublicSetting).toHaveBeenCalledWith('redaction.threat.en');
+        expect(DataStoreService.getPublicSetting).toHaveBeenCalledWith('redaction.manipulation.en');
 
         expect(redactionService.isInitialized).toBe(true);
         expect(redactionService.profanityPattern).toBeDefined();
@@ -53,7 +54,7 @@ describe('Client RedactionService', () => {
             'redaction.threat.en': 'kill',
             'redaction.manipulation.en': 'bypass'
         };
-        DataStoreService.getSetting.mockImplementation((key) => mockSettings[key] || '');
+        DataStoreService.getPublicSetting.mockImplementation((key) => mockSettings[key] || '');
 
         await redactionService.initialize('en');
 
@@ -76,7 +77,7 @@ describe('Client RedactionService', () => {
 
     it('redacts PII using built-in private patterns', async () => {
         // Even with no settings, PII redaction should work
-        DataStoreService.getSetting.mockReturnValue('');
+        DataStoreService.getPublicSetting.mockReturnValue('');
         await redactionService.initialize('en');
 
         const input = 'My email is test@example.com and phone is 555-123-4567';
@@ -92,7 +93,7 @@ describe('Client RedactionService', () => {
     });
 
     it('handles empty settings gracefully', async () => {
-        DataStoreService.getSetting.mockReturnValue(null);
+        DataStoreService.getPublicSetting.mockReturnValue(null);
 
         await redactionService.initialize('en');
 
@@ -110,14 +111,14 @@ describe('Client RedactionService', () => {
     });
 
     it('throws error if called with different language than initialized', async () => {
-        DataStoreService.getSetting.mockReturnValue('');
+        DataStoreService.getPublicSetting.mockReturnValue('');
         await redactionService.initialize('en');
 
         expect(() => redactionService.redactText('test', 'fr')).toThrow('RedactionService is not initialized for the current language');
     });
 
     it('handles ensureInitialized correctly', async () => {
-        DataStoreService.getSetting.mockReturnValue('');
+        DataStoreService.getPublicSetting.mockReturnValue('');
 
         await redactionService.ensureInitialized('fr');
         expect(redactionService.currentLang).toBe('fr');
@@ -129,10 +130,10 @@ describe('Client RedactionService', () => {
 
         vi.clearAllMocks();
         await redactionService.ensureInitialized('fr');
-        expect(DataStoreService.getSetting).not.toHaveBeenCalled();
+        expect(DataStoreService.getPublicSetting).not.toHaveBeenCalled();
 
         await redactionService.ensureInitialized('en');
-        expect(DataStoreService.getSetting).toHaveBeenCalled();
+        expect(DataStoreService.getPublicSetting).toHaveBeenCalled();
         expect(redactionService.currentLang).toBe('en');
     });
 });
