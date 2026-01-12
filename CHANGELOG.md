@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.80.0](https://github.com/cds-snc/ai-answers/compare/v1.79.4...v1.80.0) (2026-01-12)
+
+
+### Features
+
+* Add section for redaction settings in settings ([6e4a9a5](https://github.com/cds-snc/ai-answers/commit/6e4a9a54a33d78dc9b0a5465b3e1254455ce40fc))
+* readaction service tests for migration. ([5b00d6f](https://github.com/cds-snc/ai-answers/commit/5b00d6f76257e7d27f7fcbde18ebbefd29fa69bc))
+* use the database to get threat words instead of files ([7a7a16d](https://github.com/cds-snc/ai-answers/commit/7a7a16dbe3cfbb977f56717663a67d7d91c0cdb8))
+
+
+### Bug Fixes
+
+* add graphs to settings ([18ffc7b](https://github.com/cds-snc/ai-answers/commit/18ffc7bcacc9994a7a2ec689e2b2356abfc04f04))
+* include historySignature in GraphClient requests for conversation integrity check ([1c2cede](https://github.com/cds-snc/ai-answers/commit/1c2cede66842ee513d107486bdffac1d89ce61a3))
+* integreity check on graphs. ([021e161](https://github.com/cds-snc/ai-answers/commit/021e1619369ba4ca12ed36e0c4ba1f6dce3e10a0))
+* integreity check on graphs. ([c589c0a](https://github.com/cds-snc/ai-answers/commit/c589c0ae35f0772db02222857fa15f1aac8474f0))
+* remove threat words from repo ([0b32387](https://github.com/cds-snc/ai-answers/commit/0b32387de8167837b7109fad9162bb573559773e))
+* **server:** resolve conversation integrity hash mismatch and context agent crash ([b585a34](https://github.com/cds-snc/ai-answers/commit/b585a3488fbb8c2e94da4bb5441355859ef2e238))
+* use public endpoint for values ([daaf948](https://github.com/cds-snc/ai-answers/commit/daaf94833b07ade4f4ce0a64c68110e70b629af4))
+
 ## [1.79.4](https://github.com/cds-snc/ai-answers/compare/v1.79.3...v1.79.4) (2026-01-12)
 
 
