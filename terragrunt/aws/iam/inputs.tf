@@ -73,3 +73,9 @@ variable "conversation_integrity_secret_arn" {
   description = "The ARN of the conversation integrity secret SSM parameter"
   type        = string
 }
+
+variable "bedrock_invoke_role_arn" {
+  description = "The ARN of the cross-account Bedrock invoke role to assume"
+  type        = string
+  default     = ""
+}
