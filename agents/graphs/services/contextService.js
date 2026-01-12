@@ -28,7 +28,7 @@ function determineOutputLang(pageLang, translationData) {
   return pageLang === 'fr' ? 'fra' : originalLang;
 }
 
-function parseContextMessage(context) {
+export function parseContextMessage(context) {
   const topicMatch = context.message.match(/<topic>([\s\S]*?)<\/topic>/);
   const topicUrlMatch = context.message.match(/<topicUrl>([\s\S]*?)<\/topicUrl>/);
   const departmentMatch = context.message.match(/<department>([\s\S]*?)<\/department>/);

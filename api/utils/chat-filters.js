@@ -77,67 +77,61 @@ const filterInteractionsByCategory = (chat, category, evaluator) => {
   return { ...chat, interactions: filtered };
 };
 
-export function filterByPartnerEval(chats, category) {
-  if (!category || category === 'all') return chats;
-  return chats.reduce((acc, chat) => {
-    const matched = filterInteractionsByCategory(chat, category, (interaction) => categorizeExpertFeedback(interaction.expertFeedback));
-    if (matched) acc.push(matched);
-    return acc;
-  }, []);
-}
+// Note: filterByPartnerEval and filterByAiEval functions were removed.
+// Filtering now happens in the aggregation pipeline using computed fields
+// via getPartnerEvalAggregationExpression() and getAiEvalAggregationExpression().
 
-export function filterByAiEval(chats, category) {
-  if (!category || category === 'all') return chats;
-  return chats.reduce((acc, chat) => {
-    const matched = filterInteractionsByCategory(chat, category, (interaction) => categorizeAiEval(interaction.autoEval));
-    if (matched) acc.push(matched);
-    return acc;
-  }, []);
-}
-
-export function getPartnerEvalAggregationExpression() {
+export function getPartnerEvalAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
   return {
     $cond: {
-      if: { $eq: [{ $ifNull: ['$interactions.expertFeedback', null] }, null] },
+      if: { $eq: [{ $ifNull: [feedbackPath, null] }, null] },
       // Amazon DocumentDB does not support $$REMOVE; return null instead
       then: null,
       else: {
         $let: {
           vars: {
-            ef: { $ifNull: ['$interactions.expertFeedback', null] }
+            ef: { $ifNull: [feedbackPath, null] }
           },
           in: {
             $let: {
               vars: {
-                hasAnyScore: { $or: [
-                  { $in: ['$$ef.sentence1Score', [0, 80, 100]] },
-                  { $in: ['$$ef.sentence2Score', [0, 80, 100]] },
-                  { $in: ['$$ef.sentence3Score', [0, 80, 100]] },
-                  { $in: ['$$ef.sentence4Score', [0, 80, 100]] },
-                  { $in: ['$$ef.citationScore', [0, 20, 25]] },
-                  { $ne: ['$$ef.totalScore', null] }
-                ] },
+                hasAnyScore: {
+                  $or: [
+                    { $in: ['$$ef.sentence1Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence2Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence3Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence4Score', [0, 80, 100]] },
+                    { $in: ['$$ef.citationScore', [0, 20, 25]] },
+                    { $ne: ['$$ef.totalScore', null] }
+                  ]
+                },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
                 hasCitationError: { $eq: ['$$ef.citationScore', 0] },
-                hasHarmful: { $or: [
-                  { $eq: ['$$ef.sentence1Harmful', true] },
-                  { $eq: ['$$ef.sentence2Harmful', true] },
-                  { $eq: ['$$ef.sentence3Harmful', true] },
-                  { $eq: ['$$ef.sentence4Harmful', true] }
-                ] },
-                hasError: { $or: [
-                  { $eq: ['$$ef.sentence1Score', 0] },
-                  { $eq: ['$$ef.sentence2Score', 0] },
-                  { $eq: ['$$ef.sentence3Score', 0] },
-                  { $eq: ['$$ef.sentence4Score', 0] }
-                ] },
-                hasNeedsImprovement: { $or: [
-                  { $eq: ['$$ef.sentence1Score', 80] },
-                  { $eq: ['$$ef.sentence2Score', 80] },
-                  { $eq: ['$$ef.sentence3Score', 80] },
-                  { $eq: ['$$ef.sentence4Score', 80] },
-                  { $eq: ['$$ef.citationScore', 20] }
-                ] }
+                hasHarmful: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Harmful', true] },
+                    { $eq: ['$$ef.sentence2Harmful', true] },
+                    { $eq: ['$$ef.sentence3Harmful', true] },
+                    { $eq: ['$$ef.sentence4Harmful', true] }
+                  ]
+                },
+                hasError: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 0] },
+                    { $eq: ['$$ef.sentence2Score', 0] },
+                    { $eq: ['$$ef.sentence3Score', 0] },
+                    { $eq: ['$$ef.sentence4Score', 0] }
+                  ]
+                },
+                hasNeedsImprovement: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 80] },
+                    { $eq: ['$$ef.sentence2Score', 80] },
+                    { $eq: ['$$ef.sentence3Score', 80] },
+                    { $eq: ['$$ef.sentence4Score', 80] },
+                    { $eq: ['$$ef.citationScore', 20] }
+                  ]
+                }
               },
               in: {
                 $cond: {
@@ -166,53 +160,57 @@ export function getPartnerEvalAggregationExpression() {
   };
 }
 
-export function getAiEvalAggregationExpression() {
+export function getAiEvalAggregationExpression(feedbackPath = '$interactions.autoEval.expertFeedback') {
   return {
     $let: {
       vars: {
-        autoEval: { $ifNull: ['$interactions.autoEval', null] },
-        ef: { $ifNull: ['$interactions.autoEval.expertFeedback', null] }
+        ef: { $ifNull: [feedbackPath, null] }
       },
       in: {
         $cond: {
-          if: { $or: [
-            { $eq: ['$$autoEval', null] },
-            { $eq: ['$$ef', null] }
-          ] },
+          if: { $eq: ['$$ef', null] },
           // DocumentDB does not support $$REMOVE; return null instead
           then: null,
           else: {
             $let: {
               vars: {
-                hasAnyScore: { $or: [
-                  { $in: ['$$ef.sentence1Score', [0, 80, 100]] },
-                  { $in: ['$$ef.sentence2Score', [0, 80, 100]] },
-                  { $in: ['$$ef.sentence3Score', [0, 80, 100]] },
-                  { $in: ['$$ef.sentence4Score', [0, 80, 100]] },
-                  { $in: ['$$ef.citationScore', [0, 20, 25]] },
-                  { $ne: ['$$ef.totalScore', null] }
-                ] },
+                hasAnyScore: {
+                  $or: [
+                    { $in: ['$$ef.sentence1Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence2Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence3Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence4Score', [0, 80, 100]] },
+                    { $in: ['$$ef.citationScore', [0, 20, 25]] },
+                    { $ne: ['$$ef.totalScore', null] }
+                  ]
+                },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
                 hasCitationError: { $eq: ['$$ef.citationScore', 0] },
-                hasHarmful: { $or: [
-                  { $eq: ['$$ef.sentence1Harmful', true] },
-                  { $eq: ['$$ef.sentence2Harmful', true] },
-                  { $eq: ['$$ef.sentence3Harmful', true] },
-                  { $eq: ['$$ef.sentence4Harmful', true] }
-                ] },
-                hasError: { $or: [
-                  { $eq: ['$$ef.sentence1Score', 0] },
-                  { $eq: ['$$ef.sentence2Score', 0] },
-                  { $eq: ['$$ef.sentence3Score', 0] },
-                  { $eq: ['$$ef.sentence4Score', 0] }
-                ] },
-                hasNeedsImprovement: { $or: [
-                  { $eq: ['$$ef.sentence1Score', 80] },
-                  { $eq: ['$$ef.sentence2Score', 80] },
-                  { $eq: ['$$ef.sentence3Score', 80] },
-                  { $eq: ['$$ef.sentence4Score', 80] },
-                  { $eq: ['$$ef.citationScore', 20] }
-                ] }
+                hasHarmful: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Harmful', true] },
+                    { $eq: ['$$ef.sentence2Harmful', true] },
+                    { $eq: ['$$ef.sentence3Harmful', true] },
+                    { $eq: ['$$ef.sentence4Harmful', true] }
+                  ]
+                },
+                hasError: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 0] },
+                    { $eq: ['$$ef.sentence2Score', 0] },
+                    { $eq: ['$$ef.sentence3Score', 0] },
+                    { $eq: ['$$ef.sentence4Score', 0] }
+                  ]
+                },
+                hasNeedsImprovement: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 80] },
+                    { $eq: ['$$ef.sentence2Score', 80] },
+                    { $eq: ['$$ef.sentence3Score', 80] },
+                    { $eq: ['$$ef.sentence4Score', 80] },
+                    { $eq: ['$$ef.citationScore', 20] }
+                  ]
+                }
               },
               in: {
                 $cond: {
@@ -256,7 +254,7 @@ export function getChatFilterConditions(filters, options = {}) {
   // department
   if (filters.department) {
     const escaped = escapeRegex(filters.department);
-    conditions.push({ [withPath('context.department')]: { $regex: escaped, $options: 'i' } });
+    conditions.push({ [withPath('department')]: { $regex: escaped, $options: 'i' } });
   }
 
   // referringUrl
@@ -281,19 +279,36 @@ export function getChatFilterConditions(filters, options = {}) {
     conditions.push({ $or: urlConditions });
   }
 
-  // answerType
+  // answerType - support multi-select via comma-separated values
   if (filters.answerType && filters.answerType !== 'all') {
-    conditions.push({ [withPath('answer.answerType')]: filters.answerType });
+    const types = filters.answerType.split(',').map(t => t.trim()).filter(Boolean);
+    if (types.length === 1) {
+      // Single value: exact match (more efficient than $in with one value)
+      conditions.push({ [withPath('answerType')]: types[0] });
+    } else if (types.length > 1) {
+      // Multiple values: use $in operator
+      conditions.push({ [withPath('answerType')]: { $in: types } });
+    }
   }
 
-  // partnerEval
+  // partnerEval - support multi-select via comma-separated values
   if (filters.partnerEval && filters.partnerEval !== 'all') {
-    conditions.push({ [withPath('partnerEval')]: filters.partnerEval });
+    const categories = filters.partnerEval.split(',').map(c => c.trim()).filter(Boolean);
+    if (categories.length === 1) {
+      conditions.push({ [withPath('partnerEval')]: categories[0] });
+    } else if (categories.length > 1) {
+      conditions.push({ [withPath('partnerEval')]: { $in: categories } });
+    }
   }
 
-  // aiEval
+  // aiEval - support multi-select via comma-separated values
   if (filters.aiEval && filters.aiEval !== 'all') {
-    conditions.push({ [withPath('aiEval')]: filters.aiEval });
+    const categories = filters.aiEval.split(',').map(c => c.trim()).filter(Boolean);
+    if (categories.length === 1) {
+      conditions.push({ [withPath('aiEval')]: categories[0] });
+    } else if (categories.length > 1) {
+      conditions.push({ [withPath('aiEval')]: { $in: categories } });
+    }
   }
 
   return conditions;

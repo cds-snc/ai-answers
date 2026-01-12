@@ -26,6 +26,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `PSPC-SPAC` | Public Services and Procurement Canada | Services publics et Approvisionnement Canada |
 | `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada | Relations Couronne-Autochtones et Affaires du Nord Canada |
 | `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
+| `StatCan` | Statistics Canada | Statistique Canada |
 | `TBS-SCT` | Treasury Board of Canada Secretariat | Secrétariat du Conseil du Trésor du Canada |
 
 ---

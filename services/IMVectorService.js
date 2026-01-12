@@ -392,7 +392,7 @@ class IMVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100, language = null } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Ensure vectors are loaded
@@ -464,13 +464,15 @@ class IMVectorService {
         }
       }
 
-      // If a specific expertFeedbackRating was requested, filter to only items
-      // whose stored expertFeedbackScore equals it. This enforces the totalScore
-      // requirement at runtime (e.g. 100).
+      // If a specific expertFeedbackRating was requested, filter by comparison (default eq for compatibility).
       if (typeof expertFeedbackRating === 'number') {
         filtered = filtered.filter(m => {
           const meta = this.qaMeta.get(m.id) || {};
-          return typeof meta.expertFeedbackScore === 'number' && meta.expertFeedbackScore === expertFeedbackRating;
+          const score = typeof meta.expertFeedbackScore === 'number' ? meta.expertFeedbackScore : null;
+          if (score === null) return false;
+          if (expertFeedbackComparison === 'lt') return score < expertFeedbackRating;
+          if (expertFeedbackComparison === 'lte') return score <= expertFeedbackRating;
+          return score === expertFeedbackRating; // eq
         });
       }
 

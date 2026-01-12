@@ -69,3 +69,13 @@ variable "enable_ecs_exec" {
   type        = bool
   default     = false
 }
+
+variable "session_secret_arn" {
+  description = "The ARN of the session secret SSM parameter"
+  type        = string
+}
+
+variable "conversation_integrity_secret_arn" {
+  description = "The ARN of the conversation integrity secret SSM parameter"
+  type        = string
+}

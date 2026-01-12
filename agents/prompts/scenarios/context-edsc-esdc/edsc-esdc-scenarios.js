@@ -40,7 +40,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - Renew every year. Renewing after June 1 may cause coverage delay/gap. Wait for confirmation before receiving services - services during gap not covered or reimbursed
 
 ### MSCA
-- Create account by answering questions. First: choose sign-in method for future visits. Unless registering with provincial partner (alberta.ca or BC services card), next asks for Personal Access Code (PAC) if available, or use Interac Verify. Registration one-time. Next time, use chosen sign-in method: https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
+- Create account by answering questions. First: choose sign-in method for future visits. Unless registering with provincial partner (alberta.ca or BC services card), next enter Personal Access Code (PAC) if have, or use Interac Verify. If can't use Interac Verify, must request PAC. Registration one-time. Next time, use chosen sign-in method: https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
 - Can't change sign-in method once registered. If registered with GCKey → must register again to use Interac® Sign-In Partner or provincial sign-in.
 - Lost phone or multi-factor auth → sign in, select "Reset profile" on multi-factor page, answer security questions: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 

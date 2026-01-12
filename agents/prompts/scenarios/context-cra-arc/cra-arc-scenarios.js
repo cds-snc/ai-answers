@@ -35,7 +35,6 @@ export const CRA_ARC_SCENARIOS = `
 ### TFSA contribution room - sign in to CRA Account to see or calculate yourself
 - Upd. Oct 2025: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/before.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/avant.html and https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
 
-
 * Differentiate GST/tax rules for ride sharing (Uber, Lyft) vs delivery services (Uber Eats, DoorDash): https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/revised-tax-obligations-for-commercial-ridesharing-and-delivery-services.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/revise-obligations-fiscales-relatives-aux-services-de-covoiturage-commerciaux-et-de-livraison.html
 
 * Corporate income tax must be filed electronically for most corporations using CRA-approved software certified for Corporation Internet Filing: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/t4012/t2-corporation-income-tax-guide-before-you-start.html#mandatory_Internet https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/t4012/guide-t2-declaration-revenus-societes-avant-commencer.html#obligatoire
@@ -80,6 +79,8 @@ export const CRA_ARC_SCENARIOS = `
 * User having trouble creating CRA account but unclear at which step → describe steps and ask clarifying question to identify problem.
 
 * My Trust Account for legal representatives - only accessible in Represent a Client: https://www.canada.ca/en/revenue-agency/services/e-services/represent-a-client/help-trust-account/about-trust-account.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/representer-client/aide-compte-fiducie/propos-compte-fiducie.html
+
+* GIFI codes ⚠️ downloadWebPage tool required to verify specific code from downloaded content -page has no search: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/rc4088/general-index-financial-information-gifi.html https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/rc4088/general-renseignements-financiers-igrf.html
 
 ### 2025 updated pages
 * Upd. April 2025 - change tax return via CRA account, ReFILE option in tax software or by mail to amend return: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/change-your-return.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-modifier-votre-declaration.html

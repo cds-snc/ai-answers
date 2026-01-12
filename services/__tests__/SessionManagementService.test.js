@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatSessionService from '../ChatSessionService.js';
+import ChatSessionMetricsService from '../ChatSessionMetricsService.js';
 import { SettingsService } from '../SettingsService.js';
 import { SessionState } from '../../models/sessionState.js';
 
@@ -17,8 +18,12 @@ vi.mock('../../api/db/db-connect.js', () => ({
 vi.mock('../../models/sessionState.js', () => ({
     SessionState: {
         findOne: vi.fn(),
+        find: vi.fn(),
         findOneAndUpdate: vi.fn(),
         deleteOne: vi.fn(),
+        countDocuments: vi.fn(),
+        updateMany: vi.fn(),
+        exists: vi.fn(),
     },
 }));
 
@@ -26,7 +31,11 @@ vi.mock('../../middleware/rate-limiter.js', () => ({
     rateLimiters: {
         public: { get: vi.fn() },
         auth: { get: vi.fn() }
-    }
+    },
+    getRateLimiterConfig: vi.fn(() => ({
+        authCapacity: 100,
+        publicCapacity: 10
+    }))
 }));
 
 describe('SessionManagementService - Lambda Persistence', () => {
@@ -36,79 +45,49 @@ describe('SessionManagementService - Lambda Persistence', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         ChatSessionService.shutdown();
+        ChatSessionMetricsService.metricsBuffer.clear();
+        ChatSessionMetricsService.chatToSession.clear();
 
         // Default settings
         SettingsService.get.mockImplementation((key) => {
-            if (key === 'session.persistence') return 'mongo';
+            if (key === 'metrics.type') return 'mongo';
+            if (key === 'session.type') return 'mongo';
             if (key === 'session.managementEnabled') return 'true';
+            if (key === 'session.defaultTTLMinutes') return '10';
             return null;
         });
     });
 
-    it('should load session from DB if missing from memory during registerChat', async () => {
-        // Setup: Session exists in DB but not in memory
-        const dbSession = {
-            sessionId: mockSessionId,
-            chatIds: [mockChatId],
-            createdAt: new Date(),
-            lastSeen: new Date(),
-            ttl: 3600000,
-            isAuthenticated: false,
-            requestCount: 5,
-            errorCount: 0,
-            totalLatencyMs: 1000,
-            lastLatencyMs: 200,
-            requestTimestamps: [],
-            errorTypes: {},
-            chatMetrics: {}
-        };
-
-        // Mock the Mongoose query chain - findOne().lean()
-        SessionState.findOne.mockReturnValue({
-            lean: vi.fn().mockResolvedValue(dbSession)
-        });
-        SessionState.findOneAndUpdate.mockResolvedValue(dbSession);
-
-        // Act: Register with the existing sessionId
-        const result = await ChatSessionService.registerChat(mockSessionId);
+    it('should track session metrics when chat is registered', async () => {
+        // Act: Register a chat with a session
+        ChatSessionMetricsService.registerChat(mockSessionId, mockChatId);
 
         // Assert
-        expect(result.ok).toBe(true);
-        expect(SessionState.findOne).toHaveBeenCalledWith({ sessionId: mockSessionId });
-        // Should have loaded the chatIds from DB
-        expect(result.session.chatIds).toContain(mockChatId);
-        // Should have restored request count
-        expect(result.session.requestCount).toBe(5);
+        expect(ChatSessionMetricsService.chatToSession.get(mockChatId)).toBe(mockSessionId);
+        expect(ChatSessionMetricsService.metricsBuffer.has(mockSessionId)).toBe(true);
+        const metrics = ChatSessionMetricsService.metricsBuffer.get(mockSessionId);
+        expect(metrics.chatIds.has(mockChatId)).toBe(true);
     });
 
-    it('should create new session if not in DB', async () => {
-        // Setup: Session does not exist in DB
-        SessionState.findOne.mockReturnValue({
-            lean: vi.fn().mockResolvedValue(null)
-        });
-        SessionState.findOneAndUpdate.mockResolvedValue(null);
+    it('should check if session is active', async () => {
+        SessionState.exists.mockResolvedValue(true);
 
         // Act
-        const result = await ChatSessionService.registerChat(mockSessionId);
+        const isActive = await ChatSessionService.isSessionActive(mockSessionId);
 
         // Assert
-        expect(result.ok).toBe(true);
-        expect(SessionState.findOne).toHaveBeenCalledWith({ sessionId: mockSessionId });
-        // Should be a new session
-        expect(result.session.chatIds).toEqual([]);
+        expect(isActive).toBe(true);
+        expect(SessionState.exists).toHaveBeenCalled();
     });
 
-    it('should sync session from express-session', async () => {
-        const expressSession = {
-            user: { id: 'user1' },
-            chatIds: ['chat1']
-        };
+    it('should count active sessions from database', async () => {
+        SessionState.countDocuments.mockResolvedValue(5);
 
-        await ChatSessionService.syncSession(expressSession, mockSessionId);
+        // Act
+        const count = await ChatSessionService.getActiveSessionsCount();
 
-        const info = await ChatSessionService.getInfo(mockSessionId);
-        expect(info).toBeDefined();
-        expect(info.isAuthenticated).toBe(true);
-        expect(info.chatIds).toContain('chat1');
+        // Assert
+        expect(count).toBe(5);
+        expect(SessionState.countDocuments).toHaveBeenCalled();
     });
 });

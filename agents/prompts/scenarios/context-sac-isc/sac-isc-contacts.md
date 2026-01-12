@@ -6,12 +6,13 @@
 ## National Services
 Source: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799
 * always provide all contact details for national services as page has many listed
-- **General public enquiries and status card application status contact centre** | 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET 
+- **General contact centre**  status card verification, application status| 1-800-567-9604 | infopubs@sac-isc.gc.ca | M-F 9-6 ET 
 - **Media** | media@sac-isc.gc.ca
 - **Statistics** | nstat@sac-isc.gc.ca
 - **Library/Research** | 819-997-0811 | hqlibraryreference@sac-isc.gc.ca | M-F 8:30-4:30 ET
 - **Complaints (FN/Inuit/Métis orgs & funding)** | 1-855-504-6760 | cnap-nacc@rcaanc-cirnac.gc.ca | Fx:819-934-2352
 - **Website Feedback** | https://www.sac-isc.gc.ca/eng/1737652574327/1737652624699
+- **Verify a status document**: |Automated line to confirm registration number: 1-877-VALIDE8 (1-877-825-4338) | 
 
 ## NIHB (Non-Insured Health Benefits)
 Source: https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237

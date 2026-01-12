@@ -131,6 +131,7 @@ export class DefaultWorkflow {
       confidenceRating: confidenceRating,
       context: context,
       chatId: chatId,
+      workflow: 'DefaultWorkflow',
       pageLanguage: lang,
       responseTime: totalResponseTime,
       searchProvider: searchProvider
