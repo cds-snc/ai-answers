@@ -120,7 +120,8 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                     { $eq: ['$$ef.sentence1Score', 0] },
                     { $eq: ['$$ef.sentence2Score', 0] },
                     { $eq: ['$$ef.sentence3Score', 0] },
-                    { $eq: ['$$ef.sentence4Score', 0] }
+                    { $eq: ['$$ef.sentence4Score', 0] },
+                    { $eq: ['$$ef.totalScore', 0] }
                   ]
                 },
                 hasNeedsImprovement: {
@@ -129,7 +130,8 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] }
+                    { $eq: ['$$ef.citationScore', 20] },
+                    { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
               },
@@ -199,7 +201,8 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                     { $eq: ['$$ef.sentence1Score', 0] },
                     { $eq: ['$$ef.sentence2Score', 0] },
                     { $eq: ['$$ef.sentence3Score', 0] },
-                    { $eq: ['$$ef.sentence4Score', 0] }
+                    { $eq: ['$$ef.sentence4Score', 0] },
+                    { $eq: ['$$ef.totalScore', 0] }
                   ]
                 },
                 hasNeedsImprovement: {
@@ -208,7 +211,8 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] }
+                    { $eq: ['$$ef.citationScore', 20] },
+                    { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
               },
