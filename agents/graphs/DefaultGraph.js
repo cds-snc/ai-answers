@@ -152,6 +152,7 @@ graph.addNode('contextNode', async (state) => {
     context,
     cleanedHistory,
     usedExistingContext,
+    status: WorkflowStatus.GENERATING_ANSWER,
   };
   logGraphEvent('info', 'node:context output', state.chatId, out);
   return out;
