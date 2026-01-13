@@ -897,7 +897,7 @@ export const departments_FR = [
   {
     "name": "Recherche et développement pour la Défense Canada",
     "url": "https://www.canada.ca/fr/recherche-developpement-defense.html",
-    "abbrKey": "UNKNOWN"
+    "abbrKey": "DRDC-RDDC"
   },
   {
     "name": "Relations Couronne-Autochtones et Affaires du Nord Canada",

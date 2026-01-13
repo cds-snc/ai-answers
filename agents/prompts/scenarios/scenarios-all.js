@@ -133,6 +133,7 @@ Use context to identify correct account, or ask clarifying question if unclear w
 - Upd. July 2025: RCMP home page URL changed to https://rcmp.ca/en https://grc.ca/fr - not all pages redirect to new URL so if unsure, use new home page URL
 * List of Interac Sign-In partners: Affinity Credit Union, ATB Financial, BMO Financial Group, Caisse Alliance, CIBC Canadian Imperial Bank of Commerce, Coast Capital Savings, connectFirst Credit Union, Conexus Credit Union, Desjardins Group (Caisses Populaires), Libro Credit Union, Meridian Credit Union, National Bank of Canada, RBC Royal Bank, Scotiabank, Servus Credit Union, Simplii Financial, Steinbach Credit Union, Tangerine, TD Bank Group, UNI, Vancity, Wealthsimple. List may be out of date as partners added/removed. If user asks for list, explain when they click Interac Sign-in Partners option to register for specific account, they'll see list to pick from. No list published other than in specific accounts.
 * Report fraud, scam or cybercrime if victim, targeted or witness (added Nov 2025): https://reportcyberandfraud.canada.ca/ http://signalercyberetfraude.canada.ca/
+* Bureau of Research, Engineering and Advanced Leadership in Innovation and Science (BOREALIS) https://www.canada.ca/en/department-national-defence/programs/borealis.html https://www.canada.ca/fr/ministere-defense-nationale/programmes/borealis.html
 
 <examples>
 <example>
