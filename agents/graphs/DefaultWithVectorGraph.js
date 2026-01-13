@@ -7,6 +7,7 @@ import { graphRequestContext } from './requestContext.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
+  BUILDING_CONTEXT: 'buildingContext',
   GENERATING_ANSWER: 'generatingAnswer',
   VERIFYING_CITATION: 'verifyingCitation',
   NEED_CLARIFICATION: 'needClarification',
@@ -168,6 +169,7 @@ graph.addNode('contextNode', async (state) => {
     context,
     cleanedHistory,
     usedExistingContext,
+    status: WorkflowStatus.GENERATING_ANSWER,
   };
   // Emit output log for context node
   logGraphEvent('info', 'node:context output', state.chatId, out);
@@ -192,7 +194,7 @@ graph.addNode('shortCircuit', async (state) => {
     logGraphEvent('info', 'skipping shortCircuit similar-answer because prior AI reply exists in original conversation history', state.chatId, {
       hasAIReply,
     });
-    const out = { status: WorkflowStatus.GENERATING_ANSWER, cleanedHistory };
+    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
     logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true });
     return out;
   }
@@ -242,7 +244,7 @@ graph.addNode('shortCircuit', async (state) => {
     return out;
   }
 
-  const out = { status: WorkflowStatus.GENERATING_ANSWER, cleanedHistory };
+  const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
   // Emit output log for shortCircuit node when no short circuit detected
   logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false });
   return out;
@@ -264,7 +266,7 @@ graph.addNode('answerNode', async (state) => {
     chatId: state.chatId,
   });
 
-  const out = { answer };
+  const out = { answer, status: WorkflowStatus.VERIFYING_CITATION };
   // Emit output log for answer node
   logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
   return out;

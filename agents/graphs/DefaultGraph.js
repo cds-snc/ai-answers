@@ -7,6 +7,7 @@ import { graphRequestContext } from './requestContext.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
+  BUILDING_CONTEXT: 'buildingContext',
   GENERATING_ANSWER: 'generatingAnswer',
   VERIFYING_CITATION: 'verifyingCitation',
   NEED_CLARIFICATION: 'needClarification',
@@ -107,7 +108,7 @@ graph.addNode('translate', async (state) => {
 
   const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
 
-  const out = { translationData };
+  const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
   logGraphEvent('info', 'node:translate output', state.chatId, out);
   return out;
 });
@@ -152,6 +153,7 @@ graph.addNode('contextNode', async (state) => {
     context,
     cleanedHistory,
     usedExistingContext,
+    status: WorkflowStatus.GENERATING_ANSWER,
   };
   logGraphEvent('info', 'node:context output', state.chatId, out);
   return out;
@@ -172,7 +174,7 @@ graph.addNode('answerNode', async (state) => {
     chatId: state.chatId,
   });
 
-  const out = { answer };
+  const out = { answer, status: WorkflowStatus.VERIFYING_CITATION };
   logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
   return out;
 });
