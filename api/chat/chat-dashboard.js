@@ -391,7 +391,7 @@ async function chatDashboardHandler(req, res) {
                     {
                       $and: [
                         { $ne: [department, ''] },
-                        { $in: [department, '$$filtered'] }
+                        { $gte: [{ $indexOfArray: ['$$filtered', department] }, 0] }
                       ]
                     },
                     department,
