@@ -159,6 +159,7 @@
         "characters": "caractères",
         "searching": "Recherche d'informations pertinentes...",
         "generatingAnswer": "Génération de la réponse...",
+        "buildingContext": "Construction du contexte...",
         "verifyingCitation": "Test du lien de citation",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Évaluation de la question",

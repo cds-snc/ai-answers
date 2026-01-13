@@ -57,7 +57,7 @@ const ChatInterface = ({
       const domain = urlObj.hostname.replace(/^www\./, '');
       const pathname = urlObj.pathname;
       const filename = pathname.split('/').pop() || '';
-      
+
       return `${domain}/.../${filename}`;
     } catch (error) {
       console.error('Invalid URL:', error);
@@ -66,16 +66,16 @@ const ChatInterface = ({
   }, []);
 
   // Add formatChatDate helper function
-    const formatChatDate = useCallback((isoDateString) => {
-      if (!isoDateString) return '';
-      try {
-        // Extract YYYY-MM-DD from ISO 8601 format
-        return isoDateString.substring(0, 10);
-      } catch (error) {
-        console.error('Invalid date format:', error);
-        return isoDateString;
-      }
-    }, []);
+  const formatChatDate = useCallback((isoDateString) => {
+    if (!isoDateString) return '';
+    try {
+      // Extract YYYY-MM-DD from ISO 8601 format
+      return isoDateString.substring(0, 10);
+    } catch (error) {
+      console.error('Invalid date format:', error);
+      return isoDateString;
+    }
+  }, []);
 
   const [redactionAlert, setRedactionAlert] = useState("");
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
@@ -216,7 +216,7 @@ const ChatInterface = ({
       // Show after first AI response OR error message (not loading)
       const hasAIResponse = messages.some(m => m.sender === 'ai' && !m.error);
       const hasErrorMessage = messages.some(m => m.error && (m.sender === 'system' || m.sender === 'ai'));
-      
+
       if ((!hasAIResponse && !hasErrorMessage) || isLoading) {
         scrollBtn.classList.remove('has-scroll');
         return;
@@ -225,22 +225,22 @@ const ChatInterface = ({
       // Check if footer is visible - try input-area bottom first, then gcds-footer__sub top
       const inputArea = document.querySelector('.input-area');
       const gcdsFooter = document.querySelector('.gcds-footer__sub');
-      
+
       let isFooterVisible = false;
-      
+
       // if (inputArea) {
       //   const inputRect = inputArea.getBoundingClientRect();
       //   // Check if bottom of input area is visible - wasn't working reliably so switched to gcds-footer__sub
       //   isFooterVisible = inputRect.bottom >= 0 && inputRect.bottom <= window.innerHeight;
       // }
-      
+
       // If input area bottom not visible, check gcds-footer__sub top
       if (!isFooterVisible && gcdsFooter) {
         const footerRect = gcdsFooter.getBoundingClientRect();
         // Check if top of footer is visible
         isFooterVisible = footerRect.top >= 0 && footerRect.top <= window.innerHeight;
       }
-      
+
       if (isFooterVisible) {
         scrollBtn.classList.remove('has-scroll');
         return;
@@ -251,7 +251,7 @@ const ChatInterface = ({
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const scrollBottom = scrollTop + windowHeight;
-      
+
       if (scrollBottom < documentHeight - 50) {
         scrollBtn.classList.add('has-scroll');
       } else {
@@ -264,12 +264,12 @@ const ChatInterface = ({
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
       const viewportHeight = window.innerHeight;
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      
+
       // Same behavior for all: scroll 80% of viewport
       const targetScroll = currentScroll + (viewportHeight * 0.8);
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const scrollTo = Math.min(targetScroll, maxScroll);
-      
+
       window.scrollTo({
         top: scrollTo,
         behavior: prefersReducedMotion ? 'auto' : 'smooth'
@@ -287,7 +287,7 @@ const ChatInterface = ({
     scrollBtn.addEventListener('keydown', handleKeyDown);
     window.addEventListener('scroll', checkScrollableContent);
     window.addEventListener('resize', checkScrollableContent);
-    
+
     checkScrollableContent();
 
     return () => {
@@ -376,7 +376,7 @@ const ChatInterface = ({
       {readOnly && referringUrl && (
         <span className="referring-url-chat">
           <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
-          
+
           <a href={referringUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -394,13 +394,12 @@ const ChatInterface = ({
           >
             {message.sender === "user" ? (
               <div
-                className={`user-message-box ${
-                  message.redactedText?.includes("XXX")
+                className={`user-message-box ${message.redactedText?.includes("XXX")
                     ? "privacy-box"
                     : message.redactedText?.includes("###")
-                    ? "redacted-box"
-                    : ""
-                }`}
+                      ? "redacted-box"
+                      : ""
+                  }`}
                 {...(message.redactedText && {
                   "aria-describedby": `description-${message.id}`,
                 })}
@@ -426,8 +425,8 @@ const ChatInterface = ({
                     message.redactedText?.includes("XXX")
                       ? "privacy-message"
                       : message.redactedText?.includes("###")
-                      ? "redacted-message"
-                      : ""
+                        ? "redacted-message"
+                        : ""
                   }
                   {...(message.redactedText?.includes("###") && {
                     "aria-hidden": "true",
@@ -441,8 +440,8 @@ const ChatInterface = ({
                       message.redactedText?.includes("XXX")
                         ? "privacy-preview"
                         : message.redactedText?.includes("###")
-                        ? "redacted-preview"
-                        : ""
+                          ? "redacted-preview"
+                          : ""
                     }
                     aria-hidden="true"
                   >
@@ -461,13 +460,12 @@ const ChatInterface = ({
               <>
                 {message.error ? (
                   <div
-                    className={`error-message-box ${
-                      messages[
+                    className={`error-message-box ${messages[
                         messages.findIndex((m) => m.id === message.id) - 1
                       ]?.redactedText?.includes("XXX")
                         ? "privacy-error-box"
                         : "error-box"
-                    }`}
+                      }`}
                   >
                     <p
                       className={
@@ -599,8 +597,8 @@ const ChatInterface = ({
                       sentences={
                         message.interaction.answer.paragraphs
                           ? message.interaction.answer.paragraphs.flatMap(
-                              (paragraph) => extractSentences(paragraph)
-                            )
+                            (paragraph) => extractSentences(paragraph)
+                          )
                           : []
                       }
                       chatId={chatId}
@@ -626,11 +624,10 @@ const ChatInterface = ({
             <div key="loading" className="loading-container">
               <div className="loading-animation"></div>
               <div className="loading-text">
-                {displayStatus === "thinkingWithContext"
-                  ? `${safeT("homepage.chat.messages.thinkingWithContext")}: ${
-                      currentDepartment || ""
-                    } - ${currentTopic || ""}`
-                  : safeT(`homepage.chat.messages.${displayStatus}`)}
+                {displayStatus && (displayStatus === "thinkingWithContext"
+                  ? `${safeT("homepage.chat.messages.thinkingWithContext")}: ${currentDepartment || ""
+                  } - ${currentTopic || ""}`
+                  : safeT(`homepage.chat.messages.${displayStatus}`))}
               </div>
             </div>
             <div className="loading-hint-text">
@@ -658,15 +655,15 @@ const ChatInterface = ({
       </div>
 
       {/* Accessible Scroll Down Button */}
-      <button 
-        className="scroll-down-btn" 
+      <button
+        className="scroll-down-btn"
         aria-label={safeT('homepage.scroll.ariaLabel')}
         title={safeT('homepage.scroll.title')}
         type="button"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
@@ -683,8 +680,8 @@ const ChatInterface = ({
                         ? t("homepage.chat.input.initial").ariaLabel
                         : undefined
                       : typeof t("homepage.chat.input.followUp") === "object"
-                      ? t("homepage.chat.input.followUp").ariaLabel
-                      : undefined
+                        ? t("homepage.chat.input.followUp").ariaLabel
+                        : undefined
                   }
                 >
                   <span className="aria-hidden" aria-hidden="true">
@@ -728,11 +725,10 @@ const ChatInterface = ({
                       e.preventDefault();
                       handleSendMessage();
                     }}
-                    className={`btn-primary-send ${
-                      inputText.trim().length > 0 && charCount <= MAX_CHARS
+                    className={`btn-primary-send ${inputText.trim().length > 0 && charCount <= MAX_CHARS
                         ? "visible"
                         : ""
-                    }`}
+                      }`}
                     disabled={
                       isLoading ||
                       charCount > MAX_CHARS ||
@@ -765,24 +761,24 @@ const ChatInterface = ({
                     &nbsp;
                     {charCount > MAX_CHARS
                       ? safeT("homepage.chat.messages.characterLimit")
-                          .replace(
-                            "{count}",
-                            Math.max(1, charCount - MAX_CHARS)
-                          )
-                          .replace(
-                            "{unit}",
-                            charCount - MAX_CHARS === 1
-                              ? safeT("homepage.chat.messages.character")
-                              : safeT("homepage.chat.messages.characters")
-                          )
+                        .replace(
+                          "{count}",
+                          Math.max(1, charCount - MAX_CHARS)
+                        )
+                        .replace(
+                          "{unit}",
+                          charCount - MAX_CHARS === 1
+                            ? safeT("homepage.chat.messages.character")
+                            : safeT("homepage.chat.messages.characters")
+                        )
                       : safeT("homepage.chat.messages.characterWarning")
-                          .replace("{count}", MAX_CHARS - charCount)
-                          .replace(
-                            "{unit}",
-                            MAX_CHARS - charCount === 1
-                              ? safeT("homepage.chat.messages.character")
-                              : safeT("homepage.chat.messages.characters")
-                          )}
+                        .replace("{count}", MAX_CHARS - charCount)
+                        .replace(
+                          "{unit}",
+                          MAX_CHARS - charCount === 1
+                            ? safeT("homepage.chat.messages.character")
+                            : safeT("homepage.chat.messages.characters")
+                        )}
                   </div>
                 )}
               </div>
@@ -813,7 +809,7 @@ const ChatInterface = ({
         </div>
       )}
     </div>
-    
+
   );
 };
 

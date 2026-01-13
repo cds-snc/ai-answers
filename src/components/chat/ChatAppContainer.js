@@ -101,7 +101,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
-  const [displayStatus, setDisplayStatus] = useState('startingToThink');
+  const [displayStatus, setDisplayStatus] = useState('moderatingQuestion');
   const statusTimeoutRef = useRef(null);
   const statusQueueRef = useRef([]);
   // Add a ref to track if we're currently typing
@@ -191,14 +191,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [isLoading, displayStatus, messages, t, selectedDepartment, safeT, loadingAnnounced]);
 
+  const currentRequestId = useRef(null);
+
   const processNextStatus = useCallback(() => {
     if (statusQueueRef.current.length === 0) {
       statusTimeoutRef.current = null;
       return;
     }
 
-    const nextStatus = statusQueueRef.current.shift();
-    setDisplayStatus(nextStatus);
+    const nextStatusObj = statusQueueRef.current.shift();
+
+    // Only display status if it belongs to the current active request
+    if (nextStatusObj.requestId === currentRequestId.current) {
+      setDisplayStatus(nextStatusObj.status);
+    }
 
     statusTimeoutRef.current = setTimeout(() => {
       processNextStatus();
@@ -206,8 +212,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   }, []);
 
   const updateStatusWithTimer = useCallback((status) => {
-    // Add the new status to the queue
-    statusQueueRef.current.push(status);
+    // Add the new status to the queue with the current request ID
+    statusQueueRef.current.push({
+      status,
+      requestId: currentRequestId.current
+    });
 
     // If there's no active timeout, start processing the queue
     if (!statusTimeoutRef.current) {
@@ -394,6 +403,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
       setIsLoading(true);
 
+      // Clear any pending status updates from previous requests
+      if (statusTimeoutRef.current) {
+        clearTimeout(statusTimeoutRef.current);
+        statusTimeoutRef.current = null;
+      }
+      statusQueueRef.current = [];
+
       // Initial validation checks
       if (inputText.length > MAX_CHAR_LIMIT) {
         const errorMessageId = messageIdCounter.current++;
@@ -410,6 +426,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         return;
       }
       const userMessageId = messageIdCounter.current++;
+      currentRequestId.current = userMessageId;
       const userMessage = inputText.trim();
       setMessages(prevMessages => [
         ...prevMessages,

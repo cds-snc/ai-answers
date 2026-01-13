@@ -11,6 +11,7 @@ export const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
   SEARCHING: 'searching',
   GETTING_CONTEXT: 'gettingContext',
+  BUILDING_CONTEXT: 'buildingContext',
   GENERATING_ANSWER: 'generatingAnswer',
   COMPLETE: 'complete',
   VERIFYING_CITATION: 'verifyingCitation',
@@ -26,6 +27,7 @@ const sendStatusUpdate = (onStatusUpdate, status) => {
   const displayableStatuses = [
     WorkflowStatus.MODERATING_QUESTION,
     WorkflowStatus.SEARCHING,
+    WorkflowStatus.BUILDING_CONTEXT,
     WorkflowStatus.GENERATING_ANSWER,
     WorkflowStatus.VERIFYING_CITATION,
     WorkflowStatus.MODERATING_ANSWER,
