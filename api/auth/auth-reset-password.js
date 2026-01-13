@@ -59,24 +59,6 @@ const resetPasswordHandler = async (req, res) => {
 
     console.info(`[auth-reset-password][${os.hostname()}] Password updated successfully for: ${email}`);
 
-    // Send success notification via GC Notify
-    try {
-      const templateId = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID;
-      if (templateId) {
-        await GCNotifyService.sendEmail({
-          email: user.email,
-          templateId,
-          personalisation: {
-            name: '', // Required by many templates
-            reset_link: ''
-          }
-        });
-      }
-    } catch (notifyError) {
-      console.warn(`[auth-reset-password][${os.hostname()}] Failed to send success notification:`, notifyError);
-      // Don't fail the request if notification fails
-    }
-
     return res.status(200).json({ success: true, message: 'password reset successfully' });
   } catch (err) {
     console.error(`[auth-reset-password][${os.hostname()}] Error:`, err);
