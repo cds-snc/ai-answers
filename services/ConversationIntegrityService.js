@@ -38,9 +38,13 @@ class ConversationIntegrityService {
     serializeHistory(history) {
         if (!Array.isArray(history)) return '';
 
+        // Filter out error messages - they don't affect conversation integrity
+        // and their presence/absence shouldn't change the signature
+        const filteredHistory = history.filter(m => !m.error);
+
         const lines = [];
-        for (let i = 0; i < history.length; i++) {
-            const m = history[i];
+        for (let i = 0; i < filteredHistory.length; i++) {
+            const m = filteredHistory[i];
 
             if (m.interaction) {
                 const q = this.normalizeText(m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question);
@@ -52,8 +56,8 @@ class ConversationIntegrityService {
                 // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
                 // This handles the [User, AI(with interaction)] pattern common in client state.
                 const isUser = (m.sender === 'user' || m.role === 'user');
-                if (isUser && i + 1 < history.length) {
-                    const next = history[i + 1];
+                if (isUser && i + 1 < filteredHistory.length) {
+                    const next = filteredHistory[i + 1];
                     if (next.interaction) {
                         continue;
                     }
