@@ -190,7 +190,18 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.department', 'Department'),
       data: 'department',
-      render: (value) => escapeHtmlAttribute(value || '')
+      render: (value, type, row) => {
+        const primary = escapeHtmlAttribute(value || '');
+        const allDepts = row.allDepartments || [];
+        const otherCount = allDepts.length > 1 ? allDepts.length - 1 : 0;
+
+        if (otherCount > 0) {
+          const moreText = t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount);
+          const allDeptsStr = escapeHtmlAttribute(allDepts.join(', '));
+          return `<span title="${allDeptsStr}" style="cursor: help; border-bottom: 1px dotted #999;">${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span></span>`;
+        }
+        return primary;
+      }
     },
     {
       title: t('admin.chatDashboard.columns.pageLanguage', 'Page'),

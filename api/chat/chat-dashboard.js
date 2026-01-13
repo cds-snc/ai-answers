@@ -385,8 +385,32 @@ async function chatDashboardHandler(req, res) {
             in: {
               $cond: [
                 { $gt: [{ $size: '$$filtered' }, 0] },
-                { $arrayElemAt: ['$$filtered', 0] },
+                // If department filter is set and exists in filtered array, use it as primary
+                {
+                  $cond: [
+                    {
+                      $and: [
+                        { $ne: [department, ''] },
+                        { $gte: [{ $indexOfArray: ['$$filtered', department] }, 0] }
+                      ]
+                    },
+                    department,
+                    { $arrayElemAt: ['$$filtered', 0] }
+                  ]
+                },
                 ''
+              ]
+            }
+          }
+        },
+        allDepartments: {
+          $filter: {
+            input: '$departments',
+            as: 'dept',
+            cond: {
+              $and: [
+                { $ne: ['$$dept', null] },
+                { $ne: ['$$dept', ''] }
               ]
             }
           }
@@ -417,9 +441,41 @@ async function chatDashboardHandler(req, res) {
           }
         },
         referringUrl: { $arrayElemAt: ['$referringUrls', 0] },
-        answerType: { $arrayElemAt: ['$answerTypes', 0] },
-        partnerEval: { $arrayElemAt: ['$partnerEvals', 0] },
-        aiEval: { $arrayElemAt: ['$aiEvals', 0] },
+        answerType: {
+          $switch: {
+            branches: [
+              { case: { $in: ['not-gc', '$answerTypes'] }, then: 'not-gc' },
+              { case: { $in: ['pt-muni', '$answerTypes'] }, then: 'pt-muni' },
+              { case: { $in: ['clarifying-question', '$answerTypes'] }, then: 'clarifying-question' },
+              { case: { $in: ['normal', '$answerTypes'] }, then: 'normal' }
+            ],
+            default: null
+          }
+        },
+        partnerEval: {
+          $switch: {
+            branches: [
+              { case: { $in: ['harmful', '$partnerEvals'] }, then: 'harmful' },
+              { case: { $in: ['hasCitationError', '$partnerEvals'] }, then: 'hasCitationError' },
+              { case: { $in: ['hasError', '$partnerEvals'] }, then: 'hasError' },
+              { case: { $in: ['needsImprovement', '$partnerEvals'] }, then: 'needsImprovement' },
+              { case: { $in: ['correct', '$partnerEvals'] }, then: 'correct' }
+            ],
+            default: null
+          }
+        },
+        aiEval: {
+          $switch: {
+            branches: [
+              { case: { $in: ['harmful', '$aiEvals'] }, then: 'harmful' },
+              { case: { $in: ['hasCitationError', '$aiEvals'] }, then: 'hasCitationError' },
+              { case: { $in: ['hasError', '$aiEvals'] }, then: 'hasError' },
+              { case: { $in: ['needsImprovement', '$aiEvals'] }, then: 'needsImprovement' },
+              { case: { $in: ['correct', '$aiEvals'] }, then: 'correct' }
+            ],
+            default: null
+          }
+        },
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
@@ -482,6 +538,7 @@ async function chatDashboardHandler(req, res) {
       _id: chat._id ? String(chat._id) : '',
       chatId: chat.chatId || '',
       department: chat.department || '',
+      allDepartments: Array.isArray(chat.allDepartments) ? chat.allDepartments : [],
       expertEmail: chat.expertEmail || '',
       creatorEmail: chat.creatorEmail || '',
       date: chat.createdAt ? chat.createdAt.toISOString() : null,
