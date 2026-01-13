@@ -15,8 +15,10 @@ const signupHandler = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -34,7 +36,7 @@ const signupHandler = async (req, res) => {
 
     // Create new user (automatically active if first user)
     const user = new User({
-      email,
+      email: normalizedEmail,
       password,
       role: isFirstUser ? "admin" : "partner",
       active: isFirstUser, // First user is automatically active
