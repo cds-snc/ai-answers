@@ -417,9 +417,41 @@ async function chatDashboardHandler(req, res) {
           }
         },
         referringUrl: { $arrayElemAt: ['$referringUrls', 0] },
-        answerType: { $arrayElemAt: ['$answerTypes', 0] },
-        partnerEval: { $arrayElemAt: ['$partnerEvals', 0] },
-        aiEval: { $arrayElemAt: ['$aiEvals', 0] },
+        answerType: {
+          $switch: {
+            branches: [
+              { case: { $in: ['not-gc', '$answerTypes'] }, then: 'not-gc' },
+              { case: { $in: ['pt-muni', '$answerTypes'] }, then: 'pt-muni' },
+              { case: { $in: ['clarifying-question', '$answerTypes'] }, then: 'clarifying-question' },
+              { case: { $in: ['normal', '$answerTypes'] }, then: 'normal' }
+            ],
+            default: null
+          }
+        },
+        partnerEval: {
+          $switch: {
+            branches: [
+              { case: { $in: ['harmful', '$partnerEvals'] }, then: 'harmful' },
+              { case: { $in: ['hasCitationError', '$partnerEvals'] }, then: 'hasCitationError' },
+              { case: { $in: ['hasError', '$partnerEvals'] }, then: 'hasError' },
+              { case: { $in: ['needsImprovement', '$partnerEvals'] }, then: 'needsImprovement' },
+              { case: { $in: ['correct', '$partnerEvals'] }, then: 'correct' }
+            ],
+            default: null
+          }
+        },
+        aiEval: {
+          $switch: {
+            branches: [
+              { case: { $in: ['harmful', '$aiEvals'] }, then: 'harmful' },
+              { case: { $in: ['hasCitationError', '$aiEvals'] }, then: 'hasCitationError' },
+              { case: { $in: ['hasError', '$aiEvals'] }, then: 'hasError' },
+              { case: { $in: ['needsImprovement', '$aiEvals'] }, then: 'needsImprovement' },
+              { case: { $in: ['correct', '$aiEvals'] }, then: 'correct' }
+            ],
+            default: null
+          }
+        },
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
