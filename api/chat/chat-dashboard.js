@@ -385,8 +385,32 @@ async function chatDashboardHandler(req, res) {
             in: {
               $cond: [
                 { $gt: [{ $size: '$$filtered' }, 0] },
-                { $arrayElemAt: ['$$filtered', 0] },
+                // If department filter is set and exists in filtered array, use it as primary
+                {
+                  $cond: [
+                    {
+                      $and: [
+                        { $ne: [department, ''] },
+                        { $in: [department, '$$filtered'] }
+                      ]
+                    },
+                    department,
+                    { $arrayElemAt: ['$$filtered', 0] }
+                  ]
+                },
                 ''
+              ]
+            }
+          }
+        },
+        allDepartments: {
+          $filter: {
+            input: '$departments',
+            as: 'dept',
+            cond: {
+              $and: [
+                { $ne: ['$$dept', null] },
+                { $ne: ['$$dept', ''] }
               ]
             }
           }
@@ -514,6 +538,7 @@ async function chatDashboardHandler(req, res) {
       _id: chat._id ? String(chat._id) : '',
       chatId: chat.chatId || '',
       department: chat.department || '',
+      allDepartments: Array.isArray(chat.allDepartments) ? chat.allDepartments : [],
       expertEmail: chat.expertEmail || '',
       creatorEmail: chat.creatorEmail || '',
       date: chat.createdAt ? chat.createdAt.toISOString() : null,

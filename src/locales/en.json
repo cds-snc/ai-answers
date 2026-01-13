@@ -626,7 +626,8 @@
           "hasCitationError": "citation error",
           "harmful": "harmful"
         }
-      }
+      },
+      "departmentMore": "+{count} more"
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",

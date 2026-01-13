@@ -664,7 +664,8 @@
           "hasCitationError": "erreur de citation",
           "harmful": "nuisible"
         }
-      }
+      },
+      "departmentMore": "+{count} de plus"
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
