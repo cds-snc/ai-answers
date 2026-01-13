@@ -197,7 +197,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
         if (otherCount > 0) {
           const moreText = t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount);
-          return `${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span>`;
+          const allDeptsStr = escapeHtmlAttribute(allDepts.join(', '));
+          return `<span title="${allDeptsStr}" style="cursor: help; border-bottom: 1px dotted #999;">${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span></span>`;
         }
         return primary;
       }
