@@ -69,6 +69,11 @@ export const departments_FR = [
     "url": "https://www.canada.ca/fr/agence-consommation-matiere-financiere.html",
     "abbrKey": "FCAC-ACFC"
   },
+      {
+    "name": "Agence de l’investissement pour la défense",
+    "url": "https://www.canada.ca/fr/agence-investissement-defense.html",
+    "abbrKey": "DIA-AID"
+  },
   {
     "name": "Agence de logement des Forces canadiennes",
     "url": "https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/logements-militaires.html",

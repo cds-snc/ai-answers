@@ -464,10 +464,15 @@ export const departments_EN = [
     "url": "https://www.dcc-cdc.gc.ca/",
     "abbrKey": "DCC-CDC"
   },
+    {
+    "name": "Defence Investment Agency",
+    "url": "https://www.canada.ca/en/defence-investment-agency.html",
+    "abbrKey": "DIA-AID"
+  },
   {
     "name": "Defence Research and Development Canada",
     "url": "https://www.canada.ca/en/defence-research-development.html",
-    "abbrKey": "UNKNOWN"
+    "abbrKey": "DRDC-RDDC"
   },
   {
     "name": "Democratic Institutions",
