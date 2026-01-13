@@ -147,7 +147,7 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                         { case: { $eq: ["$$hasNeedsImprovement", true] }, then: 'needsImprovement' },
                         { case: { $eq: ["$$hasPerfectTotalScore", true] }, then: 'correct' }
                       ],
-                      default: 'correct'
+                      default: null
                     }
                   },
                   // When there is no score data, leave the value as null
@@ -228,7 +228,7 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                         { case: { $eq: ["$$hasNeedsImprovement", true] }, then: 'needsImprovement' },
                         { case: { $eq: ["$$hasPerfectTotalScore", true] }, then: 'correct' }
                       ],
-                      default: 'correct'
+                      default: null
                     }
                   },
                   else: null
