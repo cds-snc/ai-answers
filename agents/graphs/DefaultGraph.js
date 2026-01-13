@@ -173,7 +173,7 @@ graph.addNode('answerNode', async (state) => {
     chatId: state.chatId,
   });
 
-  const out = { answer };
+  const out = { answer, status: WorkflowStatus.GENERATING_ANSWER };
   logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
   return out;
 });
