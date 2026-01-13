@@ -987,7 +987,7 @@ export const departments_EN = [
   {
     "name": "Service Canada",
     "url": "https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada.html",
-    "abbrKey": "ServCan"
+    "abbrKey": "EDSC-ESDC"
   },
   {
     "name": "Shared Services Canada",

@@ -969,6 +969,11 @@ export const departments_FR = [
     "url": "https://www.securitepublique.gc.ca/index-fr.aspx",
     "abbrKey": "PS-SP"
   },
+    {
+    "name": "Service Canada",
+    "url": "https://www.canada.ca/fr/emploi-developpement-social/ministere/portefeuille/service-canada.html",
+    "abbrKey": "EDSC-ESDC"
+  },
   {
     "name": "Service canadien d'appui aux tribunaux administratifs",
     "url": "https://www.canada.ca/fr/service-canadien-appui-tribunaux-administratifs.html",
