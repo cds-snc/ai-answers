@@ -157,21 +157,6 @@ class DataStoreService {
     }
   }
 
-  static async backfillUserSecrets() {
-    try {
-      const response = await AuthService.fetch(getApiUrl('db-users-secrets'), {
-        method: 'POST'
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to backfill user secrets');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error backfilling user secrets:', error);
-      throw error;
-    }
-  }
 
 
   static async getTableCounts() {
