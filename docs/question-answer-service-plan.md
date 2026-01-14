@@ -12,7 +12,7 @@ Add a server-side QuestionAnswerService that retrieves similar questions with ex
 ## Data Sources
 - Vector services: DocDBVectorService and IMVectorService via initVectorService().matchQuestions()
   - Both already return items with expertFeedbackId and propagate expertFeedbackRating (client sets it); ensure we filter to items with expertFeedbackId in QuestionAnswerService.
-- Mongo models: Interaction (links to Answer and ExpertFeedback), Answer (content + citation), ExpertFeedback (sentence-level fields).
+- Database models: Interaction (links to Answer and ExpertFeedback), Answer (content + citation), ExpertFeedback (sentence-level fields).
 
 ## Flow
 1) QuestionAnswerService.getSimilarQuestionsContext(question, opts)

@@ -905,14 +905,14 @@
       "store": {
         "options": {
           "memory": "En mémoire (volatile)",
-          "mongo": "MongoDB (persistant/cache)"
+          "mongo": "DocumentDB (persistant/cache)"
         }
       },
       "persistence": {
         "label": "Persistance des sessions",
         "options": {
           "memory": "Mémoire (en processus)",
-          "mongo": "MongoDB (persistant/cache)"
+          "mongo": "DocumentDB (persistant/cache)"
         }
       }
     },

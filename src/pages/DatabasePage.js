@@ -873,8 +873,8 @@ const DatabasePage = ({ lang }) => {
         <GcdsHeading tag="h2">{lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index'}</GcdsHeading>
         <GcdsText>
           {lang === 'en'
-            ? 'Remove all database indexes. This can be useful to fix database performance issues. Indexes will be automatically rebuilt by MongoDB as needed.'
-            : 'Supprimer tous les index de la base de données. Cela peut être utile pour résoudre les problèmes de performance de la base de données. Les index seront reconstruits automatiquement par MongoDB selon les besoins.'}
+            ? 'Remove all database indexes. This can be useful to fix database performance issues. Indexes will be automatically rebuilt by the database as needed.'
+            : 'Supprimer tous les index de la base de données. Cela peut être utile pour résoudre les problèmes de performance de la base de données. Les index seront reconstruits automatiquement par la base de données selon les besoins.'}
         </GcdsText>
         <GcdsButton
           onClick={handleDropIndexes}

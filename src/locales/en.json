@@ -867,14 +867,14 @@
       "store": {
         "options": {
           "memory": "Memory (in-process)",
-          "mongo": "MongoDB (persistent/cache)"
+          "mongo": "DocumentDB (persistent/cache)"
         }
       },
       "persistence": {
         "label": "Session persistence",
         "options": {
           "memory": "Memory (in-process)",
-          "mongo": "MongoDB (persistent/cache)"
+          "mongo": "DocumentDB (persistent/cache)"
         }
       }
     },
