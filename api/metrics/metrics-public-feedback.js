@@ -4,7 +4,11 @@ import { withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../utils/chat-filters.js';
 import { parseRequestFilters } from './metrics-common.js';
 
-function buildPublicFeedbackPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
+/**
+ * Builds the shared base pipeline stages that all public feedback queries use.
+ * This includes lookups for interactions, contexts, publicfeedbacks, and all cross-filters.
+ */
+function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
     const stages = [
         { $match: dateFilter },
         {
@@ -116,46 +120,60 @@ function buildPublicFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         );
     }
 
-    // $facet for aggregating totals and reason breakdowns
+    return stages;
+}
+
+/**
+ * Builds the totals aggregation pipeline (yes/no counts by language).
+ */
+function buildTotalsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
+    const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
     stages.push({
-        $facet: {
-            // Totals aggregation
-            totals: [
-                {
-                    $group: {
-                        _id: null,
-                        totalWithFeedback: { $sum: 1 },
-                        yesCount: { $sum: { $cond: [{ $eq: ['$publicFeedback.feedback', 'yes'] }, 1, 0] } },
-                        noCount: { $sum: { $cond: [{ $eq: ['$publicFeedback.feedback', 'no'] }, 1, 0] } },
-                        yesCountEn: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'yes'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
-                        yesCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'yes'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
-                        noCountEn: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'no'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
-                        noCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'no'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } }
-                    }
-                }
-            ],
-            // Reason breakdown for "yes" feedback
-            yesReasons: [
-                { $match: { 'publicFeedback.feedback': 'yes' } },
-                {
-                    $group: {
-                        _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
-                        count: { $sum: 1 }
-                    }
-                }
-            ],
-            // Reason breakdown for "no" feedback
-            noReasons: [
-                { $match: { 'publicFeedback.feedback': 'no' } },
-                {
-                    $group: {
-                        _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
-                        count: { $sum: 1 }
-                    }
-                }
-            ]
+        $group: {
+            _id: null,
+            totalWithFeedback: { $sum: 1 },
+            yesCount: { $sum: { $cond: [{ $eq: ['$publicFeedback.feedback', 'yes'] }, 1, 0] } },
+            noCount: { $sum: { $cond: [{ $eq: ['$publicFeedback.feedback', 'no'] }, 1, 0] } },
+            yesCountEn: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'yes'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
+            yesCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'yes'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
+            noCountEn: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'no'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
+            noCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$publicFeedback.feedback', 'no'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } }
         }
     });
+    return stages;
+}
+
+/**
+ * Builds the "yes" reasons breakdown pipeline.
+ */
+function buildYesReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
+    const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
+    stages.push(
+        { $match: { 'publicFeedback.feedback': 'yes' } },
+        {
+            $group: {
+                _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
+                count: { $sum: 1 }
+            }
+        }
+    );
+    return stages;
+}
+
+/**
+ * Builds the "no" reasons breakdown pipeline.
+ */
+function buildNoReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
+    const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
+    stages.push(
+        { $match: { 'publicFeedback.feedback': 'no' } },
+        {
+            $group: {
+                _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
+                count: { $sum: 1 }
+            }
+        }
+    );
     return stages;
 }
 
@@ -166,19 +184,22 @@ async function getPublicFeedbackMetrics(req, res) {
         const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await Chat.aggregate(buildPublicFeedbackPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter));
-        const facetResult = result[0] || {};
-        const pf = facetResult.totals?.[0] || {};
-        const yesReasonsArr = facetResult.yesReasons || [];
-        const noReasonsArr = facetResult.noReasons || [];
+        // Run three queries in parallel (no $facet needed)
+        const [totalsResult, yesReasonsResult, noReasonsResult] = await Promise.all([
+            Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)),
+            Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)),
+            Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter))
+        ]);
+
+        const pf = totalsResult[0] || {};
 
         // Convert reason arrays to objects { reason: count }
         const yesReasons = {};
-        yesReasonsArr.forEach(r => {
+        yesReasonsResult.forEach(r => {
             yesReasons[r._id] = r.count;
         });
         const noReasons = {};
-        noReasonsArr.forEach(r => {
+        noReasonsResult.forEach(r => {
             noReasons[r._id] = r.count;
         });
 
