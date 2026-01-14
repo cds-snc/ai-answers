@@ -103,7 +103,7 @@ test.describe('Admin Metrics Dashboard', () => {
 
         // Wait for ANY response from metrics endpoint (not just 200)
         const metricsPromise = page.waitForResponse(response =>
-            response.url().includes('/api/db/db-metrics-dashboard'),
+            response.url().includes('/api/metrics/metrics-usage'),
             { timeout: 30000 }
         );
 
