@@ -36,6 +36,7 @@ const DatabasePage = ({ lang }) => {
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
   const [isCheckingIndexStatus, setIsCheckingIndexStatus] = useState(false);
   const [indexStatus, setIndexStatus] = useState(null);
+  const [creationDetails, setCreationDetails] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -528,11 +529,13 @@ const DatabasePage = ({ lang }) => {
       const successCount = result.results.success ? result.results.success.length : 0;
       const failCount = result.results.failed ? result.results.failed.length : 0;
 
+      setCreationDetails(result.results);
       setMessage(lang === 'en'
         ? `Indexes created/rebuilt successfully. Success: ${successCount}, Failed: ${failCount}`
         : `Index créés/reconstruits avec succès. Succès: ${successCount}, Échec: ${failCount}`
       );
     } catch (error) {
+      setCreationDetails(null);
       setMessage(lang === 'en'
         ? `Create indexes failed: ${error.message}`
         : `Échec de la création des index: ${error.message}`
@@ -818,6 +821,21 @@ const DatabasePage = ({ lang }) => {
             ? (lang === 'en' ? 'Creating Indexes...' : 'Création des index...')
             : (lang === 'en' ? 'Rebuild All Indexes' : 'Reconstruire tous les index')}
         </GcdsButton>
+        {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
+          <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
+            <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
+              {lang === 'en' ? 'Index creation failed for the following collections:' : 'La création d\'index a échoué pour les collections suivantes :'}
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
+              {creationDetails.failed.map((f, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>
+                  <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
+                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>(Code {f.code})</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
 
@@ -877,7 +895,7 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.allComplete ? 'green' : 'orange' }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.anyBuilding ? 'blue' : indexStatus.allComplete ? 'green' : 'orange' }}>
               {indexStatus.message}
             </div>
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
@@ -895,8 +913,19 @@ const DatabasePage = ({ lang }) => {
                     <td style={{ paddingRight: 16 }}>{col.collection}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
-                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'error' ? 'red' : 'orange' }}>
-                      {col.status}{col.error ? `: ${col.error}` : ''}
+                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'building' ? 'blue' : col.status === 'error' ? 'red' : 'orange' }}>
+                      {col.status}
+                      {col.status === 'building' && col.building?.length > 0 && (
+                        <span style={{ marginLeft: 8, fontSize: 11 }}>
+                          ({col.building.map(b => b.progress != null ? `${b.progress}%` : 'in progress').join(', ')})
+                        </span>
+                      )}
+                      {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
+                        <span style={{ marginLeft: 8, fontSize: 11, fontStyle: 'italic' }}>
+                          Missing: {col.missingIndexes.join('; ')}
+                        </span>
+                      )}
+                      {col.error ? `: ${col.error}` : ''}
                     </td>
                   </tr>
                 ))}
