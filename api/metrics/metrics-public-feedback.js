@@ -196,12 +196,10 @@ async function getPublicFeedbackMetrics(req, res) {
         const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        // Run three queries in parallel (no $facet needed)
-        const [totalsResult, yesReasonsResult, noReasonsResult] = await Promise.all([
-            Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true),
-            Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true),
-            Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true)
-        ]);
+        // Run queries sequentially to reduce peak memory usage on DocumentDB
+        const totalsResult = await Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
+        const yesReasonsResult = await Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
+        const noReasonsResult = await Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
 
         const pf = totalsResult[0] || {};
 
