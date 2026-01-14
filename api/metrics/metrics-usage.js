@@ -125,7 +125,7 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             { $match: partnerEvalFilter },
-            { $unset: ['ef_filter', 'category'] } // Cleanup temporary fields
+            { $project: { ef_filter: 0, category: 0 } } // Cleanup temporary fields
         );
     }
 
@@ -154,7 +154,7 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             { $match: aiEvalFilter },
-            { $unset: ['ae_filter_doc', 'ae_ef_filter', 'category'] } // Cleanup
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0 } } // Cleanup
         );
     }
 

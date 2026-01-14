@@ -112,7 +112,7 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             { $match: answerTypeFilter },
-            { $unset: ['ans'] }
+            { $project: { ans: 0 } }
         );
     }
 
@@ -133,7 +133,7 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             { $match: partnerEvalFilter },
-            { $unset: ['ef', 'category'] }
+            { $project: { ef: 0, category: 0 } }
         );
     }
 
@@ -162,7 +162,7 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             { $match: aiEvalFilter },
-            { $unset: ['ae', 'ae_ef', 'category'] }
+            { $project: { ae: 0, ae_ef: 0, category: 0 } }
         );
     }
 

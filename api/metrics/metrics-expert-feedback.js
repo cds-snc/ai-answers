@@ -78,7 +78,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 }
             },
             { $match: answerTypeFilter },
-            { $unset: ['ans_filter', 'answerType'] }
+            { $project: { ans_filter: 0, answerType: 0 } }
         );
     }
 
@@ -120,7 +120,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         }
         stages.push(
             { $match: remappedFilter },
-            { $unset: ['ae_filter_doc', 'ae_ef_filter', 'aiCategory'] }
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0 } }
         );
     }
 

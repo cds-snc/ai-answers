@@ -105,7 +105,7 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
                 }
             },
             { $match: answerTypeFilter },
-            { $unset: ['ans_filter', 'answerType'] }
+            { $project: { ans_filter: 0, answerType: 0 } }
         );
     }
 
@@ -134,7 +134,7 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
         }
         stages.push(
             { $match: remappedFilter },
-            { $unset: ['pe_filter', 'partnerCategory'] }
+            { $project: { pe_filter: 0, partnerCategory: 0 } }
         );
     }
 

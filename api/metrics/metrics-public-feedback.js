@@ -78,7 +78,7 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
                 }
             },
             { $match: answerTypeFilter },
-            { $unset: ['ans_filter', 'answerType'] }
+            { $project: { ans_filter: 0, answerType: 0 } }
         );
     }
 
@@ -99,7 +99,7 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
                 }
             },
             { $match: partnerEvalFilter },
-            { $unset: ['pe_filter', 'category'] }
+            { $project: { pe_filter: 0, category: 0 } }
         );
     }
 
@@ -128,7 +128,7 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
                 }
             },
             { $match: aiEvalFilter },
-            { $unset: ['ae_filter_doc', 'ae_ef_filter', 'category'] }
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0 } }
         );
     }
 
