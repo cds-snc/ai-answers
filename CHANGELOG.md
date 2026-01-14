@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.82.0](https://github.com/cds-snc/ai-answers/compare/v1.81.0...v1.82.0) (2026-01-14)
+
+
+### Features
+
+* Add an endpoint and MongoDB aggregation pipeline to calculate and retrieve AI evaluation metrics with various filtering options. ([63da8fc](https://github.com/cds-snc/ai-answers/commit/63da8fc54e8f499f2dafe0a4d2fcf0c6603b296f))
+* add API endpoint for calculating and retrieving AI evaluation metrics. ([2c2eac0](https://github.com/cds-snc/ai-answers/commit/2c2eac09304987e9816cb2c06bde6e881beb5cff))
+* add API endpoint for public feedback metrics, including totals and reason breakdowns with comprehensive filtering. ([1d85557](https://github.com/cds-snc/ai-answers/commit/1d855572e1627047d6669e34b325728af11667e5))
+* add API endpoint to retrieve public feedback metrics, providing totals and reasons for 'yes' and 'no' feedback with filtering capabilities. ([7ba058c](https://github.com/cds-snc/ai-answers/commit/7ba058ca97c7638b42055247bd5b0811df38fd0d))
+* Add new API endpoints for expert feedback, public feedback, AI evaluation, and department metrics. ([929cfba](https://github.com/cds-snc/ai-answers/commit/929cfbaeddef703ca0113bf8609c14167efd1762))
+* add new API endpoints for public feedback, sessions, usage, AI eval, departments, and expert feedback metrics. ([4763b1f](https://github.com/cds-snc/ai-answers/commit/4763b1f525e7f7122f63c39cc6dd6affe19489dd))
+* add new API endpoints for various metrics including AI evaluation, departments, expert feedback, public feedback, sessions, and usage. ([b306aab](https://github.com/cds-snc/ai-answers/commit/b306aabbd895f9b44a4cf6276c3f4906b8f91f3a))
+* Implement a new metrics module with shared request parsing and MongoDB aggregation pipeline stages for various metrics. ([405fc16](https://github.com/cds-snc/ai-answers/commit/405fc16ff2963b0c7e3da1e45435dae90da48e42))
+* refactor of metrics now runs each view as separate query and loads in data as it comes in. ([9a9e063](https://github.com/cds-snc/ai-answers/commit/9a9e063deaed7578c8d7f03b9def1132b6f97b4b))
+
+
+### Bug Fixes
+
+* refactor of user and additonal notification panel feature of ina… ([4a231cb](https://github.com/cds-snc/ai-answers/commit/4a231cbcdfcd0f87d7cd751b5a283d66a3036eeb))
+* refactor of user and additonal notification panel feature of inactive and new users. ([3703742](https://github.com/cds-snc/ai-answers/commit/3703742bcb1c841bd3cb37ec4a2029a6efb6115e))
+* sanitize user input in user-users API to prevent NoSQL injection ([48398a3](https://github.com/cds-snc/ai-answers/commit/48398a3a9792278579389f4775b8f4c4c5b42eee))
+
+
+### Documentation
+
+* add evaluation service refactor plan and architecture overview ([2815809](https://github.com/cds-snc/ai-answers/commit/2815809e497db151a897fb0dc66810092ef659c3))
+* add evaluation service refactor plan and architecture overview ([cec14e4](https://github.com/cds-snc/ai-answers/commit/cec14e45e0a869126e4b1e65056fe0c542f8f4cd))
+
 ## [1.81.0](https://github.com/cds-snc/ai-answers/compare/v1.80.0...v1.81.0) (2026-01-13)
 
 
