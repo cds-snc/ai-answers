@@ -18,12 +18,12 @@ async function usersHandler(req, res) {
         case 'PATCH':
             try {
                 const { userId, active, role } = req.body;
-                if (!userId) {
-                    return res.status(400).json({ message: 'User ID is required' });
+                if (!userId || typeof userId !== 'string') {
+                    return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
                 const updateFields = {};
                 if (typeof active === 'boolean') updateFields.active = active;
-                if (role) updateFields.role = role;
+                if (role && typeof role === 'string') updateFields.role = role;
                 if (Object.keys(updateFields).length === 0) {
                     return res.status(400).json({ message: 'No valid fields to update' });
                 }
@@ -48,8 +48,8 @@ async function usersHandler(req, res) {
         case 'DELETE':
             try {
                 const { userId } = req.body;
-                if (!userId) {
-                    return res.status(400).json({ message: 'User ID is required' });
+                if (!userId || typeof userId !== 'string') {
+                    return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
                 await dbConnect();
                 const user = await User.findByIdAndDelete(userId);
