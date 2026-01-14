@@ -46,7 +46,19 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
         },
         // Apply department filter after context lookup
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
-        { $match: { publicFeedback: { $ne: null } } }
+        { $match: { publicFeedback: { $ne: null } } },
+        // Project only fields needed for aggregation (optimization)
+        {
+            $project: {
+                pageLanguage: 1,
+                department: 1,
+                publicFeedback: 1,
+                // Keep IDs for potential cross-filter lookups
+                answerId: '$interactions.answer',
+                expertFeedbackId: '$interactions.expertFeedback',
+                autoEvalId: '$interactions.autoEval'
+            }
+        }
     ];
 
     // 1. Answer Type Filter
@@ -55,7 +67,7 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
             {
                 $lookup: {
                     from: 'answers',
-                    localField: 'interactions.answer',
+                    localField: 'answerId',
                     foreignField: '_id',
                     as: 'ans_filter'
                 }
@@ -76,7 +88,7 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
             {
                 $lookup: {
                     from: 'expertfeedbacks',
-                    localField: 'interactions.expertFeedback',
+                    localField: 'expertFeedbackId',
                     foreignField: '_id',
                     as: 'pe_filter'
                 }
@@ -97,7 +109,7 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
             {
                 $lookup: {
                     from: 'evals',
-                    localField: 'interactions.autoEval',
+                    localField: 'autoEvalId',
                     foreignField: '_id',
                     as: 'ae_filter_doc'
                 }

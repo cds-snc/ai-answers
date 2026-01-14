@@ -61,6 +61,17 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
             $addFields: {
                 category: getAiEvalAggregationExpression('$autoEval.expertFeedback')
             }
+        },
+        // Project only fields needed for aggregation (optimization)
+        {
+            $project: {
+                pageLanguage: 1,
+                department: 1,
+                category: 1,
+                // Keep IDs for potential cross-filter lookups
+                answerId: '$interactions.answer',
+                expertFeedbackId: '$interactions.expertFeedback'
+            }
         }
     ];
 
@@ -70,7 +81,7 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
             {
                 $lookup: {
                     from: 'answers',
-                    localField: 'interactions.answer',
+                    localField: 'answerId',
                     foreignField: '_id',
                     as: 'ans_filter'
                 }
@@ -91,7 +102,7 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
             {
                 $lookup: {
                     from: 'expertfeedbacks',
-                    localField: 'interactions.expertFeedback',
+                    localField: 'expertFeedbackId',
                     foreignField: '_id',
                     as: 'pe_filter'
                 }

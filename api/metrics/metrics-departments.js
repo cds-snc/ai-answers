@@ -46,6 +46,17 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
                 hasExpertFeedback: { $cond: [{ $ne: ['$expertFeedback', null] }, 1, 0] },
                 category: getPartnerEvalAggregationExpression('$expertFeedback')
             }
+        },
+        // Project only fields needed for aggregation (optimization)
+        {
+            $project: {
+                department: 1,
+                hasExpertFeedback: 1,
+                category: 1,
+                // Keep IDs for potential cross-filter lookups
+                answerId: '$interactions.answer',
+                autoEvalId: '$interactions.autoEval'
+            }
         }
     ];
 
@@ -57,7 +68,7 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
             {
                 $lookup: {
                     from: 'answers',
-                    localField: 'interactions.answer',
+                    localField: 'answerId',
                     foreignField: '_id',
                     as: 'ans_filter'
                 }
@@ -84,7 +95,7 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
             {
                 $lookup: {
                     from: 'evals',
-                    localField: 'interactions.autoEval',
+                    localField: 'autoEvalId',
                     foreignField: '_id',
                     as: 'ae_filter_doc'
                 }
