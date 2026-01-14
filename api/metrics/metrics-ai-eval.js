@@ -153,7 +153,7 @@ async function getAiEvalMetrics(req, res) {
         const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await Chat.aggregate(buildAiEvalPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter));
+        const result = await Chat.aggregate(buildAiEvalPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
         const aiStats = result[0] || {};
 
         const metrics = {

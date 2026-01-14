@@ -199,7 +199,7 @@ async function getUsageMetrics(req, res) {
 
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await Chat.aggregate(buildOverallStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter));
+        const result = await Chat.aggregate(buildOverallStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
         const overall = result[0] || {};
 
         const metrics = {

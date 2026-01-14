@@ -186,9 +186,9 @@ async function getPublicFeedbackMetrics(req, res) {
 
         // Run three queries in parallel (no $facet needed)
         const [totalsResult, yesReasonsResult, noReasonsResult] = await Promise.all([
-            Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)),
-            Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)),
-            Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter))
+            Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true),
+            Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true),
+            Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true)
         ]);
 
         const pf = totalsResult[0] || {};

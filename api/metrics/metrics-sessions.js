@@ -205,7 +205,7 @@ async function getSessionMetrics(req, res) {
         const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await Chat.aggregate(buildSessionStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter));
+        const result = await Chat.aggregate(buildSessionStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
         const session = result[0] || {};
 
         const metrics = {
