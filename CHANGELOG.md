@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.81.0](https://github.com/cds-snc/ai-answers/compare/v1.80.0...v1.81.0) (2026-01-13)
+
+
+### Features
+
+* **dashboard:** add tooltip to show all departments on hover ([9574728](https://github.com/cds-snc/ai-answers/commit/9574728d544de5f2cf305291a08fa876cbfb7fd7))
+* **dashboard:** display all departments with primary and count indicator ([5ee3bef](https://github.com/cds-snc/ai-answers/commit/5ee3bef9b8d48efc652997315555688124c83cc4))
+
+
+### Bug Fixes
+
+* **admin:** solve export memory limit and fix department/answerType f… ([81e0cdc](https://github.com/cds-snc/ai-answers/commit/81e0cdca75ff93edb5584ca5af09026ac58fdece))
+* **admin:** solve export memory limit and fix department/answerType filter paths ([697190e](https://github.com/cds-snc/ai-answers/commit/697190e9bd82ccc0aca8636f13642f9e236ef506))
+* **api:** add missing totalScore checks to dashboard aggregation expr… ([c77add1](https://github.com/cds-snc/ai-answers/commit/c77add1be40ad7149f051a56dde453536f4931c0))
+* **api:** add missing totalScore checks to dashboard aggregation expressions ([76b04ed](https://github.com/cds-snc/ai-answers/commit/76b04edf3ad9712c6cc2ffb329c0d072e0a4133f))
+* **api:** implement eval and answerType rollup logic with worst-case priority ([6d23876](https://github.com/cds-snc/ai-answers/commit/6d23876efe2de6c26521c1538a51a6dd10751652))
+* **api:** stricter eval checks, default to null instead of correct ([48a5ac9](https://github.com/cds-snc/ai-answers/commit/48a5ac9976c38426f2da141538265dd3845c705c))
+* **api:** use indexOfArray instead of  for DocumentDB compatibility ([70bfcfb](https://github.com/cds-snc/ai-answers/commit/70bfcfba1150ea4fb24e1709b3b4fdfddbc17bc0))
+* **auth:** normalize email in signup and remove duplicate reset email ([b29c06f](https://github.com/cds-snc/ai-answers/commit/b29c06fca3fe7370bfaed0a9cf0a609b0d3e6f5c))
+* **auth:** normalize email in signup and remove duplicate reset email ([3600578](https://github.com/cds-snc/ai-answers/commit/3600578e44499629165c5fadff2eb330e1b8614f))
+* first question is error ([573e418](https://github.com/cds-snc/ai-answers/commit/573e418ce087337c07928af0d8dcd86ec3c89036))
+* **graphs:** ensure GENERATING_ANSWER status is emitted in all answer paths ([ad1b101](https://github.com/cds-snc/ai-answers/commit/ad1b1010dad131fdc7dbaa10778df81e02c787fb))
+* **integrity:** filter error messages and add missing graph status updates ([13fbf7f](https://github.com/cds-snc/ai-answers/commit/13fbf7fbdb8b8890130c8a0f0945b80de4e20cb0))
+* **integrity:** filter out error messages from conversation history ([277613b](https://github.com/cds-snc/ai-answers/commit/277613bb182ec819b9fec846cd1edb35180ab6a0))
+* **integrity:** filter out error messages from conversation history serialization ([f1434a9](https://github.com/cds-snc/ai-answers/commit/f1434a921596328a067653e81f68fb365a141933))
+* ircc scenario per david - depts ([7eb0c88](https://github.com/cds-snc/ai-answers/commit/7eb0c8888317fe91e3f83ccc448e58df9e09748c))
+* langgraph fixes ([7f0f9b0](https://github.com/cds-snc/ai-answers/commit/7f0f9b050d6a084776f7d7c1b96cdcb842c633bb))
+* link to about content ([e027221](https://github.com/cds-snc/ai-answers/commit/e02722110f290dc9f87657eaecafba98cc9d6ac0))
+* missed these ([2f34d5b](https://github.com/cds-snc/ai-answers/commit/2f34d5b03efca2d1151efc7d57f62a94016f7291))
+* more download msgs ([3530fec](https://github.com/cds-snc/ai-answers/commit/3530fec5b59bbfe0f59e9351f465f26620658141))
+* service canada was only in dept en ([366088f](https://github.com/cds-snc/ai-answers/commit/366088f89c8690591ed228530579b68b83001daf))
+* vaguer so forces upload IRCC PGWP ([fdb7d10](https://github.com/cds-snc/ai-answers/commit/fdb7d1069fb62f6b608f91bd9fffaab5b60f03db))
+
 ## [1.80.0](https://github.com/cds-snc/ai-answers/compare/v1.79.4...v1.80.0) (2026-01-12)
 
 
