@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../utils/chat-filters.js';
-import { parseRequestFilters } from './metrics-common.js';
+import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 /**
  * Build session stats pipeline that properly applies all filters.
@@ -205,7 +205,7 @@ async function getSessionMetrics(req, res) {
         const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await Chat.aggregate(buildSessionStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
+        const result = await executeWithRetry(() => Chat.aggregate(buildSessionStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
         const session = result[0] || {};
 
         const metrics = {

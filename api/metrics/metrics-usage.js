@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../utils/chat-filters.js';
-import { parseRequestFilters } from './metrics-common.js';
+import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter = []) {
     const stages = [
@@ -199,7 +199,7 @@ async function getUsageMetrics(req, res) {
 
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await Chat.aggregate(buildOverallStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true);
+        const result = await executeWithRetry(() => Chat.aggregate(buildOverallStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
         const overall = result[0] || {};
 
         const metrics = {

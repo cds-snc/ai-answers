@@ -143,7 +143,7 @@ export function parseRequestFilters(req) {
  */
 export function getBaseInteractionPipeline(dateFilter, extraFilters = [], options = {}) {
     const { unwindInteractions = true } = options;
-    
+
     const stages = [
         { $match: dateFilter },
         {
@@ -158,7 +158,7 @@ export function getBaseInteractionPipeline(dateFilter, extraFilters = [], option
 
     if (unwindInteractions) {
         stages.push({ $unwind: '$interactions' });
-        
+
         // Apply extra filters after unwind (since they filter on interactions.x)
         if (extraFilters.length > 0) {
             stages.push({ $match: { $and: extraFilters } });
@@ -292,4 +292,37 @@ export function addAutoEvalLookup(pipeline) {
             }
         }
     ];
+}
+
+/**
+ * Execute an aggregation with retry logic for DocumentDB low memory errors.
+ * Retries up to maxRetries times with exponential backoff.
+ * 
+ * @param {Function} aggregateFn - Function that returns the aggregate query (e.g., () => Model.aggregate(pipeline).allowDiskUse(true))
+ * @param {Object} options - Retry options
+ * @param {number} options.maxRetries - Maximum number of retries (default: 2)
+ * @param {number} options.baseDelayMs - Base delay in milliseconds (default: 2000)
+ * @returns {Promise} - Aggregation result
+ */
+export async function executeWithRetry(aggregateFn, options = {}) {
+    const { maxRetries = 2, baseDelayMs = 2000 } = options;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await aggregateFn();
+        } catch (error) {
+            // Check if it's a low memory error (code 39)
+            const isLowMemory = error.code === 39 ||
+                error.errorResponse?.code === 39 ||
+                (error.message && error.message.includes('low available memory'));
+
+            if (isLowMemory && attempt < maxRetries) {
+                const delayMs = baseDelayMs * Math.pow(2, attempt); // Exponential backoff
+                console.warn(`DocumentDB low memory error, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                continue;
+            }
+            throw error;
+        }
+    }
 }
