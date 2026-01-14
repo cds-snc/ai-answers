@@ -26,15 +26,24 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
             }
         },
         {
-            // Pipeline-based $lookup to fetch ONLY expertFeedback from evals (avoiding large trace fields)
+            // Basic $lookup for DocumentDB 5 compatibility (pipeline-based lookups not supported)
             $lookup: {
                 from: 'evals',
-                let: { evalId: '$interactions.autoEval' },
-                pipeline: [
-                    { $match: { $expr: { $eq: ['$_id', '$$evalId'] } } },
-                    { $project: { expertFeedback: 1 } }  // Only fetch expertFeedback ObjectId
-                ],
+                localField: 'interactions.autoEval',
+                foreignField: '_id',
                 as: 'autoEval'
+            }
+        },
+        // Strip large trace fields from eval documents immediately after lookup
+        {
+            $addFields: {
+                autoEval: {
+                    $map: {
+                        input: '$autoEval',
+                        as: 'e',
+                        in: { _id: '$$e._id', expertFeedback: '$$e.expertFeedback' }
+                    }
+                }
             }
         },
         {
