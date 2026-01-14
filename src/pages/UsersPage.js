@@ -4,22 +4,41 @@ import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton, GcdsLink, GcdsText } from '@cdssnc/gcds-components-react';
-import { getApiUrl } from '../utils/apiToUrl.js';
 import { useTranslations } from '../hooks/useTranslations.js';
-import AuthService from '../services/AuthService.js';
+import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 
 DataTable.use(DT);
 
 const roleOptions = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'partner', label: 'Partner' },
+  { value: 'admin', label: 'Admin', sortIndex: 0 },
+  { value: 'partner', label: 'Partner', sortIndex: 1 },
 ];
 const statusOptions = [
-  { value: true, label: 'Active' },
-  { value: false, label: 'Inactive' },
+  { value: true, label: 'Active', sortIndex: 0 },
+  { value: false, label: 'Inactive', sortIndex: 1 },
 ];
+const NA_LABEL = 'N/A';
+
+// Helper to normalize role values (handles bad data like uppercase 'User' or 'ADMIN')
+const normalizeRole = (role) => {
+  if (!role) return '';
+  return String(role).toLowerCase();
+};
+
+// Convert truthy-ish values into booleans, otherwise null for unknowns
+const toBooleanish = (value) => {
+  if (typeof value === 'string') {
+    const cleaned = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].includes(cleaned)) return true;
+    if (['false', '0', 'no', 'n'].includes(cleaned)) return false;
+    return null;
+  }
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0) return false;
+  return null;
+};
 
 const UsersPage = ({ lang }) => {
   const { t } = useTranslations(lang);
@@ -48,39 +67,23 @@ const UsersPage = ({ lang }) => {
   }, [users]);
 
   const handleFieldChange = (userId, field, value) => {
-    // Update the ref directly (this persists across renders)
-    console.log('Before change:', {
-      userId, field, value,
-      current: editStatesRef.current[userId]
-    });
-
+    // Update the ref directly for change tracking
     if (!editStatesRef.current[userId]) {
-      // Initialize if it doesn't exist yet
       const matchingUser = users.find(u => u._id === userId);
-      if (matchingUser) {
-        editStatesRef.current[userId] = {
-          role: matchingUser.role,
-          active: matchingUser.active
-        };
-      } else {
-        editStatesRef.current[userId] = {
-          role: '',
-          active: false
-        };
-      }
+      editStatesRef.current[userId] = {
+        role: matchingUser?.role || '',
+        active: matchingUser?.active || false
+      };
     }
-
-    // Update the field
     editStatesRef.current[userId][field] = value;
     editStatesRef.current[userId].changed = true;
 
-    console.log('After change:', {
-      userId, field, value,
-      current: editStatesRef.current[userId],
-      allStates: { ...editStatesRef.current }
-    });
+    // Update the users state so DataTable re-renders and re-indexes
+    setUsers(prevUsers => prevUsers.map(u =>
+      u._id === userId ? { ...u, [field]: value } : u
+    ));
 
-    // Force a re-render to update UI
+    // Trigger render is handled by setUsers now, but we keep it for safety if needed
     setTriggerRender(prev => prev + 1);
   };
 
@@ -98,27 +101,18 @@ const UsersPage = ({ lang }) => {
     }
 
     try {
-      const response = await AuthService.fetch(getApiUrl('db-users'), {
-        method: 'PATCH',
-        body: JSON.stringify({
-          userId,
-          active: edit.active,
-          role: edit.role
-        })
+      const updatedUser = await UserService.update(userId, {
+        active: edit.active,
+        role: edit.role
       });
 
-      if (response.ok) {
-        const updatedUser = await response.json();
-        // Update users array
-        setUsers(prevUsers => prevUsers.map(u => u._id === userId ? updatedUser : u));
-        // Update ref
-        editStatesRef.current[userId].changed = false;
-        // Force re-render
-        setTriggerRender(prev => prev + 1);
-        console.log('Save successful, changes:', edit);
-      } else {
-        console.error('Failed to update user');
-      }
+      // Update users array
+      setUsers(prevUsers => prevUsers.map(u => u._id === userId ? updatedUser : u));
+      // Update ref
+      editStatesRef.current[userId].changed = false;
+      // Force re-render
+      setTriggerRender(prev => prev + 1);
+      console.log('Save successful, changes:', edit);
     } catch (error) {
       console.error('Error updating user:', error);
     }
@@ -133,21 +127,14 @@ const UsersPage = ({ lang }) => {
     if (!window.confirm(t('users.actions.confirmDelete'))) return;
 
     try {
-      const response = await AuthService.fetch(getApiUrl('db-users'), {
-        method: 'DELETE',
-        body: JSON.stringify({ userId })
-      });
+      await UserService.delete(userId);
 
-      if (response.ok) {
-        // Remove from users array
-        setUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
-        // Remove from ref
-        delete editStatesRef.current[userId];
-        // Force re-render
-        setTriggerRender(prev => prev + 1);
-      } else {
-        console.error('Failed to delete user');
-      }
+      // Remove from users array
+      setUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
+      // Remove from ref
+      delete editStatesRef.current[userId];
+      // Force re-render
+      setTriggerRender(prev => prev + 1);
     } catch (error) {
       console.error('Error deleting user:', error);
     }
@@ -158,10 +145,15 @@ const UsersPage = ({ lang }) => {
 
     const fetchUsers = async () => {
       try {
-        const response = await AuthService.fetch(getApiUrl('db-users'));
+        const data = await UserService.getAll();
         if (!didCancel) {
-          const data = await response.json();
-          setUsers(data);
+          // Normalize role casing and coerce active flags for consistent sorting
+          const sanitized = data.map(user => ({
+            ...user,
+            role: normalizeRole(user.role),
+            active: toBooleanish(user.active),
+          }));
+          setUsers(sanitized);
         }
       } catch (error) {
         if (!didCancel) {
@@ -181,9 +173,31 @@ const UsersPage = ({ lang }) => {
       data: 'role',
       render: (data, type, row) => {
         const userId = row._id;
-        // Use ref value or fall back to the data
-        const value = editStatesRef.current[userId]?.role ?? data;
-        return `<select data-userid="${userId}" data-field="role">${roleOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${opt.label}</option>`).join('')}</select>`;
+        const rawValue = editStatesRef.current[userId]?.role ?? data;
+        // Normalize the role value to handle bad data (e.g., 'User' vs 'user')
+        const value = normalizeRole(rawValue);
+
+        const option = roleOptions.find(opt => opt.value === value);
+        // If role isn't a known option (including legacy 'user'), show N/A
+        const label = option ? option.label : NA_LABEL;
+
+        // For sorting/filtering, return a consistent sortable value
+        if (type === 'sort' || type === 'type') {
+          return option ? option.sortIndex : 999; // Unknown roles sort last
+        }
+        if (type === 'filter') {
+          return label;
+        }
+
+        if (type === 'display') {
+          const optionsHtml = roleOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${opt.label}</option>`).join('');
+          const isKnownKey = roleOptions.some(opt => opt.value === value);
+          // For unknown roles (including 'user'), show N/A placeholder with empty value
+          const extraOption = !isKnownKey ? `<option value="" selected>${NA_LABEL}</option>` : '';
+
+          return `<select data-userid="${userId}" data-field="role" style="width: 100%">${extraOption}${optionsHtml}</select>`;
+        }
+        return label;
       }
     },
     {
@@ -191,9 +205,28 @@ const UsersPage = ({ lang }) => {
       data: 'active',
       render: (data, type, row) => {
         const userId = row._id;
-        // Use ref value or fall back to the data
-        const value = editStatesRef.current[userId]?.active ?? data;
-        return `<select data-userid="${userId}" data-field="active">${statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('')}</select>`;
+        const rawValue = editStatesRef.current[userId]?.active ?? data;
+        const value = toBooleanish(rawValue);
+        const option = statusOptions.find(opt => opt.value === value);
+        const label = option
+          ? t('users.status.' + (value ? 'active' : 'inactive'))
+          : (rawValue !== undefined && rawValue !== null ? String(rawValue) : NA_LABEL);
+
+        // For sorting, return a consistent sortable value (Active=0, Inactive=1)
+        if (type === 'sort' || type === 'type') {
+          return option ? option.sortIndex : 999;
+        }
+        if (type === 'filter') {
+          return label;
+        }
+
+        if (type === 'display') {
+          // Only show N/A placeholder when status is unknown; otherwise show the two known options
+          const placeholder = option ? '' : `<option value="" selected>${NA_LABEL}</option>`;
+          const optionsHtml = statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('');
+          return `<select data-userid="${userId}" data-field="active" style="width: 100%">${placeholder}${optionsHtml}</select>`;
+        }
+        return label;
       }
     },
     {
@@ -221,6 +254,7 @@ const UsersPage = ({ lang }) => {
         data={users}
         columns={columns}
         options={{
+          rowId: '_id',
           paging: true,
           searching: true,
           ordering: true,
@@ -228,12 +262,19 @@ const UsersPage = ({ lang }) => {
           createdRow: (row, data) => {
             // Attach select change handlers
             row.querySelectorAll('select').forEach(select => {
-              select.onchange = () => {
+              select.onchange = async () => {
                 const userId = select.getAttribute('data-userid');
                 const field = select.getAttribute('data-field');
                 let value = select.value;
-                if (field === 'active') value = value === 'true';
+                if (field === 'active') {
+                  value = toBooleanish(value);
+                }
                 handleFieldChange(userId, field, value);
+                try {
+                  await handleSave(userId);
+                } catch (err) {
+                  console.error('Autosave failed:', err);
+                }
               };
             });
 
@@ -241,26 +282,15 @@ const UsersPage = ({ lang }) => {
             const actionsCell = row.querySelector('td:last-child');
             actionsCell.innerHTML = '';
             const root = createRoot(actionsCell);
-            // Render admin buttons (only admins should reach this page)
+            // Render admin delete button (only admins should reach this page)
             root.render(
-              <>
-                <GcdsButton
-                  size="small"
-                  variant="primary"
-                  onClick={() => handleSave(data._id)}
-
-                >
-                  {t('users.actions.save')}
-                </GcdsButton>
-                <GcdsButton
-                  size="small"
-                  variant="danger"
-                  onClick={() => handleDelete(data._id)}
-                  style={{ marginLeft: 8 }}
-                >
-                  {t('users.actions.delete')}
-                </GcdsButton>
-              </>
+              <GcdsButton
+                size="small"
+                variant="danger"
+                onClick={() => handleDelete(data._id)}
+              >
+                {t('users.actions.delete')}
+              </GcdsButton>
             );
           },
         }}

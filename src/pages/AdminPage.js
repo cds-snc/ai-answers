@@ -7,8 +7,7 @@ import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
 import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 import DeleteExpertEval from '../components/DeleteExpertEval.js';
 import { RoleBasedContent } from '../components/RoleBasedUI.js';
-
-
+import AdminNotifications from '../components/admin/AdminNotifications.js';
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout, currentUser } = useAuth();
@@ -39,6 +38,11 @@ const AdminPage = ({ lang = 'en' }) => {
           ? t('admin.partnerTitle', 'AI Answers Partner Dashboard')
           : t('admin.title', 'Admin Dashboard')}
       </h1>
+
+      {/* Admin notifications panel - only visible to admins */}
+      <RoleBasedContent roles={["admin"]}>
+        <AdminNotifications lang={lang} />
+      </RoleBasedContent>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', isPartner ? 'Partner Navigation' : 'Admin Navigation')}>
         <h2 className="mt-400 mb-400">

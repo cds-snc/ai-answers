@@ -22,7 +22,6 @@ const DatabasePage = ({ lang }) => {
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
   const [isCreatingIndexes, setIsCreatingIndexes] = useState(false);
-  const [isBackfillingSecrets, setIsBackfillingSecrets] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
@@ -544,35 +543,6 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
-  const handleBackfillSecrets = async () => {
-    const confirmed = window.confirm(
-      lang === 'en'
-        ? 'This will generate 2FA and reset password secrets for any users who are missing them. Are you sure you want to continue?'
-        : 'Cela générera des secrets 2FA et de réinitialisation de mot de passe pour tous les utilisateurs qui en manquent. Êtes-vous sûr de vouloir continuer?'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setIsBackfillingSecrets(true);
-      setMessage('');
-
-      const result = await DataStoreService.backfillUserSecrets();
-
-      setMessage(lang === 'en'
-        ? `Backfill complete. Updated users: ${result.updatedCount}`
-        : `Remplissage terminé. Utilisateurs mis à jour: ${result.updatedCount}`
-      );
-    } catch (error) {
-      setMessage(lang === 'en'
-        ? `Backfill secrets failed: ${error.message}`
-        : `Échec du remplissage des secrets: ${error.message}`
-      );
-      console.error('Backfill secrets error:', error);
-    } finally {
-      setIsBackfillingSecrets(false);
-    }
-  };
 
   return (
     <GcdsContainer size="xl" centered>
@@ -850,24 +820,6 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
       </div>
 
-      <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Backfill User Secrets' : 'Remplir les secrets des utilisateurs'}</GcdsHeading>
-        <GcdsText>
-          {lang === 'en'
-            ? 'Generate 2FA and reset password secrets for existing users that are missing them.'
-            : 'Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.'}
-        </GcdsText>
-        <GcdsButton
-          onClick={handleBackfillSecrets}
-          disabled={isBackfillingSecrets}
-          variant="secondary"
-          className="mb-200"
-        >
-          {isBackfillingSecrets
-            ? (lang === 'en' ? 'Backfilling...' : 'Remplissage...')
-            : (lang === 'en' ? 'Backfill Secrets' : 'Remplir les secrets')}
-        </GcdsButton>
-      </div>
 
       <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index'}</GcdsHeading>
