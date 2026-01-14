@@ -26,10 +26,14 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
             }
         },
         {
+            // Pipeline-based $lookup to fetch ONLY expertFeedback from evals (avoiding large trace fields)
             $lookup: {
                 from: 'evals',
-                localField: 'interactions.autoEval',
-                foreignField: '_id',
+                let: { evalId: '$interactions.autoEval' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$_id', '$$evalId'] } } },
+                    { $project: { expertFeedback: 1 } }  // Only fetch expertFeedback ObjectId
+                ],
                 as: 'autoEval'
             }
         },
