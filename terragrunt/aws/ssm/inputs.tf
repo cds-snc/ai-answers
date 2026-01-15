@@ -92,3 +92,15 @@ variable "dummy2_trigger" {
   description = "Dummy variable for triggering CI"
   default     = "trigger"
 }
+
+variable "cross_account_bedrock_role_arn" {
+  description = "The ARN of the cross-account Bedrock invoke role to assume"
+  type        = string
+  default     = ""
+}
+
+variable "bedrock_region" {
+  description = "The AWS region where Bedrock is enabled"
+  type        = string
+  default     = "us-east-1"
+}

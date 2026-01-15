@@ -55,6 +55,14 @@ locals {
     {
       "name"      = "CONVERSATION_INTEGRITY_SECRET"
       "valueFrom" = var.conversation_integrity_secret_arn
+    },
+    {
+      "name"      = "BEDROCK_ROLE_ARN"
+      "valueFrom" = var.cross_account_bedrock_role_ssm_arn
+    },
+    {
+      "name"      = "BEDROCK_REGION"
+      "valueFrom" = var.bedrock_region_ssm_arn
     }
   ]
 }

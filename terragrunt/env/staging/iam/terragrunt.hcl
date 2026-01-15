@@ -25,7 +25,8 @@ dependency "ssm" {
     google_search_engine_id_arn       = ""
     adobe_analytics_url_arn           = ""
     session_secret_arn                = ""
-    conversation_integrity_secret_arn = ""
+    conversation_integrity_secret_arn  = ""
+    cross_account_bedrock_role_arn_value = ""
   }
 }
 
@@ -55,7 +56,7 @@ inputs = {
   adobe_analytics_url_arn           = dependency.ssm.outputs.adobe_analytics_url_arn
   session_secret_arn                = dependency.ssm.outputs.session_secret_arn
   conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
-  bedrock_invoke_role_arn           = "arn:aws:iam::144414543732:role/ai-answers-bedrock-invoke"
+  bedrock_invoke_role_arn           = dependency.ssm.outputs.cross_account_bedrock_role_arn_value
 }
 
 include {

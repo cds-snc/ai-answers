@@ -142,3 +142,13 @@ variable "conversation_integrity_secret_arn" {
   description = "ARN of the Interaction history integrity secret parameter"
   type        = string
 }
+
+variable "cross_account_bedrock_role_ssm_arn" {
+  description = "ARN of the cross-account Bedrock role SSM parameter"
+  type        = string
+}
+
+variable "bedrock_region_ssm_arn" {
+  description = "ARN of the Bedrock region SSM parameter"
+  type        = string
+}

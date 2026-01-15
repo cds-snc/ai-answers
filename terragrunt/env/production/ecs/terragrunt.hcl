@@ -79,7 +79,9 @@ dependency "ssm" {
     google_search_engine_id_arn       = ""
     adobe_analytics_url_arn           = ""
     session_secret_arn                = ""
-    conversation_integrity_secret_arn = ""
+    conversation_integrity_secret_arn    = ""
+    cross_account_bedrock_role_ssm_arn   = ""
+    bedrock_region_ssm_arn               = ""
   }
 }
 
@@ -109,6 +111,8 @@ inputs = {
   adobe_analytics_url_arn           = dependency.ssm.outputs.adobe_analytics_url_arn
   session_secret_arn                = dependency.ssm.outputs.session_secret_arn
   conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
+  cross_account_bedrock_role_ssm_arn = dependency.ssm.outputs.cross_account_bedrock_role_ssm_arn
+  bedrock_region_ssm_arn             = dependency.ssm.outputs.bedrock_region_ssm_arn
   fargate_cpu                       = 4096 # Override default for production
   fargate_memory                    = 8192 # Override default for production
 }
