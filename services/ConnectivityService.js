@@ -241,7 +241,7 @@ async function testAzureOpenAI() {
  */
 async function testBedrockWithRole() {
     const startTime = Date.now();
-    const bedrockRegion = 'ca-central-1';
+    const bedrockRegion = 'us-east-1';
     const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
 
     if (!bedrockRoleArn) {
@@ -256,7 +256,7 @@ async function testBedrockWithRole() {
 
     try {
         // Assume the cross-account role first
-        const stsClient = new STSClient({ region: 'ca-central-1' });
+        const stsClient = new STSClient({ region: 'us-east-1' });
         const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
             RoleArn: bedrockRoleArn,
             RoleSessionName: 'connectivity-test',
