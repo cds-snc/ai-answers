@@ -8,6 +8,7 @@
     "@anthropic-ai/sdk": "^0.33.1",
     "@aws-sdk/client-bedrock-runtime": "^3.969.0",
     "@aws-sdk/client-s3": "^3.969.0",
+    "@aws-sdk/client-sts": "^3.969.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@cdssnc/gcds-components": "^0.26.1",
     "@cdssnc/gcds-components-react": "^0.34.3",

@@ -7,6 +7,7 @@ import Redis from 'ioredis';
 import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3';
 import { AzureOpenAI } from 'openai';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 
 /**
  * Test DocumentDB/MongoDB connection
@@ -233,29 +234,43 @@ async function testAzureOpenAI() {
 }
 
 /**
- * Test AWS Bedrock connection
+ * Test AWS Bedrock connection (with role assumption)
  */
-async function testBedrock() {
+async function testBedrockWithRole() {
     const startTime = Date.now();
-    const region = process.env.AWS_REGION || 'ca-central-1';
+    const bedrockRegion = process.env.BEDROCK_REGION || 'us-east-1';
     const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
 
-    // Check if Bedrock is configured (either via role or direct access)
-    if (!bedrockRoleArn && !process.env.AWS_LAMBDA_RUNTIME_API && !process.env.AWS_EXECUTION_ENV) {
+    if (!bedrockRoleArn) {
         return {
-            service: 'AWS Bedrock',
+            service: 'Bedrock (with role)',
             status: 'not_configured',
-            message: 'Not running in AWS or BEDROCK_ROLE_ARN not set',
+            message: 'BEDROCK_ROLE_ARN not set',
             latencyMs: Date.now() - startTime,
             configured: false
         };
     }
 
     try {
-        const client = new BedrockRuntimeClient({ region });
+        // Assume the cross-account role first
+        const stsClient = new STSClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+        const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
+            RoleArn: bedrockRoleArn,
+            RoleSessionName: 'connectivity-test',
+            DurationSeconds: 900
+        }));
 
-        // Try a minimal invoke to test connectivity
-        // We use Claude with a minimal prompt
+        const credentials = {
+            accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
+            secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
+            sessionToken: assumeRoleResponse.Credentials.SessionToken
+        };
+
+        const client = new BedrockRuntimeClient({
+            region: bedrockRegion,
+            credentials
+        });
+
         const command = new InvokeModelCommand({
             modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
             contentType: 'application/json',
@@ -270,36 +285,102 @@ async function testBedrock() {
         await client.send(command);
 
         return {
-            service: 'AWS Bedrock',
+            service: 'Bedrock (with role)',
             status: 'connected',
-            message: 'Connection successful',
+            message: 'Connection successful with role assumption',
             latencyMs: Date.now() - startTime,
             configured: true,
             details: {
-                region,
+                region: bedrockRegion,
+                roleArn: bedrockRoleArn,
                 testModel: 'anthropic.claude-3-haiku-20240307-v1:0'
             }
         };
     } catch (error) {
-        // AccessDeniedException means we connected but don't have access
-        if (error.name === 'AccessDeniedException') {
-            return {
-                service: 'AWS Bedrock',
-                status: 'warning',
-                message: 'Connected but access denied to test model',
-                latencyMs: Date.now() - startTime,
-                configured: true,
-                details: { region }
-            };
-        }
         return {
-            service: 'AWS Bedrock',
+            service: 'Bedrock (with role)',
             status: 'error',
             message: error.message,
             latencyMs: Date.now() - startTime,
-            configured: true
+            configured: true,
+            details: { region: bedrockRegion, roleArn: bedrockRoleArn }
         };
     }
+}
+
+/**
+ * Test AWS Bedrock connection (direct, no role assumption)
+ */
+async function testBedrockDirect() {
+    const startTime = Date.now();
+    const bedrockRegion = process.env.BEDROCK_REGION || 'us-east-1';
+
+    // Check if running in AWS
+    if (!process.env.AWS_LAMBDA_RUNTIME_API && !process.env.AWS_EXECUTION_ENV) {
+        return {
+            service: 'Bedrock (direct)',
+            status: 'not_configured',
+            message: 'Not running in AWS environment',
+            latencyMs: Date.now() - startTime,
+            configured: false
+        };
+    }
+
+    try {
+        // Use default ECS task credentials, just change region
+        const client = new BedrockRuntimeClient({ region: bedrockRegion });
+
+        const command = new InvokeModelCommand({
+            modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
+            contentType: 'application/json',
+            accept: 'application/json',
+            body: JSON.stringify({
+                anthropic_version: 'bedrock-2023-05-31',
+                max_tokens: 1,
+                messages: [{ role: 'user', content: 'Hi' }]
+            })
+        });
+
+        await client.send(command);
+
+        return {
+            service: 'Bedrock (direct)',
+            status: 'connected',
+            message: 'Connection successful with direct credentials',
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: {
+                region: bedrockRegion,
+                testModel: 'anthropic.claude-3-haiku-20240307-v1:0'
+            }
+        };
+    } catch (error) {
+        if (error.name === 'AccessDeniedException') {
+            return {
+                service: 'Bedrock (direct)',
+                status: 'warning',
+                message: 'Connected but access denied',
+                latencyMs: Date.now() - startTime,
+                configured: true,
+                details: { region: bedrockRegion }
+            };
+        }
+        return {
+            service: 'Bedrock (direct)',
+            status: 'error',
+            message: error.message,
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: { region: bedrockRegion }
+        };
+    }
+}
+
+// Wrapper for backward compatibility
+async function testBedrock() {
+    const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
+    // Use role assumption if ARN is provided, otherwise direct
+    return bedrockRoleArn ? testBedrockWithRole() : testBedrockDirect();
 }
 
 /**
@@ -311,7 +392,8 @@ async function testAllConnections() {
         testRedis(),
         testS3(),
         testAzureOpenAI(),
-        testBedrock()
+        testBedrockWithRole(),
+        testBedrockDirect()
     ]);
 
     return {
@@ -333,5 +415,7 @@ export {
     testS3,
     testAzureOpenAI,
     testBedrock,
+    testBedrockWithRole,
+    testBedrockDirect,
     testAllConnections
 };
