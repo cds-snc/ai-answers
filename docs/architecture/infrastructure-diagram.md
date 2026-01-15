@@ -20,6 +20,7 @@ graph TD
                     DocDB[(DocumentDB <br/> MongoDB Compatible)]
                 end
                 
+                
                 subgraph Redis_Infra [Redis Security Group]
                     Redis[(ElastiCache Redis <br/> Single Node t3.micro)]:::new
                 end
