@@ -25,6 +25,8 @@ graph TD
                     Redis[(ElastiCache Redis <br/> Single Node t3.micro)]:::new
                 end
             end
+            
+            VPCE[VPC Gateway Endpoint <br/> S3]:::new
         end
         
         S3[S3 Bucket <br/> 'product-env-storage']:::new
@@ -43,7 +45,8 @@ graph TD
     
     %% New Connections
     ECS -->|Port 6379| Redis
-    ECS -->|HTTPS| S3
+    ECS -->|HTTPS| VPCE
+    VPCE -->|Private Route| S3
     ECS -->|AWS SDK| Bedrock
     ECS -->|HTTPS| AzFoundry
     
@@ -70,6 +73,7 @@ graph TD
 3.  **S3 Storage**:
     *   Adds a private **S3 Bucket** named `{product}-{env}-storage`.
     *   configured with default server-side encryption (AES256) and public access blocking.
+    *   **VPC Gateway Endpoint**: Enables private access from ECS to S3 without using the public internet.
     *   Includes a lifecycle rule to expire objects after 90 days.
 4.  **Model Providers**:
     *   **Amazon Bedrock**: Accessed via AWS SDK/Role assumption for Foundation Models.
