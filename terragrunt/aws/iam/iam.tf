@@ -68,3 +68,34 @@ resource "aws_iam_policy_attachment" "ai-answers-ssm-policy" {
   policy_arn = aws_iam_policy.ai-answers-ssm-policy.arn
   roles      = [aws_iam_role.ai-answers-ecs-role.name]
 }
+
+# Policy document for assuming the cross-account Bedrock invoke role
+data "aws_iam_policy_document" "ai_answers_assume_bedrock_role" {
+  count = var.bedrock_invoke_role_arn != "" ? 1 : 0
+  statement {
+    sid       = "AssumeBedrockInvokeRole"
+    effect    = "Allow"
+    actions   = ["sts:AssumeRole"]
+    resources = [var.bedrock_invoke_role_arn]
+  }
+}
+
+# Customer-managed policy for cross-account Bedrock access
+resource "aws_iam_policy" "ai_answers_assume_bedrock_role" {
+  count       = var.bedrock_invoke_role_arn != "" ? 1 : 0
+  name        = "${var.product_name}-assume-bedrock-invoke-role"
+  description = "Allow ${var.product_name} ECS tasks to assume the Bedrock invoke role"
+  policy      = data.aws_iam_policy_document.ai_answers_assume_bedrock_role[0].json
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+# Attach the cross-account assume role policy to the ECS role
+resource "aws_iam_role_policy_attachment" "ai_answers_assume_bedrock_role" {
+  count      = var.bedrock_invoke_role_arn != "" ? 1 : 0
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = aws_iam_policy.ai_answers_assume_bedrock_role[0].arn
+}
