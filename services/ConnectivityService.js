@@ -241,7 +241,7 @@ async function testAzureOpenAI() {
  */
 async function testBedrockWithRole() {
     const startTime = Date.now();
-    const bedrockRegion = process.env.BEDROCK_REGION || 'us-east-1';
+    const bedrockRegion = process.env.BEDROCK_REGION || 'ca-central-1';
     const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
 
     if (!bedrockRoleArn) {
