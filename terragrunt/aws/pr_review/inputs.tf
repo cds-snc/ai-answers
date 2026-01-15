@@ -81,3 +81,21 @@ variable "google_search_engine_id_arn" {
   description = "ARN for the google_search_engine_id SSM parameter"
   type        = string
 }
+
+variable "bedrock_invoke_role_arn" {
+  description = "The ARN of the cross-account Bedrock invoke role to assume"
+  type        = string
+  default     = ""
+}
+
+variable "cross_account_bedrock_role_ssm_arn" {
+  description = "ARN of the cross-account Bedrock role SSM parameter"
+  type        = string
+  default     = ""
+}
+
+variable "bedrock_region_ssm_arn" {
+  description = "ARN of the Bedrock region SSM parameter"
+  type        = string
+  default     = ""
+}

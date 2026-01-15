@@ -43,7 +43,10 @@ dependency "ssm" {
     jwt_secret_key_arn           = ""
     google_api_key_arn           = ""
     gc_notify_api_key_arn        = ""
-    google_search_engine_id_arn  = ""
+    google_search_engine_id_arn        = ""
+    cross_account_bedrock_role_arn_value = ""
+    cross_account_bedrock_role_ssm_arn    = ""
+    bedrock_region_ssm_arn                = ""
   }
 }
 
@@ -66,4 +69,7 @@ inputs = {
   google_api_key_arn                     = dependency.ssm.outputs.google_api_key_arn
   gc_notify_api_key_arn                  = dependency.ssm.outputs.gc_notify_api_key_arn
   google_search_engine_id_arn            = dependency.ssm.outputs.google_search_engine_id_arn
+  bedrock_invoke_role_arn                = dependency.ssm.outputs.cross_account_bedrock_role_arn_value
+  cross_account_bedrock_role_ssm_arn     = dependency.ssm.outputs.cross_account_bedrock_role_ssm_arn
+  bedrock_region_ssm_arn                 = dependency.ssm.outputs.bedrock_region_ssm_arn
 }

@@ -8,5 +8,5 @@ include {
 
 inputs = {
   cross_account_bedrock_role_arn = "arn:aws:iam::144414543732:role/ai-answers-bedrock-invoke"
-  bedrock_region                 = "us-east-1"
+  bedrock_region                 = "ca-central-1"
 }
