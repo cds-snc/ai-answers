@@ -41,7 +41,7 @@
     "datatables.net-dt": "^2.2.1",
     "datatables.net-react": "^1.0.0",
     "daterangepicker": "^3.1.0",
-    "diff": "^8.0.2",
+    "diff": "^8.0.3",
     "dotenv": "^16.5.0",
     "duck-duck-scrape": "^2.2.6",
     "exceljs": "^4.4.0",
