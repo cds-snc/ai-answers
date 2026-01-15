@@ -38,6 +38,8 @@ data "aws_iam_policy_document" "ai-answers-ssm-policy" {
       var.adobe_analytics_url_arn,
       var.session_secret_arn,
       var.conversation_integrity_secret_arn,
+      var.cross_account_bedrock_role_ssm_arn,
+      var.bedrock_region_ssm_arn,
     ]
   }
 }
