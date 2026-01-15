@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.83.0](https://github.com/cds-snc/ai-answers/compare/v1.82.0...v1.83.0) (2026-01-15)
+
+
+### Features
+
+* add bedrock invoke access to ECS ([14cf4cb](https://github.com/cds-snc/ai-answers/commit/14cf4cb9f5104af143cb99e6b55e7dfeacbf511b))
+* add ConnectivityService to test connections to DocumentDB, Redis, S3, Azure OpenAI, and AWS Bedrock. ([c6e1a5c](https://github.com/cds-snc/ai-answers/commit/c6e1a5c7e5e376a77401368a0bc7896863dc14bf))
+* add ConnectivityService to test health of DocumentDB, Redis, S3, Azure OpenAI, and AWS Bedrock for the admin dashboard. ([9d0d6dc](https://github.com/cds-snc/ai-answers/commit/9d0d6dc6ca5d2ce09661baf29f5684440db46903))
+* Add Terragrunt configurations for IAM, ECS, and SSM modules in production and staging environments to pass value of role to assume to application ([a92bb0e](https://github.com/cds-snc/ai-answers/commit/a92bb0e8d31d251ee21a1116534504390513996e))
+* Implement AI chat interface, add admin and connectivity pages, … ([1dc6102](https://github.com/cds-snc/ai-answers/commit/1dc6102c5f02decfc45eac3c832b955727b3b1eb))
+* Implement AI chat interface, add admin and connectivity pages, and introduce French/English localization. ([5e56a39](https://github.com/cds-snc/ai-answers/commit/5e56a398ac766b030c8c22ee02eeae84e6803b73))
+* **infra:** enable Bedrock support in PR Review environments ([99d1222](https://github.com/cds-snc/ai-answers/commit/99d1222a43af549ca0f9659929fd9cca94577652))
+* **infra:** expose Bedrock role and region to ECS via SSM and config… ([e3daf20](https://github.com/cds-snc/ai-answers/commit/e3daf2078f6a6d4573239e1cdef3fe8d531b65e4))
+* **infra:** expose Bedrock role and region to ECS via SSM and configure IAM permissions ([8e74961](https://github.com/cds-snc/ai-answers/commit/8e74961c6968426683cab67d7cc04be7bf3f5838))
+
+
+### Bug Fixes
+
+* **bedrock:** clean up connectivity tests, hardcode ca-central-1, and include model reply in details ([3cb57f3](https://github.com/cds-snc/ai-answers/commit/3cb57f30091c6047b98cf55a888e260cd122a8d7))
+* **bedrock:** switch to ca-central-1 region and update connectivity tests ([06e593e](https://github.com/cds-snc/ai-answers/commit/06e593e8644b627dc43ecfd0a8c71469d0b6a9ae))
+* remove Mongo references, rewrite pipeline doc ([2642ac5](https://github.com/cds-snc/ai-answers/commit/2642ac53ba906ab9e3167f5d6f1ddcef2b0a0e19))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump diff from 8.0.2 to 8.0.3 ([3695bd6](https://github.com/cds-snc/ai-answers/commit/3695bd68b534f4911c94d301d5d4ec18370474d6))
+* **deps:** bump diff from 8.0.2 to 8.0.3 ([6dac8cb](https://github.com/cds-snc/ai-answers/commit/6dac8cbe713cbf27dc391eded002fb3839ad81ee))
+
 ## [1.82.0](https://github.com/cds-snc/ai-answers/compare/v1.81.0...v1.82.0) (2026-01-14)
 
 
