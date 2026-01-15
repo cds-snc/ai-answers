@@ -319,7 +319,7 @@ async function testBedrockWithRole() {
  */
 async function testBedrockNova() {
     const startTime = Date.now();
-    const bedrockRegion = 'ca-central-1';
+    const bedrockRegion = 'ca-central-1'; // Use Canada Central
     const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
 
     if (!bedrockRoleArn) {
@@ -352,8 +352,8 @@ async function testBedrockNova() {
             credentials
         });
 
-        // Amazon Nova Micro model ID for Canada Central
-        const modelId = 'amazon.nova-micro-v1:0';
+        // Amazon Nova Lite cross-region inference profile for Canada
+        const modelId = 'ca.amazon.nova-lite-v1:0';
 
         const command = new InvokeModelCommand({
             modelId,
@@ -374,7 +374,7 @@ async function testBedrockNova() {
         return {
             service: 'Bedrock (Nova)',
             status: 'connected',
-            message: 'Connection successful to Amazon Nova Micro!',
+            message: 'Connection successful to Amazon Nova Lite!',
             latencyMs: Date.now() - startTime,
             configured: true,
             details: {
