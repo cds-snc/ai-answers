@@ -38,3 +38,31 @@ resource "aws_s3_bucket_lifecycle_configuration_v2" "storage" {
     }
   }
 }
+
+#
+# Network Integration (VPC Gateway Endpoint)
+# Ensures traffic to S3 stays within the AWS network
+#
+
+data "aws_region" "current" {}
+
+# Lookup route tables associated with the private subnets
+data "aws_route_table" "private" {
+  for_each = toset(var.vpc_private_subnet_ids)
+  subnet_id = each.value
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = var.vpc_id
+  service_name = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+
+  # Attach to all route tables used by private subnets
+  route_table_ids = distinct([for rt in data.aws_route_table.private : rt.route_table_id])
+
+  tags = {
+    Name       = "${var.product_name}-${var.env}-s3-endpoint"
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
