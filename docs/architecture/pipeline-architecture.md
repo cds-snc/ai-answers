@@ -38,40 +38,42 @@ AI Answers uses a **LangGraph-based state machine architecture** to orchestrate 
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              API Layer: /api/chat/chat-graph-run.js              │
-│  • Entry point for graph execution                               │
-│  • Streams status updates to client                              │
+│              API Layer: /api/chat/chat-graph-run.js             │
+│  • Entry point for graph execution                              │
+│  • Streams status updates to client                             │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│            LangGraph State Machine (Server-Side)                 │
-│                                                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
+│            LangGraph State Machine (Server-Side)                │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
 │  │  Graph Registry: agents/graphs/registry.js                │  │
 │  │  • Manages available graph workflows                      │  │
 │  │  • DefaultWithVectorGraph (primary)                       │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Graph Nodes (Sequential Pipeline)                        │  │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Graph Nodes (Pipeline with Conditional Branching)       │  │
 │  │  1. init          → Initialize state                      │  │
 │  │  2. validate      → Short query validation                │  │
 │  │  3. redact        → PI detection & redaction              │  │
 │  │  4. translate     → Language detection & translation      │  │
-│  │  5. contextNode   → Search & context derivation           │  │
-│  │  6. shortCircuit  → Similar answer detection              │  │
-│  │  7. answerNode    → Answer generation (if no shortcut)    │  │
+│  │  5. shortCircuit  → Similar answer detection              │  │
+│  │     ├─ If match found: → verifyNode (skip context/answer) │  │
+│  │     └─ If no match: → contextNode (continue flow)         │  │
+│  │  6. contextNode   → Search & context derivation           │  │
+│  │  7. answerNode    → Answer generation                     │  │
 │  │  8. verifyNode    → Citation URL verification             │  │
 │  │  9. persistNode   → Save to database                      │  │
 │  │  10. END          → Return result                         │  │
-│  └──────────────────────────────────────────────────────────┘  │
+│  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Infrastructure Layer                          │
-│  • MongoDB (DocumentDB): Persistence                             │
+│                    Infrastructure Layer                         │
+│  • AWS DocumentDB: Persistence (MongoDB-compatible)             │
 │  • AI Providers: OpenAI, Azure OpenAI, Anthropic                │
 │  • Search: Canada.ca, Google                                    │
 │  • Embedding Service: Vector similarity                         │
@@ -97,15 +99,13 @@ LangGraph is a framework for building stateful, multi-actor applications with LL
 The graph is defined using the `StateGraph` class from `@langchain/langgraph`:
 
 ```javascript
-const workflow = new StateGraph({
-  channels: graphState  // State annotations
-})
+const workflow = new StateGraph(GraphState)
   .addNode('init', initNode)
   .addNode('validate', validateNode)
   .addNode('redact', redactNode)
   .addNode('translate', translateNode)
-  .addNode('contextNode', contextNode)
   .addNode('shortCircuit', shortCircuitNode)
+  .addNode('contextNode', contextNode)
   .addNode('answerNode', answerNode)
   .addNode('verifyNode', verifyNode)
   .addNode('persistNode', persistNode)
@@ -113,12 +113,16 @@ const workflow = new StateGraph({
   .addEdge('init', 'validate')
   .addEdge('validate', 'redact')
   .addEdge('redact', 'translate')
-  .addEdge('translate', 'contextNode')
-  .addEdge('contextNode', 'shortCircuit')
+  .addEdge('translate', 'shortCircuit')
   .addConditionalEdges(
     'shortCircuit',
-    (state) => state.shortCircuitPayload ? 'persistNode' : 'answerNode'
+    (state) => state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
+    {
+      skipAnswer: 'verifyNode',
+      runAnswer: 'contextNode'
+    }
   )
+  .addEdge('contextNode', 'answerNode')
   .addEdge('answerNode', 'verifyNode')
   .addEdge('verifyNode', 'persistNode')
   .addEdge('persistNode', END);
@@ -130,20 +134,29 @@ The graph maintains state across all nodes with these key fields:
 
 ```javascript
 {
-  chatId: string,              // Unique chat session ID
-  userMessage: string,         // Original user input
-  conversationHistory: array,  // Previous messages
-  lang: string,                // UI language (en/fr)
-  redactedText: string,        // Text after PI redaction
-  translationData: object,     // Translation results
-  context: object,             // Derived context (dept, topic, search results)
-  shortCircuitPayload: object, // Similar answer data (if found)
-  answer: object,              // Generated answer
-  finalCitationUrl: string,    // Verified citation URL
-  confidenceRating: number,    // Answer confidence (0-10)
-  status: string,              // Current pipeline status
-  result: object,              // Final result object
-  startTime: number            // Pipeline start time
+  chatId: string,                // Unique chat session ID
+  userMessage: string,           // Original user input
+  userMessageId: string,         // Unique message ID
+  conversationHistory: array,    // Previous messages
+  cleanedHistory: array,         // Cleaned conversation history
+  lang: string,                  // UI language (en/fr)
+  department: string,            // Department code (if provided)
+  referringUrl: string,          // Page URL where question was asked
+  selectedAI: string,            // AI provider (openai, azure, anthropic)
+  translationF: boolean,         // Translation function enabled
+  searchProvider: string,        // Search provider (canadaCa, google)
+  overrideUserId: string,        // Override user ID for special cases
+  redactedText: string,          // Text after PI redaction
+  translationData: object,       // Translation results
+  context: object,               // Derived context (dept, topic, search results)
+  usedExistingContext: boolean,  // Whether context was reused
+  shortCircuitPayload: object,   // Similar answer data (if found)
+  answer: object,                // Generated answer
+  finalCitationUrl: string,      // Verified citation URL
+  confidenceRating: number,      // Answer confidence (0-10)
+  status: string,                // Current pipeline status (camelCase)
+  result: object,                // Final result object
+  startTime: number              // Pipeline start time (ms)
 }
 ```
 
@@ -157,7 +170,7 @@ The graph maintains state across all nodes with these key fields:
 
 **Operations:**
 - Record `startTime` for performance tracking
-- Set initial status to `MODERATING_QUESTION`
+- Set initial status to `moderatingQuestion`
 - Initialize state fields
 
 **File:** [`agents/graphs/DefaultWithVectorGraph.js:47-51`](../../agents/graphs/DefaultWithVectorGraph.js#L47-L51)
@@ -167,7 +180,7 @@ The graph maintains state across all nodes with these key fields:
 ### 2. Short Query Validation (`validate` node)
 
 **Type:** Programmatic (no AI)
-**Status:** `MODERATING_QUESTION`
+**Status:** `moderatingQuestion`
 
 **Purpose:** Block queries that are too short to be meaningful
 
@@ -187,7 +200,7 @@ The graph maintains state across all nodes with these key fields:
 ### 3. Pattern-Based Redaction (`redact` node)
 
 **Type:** Programmatic + AI
-**Status:** `MODERATING_QUESTION`
+**Status:** `moderatingQuestion`
 
 **Purpose:** Two-stage privacy protection
 
@@ -214,7 +227,7 @@ The graph maintains state across all nodes with these key fields:
 ### 4. Translation (`translate` node)
 
 **Type:** AI-powered (GPT-4 mini)
-**Status:** `MODERATING_QUESTION`
+**Status:** `moderatingQuestion`
 
 **Purpose:** Detect language and translate to English for processing
 
@@ -238,32 +251,60 @@ The graph maintains state across all nodes with these key fields:
 
 ---
 
-### 5. Context Derivation (`contextNode`)
+### 5. Short-Circuit Check (`shortCircuit` node)
+
+**Type:** AI-powered (vector similarity + reranking)
+**Status:** `generatingAnswer`
+
+**Purpose:** Detect if a similar question was already answered (runs BEFORE context derivation)
+
+**Process:**
+1. Skip short-circuit if conversation already has prior AI replies
+2. Generate embedding for current question
+3. Search embeddings database for similar questions
+4. Use reranker agent (GPT-4 mini) to score candidates
+5. If high similarity match found (threshold met):
+   - Set `shortCircuitPayload` with existing answer
+   - Skip directly to `verifyNode` (bypass context and answer generation)
+6. Otherwise: proceed to `contextNode`
+
+**Benefits:**
+- Faster responses (no context derivation or answer generation needed)
+- Lower AI costs
+- Consistent answers to similar questions
+
+**File:** [`api/chat/chat-similar-answer.js`](../../api/chat/chat-similar-answer.js)
+
+---
+
+### 6. Context Derivation (`contextNode`)
 
 **Type:** AI-powered (multi-step)
-**Status:** `MODERATING_QUESTION` → `GENERATING_ANSWER`
+**Status:** `buildingContext` → `generatingAnswer`
 
 **Purpose:** Generate search query, execute search, identify department
 
+**Note:** This node is SKIPPED if short-circuit finds a matching answer
+
 #### Sub-steps:
 
-**5a. Query Rewrite**
+**6a. Query Rewrite**
 - Craft optimized search query from translated text
 - Consider conversation history
 - Model: GPT-4 mini
 
-**5b. Search Execution**
+**6b. Search Execution**
 - Execute search using Canada.ca or Google
 - Configurable via `searchProvider` parameter
 - Tools: `canadaCaContextSearch.js`, `googleContextSearch.js`
 
-**5c. Department Matching**
+**6c. Department Matching**
 - Match question to Government of Canada department
 - Identify topic and relevant URLs
 - Parse department code (e.g., `EDSC-ESDC`, `CRA-ARC`)
 - Load department-specific scenarios if available
 
-**5d. Context Reuse (Optimization)**
+**6d. Context Reuse (Optimization)**
 - Check if previous message has valid context
 - Reuse if applicable (saves time and cost)
 - Function: `getContextForFlow()`
@@ -275,37 +316,12 @@ The graph maintains state across all nodes with these key fields:
 
 ---
 
-### 6. Short-Circuit Check (`shortCircuit` node)
-
-**Type:** AI-powered (vector similarity + reranking)
-**Status:** `GENERATING_ANSWER`
-
-**Purpose:** Detect if a similar question was already answered
-
-**Process:**
-1. Generate embedding for current question
-2. Search embeddings database for similar questions
-3. Use reranker agent (GPT-4 mini) to score candidates
-4. If high similarity match found (threshold met):
-   - Set `shortCircuitPayload` with existing answer
-   - Skip to `persistNode` (bypass answer generation)
-5. Otherwise: proceed to `answerNode`
-
-**Benefits:**
-- Faster responses (no answer generation needed)
-- Lower AI costs
-- Consistent answers to similar questions
-
-**File:** [`api/chat/chat-similar-answer.js`](../../api/chat/chat-similar-answer.js)
-
----
-
 ### 7. Answer Generation (`answerNode`)
 
 **Type:** AI-powered (configurable model)
-**Status:** `GENERATING_ANSWER`
+**Status:** `generatingAnswer`
 
-**Purpose:** Generate answer using context and conversation history
+**Purpose:** Generate answer using context and conversation history (SKIPPED if short-circuit found match)
 
 **Input:**
 - Translated question
@@ -336,9 +352,9 @@ The graph maintains state across all nodes with these key fields:
 ### 8. Citation Verification (`verifyNode`)
 
 **Type:** Programmatic URL validation
-**Status:** `VERIFYING_CITATION`
+**Status:** `verifyingCitation`
 
-**Purpose:** Ensure citation URL is accessible
+**Purpose:** Ensure citation URL is accessible and build final result object
 
 **Process:**
 1. Send HEAD request to URL (fast, low bandwidth)
@@ -368,9 +384,9 @@ The graph maintains state across all nodes with these key fields:
 ### 9. Persistence (`persistNode`)
 
 **Type:** Database write
-**Status:** `COMPLETE` or `NEED_CLARIFICATION`
+**Status:** `complete` or `needClarification`
 
-**Purpose:** Save interaction to database and trigger evaluation
+**Purpose:** Save interaction to database and trigger evaluation (SKIPPED if short-circuit, as already persisted)
 
 **Operations:**
 1. Create embeddings via `EmbeddingService`
@@ -399,7 +415,7 @@ The graph maintains state across all nodes with these key fields:
 ### 10. Return Result (`END`)
 
 **Type:** Response streaming
-**Status:** `COMPLETE`
+**Status:** `complete`
 
 **Purpose:** Stream final result to client
 
@@ -432,63 +448,6 @@ The graph maintains state across all nodes with these key fields:
 
 **File:** [`api/chat/chat-graph-run.js`](../../api/chat/chat-graph-run.js)
 
----
-
-## Key Components
-
-### Graph Registry
-
-**File:** [`agents/graphs/registry.js`](../../agents/graphs/registry.js)
-
-**Purpose:** Central registry for available graph workflows
-
-**Available Graphs:**
-- `DefaultWithVectorGraph`: Primary production workflow (includes short-circuit)
-- Additional graphs can be registered for A/B testing or specialized use cases
-
-**Usage:**
-```javascript
-import GraphRegistry from './agents/graphs/registry.js';
-const graph = GraphRegistry.getGraph('DefaultWithVectorGraph');
-```
-
----
-
-### Agent Factory
-
-**File:** [`agents/AgentFactory.js`](../../agents/AgentFactory.js)
-
-**Purpose:** Creates configured AI agents with appropriate prompts and tools
-
-**Agent Types:**
-- `createPIIAgent()`: PII detection
-- `createTranslationAgent()`: Language detection and translation
-- `createQueryRewriteAgent()`: Search query optimization
-- `createContextAgent()`: Department and context derivation
-- `createChatAgent()`: Answer generation with tools
-
-**Configuration:**
-- Model selection (OpenAI, Azure, Anthropic)
-- Temperature settings
-- Token limits
-- Tool availability
-
----
-
-### Service Layer
-
-**Key Services:**
-
-| Service | Purpose | File |
-|---------|---------|------|
-| **PIIAgentService** | PII detection coordination | [`services/PIIAgentService.js`](../../services/PIIAgentService.js) |
-| **ContextAgentService** | Context derivation coordination | [`services/ContextAgentService.js`](../../services/ContextAgentService.js) |
-| **ScenarioOverrideService** | Department scenario loading | [`services/ScenarioOverrideService.js`](../../services/ScenarioOverrideService.js) |
-| **EmbeddingService** | Vector embeddings for similarity | [`services/EmbeddingService.js`](../../services/EmbeddingService.js) |
-| **AgentOrchestratorService** | Agent execution orchestration | [`agents/AgentOrchestratorService.js`](../../agents/AgentOrchestratorService.js) |
-
----
-
 ## State Management
 
 ### State Flow
@@ -504,11 +463,13 @@ User Question
     ↓
 [translate] → Add translationData to state
     ↓
+[shortCircuit] → Check for similar answer
+    ├─ If match found: Set shortCircuitPayload → Skip to verifyNode
+    └─ If no match: Continue to contextNode
+    ↓
 [contextNode] → Add context (department, topic, searchResults) to state
     ↓
-[shortCircuit] → Set shortCircuitPayload if match found
-    ↓
-[answerNode OR skip] → Add answer to state
+[answerNode] → Add answer to state
     ↓
 [verifyNode] → Set finalCitationUrl
     ↓
@@ -532,110 +493,6 @@ Each node can:
 
 ---
 
-## Error Handling & Resilience
-
-### Error Types
-
-1. **Validation Errors** (recoverable)
-   - Short query: Return fallback search URL
-   - PII detected: Block with helpful message
-
-2. **AI Service Errors** (retriable)
-   - Exponential backoff (3 retries)
-   - Fallback to alternative model if configured
-
-3. **Search Errors** (degradable)
-   - Try alternative search provider
-   - Continue with limited context if search fails
-
-4. **Citation Errors** (fallback)
-   - Use search result URL
-   - Use department URL
-   - Use Canada.ca homepage
-
-### Error Handling Strategy
-
-```javascript
-try {
-  // Node execution
-  const result = await nodeFunction(state);
-  return result;
-} catch (error) {
-  if (error instanceof ValidationError) {
-    // Return error state with fallback
-    return { status: 'ERROR', result: fallback };
-  }
-
-  if (error instanceof AIServiceError && retryCount < 3) {
-    // Retry with exponential backoff
-    await sleep(2 ** retryCount * 1000);
-    return retry(nodeFunction, state, retryCount + 1);
-  }
-
-  // Log and fail gracefully
-  logger.error('Node execution failed', { error, state });
-  throw error;
-}
-```
-
-### Graceful Degradation
-
-- **Search fails**: Use cached context or proceed with limited info
-- **Translation fails**: Assume English and continue
-- **Citation check fails**: Accept URL without validation
-- **Answer generation fails**: Return error message with search link
-
----
-
-## Performance Optimizations
-
-### 1. Short-Circuit Optimization
-
-- **Impact**: 40-60% of queries match similar questions
-- **Savings**: ~3-5 seconds response time, ~$0.01 per query
-- **Implementation**: Vector similarity search + AI reranking
-
-### 2. Context Reuse
-
-- **When**: Follow-up questions in same conversation
-- **Logic**: Check if previous message has valid context
-- **Savings**: ~2-3 seconds, ~$0.005 per query
-
-### 3. Prompt Caching
-
-- **OpenAI**: Automatic prompt caching for repeated prefixes
-- **Anthropic**: Explicit cache control headers
-- **Savings**: ~50% reduction in input token costs
-
-### 4. Parallel Tool Execution
-
-- Answer agent can call multiple tools concurrently
-- Example: Download multiple web pages simultaneously
-- Tracked by `ToolTrackingHandler`
-
-### 5. Streaming Responses
-
-- Server-Sent Events (SSE) for status updates
-- User sees progress: "Searching...", "Generating answer..."
-- Perceived performance improvement
-
-### 6. Database Indexing
-
-- Embeddings: Vector index for similarity search
-- ChatId: Index for conversation lookup
-- Timestamps: Index for analytics queries
-
----
-
-## Deployment
-
-**CDS Deployment:**
-- Evaluation runs **asynchronously** after response sent
-- Faster user response times
-- Background worker processes evaluations
-
----
-
 ## Monitoring & Observability
 
 ### Status Events
@@ -644,16 +501,17 @@ Emitted via SSE to client:
 
 ```javascript
 {
-  status: 'MODERATING_QUESTION',    // Initial validation
-  status: 'GENERATING_ANSWER',      // Context and answer gen
-  status: 'VERIFYING_CITATION',     // URL validation
-  status: 'COMPLETE'                // Done
+  status: 'moderatingQuestion',    // Initial validation
+  status: 'buildingContext',       // Context derivation (if not short-circuited)
+  status: 'generatingAnswer',      // Answer generation
+  status: 'verifyingCitation',     // URL validation
+  status: 'complete'               // Done (or 'needClarification' for clarifying questions)
 }
 ```
 
 ### Logging
 
-- **Server Logging**: `ServerLoggingService` logs to MongoDB
+- **Server Logging**: `ServerLoggingService` logs to DocumentDB
 - **Client Logging**: Error tracking and analytics
 - **Tool Tracking**: `ToolTrackingHandler` logs all tool calls
 
@@ -681,134 +539,6 @@ Tracked per interaction:
 
 ### How-To Guides
 - See `docs/how-to/` for developer guides (when available)
-
----
-
-## Future Enhancements
-
-### Planned Improvements
-
-1. **Enhanced Short-Circuit**
-   - Use short-circuit embeddings for answer generation
-   - Hybrid retrieval: vector + keyword search
-
-2. **Multi-Turn Context**
-   - Persistent context across conversation
-   - Context compression for long conversations
-
-3. **Advanced Routing**
-   - Route to specialized graphs based on question type
-   - Department-specific graph variants
-
-4. **Evaluation Integration**
-   - Inline evaluation during answer generation
-   - Real-time quality scoring
-   - Automatic retry on low confidence
-
-5. **Cache Optimization**
-   - Shared cache across users for common questions
-   - Redis cache layer for frequent queries
-
----
-
-## Migration Notes
-
-### From Microservices Architecture
-
-The previous architecture used separate API endpoints chained together:
-
-```
-Old: /translate → /search-context → /chat-message
-New: /chat-graph-run (single entry point, internal graph orchestration)
-```
-
-**Benefits of LangGraph:**
-- **Single entry point**: Simpler client integration
-- **Atomic execution**: All-or-nothing processing
-- **Better error handling**: Centralized error recovery
-- **Observability**: Complete state tracking
-- **Testing**: Easier to test individual nodes
-
-**Breaking Changes:**
-- Legacy API endpoints still available for backward compatibility
-- New clients should use `/api/chat/chat-graph-run.js`
-
----
-
-## Development Guide
-
-### Adding a New Node
-
-1. **Define node function** in graph file or service:
-```javascript
-async function myNewNode(state) {
-  // Process state
-  const result = await processData(state);
-
-  // Return updated state
-  return {
-    ...state,
-    myNewField: result,
-    status: 'PROCESSING'
-  };
-}
-```
-
-2. **Register node** in graph:
-```javascript
-workflow
-  .addNode('myNewNode', myNewNode)
-  .addEdge('previousNode', 'myNewNode')
-  .addEdge('myNewNode', 'nextNode');
-```
-
-3. **Update state annotations**:
-```javascript
-const graphState = {
-  // ... existing fields
-  myNewField: Annotation.Root({
-    default: () => null
-  })
-};
-```
-
-4. **Add tests**:
-```javascript
-describe('myNewNode', () => {
-  it('should process state correctly', async () => {
-    const state = { /* test state */ };
-    const result = await myNewNode(state);
-    expect(result.myNewField).toBeDefined();
-  });
-});
-```
-
-### Testing the Graph
-
-**Unit tests**: Test individual nodes
-```bash
-npm test agents/graphs/__tests__/
-```
-
-**Integration tests**: Test full graph execution
-```bash
-npm test agents/graphs/DefaultWithVectorGraph.test.js
-```
-
-**Local execution**:
-```bash
-# Set environment variables
-export MONGODB_URI="..."
-export OPENAI_API_KEY="..."
-
-# Run development server
-npm run dev
-
-# Test via API
-curl -X POST http://localhost:3000/api/chat/chat-graph-run \
-  -H "Content-Type: application/json" \
-  -d '{"message": "How do I apply for EI?", "lang": "en"}'
-```
 
 ---
 

@@ -15,7 +15,7 @@ export default defineConfig({
     isolate: true,
     // Run tests in the same process to avoid cross-worker mongoose/model issues
     threads: false,
-    testTimeout: 20000, // Increase timeout for MongoDB operations
-    hookTimeout: 60000 // Allow longer async hooks (e.g., Mongo downloads)
+    testTimeout: 20000, // Increase timeout for database operations
+    hookTimeout: 60000 // Allow longer async hooks (e.g., database downloads)
   }
 });
