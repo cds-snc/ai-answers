@@ -39,6 +39,11 @@ graph TD
         AzFoundry[Azure AI Foundry <br/> OpenAI Models]:::model
     end
     
+    subgraph External_Search [External Search Services]
+        Google[Google Custom Search]:::search
+        CanadaCA[Canada.ca Search]:::search
+    end
+    
     %% Traffic Flows
     ALB -->|Port 3000| ECS
     ECS -->|Mongoose| DocDB
@@ -49,6 +54,8 @@ graph TD
     VPCE -->|Private Route| S3
     ECS -->|AWS SDK| Bedrock
     ECS -->|HTTPS| AzFoundry
+    ECS -->|HTTPS| Google
+    ECS -->|HTTPS| CanadaCA
     
     %% Supporting Services
     ECS -.->|Pull Image| ECR
@@ -58,6 +65,7 @@ graph TD
     classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;
     classDef new fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
     classDef model fill:#e1f5fe,stroke:#039be5,stroke-width:2px,color:#000;
+    classDef search fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000;
     
     linkStyle default stroke:#333,stroke-width:1px;
 ```
@@ -78,3 +86,6 @@ graph TD
 4.  **Model Providers**:
     *   **Amazon Bedrock**: Accessed via AWS SDK/Role assumption for Foundation Models.
     *   **Azure AI Foundry**: Accessed via HTTPS using API keys for OpenAI Models.
+5.  **External Search Services**:
+    *   **Google Custom Search**: Provided through Google Cloud Search API for external web context.
+    *   **Canada.ca Search**: Hits the Canada.ca search API for authoritative government content.
