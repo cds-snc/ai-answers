@@ -26,6 +26,7 @@ import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
+import ConnectivityPage from './pages/ConnectivityPage.js';
 import { useTranslations } from './hooks/useTranslations.js';
 
 
@@ -172,10 +173,10 @@ const AppLayout = () => {
     // Removed the auth expiration checker setup
   }, []);
 
-    // Track virtual page views ONLY for public pages (not admin routes)
+  // Track virtual page views ONLY for public pages (not admin routes)
   useEffect(() => {
     const isPublicPage = location.pathname === '/en' || location.pathname === '/fr' || location.pathname === '/';
-    
+
     if (isPublicPage && typeof window !== 'undefined' && window._satellite) {
       window._satellite.track('pageview');
     }
@@ -185,7 +186,7 @@ const AppLayout = () => {
   useEffect(() => {
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
     const title = currentLang === 'fr' ? 'Bêta : Réponses IA' : 'Beta: AI Answers';
-    const description = currentLang === 'fr' 
+    const description = currentLang === 'fr'
       ? 'Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada.'
       : 'AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites.';
     const dctermsDescription = currentLang === 'fr'
@@ -321,12 +322,12 @@ export default function App() {
       { path: '/fr/about', element: <AboutPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
       { path: '/fr/signin', element: <LoginPage lang="fr" /> },
-  { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },
-  { path: '/fr/reset-request', element: <ResetRequestPage lang="fr" /> },
-  { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" /> },
-  { path: '/fr/reset-verify', element: <ResetVerifyPage lang="fr" /> },
-  { path: '/en/reset-complete', element: <ResetCompletePage lang="en" /> },
-  { path: '/fr/reset-complete', element: <ResetCompletePage lang="fr" /> },
+      { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },
+      { path: '/fr/reset-request', element: <ResetRequestPage lang="fr" /> },
+      { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" /> },
+      { path: '/fr/reset-verify', element: <ResetVerifyPage lang="fr" /> },
+      { path: '/en/reset-complete', element: <ResetCompletePage lang="en" /> },
+      { path: '/fr/reset-complete', element: <ResetCompletePage lang="fr" /> },
       { path: '/en/signup', element: <SignupPage lang="en" /> },
       { path: '/fr/signup', element: <SignupPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
@@ -346,8 +347,8 @@ export default function App() {
       { path: '/fr/users', element: <UsersPage lang="fr" />, roles: ['admin'] },
       { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'] },
       { path: '/fr/eval', element: <EvalPage lang="fr" />, roles: ['admin'] },
-  { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin'] },
-  { path: '/fr/eval-dashboard', element: <EvalDashboardPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/eval-dashboard', element: <EvalDashboardPage lang="fr" />, roles: ['admin'] },
       { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
@@ -361,7 +362,9 @@ export default function App() {
       { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
       { path: '/fr/database', element: <DatabasePage lang="fr" />, roles: ['admin'] },
       { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/connectivity', element: <ConnectivityPage lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

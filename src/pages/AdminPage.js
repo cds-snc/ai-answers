@@ -125,6 +125,11 @@ const AdminPage = ({ lang = 'en' }) => {
                 {t('admin.navigation.sessions', 'Active Sessions')}
               </GcdsLink>
             </li>
+            <li>
+              <GcdsLink href={`/${lang}/connectivity`}>
+                {t('admin.navigation.connectivity', 'Service Connectivity')}
+              </GcdsLink>
+            </li>
           </RoleBasedContent>
 
           {/* Links for both roles */}
