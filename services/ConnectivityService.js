@@ -241,12 +241,12 @@ async function testAzureOpenAI() {
  */
 async function testBedrockWithRole() {
     const startTime = Date.now();
-    const bedrockRegion = process.env.BEDROCK_REGION || 'ca-central-1';
+    const bedrockRegion = 'ca-central-1';
     const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
 
     if (!bedrockRoleArn) {
         return {
-            service: 'Bedrock (with role)',
+            service: 'Bedrock',
             status: 'not_configured',
             message: 'BEDROCK_ROLE_ARN not set',
             latencyMs: Date.now() - startTime,
@@ -256,7 +256,7 @@ async function testBedrockWithRole() {
 
     try {
         // Assume the cross-account role first
-        const stsClient = new STSClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+        const stsClient = new STSClient({ region: 'ca-central-1' });
         const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
             RoleArn: bedrockRoleArn,
             RoleSessionName: 'connectivity-test',
@@ -290,7 +290,7 @@ async function testBedrockWithRole() {
         const outputText = responseBody.content?.[0]?.text || 'No response text';
 
         return {
-            service: 'Bedrock (with role)',
+            service: 'Bedrock',
             status: 'connected',
             message: 'Connection successful with role assumption',
             latencyMs: Date.now() - startTime,
@@ -304,74 +304,12 @@ async function testBedrockWithRole() {
         };
     } catch (error) {
         return {
-            service: 'Bedrock (with role)',
+            service: 'Bedrock',
             status: 'error',
             message: error.message,
             latencyMs: Date.now() - startTime,
             configured: true,
             details: { region: bedrockRegion, roleArn: bedrockRoleArn }
-        };
-    }
-}
-
-/**
- * Test AWS Bedrock connection (Canada Central probe)
- */
-async function testBedrockCanada() {
-    const startTime = Date.now();
-    const bedrockRegion = 'ca-central-1';
-
-    try {
-        // Use default ECS credentials (this assumes the ECS task works or we have permission in this region)
-        // Note: Unless permissions are added for ca-central-1 in the future, this might fail access or model not found.
-        const client = new BedrockRuntimeClient({ region: bedrockRegion });
-
-        // We use a model that MIGHT exist there eventually, or check listFoundationModels if preferred.
-        // For now, let's try invoking the same model to see if it's there.
-        const command = new InvokeModelCommand({
-            modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
-            contentType: 'application/json',
-            accept: 'application/json',
-            body: JSON.stringify({
-                anthropic_version: 'bedrock-2023-05-31',
-                max_tokens: 10,
-                messages: [{ role: 'user', content: 'Hello' }]
-            })
-        });
-
-        await client.send(command);
-
-        return {
-            service: 'Bedrock (Canada)',
-            status: 'connected',
-            message: 'Connection successful to Canada Central',
-            latencyMs: Date.now() - startTime,
-            configured: true,
-            details: {
-                region: bedrockRegion,
-                note: 'Model available in Canada!'
-            }
-        };
-    } catch (error) {
-        // Differentiate between "AccessDenied" (permissions) and "ResourceNotFound" (model missing)
-        let status = 'error';
-        let message = error.message;
-
-        if (error.name === 'ResourceNotFoundException') {
-            status = 'warning';
-            message = 'Model not yet available in Canada Central';
-        } else if (error.name === 'AccessDeniedException') {
-            status = 'warning';
-            message = 'Access Denied (expected if not configured)';
-        }
-
-        return {
-            service: 'Bedrock (Canada)',
-            status: status,
-            message: message,
-            latencyMs: Date.now() - startTime,
-            configured: true,
-            details: { region: bedrockRegion }
         };
     }
 }
@@ -390,8 +328,7 @@ async function testAllConnections() {
         testRedis(),
         testS3(),
         testAzureOpenAI(),
-        testBedrockWithRole(),
-        testBedrockCanada()
+        testBedrockWithRole()
     ]);
 
     return {
@@ -414,6 +351,5 @@ export {
     testAzureOpenAI,
     testBedrock,
     testBedrockWithRole,
-    testBedrockCanada,
     testAllConnections
 };
