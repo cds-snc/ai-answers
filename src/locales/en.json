@@ -354,7 +354,8 @@
       "chatDashboard": "View chats",
       "logout": "Sign out",
       "vector": "Vector administration",
-      "scenarioOverrides": "Edit scenarios"
+      "scenarioOverrides": "Edit scenarios",
+      "connectivity": "Service Connectivity"
     },
     "database": {
       "createIndexes": "Create/Rebuild Indexes",
@@ -1149,5 +1150,17 @@
       "never": "Never",
       "defaultMissing": "No default text available."
     }
+  },
+  "connectivity": {
+    "title": "Service Connectivity Dashboard",
+    "description": "Test connectivity to all external services and AI providers used by AI Answers.",
+    "runTests": "Run Connectivity Tests",
+    "testing": "Testing connections...",
+    "connected": "Connected",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "notConfigured": "Not Configured",
+    "lastRun": "Last run",
+    "serviceDetails": "Service Details"
   }
 }

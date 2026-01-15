@@ -6,6 +6,8 @@
   "proxy": "http://localhost:3001",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
+    "@aws-sdk/client-bedrock-runtime": "^3.969.0",
+    "@aws-sdk/client-s3": "^3.969.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@cdssnc/gcds-components": "^0.26.1",
     "@cdssnc/gcds-components-react": "^0.34.3",
@@ -53,6 +55,7 @@
     "http-proxy-middleware": "^3.0.5",
     "imvectordb": "^0.0.6",
     "install": "^0.13.0",
+    "ioredis": "^5.9.1",
     "isbot": "^3.6.0",
     "jquery": "^3.7.1",
     "js-tiktoken": "^1.0.21",

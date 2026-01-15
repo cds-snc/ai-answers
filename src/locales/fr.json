@@ -391,7 +391,8 @@
       "chatDashboard": "Voir les chats",
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
-      "scenarioOverrides": "Remplacements de scénarios"
+      "scenarioOverrides": "Remplacements de scénarios",
+      "connectivity": "Connectivité du service"
     },
     "database": {
       "createIndexes": "Créer/Reconstruire des index",
@@ -1154,5 +1155,17 @@
       "never": "Jamais",
       "defaultMissing": "Texte par défaut indisponible."
     }
+  },
+  "connectivity": {
+    "title": "Tableau de bord de connectivité du service",
+    "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
+    "runTests": "Exécuter les tests de connectivité",
+    "testing": "Test des connexions...",
+    "connected": "Connecté",
+    "errors": "Erreurs",
+    "warnings": "Avertissements",
+    "notConfigured": "Non configuré",
+    "lastRun": "Dernière exécution",
+    "serviceDetails": "Détails du service"
   }
 }

@@ -87,6 +87,7 @@ import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
+import connectivityHandler from '../api/util/util-connectivity.js';
 import createSessionMiddleware from '../middleware/express-session.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import botIsBot from '../middleware/bot-isbot.js';
@@ -259,6 +260,7 @@ app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
 app.post('/api/chat/chat-translate', chatTranslateHandler);
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
+app.get('/api/util/util-connectivity', connectivityHandler);
 
 
 const PORT = process.env.PORT || 3001;
