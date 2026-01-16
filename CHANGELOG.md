@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.84.0](https://github.com/cds-snc/ai-answers/compare/v1.83.0...v1.84.0) (2026-01-16)
+
+
+### Features
+
+* add infrastructure diagram detailing new Redis, S3, Bedrock, Azure AI Foundry, and external search service integrations. ([e42fb6c](https://github.com/cds-snc/ai-answers/commit/e42fb6ca66aa75264696c90495a0edceeee1faed))
+* add workspace synchronization script ([0b055f6](https://github.com/cds-snc/ai-answers/commit/0b055f6c644c14c61e93e7b8ff6ce28a33fd5744))
+* Implement ConversationIntegrityService to normalize text, seria… ([723b8be](https://github.com/cds-snc/ai-answers/commit/723b8bef4437f6eac11187a096c4874a16c89a35))
+* Implement ConversationIntegrityService to normalize text, serialize history, and verify conversation integrity using HMAC-SHA256 signatures, with accompanying tests. ([e15fd0d](https://github.com/cds-snc/ai-answers/commit/e15fd0d3c819b987b2e6744fa22f9cc704815672))
+
+
+### Documentation
+
+* add infrastructure diagram with redis s3 and model providers ([a49f5ca](https://github.com/cds-snc/ai-answers/commit/a49f5cadf8825fac1e427dccaefc634f2f0dce6f))
+* correct s3 placement outside vpc ([90217ec](https://github.com/cds-snc/ai-answers/commit/90217ec4d82d4954f26db6423d58715ed7ec6c65))
+* fix mermaid syntax error and duplicate connection ([38151a5](https://github.com/cds-snc/ai-answers/commit/38151a5f002ce82425342c675b8879d5f81be810))
+
 ## [1.83.0](https://github.com/cds-snc/ai-answers/compare/v1.82.0...v1.83.0) (2026-01-15)
 
 
