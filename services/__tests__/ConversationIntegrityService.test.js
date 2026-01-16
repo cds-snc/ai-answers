@@ -30,6 +30,15 @@ describe('ConversationIntegrityService', () => {
             expect(ConversationIntegrityService.serializeHistory(null)).toBe('');
             expect(ConversationIntegrityService.serializeHistory({})).toBe('');
         });
+
+        it('should strip referring-url and output-lang tags from content', () => {
+            const historyWithTags = [
+                { sender: 'user', text: 'Where is this?\n<referring-url>http://foo.com</referring-url>' },
+                { sender: 'ai', text: 'Here.\n<output-lang>en</output-lang>' }
+            ];
+            const serialized = ConversationIntegrityService.serializeHistory(historyWithTags);
+            expect(serialized).toBe('user:Where is this?|ai:Here.');
+        });
     });
 
     describe('calculateSignature', () => {

@@ -22,7 +22,9 @@ class ConversationIntegrityService {
         } else {
             // 2. "Remove known noise" for User messages (or AI messages without standard tags)
             // e.g. <output-lang>eng</output-lang> sometimes appended to history
-            content = content.replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '');
+            content = content
+                .replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '')
+                .replace(/<referring-url>[\s\S]*?<\/referring-url>/g, '');
         }
 
         // 3. Final Polish: strip remaining tags (formatting, s-tags) and normalize whitespace
