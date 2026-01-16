@@ -8,6 +8,7 @@ import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 import DeleteExpertEval from '../components/DeleteExpertEval.js';
 import { RoleBasedContent } from '../components/RoleBasedUI.js';
 import AdminNotifications from '../components/admin/AdminNotifications.js';
+
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout, currentUser } = useAuth();
@@ -45,100 +46,106 @@ const AdminPage = ({ lang = 'en' }) => {
       </RoleBasedContent>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', isPartner ? 'Partner Navigation' : 'Admin Navigation')}>
-        <h2 className="mt-400 mb-400">
-          {isPartner
-            ? t('admin.navigation.partnerMenu', 'Partner Menu')
-            : t('admin.navigation.title', 'Admin Menu')}
-        </h2>
-        <ul className="list-none p-0">
-          <li>
-            <GcdsLink href={`/${lang}`}>
-              {t('admin.navigation.aiAnswers', 'AI Answers')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/chat-dashboard`}>
-              {t('admin.navigation.chatDashboard', 'Chat dashboard')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/metrics`}>
-              {t('admin.navigation.metrics', 'View performance metrics')}
-            </GcdsLink>
-          </li>
-          {/* Commented out - now using Users filter in Chat Dashboard instead */}
-          {/* <li>
-            <GcdsLink href={`/${lang}/public-eval`}>
-              {t('admin.navigation.publicEval', 'Public Evaluation')}
-            </GcdsLink>
-          </li> */}
-          <li>
-            <GcdsLink href={`/${lang}/scenario-overrides`}>
-              {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/chat-viewer`}>
-              {t('admin.navigation.chatViewer')}
-            </GcdsLink>
-          </li>
 
-          {/* Admin-only links */}
-          <RoleBasedContent roles={["admin"]}>
+        {/* Partner Menu - Visible to everyone (Partner & Admin) */}
+        <section className="mb-400">
+          <h2 className="mt-400 mb-400">
+            {t('admin.navigation.partnerMenu', 'Partner Menu')}
+          </h2>
+          <ul className="list-none p-0">
             <li>
-              <GcdsLink href={`/${lang}/batch`}>
-                {t('admin.navigation.batches', 'View and Manage Batches')}
+              <GcdsLink href={`/${lang}`}>
+                {t('admin.navigation.aiAnswers', 'AI Answers')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/users`}>
-                {t('admin.navigation.users', 'Manage User Accounts')}
+              <GcdsLink href={`/${lang}/chat-dashboard`}>
+                {t('admin.navigation.chatDashboard', 'Chat dashboard')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/database`}>
-                {t('admin.navigation.database', 'Manage the database')}
+              <GcdsLink href={`/${lang}/metrics`}>
+                {t('admin.navigation.metrics', 'View performance metrics')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/eval`}>
-                {t('admin.navigation.eval', 'Evaluation Administration')}
+              <GcdsLink href={`/${lang}/scenario-overrides`}>
+                {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/eval-dashboard`}>
-                {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
+              <GcdsLink href={`/${lang}/chat-viewer`}>
+                {t('admin.navigation.chatViewer')}
               </GcdsLink>
             </li>
-            <li>
-              <GcdsLink href={`/${lang}/vector`}>
-                {t('admin.navigation.vector', 'Vector Administration')}
-              </GcdsLink>
-            </li>
-            <li>
-              <GcdsLink href={`/${lang}/settings`}>
-                {t('settings.title', 'Settings')}
-              </GcdsLink>
-            </li>
-            <li>
-              <GcdsLink href={`/${lang}/sessions`}>
-                {t('admin.navigation.sessions', 'Active Sessions')}
-              </GcdsLink>
-            </li>
-            <li>
-              <GcdsLink href={`/${lang}/connectivity`}>
-                {t('admin.navigation.connectivity', 'Service Connectivity')}
-              </GcdsLink>
-            </li>
-          </RoleBasedContent>
+          </ul>
+        </section>
 
-          {/* Links for both roles */}
-          <li>
-            <GcdsLink href="#" onClick={handleLogout}>
-              {t('admin.navigation.logout', 'Logout')}
-            </GcdsLink>
-          </li>
-        </ul>
+        {/* Admin Menu - Visible only to Admins */}
+        <RoleBasedContent roles={["admin"]}>
+          <section className="mb-400">
+            <h2 className="mt-400 mb-400">
+              {t('admin.navigation.title', 'Admin Menu')}
+            </h2>
+            <ul className="list-none p-0">
+              <li>
+                <GcdsLink href={`/${lang}/batch`}>
+                  {t('admin.navigation.batches', 'View and Manage Batches')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/users`}>
+                  {t('admin.navigation.users', 'Manage User Accounts')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/database`}>
+                  {t('admin.navigation.database', 'Manage the database')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/eval`}>
+                  {t('admin.navigation.eval', 'Evaluation Administration')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/eval-dashboard`}>
+                  {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/vector`}>
+                  {t('admin.navigation.vector', 'Vector Administration')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/settings`}>
+                  {t('settings.title', 'Settings')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/sessions`}>
+                  {t('admin.navigation.sessions', 'Active Sessions')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/connectivity`}>
+                  {t('admin.navigation.connectivity', 'Service Connectivity')}
+                </GcdsLink>
+              </li>
+            </ul>
+          </section>
+        </RoleBasedContent>
+        {/* Logout Link */}
+        <section className="mt-400">
+          <ul className="list-none p-0">
+            <li>
+              <GcdsLink href="#" onClick={handleLogout}>
+                {t('admin.navigation.logout', 'Logout')}
+              </GcdsLink>
+            </li>
+          </ul>
+        </section>
       </nav>
 
       {/* Quick chat lookup for admins and partners */}
@@ -186,10 +193,3 @@ const AdminPage = ({ lang = 'en' }) => {
 };
 
 export default AdminPage;
-
-
-
-
-
-
-
