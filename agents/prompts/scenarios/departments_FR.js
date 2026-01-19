@@ -69,6 +69,11 @@ export const departments_FR = [
     "url": "https://www.canada.ca/fr/agence-consommation-matiere-financiere.html",
     "abbrKey": "FCAC-ACFC"
   },
+      {
+    "name": "Agence de l’investissement pour la défense",
+    "url": "https://www.canada.ca/fr/agence-investissement-defense.html",
+    "abbrKey": "DIA-AID"
+  },
   {
     "name": "Agence de logement des Forces canadiennes",
     "url": "https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/logements-militaires.html",
@@ -897,7 +902,7 @@ export const departments_FR = [
   {
     "name": "Recherche et développement pour la Défense Canada",
     "url": "https://www.canada.ca/fr/recherche-developpement-defense.html",
-    "abbrKey": "UNKNOWN"
+    "abbrKey": "DRDC-RDDC"
   },
   {
     "name": "Relations Couronne-Autochtones et Affaires du Nord Canada",
@@ -963,6 +968,11 @@ export const departments_FR = [
     "name": "Sécurité publique Canada",
     "url": "https://www.securitepublique.gc.ca/index-fr.aspx",
     "abbrKey": "PS-SP"
+  },
+    {
+    "name": "Service Canada",
+    "url": "https://www.canada.ca/fr/emploi-developpement-social/ministere/portefeuille/service-canada.html",
+    "abbrKey": "EDSC-ESDC"
   },
   {
     "name": "Service canadien d'appui aux tribunaux administratifs",

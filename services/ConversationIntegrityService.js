@@ -22,7 +22,9 @@ class ConversationIntegrityService {
         } else {
             // 2. "Remove known noise" for User messages (or AI messages without standard tags)
             // e.g. <output-lang>eng</output-lang> sometimes appended to history
-            content = content.replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '');
+            content = content
+                .replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '')
+                .replace(/<referring-url>[\s\S]*?<\/referring-url>/g, '');
         }
 
         // 3. Final Polish: strip remaining tags (formatting, s-tags) and normalize whitespace
@@ -38,14 +40,31 @@ class ConversationIntegrityService {
     serializeHistory(history) {
         if (!Array.isArray(history)) return '';
 
+        // Filter out error messages - they don't affect conversation integrity
+        // and their presence/absence shouldn't change the signature
+        const filteredHistory = history.filter(m => !m.error);
+
         const lines = [];
-        for (const m of history) {
+        for (let i = 0; i < filteredHistory.length; i++) {
+            const m = filteredHistory[i];
+
             if (m.interaction) {
                 const q = this.normalizeText(m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question);
                 const a = this.normalizeText(m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer);
                 lines.push(`user:${q}`);
                 lines.push(`ai:${a}`);
             } else {
+                // Check redundancy: If this is a user message and the NEXT message has an interaction,
+                // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
+                // This handles the [User, AI(with interaction)] pattern common in client state.
+                const isUser = (m.sender === 'user' || m.role === 'user');
+                if (isUser && i + 1 < filteredHistory.length) {
+                    const next = filteredHistory[i + 1];
+                    if (next.interaction) {
+                        continue;
+                    }
+                }
+
                 const role = m.sender || m.role || '';
                 const text = this.normalizeText(m.text || m.content || '');
                 lines.push(`${role}:${text}`);

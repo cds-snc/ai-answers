@@ -67,7 +67,9 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       var.user_agent_arn,
       var.google_api_key_arn,
       var.gc_notify_api_key_arn,
-      var.google_search_engine_id_arn
+      var.google_search_engine_id_arn,
+      var.cross_account_bedrock_role_ssm_arn,
+      var.bedrock_region_ssm_arn
     ]
   }
 }
@@ -90,6 +92,38 @@ resource "aws_iam_role_policy_attachment" "ai_answers_lambda_parameter_store" {
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = aws_iam_policy.ai_answers_lambda_parameter_store[0].arn
+}
+
+# Assume role policy for cross-account Bedrock
+data "aws_iam_policy_document" "ai_answers_lambda_assume_bedrock_role" {
+  count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
+
+  statement {
+    sid       = "AssumeBedrockInvokeRole"
+    actions   = ["sts:AssumeRole"]
+    effect    = "Allow"
+    resources = [var.bedrock_invoke_role_arn]
+  }
+}
+
+resource "aws_iam_policy" "ai_answers_lambda_assume_bedrock_role" {
+  count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
+
+  name        = "ai-answers-lambda-assume-bedrock-invoke-role"
+  description = "Execution role policy for cross-account Bedrock access"
+  policy      = data.aws_iam_policy_document.ai_answers_lambda_assume_bedrock_role[0].json
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ai_answers_lambda_assume_bedrock_role" {
+  count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
+
+  role       = aws_iam_role.ai_answers_lambda_client[0].name
+  policy_arn = aws_iam_policy.ai_answers_lambda_assume_bedrock_role[0].arn
 }
 
 #

@@ -486,8 +486,10 @@ async function chatExportHandler(req, res) {
                 $addFields: {
                     'interactions.expertFeedback': { $arrayElemAt: ['$interactions.expertFeedback_doc', 0] },
                     'interactions.publicFeedback': { $arrayElemAt: ['$interactions.publicFeedback_doc', 0] },
-                    'interactions.question': { $arrayElemAt: ['$interactions.question_doc', 0] }
-                    // Answer and Citation already attached
+                    'interactions.question': { $arrayElemAt: ['$interactions.question_doc', 0] },
+                    // Lift department and answerType to interactions root for filter compatibility
+                    'interactions.department': { $ifNull: ['$interactions.context.department', ''] },
+                    'interactions.answerType': { $ifNull: ['$interactions.answer.answerType', ''] }
                 }
             });
 
@@ -561,7 +563,7 @@ async function chatExportHandler(req, res) {
                 }
             });
 
-            chats = await Chat.aggregate(pipeline);
+            chats = await Chat.aggregate(pipeline).allowDiskUse(true);
 
         } else {
             // Non-Aggregate Optimized Path - used when no filters are specified

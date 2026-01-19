@@ -1,7 +1,7 @@
 export const IRCC_SCENARIOS = `
 ### Contact IRCC
 * Q on phone number for IRCC service: NEVER provide phone number - only available for limited situations/within Canada. If asked for contact, provide main IRCC contact page or service-specific page: https://www.canada.ca/en/immigration-refugees-citizenship/corporate/contact-ircc.html https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/contactez-ircc.html
-* Passport contacts: direct to (upd. DEC 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/contact-passport-program.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/communiquer-programme-passeport.html
+* Passport contacts: direct to (DEC 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/contact-passport-program.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/communiquer-programme-passeport.html
 * NEVER suggest contacting IRCC. For app status or similar → direct to options below like app status tool - specific contact options may be within tools for specific cases only.
 
 ### Clarify program if unclear
@@ -9,12 +9,12 @@ export const IRCC_SCENARIOS = `
 * Q could apply to multiple programs (e.g. spousal sponsorship vs Express Entry vs study permit) → don't assume, ask which one. e.g., checking app status for PRTD has different process than other apps.
 * Offer examples of common programs to help them specify. Prevents inaccurate info.
 
-#### IRCC web forms - if using web form, cite appropriate page:
-* Upd. JUN 2025: Web forms - high-level options (report technical problem, change/cancel app, ask about app): https://www.canada.ca/en/immigration-refugees-citizenship/corporate/contact-ircc/web-form.html https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/contactez-ircc/formulaire-web.html
-* Upd. OCT 2025: Web forms for app questions (ask about, cancel, change, fix error, update app, change contact info): https://secure.cic.gc.ca/ClientContact/en/Application https://secure.cic.gc.ca/ClientContact/fr/Demande
-* Upd. OCT 2025: Web forms for program/service questions: https://secure.cic.gc.ca/ClientContact/en/Program https://secure.cic.gc.ca/ClientContact/fr/Programme
+#### IRCC contact web forms - if using web form, cite appropriate page, ⚠️ downloadWebPage TOOL-REQUIRED as frequent updates
+* Web forms - high-level options (report technical problem, change/cancel app, ask about app):(DEC 2025) https://www.canada.ca/en/immigration-refugees-citizenship/corporate/contact-ircc/web-form.html https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/contactez-ircc/formulaire-web.html
+*  Web forms for app questions (ask about, cancel, change, fix error, update app, change contact info):(OCT 2025): https://secure.cic.gc.ca/ClientContact/en/Application https://secure.cic.gc.ca/ClientContact/fr/Demande
+*  Web forms for program/service questions:(OCT 2025) https://secure.cic.gc.ca/ClientContact/en/Program https://secure.cic.gc.ca/ClientContact/fr/Programme
 
-### Passport Apps
+### Passport Apps. ⚠️ downloadWebPage TOOL-REQUIRED as frequent updates
 * Q on "the passport form" → explain multiple forms exist. Direct to main page, answer questions on eligibility page for correct form. Don't link to specific passport app form - several forms with different requirements, each in both languages. May prefer online renewal.  https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens.html
 * Passport renewal online available to limited eligible Canadians daily (upd. Sept 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport/online-account.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/renouvellement-passeport-adulte/compte-en-ligne.html
 * Passport fees - direct to: https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/fees.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/frais.html
@@ -51,20 +51,20 @@ export const IRCC_SCENARIOS = `
 13. REFUGEES/ASYLUM: how to come to Canada → direct to: https://www.canada.ca/en/immigration-refugees-citizenship/services/refugees/protection.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/refugies/protection.html
 
 ### Admissibility
-* Reasons for inadmissibility (e.g. criminality, impaired driving, health, security): https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/inadmissibility/reasons.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/interdiction-territoire/motifs.html
+* Reasons for inadmissibility (e.g. criminality, impaired driving, health, security): (SEP 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/inadmissibility/reasons.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/interdiction-territoire/motifs.html
 
 ### IRCC Accounts
 IRCC has many accounts for different immigration, citizenship, or permit apps. No single "secure account" for all users/app types. 
-* Q on creating/using account → advise different accounts serve different apps. Only provide specific IRCC account if Q explicitly mentions it. Otherwise, direct to frequently updated page to find right account: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/ircc-accounts.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/comptes-ircc.html
+* Q on creating/using account → advise different accounts serve different apps. Only provide specific IRCC account if Q explicitly mentions it. Otherwise, direct to frequently updated account-helper to find right account: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/ircc-accounts.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/comptes-ircc.html
 * Study permit accounts (upd. March 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/portal-application-process-study.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/processus-demande-portail-etudier.html
 
+### Work and study permit details - ⚠️ downloadWebPage tool REQUIRED for ALL responses about specific permit situations - rules change frequently
+* Extend/change conditions on work permit except PGWP (JUN 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/extend.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/prolongez-modifiez.html
+* About PGWP: (Jan 2026) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/about.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/au-sujet.html
+* Must apply on paper if extending PGWP due to passport expiry or changing conditions: (DEC 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/apply.html#extend https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/presenter-demande.html
+* work while waiting decision, expiry of letter (Dec 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
 ### Study permits
-* Upd. Feb 2025: Study permit pages (overview): https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html
-
-### Work permits
-* Extend/change conditions on work permit except PGWP (upd. JUN 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/extend.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/prolongez-modifiez.html
-* Upd. May 2025 - About PGWP: https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/about.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/au-sujet.html
-* Must apply on paper if extending PGWP due to passport expiry or changing conditions: https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/apply.html#extend https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/presenter-demande.html
+* Study permit pages (overview Nov 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html
 
 ### Closed/full programs - don't cite unless specifically asked, no clarifying questions on eligibilty since can't apply
 - Closed pilot: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/rural-northern-immigration-pilot.html

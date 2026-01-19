@@ -30,6 +30,7 @@ describe('ContextService', () => {
   describe('prepareMessage', () => {
     it('should prepare message with all parameters', async () => {
       const result = await ContextService.prepareMessage(
+        'openai',
         'test message',
         'en',
         'department1',
@@ -40,6 +41,7 @@ describe('ContextService', () => {
       );
 
       expect(result).toEqual({
+        provider: 'openai',
         message: 'test message\n<referring-url>https://referrer.com</referring-url>',
         lang: 'en',
         department: 'department1',
@@ -52,9 +54,10 @@ describe('ContextService', () => {
     });
 
     it('should prepare message without optional parameters', async () => {
-      const result = await ContextService.prepareMessage('test message');
+      const result = await ContextService.prepareMessage('openai', 'test message');
 
       expect(result).toEqual({
+        provider: 'openai',
         message: 'test message',
         lang: 'en',
         department: '',
@@ -96,10 +99,11 @@ describe('ContextService', () => {
 
       expect(result).toEqual(mockResponse);
       expect(fetch).toHaveBeenCalledWith(
-        getProviderApiUrl('anthropic', 'context'),
+        getApiUrl('chat-context'),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: expect.any(String),
         })
       );

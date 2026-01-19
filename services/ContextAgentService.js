@@ -5,12 +5,12 @@ const invokeContextAgent = async (agentType, request) => {
   try {
 
     let { chatId, message, systemPrompt, searchResults, conversationHistory = [], language = 'en' } = request;
-    
+
     // Load system prompt from contextSystemPrompt.js if not provided
     if (!systemPrompt) {
       systemPrompt = await loadContextSystemPrompt(language);
     }
-    
+
     const contextAgent = await createContextAgent(agentType, chatId);
 
     const messages = [
@@ -22,6 +22,10 @@ const invokeContextAgent = async (agentType, request) => {
 
     // Add conversation history messages before the current message
     conversationHistory.forEach(entry => {
+      // Only process entries with interactions (AI messages) to avoid duplicates
+      // and ensure we rely on the full Q&A pair stored in the interaction.
+      if (!entry.interaction) return;
+
       messages.push({
         role: "user",
         content: entry.interaction.question

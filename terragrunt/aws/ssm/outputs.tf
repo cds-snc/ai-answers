@@ -81,3 +81,18 @@ output "conversation_integrity_secret_arn" {
   description = "ARN of the interaction history integrity secret parameter"
   value       = aws_ssm_parameter.conversation_integrity_secret.arn
 }
+
+output "cross_account_bedrock_role_ssm_arn" {
+  description = "ARN of the cross-account Bedrock role SSM parameter"
+  value       = aws_ssm_parameter.cross_account_bedrock_role.arn
+}
+
+output "cross_account_bedrock_role_arn_value" {
+  description = "The cross-account Bedrock role ARN value (for IAM)"
+  value       = var.cross_account_bedrock_role_arn
+}
+
+output "bedrock_region_ssm_arn" {
+  description = "ARN of the Bedrock region SSM parameter"
+  value       = aws_ssm_parameter.bedrock_region.arn
+}

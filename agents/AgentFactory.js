@@ -189,45 +189,6 @@ const createContextAgent = async (agentType, chatId = 'system') => {
 };
 
 
-const createQueryAndPIIAgent = async (agentType, chatId = 'system') => {
-  let llm;
-  switch (agentType) {
-    case 'openai': {
-      const openaiConfig = getModelConfig('openai', 'gpt-4.1-mini');
-      llm = new ChatOpenAI({
-        openAIApiKey: process.env.OPENAI_API_KEY,
-        modelName: openaiConfig.name,
-        temperature: openaiConfig.temperature,
-        maxTokens: openaiConfig.maxTokens,
-        timeout: openaiConfig.timeoutMs,
-      });
-      break;
-    }
-    case 'azure': {
-      const azureConfig = getModelConfig('azure', 'openai-gpt41-mini');
-      llm = new AzureChatOpenAI({
-        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
-        azureOpenAIApiDeploymentName: azureConfig.name,
-        temperature: azureConfig.temperature,
-        maxTokens: azureConfig.maxTokens,
-        timeout: azureConfig.timeoutMs,
-      });
-      console.log('Creating Azure OpenAI search agent with model:', azureConfig.name);
-      break;
-    }
-    default:
-      throw new Error(`Unknown agent type for search: ${agentType}`);
-  }
-  // Search agent doesn't need tools, just callbacks for tracking
-  const callbacks = [new ToolTrackingHandler(chatId)];
-  const agent = await createReactAgent({ llm, tools: [] });
-  agent.callbacks = callbacks;
-  return agent;
-};
-
-
 const createPIIAgent = async (agentType, chatId = 'system') => {
   let llm;
   switch (agentType) {
@@ -243,7 +204,7 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
       break;
     }
     case 'azure': {
-      const azureConfig = getModelConfig('azure', 'openai-gpt41-mini');
+      const azureConfig = getModelConfig('azure', 'gpt-4o');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
@@ -496,6 +457,6 @@ const createChatAgent = async (provider, chatId = 'system') => {
   }
 };
 
-export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent };
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent };
 
 

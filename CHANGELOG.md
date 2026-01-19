@@ -1,5 +1,167 @@
 # Changelog
 
+## [1.85.0](https://github.com/cds-snc/ai-answers/compare/v1.84.0...v1.85.0) (2026-01-19)
+
+
+### Features
+
+* **admin:** enable eval dashboard for partners and move link to partner menu ([a730556](https://github.com/cds-snc/ai-answers/commit/a7305565074c404cf26c7211ce72d159bc24c08c))
+* **admin:** split admin menu into Partner and Admin sections ([ec156f8](https://github.com/cds-snc/ai-answers/commit/ec156f8279f9751d9e307a1037068b154da349c4))
+* **admin:** split admin menu into Partner and Admin sections ([0bb4f7c](https://github.com/cds-snc/ai-answers/commit/0bb4f7c8f87298514233686df3545d93e1734caf))
+
+
+### Bug Fixes
+
+* **bedrock:** use Claude 3 Haiku (ON_DEMAND) for Canada, remove US test (SCP blocked) ([6adf17a](https://github.com/cds-snc/ai-answers/commit/6adf17a60d73f8b38a5c517b2b5b161e0d158993))
+
+## [1.84.0](https://github.com/cds-snc/ai-answers/compare/v1.83.0...v1.84.0) (2026-01-16)
+
+
+### Features
+
+* add infrastructure diagram detailing new Redis, S3, Bedrock, Azure AI Foundry, and external search service integrations. ([e42fb6c](https://github.com/cds-snc/ai-answers/commit/e42fb6ca66aa75264696c90495a0edceeee1faed))
+* add workspace synchronization script ([0b055f6](https://github.com/cds-snc/ai-answers/commit/0b055f6c644c14c61e93e7b8ff6ce28a33fd5744))
+* Implement ConversationIntegrityService to normalize text, seria… ([723b8be](https://github.com/cds-snc/ai-answers/commit/723b8bef4437f6eac11187a096c4874a16c89a35))
+* Implement ConversationIntegrityService to normalize text, serialize history, and verify conversation integrity using HMAC-SHA256 signatures, with accompanying tests. ([e15fd0d](https://github.com/cds-snc/ai-answers/commit/e15fd0d3c819b987b2e6744fa22f9cc704815672))
+
+
+### Documentation
+
+* add infrastructure diagram with redis s3 and model providers ([a49f5ca](https://github.com/cds-snc/ai-answers/commit/a49f5cadf8825fac1e427dccaefc634f2f0dce6f))
+* correct s3 placement outside vpc ([90217ec](https://github.com/cds-snc/ai-answers/commit/90217ec4d82d4954f26db6423d58715ed7ec6c65))
+* fix mermaid syntax error and duplicate connection ([38151a5](https://github.com/cds-snc/ai-answers/commit/38151a5f002ce82425342c675b8879d5f81be810))
+
+## [1.83.0](https://github.com/cds-snc/ai-answers/compare/v1.82.0...v1.83.0) (2026-01-15)
+
+
+### Features
+
+* add bedrock invoke access to ECS ([14cf4cb](https://github.com/cds-snc/ai-answers/commit/14cf4cb9f5104af143cb99e6b55e7dfeacbf511b))
+* add ConnectivityService to test connections to DocumentDB, Redis, S3, Azure OpenAI, and AWS Bedrock. ([c6e1a5c](https://github.com/cds-snc/ai-answers/commit/c6e1a5c7e5e376a77401368a0bc7896863dc14bf))
+* add ConnectivityService to test health of DocumentDB, Redis, S3, Azure OpenAI, and AWS Bedrock for the admin dashboard. ([9d0d6dc](https://github.com/cds-snc/ai-answers/commit/9d0d6dc6ca5d2ce09661baf29f5684440db46903))
+* Add Terragrunt configurations for IAM, ECS, and SSM modules in production and staging environments to pass value of role to assume to application ([a92bb0e](https://github.com/cds-snc/ai-answers/commit/a92bb0e8d31d251ee21a1116534504390513996e))
+* Implement AI chat interface, add admin and connectivity pages, … ([1dc6102](https://github.com/cds-snc/ai-answers/commit/1dc6102c5f02decfc45eac3c832b955727b3b1eb))
+* Implement AI chat interface, add admin and connectivity pages, and introduce French/English localization. ([5e56a39](https://github.com/cds-snc/ai-answers/commit/5e56a398ac766b030c8c22ee02eeae84e6803b73))
+* **infra:** enable Bedrock support in PR Review environments ([99d1222](https://github.com/cds-snc/ai-answers/commit/99d1222a43af549ca0f9659929fd9cca94577652))
+* **infra:** expose Bedrock role and region to ECS via SSM and config… ([e3daf20](https://github.com/cds-snc/ai-answers/commit/e3daf2078f6a6d4573239e1cdef3fe8d531b65e4))
+* **infra:** expose Bedrock role and region to ECS via SSM and configure IAM permissions ([8e74961](https://github.com/cds-snc/ai-answers/commit/8e74961c6968426683cab67d7cc04be7bf3f5838))
+
+
+### Bug Fixes
+
+* **bedrock:** clean up connectivity tests, hardcode ca-central-1, and include model reply in details ([3cb57f3](https://github.com/cds-snc/ai-answers/commit/3cb57f30091c6047b98cf55a888e260cd122a8d7))
+* **bedrock:** switch to ca-central-1 region and update connectivity tests ([06e593e](https://github.com/cds-snc/ai-answers/commit/06e593e8644b627dc43ecfd0a8c71469d0b6a9ae))
+* remove Mongo references, rewrite pipeline doc ([2642ac5](https://github.com/cds-snc/ai-answers/commit/2642ac53ba906ab9e3167f5d6f1ddcef2b0a0e19))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump diff from 8.0.2 to 8.0.3 ([3695bd6](https://github.com/cds-snc/ai-answers/commit/3695bd68b534f4911c94d301d5d4ec18370474d6))
+* **deps:** bump diff from 8.0.2 to 8.0.3 ([6dac8cb](https://github.com/cds-snc/ai-answers/commit/6dac8cbe713cbf27dc391eded002fb3839ad81ee))
+
+## [1.82.0](https://github.com/cds-snc/ai-answers/compare/v1.81.0...v1.82.0) (2026-01-14)
+
+
+### Features
+
+* Add an endpoint and MongoDB aggregation pipeline to calculate and retrieve AI evaluation metrics with various filtering options. ([63da8fc](https://github.com/cds-snc/ai-answers/commit/63da8fc54e8f499f2dafe0a4d2fcf0c6603b296f))
+* add API endpoint for calculating and retrieving AI evaluation metrics. ([2c2eac0](https://github.com/cds-snc/ai-answers/commit/2c2eac09304987e9816cb2c06bde6e881beb5cff))
+* add API endpoint for public feedback metrics, including totals and reason breakdowns with comprehensive filtering. ([1d85557](https://github.com/cds-snc/ai-answers/commit/1d855572e1627047d6669e34b325728af11667e5))
+* add API endpoint to retrieve public feedback metrics, providing totals and reasons for 'yes' and 'no' feedback with filtering capabilities. ([7ba058c](https://github.com/cds-snc/ai-answers/commit/7ba058ca97c7638b42055247bd5b0811df38fd0d))
+* Add new API endpoints for expert feedback, public feedback, AI evaluation, and department metrics. ([929cfba](https://github.com/cds-snc/ai-answers/commit/929cfbaeddef703ca0113bf8609c14167efd1762))
+* add new API endpoints for public feedback, sessions, usage, AI eval, departments, and expert feedback metrics. ([4763b1f](https://github.com/cds-snc/ai-answers/commit/4763b1f525e7f7122f63c39cc6dd6affe19489dd))
+* add new API endpoints for various metrics including AI evaluation, departments, expert feedback, public feedback, sessions, and usage. ([b306aab](https://github.com/cds-snc/ai-answers/commit/b306aabbd895f9b44a4cf6276c3f4906b8f91f3a))
+* Implement a new metrics module with shared request parsing and MongoDB aggregation pipeline stages for various metrics. ([405fc16](https://github.com/cds-snc/ai-answers/commit/405fc16ff2963b0c7e3da1e45435dae90da48e42))
+* refactor of metrics now runs each view as separate query and loads in data as it comes in. ([9a9e063](https://github.com/cds-snc/ai-answers/commit/9a9e063deaed7578c8d7f03b9def1132b6f97b4b))
+
+
+### Bug Fixes
+
+* refactor of user and additonal notification panel feature of ina… ([4a231cb](https://github.com/cds-snc/ai-answers/commit/4a231cbcdfcd0f87d7cd751b5a283d66a3036eeb))
+* refactor of user and additonal notification panel feature of inactive and new users. ([3703742](https://github.com/cds-snc/ai-answers/commit/3703742bcb1c841bd3cb37ec4a2029a6efb6115e))
+* sanitize user input in user-users API to prevent NoSQL injection ([48398a3](https://github.com/cds-snc/ai-answers/commit/48398a3a9792278579389f4775b8f4c4c5b42eee))
+
+
+### Documentation
+
+* add evaluation service refactor plan and architecture overview ([2815809](https://github.com/cds-snc/ai-answers/commit/2815809e497db151a897fb0dc66810092ef659c3))
+* add evaluation service refactor plan and architecture overview ([cec14e4](https://github.com/cds-snc/ai-answers/commit/cec14e45e0a869126e4b1e65056fe0c542f8f4cd))
+
+## [1.81.0](https://github.com/cds-snc/ai-answers/compare/v1.80.0...v1.81.0) (2026-01-13)
+
+
+### Features
+
+* **dashboard:** add tooltip to show all departments on hover ([9574728](https://github.com/cds-snc/ai-answers/commit/9574728d544de5f2cf305291a08fa876cbfb7fd7))
+* **dashboard:** display all departments with primary and count indicator ([5ee3bef](https://github.com/cds-snc/ai-answers/commit/5ee3bef9b8d48efc652997315555688124c83cc4))
+
+
+### Bug Fixes
+
+* **admin:** solve export memory limit and fix department/answerType f… ([81e0cdc](https://github.com/cds-snc/ai-answers/commit/81e0cdca75ff93edb5584ca5af09026ac58fdece))
+* **admin:** solve export memory limit and fix department/answerType filter paths ([697190e](https://github.com/cds-snc/ai-answers/commit/697190e9bd82ccc0aca8636f13642f9e236ef506))
+* **api:** add missing totalScore checks to dashboard aggregation expr… ([c77add1](https://github.com/cds-snc/ai-answers/commit/c77add1be40ad7149f051a56dde453536f4931c0))
+* **api:** add missing totalScore checks to dashboard aggregation expressions ([76b04ed](https://github.com/cds-snc/ai-answers/commit/76b04edf3ad9712c6cc2ffb329c0d072e0a4133f))
+* **api:** implement eval and answerType rollup logic with worst-case priority ([6d23876](https://github.com/cds-snc/ai-answers/commit/6d23876efe2de6c26521c1538a51a6dd10751652))
+* **api:** stricter eval checks, default to null instead of correct ([48a5ac9](https://github.com/cds-snc/ai-answers/commit/48a5ac9976c38426f2da141538265dd3845c705c))
+* **api:** use indexOfArray instead of  for DocumentDB compatibility ([70bfcfb](https://github.com/cds-snc/ai-answers/commit/70bfcfba1150ea4fb24e1709b3b4fdfddbc17bc0))
+* **auth:** normalize email in signup and remove duplicate reset email ([b29c06f](https://github.com/cds-snc/ai-answers/commit/b29c06fca3fe7370bfaed0a9cf0a609b0d3e6f5c))
+* **auth:** normalize email in signup and remove duplicate reset email ([3600578](https://github.com/cds-snc/ai-answers/commit/3600578e44499629165c5fadff2eb330e1b8614f))
+* first question is error ([573e418](https://github.com/cds-snc/ai-answers/commit/573e418ce087337c07928af0d8dcd86ec3c89036))
+* **graphs:** ensure GENERATING_ANSWER status is emitted in all answer paths ([ad1b101](https://github.com/cds-snc/ai-answers/commit/ad1b1010dad131fdc7dbaa10778df81e02c787fb))
+* **integrity:** filter error messages and add missing graph status updates ([13fbf7f](https://github.com/cds-snc/ai-answers/commit/13fbf7fbdb8b8890130c8a0f0945b80de4e20cb0))
+* **integrity:** filter out error messages from conversation history ([277613b](https://github.com/cds-snc/ai-answers/commit/277613bb182ec819b9fec846cd1edb35180ab6a0))
+* **integrity:** filter out error messages from conversation history serialization ([f1434a9](https://github.com/cds-snc/ai-answers/commit/f1434a921596328a067653e81f68fb365a141933))
+* ircc scenario per david - depts ([7eb0c88](https://github.com/cds-snc/ai-answers/commit/7eb0c8888317fe91e3f83ccc448e58df9e09748c))
+* langgraph fixes ([7f0f9b0](https://github.com/cds-snc/ai-answers/commit/7f0f9b050d6a084776f7d7c1b96cdcb842c633bb))
+* link to about content ([e027221](https://github.com/cds-snc/ai-answers/commit/e02722110f290dc9f87657eaecafba98cc9d6ac0))
+* missed these ([2f34d5b](https://github.com/cds-snc/ai-answers/commit/2f34d5b03efca2d1151efc7d57f62a94016f7291))
+* more download msgs ([3530fec](https://github.com/cds-snc/ai-answers/commit/3530fec5b59bbfe0f59e9351f465f26620658141))
+* service canada was only in dept en ([366088f](https://github.com/cds-snc/ai-answers/commit/366088f89c8690591ed228530579b68b83001daf))
+* vaguer so forces upload IRCC PGWP ([fdb7d10](https://github.com/cds-snc/ai-answers/commit/fdb7d1069fb62f6b608f91bd9fffaab5b60f03db))
+
+## [1.80.0](https://github.com/cds-snc/ai-answers/compare/v1.79.4...v1.80.0) (2026-01-12)
+
+
+### Features
+
+* Add section for redaction settings in settings ([6e4a9a5](https://github.com/cds-snc/ai-answers/commit/6e4a9a54a33d78dc9b0a5465b3e1254455ce40fc))
+* readaction service tests for migration. ([5b00d6f](https://github.com/cds-snc/ai-answers/commit/5b00d6f76257e7d27f7fcbde18ebbefd29fa69bc))
+* use the database to get threat words instead of files ([7a7a16d](https://github.com/cds-snc/ai-answers/commit/7a7a16dbe3cfbb977f56717663a67d7d91c0cdb8))
+
+
+### Bug Fixes
+
+* add graphs to settings ([18ffc7b](https://github.com/cds-snc/ai-answers/commit/18ffc7bcacc9994a7a2ec689e2b2356abfc04f04))
+* include historySignature in GraphClient requests for conversation integrity check ([1c2cede](https://github.com/cds-snc/ai-answers/commit/1c2cede66842ee513d107486bdffac1d89ce61a3))
+* integreity check on graphs. ([021e161](https://github.com/cds-snc/ai-answers/commit/021e1619369ba4ca12ed36e0c4ba1f6dce3e10a0))
+* integreity check on graphs. ([c589c0a](https://github.com/cds-snc/ai-answers/commit/c589c0ae35f0772db02222857fa15f1aac8474f0))
+* remove threat words from repo ([0b32387](https://github.com/cds-snc/ai-answers/commit/0b32387de8167837b7109fad9162bb573559773e))
+* **server:** resolve conversation integrity hash mismatch and context agent crash ([b585a34](https://github.com/cds-snc/ai-answers/commit/b585a3488fbb8c2e94da4bb5441355859ef2e238))
+* use public endpoint for values ([daaf948](https://github.com/cds-snc/ai-answers/commit/daaf94833b07ade4f4ce0a64c68110e70b629af4))
+
+## [1.79.4](https://github.com/cds-snc/ai-answers/compare/v1.79.3...v1.79.4) (2026-01-12)
+
+
+### Bug Fixes
+
+* pi check model and information is done in canada only ([3aa4fa6](https://github.com/cds-snc/ai-answers/commit/3aa4fa681ebc7b399e52b7e0031ec4c7a844be48))
+* pi check model and information is done in canada only ([85e8879](https://github.com/cds-snc/ai-answers/commit/85e8879e1545a59c265af5aedb6046276dbc70d5))
+
+## [1.79.3](https://github.com/cds-snc/ai-answers/compare/v1.79.2...v1.79.3) (2026-01-12)
+
+
+### Bug Fixes
+
+* add blog to About ([18780b8](https://github.com/cds-snc/ai-answers/commit/18780b8da148ddfeb42ba29387f4abcc7362ec38))
+* add statcan partner ([5d830cd](https://github.com/cds-snc/ai-answers/commit/5d830cdebf0a11a8013af60af7b3b8ea822e84ae))
+* add statcan partner ([76f5c60](https://github.com/cds-snc/ai-answers/commit/76f5c60492aede3cef4960aafd1b7b22b6732595))
+* change cds to ceo ([3a52cbc](https://github.com/cds-snc/ai-answers/commit/3a52cbc258f41d8dc0cfd3df4b6ad9e35be26754))
+* contact form label ([a2985e9](https://github.com/cds-snc/ai-answers/commit/a2985e9ed622d223abff536dd1fdc762286e35bf))
+* move blog link ([57682da](https://github.com/cds-snc/ai-answers/commit/57682da5bfbfe69bf25ae3636a68e8a0b5dec071))
+* translation ([ce0eb30](https://github.com/cds-snc/ai-answers/commit/ce0eb309bd3c1d376cd43d1d78b37ddd1fd549eb))
+* typo on about ([0fdabc0](https://github.com/cds-snc/ai-answers/commit/0fdabc06b9a014a3205d1779936c658c4b82dfa9))
+
 ## [1.79.2](https://github.com/cds-snc/ai-answers/compare/v1.79.1...v1.79.2) (2026-01-09)
 
 

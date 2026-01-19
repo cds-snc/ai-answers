@@ -20,5 +20,7 @@ dependency "elasticache" {
 }
 
 inputs = {
-  redis_url = dependency.elasticache.outputs.redis_url
+  cross_account_bedrock_role_arn = "arn:aws:iam::144414543732:role/ai-answers-bedrock-invoke"
+  bedrock_region                 = "ca-central-1"
+  redis_url                      = dependency.elasticache.outputs.redis_url
 }

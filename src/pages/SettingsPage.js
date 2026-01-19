@@ -81,7 +81,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
       // Validate default workflow against known options
-      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'Default');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
@@ -467,7 +467,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph'];
+                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph'];
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
               } finally {
@@ -476,10 +476,12 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingDefaultWorkflow}
           >
-            <option value="Default">{t('settings.defaultWorkflow.options.Default', 'Default')}</option>
-            <option value="DefaultAlwaysContext">{t('settings.defaultWorkflow.options.DefaultAlwaysContext', 'DefaultAlwaysContext')}</option>
-            <option value="DefaultWithVector">{t('settings.defaultWorkflow.options.DefaultWithVector', 'DefaultWithVector')}</option>
-            <option value="DefaultWithVectorGraph">{t('settings.defaultWorkflow.options.DefaultWithVectorGraph', 'DefaultWithVectorGraph')}</option>
+            <option value="Default">Default</option>
+            <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
+            <option value="DefaultWithVector">DefaultWithVector</option>
+            <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
+            <option value="InstantAndQAGraph">InstantAndQAGraph</option>
+            <option value="DefaultGraph">DefaultGraph</option>
           </select>
           <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
             {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
@@ -495,6 +497,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           </select>
         </div>
       </GcdsDetails>
+
+
 
       <GcdsDetails detailsTitle={t('settings.twoFA.title', 'Two-factor authentication')} className="mt-600 mb-200" tabIndex="0">
         <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
@@ -624,7 +628,90 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
       </GcdsDetails>
+      <GcdsDetails detailsTitle={t('settings.redaction.title', 'Redaction Settings')} className="mt-600 mb-200" tabIndex="0">
+        <p className="mb-400">{t('settings.redaction.description', 'Manage bad words, threats, and manipulation phrases. Enter words separated by commas.')}</p>
+
+        <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          <div>
+            <h3 className="mb-200">English</h3>
+
+            <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
+              {t('settings.redaction.profanity', 'Profanity')} (EN)
+            </label>
+            <SettingsTextArea settingKey="redaction.profanity.en" saveAndVerify={saveAndVerify} />
+
+            <label htmlFor="threat-en" className="mb-200 display-block mt-400">
+              {t('settings.redaction.threat', 'Threats')} (EN)
+            </label>
+            <SettingsTextArea settingKey="redaction.threat.en" saveAndVerify={saveAndVerify} />
+
+            <label htmlFor="manipulation-en" className="mb-200 display-block mt-400">
+              {t('settings.redaction.manipulation', 'Manipulation')} (EN)
+            </label>
+            <SettingsTextArea settingKey="redaction.manipulation.en" saveAndVerify={saveAndVerify} />
+          </div>
+
+          <div>
+            <h3 className="mb-200">Français</h3>
+
+            <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
+              {t('settings.redaction.profanity', 'Profanity')} (FR)
+            </label>
+            <SettingsTextArea settingKey="redaction.profanity.fr" saveAndVerify={saveAndVerify} />
+
+            <label htmlFor="threat-fr" className="mb-200 display-block mt-400">
+              {t('settings.redaction.threat', 'Threats')} (FR)
+            </label>
+            <SettingsTextArea settingKey="redaction.threat.fr" saveAndVerify={saveAndVerify} />
+
+            <label htmlFor="manipulation-fr" className="mb-200 display-block mt-400">
+              {t('settings.redaction.manipulation', 'Manipulation')} (FR)
+            </label>
+            <SettingsTextArea settingKey="redaction.manipulation.fr" saveAndVerify={saveAndVerify} />
+          </div>
+        </div>
+      </GcdsDetails>
+
     </GcdsContainer>
+  );
+};
+
+// Helper component for text areas to manage their own state and saving
+const SettingsTextArea = ({ settingKey, saveAndVerify }) => {
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    DataStoreService.getSetting(settingKey, '').then(val => {
+      setValue(val || '');
+      setLoading(false);
+    });
+  }, [settingKey]);
+
+  const handleBlur = async () => {
+    setSaving(true);
+    try {
+      const current = await saveAndVerify(settingKey, value, (v) => v ?? '');
+      setValue(current);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="mb-200">Loading...</div>;
+
+  return (
+    <textarea
+      id={settingKey}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={handleBlur}
+      disabled={saving}
+      className="w-full"
+      rows={5}
+      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
+    />
   );
 };
 

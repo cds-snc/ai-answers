@@ -198,14 +198,17 @@ export function validateConversationIntegrity(req, res) {
   const history = input.conversationHistory;
 
   // Only block if history exists but signature is missing/invalid
-  if (Array.isArray(history) && history.length > 0) {
+  // Filter out error messages - they don't participate in integrity checking
+  const filteredHistory = Array.isArray(history) ? history.filter(m => !m.error) : [];
+
+  if (filteredHistory.length > 0) {
     // Extract signature: check top-level, then dig into last AI interaction
-    const lastAi = [...history].reverse().find(m => m.sender === 'ai' || (m.interaction && m.interaction.answer));
+    const lastAi = [...filteredHistory].reverse().find(m => m.sender === 'ai' || (m.interaction && m.interaction.answer));
     const signature = input.historySignature ||
       lastAi?.historySignature ||
       lastAi?.interaction?.historySignature ||
       lastAi?.interaction?.answer?.historySignature ||
-      history[0]?.interaction?.answer?.historySignature;
+      filteredHistory[0]?.interaction?.answer?.historySignature;
 
     if (!signature) {
       console.warn('[Integrity] Missing historySignature for non-empty history', { chatId: req.chatId });

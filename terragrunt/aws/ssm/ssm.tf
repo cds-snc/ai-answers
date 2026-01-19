@@ -161,6 +161,28 @@ resource "aws_ssm_parameter" "conversation_integrity_secret" {
   }
 }
 
+resource "aws_ssm_parameter" "cross_account_bedrock_role" {
+  name  = "cross_account_bedrock_role"
+  type  = "SecureString"
+  value = var.cross_account_bedrock_role_arn
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_ssm_parameter" "bedrock_region" {
+  name  = "bedrock_region"
+  type  = "SecureString"
+  value = var.bedrock_region
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
 resource "aws_ssm_parameter" "redis_url" {
   name  = "redis_url"
   type  = "SecureString"

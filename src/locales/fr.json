@@ -25,7 +25,7 @@
     },
     "about": {
       "title": "À propos de Réponses IA",
-      "builtBy": "Réponses IA est conçu, exploité et maintenu par le Service numérique canadien.",
+      "builtBy": "Réponses IA est conçu, exploité et maintenu par le Bureau de l'expérience Canada.ca de Service Canada.",
       "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
       "contactTitle": "Contactez-nous",
       "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
@@ -159,6 +159,7 @@
         "characters": "caractères",
         "searching": "Recherche d'informations pertinentes...",
         "generatingAnswer": "Génération de la réponse...",
+        "buildingContext": "Construction du contexte...",
         "verifyingCitation": "Test du lien de citation",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Évaluation de la question",
@@ -240,11 +241,6 @@
         "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
       },
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
-    }
-  },
-  "settings": {
-    "general": {
-      "title": "Paramètres généraux"
     }
   },
   "aboutPage": {
@@ -395,19 +391,22 @@
       "chatDashboard": "Voir les chats",
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
-      "scenarioOverrides": "Remplacements de scénarios"
+      "scenarioOverrides": "Remplacements de scénarios",
+      "connectivity": "Connectivité du service"
     },
     "database": {
       "createIndexes": "Créer/Reconstruire des index",
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
       "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
-      "createIndexesError": "Échec de la création des index: {error}",
-      "backfillSecrets": "Remplir les secrets des utilisateurs",
-      "backfillSecretsDescription": "Générez des secrets 2FA et de réinitialisation de mot de passe pour les utilisateurs existants qui en sont dépourvus.",
-      "backfillSecretsButton": "Remplir les secrets",
-      "backfillSecretsSuccess": "Remplissage terminé. Utilisateurs mis à jour: {updatedCount}",
-      "backfillSecretsError": "Échec du remplissage des secrets: {error}"
+      "createIndexesError": "Échec de la création des index: {error}"
+    },
+    "notifications": {
+      "title": "Notifications utilisateur",
+      "ariaLabel": "Notifications utilisateur",
+      "newInactive": "nouvel(aux) utilisateur(s) en attente d'activation (7 derniers jours)",
+      "totalInactive": "utilisateur(s) inactif(s) au total",
+      "viewUsers": "Voir et gérer les utilisateurs"
     },
     "viewChat": {
       "title": "Voir le chat par ID",
@@ -668,7 +667,8 @@
           "hasCitationError": "erreur de citation",
           "harmful": "nuisible"
         }
-      }
+      },
+      "departmentMore": "+{count} de plus"
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
@@ -908,14 +908,14 @@
       "store": {
         "options": {
           "memory": "En mémoire (volatile)",
-          "mongo": "MongoDB (persistant/cache)"
+          "mongo": "DocumentDB (persistant/cache)"
         }
       },
       "persistence": {
         "label": "Persistance des sessions",
         "options": {
           "memory": "Mémoire (en processus)",
-          "mongo": "MongoDB (persistant/cache)"
+          "mongo": "DocumentDB (persistant/cache)"
         }
       }
     },
@@ -928,6 +928,13 @@
       "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
       "rateLimitRefill": "Recharge du quota (requêtes/min)",
       "authenticatedRateLimitRefill": "Recharge du quota authentifié (requêtes/min)"
+    },
+    "redaction": {
+      "title": "Paramètres de rédaction",
+      "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
+      "profanity": "Gros mots",
+      "threat": "Menaces",
+      "manipulation": "Manipulation"
     }
   },
   "outage": {
@@ -1148,5 +1155,17 @@
       "never": "Jamais",
       "defaultMissing": "Texte par défaut indisponible."
     }
+  },
+  "connectivity": {
+    "title": "Tableau de bord de connectivité du service",
+    "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
+    "runTests": "Exécuter les tests de connectivité",
+    "testing": "Test des connexions...",
+    "connected": "Connecté",
+    "errors": "Erreurs",
+    "warnings": "Avertissements",
+    "notConfigured": "Non configuré",
+    "lastRun": "Dernière exécution",
+    "serviceDetails": "Détails du service"
   }
 }

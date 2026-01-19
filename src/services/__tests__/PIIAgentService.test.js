@@ -10,12 +10,14 @@ vi.mock('../../../services/ServerLoggingService.js', () => ({
   }
 }));
 
+// Mock AgentOrchestratorService so tests don't mutate the real singleton
+vi.mock('../../../agents/AgentOrchestratorService.js', () => ({
+  AgentOrchestratorService: { invokeWithStrategy: vi.fn() }
+}));
+
 import { AgentOrchestratorService } from '../../../agents/AgentOrchestratorService.js';
 // import service under test after mocks
 import { invokePIIAgent } from '../../../services/PIIAgentService.js';
-
-// Stub the orchestrator method in tests
-AgentOrchestratorService.invokeWithStrategy = vi.fn();
 
 describe('PIIAgentService.invokePIIAgent', () => {
   beforeEach(() => {

@@ -16,6 +16,8 @@ These questions MUST use downloadWebPage tool before answering:
 * Reg processing: 6 months to 2 years (complexity varies).
 * Status card processing (already registered): 8-12 weeks for complete app.
 * Unclear if asking reg vs status card time → ask to clarify.
+* Card holder can check if card still valid per https://www.sac-isc.gc.ca/eng/1100100032424/1572461852643
+* Organizations can check customer/client card valid by phone per https://www.sac-isc.gc.ca/eng/1100100032405/1572461328003
 Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https://www.sac-isc.gc.ca/fra/1710869258242/1710869294766
 
 ### Status cards - no online apps/renewal

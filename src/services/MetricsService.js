@@ -14,6 +14,80 @@ class MetricsService {
     }
   }
 
+  static async getUsageMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-usage', filters, signal);
+  }
+
+  static async getSessionMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-sessions', filters, signal);
+  }
+
+  static async getExpertMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-expert-feedback', filters, signal);
+  }
+
+  static async getAiEvalMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-ai-eval', filters, signal);
+  }
+
+  static async getPublicFeedbackMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-public-feedback', filters, signal);
+  }
+
+  static async getDepartmentMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-departments', filters, signal);
+  }
+
+  static async _fetchMetric(endpoint, filters, signal) {
+    try {
+      const queryParams = new URLSearchParams(filters).toString();
+      const fetchOptions = signal ? { signal } : {};
+      const response = await AuthService.fetch(getApiUrl(`${endpoint}?${queryParams}`), fetchOptions);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to get ${endpoint}`);
+      }
+      const data = await response.json();
+      return data.metrics;
+    } catch (error) {
+      // Don't log abort errors as they're intentional
+      if (error.name !== 'AbortError') {
+        console.error(`Error getting ${endpoint}:`, error);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch pre-calculated metrics (Legacy Monolithic Support - calls all endpoints parallel)
+   */
+  static async getCalculatedMetrics(filters = {}) {
+    try {
+      const [usage, session, expert, ai, publicFb, dept] = await Promise.all([
+        this.getUsageMetrics(filters),
+        this.getSessionMetrics(filters),
+        this.getExpertMetrics(filters),
+        this.getAiEvalMetrics(filters),
+        this.getPublicFeedbackMetrics(filters),
+        this.getDepartmentMetrics(filters)
+      ]);
+
+      // Merge results into single object matching old structure
+      return {
+        ...usage,
+        ...session,
+        ...expert,
+        ...ai,
+        ...publicFb,
+        ...dept
+      };
+    } catch (error) {
+      console.error('Error in getCalculatedMetrics:', error);
+      throw error;
+    }
+  }
+
+
 
   static calculateMetrics = (logs) => {
     // Use a local Set to track unique chatIds

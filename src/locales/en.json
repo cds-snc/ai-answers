@@ -26,7 +26,7 @@
     },
     "about": {
       "title": "About AI Answers",
-      "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service.",
+      "builtBy": "AI Answers is designed, operated and maintained by Service Canada's Canada.ca Experience Office .",
       "status": "The service began as an experiment in late 2024 by the Canada.ca design team. AI Answers is currently undergoing invitation-only trials on high-traffic Canada.ca pages. We analyze results after each trial to improve both product and processes with our partner institutions. An expanded rollout is planned for 2026.",
       "contactTitle": "Contact us",
       "contactFormLink": "Use the Canadian Digital Service contact form",
@@ -160,6 +160,7 @@
         "characters": "characters",
         "searching": "Searching for relevant information...",
         "generatingAnswer": "Generating answer...",
+        "buildingContext": "Building context...",
         "verifyingCitation": "Testing citation link",
         "moderatingAnswer": "Moderating answer...",
         "moderatingQuestion": "Assessing question",
@@ -204,11 +205,6 @@
         "invalidUrl": "Please enter a valid canada.ca or gc.ca URL"
       },
       "intro": "Rate the sentences in the answer, or the citation, or both"
-    }
-  },
-  "settings": {
-    "general": {
-      "title": "General settings"
     }
   },
   "aboutPage": {
@@ -358,19 +354,22 @@
       "chatDashboard": "View chats",
       "logout": "Sign out",
       "vector": "Vector administration",
-      "scenarioOverrides": "Edit scenarios"
+      "scenarioOverrides": "Edit scenarios",
+      "connectivity": "Service Connectivity"
     },
     "database": {
       "createIndexes": "Create/Rebuild Indexes",
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
       "createIndexesButton": "Rebuild All Indexes",
       "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
-      "createIndexesError": "Create indexes failed: {error}",
-      "backfillSecrets": "Backfill User Secrets",
-      "backfillSecretsDescription": "Generate 2FA and reset password secrets for existing users that are missing them.",
-      "backfillSecretsButton": "Backfill Secrets",
-      "backfillSecretsSuccess": "Backfill complete. Updated users: {updatedCount}",
-      "backfillSecretsError": "Backfill secrets failed: {error}"
+      "createIndexesError": "Create indexes failed: {error}"
+    },
+    "notifications": {
+      "title": "User Notifications",
+      "ariaLabel": "User notifications",
+      "newInactive": "new user(s) awaiting activation (last 7 days)",
+      "totalInactive": "total inactive user(s)",
+      "viewUsers": "View and manage users"
     },
     "viewChat": {
       "title": "View chat by ID",
@@ -630,7 +629,8 @@
           "hasCitationError": "citation error",
           "harmful": "harmful"
         }
-      }
+      },
+      "departmentMore": "+{count} more"
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
@@ -870,14 +870,14 @@
       "store": {
         "options": {
           "memory": "Memory (in-process)",
-          "mongo": "MongoDB (persistent/cache)"
+          "mongo": "DocumentDB (persistent/cache)"
         }
       },
       "persistence": {
         "label": "Session persistence",
         "options": {
           "memory": "Memory (in-process)",
-          "mongo": "MongoDB (persistent/cache)"
+          "mongo": "DocumentDB (persistent/cache)"
         }
       }
     },
@@ -890,6 +890,13 @@
       "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (requests)",
       "rateLimitRefill": "Rate limit refill (requests per min)",
       "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
+    },
+    "redaction": {
+      "title": "Redaction Settings",
+      "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
+      "profanity": "Profanity",
+      "threat": "Threats",
+      "manipulation": "Manipulation"
     }
   },
   "outage": {
@@ -1143,5 +1150,17 @@
       "never": "Never",
       "defaultMissing": "No default text available."
     }
+  },
+  "connectivity": {
+    "title": "Service Connectivity Dashboard",
+    "description": "Test connectivity to all external services and AI providers used by AI Answers.",
+    "runTests": "Run Connectivity Tests",
+    "testing": "Testing connections...",
+    "connected": "Connected",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "notConfigured": "Not Configured",
+    "lastRun": "Last run",
+    "serviceDetails": "Service Details"
   }
 }
