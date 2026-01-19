@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.85.0](https://github.com/cds-snc/ai-answers/compare/v1.84.0...v1.85.0) (2026-01-19)
+
+
+### Features
+
+* **admin:** enable eval dashboard for partners and move link to partner menu ([a730556](https://github.com/cds-snc/ai-answers/commit/a7305565074c404cf26c7211ce72d159bc24c08c))
+* **admin:** split admin menu into Partner and Admin sections ([ec156f8](https://github.com/cds-snc/ai-answers/commit/ec156f8279f9751d9e307a1037068b154da349c4))
+* **admin:** split admin menu into Partner and Admin sections ([0bb4f7c](https://github.com/cds-snc/ai-answers/commit/0bb4f7c8f87298514233686df3545d93e1734caf))
+
+
+### Bug Fixes
+
+* **bedrock:** use Claude 3 Haiku (ON_DEMAND) for Canada, remove US test (SCP blocked) ([6adf17a](https://github.com/cds-snc/ai-answers/commit/6adf17a60d73f8b38a5c517b2b5b161e0d158993))
+
 ## [1.84.0](https://github.com/cds-snc/ai-answers/compare/v1.83.0...v1.84.0) (2026-01-16)
 
 
