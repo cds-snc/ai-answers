@@ -7,10 +7,15 @@ export default async function batchListHandler(req, res) {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
-        const type = req.query.type; // Optional filter by type
+        const rawType = req.query.type;
 
         const query = {};
-        if (type) query.type = type;
+        if (rawType !== undefined) {
+            if (typeof rawType !== 'string') {
+                return res.status(400).json({ error: 'Invalid type parameter' });
+            }
+            query.type = { $eq: rawType };
+        }
 
         const batches = await ExperimentalBatch.find(query)
             .sort({ createdAt: -1 })
