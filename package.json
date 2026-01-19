@@ -101,6 +101,7 @@
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
+    "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
     "test:e2e": "cross-env NODE_ENV=test dotenv -e .env powershell ./scripts/run-e2e-tests.ps1"
   },
