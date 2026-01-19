@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { Heading, Button, Select, Text, FileUploader, Container, Grid, Card } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import * as XLSX from 'xlsx';
 
@@ -124,29 +124,34 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     return (
-        <Container size="xl" centered className="my-400">
-            <Heading tag="h1">{t('experimental.analysis.title', 'Experimental Analysis')}</Heading>
+        <GcdsContainer size="xl" centered className="my-400">
+            <GcdsHeading tag="h1">{t('experimental.analysis.title')}</GcdsHeading>
 
-            <Card className="p-400 my-400">
-                <Grid columns="1fr" gap="400">
+            <div className="p-400 my-400 border rounded">
+                <div>
 
                     {/* Analyzer Selector */}
-                    <div>
-                        <Select
-                            label={t('experimental.analysis.selectAnalyzer', 'Select Analyzer')}
+                    <div className="mb-400">
+                        <label htmlFor="analyzer-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            {t('experimental.analysis.selectAnalyzer')}
+                        </label>
+                        <select
+                            id="analyzer-select"
                             value={selectedAnalyzerId}
                             onChange={(e) => setSelectedAnalyzerId(e.target.value)}
-                            options={[
-                                { value: '', text: 'Choose...' },
-                                ...analyzers.map(a => ({ value: a.id, text: a.name }))
-                            ]}
-                        />
+                            style={{ padding: '8px', width: '100%', maxWidth: '400px' }}
+                        >
+                            <option value="">{t('experimental.analysis.choose')}</option>
+                            {analyzers.map(a => (
+                                <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Dynamic Uploads */}
                     {selectedAnalyzer && (
-                        <div className="border p-300 rounded">
-                            <Text><strong>{selectedAnalyzer.name}</strong> requires {selectedAnalyzer.inputType === 'comparison' ? 'two Excel files' : 'one Excel file'}.</Text>
+                        <div className="border p-300 rounded mb-400">
+                            <GcdsText><strong>{selectedAnalyzer.name}</strong> requires {selectedAnalyzer.inputType === 'comparison' ? 'two Excel files' : 'one Excel file'}.</GcdsText>
 
                             <div className="my-200">
                                 <label style={{ display: 'block', marginBottom: '5px' }}>
@@ -166,17 +171,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
                     {/* Action */}
                     <div>
-                        <Button onClick={handleRunAnalysis} disabled={!selectedAnalyzer || loading}>
+                        <GcdsButton onClick={handleRunAnalysis} disabled={!selectedAnalyzer || loading}>
                             {loading ? 'Processing...' : 'Run Analysis'}
-                        </Button>
-                        {message && <Text className="mt-200" role="status">{message}</Text>}
+                        </GcdsButton>
+                        {message && <GcdsText className="mt-200" role="status">{message}</GcdsText>}
                     </div>
 
-                </Grid>
-            </Card>
+                </div>
+            </div>
 
             {/* Results List */}
-            <Heading tag="h2" className="mt-600">Recent Analysis Batches</Heading>
+            <GcdsHeading tag="h2" className="mt-600">Recent Analysis Batches</GcdsHeading>
             <div className="overflow-auto">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -205,6 +210,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </table>
             </div>
 
-        </Container>
+        </GcdsContainer>
     );
 }
