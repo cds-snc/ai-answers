@@ -24,6 +24,8 @@ const YES_REASON_LABELS = {
     "J'ai gagné du temps en cherchant et en lisant"
   ],
   other: [
+    "Other",
+    "Autre",
     "Other - please fill out the survey",
     "Autre - veuillez remplir l'enquête"
   ]
