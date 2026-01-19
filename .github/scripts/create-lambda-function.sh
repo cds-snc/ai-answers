@@ -16,7 +16,7 @@ echo "Deploying AI Answers function: $FULL_FUNCTION_NAME"
 echo "Fetching environment variables from SSM Parameter Store..."
 # The parameter names to fetch
 PARAMETER_NAMES1="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key"
-PARAMETER_NAMES2="gc_notify_api_key google_search_engine_id cross_account_bedrock_role bedrock_region redis_url"
+PARAMETER_NAMES2="gc_notify_api_key google_search_engine_id cross_account_bedrock_role bedrock_region"
 
 # Fetch all parameters in two batches due to AWS limit of 10 per request
 PARAMETERS_JSON1=$(aws ssm get-parameters --names $PARAMETER_NAMES1 --with-decryption --query 'Parameters' --output json)
@@ -45,7 +45,9 @@ GC_NOTIFY_API_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="gc_not
 GOOGLE_SEARCH_ENGINE_ID=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="google_search_engine_id") | .Value')
 CROSS_ACCOUNT_BEDROCK_ROLE=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="cross_account_bedrock_role") | .Value')
 BEDROCK_REGION=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="bedrock_region") | .Value')
-REDIS_URL=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="redis_url") | .Value')
+
+# Fetch optional redis_url parameter (may not exist yet)
+REDIS_URL=$(aws ssm get-parameter --name redis_url --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || echo "")
 
 # Validate that all required parameters were extracted
 if [ -z "$DOCDB_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$JWT_SECRET_KEY" ]; then
