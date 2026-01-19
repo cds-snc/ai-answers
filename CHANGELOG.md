@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.86.0](https://github.com/cds-snc/ai-answers/compare/v1.85.0...v1.86.0) (2026-01-19)
+
+
+### Features
+
+* add dev:quick script for easy local development ([b012787](https://github.com/cds-snc/ai-answers/commit/b0127876444160d92ab1a1aa08c13e57bf23043f))
+* add dev:quick script for easy local development ([eb48b70](https://github.com/cds-snc/ai-answers/commit/eb48b70c76c50041ba1d7e85a43b8152dd34338d))
+* show domain ([8205aba](https://github.com/cds-snc/ai-answers/commit/8205aba07b99a1177a65f5ec7a389b2f0e843b77))
+* update URL truncation in filter show domain and segment ([b865db6](https://github.com/cds-snc/ai-answers/commit/b865db6365d9543d17ce8f6a98b404ef568f76b7))
+
 ## [1.85.0](https://github.com/cds-snc/ai-answers/compare/v1.84.0...v1.85.0) (2026-01-19)
 
 
