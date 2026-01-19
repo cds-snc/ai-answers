@@ -64,14 +64,15 @@ const buildLabelToKeyMap = (labelsObj) => {
 const YES_LABEL_TO_KEY = buildLabelToKeyMap(YES_REASON_LABELS);
 const NO_LABEL_TO_KEY = buildLabelToKeyMap(NO_REASON_LABELS);
 
-// Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
-  // Normalize the key to lowercase to handle old data that might have uppercase
-  const normalizedKey = reasonKey.toLowerCase();
+  // Try to find the correct camelCase key from our labels object
+  const reasonLabels = isPositive ? YES_REASON_LABELS : NO_REASON_LABELS;
+  const matchedKey = Object.keys(reasonLabels).find(k => k.toLowerCase() === reasonKey.toLowerCase()) || reasonKey;
+  
   if (isPositive) {
-    return t(`homepage.publicFeedback.yes.options.${normalizedKey}`) || reasonKey;  
+    return t(`homepage.publicFeedback.yes.options.${matchedKey}`) || reasonKey;  
   } else {
-    return t(`homepage.publicFeedback.no.options.${normalizedKey}`) || reasonKey;
+    return t(`homepage.publicFeedback.no.options.${matchedKey}`) || reasonKey;
   }
 };
 
@@ -86,19 +87,23 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
   const noReasons = metrics.publicFeedbackReasons?.no || {};
 
 
-  // Helper to group counts by translation key
+// Helper to group counts by translation key
 const groupByKey = (reasons, isPositive) => {
   const labelToKey = isPositive ? YES_LABEL_TO_KEY : NO_LABEL_TO_KEY;
+  const reasonLabels = isPositive ? YES_REASON_LABELS : NO_REASON_LABELS;
   const grouped = {};
+  
   Object.entries(reasons).forEach(([reason, count]) => {
-    // Start by normalizing to lowercase
-    let key = reason.toLowerCase();
+    // First try to find a matching key (case-insensitive)
+    let key = Object.keys(reasonLabels).find(k => k.toLowerCase() === reason.toLowerCase());
     
-    // Check if it's a valid key, if not try to map from label
-    if (!(key in (isPositive ? YES_REASON_LABELS : NO_REASON_LABELS))) {
-      // Try to map from label (use original reason for lookup, then lowercase the result)
-      key = (labelToKey[reason] || reason).toLowerCase();
+    // If not found, try to map from label
+    if (!key) {
+      key = labelToKey[reason] || reason;
     }
+    
+    // Normalize to lowercase for grouping
+    key = key.toLowerCase();
     
     if (!grouped[key]) grouped[key] = 0;
     grouped[key] += count;
