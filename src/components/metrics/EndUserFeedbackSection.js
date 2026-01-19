@@ -66,10 +66,12 @@ const NO_LABEL_TO_KEY = buildLabelToKeyMap(NO_REASON_LABELS);
 
 // Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
+  // Normalize the key to lowercase to handle old data that might have uppercase
+  const normalizedKey = reasonKey.toLowerCase();
   if (isPositive) {
-    return t(`homepage.publicFeedback.yes.options.${reasonKey}`) || reasonKey;
+    return t(`homepage.publicFeedback.yes.options.${normalizedKey}`) || reasonKey;  
   } else {
-    return t(`homepage.publicFeedback.no.options.${reasonKey}`) || reasonKey;
+    return t(`homepage.publicFeedback.no.options.${normalizedKey}`) || reasonKey;
   }
 };
 
