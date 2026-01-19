@@ -1212,12 +1212,13 @@
     "warnings": "Warnings",
     "notConfigured": "Not Configured",
     "lastRun": "Last run",
-    "serviceDetails": "Service Details""experimental": {
-      "analysis": {
-        "title": "Experimental Analysis",
-        "selectAnalyzer": "Select Analyzer",
-        "choose": "Choose..."
-      }
+    "serviceDetails": "Service Details"
+  },
+  "experimental": {
+    "analysis": {
+      "title": "Experimental Analysis",
+      "selectAnalyzer": "Select Analyzer",
+      "choose": "Choose..."
     }
   }
 }
