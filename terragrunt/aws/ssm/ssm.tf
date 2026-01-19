@@ -160,3 +160,14 @@ resource "aws_ssm_parameter" "conversation_integrity_secret" {
     Terraform  = true
   }
 }
+
+resource "aws_ssm_parameter" "redis_url" {
+  name  = "redis_url"
+  type  = "SecureString"
+  value = var.redis_url
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}

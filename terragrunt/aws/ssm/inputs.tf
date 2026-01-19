@@ -92,3 +92,9 @@ variable "dummy2_trigger" {
   description = "Dummy variable for triggering CI"
   default     = "trigger"
 }
+
+variable "redis_url" {
+  description = "The Redis URL"
+  sensitive   = true
+  type        = string
+}
