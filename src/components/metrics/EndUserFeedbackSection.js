@@ -87,21 +87,24 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
 
 
   // Helper to group counts by translation key
-  const groupByKey = (reasons, isPositive) => {
-    const labelToKey = isPositive ? YES_LABEL_TO_KEY : NO_LABEL_TO_KEY;
-    const grouped = {};
-    Object.entries(reasons).forEach(([reason, count]) => {
-      // Try to map reason to a key (if it's already a key, use it; else, try to map from label)
-      let key = reason;
-      if (!(key in (isPositive ? YES_REASON_LABELS : NO_REASON_LABELS))) {
-        // Try to map from label
-        key = labelToKey[reason] || reason;
-      }
-      if (!grouped[key]) grouped[key] = 0;
-      grouped[key] += count;
-    });
-    return grouped;
-  };
+const groupByKey = (reasons, isPositive) => {
+  const labelToKey = isPositive ? YES_LABEL_TO_KEY : NO_LABEL_TO_KEY;
+  const grouped = {};
+  Object.entries(reasons).forEach(([reason, count]) => {
+    // Start by normalizing to lowercase
+    let key = reason.toLowerCase();
+    
+    // Check if it's a valid key, if not try to map from label
+    if (!(key in (isPositive ? YES_REASON_LABELS : NO_REASON_LABELS))) {
+      // Try to map from label (use original reason for lookup, then lowercase the result)
+      key = (labelToKey[reason] || reason).toLowerCase();
+    }
+    
+    if (!grouped[key]) grouped[key] = 0;
+    grouped[key] += count;
+  });
+  return grouped;
+};
 
   // Grouped counts for table and pie charts (by translation key)
   const yesGrouped = groupByKey(yesReasons, true);
