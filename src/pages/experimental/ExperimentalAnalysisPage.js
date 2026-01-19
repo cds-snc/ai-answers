@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslations } from '../../hooks/useTranslations.js';
 import { Heading, Button, Select, Text, FileUploader, Container, Grid, Card } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import * as XLSX from 'xlsx';
 
-export default function ExperimentalAnalysisPage() {
-    const { t } = useTranslation();
+export default function ExperimentalAnalysisPage({ lang = 'en' }) {
+    const { t } = useTranslations(lang);
 
     // State
     const [analyzers, setAnalyzers] = useState([
