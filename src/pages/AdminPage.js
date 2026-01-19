@@ -118,7 +118,6 @@ const AdminPage = ({ lang = 'en' }) => {
                   {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
                 </GcdsLink>
               </li>
-
               <li>
                 <GcdsLink href={`/${lang}/vector`}>
                   {t('admin.navigation.vector', 'Vector Administration')}
@@ -138,6 +137,18 @@ const AdminPage = ({ lang = 'en' }) => {
                 <GcdsLink href={`/${lang}/connectivity`}>
                   {t('admin.navigation.connectivity', 'Service Connectivity')}
                 </GcdsLink>
+              </li>
+
+              {/* Experimental Features */}
+              <li className="mt-400">
+                <strong>{t('admin.navigation.experimental', 'Experimental')}</strong>
+                <ul className="list-none pl-400">
+                  <li>
+                    <GcdsLink href={`/${lang}/experimental/analysis`}>
+                      {t('admin.navigation.experimentalAnalysis', 'Analysis Batches')}
+                    </GcdsLink>
+                  </li>
+                </ul>
               </li>
             </ul>
           </section>
@@ -194,7 +205,7 @@ const AdminPage = ({ lang = 'en' }) => {
         <h2 className="mt-400 mb-400">{t('admin.chatLogs.title', 'Recent Chat Interactions')}</h2>
         <ChatLogsDashboard lang={lang} />
       </section>
-    </GcdsContainer>
+    </GcdsContainer >
   );
 };
 

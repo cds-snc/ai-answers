@@ -357,6 +357,8 @@
       "chatViewer": "View full trace for a chat",
       "database": "Manage the database",
       "eval": "Evaluation administration",
+      "experimental": "Experimental",
+      "experimentalAnalysis": "Analysis Batches",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
       "publicEval": "Evaluate a public chat",
@@ -1210,6 +1212,12 @@
     "warnings": "Warnings",
     "notConfigured": "Not Configured",
     "lastRun": "Last run",
-    "serviceDetails": "Service Details"
+    "serviceDetails": "Service Details""experimental": {
+      "analysis": {
+        "title": "Experimental Analysis",
+        "selectAnalyzer": "Select Analyzer",
+        "choose": "Choose..."
+      }
+    }
   }
 }

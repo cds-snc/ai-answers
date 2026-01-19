@@ -394,6 +394,8 @@
       "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
+      "experimental": "Expérimental",
+      "experimentalAnalysis": "Lots d'analyse",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluer un chat public",
@@ -1217,5 +1219,12 @@
     "notConfigured": "Non configuré",
     "lastRun": "Dernière exécution",
     "serviceDetails": "Détails du service"
+  },
+  "experimental": {
+    "analysis": {
+      "title": "Analyse expérimentale",
+      "selectAnalyzer": "Sélectionner l'analyseur",
+      "choose": "Choisir..."
+    }
   }
 }
