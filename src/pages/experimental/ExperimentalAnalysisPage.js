@@ -11,7 +11,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [analyzers, setAnalyzers] = useState([
         { id: 'semantic-comparison', name: 'Semantic Comparison', inputType: 'comparison' },
         { id: 'bias-detection', name: 'Bias Detection', inputType: 'single' },
-        { id: 'safety', name: 'Safety Evaluation', inputType: 'single' }
+        { id: 'safety', name: 'Safety Evaluation', inputType: 'single' },
+        { id: 'opus-judge', name: 'Opus-as-Judge', inputType: 'single' },
+        { id: 'refusal-check', name: 'Refusal', inputType: 'single' }
     ]);
     const [selectedAnalyzerId, setSelectedAnalyzerId] = useState('');
 
