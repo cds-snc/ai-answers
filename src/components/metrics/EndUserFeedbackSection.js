@@ -6,10 +6,8 @@ import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recha
 // Accessible color palette for pie charts (WCAG AA compliant)
 const ACCESSIBLE_COLORS = [
   "#0066CC", // Dark blue
-  "#00A651", // Green  
   "#AD1457", // Magenta
   "#7B1FA2", // Purple
-  "#F57C00", // Dark orange
   "#00838F", // Teal
   "#5D4037"  // Brown
 ];
