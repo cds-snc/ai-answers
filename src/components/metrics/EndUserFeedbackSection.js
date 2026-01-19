@@ -48,6 +48,8 @@ const NO_REASON_LABELS = {
     "La réponse est claire, mais ce n'est pas ce que je voulais entendre"
   ],
   other: [
+    "Other",
+    "Autre",
     "Other - please fill out the survey",
     "Autre - veuillez remplir l'enquête"
   ]
