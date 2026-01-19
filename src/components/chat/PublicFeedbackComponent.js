@@ -37,7 +37,7 @@ const PublicFeedbackComponent = ({
     const feedbackPayload = {
       type: 'public',
       feedback: isPositive ? 'yes' : 'no', // Set 'yes' or 'no'
-      publicFeedbackReason: option.label,   // Use the option's label
+      publicFeedbackReason: option.id,   // Use the option's id
       publicFeedbackScore: option.score,    // Use the option's score
     };
     try {

@@ -3,7 +3,16 @@ import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-
+// Accessible color palette for pie charts (WCAG AA compliant)
+const ACCESSIBLE_COLORS = [
+  "#0066CC", // Dark blue
+  "#00A651", // Green  
+  "#AD1457", // Magenta
+  "#7B1FA2", // Purple
+  "#F57C00", // Dark orange
+  "#00838F", // Teal
+  "#5D4037"  // Brown
+];
 
 // --- Reverse lookup for public feedback reason keys ---
 // These should match the ids used in PublicFeedbackComponent.js
@@ -83,8 +92,6 @@ const getReasonLabel = (reasonKey, t, isPositive) => {
 
 
 const EndUserFeedbackSection = ({ t, metrics }) => {
-    console.log('Raw feedback data:', metrics.publicFeedbackReasons);
-
   // --- First table (en/fr counts) remains unchanged ---
 
 
@@ -218,8 +225,8 @@ const groupByKey = (reasons, isPositive) => {
                   label
                 >
                   {yesPieData.map((entry, idx) => (
-                    <Cell key={`cell-yes-${idx}`} fill={["#0088FE", "#00C49F", "#FFBB28", "#FF8042"][idx % 4]} />
-                  ))}
+                 <Cell key={`cell-yes-${idx}`} fill={ACCESSIBLE_COLORS[idx % ACCESSIBLE_COLORS.length]} />           
+             ))}
                 </Pie>
                 <Tooltip />
                 <Legend />
@@ -241,7 +248,7 @@ const groupByKey = (reasons, isPositive) => {
                   label
                 >
                   {noPieData.map((entry, idx) => (
-                    <Cell key={`cell-no-${idx}`} fill={["#8884d8", "#FF8042", "#FFBB28", "#00C49F"][idx % 4]} />
+                        <Cell key={`cell-no-${idx}`} fill={ACCESSIBLE_COLORS[idx % ACCESSIBLE_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
