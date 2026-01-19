@@ -83,6 +83,8 @@ const getReasonLabel = (reasonKey, t, isPositive) => {
 
 
 const EndUserFeedbackSection = ({ t, metrics }) => {
+    console.log('Raw feedback data:', metrics.publicFeedbackReasons);
+
   // --- First table (en/fr counts) remains unchanged ---
 
 
