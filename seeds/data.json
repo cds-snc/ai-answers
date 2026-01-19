@@ -1,0 +1,80 @@
+{
+    "users": [
+        {
+            "_id": "507f1f77bcf86cd799439011",
+            "email": "admin@admin.com",
+            "password": "admin",
+            "role": "admin",
+            "active": true
+        },
+        {
+            "_id": "507f1f77bcf86cd799439012",
+            "email": "partner@example.com",
+            "password": "partner",
+            "role": "partner",
+            "active": true
+        }
+    ],
+    "settings": [
+        {
+            "key": "siteStatus",
+            "value": "available"
+        },
+        {
+            "key": "provider",
+            "value": "azure"
+        },
+        {
+            "key": "deploymentMode",
+            "value": "CDS"
+        },
+        {
+            "key": "site.baseUrl",
+            "value": "http://localhost:3000"
+        }
+    ],
+    "chats": [
+        {
+            "_id": "507f1f77bcf86cd799439021",
+            "chatId": "chat-sample-123",
+            "interactions": [
+                "507f1f77bcf86cd799439031"
+            ],
+            "createdAt": "2023-01-01T12:00:00.000Z"
+        }
+    ],
+    "interactions": [
+        {
+            "_id": "507f1f77bcf86cd799439031",
+            "interactionId": "interaction-sample-001",
+            "question": "507f1f77bcf86cd799439041",
+            "answer": "507f1f77bcf86cd799439051",
+            "expertFeedback": "507f1f77bcf86cd799439061",
+            "createdAt": "2023-01-01T12:00:00.000Z"
+        }
+    ],
+    "questions": [
+        {
+            "_id": "507f1f77bcf86cd799439041",
+            "redactedQuestion": "What is the capital of Canada?",
+            "language": "en",
+            "createdAt": "2023-01-01T12:00:00.000Z"
+        }
+    ],
+    "answers": [
+        {
+            "_id": "507f1f77bcf86cd799439051",
+            "content": "The capital of Canada is Ottawa.",
+            "createdAt": "2023-01-01T12:00:05.000Z"
+        }
+    ],
+    "expertFeedbacks": [
+        {
+            "_id": "507f1f77bcf86cd799439061",
+            "totalScore": 5,
+            "expertEmail": "expert@example.com",
+            "feedback": "This is a great, accurate answer!",
+            "createdAt": "2023-01-01T12:05:00.000Z"
+        }
+    ]
+}
