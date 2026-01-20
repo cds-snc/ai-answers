@@ -3,53 +3,34 @@ import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
+// Accessible color palette for pie charts (WCAG AA compliant)
+const CHART_COLORS = [
+  "#1976D2", // Medium blue
+  "#AD1457", // Magenta
+  "#26A69A", // Medium teal
+  "#E65100", // Dark orange
+  "#7B1FA2", // Dark purple
+  "#F9A825", // Dark amber
+  "#388E3C"  // Green
+];
 
+// Score-to-key mapping (matches PublicFeedbackComponent.js)
+const SCORE_TO_KEY = {
+  1: 'noCall',
+  2: 'noVisit',
+  3: 'savedTime',
+  4: 'other',
+  5: 'notWanted',
+  6: 'other',
+  7: 'notDetailed',
+  8: 'confusing',
+  9: 'irrelevant'
+};
 
 // --- Reverse lookup for public feedback reason keys ---
 // These should match the ids used in PublicFeedbackComponent.js
 // Removed unused YES_REASON_KEYS and NO_REASON_KEYS
 
-// English and French translations for each key (from en.json and fr.json)
-const YES_REASON_LABELS = {
-  noCall: [
-    "I don't need to call the government",
-    "Je n'ai pas besoin d'appeler le gouvernement"
-  ],
-  noVisit: [
-    "I don't need to visit an office",
-    "Je n'ai pas besoin de me rendre dans un bureau"
-  ],
-  savedTime: [
-    "Saved me time searching and reading",
-    "J'ai gagné du temps en cherchant et en lisant"
-  ],
-  other: [
-    "Other - please fill out the survey",
-    "Autre - veuillez remplir l'enquête"
-  ]
-};
-const NO_REASON_LABELS = {
-  irrelevant: [
-    "Irrelevant or off topic",
-    "Non pertinent ou hors sujet"
-  ],
-  confusing: [
-    "Too complex or confusing",
-    "Trop complexe ou déroutant"
-  ],
-  notDetailed: [
-    "Not detailed enough",
-    "Pas assez détaillé"
-  ],
-  notWanted: [
-    "Answer is clear, but is not what I wanted to hear",
-    "La réponse est claire, mais ce n'est pas ce que je voulais entendre"
-  ],
-  other: [
-    "Other - please fill out the survey",
-    "Autre - veuillez remplir l'enquête"
-  ]
-};
 
 // Build a map from label (in any language) to key
 const buildLabelToKeyMap = (labelsObj) => {
@@ -84,26 +65,25 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
   const noReasons = metrics.publicFeedbackReasons?.no || {};
 
 
-  // Helper to group counts by translation key
-  const groupByKey = (reasons, isPositive) => {
-    const labelToKey = isPositive ? YES_LABEL_TO_KEY : NO_LABEL_TO_KEY;
+    // Helper to group counts by key (handles scores from backend)
+  const groupByKey = (reasons) => {
     const grouped = {};
+    
     Object.entries(reasons).forEach(([reason, count]) => {
-      // Try to map reason to a key (if it's already a key, use it; else, try to map from label)
-      let key = reason;
-      if (!(key in (isPositive ? YES_REASON_LABELS : NO_REASON_LABELS))) {
-        // Try to map from label
-        key = labelToKey[reason] || reason;
-      }
+      // Convert score to key
+      const score = parseInt(reason, 10);
+      const key = SCORE_TO_KEY[score] || reason;
+      
       if (!grouped[key]) grouped[key] = 0;
       grouped[key] += count;
     });
+    
     return grouped;
   };
 
   // Grouped counts for table and pie charts (by translation key)
-  const yesGrouped = groupByKey(yesReasons, true);
-  const noGrouped = groupByKey(noReasons, false);
+  const yesGrouped = groupByKey(yesReasons);
+  const noGrouped = groupByKey(noReasons);
 
   // Prepare data for pie charts (grouped by translation key, label in current language)
   const yesPieData = Object.entries(yesGrouped).map(([key, count]) => ({
@@ -136,7 +116,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
  
   return (
     <div className="mb-600">
-      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')} / Public Feedback</h3>
+      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
       <GcdsText className="mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
       <div className="bg-gray-50 p-4 rounded-lg">
         {/* Totals Table (unchanged) */}
@@ -189,7 +169,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
           {/* Pie chart for YES (helpful) reasons */}
           <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>Helpful (Yes) - Reason Breakdown</h4>
+          <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -202,7 +182,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
                   label
                 >
                   {yesPieData.map((entry, idx) => (
-                    <Cell key={`cell-yes-${idx}`} fill={["#0088FE", "#00C49F", "#FFBB28", "#FF8042"][idx % 4]} />
+                    <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -212,7 +192,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           </div>
           {/* Pie chart for NO (unhelpful) reasons */}
           <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.unhelpful')} - Reason Breakdown</h4>
+            <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -225,7 +205,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
                   label
                 >
                   {noPieData.map((entry, idx) => (
-                    <Cell key={`cell-no-${idx}`} fill={["#8884d8", "#FF8042", "#FFBB28", "#00C49F"][idx % 4]} />
+                    <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
