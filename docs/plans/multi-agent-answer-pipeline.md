@@ -59,8 +59,6 @@ This proposal adds **1 pre-context agent** and replaces the single `answerNode` 
 - Translation request detection (out of scope)
 - Code injection attempts
 - False premise detection (political)
-- Questions about the AI itself
-- Basic IS_GC check (can infer from question + referringUrl without context)
 
 **Input:**
 - Translated question text
@@ -73,7 +71,6 @@ This proposal adds **1 pre-context agent** and replaces the single `answerNode` 
   manipulationGuardrails: {
     isManipulative: boolean,
     manipulationType: string?, // 'politics', 'role-change', 'translation-request', etc.
-    isGC: boolean | 'uncertain', // Basic check, may be uncertain without context
     shouldProceed: boolean,
     responseType: 'continue' | 'not-gc'
   }
@@ -154,6 +151,7 @@ This proposal adds **1 pre-context agent** and replaces the single `answerNode` 
 - Maintain neutrality (no opinions/speculation)
 - Craft raw answer content (1-4 sentences, unformatted)
 - Select citation URL
+- Handle questions about the AI itself (respond with scope limitations)
 
 **Input:**
 - Translated question text
