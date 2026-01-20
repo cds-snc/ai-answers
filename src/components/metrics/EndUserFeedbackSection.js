@@ -2,6 +2,8 @@ import React from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+
 
 // Accessible color palette for pie charts (WCAG AA compliant)
 const CHART_COLORS = [
@@ -14,19 +16,6 @@ const CHART_COLORS = [
   "#388E3C"  // Green
 ];
 
-// Score-to-key mapping (matches PublicFeedbackComponent.js)
-const SCORE_TO_KEY = {
-  1: 'noCall',
-  2: 'noVisit',
-  3: 'savedTime',
-  4: 'other',
-  5: 'notWanted',
-  6: 'other',
-  7: 'notDetailed',
-  8: 'confusing',
-  9: 'irrelevant',
-  10: 'brokenLink'
-};
 
 // Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
