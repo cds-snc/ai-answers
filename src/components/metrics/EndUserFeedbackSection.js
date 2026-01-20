@@ -2,8 +2,7 @@ import React from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
-
+import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 
 // Accessible color palette for pie charts (WCAG AA compliant)
 const CHART_COLORS = [
@@ -17,30 +16,21 @@ const CHART_COLORS = [
 ];
 
 
-// Helper to get translation label for a reason key in the current language
-const getReasonLabel = (reasonKey, t, isPositive) => {
-  // First, try the key as-is (handles camelCase like "noCall")
-  let translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${reasonKey}`
-    : `homepage.publicFeedback.no.options.${reasonKey}`;
+/// Helper to get translation label for a score
+const getReasonLabelFromScore = (score, t) => {
+  // Convert score to key
+  const key = SCORE_TO_KEY[score];
+  if (!key) return score.toString(); // Fallback to score if not found
   
-  let translation = t(translationKey);
+  // Determine if it's a positive or negative feedback based on score
+  const isPositive = FEEDBACK_OPTIONS.YES.some(opt => opt.score === score);
   
-  // If translation succeeded (didn't return the key), return it
-  if (translation !== translationKey) {
-    return translation;
-  }
+  // Get translation
+  const translationKey = isPositive 
+    ? `homepage.publicFeedback.yes.options.${key}`
+    : `homepage.publicFeedback.no.options.${key}`;
   
-  // If that failed, try lowercase version (handles "Other" → "other")
-  const lowercaseKey = reasonKey.toLowerCase();
-  translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${lowercaseKey}`
-    : `homepage.publicFeedback.no.options.${lowercaseKey}`;
-  
-  translation = t(translationKey);
-  
-  // Return translation if successful, otherwise return original key
-  return translation !== translationKey ? translation : reasonKey;
+  return t(translationKey);
 };
 
 
@@ -73,15 +63,27 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
   const yesGrouped = groupByKey(yesReasons);
   const noGrouped = groupByKey(noReasons);
 
-  // Prepare data for pie charts (grouped by translation key, label in current language)
-  const yesPieData = Object.entries(yesGrouped).map(([key, count]) => ({
-    label: getReasonLabel(key, t, true),
+  // Prepare data for pie charts 
+  const yesPieData = Object.entries(yesGrouped).map(([key, count]) => {
+  // Find the score for this key
+  const option = FEEDBACK_OPTIONS.YES.find(opt => opt.id === key);
+  const score = option?.score || 0;
+  
+  return {
+    label: getReasonLabelFromScore(score, t),
     count,
-  }));
-  const noPieData = Object.entries(noGrouped).map(([key, count]) => ({
-    label: getReasonLabel(key, t, false),
-    count,
-  }));
+  };
+});
+  const noPieData = Object.entries(noGrouped).map(([key, count]) => {
+    // Find the score for this key
+    const option = FEEDBACK_OPTIONS.NO.find(opt => opt.id === key);
+    const score = option?.score || 0;
+    
+    return {
+      label: getReasonLabelFromScore(score, t),
+      count,
+    };
+  });
 
   // For the lower table, get all unique keys from both yes and no
   const allKeys = Array.from(new Set([
@@ -90,16 +92,22 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
   ]));
 
   // Table data: show label (in current language) and combined counts for yes/no
-  const tableData = allKeys.map((key) => {
-    const yesCount = yesGrouped[key] || 0;
-    const noCount = noGrouped[key] || 0;
-    return {
-      label: getReasonLabel(key, t, yesCount >= noCount),
-      helpful: yesCount,
-      unhelpful: noCount,
-      total: yesCount + noCount,
-    };
-  });
+const tableData = allKeys.map((key) => {
+  const yesCount = yesGrouped[key] || 0;
+  const noCount = noGrouped[key] || 0;
+  
+  // Find the score for this key from either YES or NO options
+  const yesOption = FEEDBACK_OPTIONS.YES.find(opt => opt.id === key);
+  const noOption = FEEDBACK_OPTIONS.NO.find(opt => opt.id === key);
+  const score = yesOption?.score || noOption?.score || 0;
+  
+  return {
+    label: getReasonLabelFromScore(score, t),
+    helpful: yesCount,
+    unhelpful: noCount,
+    total: yesCount + noCount,
+  };
+});
 
  
   return (
