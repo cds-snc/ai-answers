@@ -27,24 +27,6 @@ const SCORE_TO_KEY = {
   9: 'irrelevant'
 };
 
-// --- Reverse lookup for public feedback reason keys ---
-// These should match the ids used in PublicFeedbackComponent.js
-// Removed unused YES_REASON_KEYS and NO_REASON_KEYS
-
-
-// Build a map from label (in any language) to key
-const buildLabelToKeyMap = (labelsObj) => {
-  const map = {};
-  Object.entries(labelsObj).forEach(([key, arr]) => {
-    arr.forEach(label => {
-      map[label] = key;
-    });
-  });
-  return map;
-};
-const YES_LABEL_TO_KEY = buildLabelToKeyMap(YES_REASON_LABELS);
-const NO_LABEL_TO_KEY = buildLabelToKeyMap(NO_REASON_LABELS);
-
 // Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
   if (isPositive) {
@@ -53,7 +35,6 @@ const getReasonLabel = (reasonKey, t, isPositive) => {
     return t(`homepage.publicFeedback.no.options.${reasonKey}`) || reasonKey;
   }
 };
-
 
 
 const EndUserFeedbackSection = ({ t, metrics }) => {
