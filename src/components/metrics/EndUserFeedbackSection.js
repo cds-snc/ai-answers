@@ -114,9 +114,7 @@ const groupByKey = (reasons, isPositive) => {
     if (!key) {
       key = labelToKey[reason] || reason;
     }
-    
-    // Normalize to lowercase for grouping
-    key = key.toLowerCase();
+  
     
     if (!grouped[key]) grouped[key] = 0;
     grouped[key] += count;
