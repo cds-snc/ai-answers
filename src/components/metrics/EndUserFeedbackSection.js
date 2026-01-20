@@ -39,7 +39,6 @@ const getReasonLabel = (reasonKey, t, isPositive) => {
 const EndUserFeedbackSection = ({ t, metrics }) => {
   // --- First table (en/fr counts) remains unchanged ---
 
-
   // Pie charts and lower table use already-combined counts and translations
   const yesReasons = metrics.publicFeedbackReasons?.yes || {};
   const noReasons = metrics.publicFeedbackReasons?.no || {};
