@@ -96,3 +96,8 @@ output "bedrock_region_ssm_arn" {
   description = "ARN of the Bedrock region SSM parameter"
   value       = aws_ssm_parameter.bedrock_region.arn
 }
+
+output "redis_url_arn" {
+  description = "ARN of the Redis URL SSM parameter"
+  value       = aws_ssm_parameter.redis_url.arn
+}

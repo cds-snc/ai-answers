@@ -69,7 +69,8 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       var.gc_notify_api_key_arn,
       var.google_search_engine_id_arn,
       var.cross_account_bedrock_role_ssm_arn,
-      var.bedrock_region_ssm_arn
+      var.bedrock_region_ssm_arn,
+      var.redis_url_arn
     ]
   }
 }
