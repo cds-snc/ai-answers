@@ -24,7 +24,8 @@ const SCORE_TO_KEY = {
   6: 'other',
   7: 'notDetailed',
   8: 'confusing',
-  9: 'irrelevant'
+  9: 'irrelevant',
+  10: 'brokenLink'
 };
 
 // Helper to get translation label for a reason key in the current language

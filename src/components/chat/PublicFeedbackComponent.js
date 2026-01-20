@@ -23,6 +23,7 @@ const PublicFeedbackComponent = ({
         { id: 'other', score: 4, label: t('homepage.publicFeedback.yes.options.other') },
       ]
     : [
+        { id: 'brokenLink', score: 10, label: t('homepage.publicFeedback.no.options.brokenLink') },
         { id: 'irrelevant', score: 9, label: t('homepage.publicFeedback.no.options.irrelevant') },
         { id: 'confusing', score: 8, label: t('homepage.publicFeedback.no.options.confusing') },
         { id: 'notDetailed', score: 7, label: t('homepage.publicFeedback.no.options.notDetailed') },

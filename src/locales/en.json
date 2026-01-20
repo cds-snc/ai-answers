@@ -69,7 +69,7 @@
           "confusing": "Too complex or confusing",
           "notDetailed": "Not detailed enough",
           "notWanted": "Answer is clear, but is not what I wanted to hear",
-          "linkBroken": "Link doesn't work",
+          "brokenLink": "Link doesn't work",
           "other": "Other"
         },
         "shortQuestion": "Why wasn't this helpful?"

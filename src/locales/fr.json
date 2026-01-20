@@ -68,7 +68,7 @@
           "confusing": "Trop complexe ou déroutant",
           "notDetailed": "Pas assez détaillé",
           "notWanted": "La réponse est claire, mais ce n'est pas ce que je voulais entendre",
-          "linkBroken": "Le lien ne fonctionne pas",
+          "brokenLink": "Le lien ne fonctionne pas",
           "other": "Autre"
         },
         "shortQuestion": "Pourquoi n'était-ce pas utile ?"
