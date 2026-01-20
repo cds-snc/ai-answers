@@ -19,6 +19,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const [inputFile, setInputFile] = useState(null);
     const [comparisonFile, setComparisonFile] = useState(null);
+    const [iterations, setIterations] = useState(1);
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -146,6 +147,23 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <option value="">{t('experimental.analysis.choose')}</option>
                             {analyzers.map(a => (
                                 <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Iterations Dropdown (Demo) */}
+                    <div className="mb-400">
+                        <label htmlFor="iterations-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            Iterations (Run count per row)
+                        </label>
+                        <select
+                            id="iterations-select"
+                            value={iterations}
+                            onChange={(e) => setIterations(parseInt(e.target.value))}
+                            style={{ padding: '8px', width: '100%', maxWidth: '100px' }}
+                        >
+                            {[1, 2, 3, 5, 10].map(n => (
+                                <option key={n} value={n}>{n}</option>
                             ))}
                         </select>
                     </div>
