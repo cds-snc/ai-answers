@@ -19,30 +19,15 @@ const CHART_COLORS = [
 
 // Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
-  // First, try the key as-is (handles camelCase like "noCall")
-  let translationKey = isPositive 
+  const translationKey = isPositive 
     ? `homepage.publicFeedback.yes.options.${reasonKey}`
     : `homepage.publicFeedback.no.options.${reasonKey}`;
   
-  let translation = t(translationKey);
-  
-  // If translation succeeded (didn't return the key), return it
-  if (translation !== translationKey) {
-    return translation;
-  }
-  
-  // If that failed, try lowercase version (handles "Other" → "other")
-  const lowercaseKey = reasonKey.toLowerCase();
-  translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${lowercaseKey}`
-    : `homepage.publicFeedback.no.options.${lowercaseKey}`;
-  
-  translation = t(translationKey);
+  const translation = t(translationKey);
   
   // Return translation if successful, otherwise return original key
   return translation !== translationKey ? translation : reasonKey;
 };
-
 
 const EndUserFeedbackSection = ({ t, metrics }) => {
   // --- First table (en/fr counts) remains unchanged ---
