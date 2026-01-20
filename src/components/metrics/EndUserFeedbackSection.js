@@ -29,30 +29,12 @@ const SCORE_TO_KEY = {
 
 // Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
-  // First, try the key as-is (handles camelCase like "noCall")
-  let translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${reasonKey}`
-    : `homepage.publicFeedback.no.options.${reasonKey}`;
-  
-  let translation = t(translationKey);
-  
-  // If translation succeeded (didn't return the key), return it
-  if (translation !== translationKey) {
-    return translation;
+  if (isPositive) {
+    return t(`homepage.publicFeedback.yes.options.${reasonKey}`) || reasonKey;
+  } else {
+    return t(`homepage.publicFeedback.no.options.${reasonKey}`) || reasonKey;
   }
-  
-  // If that failed, try lowercase version (handles "Other" → "other")
-  const lowercaseKey = reasonKey.toLowerCase();
-  translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${lowercaseKey}`
-    : `homepage.publicFeedback.no.options.${lowercaseKey}`;
-  
-  translation = t(translationKey);
-  
-  // Return translation if successful, otherwise return original key
-  return translation !== translationKey ? translation : reasonKey;
 };
-
 
 const EndUserFeedbackSection = ({ t, metrics }) => {
   // --- First table (en/fr counts) remains unchanged ---
@@ -63,22 +45,22 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
   const noReasons = metrics.publicFeedbackReasons?.no || {};
 
 
-    // Helper to group counts by key (handles scores from backend)
-  const groupByKey = (reasons) => {
-    const grouped = {};
+  // Helper to group counts by key (handles scores from backend)
+ const groupByKey = (reasons) => {
+  const grouped = {};
+  
+  Object.entries(reasons).forEach(([reason, count]) => {
+    const score = parseInt(reason, 10);
+    const key = SCORE_TO_KEY[score];
     
-    Object.entries(reasons).forEach(([reason, count]) => {
-      // Convert score to key
-      const score = parseInt(reason, 10);
-      const key = SCORE_TO_KEY[score] || reason;
-      
+    // Only process valid scores
+    if (key) {
       if (!grouped[key]) grouped[key] = 0;
       grouped[key] += count;
-    });
-    
-    return grouped;
-  };
-
+    }
+  });
+    return grouped;  
+};  
   // Grouped counts for table and pie charts (by translation key)
   const yesGrouped = groupByKey(yesReasons);
   const noGrouped = groupByKey(noReasons);
