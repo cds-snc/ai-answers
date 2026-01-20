@@ -159,7 +159,7 @@ const groupByKey = (reasons, isPositive) => {
  
   return (
     <div className="mb-600">
-      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')} / Public Feedback</h3>
+      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
       <GcdsText className="mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
       <div className="bg-gray-50 p-4 rounded-lg">
         {/* Totals Table (unchanged) */}
@@ -212,7 +212,7 @@ const groupByKey = (reasons, isPositive) => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
           {/* Pie chart for YES (helpful) reasons */}
           <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>Helpful (Yes) - Reason Breakdown</h4>
+            <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -235,7 +235,7 @@ const groupByKey = (reasons, isPositive) => {
           </div>
           {/* Pie chart for NO (unhelpful) reasons */}
           <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.unhelpful')} - Reason Breakdown</h4>
+            <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
