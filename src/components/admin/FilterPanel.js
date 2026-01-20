@@ -206,6 +206,7 @@ const FilterPanel = ({
     { value: 'HC-SC', label: 'HC-SC' },
     { value: 'IRCC', label: 'IRCC' },
     { value: 'ISED-ISDE', label: 'ISED-ISDE' },
+    { value: 'JUS', label: 'JUS' },
     { value: 'NRCan-RNCan', label: 'NRCan-RNCan' },
     { value: 'PHAC-ASPC', label: 'PHAC-ASPC' },
     { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
