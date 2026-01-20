@@ -1,239 +1,95 @@
-import React from 'react';
-import { GcdsText } from '@cdssnc/gcds-components-react';
-import DataTable from 'datatables.net-react';
-import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
-
-// Accessible color palette for pie charts (WCAG AA compliant)
-const CHART_COLORS = [
-  "#1976D2", // Medium blue
-  "#AD1457", // Magenta
-  "#26A699", // Medium teal
-  "#E65100", // Dark orange
-  "#7B1FA2", // Dark purple
-  "#D18305", // Dark amber
-  "#388E3C"  // Green
-];
+import React, { useState } from 'react';
+import '../../styles/App.css';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import FeedbackService from '../../services/FeedbackService.js';
+import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 
 
-/// Helper to get translation label for a score
-const getReasonLabelFromScore = (score, t) => {
-  // Convert score to key
-  const key = SCORE_TO_KEY[score];
-  if (!key) return score.toString(); // Fallback to score if not found
-  
-  // Determine if it's a positive or negative feedback based on score
-  const isPositive = FEEDBACK_OPTIONS.YES.some(opt => opt.score === score);
-  
-  // Get translation
-  const translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${key}`
-    : `homepage.publicFeedback.no.options.${key}`;
-  
-  return t(translationKey);
-};
+const PublicFeedbackComponent = ({
+  lang = 'en',
+  isPositive = true,
+  chatId,
+  userMessageId,
+  onSubmit = () => {},
+  onClose,
+}) => {
+  const { t } = useTranslations(lang);
+  const [selected, setSelected] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
+  const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
+    ...opt,
+    label: isPositive 
+      ? t(`homepage.publicFeedback.yes.options.${opt.id}`)
+      : t(`homepage.publicFeedback.no.options.${opt.id}`)
+  }));
 
-const EndUserFeedbackSection = ({ t, metrics }) => {
-  // --- First table (en/fr counts) remains unchanged ---
+  const handleSend = async () => {
+    if (!selected) return;
 
-
-  // Pie charts and lower table use already-combined counts and translations
-  const yesReasons = metrics.publicFeedbackReasons?.yes || {};
-  const noReasons = metrics.publicFeedbackReasons?.no || {};
-
-
-    // Helper to group counts by key (handles scores from backend)
-  const groupByKey = (reasons) => {
-    const grouped = {};
-    
-    Object.entries(reasons).forEach(([reason, count]) => {
-      // Convert score to key
-      const score = parseInt(reason, 10);
-      const key = SCORE_TO_KEY[score] || reason;
-      
-      if (!grouped[key]) grouped[key] = 0;
-      grouped[key] += count;
-    });
-    
-    return grouped;
-  };
-
-  // Grouped counts for table and pie charts (by translation key)
-  const yesGrouped = groupByKey(yesReasons);
-  const noGrouped = groupByKey(noReasons);
-
-  // Prepare data for pie charts 
-  const yesPieData = Object.entries(yesGrouped).map(([key, count]) => {
-  // Find the score for this key
-  const option = FEEDBACK_OPTIONS.YES.find(opt => opt.id === key);
-  const score = option?.score || 0;
-  
-  return {
-    label: getReasonLabelFromScore(score, t),
-    count,
-  };
-});
-  const noPieData = Object.entries(noGrouped).map(([key, count]) => {
-    // Find the score for this key
-    const option = FEEDBACK_OPTIONS.NO.find(opt => opt.id === key);
-    const score = option?.score || 0;
-    
-    return {
-      label: getReasonLabelFromScore(score, t),
-      count,
+    const option = options.find((o) => o.id === selected);
+    const feedbackPayload = {
+      type: 'public',
+      feedback: isPositive ? 'yes' : 'no', // Set 'yes' or 'no'
+      publicFeedbackReason: option.label,   // Use the option's label
+      publicFeedbackScore: option.score,    // Use the option's score
     };
-  });
-
-  // For the lower table, get all unique keys from both yes and no
-  const allKeys = Array.from(new Set([
-    ...Object.keys(yesGrouped),
-    ...Object.keys(noGrouped)
-  ]));
-
-  // Table data: show label (in current language) and combined counts for yes/no
-const tableData = allKeys.map((key) => {
-  const yesCount = yesGrouped[key] || 0;
-  const noCount = noGrouped[key] || 0;
-  
-  // Find the score for this key from either YES or NO options
-  const yesOption = FEEDBACK_OPTIONS.YES.find(opt => opt.id === key);
-  const noOption = FEEDBACK_OPTIONS.NO.find(opt => opt.id === key);
-  const score = yesOption?.score || noOption?.score || 0;
-  
-  return {
-    label: getReasonLabelFromScore(score, t),
-    helpful: yesCount,
-    unhelpful: noCount,
-    total: yesCount + noCount,
+    try {
+      await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
+    } catch (err) {
+      console.error('Failed to persist public feedback', err);
+      // continue to show thank-you even if logging fails
+    }
+    setSubmitted(true);
+    onSubmit(feedbackPayload);
   };
-});
 
- 
+  if (submitted) {
+    return (
+      <p className="thank-you">
+        <span className="gcds-icon fa fa-solid fa-check-circle"></span>
+        {t('homepage.feedback.thankYou')}
+      </p>
+    );
+  }
+
   return (
-    <div className="mb-600">
-      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
-      <GcdsText className="mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
-      <div className="bg-gray-50 p-4 rounded-lg">
-        {/* Totals Table (unchanged) */}
-        <DataTable
-          data={[
-            {
-              metric: t('metrics.dashboard.userScored.total'),
-              count: metrics.publicFeedbackTotals.totalQuestionsWithFeedback,
-              percentage: '100%',
-              enCount: metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo,
-              enPercentage: '100%',
-              frCount: metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo,
-              frPercentage: '100%'
-            },
-            {
-              metric: t('metrics.dashboard.userScored.helpful'),
-              count: metrics.publicFeedbackTotals.yes,
-              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.yes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
-              enCount: metrics.publicFeedbackTotals.enYes,
-              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.enYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
-              frCount: metrics.publicFeedbackTotals.frYes,
-              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.frYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%'
-            },
-            {
-              metric: t('metrics.dashboard.userScored.unhelpful'),
-              count: metrics.publicFeedbackTotals.no,
-              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.no / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
-              enCount: metrics.publicFeedbackTotals.enNo,
-              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.enNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
-              frCount: metrics.publicFeedbackTotals.frNo,
-              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.frNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%'
-            }
-          ]}
-          columns={[
-            { title: t('metrics.dashboard.metric'), data: 'metric' },
-            { title: t('metrics.dashboard.count'), data: 'count' },
-            { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-            { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-            { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-            { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-            { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-          ]}
-          options={{
-            paging: false,
-            searching: false,
-            ordering: false,
-            info: false
-          }}
-        />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
-          {/* Pie chart for YES (helpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-          <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={yesPieData.map(({ label, count }) => ({ name: label, value: count }))}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {yesPieData.map((entry, idx) => (
-                    <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Pie chart for NO (unhelpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={noPieData.map(({ label, count }) => ({ name: label, value: count }))}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {noPieData.map((entry, idx) => (
-                    <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        {/* Add margin below pie charts to separate from the next section */}
-        <div style={{ height: '2rem' }} />
-        {/* Table for public feedback reasons breakdown by language */}
-        <div style={{ marginTop: '2rem' }}>
-          <h4>{t('metrics.dashboard.userScored.reasonTableTitle') || 'Public Feedback Reasons Breakdown'}</h4>
-          <DataTable
-            data={tableData.filter(row => row.total > 0)}
-            columns={[
-              { title: t('metrics.dashboard.userScored.reason'), data: 'label' },
-              { title: t('metrics.dashboard.userScored.helpful'), data: 'helpful' },
-              { title: t('metrics.dashboard.userScored.unhelpful'), data: 'unhelpful' },
-              { title: t('metrics.dashboard.count'), data: 'total' }
-            ]}
-            options={{
-              paging: false,
-              searching: false,
-              ordering: false,
-              info: false
-            }}
-          />
-        </div>
-      </div>
-    </div>
+    <form className="expert-rating-container" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+      <span
+        className="close-icon"
+        role="button"
+        tabIndex={0}
+        aria-label="Close"
+        onClick={onClose}
+        onKeyDown={(e) => e.key === 'Enter' && onClose()}
+      >
+        <i className="fa-solid fa-close"></i>
+      </span>
+      <fieldset className="gc-chckbxrdio sm-v">
+        <h2>{isPositive ? t('homepage.publicFeedback.yes.question') : t('homepage.publicFeedback.no.question')}</h2>
+        <details className="answer-details" open>
+          <summary>{isPositive ? t('homepage.publicFeedback.yes.shortQuestion') : t('homepage.publicFeedback.no.shortQuestion')}</summary>
+          <ul className="list-unstyled lst-spcd-2">
+            {options.map((opt) => (
+              <li className="radio" key={opt.id}>
+                <input
+                  type="radio"
+                  id={opt.id}
+                  value={opt.id}
+                  checked={selected === opt.id}
+                  onChange={() => setSelected(opt.id)}
+                />
+                <label htmlFor={opt.id}>{opt.label}</label>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </fieldset>
+      <button type="submit" className="btn-primary mrgn-lft-sm">
+        {t('homepage.publicFeedback.send')}
+      </button>
+    </form>
   );
 };
 
-export default EndUserFeedbackSection;
+export default PublicFeedbackComponent;
