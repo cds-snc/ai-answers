@@ -4,12 +4,14 @@ import DataTable from 'datatables.net-react';
 import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // Accessible color palette for pie charts (WCAG AA compliant)
-const ACCESSIBLE_COLORS = [
-  "#0066CC", // Dark blue
-  "#00838F", // Teal
+const CHART_COLORS = [
+  "#1976D2", // Medium blue
   "#AD1457", // Magenta
-  "#7B1FA2", // Purple
-  "#5D4037"  // Brown
+  "#26A69A", // Medium teal
+  "#E65100", // Dark orange
+  "#7B1FA2", // Dark purple
+  "#F9A825",  // Dark amber
+  "#388E3C"  // Green
 ];
 
 // --- Reverse lookup for public feedback reason keys ---
@@ -223,7 +225,7 @@ const groupByKey = (reasons, isPositive) => {
                   label
                 >
                   {yesPieData.map((entry, idx) => (
-                 <Cell key={`cell-yes-${idx}`} fill={ACCESSIBLE_COLORS[idx % ACCESSIBLE_COLORS.length]} />           
+                 <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />           
              ))}
                 </Pie>
                 <Tooltip />
@@ -246,7 +248,7 @@ const groupByKey = (reasons, isPositive) => {
                   label
                 >
                   {noPieData.map((entry, idx) => (
-                        <Cell key={`cell-no-${idx}`} fill={ACCESSIBLE_COLORS[idx % ACCESSIBLE_COLORS.length]} />
+                        <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
