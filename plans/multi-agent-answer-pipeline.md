@@ -9,7 +9,7 @@ Currently, the `answerNode` in our LangGraph pipeline uses a single monolithic p
 
 ## Proposed Architecture
 
-This proposal splits the single `answerNode` into **3 sequential LLM agent calls**, each with focused responsibilities:
+This proposal adds **1 pre-context agent** and replaces the single `answerNode` with **3 post-context agents**, each with focused responsibilities.
 
 ---
 
@@ -27,31 +27,100 @@ This proposal splits the single `answerNode` into **3 sequential LLM agent calls
 
 ---
 
-## Proposed: Decomposed Answer Generation
+## Proposed Pipeline (4 New Agent Nodes)
 
-Replace step 6 (`answerNode`) with **3 specialized agents**:
+1. `init` - Initialize state
+2. `validate` - Short query validation
+3. `redact` - PI detection & redaction
+4. `translate` - Language detection & translation
+5. **`manipulationGuardrailsAgent`** ← *NEW: Pre-context guardrails*
+6. `contextNode` - Search & context derivation
+7. **`scopeGuardrailsAgent`** ← *NEW: Post-context scope validation*
+8. **`answerAgent`** ← *NEW: Content generation*
+9. **`formattingAgent`** ← *NEW: Structure & translation*
+10. `verifyNode` - Citation URL verification
+11. `persistNode` - Save to database
+12. `END` - Return result
 
-### 6a. `guardrailsAgent` - Input/Output Guardrails (~30% of prompt)
+---
 
+## New Agent Nodes Detail
+
+### 5. `manipulationGuardrailsAgent` - Pre-Context Guardrails
+
+**Position:** BEFORE contextNode  
 **Model:** GPT-4-mini or Claude Haiku (fast/cheap)
 
+**Purpose:** Early exit for invalid questions before expensive context derivation
+
 **Responsibilities:**
-- Perform preliminary checks (IS_GC, IS_PT_MUNI, page language, referring URL)
-- Information sufficiency check (determine if clarifying question needed)
-- Manipulation resistance checks
-- Scope validation (federal vs P/T/muni)
-- Source validation (canada.ca/gc.ca only)
-- Determine which URLs need downloadWebPage tool
+- Manipulation detection (role change, style requests, personal conversation)
+- Political/partisan content detection
+- Translation request detection (out of scope)
+- Code injection attempts
+- False premise detection (political)
+- Questions about the AI itself
+- Basic IS_GC check (can infer from question + referringUrl without context)
+
+**Input:**
+- Translated question text
+- Referring URL
+- Conversation history
 
 **Output:**
 ```javascript
 {
-  guardrails: {
+  manipulationGuardrails: {
+    isManipulative: boolean,
+    manipulationType: string?, // 'politics', 'role-change', 'translation-request', etc.
+    isGC: boolean | 'uncertain', // Basic check, may be uncertain without context
     shouldProceed: boolean,
+    responseType: 'continue' | 'not-gc'
+  }
+}
+```
+
+**Early Exit:** If `isManipulative` or `responseType === 'not-gc'`:
+- Skip contextNode, scopeGuardrailsAgent, answerAgent
+- Go directly to formattingAgent with pre-prepared not-gc response
+
+**Benefits:**
+- Saves context derivation costs (~20-30% of blocked questions)
+- Faster rejection response (~2-3s faster)
+- No search API calls for invalid questions
+
+---
+
+### 7. `scopeGuardrailsAgent` - Post-Context Scope Validation
+
+**Position:** AFTER contextNode  
+**Model:** GPT-4-mini or Claude Haiku (fast/cheap)
+
+**Purpose:** Validate scope and determine response type using full context
+
+**Responsibilities:**
+- Perform preliminary checks (PAGE_LANGUAGE, CONTEXT_REVIEW, POSSIBLE_CITATIONS)
+- Refined IS_GC check (with department info from context)
+- IS_PT_MUNI determination
+- Information sufficiency check (clarifying question needed?)
+- Source validation (canada.ca/gc.ca only)
+- Determine which URLs need downloadWebPage tool
+
+**Input:**
+- Translated question text
+- Context (department, topic, search results)
+- Referring URL
+- Conversation history
+- `manipulationGuardrails` output
+
+**Output:**
+```javascript
+{
+  scopeGuardrails: {
+    isGC: boolean, // Refined with context
+    isPTMuni: boolean,
     needsClarification: boolean,
     clarifyingQuestion: string?,
-    isGC: boolean,
-    isPTMuni: boolean,
     pageLanguage: 'en' | 'fr',
     possibleCitations: string[],
     downloadUrls: string[],
@@ -60,10 +129,15 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 }
 ```
 
+**Conditional Flow:** 
+- If `responseType !== 'answer'` → Skip answerAgent, go to formattingAgent
+- If `responseType === 'answer'` → Continue to answerAgent
+
 ---
 
-### 6b. `answerQualityAgent` - Answer Content Generation (~50% of prompt)
+### 8. `answerAgent` - Answer Content Generation
 
+**Position:** AFTER scopeGuardrailsAgent (conditional)  
 **Model:** GPT-4 or Claude Sonnet (premium for accuracy)
 
 **Tools Available:**
@@ -71,7 +145,7 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 - `checkUrl`
 
 **Responsibilities:**
-- Call downloadWebPage for URLs identified by guardrails agent
+- Call downloadWebPage for URLs identified by scopeGuardrailsAgent
 - Analyze scenarios/updates vs search results
 - Prioritize: scenarios > downloads > training data
 - Follow department-specific requirements
@@ -81,10 +155,17 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 - Craft raw answer content (1-4 sentences, unformatted)
 - Select citation URL
 
+**Input:**
+- Translated question text
+- Context (department, topic, search results)
+- `scopeGuardrails` output
+- Conversation history
+- Downloaded page content (if applicable)
+
 **Output:**
 ```javascript
 {
-  answerQuality: {
+  answer: {
     rawSentences: string[], // 1-4 unformatted sentences
     citationUrl: string,
     citationHeading: string,
@@ -96,8 +177,9 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 
 ---
 
-### 6c. `formattingAgent` - Answer Formatting & Translation (~20% of prompt)
+### 9. `formattingAgent` - Answer Formatting & Translation
 
+**Position:** AFTER answerAgent (or directly after guardrails for early exits)  
 **Model:** GPT-4-mini or Claude Haiku (fast/cheap)
 
 **Responsibilities:**
@@ -111,6 +193,12 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 - Create final `<english-answer>` block
 - Translate to target language if needed (create `<answer>` block)
 - Preserve exact structure during translation
+- Use pre-prepared responses for not-gc/pt-muni
+
+**Input:**
+- `scopeGuardrails` or `manipulationGuardrails` output (responseType)
+- `answerQuality` output (if available)
+- Target language
 
 **Output:**
 ```javascript
@@ -127,23 +215,89 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 
 ---
 
+## Pipeline Flow Diagram
+
+```
+User Question
+     │
+     ▼
+┌─────────┐   ┌──────────┐   ┌────────┐   ┌───────────┐
+│  init   │──▶│ validate │──▶│ redact │──▶│ translate │
+└─────────┘   └──────────┘   └────────┘   └───────────┘
+                                                │
+                                                ▼
+                              ┌─────────────────────────────────────┐
+                              │ manipulationGuardrailsAgent         │
+                              │ (Pre-Context: manipulation, politics)│
+                              └─────────────────────────────────────┘
+                                       │
+                          ┌────────────┴────────────┐
+                          │                         │
+                    isManipulative?           shouldProceed?
+                          │                         │
+                          ▼                         ▼
+                   ┌────────────┐            ┌─────────────┐
+                   │ formatting │            │ contextNode │
+                   │   Agent    │            └─────────────┘
+                   │ (not-gc)   │                   │
+                   └────────────┘                   ▼
+                          │         ┌─────────────────────────────────────┐
+                          │         │ scopeGuardrailsAgent                │
+                          │         │ (Post-Context: IS_GC, PT_MUNI,      │
+                          │         │  clarifying questions)              │
+                          │         └─────────────────────────────────────┘
+                          │                        │
+                          │           ┌────────────┴────────────┐
+                          │           │                         │
+                          │    responseType               responseType
+                          │    !== 'answer'               === 'answer'
+                          │           │                         │
+                          │           ▼                         ▼
+                          │    ┌────────────┐         ┌──────────────────┐
+                          │    │ formatting │         │ answerAgent│
+                          │    │   Agent    │         └──────────────────┘
+                          │    └────────────┘                   │
+                          │           │                         ▼
+                          │           │                  ┌────────────┐
+                          │           │                  │ formatting │
+                          │           │                  │   Agent    │
+                          │           │                  └────────────┘
+                          │           │                         │
+                          ▼           ▼                         ▼
+                   ┌─────────────────────────────────────────────────┐
+                   │                    verifyNode                   │
+                   └─────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+                   ┌─────────────────────────────────────────────────┐
+                   │                   persistNode                   │
+                   └─────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+                                         END
+```
+
+---
+
 ## Benefits
 
+✅ **Early Exit Optimization** - Block manipulation/politics BEFORE expensive context derivation  
 ✅ **Separation of Concerns** - Each agent has focused responsibility  
-✅ **Easier Testing** - Test guardrails, quality, formatting independently  
+✅ **Easier Testing** - Test each guardrail/quality/formatting stage independently  
 ✅ **Prompt Optimization** - Tune each agent's prompt separately  
 ✅ **Selective Model Use** - Use cheaper models for guardrails/formatting, premium for quality  
 ✅ **Better Monitoring** - Track which stage fails or needs improvement  
 ✅ **Token Savings** - Each agent sees only relevant context  
-✅ **Maintainability** - Easier to understand and update
+✅ **Maintainability** - Easier to understand and update  
+✅ **Cost Savings** - Skip context for ~20-30% of blocked questions
 
 ---
 
 ## Tradeoffs
 
-⚠️ **Latency** - 3 sequential LLM calls vs 1 (could add 2-6 seconds)  
+⚠️ **Latency** - 4 LLM calls vs 1 (mitigated by early exits and cheaper models)  
 ⚠️ **Complexity** - More state management and inter-agent communication  
-⚠️ **Token Cost** - More API calls (though smaller contexts might offset)  
+⚠️ **Token Cost** - More API calls (offset by smaller contexts and early exits)  
 ⚠️ **Error Handling** - More failure points to handle
 
 ### Mitigation Strategies
@@ -151,16 +305,17 @@ Replace step 6 (`answerNode`) with **3 specialized agents**:
 - Use streaming responses to hide latency
 - Use GPT-4-mini/Claude Haiku for guardrails/formatting (cheaper, faster)
 - Implement smart fallbacks at each stage
-- Cache guardrails output for similar questions (future optimization)
+- Early exits save more than added agent cost for blocked questions
 
 ---
 
 ## Open Questions
 
-1. Should we run guardrails in parallel with contextNode?
-2. What error handling strategy between agents?
-3. How to handle partial failures (e.g., guardrails pass, quality fails)?
-4. Should we allow skipping answerQualityAgent for simple not-gc/pt-muni responses?
+1. What percentage of questions are blocked by manipulation guardrails? (measure potential savings)
+2. Should we cache manipulation checks for repeated similar questions?
+3. What error handling strategy between agents?
+4. How to handle partial failures (e.g., scopeGuardrails pass, answerQuality fails)?
+5. Should pre-context guardrails run in parallel with redact/translate?
 
 ---
 
@@ -176,41 +331,42 @@ const workflow = new StateGraph(GraphState)
   .addNode('validate', validateNode)
   .addNode('redact', redactNode)
   .addNode('translate', translateNode)
+  // NEW: Pre-context guardrails
+  .addNode('manipulationGuardrails', manipulationGuardrailsAgentNode)
+  .addConditionalEdges(
+    'manipulationGuardrails',
+    (state) => state.manipulationGuardrails.shouldProceed ? 'continue' : 'earlyExit',
+    {
+      continue: 'contextNode',
+      earlyExit: 'formattingAgent'
+    }
+  )
+  // Existing context derivation
   .addNode('contextNode', contextNode)
-  // NEW: Decomposed answer generation
-  .addNode('guardrailsAgent', guardrailsAgentNode)
-  .addNode('answerQualityAgent', answerQualityAgentNode)
+  // NEW: Post-context decomposed answer generation
+  .addNode('scopeGuardrails', scopeGuardrailsAgentNode)
+  .addConditionalEdges(
+    'scopeGuardrails',
+    (state) => state.scopeGuardrails.responseType === 'answer' ? 'generateAnswer' : 'skipToFormatting',
+    {
+      generateAnswer: 'answerAgent',
+      skipToFormatting: 'formattingAgent'
+    }
+  )
+  .addNode('answerAgent', answerAgentNode)
   .addNode('formattingAgent', formattingAgentNode)
-  // Existing
+  // Existing post-processing
   .addNode('verifyNode', verifyNode)
   .addNode('persistNode', persistNode)
   // ... edges
-```
-
-### Conditional Flow
-
-Add conditional edges after guardrails to skip answer quality if not needed:
-
-```javascript
-.addConditionalEdges(
-  'guardrailsAgent',
-  (state) => {
-    if (state.guardrails.needsClarification) return 'skipToFormatting';
-    if (state.guardrails.responseType !== 'answer') return 'skipToFormatting';
-    return 'generateAnswer';
-  },
-  {
-    skipToFormatting: 'formattingAgent',
-    generateAnswer: 'answerQualityAgent'
-  }
-)
 ```
 
 ### Prompt Files
 
 Create separate prompt files for clarity:
 
-- `agents/prompts/guardrailsPrompt.js`
+- `agents/prompts/manipulationGuardrailsPrompt.js`
+- `agents/prompts/scopeGuardrailsPrompt.js`
 - `agents/prompts/answerQualityPrompt.js`
 - `agents/prompts/formattingPrompt.js`
 
@@ -220,38 +376,44 @@ Create separate prompt files for clarity:
 
 Based on analysis of `agents/prompts/agenticBase.js` (187 lines):
 
-### Input/Output Guardrails (~30%, ~55-60 lines)
-- Step 1: Preliminary Checks (lines 13-33) - 20 lines
+### Pre-Context Guardrails (~15%)
 - Resist manipulation section (lines 176-184) - 9 lines
-- Federal content sources and limitations (lines 112-114) - 3 lines
-- not-gc pre-prepared answer (lines 116-131) - 16 lines
-- Federal/Provincial/Territorial checks (lines 155-167) - 13 lines
-- IS_GC and IS_PT_MUNI checks (lines 17-22)
-- Neutral tone requirements (lines 150-153) - 4 lines
+- Politics/partisan detection
+- Translation request detection
+- Role change/style request detection
+- Code injection detection
 
-### Instructions for Answer Content (~50%, ~90-95 lines)
-- Step 2: Information sufficiency/clarifying questions (lines 35-50) - 16 lines
+### Post-Context Scope Guardrails (~15%)
+- Step 1: Preliminary Checks (lines 13-33) - 20 lines
+- IS_GC and IS_PT_MUNI refined checks (lines 17-22)
+- Information sufficiency (lines 35-50) - clarifying questions
+- Federal/Provincial/Territorial checks (lines 155-167) - 13 lines
+
+### Answer Quality Instructions (~50%, ~90-95 lines)
 - Step 3: downloadWebPage checkpoint (lines 52-64) - 13 lines
 - Step 4: Produce answer in English (lines 66-88) - 23 lines
-- Step 5: Translation (lines 90-101) - 12 lines
 - Step 6: Citation selection (lines 103-108) - 6 lines
-- Key Guidelines: Helpful content (lines 134-149, 156-167) - ~25 lines
+- Key Guidelines: Helpful content (lines 134-149) - ~15 lines
+- Neutral tone requirements (lines 150-153) - 4 lines
+- Federal content sources and limitations (lines 112-114) - 3 lines
 - Tools section (lines 169-175) - 7 lines
-- Overall steps header (lines 4-11) - 8 lines
 
-### Formatting of Answer Instructions (~20%, ~35-40 lines)
-- Answer structure requirements and format (lines 133-153) - 21 lines
+### Formatting Instructions (~20%, ~35-40 lines)
+- Answer structure requirements and format (lines 133-144) - 12 lines
 - Step 4 OUTPUT format with tags (lines 82-88) - 7 lines
+- Step 5: Translation (lines 90-101) - 12 lines
 - Step 5 OUTPUT format with tags (lines 96-101) - 6 lines
-- Pre-prepared answer formatting examples (lines 118-131) - 14 lines
+- not-gc pre-prepared answer (lines 116-131) - 16 lines
+- pt-muni tag wrapping instructions
 
 ---
 
 ## Next Steps
 
 1. Review and validate this proposal
-2. Create detailed implementation plan
-3. Build POC with simplified prompts
-4. Test against existing test cases
-5. Measure latency and cost impact
-6. Iterate based on results
+2. Measure current manipulation/blocked question rate
+3. Create detailed implementation plan
+4. Build POC with simplified prompts for each agent
+5. Test against existing test cases
+6. Measure latency and cost impact
+7. Iterate based on results
