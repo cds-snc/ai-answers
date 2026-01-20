@@ -182,3 +182,14 @@ resource "aws_ssm_parameter" "bedrock_region" {
     Terraform  = true
   }
 }
+
+resource "aws_ssm_parameter" "redis_url" {
+  name  = "redis_url"
+  type  = "SecureString"
+  value = var.redis_url
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
