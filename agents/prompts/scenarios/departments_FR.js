@@ -175,6 +175,11 @@ export const departments_FR = [
     "abbrKey": "TB"
   },
   {
+    "name": "Bureau de l'expérience Canada.ca",
+    "url": "https://conception.canada.ca/",
+    "abbrKey": "CEO-BEC"
+  },
+  {
     "name": "Bureau de l'ombudsman de l'approvisionnement",
     "url": "https://www.canada.ca/fr/ombudsman-approvisionnement.html",
     "abbrKey": "OPO-BOA"

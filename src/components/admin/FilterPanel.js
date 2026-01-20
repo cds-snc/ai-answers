@@ -198,6 +198,7 @@ const FilterPanel = ({
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
     { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
+    { value: 'CEO-BEC', label: 'CEO-BEC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
     { value: 'ECCC', label: 'ECCC' },

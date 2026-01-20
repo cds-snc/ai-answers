@@ -13,6 +13,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
 | `CBSA-ASFC` | Canada Border Services Agency | Agence des services frontaliers du Canada |
+| `CEO-BEC` | Canada.ca Experience Office | Bureau de l'expérience Canada.ca |
 | `CDS-SNC` | Canadian Digital Service | Service numérique canadien |
 | `CRA-ARC` | Canada Revenue Agency | Agence du revenu du Canada |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |

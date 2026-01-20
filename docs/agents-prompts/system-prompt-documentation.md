@@ -269,7 +269,7 @@ Page Language: en
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
 
-**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 222 entries. Each entry shows:
+**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 223 entries. Each entry shows:
 • Organization name
 • Unilingual Abbr: Language-specific abbreviation (may be null)
 • Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
@@ -399,6 +399,7 @@ Page Language: en
 **Partner Departments with Custom Scenario Files (as of January 2026):**
 - `context-cbsa-asfc/` - CBSA-ASFC
 - `context-cds-snc/` - Canadian Digital Service (CDS-SNC)
+- `context-ceo-bec/` - CEO-BEC
 - `context-cra-arc/` - Canada Revenue Agency (CRA-ARC)
 - `context-eccc/` - Environment and Climate Change Canada (ECCC)
 - `context-edsc-esdc/` - Employment and Social Development Canada (EDSC-ESDC)

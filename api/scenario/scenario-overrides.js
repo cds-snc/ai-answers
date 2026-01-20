@@ -6,6 +6,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
     return mod.CBSA_ASFC_SCENARIOS || '';
   },
+  'CEO-BEC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-ceo-bec/ceo-bec-scenarios.js');
+    return mod.CEO_BEC_SCENARIOS || '';
+  },
   'CDS-SNC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-cds-snc/cds-snc-scenarios.js');
     return mod.CDS_SNC_SCENARIOS || '';
