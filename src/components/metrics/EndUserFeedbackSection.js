@@ -3,16 +3,7 @@ import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-// Accessible color palette for pie charts (WCAG AA compliant)
-const CHART_COLORS = [
-  "#1976D2", // Medium blue
-  "#AD1457", // Magenta
-  "#26A69A", // Medium teal
-  "#E65100", // Dark orange
-  "#7B1FA2", // Dark purple
-  "#F9A825",  // Dark amber
-  "#388E3C"  // Green
-];
+
 
 // --- Reverse lookup for public feedback reason keys ---
 // These should match the ids used in PublicFeedbackComponent.js
@@ -33,8 +24,6 @@ const YES_REASON_LABELS = {
     "J'ai gagné du temps en cherchant et en lisant"
   ],
   other: [
-    "Other",
-    "Autre",
     "Other - please fill out the survey",
     "Autre - veuillez remplir l'enquête"
   ]
@@ -57,8 +46,6 @@ const NO_REASON_LABELS = {
     "La réponse est claire, mais ce n'est pas ce que je voulais entendre"
   ],
   other: [
-    "Other",
-    "Autre",
     "Other - please fill out the survey",
     "Autre - veuillez remplir l'enquête"
   ]
@@ -77,15 +64,12 @@ const buildLabelToKeyMap = (labelsObj) => {
 const YES_LABEL_TO_KEY = buildLabelToKeyMap(YES_REASON_LABELS);
 const NO_LABEL_TO_KEY = buildLabelToKeyMap(NO_REASON_LABELS);
 
+// Helper to get translation label for a reason key in the current language
 const getReasonLabel = (reasonKey, t, isPositive) => {
-  // Try to find the correct camelCase key from our labels object
-  const reasonLabels = isPositive ? YES_REASON_LABELS : NO_REASON_LABELS;
-  const matchedKey = Object.keys(reasonLabels).find(k => k.toLowerCase() === reasonKey.toLowerCase()) || reasonKey;
-  
   if (isPositive) {
-    return t(`homepage.publicFeedback.yes.options.${matchedKey}`) || reasonKey;  
+    return t(`homepage.publicFeedback.yes.options.${reasonKey}`) || reasonKey;
   } else {
-    return t(`homepage.publicFeedback.no.options.${matchedKey}`) || reasonKey;
+    return t(`homepage.publicFeedback.no.options.${reasonKey}`) || reasonKey;
   }
 };
 
@@ -100,27 +84,22 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
   const noReasons = metrics.publicFeedbackReasons?.no || {};
 
 
-// Helper to group counts by translation key
-const groupByKey = (reasons, isPositive) => {
-  const labelToKey = isPositive ? YES_LABEL_TO_KEY : NO_LABEL_TO_KEY;
-  const reasonLabels = isPositive ? YES_REASON_LABELS : NO_REASON_LABELS;
-  const grouped = {};
-  
-  Object.entries(reasons).forEach(([reason, count]) => {
-    // First try to find a matching key (case-insensitive)
-    let key = Object.keys(reasonLabels).find(k => k.toLowerCase() === reason.toLowerCase());
-    
-    // If not found, try to map from label
-    if (!key) {
-      key = labelToKey[reason] || reason;
-    }
-  
-    
-    if (!grouped[key]) grouped[key] = 0;
-    grouped[key] += count;
-  });
-  return grouped;
-};
+  // Helper to group counts by translation key
+  const groupByKey = (reasons, isPositive) => {
+    const labelToKey = isPositive ? YES_LABEL_TO_KEY : NO_LABEL_TO_KEY;
+    const grouped = {};
+    Object.entries(reasons).forEach(([reason, count]) => {
+      // Try to map reason to a key (if it's already a key, use it; else, try to map from label)
+      let key = reason;
+      if (!(key in (isPositive ? YES_REASON_LABELS : NO_REASON_LABELS))) {
+        // Try to map from label
+        key = labelToKey[reason] || reason;
+      }
+      if (!grouped[key]) grouped[key] = 0;
+      grouped[key] += count;
+    });
+    return grouped;
+  };
 
   // Grouped counts for table and pie charts (by translation key)
   const yesGrouped = groupByKey(yesReasons, true);
@@ -157,7 +136,7 @@ const groupByKey = (reasons, isPositive) => {
  
   return (
     <div className="mb-600">
-      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
+      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')} / Public Feedback</h3>
       <GcdsText className="mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
       <div className="bg-gray-50 p-4 rounded-lg">
         {/* Totals Table (unchanged) */}
@@ -210,7 +189,7 @@ const groupByKey = (reasons, isPositive) => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
           {/* Pie chart for YES (helpful) reasons */}
           <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
+            <h4>Helpful (Yes) - Reason Breakdown</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -223,8 +202,8 @@ const groupByKey = (reasons, isPositive) => {
                   label
                 >
                   {yesPieData.map((entry, idx) => (
-                 <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />           
-             ))}
+                    <Cell key={`cell-yes-${idx}`} fill={["#0088FE", "#00C49F", "#FFBB28", "#FF8042"][idx % 4]} />
+                  ))}
                 </Pie>
                 <Tooltip />
                 <Legend />
@@ -233,7 +212,7 @@ const groupByKey = (reasons, isPositive) => {
           </div>
           {/* Pie chart for NO (unhelpful) reasons */}
           <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
+            <h4>{t('metrics.dashboard.userScored.unhelpful')} - Reason Breakdown</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -246,7 +225,7 @@ const groupByKey = (reasons, isPositive) => {
                   label
                 >
                   {noPieData.map((entry, idx) => (
-                        <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
+                    <Cell key={`cell-no-${idx}`} fill={["#8884d8", "#FF8042", "#FFBB28", "#00C49F"][idx % 4]} />
                   ))}
                 </Pie>
                 <Tooltip />
