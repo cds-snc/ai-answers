@@ -7,10 +7,10 @@ import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recha
 const CHART_COLORS = [
   "#1976D2", // Medium blue
   "#AD1457", // Magenta
-  "#26A69A", // Medium teal
+  "#26A699", // Medium teal
   "#E65100", // Dark orange
   "#7B1FA2", // Dark purple
-  "#F9A825", // Dark amber
+  "#D18305", // Dark amber
   "#388E3C"  // Green
 ];
 
