@@ -16,5 +16,5 @@ variable "vpc_private_subnet_ids" {
 variable "node_type" {
   description = "ElastiCache node type"
   type        = string
-  default     = "cache.t3.micro"  # Cheapest option: ~$12/month, 0.5GB RAM
+  default     = "cache.t3.micro" # Cheapest option: ~$12/month, 0.5GB RAM
 }
