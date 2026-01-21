@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.87.1](https://github.com/cds-snc/ai-answers/compare/v1.87.0...v1.87.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* add elasticache module to terraform plan jobs for production and staging workflows ([01de02b](https://github.com/cds-snc/ai-answers/commit/01de02b29030e7f785192deb438dfd338a89fe8f))
+* add missing dependencies block and update apply workflows order … ([740adc6](https://github.com/cds-snc/ai-answers/commit/740adc62088b6d33727af8e04599ace54db93cdb))
+* add missing dependencies block and update apply workflows order for elasticache ([44720a1](https://github.com/cds-snc/ai-answers/commit/44720a113492db9e04fb10173c166717da43c2eb))
+* remove unused variables for product name, environment, and billi… ([33326b4](https://github.com/cds-snc/ai-answers/commit/33326b48da5dbde0a488a920f9792aca4013d035))
+* remove unused variables for product name, environment, and billing code in elasticache inputs ([9c9a2dc](https://github.com/cds-snc/ai-answers/commit/9c9a2dc19ab7267d84b0a4ab09147c2c96d3ef7e))
+* terraform fmt for elasticache module ([e6219f1](https://github.com/cds-snc/ai-answers/commit/e6219f10314ff37bbe6479b69a76e660a860a4f2))
+
 ## [1.87.0](https://github.com/cds-snc/ai-answers/compare/v1.86.0...v1.87.0) (2026-01-21)
 
 
