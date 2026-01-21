@@ -10,7 +10,7 @@ Examples:
 * Notice FR urls for acts & regulations follow pattern, PDF's contain English & French text
 
 ### Updates:
-- Criminal Conviction Review (upd. UN 2025) https://www.justice.gc.ca/eng/cj-jp/ccr-rc/index.html https://www.justice.gc.ca/fra/jp-cj/rc-ccr/index.html
-- Fraudsters pretending to be from Justice https://www.justice.gc.ca/eng/contact/fraud.html https://www.justice.gc.ca/fra/contact/fraud.html https://www.justice.gc.ca/fra/contact/fraud.html
+- Criminal Conviction Review (upd. JUN 2025) https://www.justice.gc.ca/eng/cj-jp/ccr-rc/index.html https://www.justice.gc.ca/fra/jp-cj/rc-ccr/index.html
+- Fraudsters pretending to be from Justice (upd. JUN 2025) https://www.justice.gc.ca/eng/contact/fraud.html https://www.justice.gc.ca/fra/contact/fraud.html https://www.justice.gc.ca/fra/contact/fraud.html
 
 `;
