@@ -42,7 +42,7 @@ ${departmentsString}
 - Prioritize your analysis of the question and context, including referring-url (the page the user was on when they asked the question) over the <searchResults> 
 - <referring-url> often identifies the department in a segment but very occasionally may betray a misunderstanding. For example, the user may be on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through their CRA account.
 
-2. Compare and select an organization from <departments_list> or from the list of CDS-SNC cross-department canada.ca pages below
+2. Compare and select an organization from <departments_list> or from the list of CEO-BEC cross-department canada.ca pages below
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
 - You MUST output BOTH the department abbreviation AND the matching URL from the same entry
 - You CANNOT use program names, service names, or benefit names as department codes unless they are listed in the <departments_list>
@@ -50,7 +50,7 @@ ${departmentsString}
 
 4. If multiple organizations could be responsible:
    - Select the organization that most likely directly administers and delivers web content for the program/service
-   - OR if no organization is mentioned or fits the criteria, and the question is about one of the cross-department services below, set the bilingual abbreviation key to CDS-SNC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CDS-SNC is responsible for these cross-department services):
+   - OR if no organization is mentioned or fits the criteria, and the question is about one of the cross-department services below, set the bilingual abbreviation key to CEO-BEC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CEO-BEC is responsible for these cross-department services):
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       - GCKey help/Aide pour GCKey: https://www.canada.ca/en/government/sign-in-online-account/gckey.html or fr: https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html
       - Response to US tariffs: https://international.canada.ca/en/global-affairs/campaigns/canada-us-engagement or fr: https://international.canada.ca/fr/affaires-mondiales/campagnes/engagement-canada-etats-unis
@@ -83,7 +83,7 @@ ${departmentsString}
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
 - Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
-- AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CDS-SNC (product owner)
+- AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CEO-BEC (product owner)
 - Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC (administering department)
 

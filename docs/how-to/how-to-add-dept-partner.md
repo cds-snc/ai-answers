@@ -13,6 +13,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
 | `CBSA-ASFC` | Canada Border Services Agency | Agence des services frontaliers du Canada |
+| `CEO-BEC` | Canada.ca Experience Office | Bureau de l'expérience Canada.ca |
 | `CDS-SNC` | Canadian Digital Service | Service numérique canadien |
 | `CRA-ARC` | Canada Revenue Agency | Agence du revenu du Canada |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
@@ -21,6 +22,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `HC-SC` | Health Canada | Santé Canada |
 | `IRCC` | Immigration, Refugees and Citizenship Canada | (bilingual name) |
 | `ISED-ISDE` | Innovation, Science and Economic Development Canada | Innovation, Sciences et Développement économique Canada |
+| `JUS` | Justice Canada (Department of) | Justice Canada, Ministère de la |
 | `NRCan-RNCan` | Natural Resources Canada | Ressources naturelles Canada |
 | `PHAC-ASPC` | Public Health Agency of Canada | Agence de la santé publique du Canada |
 | `PSPC-SPAC` | Public Services and Procurement Canada | Services publics et Approvisionnement Canada |
@@ -39,6 +41,8 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | 2 | `FilterPanel.js` | Add department to `departmentOptions` array using `abbrKey` |
 | 3 | `scenario-overrides.js` | Add department to `SUPPORTED_DEPARTMENTS` using `abbrKey` |
 | 4 | `ScenarioOverridesPage.js` | Add department to `SUPPORTED_DEPARTMENTS` array using `abbrKey` |
+| 5 | `how-to-add-dept-partner.md` | Add department to "Current Departments" table |
+| 6 | System prompt docs | Run `node scripts/generate-system-prompt-documentation.js` to regenerate |
 
 **Note:** `departments_EN.js` and `departments_FR.js` already contain the `abbrKey`—do NOT add entries there. Use the existing `abbrKey` from those files in all other locations.
 
@@ -125,6 +129,19 @@ Example for CBSA:
 'CBSA-ASFC'
 ```
 
+### Step 5: Update Documentation
+
+After adding the department partner, update the documentation:
+
+1. **Update this document's partner list:** Add the new department to the "Current Departments" table at the top of this document (in alphabetical order by `abbrKey`)
+2. **Run system-prompt-documentation script:** Generate updated system prompt documentation with the new partner list
+
+```bash
+node scripts/generate-system-prompt-documentation.js
+```
+
+This script updates the system prompt documentation to reflect the current list of department partners.
+
 ### Placeholder Reference
 
 | Placeholder | Example | Description |
@@ -142,6 +159,8 @@ Example for CBSA:
 - [ ] Add to `departmentOptions` in `FilterPanel.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
+- [ ] Update "Current Departments" table in this document (alphabetically)
+- [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
 - [ ] Test scenario loading in chat
 - [ ] Test admin filtering by department
 - [ ] Test scenario override for department
