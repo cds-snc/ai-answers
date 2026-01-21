@@ -58,16 +58,20 @@ jobs:
           role-session-name: TFApply
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Apply ssm
-        working-directory: terragrunt/env/staging/ssm
-        run: terragrunt apply --terragrunt-non-interactive -auto-approve
-
       - name: Apply hosted zone
         working-directory: terragrunt/env/staging/hosted_zone
         run: terragrunt apply --terragrunt-non-interactive -auto-approve
 
       - name: Apply network
         working-directory: terragrunt/env/staging/network
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply elasticache
+        working-directory: terragrunt/env/staging/elasticache
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply ssm
+        working-directory: terragrunt/env/staging/ssm
         run: terragrunt apply --terragrunt-non-interactive -auto-approve
 
       - name: Apply ecr
