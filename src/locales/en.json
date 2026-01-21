@@ -69,6 +69,7 @@
           "confusing": "Too complex or confusing",
           "notDetailed": "Not detailed enough",
           "notWanted": "Answer is clear, but is not what I wanted to hear",
+          "brokenLink": "Link doesn't work",
           "other": "Other"
         },
         "shortQuestion": "Why wasn't this helpful?"
@@ -1076,11 +1077,12 @@
         "hasCitationError": "Has citation error"
       },
       "userScored": {
-        "title": "End-user feedback",
+        "title": "End-user feedback (public)",
         "description": "Yes-no feedback from end-users",
         "total": "Total questions with feedback",
         "helpful": "Helpful (yes)",
         "unhelpful": "Issue (no)",
+        "reasonBreakdown": "Reason Breakdown",
         "reasonTableTitle": "Public feedback reasons breakdown",
         "reason": "Reason"
       },
