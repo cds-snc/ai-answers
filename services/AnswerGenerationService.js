@@ -53,6 +53,7 @@ async function invokeAgent({
     ];
 
     ServerLoggingService.info(`${provider} chat invoke start`, chatId);
+    //ServerLoggingService.debug(`${provider} chat messages`, chatId, { messages });
     const answer = await agent.invoke({ messages });
     ServerLoggingService.info(`${provider} chat invoke end`, chatId);
 
