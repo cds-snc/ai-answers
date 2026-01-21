@@ -1,18 +1,3 @@
-variable "product_name" {
-  description = "Product name used for resource naming"
-  type        = string
-}
-
-variable "env" {
-  description = "Environment name (staging, production)"
-  type        = string
-}
-
-variable "billing_code" {
-  description = "Billing code for cost tracking"
-  type        = string
-}
-
 variable "vpc_id" {
   description = "VPC ID where Redis will be deployed"
   type        = string
