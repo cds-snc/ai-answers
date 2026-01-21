@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.87.2](https://github.com/cds-snc/ai-answers/compare/v1.87.1...v1.87.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* address declaration incorrect translation ([7fb3e90](https://github.com/cds-snc/ai-answers/commit/7fb3e90153f6020807737e58a3aa895df42dc58f))
+
 ## [1.87.1](https://github.com/cds-snc/ai-answers/compare/v1.87.0...v1.87.1) (2026-01-21)
 
 
