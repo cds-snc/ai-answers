@@ -1,3 +1,4 @@
+# Trigger workflow to apply redis_url parameter
 terraform {
   source = "../../../aws//ssm"
 }
