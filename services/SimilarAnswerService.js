@@ -3,10 +3,18 @@ import { VectorService, initVectorService } from './VectorServiceFactory.js';
 import dbConnect from '../api/db/db-connect.js';
 import mongoose from 'mongoose';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
-import { rankerStrategy } from '../agents/strategies/rankerStrategy.js';
 import { translationStrategy } from '../agents/strategies/translationStrategy.js';
-import { createRankerAgent, createTranslationAgent } from '../agents/AgentFactory.js';
+import { createTranslationAgent } from '../agents/AgentFactory.js';
 import ConversationIntegrityService from './ConversationIntegrityService.js';
+
+// Comparator abstraction for question flow comparison
+// Toggle between LLM and local cross-encoder by changing the import:
+// import { LLMRankerComparator } from './comparators/LLMRankerComparator.js';
+import { QuoraCrossEncoderComparator } from './comparators/QuoraCrossEncoderComparator.js';
+
+// Instantiate the comparator (swap implementations here for testing)
+// const questionFlowComparator = new LLMRankerComparator();
+const questionFlowComparator = new QuoraCrossEncoderComparator();
 
 // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
 function sanitizeQuestionArray(arr) {
@@ -107,37 +115,11 @@ async function buildQuestionFlows(finalCandidates) {
     return { candidateQuestions, orderedEntries };
 }
 
-function createRankerAdapter() {
-    return async (agentType, localChatId) => {
-        const agent = await createRankerAgent(agentType, localChatId);
-        return agent;
-    };
-}
 
-async function callOrchestrator({ chatId, selectedAI, userQuestions, candidateQuestions, createAgentFn }) {
-    const orchestratorRequest = { userQuestions, candidateQuestions };
-    try {
-        return await AgentOrchestratorService.invokeWithStrategy({ chatId, agentType: selectedAI, request: orchestratorRequest, createAgentFn, strategy: rankerStrategy });
-    } catch (err) {
-        ServerLoggingService.error('Ranker orchestrator failed', 'chat-similar-answer', err);
-        return null;
-    }
-}
 
-function interpretRankResult(rankResult) {
-    let topIndex = -1;
-    const allPass = (checks) => checks && Object.values(checks).every(v => String(v).toLowerCase() === 'pass');
-    if (rankResult && Array.isArray(rankResult.results) && rankResult.results.length) {
-        for (const item of rankResult.results) {
-            if (item && typeof item === 'object' && typeof item.index === 'number') {
-                if (allPass(item.checks)) { topIndex = item.index; break; }
-                else continue; // skip failed checks
-            }
-            // For legacy shapes (number/string) without checks, do not consider as a match
-        }
-    }
-    return topIndex;
-}
+
+
+
 
 function formatAnswerFromChosen(chosenEntry) {
     if (!chosenEntry) return null;
@@ -278,22 +260,39 @@ export const SimilarAnswerService = {
         // Clean up trailing whitespace/newline characters from question strings
         const sanitizedCandidateQuestions = sanitizeQuestionArray(candidateQuestions);
         const sanitizedUserQuestions = sanitizeQuestionArray(questions);
-        ServerLoggingService.info(`Invoking ranker with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
+        ServerLoggingService.info(`Invoking comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
             userQuestions: sanitizedUserQuestions,
-            candidateQuestions: sanitizedCandidateQuestions
+            candidateQuestions: sanitizedCandidateQuestions,
+            comparator: questionFlowComparator.getName()
         });
 
-        const createAgentFn = createRankerAdapter();
-        const rankResult = await callOrchestrator({ chatId, selectedAI, userQuestions: sanitizedUserQuestions, candidateQuestions: sanitizedCandidateQuestions, createAgentFn });
-        const topIndex = interpretRankResult(rankResult);
+        // Use the comparator abstraction (swap implementations at top of file)
+        const comparisonResult = await questionFlowComparator.compare(
+            sanitizedUserQuestions,
+            sanitizedCandidateQuestions,
+            { chatId, selectedAI }
+        );
+
+        ServerLoggingService.info(`Comparator returned ${comparisonResult.results.length} results`, chatId, {
+            method: comparisonResult.method,
+            latencyMs: comparisonResult.metadata?.latencyMs
+        });
+
+        // Find top accepted result (score >= threshold, default 0.95)
+        const topResult = comparisonResult.results.find(r => r.recommendation === 'accept');
+        const topIndex = topResult?.index ?? -1;
+        const topChecks = topResult?.checks ?? null;
 
         if (topIndex === -1) {
-            ServerLoggingService.info('Ranker produced no usable result; continuing normal flow', 'chat-similar-answer');
+            ServerLoggingService.info('Comparator produced no accepted match; continuing normal flow', 'chat-similar-answer');
             return null;
         }
-        const topRankerItem = (rankResult && Array.isArray(rankResult.results) && rankResult.results.length) ? rankResult.results[0] : null;
-        const topChecks = (topRankerItem && typeof topRankerItem === 'object' && topRankerItem.checks) ? topRankerItem.checks : null;
-        ServerLoggingService.info(`Ranker selected index ${topIndex} as top candidate`, chatId, { topRankerItem, topChecks });
+
+        ServerLoggingService.info(`Comparator selected index ${topIndex} as top candidate`, chatId, {
+            score: topResult?.score,
+            topChecks,
+            method: comparisonResult.method
+        });
         // Choose the top-ranked entry from the ranker results. fall back to the first ordered entry or finalCandidates[0]
         const chosen = orderedEntries[topIndex];
         const formatted = formatAnswerFromChosen(chosen);
