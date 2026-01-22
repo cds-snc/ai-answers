@@ -628,6 +628,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         })}
   <hr className="citation-divider" />
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
+          <>
+         <hr className="citation-divider" />
           <div className="citation-container">
             {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
             {displayUrl && (
@@ -667,6 +669,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               </ul>
             )}
           </div>
+          </>
         )}
         <div className="disclaimer">
           <p>
