@@ -1,5 +1,87 @@
 # Changelog
 
+## [1.87.2](https://github.com/cds-snc/ai-answers/compare/v1.87.1...v1.87.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* address declaration incorrect translation ([7fb3e90](https://github.com/cds-snc/ai-answers/commit/7fb3e90153f6020807737e58a3aa895df42dc58f))
+
+## [1.87.1](https://github.com/cds-snc/ai-answers/compare/v1.87.0...v1.87.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* add elasticache module to terraform plan jobs for production and staging workflows ([01de02b](https://github.com/cds-snc/ai-answers/commit/01de02b29030e7f785192deb438dfd338a89fe8f))
+* add missing dependencies block and update apply workflows order … ([740adc6](https://github.com/cds-snc/ai-answers/commit/740adc62088b6d33727af8e04599ace54db93cdb))
+* add missing dependencies block and update apply workflows order for elasticache ([44720a1](https://github.com/cds-snc/ai-answers/commit/44720a113492db9e04fb10173c166717da43c2eb))
+* remove unused variables for product name, environment, and billi… ([33326b4](https://github.com/cds-snc/ai-answers/commit/33326b48da5dbde0a488a920f9792aca4013d035))
+* remove unused variables for product name, environment, and billing code in elasticache inputs ([9c9a2dc](https://github.com/cds-snc/ai-answers/commit/9c9a2dc19ab7267d84b0a4ab09147c2c96d3ef7e))
+* terraform fmt for elasticache module ([e6219f1](https://github.com/cds-snc/ai-answers/commit/e6219f10314ff37bbe6479b69a76e660a860a4f2))
+
+## [1.87.0](https://github.com/cds-snc/ai-answers/compare/v1.86.0...v1.87.0) (2026-01-21)
+
+
+### Features
+
+* add elasticache redis infrastructure (t3.micro) ([8a77103](https://github.com/cds-snc/ai-answers/commit/8a7710311c86388134d047cc7bfee200b3ee08d2))
+* add locale for new No option ([e880d83](https://github.com/cds-snc/ai-answers/commit/e880d83d07cb7dca44b89c7657fa771030113218))
+* add new option ([57589a5](https://github.com/cds-snc/ai-answers/commit/57589a52a76669ba5669aecd8da6810bf4386991))
+* create options ([92b2093](https://github.com/cds-snc/ai-answers/commit/92b20933a8aa48c32d08903f42a825f40367850a))
+* dont think I need this ([94848cb](https://github.com/cds-snc/ai-answers/commit/94848cb9f921ef3d62467267bbbebece54c8cb0d))
+* placeholder ([b621950](https://github.com/cds-snc/ai-answers/commit/b621950d03c3b35dfe8d224619f72a2c1513e2cf))
+* put back ([809da90](https://github.com/cds-snc/ai-answers/commit/809da90d2bcd5ef29ac5ce9f7dbf8311a175e0a7))
+* rerun ([1a91f71](https://github.com/cds-snc/ai-answers/commit/1a91f71ec2753912b215df51524fac5cbe27ed59))
+* revert ([1839c6b](https://github.com/cds-snc/ai-answers/commit/1839c6b5a487c01702b8a2ec33507eb2c922f5ca))
+* revert back ([dc8d317](https://github.com/cds-snc/ai-answers/commit/dc8d317ccbe4f43bb67160730c4ae562074a32f6))
+* revert back to last stable ([c295b01](https://github.com/cds-snc/ai-answers/commit/c295b01166e46da559d56b38ca45d832d5733c3b))
+* test simplifying more ([3dac2ba](https://github.com/cds-snc/ai-answers/commit/3dac2ba440f9bf65cfbc832489fa9600e3019e02))
+* tweaks based on font-size ([94745f6](https://github.com/cds-snc/ai-answers/commit/94745f6cf367d19bef6ead51cfe1a3abda780093))
+* use score and not string ([9d42688](https://github.com/cds-snc/ai-answers/commit/9d4268814cca8848b3d066a57f8f386b08f5494a))
+
+
+### Bug Fixes
+
+* a few more issues ([3948af5](https://github.com/cds-snc/ai-answers/commit/3948af5736bd352e86aae44fba80d3abf2ea0764))
+* add CEO-BEC ([13845b8](https://github.com/cds-snc/ai-answers/commit/13845b83276c265663ff491156ce6647c3e33fd8))
+* add content to JUS ([215c09f](https://github.com/cds-snc/ai-answers/commit/215c09f5946f625dfdb8505fb47977e61b782010))
+* add JUSTICE as partner ([aa3b143](https://github.com/cds-snc/ai-answers/commit/aa3b1439cf2011ba599ccdda73fee1ebded9c634))
+* add JUSTICE as partner ([453bf40](https://github.com/cds-snc/ai-answers/commit/453bf40a997633f50468f1df300bcd6a304502a3))
+* lamda deployment failing because no access to REDIS_URL ([a5c39a7](https://github.com/cds-snc/ai-answers/commit/a5c39a72ce29f23b3586ae39e283cab99e5d3d97))
+* lamda deployment failing because no access to REDIS_URL ([4b72efd](https://github.com/cds-snc/ai-answers/commit/4b72efd465ec73a998ef3d7074a9c9307d49bc62))
+* trial3 issues ([0b72fae](https://github.com/cds-snc/ai-answers/commit/0b72fae10b5fbb998d69142e306a7a4cbd379110))
+* typo ([6c3ef54](https://github.com/cds-snc/ai-answers/commit/6c3ef54554220c5069b2c7394492d2891342fa72))
+
+
+### Miscellaneous Chores
+
+* touch staging ssm to trigger infra workflow ([4a26a50](https://github.com/cds-snc/ai-answers/commit/4a26a5003e52d3238e1ea3676c66f35159313857))
+* touch staging ssm to trigger infra workflow ([cdbcc59](https://github.com/cds-snc/ai-answers/commit/cdbcc595cb7e37a7c741a60dc0c0e3f2071767a4))
+
+## [1.86.0](https://github.com/cds-snc/ai-answers/compare/v1.85.0...v1.86.0) (2026-01-19)
+
+
+### Features
+
+* add dev:quick script for easy local development ([b012787](https://github.com/cds-snc/ai-answers/commit/b0127876444160d92ab1a1aa08c13e57bf23043f))
+* add dev:quick script for easy local development ([eb48b70](https://github.com/cds-snc/ai-answers/commit/eb48b70c76c50041ba1d7e85a43b8152dd34338d))
+* show domain ([8205aba](https://github.com/cds-snc/ai-answers/commit/8205aba07b99a1177a65f5ec7a389b2f0e843b77))
+* update URL truncation in filter show domain and segment ([b865db6](https://github.com/cds-snc/ai-answers/commit/b865db6365d9543d17ce8f6a98b404ef568f76b7))
+
+## [1.85.0](https://github.com/cds-snc/ai-answers/compare/v1.84.0...v1.85.0) (2026-01-19)
+
+
+### Features
+
+* **admin:** enable eval dashboard for partners and move link to partner menu ([a730556](https://github.com/cds-snc/ai-answers/commit/a7305565074c404cf26c7211ce72d159bc24c08c))
+* **admin:** split admin menu into Partner and Admin sections ([ec156f8](https://github.com/cds-snc/ai-answers/commit/ec156f8279f9751d9e307a1037068b154da349c4))
+* **admin:** split admin menu into Partner and Admin sections ([0bb4f7c](https://github.com/cds-snc/ai-answers/commit/0bb4f7c8f87298514233686df3545d93e1734caf))
+
+
+### Bug Fixes
+
+* **bedrock:** use Claude 3 Haiku (ON_DEMAND) for Canada, remove US test (SCP blocked) ([6adf17a](https://github.com/cds-snc/ai-answers/commit/6adf17a60d73f8b38a5c517b2b5b161e0d158993))
+
 ## [1.84.0](https://github.com/cds-snc/ai-answers/compare/v1.83.0...v1.84.0) (2026-01-16)
 
 

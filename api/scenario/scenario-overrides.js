@@ -6,6 +6,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
     return mod.CBSA_ASFC_SCENARIOS || '';
   },
+  'CEO-BEC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-ceo-bec/ceo-bec-scenarios.js');
+    return mod.CEO_BEC_SCENARIOS || '';
+  },
   'CDS-SNC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-cds-snc/cds-snc-scenarios.js');
     return mod.CDS_SNC_SCENARIOS || '';
@@ -37,6 +41,10 @@ const SUPPORTED_DEPARTMENTS = {
   'ISED-ISDE': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-ised-isde/ised-isde-scenarios.js');
     return mod.ISED_ISDE_SCENARIOS || '';
+  },
+  'JUS': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-jus/jus-scenarios.js');
+    return mod.JUS_SCENARIOS || '';
   },
   'NRCan-RNCan': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-nrcan-rncan/nrcan-rncan-scenarios.js');

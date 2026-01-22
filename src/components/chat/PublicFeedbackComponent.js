@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import FeedbackService from '../../services/FeedbackService.js';
+import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
+
 
 const PublicFeedbackComponent = ({
   lang = 'en',
@@ -15,20 +17,12 @@ const PublicFeedbackComponent = ({
   const [selected, setSelected] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const options = isPositive
-    ? [
-        { id: 'noCall', score: 1, label: t('homepage.publicFeedback.yes.options.noCall') },
-        { id: 'noVisit', score: 2, label: t('homepage.publicFeedback.yes.options.noVisit') },
-        { id: 'savedTime', score: 3, label: t('homepage.publicFeedback.yes.options.savedTime') },
-        { id: 'other', score: 4, label: t('homepage.publicFeedback.yes.options.other') },
-      ]
-    : [
-        { id: 'irrelevant', score: 9, label: t('homepage.publicFeedback.no.options.irrelevant') },
-        { id: 'confusing', score: 8, label: t('homepage.publicFeedback.no.options.confusing') },
-        { id: 'notDetailed', score: 7, label: t('homepage.publicFeedback.no.options.notDetailed') },
-        { id: 'notWanted', score: 5, label: t('homepage.publicFeedback.no.options.notWanted') },
-        { id: 'other', score: 6, label: t('homepage.publicFeedback.no.options.other') },
-      ];
+  const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
+    ...opt,
+    label: isPositive 
+      ? t(`homepage.publicFeedback.yes.options.${opt.id}`)
+      : t(`homepage.publicFeedback.no.options.${opt.id}`)
+  }));
 
   const handleSend = async () => {
     if (!selected) return;

@@ -75,6 +75,11 @@ export const departments_EN = [
     "abbrKey": "CBSA-ASFC"
   },
   {
+    "name": "Canada.ca Experience Office",
+    "url": "https://design.canada.ca/index.html",
+    "abbrKey": "CEO-BEC"
+  },
+  {
     "name": "Canada Council for the Arts",
     "url": "https://canadacouncil.ca/",
     "abbrKey": "CCA"

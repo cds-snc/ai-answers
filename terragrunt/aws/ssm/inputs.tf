@@ -104,3 +104,9 @@ variable "bedrock_region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "redis_url" {
+  description = "The Redis URL"
+  sensitive   = true
+  type        = string
+}

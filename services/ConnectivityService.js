@@ -287,12 +287,90 @@ async function testAzureOpenAI() {
  */
 async function testBedrockWithRole() {
     const startTime = Date.now();
+    const bedrockRegion = 'us-east-1';
+    const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
+
+    if (!bedrockRoleArn) {
+        return {
+            service: 'Bedrock (Claude US)',
+            status: 'not_configured',
+            message: 'BEDROCK_ROLE_ARN not set',
+            latencyMs: Date.now() - startTime,
+            configured: false
+        };
+    }
+
+    try {
+        // Assume the cross-account role first
+        const stsClient = new STSClient({ region: 'us-east-1' });
+        const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
+            RoleArn: bedrockRoleArn,
+            RoleSessionName: 'connectivity-test',
+            DurationSeconds: 900
+        }));
+
+        const credentials = {
+            accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
+            secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
+            sessionToken: assumeRoleResponse.Credentials.SessionToken
+        };
+
+        const client = new BedrockRuntimeClient({
+            region: bedrockRegion,
+            credentials
+        });
+
+        const command = new InvokeModelCommand({
+            modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+            contentType: 'application/json',
+            accept: 'application/json',
+            body: JSON.stringify({
+                anthropic_version: 'bedrock-2023-05-31',
+                max_tokens: 50,
+                messages: [{ role: 'user', content: 'Hello' }]
+            })
+        });
+
+        const response = await client.send(command);
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+        const outputText = responseBody.content?.[0]?.text || 'No response text';
+
+        return {
+            service: 'Bedrock (Claude US)',
+            status: 'connected',
+            message: 'Connection successful with role assumption',
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: {
+                region: bedrockRegion,
+                roleArn: bedrockRoleArn,
+                testModel: 'anthropic.claude-haiku-4-5-20251001-v1:0',
+                responseText: outputText
+            }
+        };
+    } catch (error) {
+        return {
+            service: 'Bedrock (Claude US)',
+            status: 'error',
+            message: error.message,
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: { region: bedrockRegion, roleArn: bedrockRoleArn }
+        };
+    }
+}
+
+/**
+ * Test AWS Bedrock connection for Claude in Canada
+ */
+async function testBedrockClaudeCanada() {
+    const startTime = Date.now();
     const bedrockRegion = 'ca-central-1';
     const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
 
     if (!bedrockRoleArn) {
         return {
-            service: 'Bedrock',
+            service: 'Bedrock (Claude CA)',
             status: 'not_configured',
             message: 'BEDROCK_ROLE_ARN not set',
             latencyMs: Date.now() - startTime,
@@ -305,7 +383,7 @@ async function testBedrockWithRole() {
         const stsClient = new STSClient({ region: 'ca-central-1' });
         const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
             RoleArn: bedrockRoleArn,
-            RoleSessionName: 'connectivity-test',
+            RoleSessionName: 'connectivity-test-claude-ca',
             DurationSeconds: 900
         }));
 
@@ -327,7 +405,7 @@ async function testBedrockWithRole() {
             body: JSON.stringify({
                 anthropic_version: 'bedrock-2023-05-31',
                 max_tokens: 50,
-                messages: [{ role: 'user', content: 'Hello' }]
+                messages: [{ role: 'user', content: 'Hello from Canada' }]
             })
         });
 
@@ -336,21 +414,103 @@ async function testBedrockWithRole() {
         const outputText = responseBody.content?.[0]?.text || 'No response text';
 
         return {
-            service: 'Bedrock',
+            service: 'Bedrock (Claude CA)',
             status: 'connected',
-            message: 'Connection successful with role assumption',
+            message: 'Connection successful to Claude in Canada!',
             latencyMs: Date.now() - startTime,
             configured: true,
             details: {
                 region: bedrockRegion,
                 roleArn: bedrockRoleArn,
-                testModel: 'anthropic.claude-3-haiku-20240307-v1:0',
+                testModel: 'anthropic.claude-haiku-4-5-20251001-v1:0',
                 responseText: outputText
             }
         };
     } catch (error) {
         return {
-            service: 'Bedrock',
+            service: 'Bedrock (Claude CA)',
+            status: 'error',
+            message: error.message,
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: { region: bedrockRegion, roleArn: bedrockRoleArn }
+        };
+    }
+}
+
+/**
+ * Test AWS Bedrock connection using Amazon Nova (No Marketplace dependency)
+ */
+async function testBedrockNova() {
+    const startTime = Date.now();
+    const bedrockRegion = 'ca-central-1'; // Use Canada Central
+    const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
+
+    if (!bedrockRoleArn) {
+        return {
+            service: 'Bedrock (Nova)',
+            status: 'not_configured',
+            message: 'BEDROCK_ROLE_ARN not set',
+            latencyMs: Date.now() - startTime,
+            configured: false
+        };
+    }
+
+    try {
+        // Assume the cross-account role first
+        const stsClient = new STSClient({ region: 'ca-central-1' });
+        const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
+            RoleArn: bedrockRoleArn,
+            RoleSessionName: 'connectivity-test-nova',
+            DurationSeconds: 900
+        }));
+
+        const credentials = {
+            accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
+            secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
+            sessionToken: assumeRoleResponse.Credentials.SessionToken
+        };
+
+        const client = new BedrockRuntimeClient({
+            region: bedrockRegion,
+            credentials
+        });
+
+        // Amazon Nova Lite cross-region inference profile for Canada
+        const modelId = 'ca.amazon.nova-lite-v1:0';
+
+        const command = new InvokeModelCommand({
+            modelId,
+            contentType: 'application/json',
+            accept: 'application/json',
+            body: JSON.stringify({
+                inferenceConfig: {
+                    max_new_tokens: 50
+                },
+                messages: [{ role: 'user', content: [{ text: 'Hello' }] }]
+            })
+        });
+
+        const response = await client.send(command);
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+        const outputText = responseBody.output?.message?.content?.[0]?.text || 'No response text';
+
+        return {
+            service: 'Bedrock (Nova)',
+            status: 'connected',
+            message: 'Connection successful to Amazon Nova Lite!',
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: {
+                region: bedrockRegion,
+                roleArn: bedrockRoleArn,
+                testModel: modelId,
+                responseText: outputText
+            }
+        };
+    } catch (error) {
+        return {
+            service: 'Bedrock (Nova)',
             status: 'error',
             message: error.message,
             latencyMs: Date.now() - startTime,
@@ -376,6 +536,8 @@ async function testAllConnections() {
         testAzureOpenAI(),
         testBedrockWithRole(),
         testQuoraModel()
+        testBedrockClaudeCanada(),
+        testBedrockNova()
     ]);
 
     return {
@@ -399,5 +561,7 @@ export {
     testBedrock,
     testBedrockWithRole,
     testQuoraModel,
+    testBedrockClaudeCanada,
+    testBedrockNova,
     testAllConnections
 };

@@ -49,6 +49,7 @@ jobs:
           - module: database
           - module: iam
           - module: ecs
+          - module: elasticache
     runs-on: ubuntu-latest
     environment: production
     steps:

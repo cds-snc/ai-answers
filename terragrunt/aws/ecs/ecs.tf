@@ -79,13 +79,19 @@ module "ai_answers" {
   ]
 
   # Task/Container definition
-  container_image            = "${var.ecr_repository_url}:latest"
-  container_name             = var.product_name
-  task_cpu                   = var.fargate_cpu
-  task_memory                = var.fargate_memory
-  container_port             = 3001
-  container_host_port        = 3001
-  container_secrets          = local.container_secrets
+  container_image     = "${var.ecr_repository_url}:latest"
+  container_name      = var.product_name
+  task_cpu            = var.fargate_cpu
+  task_memory         = var.fargate_memory
+  container_port      = 3001
+  container_host_port = 3001
+  container_secrets   = local.container_secrets
+  container_environment = [
+    {
+      name  = "REDIS_URL"
+      value = var.redis_url
+    }
+  ]
   container_linux_parameters = {}
   container_ulimits = [
     {

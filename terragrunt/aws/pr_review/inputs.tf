@@ -99,3 +99,14 @@ variable "bedrock_region_ssm_arn" {
   type        = string
   default     = ""
 }
+
+variable "redis_url_arn" {
+  description = "ARN for the redis_url SSM parameter"
+  type        = string
+  default     = ""
+}
+
+variable "conversation_integrity_secret_arn" {
+  description = "ARN for the conversation_integrity_secret SSM parameter"
+  type        = string
+}

@@ -68,6 +68,7 @@
           "confusing": "Trop complexe ou déroutant",
           "notDetailed": "Pas assez détaillé",
           "notWanted": "La réponse est claire, mais ce n'est pas ce que je voulais entendre",
+          "brokenLink": "Le lien ne fonctionne pas",
           "other": "Autre"
         },
         "shortQuestion": "Pourquoi n'était-ce pas utile ?"
@@ -1081,11 +1082,12 @@
         "hasCitationError": "Contient une erreur de citation"
       },
       "userScored": {
-        "title": "Rétroaction des utilisateurs",
+        "title": "Rétroaction des utilisateurs (publique)",
         "description": "Rétroaction oui-non des utilisateurs finaux",
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
         "unhelpful": "Problème (non)",
+        "reasonBreakdown": "Répartition des raisons",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
         "reason": "Raison"
       },

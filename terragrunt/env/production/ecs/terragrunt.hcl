@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm"]
+  paths = ["../iam", "../network", "../ecr", "../load_balancer", "../database", "../ssm", "../elasticache"]
 }
 
 dependency "iam" {
@@ -85,6 +85,16 @@ dependency "ssm" {
   }
 }
 
+dependency "elasticache" {
+  config_path = "../elasticache"
+
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    redis_url = "redis://localhost:6379"
+  }
+}
+
 inputs = {
   iam_role_ai-answers-ecs-role_arn  = dependency.iam.outputs.iam_role_ai-answers-ecs-role_arn
   ai-answers-ecs-policy_attachment  = dependency.iam.outputs.ai-answers-ecs-policy_attachment
@@ -113,6 +123,7 @@ inputs = {
   conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
   cross_account_bedrock_role_ssm_arn = dependency.ssm.outputs.cross_account_bedrock_role_ssm_arn
   bedrock_region_ssm_arn             = dependency.ssm.outputs.bedrock_region_ssm_arn
+  redis_url                          = dependency.elasticache.outputs.redis_url
   fargate_cpu                       = 4096 # Override default for production
   fargate_memory                    = 8192 # Override default for production
 }

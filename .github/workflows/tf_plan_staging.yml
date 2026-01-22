@@ -54,6 +54,7 @@ jobs:
           - module: iam
           - module: ecs
           - module: pr_review
+          - module: elasticache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

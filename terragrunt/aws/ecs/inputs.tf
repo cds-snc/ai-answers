@@ -152,3 +152,9 @@ variable "bedrock_region_ssm_arn" {
   description = "ARN of the Bedrock region SSM parameter"
   type        = string
 }
+
+variable "redis_url" {
+  description = "Redis connection URL"
+  type        = string
+  default     = ""
+}
