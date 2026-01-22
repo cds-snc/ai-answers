@@ -21,9 +21,9 @@ FROM node:lts
 WORKDIR /app
 
 RUN apt-get update \
- && apt-get install -y socat \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y socat \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
@@ -31,6 +31,14 @@ RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
 RUN npm install -omit=dev
+
+# Copy pre-downloaded/converted cross-encoder model
+# Model files are in models/ (committed to repo or generated locally)
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+ENV HF_HOME=/app/.cache/huggingface
+COPY models /app/.cache/huggingface/
+# Set environment to use local models
+ENV LOCAL_CROSSENCODER_MODEL=cross-encoder/quora-distilroberta-base
 
 # Copy built frontend and backend code
 COPY --from=build /app/build /app/build
