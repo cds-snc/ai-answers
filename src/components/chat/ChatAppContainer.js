@@ -626,7 +626,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </p>
           ));
         })}
-  <hr className="citation-divider" />
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <>
          <hr className="citation-divider" />
