@@ -119,7 +119,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
 
             <GcdsText className="mb-400">
                 {t('connectivity.description',
-                    'Test connectivity to all external services and AI providers used by AI Answers.')}
+                    'Test connectivity to all external services and AI providers used by AI Answers. (Staging/Production Review)')}
             </GcdsText>
 
             <div className="mb-400">
