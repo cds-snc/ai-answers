@@ -108,7 +108,8 @@
         "hint": "Hint: Add details to make your question clear and complete.",
         "loadingHint": "AI can make mistakes, always check your answer.",
         "referringPage": "Page you were on:",
-        "referringURL": "Referring URL:"
+        "referringURL": "Referring URL:",
+        "disclaimer": "AI can make mistakes, check the answer or ask a follow-up question below."
       },
       "textarea": {
         "title": "Ask your question here.",

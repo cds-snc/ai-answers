@@ -626,16 +626,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </p>
           ));
         })}
-        <div className="mistake-disc">
-          <p><FontAwesomeIcon icon="wand-magic-sparkles" />&nbsp;
-            {safeT('homepage.chat.input.loadingHint')}
-          </p>
-        </div>
+  <hr className="citation-divider" />
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <div className="citation-container">
             {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
             {displayUrl && (
-              <p key={`${messageId}-link`} className="citation-link">
+              <ul key={`${messageId}-link`} className="citation-link">
+                <li>
                 <a
                   href={displayUrl}
                   target="_blank"
@@ -664,11 +661,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   }}
                 >
                   {displayUrl}
-                </a>
-              </p>
+                </a>&nbsp;<FontAwesomeIcon icon="arrow-up-right-from-square" aria-hidden="true" />
+              </li>
+              </ul>
             )}
           </div>
         )}
+        <div className="disclaimer">
+          <p>
+            {safeT('homepage.chat.input.disclaimer')}
+          </p>
+        </div>
       </div>
     );
   }, [safeT, chatId]);
