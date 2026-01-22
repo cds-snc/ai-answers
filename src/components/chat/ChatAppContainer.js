@@ -629,13 +629,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   <hr className="citation-divider" />
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <div className="citation-container">
-            {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
+            {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
             {displayUrl && (
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                 <li>
                 <a
                   href={displayUrl}
                   target="_blank"
+                  className="font-size-text-small"
                   rel="noopener noreferrer"
                   tabIndex="0"
                   onClick={() => {

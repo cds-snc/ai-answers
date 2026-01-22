@@ -253,7 +253,6 @@ code {
   margin-bottom: 0.5rem !important;
 }
 .citation-link a {
-  font-size: 0.85em;
   word-break: break-all;
   margin-bottom: 0.5rem !important;
 }
@@ -271,7 +270,7 @@ code {
 }
 
 .citation-link a,
-.citation-link i {
+.citation-link svg {
   color: var(--gcds-color-blue-850);
 }
 .confidence-rating {
