@@ -71,7 +71,8 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       var.cross_account_bedrock_role_ssm_arn,
       var.bedrock_region_ssm_arn,
       var.redis_url_arn,
-      var.conversation_integrity_secret_arn
+      var.conversation_integrity_secret_arn,
+      var.s3_bucket_name_ssm_arn
     ]
   }
 }

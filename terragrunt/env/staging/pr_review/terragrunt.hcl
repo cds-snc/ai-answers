@@ -32,23 +32,23 @@ dependency "ssm" {
   mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
   mock_outputs_merge_with_state           = true
   mock_outputs = {
-    docdb_username_arn           = ""
-    docdb_password_arn           = ""
-    azure_openai_api_key_arn     = ""
-    azure_openai_endpoint_arn    = ""
-    azure_openai_api_version_arn = ""
-    canada_ca_search_api_key_arn = ""
-    canada_ca_search_uri_arn     = ""
-    user_agent_arn               = ""
-    jwt_secret_key_arn           = ""
-    google_api_key_arn           = ""
-    gc_notify_api_key_arn        = ""
-    google_search_engine_id_arn        = ""
+    docdb_username_arn                   = ""
+    docdb_password_arn                   = ""
+    azure_openai_api_key_arn             = ""
+    azure_openai_endpoint_arn            = ""
+    azure_openai_api_version_arn         = ""
+    canada_ca_search_api_key_arn         = ""
+    canada_ca_search_uri_arn             = ""
+    user_agent_arn                       = ""
+    jwt_secret_key_arn                   = ""
+    google_api_key_arn                   = ""
+    gc_notify_api_key_arn                = ""
+    google_search_engine_id_arn          = ""
     cross_account_bedrock_role_arn_value = ""
-    cross_account_bedrock_role_ssm_arn    = ""
-    bedrock_region_ssm_arn                = ""
-    redis_url_arn                         = ""
-    conversation_integrity_secret_arn     = ""
+    cross_account_bedrock_role_ssm_arn   = ""
+    bedrock_region_ssm_arn               = ""
+    redis_url_arn                        = ""
+    conversation_integrity_secret_arn    = ""
   }
 }
 
@@ -76,4 +76,14 @@ inputs = {
   bedrock_region_ssm_arn                 = dependency.ssm.outputs.bedrock_region_ssm_arn
   redis_url_arn                          = dependency.ssm.outputs.redis_url_arn
   conversation_integrity_secret_arn      = dependency.ssm.outputs.conversation_integrity_secret_arn
+  s3_bucket_name_ssm_arn                 = dependency.s3.outputs.s3_bucket_name_ssm_arn
+}
+
+dependency "s3" {
+  config_path                             = "../s3"
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    s3_bucket_name_ssm_arn = "arn:aws:ssm:ca-central-1:123456789012:parameter/s3_bucket_name"
+  }
 }

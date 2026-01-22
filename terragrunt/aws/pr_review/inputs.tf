@@ -110,3 +110,8 @@ variable "conversation_integrity_secret_arn" {
   description = "ARN for the conversation_integrity_secret SSM parameter"
   type        = string
 }
+
+variable "s3_bucket_name_ssm_arn" {
+  description = "ARN for the s3_bucket_name SSM parameter"
+  type        = string
+}
