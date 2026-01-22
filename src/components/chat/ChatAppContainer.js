@@ -637,7 +637,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 <a
                   href={displayUrl}
                   target="_blank"
-                  className="font-size-text-small"
                   rel="noopener noreferrer"
                   tabIndex="0"
                   onClick={() => {
