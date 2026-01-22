@@ -105,3 +105,8 @@ variable "redis_url_arn" {
   type        = string
   default     = ""
 }
+
+variable "conversation_integrity_secret_arn" {
+  description = "ARN for the conversation_integrity_secret SSM parameter"
+  type        = string
+}

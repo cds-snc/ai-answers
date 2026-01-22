@@ -48,6 +48,7 @@ dependency "ssm" {
     cross_account_bedrock_role_ssm_arn    = ""
     bedrock_region_ssm_arn                = ""
     redis_url_arn                         = ""
+    conversation_integrity_secret_arn     = ""
   }
 }
 
@@ -74,4 +75,5 @@ inputs = {
   cross_account_bedrock_role_ssm_arn     = dependency.ssm.outputs.cross_account_bedrock_role_ssm_arn
   bedrock_region_ssm_arn                 = dependency.ssm.outputs.bedrock_region_ssm_arn
   redis_url_arn                          = dependency.ssm.outputs.redis_url_arn
+  conversation_integrity_secret_arn      = dependency.ssm.outputs.conversation_integrity_secret_arn
 }
