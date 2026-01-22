@@ -242,15 +242,14 @@ code {
   font-weight: bold;
 }
 .citation-divider {
-   border: none;
+  border: none;
   border-top: 3px solid #d9d9d9;
   margin: 0;
   width: 80px;
 }
 
-
 .citation-head {
-  font-weight: bold !important;
+  font-weight: 700 !important;
   margin-bottom: 0.5rem !important;
 }
 .citation-link a {
@@ -271,7 +270,8 @@ code {
   }
 }
 
-.citation-link a {
+.citation-link a,
+.citation-link i {
   color: var(--gcds-color-blue-850);
 }
 .confidence-rating {

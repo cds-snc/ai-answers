@@ -631,7 +631,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <div className="citation-container">
             {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
             {displayUrl && (
-              <ul key={`${messageId}-link`} className="citation-link">
+              <ul key={`${messageId}-link`} className="citation-link list-disc">
                 <li>
                 <a
                   href={displayUrl}
