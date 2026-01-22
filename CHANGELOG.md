@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.88.0](https://github.com/cds-snc/ai-answers/compare/v1.87.2...v1.88.0) (2026-01-22)
+
+
+### Features
+
+* add conversation integrity ssrm permissions to lambda terraform ([02a6e5b](https://github.com/cds-snc/ai-answers/commit/02a6e5bd04e990e1c6691a699b6a4aefd5f667c4))
+* reduce download tool timeout to 500ms ([f84d001](https://github.com/cds-snc/ai-answers/commit/f84d0010d03e77c39b3e3075cfb2131012ea9e76))
+* reduce download tool timeout to 500ms ([e50a38f](https://github.com/cds-snc/ai-answers/commit/e50a38f99b069f5ebc9bfa97c614fce05e981d84))
+
+
+### Bug Fixes
+
+* add missing integrity secret to lambda deployment ([826a566](https://github.com/cds-snc/ai-answers/commit/826a5665c4aac406b20f264f522f56604dc34266))
+* add missing integrity secret to lambda deployment ([f00399d](https://github.com/cds-snc/ai-answers/commit/f00399d24ed6722ae676d619f2d340c024a66d6a))
+
 ## [1.87.2](https://github.com/cds-snc/ai-answers/compare/v1.87.1...v1.87.2) (2026-01-21)
 
 
