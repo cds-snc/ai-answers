@@ -58,7 +58,7 @@ async function downloadWebPage(url) {
   const res = await axios.get(url, {
     httpsAgent,
     maxRedirects: 10,
-    timeout: 10000,
+    timeout: 500,
     headers: { "User-Agent": process.env.USER_AGENT || "Mozilla/5.0 (ContentFetcher)" },
   });
   return htmlToLeanMarkdown(res.data, url);
