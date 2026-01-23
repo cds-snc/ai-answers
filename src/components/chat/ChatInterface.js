@@ -306,18 +306,13 @@ const ChatInterface = ({
     };
   }, [messages, isLoading]);
 
-   // Reset textarea focus after user sends a message to correct icons
+  // Reset textarea focus when switching to follow-up question for icon
   useEffect(() => {
-    if (!isLoading && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.sender === 'user') {
-        setIsTextareaFocused(false);
-        if (textareaRef.current) {
-          textareaRef.current.blur();
-        }
-      }
+    if (turnCount > 0 && textareaRef.current) {
+      setIsTextareaFocused(false);
+      textareaRef.current.blur();
     }
-  }, [messages, isLoading]);
+  }, [turnCount]);
 
   const getLabelForInput = () => {
     if (turnCount >= 1) {
