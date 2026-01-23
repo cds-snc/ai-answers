@@ -246,7 +246,7 @@ code {
 
 .font-size-text-xsm-nr {
   font-size: 16px !important;
-  line-height: 1.4em;
+  line-height: 1.5em;
 }
 
 .font-size-text-xxs-nr {
@@ -272,7 +272,7 @@ code {
   line-height: 1.2em !important;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 640px) {
   .citation-link a {
     display: block;
     width: 100%;
@@ -291,7 +291,7 @@ code {
   .citation-link a svg {
     position: absolute;
     right: 0;
-    bottom: 0;
+    bottom: 5px;
     margin-left: 4px;
   }
 }
@@ -301,7 +301,7 @@ code {
   vertical-align: middle;
   transform: translateY(-2px);
   text-decoration: none;
-  margin-left: 2px;
+  margin-left: 4px;
 }
 
 .ai-icon {
@@ -1914,7 +1914,7 @@ fieldset.gc-chckbxrdio {
 }
 
 .chat-id {
-  padding: 5px 20px;
+  padding: 10px 20px;
   border-bottom: 1px solid #d9d9d9;
   border-left: 1px solid #d9d9d9;
   border-right: 1px solid #d9d9d9;
