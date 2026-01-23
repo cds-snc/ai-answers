@@ -304,6 +304,11 @@ code {
   margin-left: 2px;
 }
 
+.ai-icon {
+  vertical-align: middle;
+  display: inline-block;
+}
+
 .citation-link a {
   color: var(--gcds-color-blue-850);
 }

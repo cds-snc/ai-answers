@@ -5,6 +5,8 @@ import ChatOptions from "./ChatOptions.js";
 import ExpertFeedbackPanel from "./review/ExpertFeedbackPanel.js";
 import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
 import EvalPanel from "./review/EvalPanel.js";
+import aiStarsGray from '../../assets/ai-stars-333-90.png';
+import aiStarsBlue from '../../assets/ai-stars-0535d2-90.png';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -79,6 +81,7 @@ const ChatInterface = ({
 
   const [redactionAlert, setRedactionAlert] = useState("");
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   // Effect to announce redaction warnings immediately
   useEffect(() => {
@@ -181,11 +184,16 @@ const ChatInterface = ({
     const button = document.querySelector(".btn-primary-send");
 
     // Create loading hint
-    const placeholderHint = document.createElement("div");
+   const placeholderHint = document.createElement("div");
     placeholderHint.id = "temp-hint";
-    placeholderHint.innerHTML = `<p><FontAwesomeIcon icon="wand-magic-sparkles" />${safeT(
-      "homepage.chat.input.loadingHint"
-    )}</p>`;
+    placeholderHint.innerHTML = `<p><img 
+      src="${aiStarsBlue}" 
+      class="ai-icon" 
+      width="30" 
+      height="30" 
+      alt=""
+      aria-hidden="true"
+    />${safeT("homepage.chat.input.loadingHint")}</p>`;
 
     if (isLoading) {
       if (textarea) {
@@ -358,16 +366,22 @@ const ChatInterface = ({
 
   const handleTextareaClick = () => {
     setUserHasClickedTextarea(true);
+    setIsTextareaFocused(true);
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
   };
 
   const handleTextareaBlur = () => {
+    setIsTextareaFocused(false);
     const chatContainer = document.querySelector(".chat-container");
     if (!chatContainer.contains(document.activeElement)) {
       setUserHasClickedTextarea(false);
     }
+  };
+
+  const handleTextareaFocus = () => {
+  setIsTextareaFocused(true);
   };
 
   return (
@@ -631,7 +645,14 @@ const ChatInterface = ({
               </div>
             </div>
             <div className="loading-hint-text">
-              <FontAwesomeIcon icon="wand-magic-sparkles" />
+              <img 
+                src={aiStarsBlue} 
+                className="ai-icon" 
+                width="30" 
+                height="30" 
+                alt=""
+                aria-hidden="true"
+              />
               &nbsp;
               {safeT("homepage.chat.input.loadingHint")}
             </div>
@@ -689,7 +710,14 @@ const ChatInterface = ({
                   </span>
                 </label>
                 <span className="hint-text">
-                  <FontAwesomeIcon icon="wand-magic-sparkles" />
+                  <img 
+                    src={isTextareaFocused ? aiStarsBlue : aiStarsGray} 
+                    className="ai-icon" 
+                    width="30" 
+                    height="30" 
+                    alt=""
+                    aria-hidden="true"
+                  />
                   &nbsp;
                   {safeT("homepage.chat.input.hint")}
                 </span>
@@ -710,6 +738,7 @@ const ChatInterface = ({
                     onKeyDown={handleKeyPress}
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
+                    onFocus={handleTextareaFocus} 
                     aria-label={
                       turnCount === 0
                         ? safeT("homepage.chat.textarea.ariaLabel.first")
