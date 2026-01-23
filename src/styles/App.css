@@ -272,12 +272,13 @@ code {
   line-height: 1.2em !important;
 }
 
+
 @media screen and (max-width: 768px) {
   .citation-link a {
     display: block;
     width: 100%;
-    position: relative;
-    padding-right: 20px; /* Space for icon */
+    /* position: relative;
+    padding-right: 20px; Space for icon */
   }
   
   .citation-url-text {
@@ -286,42 +287,17 @@ code {
     -webkit-line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: inline; /* Let it flow naturally */
+    /* display: inline; Let it flow naturally */
 
   }
   
   .citation-link a svg {
-    position: absolute;
+    /* position: absolute; */
     right: 0;
     bottom: 5px;
     margin-left: 4px;
   }
 }
-/* @media screen and (max-width: 1024px) {
-  .citation-link a {
-    display: block;
-    width: 100%;
-    position: relative;
-    padding-right: 20px; Space for icon
-  }
-  
-  .citation-url-text {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline; Let it flow naturally
-
-  }
-  
-  .citation-link a svg {
-    position: absolute;
-    right: 0;
-    bottom: 5px;
-    margin-left: 4px;
-  }
-} */
 
 .ai-icon {
   vertical-align: middle;
