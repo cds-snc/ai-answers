@@ -662,7 +662,22 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   }}
                 >
                   {displayUrl}
-                </a> <FontAwesomeIcon icon="arrow-up-right-from-square" aria-hidden="true" />
+                </a> <svg 
+                      width="12" 
+                      height="12" 
+                      viewBox="0 0 22 22" 
+                      aria-hidden="true"
+                      style={{ display: 'inline-block', marginLeft: 4, verticalAlign: 'middle', transform: 'translateY(-4px)' }}
+                    >
+                      <path 
+                        d="M20 2L2 20M20 2H8M20 2V14" 
+                        stroke="#5050cc" 
+                        strokeWidth="3.5" 
+                        strokeLinecap="square" 
+                        strokeLinejoin="square"
+                        fill="none"
+                      />
+                    </svg>
               </li>
               </ul>
             )}
