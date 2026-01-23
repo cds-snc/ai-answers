@@ -662,14 +662,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   }}
                 >
                   {displayUrl}
-                </a>&nbsp;<FontAwesomeIcon icon="arrow-up-right-from-square" aria-hidden="true" />
+                </a>&nbsp;<FontAwesomeIcon icon="arrow-up-right-from-square font-size-text-small-nr" aria-hidden="true" />
               </li>
               </ul>
             )}
           </div>
           </>
         )}
-        <div className="disclaimer">
+        <div className="disclaimer sm:mb-200 font-size-text-small-nr">
           <p>
             {safeT('homepage.chat.input.disclaimer')}
           </p>

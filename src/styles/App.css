@@ -241,6 +241,17 @@ code {
   margin-right: 0.5em;
   font-weight: bold;
 }
+
+/* font size overrides; working to incorporate still */
+
+.font-size-text-small-nr {
+  font-size: 16px !important;
+}
+
+.font-size-text-xs-nr {
+  font-size: 14px !important;
+}
+
 .citation-divider {
   border: none;
   border-top: 3px solid #d9d9d9;
@@ -878,9 +889,7 @@ gcds-container:first-of-type {
 
 .disclaimer p {
     color: var(--gcds-color-blue-850);
-    font-size: 16px;
     font-weight: 400 !important;
-
 }
 /* Add spacing between radio buttons and their labels */
 .radio-group label {
@@ -1891,7 +1900,6 @@ fieldset.gc-chckbxrdio {
 }
 
 .chat-id p {
-  font-size: 14px;
   color: #555;
   max-width: 100ch !important;
 }
