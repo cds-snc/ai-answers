@@ -667,7 +667,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                       height="12" 
                       viewBox="0 0 22 22" 
                       aria-hidden="true"
-                      style={{ display: 'inline-block', marginLeft: 4, verticalAlign: 'middle', transform: 'translateY(-4px)' }}
+                      style={{ display: 'inline-block', verticalAlign: 'middle', transform: 'translateY(-2px)' }}
                     >
                       <path 
                         d="M20 2L2 20M20 2H8M20 2V14" 
