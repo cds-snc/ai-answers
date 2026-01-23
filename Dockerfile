@@ -12,7 +12,7 @@ RUN npm install --omit=dev
 COPY . .
 
 # Build the React app
-RUN npm run build
+RUN GENERATE_SOURCEMAP=false npm run build
 
 # Use Node.js for the backend
 FROM node:lts
