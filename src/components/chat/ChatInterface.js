@@ -189,8 +189,8 @@ const ChatInterface = ({
     placeholderHint.innerHTML = `<p><img 
       src="${aiStarsBlue}" 
       class="ai-icon" 
-      width="22" 
-      height="22" 
+      width="24" 
+      height="24" 
       alt=""
       aria-hidden="true"
     />${safeT("homepage.chat.input.loadingHint")}</p>`;
@@ -656,8 +656,8 @@ const ChatInterface = ({
               <img 
                 src={aiStarsBlue} 
                 className="ai-icon" 
-                width="22" 
-                height="22" 
+                width="24" 
+                height="24" 
                 alt=""
                 aria-hidden="true"
               />
