@@ -661,7 +661,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     }
                   }}
                 >
+                <span className="citation-url-text">
                   {displayUrl}
+                </span>
                   <svg 
                       width="12" 
                       height="12" 
