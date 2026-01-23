@@ -721,8 +721,8 @@ const ChatInterface = ({
                   <img 
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray} 
                     className="ai-icon" 
-                    width="30" 
-                    height="30" 
+                    width="28" 
+                    height="28" 
                     alt=""
                     aria-hidden="true"
                   />
