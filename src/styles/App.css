@@ -255,13 +255,6 @@ code {
 
 }
 
-.citation-divider {
-  border: none;
-  border-top: 3px solid #d9d9d9;
-  margin: 0;
-  width: 80px;
-}
-
 .citation-head {
   font-weight: 600 !important;
   margin-bottom: 0.5rem !important;
@@ -279,23 +272,34 @@ code {
   display: inline-block;
 }
 
-@media screen and (max-width: 1024px) {
+.citation-link a svg {
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Only apply truncation on very small screens */
+@media screen and (max-width: 425px) {
   .citation-link a {
+    display: block;
+    width: 100%;
+    position: relative;
+    padding-right: 20px;
+  }
+  
+  .citation-url-text {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    word-break: break-all;
-  }
-  
-  .citation-url-text {
-    display: inline;
+    text-overflow: ellipsis;
+    line-height: 1.2em;
   }
   
   .citation-link a svg {
-    display: inline-block;
-    margin-left: 4px;
-    vertical-align: middle;
+    position: absolute;
+    right: 0;
+    bottom: 0;
   }
 }
 
