@@ -189,8 +189,8 @@ const ChatInterface = ({
     placeholderHint.innerHTML = `<p><img 
       src="${aiStarsBlue}" 
       class="ai-icon" 
-      width="30" 
-      height="30" 
+      width="22" 
+      height="22" 
       alt=""
       aria-hidden="true"
     />${safeT("homepage.chat.input.loadingHint")}</p>`;
@@ -304,6 +304,19 @@ const ChatInterface = ({
       window.removeEventListener('scroll', checkScrollableContent);
       window.removeEventListener('resize', checkScrollableContent);
     };
+  }, [messages, isLoading]);
+
+   // Reset textarea focus after user sends a message to correct icons
+  useEffect(() => {
+    if (!isLoading && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender === 'user') {
+        setIsTextareaFocused(false);
+        if (textareaRef.current) {
+          textareaRef.current.blur();
+        }
+      }
+    }
   }, [messages, isLoading]);
 
   const getLabelForInput = () => {
@@ -648,8 +661,8 @@ const ChatInterface = ({
               <img 
                 src={aiStarsBlue} 
                 className="ai-icon" 
-                width="30" 
-                height="30" 
+                width="22" 
+                height="22" 
                 alt=""
                 aria-hidden="true"
               />
