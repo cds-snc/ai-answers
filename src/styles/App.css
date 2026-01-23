@@ -281,9 +281,10 @@ code {
     width: 100%;
   }
 }
-
-.citation-link a,
-.citation-link svg {
+.citation-link a svg {
+  text-decoration: none;
+}
+.citation-link a {
   color: var(--gcds-color-blue-850);
 }
 .confidence-rating {
@@ -1959,6 +1960,7 @@ fieldset.gc-chckbxrdio {
   border-radius: 5px;
   padding: 0.25em 1em;
 }
+
 
 .mrgn-bttm-lg {
   margin-bottom: 22px;
