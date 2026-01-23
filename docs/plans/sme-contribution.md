@@ -1,7 +1,7 @@
 # SME Contribution Workflow
 
 ```mermaid
-flowchart LR
+flowchart TD
   %% Circular SME contribution loop
   SME(["SME / Partner<br/>Domain Expert"])
 
