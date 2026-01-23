@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.88.1](https://github.com/cds-snc/ai-answers/compare/v1.88.0...v1.88.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* handle clarifying question format in integrity normalization ([9bc6ff6](https://github.com/cds-snc/ai-answers/commit/9bc6ff6f09e8dcc09a76cc59e42c6331721e517d))
+* handle clarifying question format in integrity normalization ([e67e5b5](https://github.com/cds-snc/ai-answers/commit/e67e5b53749021e7d5d5881b385983ee38ff16bd))
+
 ## [1.88.0](https://github.com/cds-snc/ai-answers/compare/v1.87.2...v1.88.0) (2026-01-22)
 
 
