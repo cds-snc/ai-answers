@@ -108,7 +108,8 @@
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
         "referringPage": "Page où vous étiez :",
         "referringURL": "URL de référence :",
-        "disclaimer": "L'IA peut faire des erreurs, vérifiez la réponse ou posez une question de suivi ci-dessous."
+        "disclaimer": "L'IA peut faire des erreurs, vérifiez la réponse ou posez une question de suivi ci-dessous.",
+        "opensInNewTab": "s'ouvre dans un nouvel onglet"
       },
       "textarea": {
         "title": "Posez votre question ici.",

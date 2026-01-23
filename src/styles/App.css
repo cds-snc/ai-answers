@@ -277,7 +277,7 @@ code {
     gap: 4px;
     width: 100%;
   }
-  
+
   .citation-url-text {
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -293,9 +293,14 @@ code {
   }
 }
 
-.citation-link a svg {
+.new-tab-link-icon {
+  display: inline-block;
+  vertical-align: middle;
+  transform: translateY(-2px);
   text-decoration: none;
+  margin-left: 2px;
 }
+
 .citation-link a {
   color: var(--gcds-color-blue-850);
 }

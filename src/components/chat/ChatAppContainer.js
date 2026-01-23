@@ -664,12 +664,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 <span className="citation-url-text">
                   {displayUrl}
                 </span>
+                <span className="sr-only"> ({safeT('homepage.chat.opensInNewTab')})</span>
                   <svg 
                       width="12" 
                       height="12" 
                       viewBox="0 0 22 22" 
                       aria-hidden="true"
-                      style={{ display: 'inline-block', verticalAlign: 'middle', transform: 'translateY(-2px)' }}
+                      className="new-tab-link-icon"
                     >
                       <path 
                         d="M20 2L2 20M20 2H8M20 2V14" 

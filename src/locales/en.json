@@ -109,7 +109,8 @@
         "loadingHint": "AI can make mistakes, always check your answer.",
         "referringPage": "Page you were on:",
         "referringURL": "Referring URL:",
-        "disclaimer": "AI can make mistakes, check the answer or ask a follow-up question below."
+        "disclaimer": "AI can make mistakes, check the answer or ask a follow-up question below.",
+        "opensInNewTab": "opens in new tab"
       },
       "textarea": {
         "title": "Ask your question here.",
