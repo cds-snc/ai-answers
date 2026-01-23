@@ -270,7 +270,7 @@ code {
   line-height: 1.2em !important;
 }
 
-@media screen and (max-width: 425px) {
+@media screen and (max-width: 640px) {
   .citation-link a {
     display: block;
     width: 100%;
