@@ -277,8 +277,8 @@ code {
   .citation-link a {
     display: block;
     width: 100%;
-    /* position: relative;
-    padding-right: 20px; Space for icon */
+    position: relative;
+    padding-right: 20px; 
   }
   
   .citation-url-text {
@@ -292,7 +292,7 @@ code {
   }
   
   .citation-link a svg {
-    /* position: absolute; */
+    position: absolute;
     right: 0;
     bottom: 5px;
     margin-left: 4px;
