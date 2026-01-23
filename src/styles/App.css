@@ -244,12 +244,15 @@ code {
 
 /* font size overrides; working to incorporate still */
 
-.font-size-text-small-nr {
+.font-size-text-xsm-nr {
   font-size: 16px !important;
+  line-height: 1.4em;
 }
 
-.font-size-text-xs-nr {
+.font-size-text-xxs-nr {
   font-size: 14px !important;
+  line-height: 1.2em;
+
 }
 
 .citation-divider {
@@ -266,7 +269,6 @@ code {
 .citation-link a {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
-  font-size: 16px !important;
   line-height: 1.2em !important;
 }
 
@@ -284,7 +286,6 @@ code {
     -webkit-line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.2em;
   }
   
   .citation-link a svg {

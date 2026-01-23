@@ -495,7 +495,7 @@ const ChatInterface = ({
 
                     {chatId && (
                       <div className="chat-id">
-                        <p className="font-size-text-xs-nr">
+                        <p className="font-size-text-xxs-nr">
                           {safeT("homepage.chat.chatId")}: {chatId}
                         </p>
                       </div>

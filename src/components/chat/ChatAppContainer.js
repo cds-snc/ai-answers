@@ -661,7 +661,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     }
                   }}
                 >
-                <span className="citation-url-text">
+                <span className="citation-url-text font-size-text-xs-nr">
                   {displayUrl}
                 </span>
                 <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
@@ -689,7 +689,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           </>
         )}
         <div className="disclaimer">
-          <p className="font-size-text-small-nr">
+          <p className="font-size-text-xs-nr">
             {safeT('homepage.chat.input.disclaimer')}
           </p>
         </div>
