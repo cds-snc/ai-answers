@@ -272,9 +272,10 @@ code {
 
 @media screen and (max-width: 768px) {
   .citation-link a {
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
+    /* display: flex;
+    align-items: flex-start; 
+    gap: 4px;*/
+    display: inline;
     width: 100%;
   }
 
@@ -288,8 +289,11 @@ code {
   }
   
   .citation-link a svg {
-    flex-shrink: 0;
-    margin-top: 2px;
+    /* flex-shrink: 0;
+    margin-top: 2px; */
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
   }
 }
 
