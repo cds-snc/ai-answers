@@ -1927,7 +1927,7 @@ fieldset.gc-chckbxrdio {
 
 .chat-id p {
   color: #555;
-  max-width: 100ch !important;
+  max-width: 100%;
 }
 
 .expert-rating-container .explanation-field {
