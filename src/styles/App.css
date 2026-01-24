@@ -263,15 +263,17 @@ code {
 }
 
 .citation-head {
-  font-weight: 600 !important;
+  /* font-weight: 600 !important; */
   margin-bottom: 0.5rem !important;
 }
 .citation-link a {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
-  line-height: 1.2em !important;
+  /* line-height: 1.2em !important; */
 }
-
+.new-tab-link-icon {
+  margin-left: 4px;
+}
 
 @media screen and (max-width: 768px) {
   .citation-link a {
@@ -295,7 +297,6 @@ code {
     position: absolute;
     right: 0;
     bottom: 5px;
-    margin-left: 4px;
   }
 }
 
