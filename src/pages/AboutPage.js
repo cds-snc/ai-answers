@@ -26,7 +26,7 @@ const AboutPage = ({ lang = 'en' }) => {
   // Loading state
   if (loading) {
     return (
-      <div className="mb-600 container-custom" tag="main">
+      <div className="mb-600 container-custom">
           <p>{lang === 'fr' ? 'Chargement...' : 'Loading...'}</p>
       </div>
     );
@@ -35,7 +35,7 @@ const AboutPage = ({ lang = 'en' }) => {
   // Error state - fall back to basic message
   if (error) {
     return (
-      <div className="mb-600 container-custom" tag="main">
+      <div className="mb-600 container-custom">
           <h1>{lang === 'fr' ? 'À propos' : 'About'}</h1>
             {lang === 'fr'
               ? 'Impossible de charger le contenu.'
