@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.90.0](https://github.com/cds-snc/ai-answers/compare/v1.89.0...v1.90.0) (2026-01-26)
+
+
+### Features
+
+* add S3 bucket name, ARN, and SSM parameter ARN outputs. ([0542de9](https://github.com/cds-snc/ai-answers/commit/0542de9c96df107528f0d88d77ed0498ff7e1ce4))
+* Add Terragrunt modules for S3, IAM, and ECS infrastructure setup. ([a041505](https://github.com/cds-snc/ai-answers/commit/a0415054067183c3ab876aa972b60d83c7500191))
+* Add VPC ID and private subnet ID input variables for S3 module. ([2a700dd](https://github.com/cds-snc/ai-answers/commit/2a700ddbacb92396760eb03356103fb6b8cd4b6e))
+* Implement foundational AWS infrastructure modules, including Sentinel forwarder components, for the AI Answers project. ([323745a](https://github.com/cds-snc/ai-answers/commit/323745a3106c3f7c5190440a0fe7d231049e44ab))
+* Introduce core AWS infrastructure modules for the AI Answers application, including VPC, RDS, ECS, and various security and logging components. ([6581535](https://github.com/cds-snc/ai-answers/commit/658153575c1f2d68687f278e1b2de130abe710da))
+* Introduce initial Terraform modules, CI/CD workflows, and documentation for AI Answers and Sentinel forwarder infrastructure. ([b6d409b](https://github.com/cds-snc/ai-answers/commit/b6d409bd4bc747fa0fe217c39ae1f408dc8bc525))
+* provision S3 storage bucket with encryption, public access block, lifecycle rules, VPC endpoint, and SSM parameter. ([a82660b](https://github.com/cds-snc/ai-answers/commit/a82660b27f2692d1080e9eeffd8e5a8c8fe1bd7a))
+
+
+### Bug Fixes
+
+* Merge container_environment blocks and add s3 to deployment workflows ([59cafdf](https://github.com/cds-snc/ai-answers/commit/59cafdffb0fee40f6f6140ab8d322e9d71e04925))
+* typo ([af9075a](https://github.com/cds-snc/ai-answers/commit/af9075a86ab45ab30b8900f2acaf3aea5ae383d3))
+* updates per ECCC ([101011d](https://github.com/cds-snc/ai-answers/commit/101011d411a0692a390558103122d665196064b0))
+
+
+### Miscellaneous Chores
+
+* Initialize Terragrunt/Terraform modules for the AI Answers project, including sentinel forwarder components. ([20d545e](https://github.com/cds-snc/ai-answers/commit/20d545edf3334591851aa9dd171a14c8a353bb9e))
+
 ## [1.89.0](https://github.com/cds-snc/ai-answers/compare/v1.88.1...v1.89.0) (2026-01-26)
 
 
