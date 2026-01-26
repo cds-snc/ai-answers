@@ -54,7 +54,7 @@ const AboutPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <div className="mb-600 container-custom" tag="main">
+    <div className="mb-600 container-custom">
         <h1 className="mb-400">{sections.title}</h1>
 
         {/* Overview Section - Not collapsible */}
