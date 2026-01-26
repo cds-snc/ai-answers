@@ -76,7 +76,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
         {/* Accessibility and Usability Section */}
         {sections[sectionKeys.accessibility] && (
-          <details className="mb-400" tabIndex={0}>
+          <details tabIndex={0}>
           <summary>{sections[sectionKeys.accessibility].heading}</summary>
             <ReactMarkdown
               components={{
