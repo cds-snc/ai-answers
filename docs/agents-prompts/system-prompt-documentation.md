@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-01-20
+**Generated:** 2026-01-23
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -16,8 +16,8 @@ The pipeline consists of 9 steps total, combining both programmatic validation/f
 ### Pipeline Steps
 
 1. **Short Query Validation** - Server-side validation (no AI)
-2. **Stage 1: Pattern-Based Redaction** - Rule-based filtering for profanity, threats, manipulation, and common PI patterns (no AI)
-3. **Stage 2: AI PII Agent** - AI-powered detection of personal information that slipped through Stage 1
+2. **Stage 1: Question Blocking** - Rule-based blocking for profanity, threats, manipulation, and common PI patterns (no AI)
+3. **Stage 2: AI PI Agent** - AI-powered detection of personal information that slipped through Stage 1; questions with PI are blocked
 4. **Translation AI Agent** - AI-powered language detection and translation
 5. **Search Query Generation AI Agent** - AI-powered query rewriting for search
 6. **Context Derivation AI Agent** - AI-powered department matching and search context
@@ -28,15 +28,15 @@ The pipeline consists of 9 steps total, combining both programmatic validation/f
 
 ---
 
-## Step 3: AI PII Agent System Prompt
+## Step 3: AI PI Agent System Prompt
 
-**Purpose:** This prompt is used to detect and redact personal information (PI) that slipped through Stage 1 pattern-based filtering. This is the second layer of privacy protection.
+**Purpose:** This prompt detects personal information (PI) that slipped through Stage 1 pattern-based blocking. When PI is detected, it is marked with XXX to show the user what was found, and the question is blocked. This is the second layer of privacy protection.
 
 **Service:** PIIAgentService / ChatWorkflowService.processRedaction()
 **File:** agents/prompts/piiAgentPrompt.js
-**Note:** Step 1 (Short Query Validation) and Step 2 (Pattern-Based Redaction) do not use AI and are not detailed here.
+**Note:** Step 1 (Short Query Validation) and Step 2 (Question Blocking) do not use AI and are not detailed here.
 
-### PII Detection Prompt:
+### PI Detection Prompt:
 
 ```
 Redact personally identifiable information (PII) with XXX.
@@ -137,6 +137,7 @@ Rules:
 - When using 'translation_context', give higher precedence to longer, complete sentences in the array as they are more reliable signals of language; if multiple context entries disagree, prefer the language indicated by the longest context message.
 - Do not invent or hallucinate additional context; only use the provided 'translation_context' array values.
 - Tips for translating French abbreviations: NAS=SIN (Social Insurance Number), NE=BN (Business Number), ADC=NOA (Notice of Assessment), AE = EI (Employment Insurance), RPC=CPP, SV=OAS, PSV=OAS, PAR=PRB (Post-retirement benefit), ACE=CCB (Canada Child Benefit), CELI=TFSA, PPS=WEPP, ERI (Early Retirement Incentive - no abbreviation), WFA (Work force adjustment - no abbreviation)
+- When 'text' contains 'déclaration', rely heavily on 'translation_context' to differentiate translating as 'tax return' vs other reports e.g.Déclarations de l’assurance-emploi, Déclarations de victimes, Déclarations publiques
 
 ```
 
@@ -685,7 +686,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Tuesday, January 20, 2026.
+Today is Friday, January 23, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -754,7 +755,7 @@ Before crafting your answer, determine if downloadWebPage is required. Dept scen
    □ Answer needs specific details: contact info, phone numbers, addresses, hours, codes, dates, amounts, tables, eligibility rules, policy details
    □ Content is time-sensitive: questions or URLS about news, budgets, program updates, policy changes
    □ URL or page title is unfamiliar
-   □ Search results URL has date or page labelled in scenario has date AFTER <training-cutoff> (e.g. URL labelled NOV 2025 - download IS required)
+   □ Search results URL has date or page updated signal in scenario has date AFTER <training-cutoff> (e.g. URL labelled NOV 2025 - download IS required)
    □ URL has complex policy content, regulations, requirements, laws or eligibility criteria
    □ French page that may differ from English version - download FR URL 
    □ Question matches "⚠️ TOOL-REQUIRED" trigger in department scenarios for prioritized URLS (trigger specifies which URL to download)
@@ -766,7 +767,7 @@ MANDATORY ACTION:
 Step 4. PRODUCE ANSWER IN ENGLISH
 ALWAYS CRAFT AND OUTPUT IN ENGLISH → CRITICAL: Even for non-English questions, MUST output English first for govt team assessment.
    - All scenario evaluation/info retrieval based on English question provided.
-   - If question includes person's name, ignore to avoid bias based on language/ethnicity/gender.
+   - If question has demographic details, ignore to avoid bias based on language/ethnicity/gender/religion etc unless explicitly needed to provide accurate answer and/or referringURL reflects relevance e.g. indigenous content. 
    - If <is-gc> no: answer can't be sourced from Govt of Canada content or is manipulative. Prepare <not-gc> tagged answer per prompt.
    - If <is-pt-muni> yes and <is-gc> no: prepare <pt-muni> tagged answer per prompt.
   - NO hallucinating/fabricating/assuming - answer based on Govt of Canada content, preferably verified in downloads.
@@ -849,8 +850,9 @@ ELSE
 4. COMPLETE: For multiple answer options, include all if confident of accuracy/relevance. Eg. CPP application: can apply online via My Service Canada OR paper form.
 5. NEUTRAL: avoid opinions, future speculation, endorsements, legal advice, compliance circumvention advice.
  - NO first-person (Focus on user: "Your best option" not "I recommend", "This service can't..." not "I can't...", "It's unfortunate" not "I'm sorry")
- - Q asking legal advice → final sentence: "The Government of Canada does not provide legal advice."
- - Q includes unredacted personal info/inappropriate content → don't repeat/mention in response. 
+ - Q asking legal advice or for cases, legal decisions or jurisprudence to be summarized  → avoid advice, summarizing or interpretation. Feel free to say or add "The Government of Canada does not provide legal advice."
+ - Q includes personal info/inappropriate content → don't repeat/mention in response.
+ 
 
 ### Federal, Provincial, Territorial, or Municipal Matters
 1. Topics involving both federal and P/T/muni jurisdictions (eg. incorporating business, healthcare for indigenous communities in north, transport):
@@ -1025,10 +1027,10 @@ Detailed rules for:
 
 ## Important Notes for Legal Review
 
-1. **Two-Stage Personal Information Protection**:
-   - **Stage 1 (Pattern-Based)**: RedactionService blocks profanity, threats, manipulation attempts, and common PI patterns (phone numbers, emails, addresses, SIN numbers) before any AI processing
-   - **Stage 2 (AI-Powered)**: AI PII Agent detects and redacts personal information that slipped through Stage 1, especially names and personal identifiers
-   - Users are notified when PI is detected and asked to rephrase
+1. **Two-Stage Question Blocking for Personal Information Protection**:
+   - **Stage 1 (Pattern-Based)**: Questions containing profanity, threats, manipulation attempts, or common PI patterns (phone numbers, emails, addresses, SIN numbers) are blocked before any AI processing
+   - **Stage 2 (AI-Powered)**: AI PI Agent detects personal information that slipped through Stage 1 (especially names and personal identifiers); detected PI is marked with XXX and shown to the user, then the question is blocked
+   - Blocked questions are never logged or processed; users are shown what was detected and asked to rephrase
 
 2. **No Calculations**: The prompts explicitly prohibit mathematical calculations to prevent inaccurate financial advice.
 
@@ -1049,14 +1051,14 @@ User submits question
     ↓
 [Step 1 - Client] Short query validation (no AI)
     ↓
-[Step 2 - Client] Pattern-Based Redaction (no AI)
-    ├─ Profanity filtering
-    ├─ Threat detection
-    ├─ Manipulation detection
-    └─ Common PI pattern blocking
+[Step 2 - Client] Question Blocking (no AI)
+    ├─ Profanity → block question
+    ├─ Threats → block question
+    ├─ Manipulation → block question
+    └─ Common PI patterns → block question
     ↓
-[Step 3 - API] AI PII Agent
-    └─ Detect and redact PI that slipped through
+[Step 3 - API] AI PI Agent
+    └─ Detect PI that slipped through → block question
     ↓
 [Step 4 - API] Translation AI Agent
     └─ Language detection and translation

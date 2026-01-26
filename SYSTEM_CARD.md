@@ -105,9 +105,9 @@ The system uses a **9-step LangGraph pipeline** that orchestrates all processing
 
 1. **Initialization**: Set up timing and state tracking
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
-3. **Two-Stage Redaction**:
-   - **Stage 1** (Programmatic): Pattern-based filtering for profanity, threats, and common PI
-   - **Stage 2** (AI - GPT-4 mini): AI-powered detection of personal information that slipped through
+3. **Two-Stage Question Blocking**:
+   - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI
+   - **Stage 2** (AI - GPT-4 mini): AI detects personal information that slipped through; question is then blocked
 4. **Translation** (AI - GPT-4 mini): Detects language and translates to English for processing
 5. **Context Derivation** (AI - GPT-4 mini):
    - Query rewrite for optimized search
