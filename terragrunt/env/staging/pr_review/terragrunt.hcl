@@ -77,6 +77,7 @@ inputs = {
   redis_url_arn                          = dependency.ssm.outputs.redis_url_arn
   conversation_integrity_secret_arn      = dependency.ssm.outputs.conversation_integrity_secret_arn
   s3_bucket_name_ssm_arn                 = dependency.s3.outputs.s3_bucket_name_ssm_arn
+  s3_bucket_arn                          = dependency.s3.outputs.bucket_arn
 }
 
 dependency "s3" {
@@ -85,5 +86,6 @@ dependency "s3" {
   mock_outputs_merge_with_state           = true
   mock_outputs = {
     s3_bucket_name_ssm_arn = "arn:aws:ssm:ca-central-1:123456789012:parameter/s3_bucket_name"
+    bucket_arn             = "arn:aws:s3:::mock-bucket"
   }
 }
