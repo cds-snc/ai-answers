@@ -26,12 +26,14 @@ resource "aws_s3_bucket_public_access_block" "storage" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_lifecycle_configuration_v2" "storage" {
+resource "aws_s3_bucket_lifecycle_configuration" "storage" {
   bucket = aws_s3_bucket.storage.id
 
   rule {
     id     = "expire-all-objects-90-days"
     status = "Enabled"
+
+    filter {} # Apply to all objects
 
     expiration {
       days = 90
