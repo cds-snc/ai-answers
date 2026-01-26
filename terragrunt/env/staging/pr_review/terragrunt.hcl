@@ -57,6 +57,7 @@ inputs = {
   vpc_id                                 = dependency.network.outputs.vpc_id
   vpc_private_subnet_ids                 = dependency.network.outputs.vpc_private_subnet_ids
   ai_answers_docdb_security_group_id     = dependency.database.outputs.aws_docdb_security_group_id
+  redis_security_group_id                = dependency.elasticache.outputs.redis_security_group_id
   ai_answers_lambda_client_iam_role_name = "ai-answers-lambda-client"
   docdb_uri_arn                          = dependency.database.outputs.docdb_uri_arn
   docdb_username_arn                     = dependency.ssm.outputs.docdb_username_arn
@@ -78,6 +79,13 @@ inputs = {
   conversation_integrity_secret_arn      = dependency.ssm.outputs.conversation_integrity_secret_arn
   s3_bucket_name_ssm_arn                 = dependency.s3.outputs.s3_bucket_name_ssm_arn
   s3_bucket_arn                          = dependency.s3.outputs.bucket_arn
+}
+
+dependency "elasticache" {
+  config_path = "../elasticache"
+  mock_outputs = {
+    redis_security_group_id = "sg-00000000"
+  }
 }
 
 dependency "s3" {
