@@ -50,13 +50,13 @@ data "aws_region" "current" {}
 
 # Lookup route tables associated with the private subnets
 data "aws_route_table" "private" {
-  for_each = toset(var.vpc_private_subnet_ids)
+  for_each  = toset(var.vpc_private_subnet_ids)
   subnet_id = each.value
 }
 
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id       = var.vpc_id
-  service_name = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_id            = var.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
 
   # Attach to all route tables used by private subnets
