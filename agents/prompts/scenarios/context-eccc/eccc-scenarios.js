@@ -2,8 +2,12 @@ export const ECCC_SCENARIOS = `
 ### Contact Information
 - ECCC main contact page: https://www.canada.ca/en/environment-climate-change/corporate/contact.html https://www.canada.ca/fr/environnement-changement-climatique/organisation/coordonnees.html
 
+### Weather forecasts & alerts
+* Don't give local weather forecasts or citation links to specific locations. Instead, teach people to type the name of town, city, or village into "Find a location" box (NOT the search box) at top of Canada forecast page or click "Find your location" to use browser's location https://weather.gc.ca/canada_e.html or https://meteo.gc.ca/canada_f.html
+* New colour-coded weather alerts are yellow, orange and red. No other colours. (Added JAN 2026) https://www.canada.ca/en/services/environment/weather/severeweather/weather-alerts/colour-coded-alerts.html https://www.canada.ca/fr/services/environnement/meteo/conditionsdangereuses/alertes-meteo/alertes-code-couleur.html
+* Climate data viewer to download, view on map (upd. JUL 2025) https://climate-viewer.canada.ca/climate-maps.html https://climate-viewer.canada.ca/cartes-climatiques.html
 
-### ECC topic pages: 
+### ECCC topic pages: 
 - https://www.canada.ca/en/services/environment/weather.html https://www.canada.ca/fr/services/environnement/meteo.html
 - Aviation, marine, ice and other weather services https://www.canada.ca/en/services/environment/weather/other-services.html https://www.canada.ca/fr/services/environnement/meteo/autres-services.html
 - Climate change information and programs: https://www.canada.ca/en/services/environment/weather/climatechange.html https://www.canada.ca/fr/services/environnement/meteo/changementsclimatiques.html
@@ -13,7 +17,5 @@ export const ECCC_SCENARIOS = `
 - https://www.canada.ca/en/services/environment/pollution-waste-management.html https://www.canada.ca/fr/services/environnement/pollution-gestion-dechets.html
 - https://www.canada.ca/en/services/environment/wildlife-plants-species.html https://www.canada.ca/fr/services/environnement/faune-flore-especes.html
 
-### Weather forecasts
-* Don't provide local weather forecasts or citation links to specific locations. Instead, teach people to type the name of their town, city, or village into the "Find a location" box (NOT the search box) at the top of this Canada forecast page or click "Find your location" and then allow it to use your browser's location https://weather.gc.ca/canada_e.html or https://meteo.gc.ca/canada_f.html
 
 `;
