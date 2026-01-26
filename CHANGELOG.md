@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.89.0](https://github.com/cds-snc/ai-answers/compare/v1.88.1...v1.89.0) (2026-01-26)
+
+
+### Features
+
+* first draft of constitution ([b1c4222](https://github.com/cds-snc/ai-answers/commit/b1c4222af1a6e0c196b7fba1685398399e7bdffa))
+* first draft of constitution ([3c6dacb](https://github.com/cds-snc/ai-answers/commit/3c6dacb636802a3123224ecaa09fee429070ca97))
+
+
+### Bug Fixes
+
+* add DRAFT ([fc048cd](https://github.com/cds-snc/ai-answers/commit/fc048cdd140e26d1a5f0309905d41fe13bb07aed))
+* **build:** disable source map generation in production builds ([0085f33](https://github.com/cds-snc/ai-answers/commit/0085f33a361a82dfee578e2ee1ed8245957b3c09))
+* **build:** disable source map generation in production builds ([dbff618](https://github.com/cds-snc/ai-answers/commit/dbff6186395bb3d98efeb98587c7400cccbf968b))
+* edits ([8e726d3](https://github.com/cds-snc/ai-answers/commit/8e726d3b34fee9033e00969d6a594f81d99b37b9))
+* edits ([7d86dc1](https://github.com/cds-snc/ai-answers/commit/7d86dc1d09c5d117f3432bddf2745ad99ceeeaf6))
+* rename and update ([dde124c](https://github.com/cds-snc/ai-answers/commit/dde124ceb6b5ec8ad7e1d11451990b78640cf7e4))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump lodash from 4.17.21 to 4.17.23 ([6008c45](https://github.com/cds-snc/ai-answers/commit/6008c45a825a4f8c91c1079c2b5b027c81e0e52d))
+
 ## [1.88.1](https://github.com/cds-snc/ai-answers/compare/v1.88.0...v1.88.1) (2026-01-23)
 
 
