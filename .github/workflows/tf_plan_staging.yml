@@ -55,6 +55,7 @@ jobs:
           - module: ecs
           - module: pr_review
           - module: elasticache
+          - module: s3
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

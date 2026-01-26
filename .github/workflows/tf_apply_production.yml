@@ -58,6 +58,10 @@ jobs:
         working-directory: terragrunt/env/production/network
         run: terragrunt apply --terragrunt-non-interactive -auto-approve
 
+      - name: Apply s3
+        working-directory: terragrunt/env/production/s3
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
       - name: Apply elasticache
         working-directory: terragrunt/env/production/elasticache
         run: terragrunt apply --terragrunt-non-interactive -auto-approve

@@ -71,7 +71,8 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       var.cross_account_bedrock_role_ssm_arn,
       var.bedrock_region_ssm_arn,
       var.redis_url_arn,
-      var.conversation_integrity_secret_arn
+      var.conversation_integrity_secret_arn,
+      var.s3_bucket_name_ssm_arn
     ]
   }
 }
@@ -126,6 +127,45 @@ resource "aws_iam_role_policy_attachment" "ai_answers_lambda_assume_bedrock_role
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = aws_iam_policy.ai_answers_lambda_assume_bedrock_role[0].arn
+}
+
+# S3 bucket access for Lambda
+data "aws_iam_policy_document" "ai_answers_lambda_s3_access" {
+  count = var.env == "staging" ? 1 : 0
+
+  statement {
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:DeleteObject"
+    ]
+    effect = "Allow"
+    resources = [
+      var.s3_bucket_arn,
+      "${var.s3_bucket_arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "ai_answers_lambda_s3_access" {
+  count = var.env == "staging" ? 1 : 0
+
+  name   = "aiAnswersLambdaS3Access"
+  path   = "/"
+  policy = data.aws_iam_policy_document.ai_answers_lambda_s3_access[0].json
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ai_answers_lambda_s3_access" {
+  count = var.env == "staging" ? 1 : 0
+
+  role       = aws_iam_role.ai_answers_lambda_client[0].name
+  policy_arn = aws_iam_policy.ai_answers_lambda_s3_access[0].arn
 }
 
 #
