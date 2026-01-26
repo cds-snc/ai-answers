@@ -68,7 +68,7 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 resource "aws_ssm_parameter" "s3_bucket_name" {
-  name  = "/${var.product_name}/${var.env}/s3_bucket_name"
+  name  = "s3_bucket_name"
   type  = "String"
   value = aws_s3_bucket.storage.id
 
