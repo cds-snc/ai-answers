@@ -662,8 +662,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   }}
                 >
                 <span className="citation-url-text font-size-text-xsm-nr">
-                  {displayUrl}
-                </span>
+                  {displayUrl}{'\u00A0'}
                 <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                   <svg 
                       width="12" 
@@ -681,6 +680,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         fill="none"
                       />
                     </svg>
+                   </span>
                 </a>
               </li>
               </ul>

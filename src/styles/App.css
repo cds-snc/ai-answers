@@ -267,61 +267,48 @@ code {
   display: inline-block;
 }
 
-/* Container uses flex layout */
+/* Citation link - inline layout */
 .citation-link a {
-  display: flex !important;
-  align-items: flex-start;
-  flex-wrap: nowrap;
-  gap: 0.35rem;
-  max-width: 100%;
-  color: var(--gcds-color-blue-850);
+  display: inline;
+  word-break: break-word;
+  text-align: left;
+  line-height: 1.5;
 }
 
-/* Text container - grows to fill space, allows wrapping and truncation */
+/* URL text with truncation */
 .citation-url-text {
-  flex: 1 1 auto;
-  min-width: 0; /* Critical for flex shrinking */
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-  /* Truncation */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.6em;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
-/* Icon - fixed, never shrinks, always visible */
+/* Icon inline with text */
 .new-tab-link-icon {
-  flex: 0 0 auto;
+  display: inline-block;
   width: 12px;
   height: 12px;
-  min-width: 12px;
-  align-self: flex-start; /* Align to top of first line */
-  margin-top: 0.35em; /* Optical alignment with text */
+  vertical-align: baseline;
   transition: transform 0.2s ease;
 }
 
-/* Mobile - 2 lines max */
+/* Mobile - 3 lines */
 @media screen and (max-width: 600px) {
   .citation-url-text {
-    -webkit-line-clamp: 2;
-  }
-  
-  .citation-link a {
-    gap: 0.25rem;
+    -webkit-line-clamp: 3;
+    font-size: 14px;
   }
   
   .new-tab-link-icon {
     width: 14px;
     height: 14px;
-    min-width: 14px;
-    margin-top: 0.25em;
   }
 }
 
-/* Tablet - 2 lines max */
+/* Tablet - 2 lines */
 @media screen and (min-width: 601px) and (max-width: 1024px) {
   .citation-url-text {
     -webkit-line-clamp: 2;
@@ -330,8 +317,6 @@ code {
   .new-tab-link-icon {
     width: 13px;
     height: 13px;
-    min-width: 13px;
-    margin-top: 0.3em;
   }
 }
 
