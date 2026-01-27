@@ -271,10 +271,19 @@ code {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850);
-  /* line-height: 1.2em !important; */
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
+
+.citation-url-text {
+  /* Reserve space for the icon so text doesn't fill 100% width */
+  max-width: calc(100% - 16px);
+}
+
 .new-tab-link-icon {
   margin-left: 4px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 @media screen and (max-width: 768px) {
@@ -291,8 +300,7 @@ code {
     -webkit-line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* display: inline; Let it flow naturally */
-
+    max-width: none; /* Remove the constraint on mobile */
   }
   
   .new-tab-link-icon {
