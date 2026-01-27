@@ -267,48 +267,62 @@ code {
   display: inline-block;
 }
 
+/* Container uses flex layout */
 .citation-link a {
-  display: inline;
-  word-break: break-word;
-  text-align: left;
+  display: flex !important;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  max-width: 100%;
   line-height: 1.5;
 }
 
-/* URL text with truncation */
+/* Text container - grows to fill space, allows wrapping and truncation */
 .citation-url-text {
+  flex: 1 1 auto;
+  min-width: 0; /* Critical for flex shrinking */
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  /* Truncation */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
 }
 
-/* Icon inline with text */
+/* Icon - fixed, never shrinks, always visible */
 .new-tab-link-icon {
-  display: inline-block;
+  flex: 0 0 auto;
   width: 12px;
   height: 12px;
-  margin-left: 0.25rem;
-  vertical-align: baseline;
+  min-width: 12px;
+  align-self: flex-start; /* Align to top of first line */
+  margin-top: 0.35em; /* Optical alignment with text */
   transition: transform 0.2s ease;
 }
 
-/* Mobile - 2 lines */
+/* ===== RESPONSIVE TRUNCATION ===== */
+
+/* Mobile - 3 lines max */
 @media screen and (max-width: 600px) {
   .citation-url-text {
     -webkit-line-clamp: 2;
-    font-size: 14px;
+  }
+  
+  .citation-link a {
+    gap: 0.25rem;
   }
   
   .new-tab-link-icon {
     width: 14px;
     height: 14px;
+    min-width: 14px;
+    margin-top: 0.25em;
   }
 }
 
-/* Tablet - 2 lines */
+/* Tablet - 2 lines max */
 @media screen and (min-width: 601px) and (max-width: 1024px) {
   .citation-url-text {
     -webkit-line-clamp: 2;
@@ -317,13 +331,19 @@ code {
   .new-tab-link-icon {
     width: 13px;
     height: 13px;
+    min-width: 13px;
+    margin-top: 0.3em;
   }
 }
 
-/* Desktop - 2 lines */
+/* Desktop - 2 lines max */
 @media screen and (min-width: 1025px) {
   .citation-url-text {
     -webkit-line-clamp: 2;
+  }
+  
+  .new-tab-link-icon {
+    margin-top: 0.35em;
   }
 }
 
