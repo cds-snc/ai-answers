@@ -271,14 +271,10 @@ code {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850);
-  display: inline-block;
-  max-width: 100%; /* Ensure it doesn't exceed container */
 }
 
 .citation-url-text {
   display: inline;
-  /* Force the last word and icon to stay together */
-  word-spacing: -0.05em; /* Slightly tighter word spacing */
 }
 
 .new-tab-link-icon {
@@ -287,23 +283,12 @@ code {
   vertical-align: middle;
 }
 
-/* Prevent orphaned icon by ensuring enough space */
-.citation-link a::after {
-  content: '';
-  display: inline-block;
-  width: 20px; /* Reserve space for icon */
-}
-
 @media screen and (max-width: 768px) {
   .citation-link a {
     display: block;
     width: 100%;
     position: relative;
     padding-right: 20px; 
-  }
-  
-  .citation-link a::after {
-    display: none; /* Remove the spacer on mobile */
   }
   
   .citation-url-text {
