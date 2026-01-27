@@ -274,7 +274,7 @@ code {
   flex-wrap: nowrap;
   gap: 0.35rem;
   max-width: 100%;
-  line-height: 1.5;
+  color: var(--gcds-color-blue-850);
 }
 
 /* Text container - grows to fill space, allows wrapping and truncation */
@@ -289,6 +289,7 @@ code {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.6em;
 }
 
 /* Icon - fixed, never shrinks, always visible */
@@ -302,9 +303,7 @@ code {
   transition: transform 0.2s ease;
 }
 
-/* ===== RESPONSIVE TRUNCATION ===== */
-
-/* Mobile - 3 lines max */
+/* Mobile - 2 lines max */
 @media screen and (max-width: 600px) {
   .citation-url-text {
     -webkit-line-clamp: 2;
@@ -335,18 +334,6 @@ code {
     margin-top: 0.3em;
   }
 }
-
-/* Desktop - 2 lines max */
-@media screen and (min-width: 1025px) {
-  .citation-url-text {
-    -webkit-line-clamp: 2;
-  }
-  
-  .new-tab-link-icon {
-    margin-top: 0.35em;
-  }
-}
-
 
 .citation-link a:hover {
   text-decoration: underline;
