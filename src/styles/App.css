@@ -273,6 +273,9 @@ code {
   color: var(--gcds-color-blue-850) !important;
 }
 
+.citation-link a:focus {
+    color: var(--gcds-link-focus-text) !important;
+}
 .citation-url-text {
   display: inline;
 }
