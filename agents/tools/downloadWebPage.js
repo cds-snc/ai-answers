@@ -59,16 +59,36 @@ async function downloadWebPage(url) {
     httpsAgent,
     maxRedirects: 10,
     timeout: 500,
-    headers: { "User-Agent": process.env.USER_AGENT || "Mozilla/5.0 (ContentFetcher)" },
+    headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
   });
-  return htmlToLeanMarkdown(res.data, url);
+  return {
+    markdown: htmlToLeanMarkdown(res.data, url),
+    res
+  };
 }
 
 const downloadWebPageTool = tool(
   async ({ url }) => {
     try {
-      return await downloadWebPage(url);
+      const { markdown, res } = await downloadWebPage(url);
+      if (res?.request) {
+        console.log("Actual Request Sent:", {
+          method: res.request.method,
+          path: res.request.path,
+          headers: typeof res.request.getHeaders === 'function' ? res.request.getHeaders() : 'N/A'
+        });
+      }
+      return markdown;
     } catch (error) {
+      const req = error.request || error.response?.request;
+      if (req) {
+        console.log("Actual Request (Failed):", {
+          method: req.method,
+          path: req.path,
+          headers: typeof req.getHeaders === 'function' ? req.getHeaders() : 'N/A'
+        });
+      }
+
       if (error.code === "ECONNREFUSED") throw new Error(`Connection refused: ${url}`);
       if (error.response?.status === 403) throw new Error(`Access forbidden (403): ${url}`);
       if (error.response?.status === 404) throw new Error(`Page not found (404): ${url}`);
