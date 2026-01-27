@@ -12,6 +12,10 @@
     "intro": {
       "researchOnly": "Answers provided by this AI service are information, not official advice.  Improvements are ongoing."
     },
+    "warning": {
+      "title": "Use with caution",
+      "message": "We're upgrading and experiencing a higher volume of errors. Use with caution, for testing only."
+    },
     "textarea": {
       "title": "Ask your question here.",
       "ariaLabel": {

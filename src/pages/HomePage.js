@@ -7,6 +7,7 @@ import {
   GcdsDetails,
   GcdsText,
   GcdsLink,
+  GcdsNotice,
 } from "@cdssnc/gcds-components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
 import DataStoreService from "../services/DataStoreService.js";
@@ -77,6 +78,8 @@ const HomePage = ({ lang = "en" }) => {
   const [initialMessages, setInitialMessages] = useState([]);
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
   const [chatCreatedAt, setChatCreatedAt] = useState(null);
+  const [showWarningNotice, setShowWarningNotice] = useState(true); // set to false to turn off warning, message is in locales
+
 
   // Capture client-side referrer (if available) so we can pass it into the
   // chat component for new chats. Keep this safe for SSR/tests by guarding
@@ -258,6 +261,16 @@ const HomePage = ({ lang = "en" }) => {
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
+        {showWarningNotice && (
+        <GcdsNotice 
+          type="warning" 
+          noticeTitleTag="h3" 
+          noticeTitle={t("homepage.warning.title")}
+          className="mt-200"
+        >
+          <GcdsText>{t("homepage.warning.message")}</GcdsText>
+        </GcdsNotice>
+        )}
         <ChatAppContainer
           lang={lang}
           chatId={chatId}
