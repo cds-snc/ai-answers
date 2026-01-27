@@ -268,7 +268,7 @@ code {
 }
 
 .citation-link a {
-  word-break: break-all;
+  /* word-break: break-all; */
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850) !important;
 }
