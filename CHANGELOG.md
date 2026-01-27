@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.91.0](https://github.com/cds-snc/ai-answers/compare/v1.90.0...v1.91.0) (2026-01-27)
+
+
+### Features
+
+* AA tracking on about page (remove components) ([4fc8197](https://github.com/cds-snc/ai-answers/commit/4fc81977190f4056faf588375821a496fb96ae74))
+* can't not have title ([a0d4798](https://github.com/cds-snc/ai-answers/commit/a0d4798ce10126eec8dda454a7bdb09179784afc))
+* locales ([b487975](https://github.com/cds-snc/ai-answers/commit/b487975f2fc6935ab6d5edb7c450c70b9274d24f))
+* qa ([dd6c8de](https://github.com/cds-snc/ai-answers/commit/dd6c8de7b294151795778e8912f7f5f10317c1f5))
+* rmv classes and title ([ae40838](https://github.com/cds-snc/ai-answers/commit/ae40838c80564812a0e8685c5d396b3fbe2f32a8))
+* warning, toggle on and off-able ([0c34761](https://github.com/cds-snc/ai-answers/commit/0c347613759d17ecc46489f8dc5005d9b6b1490e))
+
 ## [1.90.0](https://github.com/cds-snc/ai-answers/compare/v1.89.0...v1.90.0) (2026-01-26)
 
 
