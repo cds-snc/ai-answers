@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.91.1](https://github.com/cds-snc/ai-answers/compare/v1.91.0...v1.91.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* about page blog section ([aed97d9](https://github.com/cds-snc/ai-answers/commit/aed97d958440f3007947fb34e83a9ffca9d75fad))
+* add instead of replace ([9b4ddc9](https://github.com/cds-snc/ai-answers/commit/9b4ddc93971cd1437a591d035b8727206c9de8c4))
+* search query did NOT include grocery benefit ([c463385](https://github.com/cds-snc/ai-answers/commit/c463385f3c6d30d7edc56f1fa9a626d95682835a))
+* to help with grocery rebate ([e7a43fb](https://github.com/cds-snc/ai-answers/commit/e7a43fb17647837fad92ea813fbfa1fc985f560b))
+* typo add blog link ([42313e3](https://github.com/cds-snc/ai-answers/commit/42313e3f6b5b3b1d1c8b856fb5dc393bd72c2952))
+
 ## [1.91.0](https://github.com/cds-snc/ai-answers/compare/v1.90.0...v1.91.0) (2026-01-27)
 
 
