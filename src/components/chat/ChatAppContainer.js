@@ -664,7 +664,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         <span className="citation-url-text font-size-text-xsm-nr">
           {(() => {
             // Only use the non-breaking wrapper if URL is long enough to potentially wrap
-            const needsWrapping = displayUrl.length > 50; // Adjust threshold as needed
+            const needsWrapping = displayUrl.length > 80; // Adjust threshold as needed
             
             if (!needsWrapping) {
               // Short URL: just render it normally with the icon
