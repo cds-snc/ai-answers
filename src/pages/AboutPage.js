@@ -49,6 +49,7 @@ const AboutPage = ({ lang = 'en' }) => {
     overview: lang === 'fr' ? 'aperu' : 'overview',
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
+    blog: lang === 'fr' ? 'billets-de-blogue-sur-rponses-ia' : 'ai-answers-blog-posts',
     systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
@@ -103,6 +104,23 @@ const AboutPage = ({ lang = 'en' }) => {
               {sections[sectionKeys.privacy].content}
             </ReactMarkdown>
           </details>
+        )}
+
+        {/* Blog Posts Section */}
+        {sections[sectionKeys.blog] && (
+          <section className="mb-400">
+            <h2 className="mb-300">{sections[sectionKeys.blog].heading}</h2>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <p className="mb-300">{children}</p>,
+                a: ({ href, children }) => <a href={href}>{children}</a>,
+                ul: ({ children }) => <ul className="mb-400">{children}</ul>,
+                li: ({ children }) => <li>{children}</li>,
+              }}
+            >
+              {sections[sectionKeys.blog].content}
+            </ReactMarkdown>
+          </section>
         )}
 
         {/* System Card Documentation Section */}

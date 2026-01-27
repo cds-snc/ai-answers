@@ -10,9 +10,6 @@ Beta-testing in collaboration with partner organizations began in November 2025 
 
 Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation, metrics, user management, and settings. The innovative evaluation system leverages subject-matter expert(SME) evaluations of questions and answers.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
 
-- For more about the first trial, see [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
-- 2024 study in which a majority of respondents (47%) would trust a custom canada.ca AI Answers chat over ones powered by Google or Bing, see [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
-
 ## Accessibility and Usability
 
 Users can be overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.
@@ -35,6 +32,11 @@ We attempt to ensure the accuracy of the information provided but there is a pos
 This AI system relies on information provided on Government of Canada websites. The Government of Canada does not provide legal advice.
 
 Your use of this system and any information generated is also subject to the [Canada.ca Terms and conditions](https://www.canada.ca/en/transparency/terms.html).
+
+## AI Answers Blog posts
+
+- [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
+- [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
 
 ## System Card documentation
 
