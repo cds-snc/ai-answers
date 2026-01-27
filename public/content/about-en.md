@@ -1,3 +1,9 @@
+---
+title: "About AI Answers"
+description: "Learn about Canada.ca AI Answers, a specialized AI chat agent designed for users of Government of Canada websites"
+ogImage: "og-about-en.png"
+---
+
 # About Canada.ca AI Answers
 
 ## Overview
@@ -9,6 +15,8 @@ The AI Answers service began as an experiment in late 2024 by the Canada.ca Expe
 Beta-testing in collaboration with partner organizations began in November 2025 and continues towards an expanded rollout in 2026. 
 
 Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation, metrics, user management, and settings. The innovative evaluation system leverages subject-matter expert(SME) evaluations of questions and answers.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
+
+- For more about the first trial, see [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 
 ## Accessibility and Usability
 
@@ -32,11 +40,6 @@ We attempt to ensure the accuracy of the information provided but there is a pos
 This AI system relies on information provided on Government of Canada websites. The Government of Canada does not provide legal advice.
 
 Your use of this system and any information generated is also subject to the [Canada.ca Terms and conditions](https://www.canada.ca/en/transparency/terms.html).
-
-## AI Answers Blog posts
-
-- [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
-- [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
 
 ## System Card documentation
 

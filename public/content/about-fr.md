@@ -1,3 +1,8 @@
+---
+title: "À propos de Réponses IA"
+description: "En savoir plus sur Canada.ca Réponses IA, un agent de discussion IA spécialisé conçu pour les utilisateurs des sites Web du gouvernement du Canada"
+ogImage: "og-about-fr.png"
+
 # À propos de Canada.ca Réponses IA
 
 ## Aperçu
@@ -9,6 +14,8 @@ Le service Réponses IA a débuté comme une expérience à la fin de 2024 par l
 Les essais bêta en collaboration avec les organisations partenaires ont commencé en novembre 2025 et se poursuivent vers un déploiement élargi en 2026.
 
 Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation humaine, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts en la matière (EM) des questions et réponses. Les évaluations sont utilisées pour améliorer la qualité des réponses et pour produire des évaluations IA automatisées de questions similaires.
+
+- Pour en savoir plus sur le premier essai, voir [Réponses IA : Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 
 ## Accessibilité et convivialité
 
@@ -32,11 +39,6 @@ Nous nous efforçons de garantir l'exactitude des informations fournies, mais il
 Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.
 
 Votre utilisation de ce système et de toute information générée est également soumise aux [Conditions d'utilisation de Canada.ca](https://www.canada.ca/fr/transparence/avis.html).
-
-## Billets de blogue sur Réponses IA
-
-- [Réponses IA : Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
-- [Résultats de l'étude sur la confiance envers l'IA sur Canada.ca](https://blogue.canada.ca/2025/02/18/confiance-ia.html)
 
 ## Documentation de la fiche système
 
