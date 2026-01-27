@@ -54,8 +54,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [textareaKey, setTextareaKey] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
 
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
@@ -140,16 +138,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       }, 200);
     }
   }, [initialMessages]);
-
-  // this effect tracks window size to set isMobile state for URL styles
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // This effect monitors displayStatus changes to update screen reader announcements
   useEffect(() => {
@@ -672,13 +660,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                       console.error('Error pushing to Adobe Data Layer:', e);
                     }
                   }}
-                      >
-              {isMobile ? (
-                // Mobile (≤768px): Let ellipsis clamp happen, icon positioned absolutely
+      >
+        <span className="citation-url-text font-size-text-xsm-nr">
+          {(() => {
+            // Only use the non-breaking wrapper if URL is long enough to potentially wrap
+            const needsWrapping = displayUrl.length > 50; // Adjust threshold as needed
+            
+            if (!needsWrapping) {
+              // Short URL: just render it normally with the icon
+              return (
                 <>
-                  <span className="citation-url-text font-size-text-xsm-nr">
-                    {displayUrl}
-                  </span>
+                  {displayUrl}
                   <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                   <svg 
                     width="12" 
@@ -697,70 +689,100 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     />
                   </svg>
                 </>
-              ) : (
-                // Desktop (>768px): Wrap last path segment (minimum 20 chars) with icon
-                <>
-                  <span className="citation-url-text font-size-text-xsm-nr">
-                    {(() => {
-                      const lastSlashIndex = displayUrl.lastIndexOf('/');
-                      
-                      if (lastSlashIndex === -1) {
-                        // No slash found, use character fallback
-                        return displayUrl.substring(0, Math.max(0, displayUrl.length - 20));
-                      }
-                      
-                      const lastSegment = displayUrl.substring(lastSlashIndex + 1);
-                      
-                      // If last segment is less than 20 chars, take at least 20 chars total
-                      if (lastSegment.length < 20) {
-                        return displayUrl.substring(0, Math.max(0, displayUrl.length - 20));
-                      }
-                      
-                      // Otherwise, just split at the last slash
-                      return displayUrl.substring(0, lastSlashIndex + 1);
-                    })()}
-                    <span style={{whiteSpace: 'nowrap'}}>
-                      {(() => {
-                        const lastSlashIndex = displayUrl.lastIndexOf('/');
-                        
-                        if (lastSlashIndex === -1) {
-                          return displayUrl.substring(Math.max(0, displayUrl.length - 20));
-                        }
-                        
-                        const lastSegment = displayUrl.substring(lastSlashIndex + 1);
-                        
-                        if (lastSegment.length < 20) {
-                          return displayUrl.substring(Math.max(0, displayUrl.length - 20));
-                        }
-                        
-                        return lastSegment;
-                      })()}
-                      <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                      <svg 
-                        width="12" 
-                        height="12" 
-                        viewBox="0 0 22 22" 
-                        aria-hidden="true"
-                        className="new-tab-link-icon"
-                      >
-                        <path 
-                          d="M20 2L2 20M20 2H8M20 2V14" 
-                          stroke="currentColor" 
-                          strokeWidth="3.5" 
-                          strokeLinecap="square" 
-                          strokeLinejoin="square"
-                          fill="none"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                </>
-
-              )}
+              );
+            }
+                  // Long URL: split and wrap last portion
+                  const lastSlashIndex = displayUrl.lastIndexOf('/');
+                  
+                  if (lastSlashIndex === -1) {
+                    return (
+                      <>
+                        {displayUrl.substring(0, Math.max(0, displayUrl.length - 20))}
+                        <span style={{whiteSpace: 'nowrap'}}>
+                          {displayUrl.substring(Math.max(0, displayUrl.length - 20))}
+                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                          <svg 
+                            width="12" 
+                            height="12" 
+                            viewBox="0 0 22 22" 
+                            aria-hidden="true"
+                            className="new-tab-link-icon"
+                          >
+                            <path 
+                              d="M20 2L2 20M20 2H8M20 2V14" 
+                              stroke="currentColor" 
+                              strokeWidth="3.5" 
+                              strokeLinecap="square" 
+                              strokeLinejoin="square"
+                              fill="none"
+                            />
+                          </svg>
+                        </span>
+                      </>
+                    );
+                  }
+                  
+                  const lastSegment = displayUrl.substring(lastSlashIndex + 1);
+                  
+                  if (lastSegment.length < 20) {
+                    return (
+                      <>
+                        {displayUrl.substring(0, Math.max(0, displayUrl.length - 20))}
+                        <span style={{whiteSpace: 'nowrap'}}>
+                          {displayUrl.substring(Math.max(0, displayUrl.length - 20))}
+                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                          <svg 
+                            width="12" 
+                            height="12" 
+                            viewBox="0 0 22 22" 
+                            aria-hidden="true"
+                            className="new-tab-link-icon"
+                          >
+                            <path 
+                              d="M20 2L2 20M20 2H8M20 2V14" 
+                              stroke="currentColor" 
+                              strokeWidth="3.5" 
+                              strokeLinecap="square" 
+                              strokeLinejoin="square"
+                              fill="none"
+                            />
+                          </svg>
+                        </span>
+                      </>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      {displayUrl.substring(0, lastSlashIndex + 1)}
+                      <span style={{whiteSpace: 'nowrap'}}>
+                        {lastSegment}
+                        <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                        <svg 
+                          width="12" 
+                          height="12" 
+                          viewBox="0 0 22 22" 
+                          aria-hidden="true"
+                          className="new-tab-link-icon"
+                        >
+                          <path 
+                            d="M20 2L2 20M20 2H8M20 2V14" 
+                            stroke="currentColor" 
+                            strokeWidth="3.5" 
+                            strokeLinecap="square" 
+                            strokeLinejoin="square"
+                            fill="none"
+                          />
+                        </svg>
+                      </span>
+                    </>
+                  );
+                })()}
+              </span>
             </a>
-              </li>
-              </ul>
-            )}
+          </li>
+        </ul>
+      )}
           </div>
           </>
         )}

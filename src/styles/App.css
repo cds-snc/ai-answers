@@ -267,7 +267,7 @@ code {
   margin-bottom: 0.5rem !important;
 }
 
-.citation-link a {
+citation-link a {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850);
@@ -281,29 +281,6 @@ code {
   display: inline-block;
   margin-left: 4px;
   vertical-align: middle;
-}
-
-@media screen and (max-width: 768px) {
-  .citation-link a {
-    display: block;
-    width: 100%;
-    position: relative;
-    padding-right: 20px; 
-  }
-  
-  .citation-url-text {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .new-tab-link-icon {
-    position: absolute;
-    right: 0;
-    bottom: 5px;
-  }
 }
 
 .ai-icon {
