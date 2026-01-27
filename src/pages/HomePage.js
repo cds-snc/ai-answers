@@ -78,6 +78,8 @@ const HomePage = ({ lang = "en" }) => {
   const [initialMessages, setInitialMessages] = useState([]);
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
   const [chatCreatedAt, setChatCreatedAt] = useState(null);
+  const [showWarningNotice, setShowWarningNotice] = useState(true); // set to false to turn off warning, message is in locales
+
 
   // Capture client-side referrer (if available) so we can pass it into the
   // chat component for new chats. Keep this safe for SSR/tests by guarding
@@ -268,7 +270,7 @@ const HomePage = ({ lang = "en" }) => {
         >
           <GcdsText>{t("homepage.warning.message")}</GcdsText>
         </GcdsNotice>
-      )}
+        )}
         <ChatAppContainer
           lang={lang}
           chatId={chatId}
