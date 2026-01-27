@@ -101,3 +101,32 @@ resource "aws_iam_role_policy_attachment" "ai_answers_assume_bedrock_role" {
   role       = aws_iam_role.ai-answers-ecs-role.name
   policy_arn = aws_iam_policy.ai_answers_assume_bedrock_role[0].arn
 }
+
+# S3 access policy
+data "aws_iam_policy_document" "s3_access_policy" {
+  statement {
+    sid    = "AllowS3Access"
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:DeleteObject"
+    ]
+    resources = [
+      var.s3_bucket_arn,
+      "${var.s3_bucket_arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "${var.product_name}-s3-policy"
+  description = "Policy for ${var.product_name} to access S3"
+  policy      = data.aws_iam_policy_document.s3_access_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "s3_access_policy" {
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+}

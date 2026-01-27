@@ -90,8 +90,13 @@ module "ai_answers" {
     {
       name  = "REDIS_URL"
       value = var.redis_url
+    },
+    {
+      name  = "S3_BUCKET_NAME"
+      value = var.s3_bucket_name
     }
   ]
+
   container_linux_parameters = {}
   container_ulimits = [
     {
@@ -101,6 +106,7 @@ module "ai_answers" {
     }
   ]
   container_read_only_root_filesystem = false
+
 
   # Task definition
   task_name          = "${var.product_name}-task"

@@ -3,7 +3,7 @@ terraform {
 }
 
 dependencies {
-  paths = ["../ssm", "../database"]
+  paths = ["../ssm", "../database", "../s3"]
 }
 
 dependency "ssm" {
@@ -11,20 +11,20 @@ dependency "ssm" {
   mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
   mock_outputs_merge_with_state           = true
   mock_outputs = {
-    docdb_username_arn                = ""
-    docdb_password_arn                = ""
-    azure_openai_api_key_arn          = ""
-    azure_openai_endpoint_arn         = ""
-    azure_openai_api_version_arn      = ""
-    canada_ca_search_api_key_arn      = ""
-    canada_ca_search_uri_arn          = ""
-    user_agent_arn                    = ""
-    jwt_secret_key_arn                = ""
-    google_api_key_arn                = ""
-    gc_notify_api_key_arn             = ""
-    google_search_engine_id_arn       = ""
-    adobe_analytics_url_arn           = ""
-    session_secret_arn                = ""
+    docdb_username_arn                   = ""
+    docdb_password_arn                   = ""
+    azure_openai_api_key_arn             = ""
+    azure_openai_endpoint_arn            = ""
+    azure_openai_api_version_arn         = ""
+    canada_ca_search_api_key_arn         = ""
+    canada_ca_search_uri_arn             = ""
+    user_agent_arn                       = ""
+    jwt_secret_key_arn                   = ""
+    google_api_key_arn                   = ""
+    gc_notify_api_key_arn                = ""
+    google_search_engine_id_arn          = ""
+    adobe_analytics_url_arn              = ""
+    session_secret_arn                   = ""
     conversation_integrity_secret_arn    = ""
     cross_account_bedrock_role_arn_value = ""
     cross_account_bedrock_role_ssm_arn   = ""
@@ -41,26 +41,36 @@ dependency "database" {
   }
 }
 
+dependency "s3" {
+  config_path                             = "../s3"
+  mock_outputs_allowed_terraform_commands = ["init", "fmt", "validate", "plan", "show"]
+  mock_outputs_merge_with_state           = true
+  mock_outputs = {
+    bucket_arn = "arn:aws:s3:::mock-bucket"
+  }
+}
+
 inputs = {
-  docdb_password_arn                = dependency.ssm.outputs.docdb_password_arn
-  docdb_username_arn                = dependency.ssm.outputs.docdb_username_arn
-  azure_openai_api_key_arn          = dependency.ssm.outputs.azure_openai_api_key_arn
-  azure_openai_endpoint_arn         = dependency.ssm.outputs.azure_openai_endpoint_arn
-  azure_openai_api_version_arn      = dependency.ssm.outputs.azure_openai_api_version_arn
-  docdb_uri_arn                     = dependency.database.outputs.docdb_uri_arn
-  canada_ca_search_api_key_arn      = dependency.ssm.outputs.canada_ca_search_api_key_arn
-  canada_ca_search_uri_arn          = dependency.ssm.outputs.canada_ca_search_uri_arn
-  user_agent_arn                    = dependency.ssm.outputs.user_agent_arn
-  jwt_secret_key_arn                = dependency.ssm.outputs.jwt_secret_key_arn
-  google_api_key_arn                = dependency.ssm.outputs.google_api_key_arn
-  gc_notify_api_key_arn             = dependency.ssm.outputs.gc_notify_api_key_arn
-  google_search_engine_id_arn       = dependency.ssm.outputs.google_search_engine_id_arn
-  adobe_analytics_url_arn           = dependency.ssm.outputs.adobe_analytics_url_arn
-  session_secret_arn                = dependency.ssm.outputs.session_secret_arn
-  conversation_integrity_secret_arn = dependency.ssm.outputs.conversation_integrity_secret_arn
-  bedrock_invoke_role_arn           = dependency.ssm.outputs.cross_account_bedrock_role_arn_value
+  docdb_password_arn                 = dependency.ssm.outputs.docdb_password_arn
+  docdb_username_arn                 = dependency.ssm.outputs.docdb_username_arn
+  azure_openai_api_key_arn           = dependency.ssm.outputs.azure_openai_api_key_arn
+  azure_openai_endpoint_arn          = dependency.ssm.outputs.azure_openai_endpoint_arn
+  azure_openai_api_version_arn       = dependency.ssm.outputs.azure_openai_api_version_arn
+  docdb_uri_arn                      = dependency.database.outputs.docdb_uri_arn
+  canada_ca_search_api_key_arn       = dependency.ssm.outputs.canada_ca_search_api_key_arn
+  canada_ca_search_uri_arn           = dependency.ssm.outputs.canada_ca_search_uri_arn
+  user_agent_arn                     = dependency.ssm.outputs.user_agent_arn
+  jwt_secret_key_arn                 = dependency.ssm.outputs.jwt_secret_key_arn
+  google_api_key_arn                 = dependency.ssm.outputs.google_api_key_arn
+  gc_notify_api_key_arn              = dependency.ssm.outputs.gc_notify_api_key_arn
+  google_search_engine_id_arn        = dependency.ssm.outputs.google_search_engine_id_arn
+  adobe_analytics_url_arn            = dependency.ssm.outputs.adobe_analytics_url_arn
+  session_secret_arn                 = dependency.ssm.outputs.session_secret_arn
+  conversation_integrity_secret_arn  = dependency.ssm.outputs.conversation_integrity_secret_arn
+  bedrock_invoke_role_arn            = dependency.ssm.outputs.cross_account_bedrock_role_arn_value
   cross_account_bedrock_role_ssm_arn = dependency.ssm.outputs.cross_account_bedrock_role_ssm_arn
-  bedrock_region_ssm_arn            = dependency.ssm.outputs.bedrock_region_ssm_arn
+  bedrock_region_ssm_arn             = dependency.ssm.outputs.bedrock_region_ssm_arn
+  s3_bucket_arn                      = dependency.s3.outputs.bucket_arn
 }
 
 include {

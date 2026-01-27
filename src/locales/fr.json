@@ -12,6 +12,10 @@
     "intro": {
       "researchOnly": "Les réponses fournies par ce service d'IA sont des informations, et non des conseils officiels. Des améliorations sont en cours."
     },
+    "warning": {
+      "title": "À utiliser avec précaution",
+      "message": "Nous effectuons une mise à niveau et rencontrons un nombre plus élevé d'erreurs. À utiliser avec précaution, à des fins de test uniquement."
+    },
     "textarea": {
       "ariaLabel": {
         "first": "Voici les réponses de Canada point CA, veuillez entrer votre question.",

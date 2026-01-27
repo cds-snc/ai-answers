@@ -20,19 +20,38 @@ class ConversationIntegrityService {
         if (answerMatch) {
             content = answerMatch[1];
         } else {
-            // 2. "Remove known noise" for User messages (or AI messages without standard tags)
-            // e.g. <output-lang>eng</output-lang> sometimes appended to history
-            content = content
-                .replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '')
-                .replace(/<referring-url>[\s\S]*?<\/referring-url>/g, '');
+            // 2. Try to extract clarifying question content
+            // Clarifying questions use <clarifying-question> tags
+            const clarifyingMatch = text.match(/<clarifying-question>([\s\S]*?)<\/clarifying-question>/);
+            if (clarifyingMatch) {
+                content = clarifyingMatch[1];
+            } else {
+                // 3. Fallback: Try to extract sentence-tagged content (<s-1>, <s-2>, etc.)
+                // This handles cases where the answer is wrapped in sentence tags
+                const sentenceMatches = text.match(/<s-\d+>([\s\S]*?)<\/s-\d+>/g);
+                if (sentenceMatches && sentenceMatches.length > 0) {
+                    // Extract content from all sentence tags and join them
+                    content = sentenceMatches
+                        .map(match => match.replace(/<\/?s-\d+>/g, ''))
+                        .join(' ');
+                } else {
+                    // 4. "Remove known noise" for User messages (or AI messages without standard tags)
+                    // e.g. <output-lang>eng</output-lang> sometimes appended to history
+                    content = content
+                        .replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '')
+                        .replace(/<referring-url>[\s\S]*?<\/referring-url>/g, '')
+                        .replace(/<preliminary-checks>[\s\S]*?<\/preliminary-checks>/g, '');
+                }
+            }
         }
 
-        // 3. Final Polish: strip remaining tags (formatting, s-tags) and normalize whitespace
+        // 5. Final Polish: strip remaining tags (formatting, s-tags) and normalize whitespace
         return content
             .replace(/<[^>]+>/g, '')
             .replace(/\s+/g, ' ')
             .trim();
     }
+
 
     /**
      * Deterministically serializes conversation history for signing/verification.
@@ -49,8 +68,10 @@ class ConversationIntegrityService {
             const m = filteredHistory[i];
 
             if (m.interaction) {
-                const q = this.normalizeText(m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question);
-                const a = this.normalizeText(m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer);
+                const qRaw = m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question;
+                const aRaw = m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer;
+                const q = this.normalizeText(qRaw);
+                const a = this.normalizeText(aRaw);
                 lines.push(`user:${q}`);
                 lines.push(`ai:${a}`);
             } else {
