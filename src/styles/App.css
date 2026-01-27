@@ -262,52 +262,108 @@ code {
   width: 80px;
 }
 
-.citation-head {
-  /* font-weight: 600 !important; */
-  margin-bottom: 0.5rem !important;
-}
-.citation-link a {
-  word-break: break-all;
-  margin-bottom: 0.5rem !important;
-  /* line-height: 1.2em !important; */
-}
-.new-tab-link-icon {
-  margin-left: 4px;
-}
-
-@media screen and (max-width: 768px) {
-  .citation-link a {
-    display: block;
-    width: 100%;
-    position: relative;
-    padding-right: 20px; 
-  }
-  
-  .citation-url-text {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* display: inline; Let it flow naturally */
-
-  }
-  
-  .new-tab-link-icon {
-    position: absolute;
-    right: 0;
-    bottom: 5px;
-  }
-}
-
 .ai-icon {
   vertical-align: middle;
   display: inline-block;
 }
 
+/* Make the link use flexbox - prevents orphaned icon */
 .citation-link a {
-  color: var(--gcds-color-blue-850);
+  display: inline-flex !important;
+  align-items: flex-start;
+  gap: 0.35rem;
+  word-break: break-word;
+  text-align: left;
+  max-width: 100%;
+  line-height: 1.5;
 }
+
+/* URL text - flexible and wrappable, with truncation */
+.citation-url-text {
+  flex: 1 1 auto;
+  min-width: 0; /* CRITICAL - allows text to shrink */
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  /* Truncation - always applied */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Icon - fixed size, never shrinks */
+.new-tab-link-icon {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+  margin-top: 0.25em;
+  transition: transform 0.2s ease;
+}
+
+/* ===== RESPONSIVE TRUNCATION ===== */
+
+/* Mobile - 3 lines */
+@media screen and (max-width: 600px) {
+  .citation-url-text {
+    -webkit-line-clamp: 2;
+    font-size: 14px;
+  }
+  
+  .citation-link a {
+    gap: 0.25rem;
+  }
+  
+  .new-tab-link-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    margin-top: 0.2em;
+  }
+}
+
+/* Tablet - 2 lines */
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+  .citation-url-text {
+    -webkit-line-clamp: 2;
+  }
+  
+  .new-tab-link-icon {
+    width: 13px;
+    height: 13px;
+    min-width: 13px;
+  }
+}
+
+/* Desktop - 2 lines */
+@media screen and (min-width: 1025px) {
+  .citation-url-text {
+    -webkit-line-clamp: 2;
+  }
+}
+
+
+.citation-link a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.citation-link a:hover .new-tab-link-icon {
+  transform: translate(2px, -2px);
+}
+
+.citation-link a:focus {
+  outline: 3px solid #0535d2;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.citation-link a:focus .new-tab-link-icon {
+  color: #0535d2;
+}
+
+
 .confidence-rating {
   font-style: italic;
   font-size: 85%;
