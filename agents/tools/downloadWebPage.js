@@ -55,12 +55,20 @@ function htmlToLeanMarkdown(html, baseUrl) {
 
 async function downloadWebPage(url) {
   const httpsAgent = new Agent({ rejectUnauthorized: false });
-  const res = await axios.get(url, {
+  const config = {
     httpsAgent,
     maxRedirects: 10,
     timeout: 5000,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
+  };
+
+  console.log("Attempting Request:", {
+    method: 'GET',
+    url,
+    headers: config.headers
   });
+
+  const res = await axios.get(url, config);
   return {
     markdown: htmlToLeanMarkdown(res.data, url),
     res
@@ -73,14 +81,7 @@ const downloadWebPageTool = tool(
       const { markdown, res } = await downloadWebPage(url);
 
       // Successfully received response
-      const req = res.request;
-      const config = res.config || {};
-
-      console.log("Actual Request Sent:", {
-        method: req?.method || config.method?.toUpperCase() || 'UNKNOWN',
-        path: req?.path || config.url || 'UNKNOWN',
-        headers: (typeof req?.getHeaders === 'function' ? req.getHeaders() : null) || config.headers || 'N/A'
-      });
+      console.log("Request Success - Status:", res.status);
       return markdown;
     } catch (error) {
       const req = error.request || error.response?.request;
