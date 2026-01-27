@@ -27,253 +27,144 @@ This proposal adds **1 pre-context agent** and replaces the single `answerNode` 
 
 ---
 
-## Proposed Pipeline (4 New Agent Nodes)
+## Proposed Pipeline (Updated with Parallel Guardrails)
 
 1. `init` - Initialize state
 2. `validate` - Short query validation
-3. `redact` - PI detection & redaction
-4. `translate` - Language detection & translation
-5. **`manipulationGuardrailsAgent`** ← *NEW: Pre-context guardrails*
-6. `contextNode` - Search & context derivation
-7. **`scopeGuardrailsAgent`** ← *NEW: Post-context scope validation*
-8. **`answerAgent`** ← *NEW: Content generation*
-9. **`formattingAgent`** ← *NEW: Structure & translation*
-10. `verifyNode` - Citation URL verification
-11. `persistNode` - Save to database
-12. `END` - Return result
-
----
-
-## New Agent Nodes Detail
-
-### 5. `manipulationGuardrailsAgent` - Pre-Context Guardrails
-
-**Position:** BEFORE contextNode  
-**Model:** GPT-4-mini or Claude Haiku (fast/cheap)
-
-**Purpose:** Early exit for invalid questions before expensive context derivation
-
-**Responsibilities:**
-- Manipulation detection (role change, style requests, personal conversation)
-- Political/partisan content detection
-- Translation request detection (out of scope)
-- Code injection attempts
-- False premise detection (political)
-
-**Input:**
-- Translated question text
-- Referring URL
-- Conversation history
-
-**Output:**
-```javascript
-{
-  manipulationGuardrails: {
-    isManipulative: boolean,
-    manipulationType: string?, // 'politics', 'role-change', 'translation-request', etc.
-    shouldProceed: boolean,
-    responseType: 'continue' | 'not-gc'
-  }
-}
-```
-
-**Early Exit:** If `isManipulative` or `responseType === 'not-gc'`:
-- Skip contextNode, scopeGuardrailsAgent, answerAgent
-- Go directly to formattingAgent with pre-prepared not-gc response
-
-**Benefits:**
-- Saves context derivation costs (~20-30% of blocked questions)
-- Faster rejection response (~2-3s faster)
-- No search API calls for invalid questions
-
----
-
-### 7. `scopeGuardrailsAgent` - Post-Context Scope Validation
-
-**Position:** AFTER contextNode  
-**Model:** GPT-4-mini or Claude Haiku (fast/cheap)
-
-**Purpose:** Validate scope and determine response type using full context
-
-**Responsibilities:**
-- Perform preliminary checks (PAGE_LANGUAGE, CONTEXT_REVIEW, POSSIBLE_CITATIONS)
-- Refined IS_GC check (with department info from context)
-- IS_PT_MUNI determination
-- Information sufficiency check (clarifying question needed?)
-- Source validation (canada.ca/gc.ca only)
-- Determine which URLs need downloadWebPage tool
-
-**Input:**
-- Translated question text
-- Context (department, topic, search results)
-- Referring URL
-- Conversation history
-- `manipulationGuardrails` output
-
-**Output:**
-```javascript
-{
-  scopeGuardrails: {
-    isGC: boolean, // Refined with context
-    isPTMuni: boolean,
-    needsClarification: boolean,
-    clarifyingQuestion: string?,
-    pageLanguage: 'en' | 'fr',
-    possibleCitations: string[],
-    downloadUrls: string[],
-    responseType: 'answer' | 'not-gc' | 'pt-muni' | 'clarifying-question'
-  }
-}
-```
-
-**Conditional Flow:** 
-- If `responseType !== 'answer'` → Skip answerAgent, go to formattingAgent
-- If `responseType === 'answer'` → Continue to answerAgent
-
----
-
-### 8. `answerAgent` - Answer Content Generation
-
-**Position:** AFTER scopeGuardrailsAgent (conditional)  
-**Model:** GPT-4 or Claude Sonnet (premium for accuracy)
-
-**Tools Available:**
-- `downloadWebPage`
-- `checkUrl`
-
-**Responsibilities:**
-- Call downloadWebPage for URLs identified by scopeGuardrailsAgent
-- Analyze scenarios/updates vs search results
-- Prioritize: scenarios > downloads > training data
-- Follow department-specific requirements
-- Ensure accuracy (no hallucination/fabrication)
-- Be helpful: address specific question, correct misunderstandings
-- Maintain neutrality (no opinions/speculation)
-- Craft raw answer content (1-4 sentences, unformatted)
-- Select citation URL
-- Handle questions about the AI itself (respond with scope limitations)
-
-**Input:**
-- Translated question text
-- Context (department, topic, search results)
-- `scopeGuardrails` output
-- Conversation history
-- Downloaded page content (if applicable)
-
-**Output:**
-```javascript
-{
-  answer: {
-    rawSentences: string[], // 1-4 unformatted sentences
-    citationUrl: string,
-    citationHeading: string,
-    confidence: number, // 0-10
-    toolsUsed: object[]
-  }
-}
-```
-
----
-
-### 9. `formattingAgent` - Answer Formatting & Translation
-
-**Position:** AFTER answerAgent (or directly after guardrails for early exits)  
-**Model:** GPT-4-mini or Claude Haiku (fast/cheap)
-
-**Responsibilities:**
-- Validate sentence count (1-4 max)
-- Validate word count per sentence (4-18 words)
-- Apply XML tag structure (`<s-1>`, `<s-2>`, `<s-3>`, `<s-4>`)
-- Wrap in special tags based on response type:
-  - `<not-gc>` for out-of-scope questions
-  - `<pt-muni>` for provincial/territorial matters
-  - `<clarifying-question>` for clarifications
-- Create final `<english-answer>` block
-- Translate to target language if needed (create `<answer>` block)
-- Preserve exact structure during translation
-- Use pre-prepared responses for not-gc/pt-muni
-
-**Input:**
-- `scopeGuardrails` or `manipulationGuardrails` output (responseType)
-- `answerQuality` output (if available)
-- Target language
-
-**Output:**
-```javascript
-{
-  formattedAnswer: {
-    englishAnswer: string, // Fully formatted XML
-    translatedAnswer: string?, // If translation needed
-    finalCitationUrl: string,
-    citationHeading: string,
-    confidence: number
-  }
-}
-```
+3. **`block`** - PII, Manipulation, Threat detection (Exit if blocked)
+4. **`Input Guardrails`** (Parallel):
+   - `manipulationAgent`
+   - `safetyAgent`
+   - `piAgent`
+   - `financialAgent`
+   - `medicalAgent`
+   - `healthAgent`
+5. `checkInputGuardrails` - If any fail, go to `refusalOutput`
+6. `translate` - Language detection & translation
+7. `contextNode` - Search & context derivation
+8. **`scopeGuardrailsAgent`** - Scope validation
+9. **`answerAgent`** - Answer generation
+10. **`Output Guardrails`** (`biasAgent`) - Bias check (Retry loop)
+11. **`formattingAgent`** - Formatting & secondary translation
+12. `verifyNode` - verification
+13. `answerOutput` -> `persistNode` -> `END`
 
 ---
 
 ## Pipeline Flow Diagram
 
+```mermaid
+graph TD
+    UserQuestion["User Question"] --> init[init]
+    init --> validate[validate]
+    validate --> block
+    
+    subgraph InputGuardrails ["Input Guardrails"]
+        block["block<br/>(pi, manipulation, threat)"]
+        manipulationAgent["manipulationAgent"]
+        safetyAgent["safetyAgent"]
+        piAgent["piAgent"]
+        financialAgent["financialAgent"]
+        medicalAgent["medicalAgent"]
+        healthAgent["healthAgent"]
+    end
+    
+    block -- "Blocked" --> refusalOutput["refusalOutput"]
+    block -- "Passed" --> manipulationAgent
+    block -- "Passed" --> safetyAgent
+    block -- "Passed" --> piAgent
+    block -- "Passed" --> financialAgent
+    block -- "Passed" --> medicalAgent
+    block -- "Passed" --> healthAgent
+    
+    manipulationAgent --> checkInputGuardrails{Check Results}
+    safetyAgent --> checkInputGuardrails
+    piAgent --> checkInputGuardrails
+    financialAgent --> checkInputGuardrails
+    medicalAgent --> checkInputGuardrails
+    healthAgent --> checkInputGuardrails
+    
+    checkInputGuardrails -- "Any Failed" --> refusalOutput
+    checkInputGuardrails -- "All Passed" --> translate[translate]
+
+    translate --> contextNode[contextNode]
+    
+    contextNode --> scopeGuardrailsAgent["scopeGuardrailsAgent"]
+    
+    scopeGuardrailsAgent -- "Other" --> refusalOutput
+    scopeGuardrailsAgent -- "Answer" --> answerAgent[answerAgent]
+    
+    answerAgent --> biasAgent
+    
+    subgraph OutputGuardrails ["Output Guardrails"]
+        biasAgent["biasAgent"]
+    end
+    
+    biasAgent -- "Fail" --> answerAgent
+    biasAgent -- "Pass" --> formattingAgent["formattingAgent"]
+    
+    formattingAgent --> verifyNode[verifyNode]
+    
+    verifyNode --> answerOutput[answerOutput]
+    answerOutput --> persistNode[persistNode]
+    persistNode --> END[END]
+    
+    refusalOutput --> END
 ```
-User Question
-     │
-     ▼
-┌─────────┐   ┌──────────┐   ┌────────┐   ┌───────────┐
-│  init   │──▶│ validate │──▶│ redact │──▶│ translate │
-└─────────┘   └──────────┘   └────────┘   └───────────┘
-                                                │
-                                                ▼
-                              ┌─────────────────────────────────────┐
-                              │ manipulationGuardrailsAgent         │
-                              │ (Pre-Context: manipulation, politics)│
-                              └─────────────────────────────────────┘
-                                       │
-                          ┌────────────┴────────────┐
-                          │                         │
-                    isManipulative?           shouldProceed?
-                          │                         │
-                          ▼                         ▼
-                   ┌────────────┐            ┌─────────────┐
-                   │ formatting │            │ contextNode │
-                   │   Agent    │            └─────────────┘
-                   │ (not-gc)   │                   │
-                   └────────────┘                   ▼
-                          │         ┌─────────────────────────────────────┐
-                          │         │ scopeGuardrailsAgent                │
-                          │         │ (Post-Context: IS_GC, PT_MUNI,      │
-                          │         │  clarifying questions)              │
-                          │         └─────────────────────────────────────┘
-                          │                        │
-                          │           ┌────────────┴────────────┐
-                          │           │                         │
-                          │    responseType               responseType
-                          │    !== 'answer'               === 'answer'
-                          │           │                         │
-                          │           ▼                         ▼
-                          │    ┌────────────┐         ┌──────────────────┐
-                          │    │ formatting │         │ answerAgent│
-                          │    │   Agent    │         └──────────────────┘
-                          │    └────────────┘                   │
-                          │           │                         ▼
-                          │           │                  ┌────────────┐
-                          │           │                  │ formatting │
-                          │           │                  │   Agent    │
-                          │           │                  └────────────┘
-                          │           │                         │
-                          ▼           ▼                         ▼
-                   ┌─────────────────────────────────────────────────┐
-                   │                    verifyNode                   │
-                   └─────────────────────────────────────────────────┘
-                                          │
-                                          ▼
-                   ┌─────────────────────────────────────────────────┐
-                   │                   persistNode                   │
-                   └─────────────────────────────────────────────────┘
-                                          │
-                                          ▼
-                                         END
-```
+
+---
+
+## Agent Nodes Detail
+
+### 1. Input Guardrails (Pre-Context)
+- **Position**: After `validate`, Before `translate`
+- **Purpose**: Sequential check followed by parallel agents for domain-specific validation.
+- **Workflow**:
+    1. **block**: Checks for PII, manipulation, and threats. If failed, exit.
+    2. **Parallel Agents**: Run only if `block` passes.
+        - **manipulationAgent**: Detects role changes, style requests, translation requests.
+        - **safetyAgent**: Detects code injection, harmful content, toxic language.
+        - **piAgent**: Detects and flags Personally Identifiable Information (PII) strategies.
+        - **financialAgent**: Detects requests for personal financial advice.
+        - **medicalAgent**: Detects requests for medical advice/diagnosis.
+        - **healthAgent**: Detects general health misinformation.
+
+### 2. scopeGuardrailsAgent (Post-Context)
+- **Position**: After `contextNode`
+- **Purpose**: Validate scope and internal logic using full context.
+- **Responsibilities**:
+    - Refined IS_GC check.
+    - IS_PT_MUNI determination.
+    - Information sufficiency (clarifying questions).
+    - Source validation.
+    - Identify URLs for `downloadWebPage`.
+
+### 3. answerAgent
+- **Position**: Conditional (if scope is valid)
+- **Purpose**: Content generation.
+- **Responsibilities**:
+    - Execute `downloadWebPage` if needed.
+    - Analyze context/scenarios.
+    - Craft raw answer sentences (1-4).
+    - Select citation URL.
+    - Maintain neutrality.
+
+### 4. Output Guardrails
+- **Position**: After `answerAgent`
+- **Agents**:
+    - **biasAgent**: Detects bias in generated answer. Reroutes back to `answerAgent` for regeneration if detected.
+
+### 5. formattingAgent
+- **Position**: Final step before verification.
+- **Purpose**: Structure and translation for generated answers.
+- **Responsibilities**:
+    - Apply XML tag structure based on `answerAgent` output.
+    - Translate to target language.
+    - Finalize citation headings.
+
+### 6. refusalOutput / answerOutput
+- **refusalOutput**: Handles blocked/out-of-scope requests (static responses). Ends workflow.
+- **answerOutput**: Consolidates verified answers before persistence.
 
 ---
 

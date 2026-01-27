@@ -57,7 +57,7 @@ AI Answers uses a **LangGraph-based state machine architecture** to orchestrate 
 │  │  Graph Nodes (Pipeline with Conditional Branching)       │  │
 │  │  1. init          → Initialize state                      │  │
 │  │  2. validate      → Short query validation                │  │
-│  │  3. redact        → PI detection & redaction              │  │
+│  │  3. redact        → PI detection & question blocking      │  │
 │  │  4. translate     → Language detection & translation      │  │
 │  │  5. shortCircuit  → Similar answer detection              │  │
 │  │     ├─ If match found: → verifyNode (skip context/answer) │  │
@@ -197,26 +197,26 @@ The graph maintains state across all nodes with these key fields:
 
 ---
 
-### 3. Pattern-Based Redaction (`redact` node)
+### 3. Question Blocking (`redact` node)
 
 **Type:** Programmatic + AI
 **Status:** `moderatingQuestion`
 
-**Purpose:** Two-stage privacy protection
+**Purpose:** Two-stage privacy protection - detect PI and block questions containing it
 
-#### Stage 1: Pattern-Based Filtering (No AI)
-- Profanity detection (badwords_en.txt, badwords_fr.txt)
-- Threat detection (threats_en.txt, threats_fr.txt)
-- Manipulation patterns (manipulation_en.json, manipulation_fr.json)
-- Basic PII patterns: phone numbers, emails, 9-digit numbers
+#### Stage 1: Pattern-Based Blocking (No AI)
+- Profanity detection → block question
+- Threat detection → block question
+- Manipulation patterns → block question
+- Basic PI patterns (phone numbers, emails, 9-digit numbers) → block question
 
 **File:** [`agents/graphs/services/redactionService.js`](../../agents/graphs/services/redactionService.js)
 
-#### Stage 2: AI-Powered PII Detection
-- Detects person names, personal IDs, US ZIP codes
+#### Stage 2: AI-Powered PI Detection
+- AI detects person names, personal IDs, US ZIP codes
 - Uses GPT-4 mini with specialized prompt
-- Replaces detected PII with `XXX`
-- Blocks question if PII found
+- Detected PI is marked with `XXX` to show user what was found
+- Question is then blocked programmatically (blocked questions are never logged or processed)
 
 **Files:**
 - Service: [`services/PIIAgentService.js`](../../services/PIIAgentService.js)
@@ -459,7 +459,7 @@ User Question
     ↓
 [validate] → Validate query length
     ↓
-[redact] → Add redactedText to state
+[redact] → Detect PI, block question if found
     ↓
 [translate] → Add translationData to state
     ↓

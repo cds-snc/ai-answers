@@ -17,12 +17,7 @@
 
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import {
-  GcdsContainer,
-  GcdsDetails,
-  GcdsText,
-  GcdsLink,
-} from '@cdssnc/gcds-components-react';
+// GCDS components removed - using standard HTML for AA
 import { useAboutContent } from '../hooks/useAboutContent.js';
 
 const AboutPage = ({ lang = 'en' }) => {
@@ -32,9 +27,7 @@ const AboutPage = ({ lang = 'en' }) => {
   if (loading) {
     return (
       <div className="mb-600 container-custom">
-        <GcdsContainer size="xl" mainContainer centered tag="main">
-          <GcdsText>{lang === 'fr' ? 'Chargement...' : 'Loading...'}</GcdsText>
-        </GcdsContainer>
+          <p>{lang === 'fr' ? 'Chargement...' : 'Loading...'}</p>
       </div>
     );
   }
@@ -43,14 +36,10 @@ const AboutPage = ({ lang = 'en' }) => {
   if (error) {
     return (
       <div className="mb-600 container-custom">
-        <GcdsContainer size="xl" mainContainer centered tag="main">
           <h1>{lang === 'fr' ? 'À propos' : 'About'}</h1>
-          <GcdsText>
             {lang === 'fr'
               ? 'Impossible de charger le contenu.'
               : 'Unable to load content.'}
-          </GcdsText>
-        </GcdsContainer>
       </div>
     );
   }
@@ -60,13 +49,13 @@ const AboutPage = ({ lang = 'en' }) => {
     overview: lang === 'fr' ? 'aperu' : 'overview',
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
+    blog: lang === 'fr' ? 'billets-de-blogue-sur-rponses-ia' : 'ai-answers-blog-posts',
     systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
 
   return (
     <div className="mb-600 container-custom">
-      <GcdsContainer size="xl" mainContainer centered tag="main">
         <h1 className="mb-400">{sections.title}</h1>
 
         {/* Overview Section - Not collapsible */}
@@ -76,8 +65,8 @@ const AboutPage = ({ lang = 'en' }) => {
             <div className="about-content">
               <ReactMarkdown
                 components={{
-                  p: ({ children }) => <GcdsText className="mb-200">{children}</GcdsText>,
-                  a: ({ href, children }) => <GcdsLink href={href}>{children}</GcdsLink>,
+                  p: ({ children }) => <p className="mb-200">{children}</p>,
+                  a: ({ href, children }) => <a href={href}>{children}</a>,
                 }}
               >
                 {sections[sectionKeys.overview].content}
@@ -88,39 +77,50 @@ const AboutPage = ({ lang = 'en' }) => {
 
         {/* Accessibility and Usability Section */}
         {sections[sectionKeys.accessibility] && (
-          <GcdsDetails
-            detailsTitle={sections[sectionKeys.accessibility].heading}
-            className="mb-400"
-            tabIndex={0}
-          >
+          <details tabIndex={0}>
+          <summary>{sections[sectionKeys.accessibility].heading}</summary>
             <ReactMarkdown
               components={{
-                p: ({ children }) => <GcdsText>{children}</GcdsText>,
-                a: ({ href, children }) => <GcdsLink href={href}>{children}</GcdsLink>,
+                p: ({ children }) => <p>{children}</p>,
+                a: ({ href, children }) => <a href={href}>{children}</a>,
               }}
             >
               {sections[sectionKeys.accessibility].content}
             </ReactMarkdown>
-          </GcdsDetails>
+            </details>
         )}
 
         {/* Privacy & Terms Section */}
         {sections[sectionKeys.privacy] && (
-          <GcdsDetails
-            detailsTitle={sections[sectionKeys.privacy].heading}
-            className="mb-400"
-            tabIndex={0}
-          >
+          <details className="mb-400" tabIndex={0}>
+           <summary>{sections[sectionKeys.privacy].heading}</summary>
             <ReactMarkdown
               components={{
-                p: ({ children }) => <GcdsText>{children}</GcdsText>,
-                a: ({ href, children }) => <GcdsLink href={href}>{children}</GcdsLink>,
+                p: ({ children }) => <p>{children}</p>,
+                a: ({ href, children }) => <a href={href}>{children}</a>,
                 h3: ({ children }) => <h3 className="mt-300 mb-200">{children}</h3>,
               }}
             >
               {sections[sectionKeys.privacy].content}
             </ReactMarkdown>
-          </GcdsDetails>
+          </details>
+        )}
+
+        {/* Blog Posts Section */}
+        {sections[sectionKeys.blog] && (
+          <section className="mb-400">
+            <h2 className="mb-300">{sections[sectionKeys.blog].heading}</h2>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <p className="mb-300">{children}</p>,
+                a: ({ href, children }) => <a href={href}>{children}</a>,
+                ul: ({ children }) => <ul className="mb-400">{children}</ul>,
+                li: ({ children }) => <li>{children}</li>,
+              }}
+            >
+              {sections[sectionKeys.blog].content}
+            </ReactMarkdown>
+          </section>
         )}
 
         {/* System Card Documentation Section */}
@@ -129,8 +129,8 @@ const AboutPage = ({ lang = 'en' }) => {
             <h2 className="mb-300">{sections[sectionKeys.systemCard].heading}</h2>
             <ReactMarkdown
               components={{
-                p: ({ children }) => <GcdsText className="mb-300">{children}</GcdsText>,
-                a: ({ href, children }) => <GcdsLink href={href}>{children}</GcdsLink>,
+                p: ({ children }) => <p className="mb-300">{children}</p>,
+                a: ({ href, children }) => <a href={href}>{children}</a>,
                 h3: ({ children }) => <h3 className="mb-200">{children}</h3>,
                 ul: ({ children }) => <ul className="mb-400">{children}</ul>,
                 li: ({ children }) => <li>{children}</li>,
@@ -147,15 +147,14 @@ const AboutPage = ({ lang = 'en' }) => {
             <h2 className="mb-300">{sections[sectionKeys.contact].heading}</h2>
             <ReactMarkdown
               components={{
-                p: ({ children }) => <GcdsText>{children}</GcdsText>,
-                a: ({ href, children }) => <GcdsLink href={href}>{children}</GcdsLink>,
+                p: ({ children }) => <p>{children}</p>,
+                a: ({ href, children }) => <a href={href}>{children}</a>,
               }}
             >
               {sections[sectionKeys.contact].content}
             </ReactMarkdown>
           </section>
         )}
-      </GcdsContainer>
     </div>
   );
 };

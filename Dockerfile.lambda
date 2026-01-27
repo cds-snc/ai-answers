@@ -12,7 +12,7 @@ RUN npm install --omit=dev
 COPY . .
 
 # Build the React app
-RUN npm run build
+RUN GENERATE_SOURCEMAP=false npm run build
 
 # Use Node.js for the backend
 FROM node:lts
@@ -21,9 +21,9 @@ FROM node:lts
 WORKDIR /app
 
 RUN apt-get update \
- && apt-get install -y socat \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y socat \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 

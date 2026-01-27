@@ -356,8 +356,8 @@ The pipeline consists of 9 steps total, combining both programmatic validation/f
 ### Pipeline Steps
 
 1. **Short Query Validation** - Server-side validation (no AI)
-2. **Stage 1: Pattern-Based Redaction** - Rule-based filtering for profanity, threats, manipulation, and common PI patterns (no AI)
-3. **Stage 2: AI PII Agent** - AI-powered detection of personal information that slipped through Stage 1
+2. **Stage 1: Question Blocking** - Rule-based blocking for profanity, threats, manipulation, and common PI patterns (no AI)
+3. **Stage 2: AI PI Agent** - AI-powered detection of personal information that slipped through Stage 1; questions with PI are blocked
 4. **Translation AI Agent** - AI-powered language detection and translation
 5. **Search Query Generation AI Agent** - AI-powered query rewriting for search
 6. **Context Derivation AI Agent** - AI-powered department matching and search context
@@ -368,15 +368,15 @@ The pipeline consists of 9 steps total, combining both programmatic validation/f
 
 ---
 
-## Step 3: AI PII Agent System Prompt
+## Step 3: AI PI Agent System Prompt
 
-**Purpose:** This prompt is used to detect and redact personal information (PI) that slipped through Stage 1 pattern-based filtering. This is the second layer of privacy protection.
+**Purpose:** This prompt detects personal information (PI) that slipped through Stage 1 pattern-based blocking. When PI is detected, it is marked with XXX to show the user what was found, and the question is blocked. This is the second layer of privacy protection.
 
 **Service:** PIIAgentService / ChatWorkflowService.processRedaction()
 **File:** agents/prompts/piiAgentPrompt.js
-**Note:** Step 1 (Short Query Validation) and Step 2 (Pattern-Based Redaction) do not use AI and are not detailed here.
+**Note:** Step 1 (Short Query Validation) and Step 2 (Question Blocking) do not use AI and are not detailed here.
 
-### PII Detection Prompt:
+### PI Detection Prompt:
 
 \`\`\`
 ${PII_PROMPT}
@@ -624,10 +624,10 @@ Detailed rules for:
 
 ## Important Notes for Legal Review
 
-1. **Two-Stage Personal Information Protection**:
-   - **Stage 1 (Pattern-Based)**: RedactionService blocks profanity, threats, manipulation attempts, and common PI patterns (phone numbers, emails, addresses, SIN numbers) before any AI processing
-   - **Stage 2 (AI-Powered)**: AI PII Agent detects and redacts personal information that slipped through Stage 1, especially names and personal identifiers
-   - Users are notified when PI is detected and asked to rephrase
+1. **Two-Stage Question Blocking for Personal Information Protection**:
+   - **Stage 1 (Pattern-Based)**: Questions containing profanity, threats, manipulation attempts, or common PI patterns (phone numbers, emails, addresses, SIN numbers) are blocked before any AI processing
+   - **Stage 2 (AI-Powered)**: AI PI Agent detects personal information that slipped through Stage 1 (especially names and personal identifiers); detected PI is marked with XXX and shown to the user, then the question is blocked
+   - Blocked questions are never logged or processed; users are shown what was detected and asked to rephrase
 
 2. **No Calculations**: The prompts explicitly prohibit mathematical calculations to prevent inaccurate financial advice.
 
@@ -648,14 +648,14 @@ User submits question
     ↓
 [Step 1 - Client] Short query validation (no AI)
     ↓
-[Step 2 - Client] Pattern-Based Redaction (no AI)
-    ├─ Profanity filtering
-    ├─ Threat detection
-    ├─ Manipulation detection
-    └─ Common PI pattern blocking
+[Step 2 - Client] Question Blocking (no AI)
+    ├─ Profanity → block question
+    ├─ Threats → block question
+    ├─ Manipulation → block question
+    └─ Common PI patterns → block question
     ↓
-[Step 3 - API] AI PII Agent
-    └─ Detect and redact PI that slipped through
+[Step 3 - API] AI PI Agent
+    └─ Detect PI that slipped through → block question
     ↓
 [Step 4 - API] Translation AI Agent
     └─ Language detection and translation

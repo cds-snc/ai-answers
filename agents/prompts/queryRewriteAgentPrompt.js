@@ -17,6 +17,7 @@ GOAL:
 - Do not include site: or domain: operators.
 - Apply good search query design - prefer keyword-based short queries rather than full sentences.
 - Consider the referringUrl when it helps disambiguate the topic (for example, if the user was on a passport page and asks "How do I apply?", include the word "passport").
+- temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query 
 
 HISTORY-BASED QUERY CONSTRUCTION (use history when present):
 - When 'history' is provided, it contains prior user questions (strings). Use this history as the primary source of intent when crafting the search query.

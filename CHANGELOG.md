@@ -1,5 +1,84 @@
 # Changelog
 
+## [1.91.1](https://github.com/cds-snc/ai-answers/compare/v1.91.0...v1.91.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* about page blog section ([aed97d9](https://github.com/cds-snc/ai-answers/commit/aed97d958440f3007947fb34e83a9ffca9d75fad))
+* add instead of replace ([9b4ddc9](https://github.com/cds-snc/ai-answers/commit/9b4ddc93971cd1437a591d035b8727206c9de8c4))
+* search query did NOT include grocery benefit ([c463385](https://github.com/cds-snc/ai-answers/commit/c463385f3c6d30d7edc56f1fa9a626d95682835a))
+* to help with grocery rebate ([e7a43fb](https://github.com/cds-snc/ai-answers/commit/e7a43fb17647837fad92ea813fbfa1fc985f560b))
+* typo add blog link ([42313e3](https://github.com/cds-snc/ai-answers/commit/42313e3f6b5b3b1d1c8b856fb5dc393bd72c2952))
+
+## [1.91.0](https://github.com/cds-snc/ai-answers/compare/v1.90.0...v1.91.0) (2026-01-27)
+
+
+### Features
+
+* AA tracking on about page (remove components) ([4fc8197](https://github.com/cds-snc/ai-answers/commit/4fc81977190f4056faf588375821a496fb96ae74))
+* can't not have title ([a0d4798](https://github.com/cds-snc/ai-answers/commit/a0d4798ce10126eec8dda454a7bdb09179784afc))
+* locales ([b487975](https://github.com/cds-snc/ai-answers/commit/b487975f2fc6935ab6d5edb7c450c70b9274d24f))
+* qa ([dd6c8de](https://github.com/cds-snc/ai-answers/commit/dd6c8de7b294151795778e8912f7f5f10317c1f5))
+* rmv classes and title ([ae40838](https://github.com/cds-snc/ai-answers/commit/ae40838c80564812a0e8685c5d396b3fbe2f32a8))
+* warning, toggle on and off-able ([0c34761](https://github.com/cds-snc/ai-answers/commit/0c347613759d17ecc46489f8dc5005d9b6b1490e))
+
+## [1.90.0](https://github.com/cds-snc/ai-answers/compare/v1.89.0...v1.90.0) (2026-01-26)
+
+
+### Features
+
+* add S3 bucket name, ARN, and SSM parameter ARN outputs. ([0542de9](https://github.com/cds-snc/ai-answers/commit/0542de9c96df107528f0d88d77ed0498ff7e1ce4))
+* Add Terragrunt modules for S3, IAM, and ECS infrastructure setup. ([a041505](https://github.com/cds-snc/ai-answers/commit/a0415054067183c3ab876aa972b60d83c7500191))
+* Add VPC ID and private subnet ID input variables for S3 module. ([2a700dd](https://github.com/cds-snc/ai-answers/commit/2a700ddbacb92396760eb03356103fb6b8cd4b6e))
+* Implement foundational AWS infrastructure modules, including Sentinel forwarder components, for the AI Answers project. ([323745a](https://github.com/cds-snc/ai-answers/commit/323745a3106c3f7c5190440a0fe7d231049e44ab))
+* Introduce core AWS infrastructure modules for the AI Answers application, including VPC, RDS, ECS, and various security and logging components. ([6581535](https://github.com/cds-snc/ai-answers/commit/658153575c1f2d68687f278e1b2de130abe710da))
+* Introduce initial Terraform modules, CI/CD workflows, and documentation for AI Answers and Sentinel forwarder infrastructure. ([b6d409b](https://github.com/cds-snc/ai-answers/commit/b6d409bd4bc747fa0fe217c39ae1f408dc8bc525))
+* provision S3 storage bucket with encryption, public access block, lifecycle rules, VPC endpoint, and SSM parameter. ([a82660b](https://github.com/cds-snc/ai-answers/commit/a82660b27f2692d1080e9eeffd8e5a8c8fe1bd7a))
+
+
+### Bug Fixes
+
+* Merge container_environment blocks and add s3 to deployment workflows ([59cafdf](https://github.com/cds-snc/ai-answers/commit/59cafdffb0fee40f6f6140ab8d322e9d71e04925))
+* typo ([af9075a](https://github.com/cds-snc/ai-answers/commit/af9075a86ab45ab30b8900f2acaf3aea5ae383d3))
+* updates per ECCC ([101011d](https://github.com/cds-snc/ai-answers/commit/101011d411a0692a390558103122d665196064b0))
+
+
+### Miscellaneous Chores
+
+* Initialize Terragrunt/Terraform modules for the AI Answers project, including sentinel forwarder components. ([20d545e](https://github.com/cds-snc/ai-answers/commit/20d545edf3334591851aa9dd171a14c8a353bb9e))
+
+## [1.89.0](https://github.com/cds-snc/ai-answers/compare/v1.88.1...v1.89.0) (2026-01-26)
+
+
+### Features
+
+* first draft of constitution ([b1c4222](https://github.com/cds-snc/ai-answers/commit/b1c4222af1a6e0c196b7fba1685398399e7bdffa))
+* first draft of constitution ([3c6dacb](https://github.com/cds-snc/ai-answers/commit/3c6dacb636802a3123224ecaa09fee429070ca97))
+
+
+### Bug Fixes
+
+* add DRAFT ([fc048cd](https://github.com/cds-snc/ai-answers/commit/fc048cdd140e26d1a5f0309905d41fe13bb07aed))
+* **build:** disable source map generation in production builds ([0085f33](https://github.com/cds-snc/ai-answers/commit/0085f33a361a82dfee578e2ee1ed8245957b3c09))
+* **build:** disable source map generation in production builds ([dbff618](https://github.com/cds-snc/ai-answers/commit/dbff6186395bb3d98efeb98587c7400cccbf968b))
+* edits ([8e726d3](https://github.com/cds-snc/ai-answers/commit/8e726d3b34fee9033e00969d6a594f81d99b37b9))
+* edits ([7d86dc1](https://github.com/cds-snc/ai-answers/commit/7d86dc1d09c5d117f3432bddf2745ad99ceeeaf6))
+* rename and update ([dde124c](https://github.com/cds-snc/ai-answers/commit/dde124ceb6b5ec8ad7e1d11451990b78640cf7e4))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump lodash from 4.17.21 to 4.17.23 ([6008c45](https://github.com/cds-snc/ai-answers/commit/6008c45a825a4f8c91c1079c2b5b027c81e0e52d))
+
+## [1.88.1](https://github.com/cds-snc/ai-answers/compare/v1.88.0...v1.88.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* handle clarifying question format in integrity normalization ([9bc6ff6](https://github.com/cds-snc/ai-answers/commit/9bc6ff6f09e8dcc09a76cc59e42c6331721e517d))
+* handle clarifying question format in integrity normalization ([e67e5b5](https://github.com/cds-snc/ai-answers/commit/e67e5b53749021e7d5d5881b385983ee38ff16bd))
+
 ## [1.88.0](https://github.com/cds-snc/ai-answers/compare/v1.87.2...v1.88.0) (2026-01-22)
 
 

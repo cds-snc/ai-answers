@@ -50,6 +50,7 @@ jobs:
           - module: iam
           - module: ecs
           - module: elasticache
+          - module: s3
     runs-on: ubuntu-latest
     environment: production
     steps:

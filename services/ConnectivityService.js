@@ -4,7 +4,7 @@
  */
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
-import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { AzureOpenAI } from 'openai';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
@@ -139,24 +139,54 @@ async function testS3() {
     try {
         const client = new S3Client({ region });
 
-        // List buckets to verify access
-        const command = new ListBucketsCommand({});
-        const response = await client.send(command);
+        // Test with PUT
+        const testKey = `connectivity_test_${Date.now()}.txt`;
+        const testContent = `Test content for connectivity at ${new Date().toISOString()}`;
 
-        const bucketExists = response.Buckets?.some(b => b.Name === bucketName);
+        await client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: testKey,
+            Body: testContent,
+            ContentType: 'text/plain'
+        }));
+
+        // Test with GET
+        const getResponse = await client.send(new GetObjectCommand({
+            Bucket: bucketName,
+            Key: testKey
+        }));
+
+        const streamToString = (stream) =>
+            new Promise((resolve, reject) => {
+                const chunks = [];
+                stream.on("data", (chunk) => chunks.push(chunk));
+                stream.on("error", reject);
+                stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+            });
+
+        const retrievedContent = await streamToString(getResponse.Body);
+
+        // Test with DELETE cleanup
+        await client.send(new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: testKey
+        }));
+
+        const isContentMatch = retrievedContent === testContent;
 
         return {
             service: 'S3',
-            status: bucketExists ? 'connected' : 'warning',
-            message: bucketExists
-                ? `Bucket '${bucketName}' accessible`
-                : `Connected but bucket '${bucketName}' not found in list`,
+            status: isContentMatch ? 'connected' : 'error',
+            message: isContentMatch
+                ? `Full S3 Read/Write access verified for '${bucketName}'`
+                : 'S3 PUT/GET succeeded but content did not match',
             latencyMs: Date.now() - startTime,
             configured: true,
             details: {
                 region,
                 bucketName,
-                bucketsFound: response.Buckets?.length || 0
+                testKey,
+                contentMatch: isContentMatch
             }
         };
     } catch (error) {
@@ -165,7 +195,11 @@ async function testS3() {
             status: 'error',
             message: error.message,
             latencyMs: Date.now() - startTime,
-            configured: true
+            configured: true,
+            details: {
+                region,
+                bucketName
+            }
         };
     }
 }

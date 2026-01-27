@@ -13,6 +13,11 @@ variable "ai_answers_docdb_security_group_id" {
   type        = string
 }
 
+variable "redis_security_group_id" {
+  description = "Security group ID for the ai-answers Redis"
+  type        = string
+}
+
 variable "ai_answers_lambda_client_iam_role_name" {
   description = "IAM role name for ai-answers client Lambda"
   type        = string
@@ -108,5 +113,15 @@ variable "redis_url_arn" {
 
 variable "conversation_integrity_secret_arn" {
   description = "ARN for the conversation_integrity_secret SSM parameter"
+  type        = string
+}
+
+variable "s3_bucket_name_ssm_arn" {
+  description = "ARN for the s3_bucket_name SSM parameter"
+  type        = string
+}
+
+variable "s3_bucket_arn" {
+  description = "ARN of the S3 bucket for Lambda access"
   type        = string
 }
