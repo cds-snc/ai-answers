@@ -263,7 +263,9 @@ const HomePage = ({ lang = "en" }) => {
         </GcdsDetails>
         {showWarningNotice && (
         <GcdsNotice 
-          type="warning"
+          type="warning" 
+          noticeTitleTag="h3" 
+          noticeTitle={t("homepage.warning.title")}
         >
           <GcdsText>{t("homepage.warning.message")}</GcdsText>
         </GcdsNotice>
