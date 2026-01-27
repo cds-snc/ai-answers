@@ -266,9 +266,11 @@ code {
   /* font-weight: 600 !important; */
   margin-bottom: 0.5rem !important;
 }
+
 .citation-link a {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
+  color: var(--gcds-color-blue-850);
   /* line-height: 1.2em !important; */
 }
 .new-tab-link-icon {
@@ -305,9 +307,6 @@ code {
   display: inline-block;
 }
 
-.citation-link a {
-  color: var(--gcds-color-blue-850);
-}
 .confidence-rating {
   font-style: italic;
   font-size: 85%;
