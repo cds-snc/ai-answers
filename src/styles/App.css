@@ -267,57 +267,26 @@ code {
   display: inline-block;
 }
 
-/* Citation link - inline layout */
+/* Citation link - simple inline */
 .citation-link a {
   display: inline;
-  word-break: break-word;
   text-align: left;
+  word-break: break-word;
   line-height: 1.5;
 }
 
-/* URL text with truncation */
+/* URL text - inline, wraps naturally with icon */
 .citation-url-text {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: inline;
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
 }
 
-/* Icon inline with text */
+
 .new-tab-link-icon {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  vertical-align: baseline;
-  transition: transform 0.2s ease;
-}
-
-/* Mobile - 3 lines */
-@media screen and (max-width: 600px) {
-  .citation-url-text {
-    -webkit-line-clamp: 3;
-    font-size: 14px;
-  }
-  
-  .new-tab-link-icon {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-/* Tablet - 2 lines */
-@media screen and (min-width: 601px) and (max-width: 1024px) {
-  .citation-url-text {
-    -webkit-line-clamp: 2;
-  }
-  
-  .new-tab-link-icon {
-    width: 13px;
-    height: 13px;
-  }
+  display: inline;
+  margin-left: 0.15rem;
 }
 
 .citation-link a:hover {
