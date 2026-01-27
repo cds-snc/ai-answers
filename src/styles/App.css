@@ -353,10 +353,6 @@ code {
   text-decoration-thickness: 2px;
 }
 
-.citation-link a:hover .new-tab-link-icon {
-  transform: translate(2px, -2px);
-}
-
 .citation-link a:focus {
   outline: 3px solid #0535d2;
   outline-offset: 2px;
