@@ -58,7 +58,7 @@ async function downloadWebPage(url) {
   const res = await axios.get(url, {
     httpsAgent,
     maxRedirects: 10,
-    timeout: 500,
+    timeout: 5000,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
   });
   return {
@@ -71,23 +71,34 @@ const downloadWebPageTool = tool(
   async ({ url }) => {
     try {
       const { markdown, res } = await downloadWebPage(url);
-      if (res?.request) {
-        console.log("Actual Request Sent:", {
-          method: res.request.method,
-          path: res.request.path,
-          headers: typeof res.request.getHeaders === 'function' ? res.request.getHeaders() : 'N/A'
-        });
-      }
+
+      // Successfully received response
+      const req = res.request;
+      const config = res.config || {};
+
+      console.log("Actual Request Sent:", {
+        method: req?.method || config.method?.toUpperCase() || 'UNKNOWN',
+        path: req?.path || config.url || 'UNKNOWN',
+        headers: (typeof req?.getHeaders === 'function' ? req.getHeaders() : null) || config.headers || 'N/A'
+      });
       return markdown;
     } catch (error) {
       const req = error.request || error.response?.request;
-      if (req) {
-        console.log("Actual Request (Failed):", {
-          method: req.method,
-          path: req.path,
-          headers: typeof req.getHeaders === 'function' ? req.getHeaders() : 'N/A'
-        });
-      }
+      // Fallback to config if request object is incomplete (common in timeouts/network errors)
+      const config = error.config || {};
+
+      console.log("Actual Request (Failed):", {
+        method: req?.method || config.method?.toUpperCase() || 'UNKNOWN',
+        path: req?.path || config.url || 'UNKNOWN',
+        headers: (typeof req?.getHeaders === 'function' ? req.getHeaders() : null) || config.headers || 'N/A'
+      });
+
+      console.error(`Download error for ${url}:`, {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data
+      });
 
       if (error.code === "ECONNREFUSED") throw new Error(`Connection refused: ${url}`);
       if (error.response?.status === 403) throw new Error(`Access forbidden (403): ${url}`);
