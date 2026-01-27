@@ -7,6 +7,7 @@ import {
   GcdsDetails,
   GcdsText,
   GcdsLink,
+  GcdsNotice,
 } from "@cdssnc/gcds-components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
 import DataStoreService from "../services/DataStoreService.js";
@@ -258,6 +259,16 @@ const HomePage = ({ lang = "en" }) => {
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
+        {showWarningNotice && (
+        <GcdsNotice 
+          type="warning" 
+          noticeTitleTag="h2" 
+          noticeTitle={t("homepage.warning.title")}
+          className="mb-400"
+        >
+          <GcdsText>{t("homepage.warning.message")}</GcdsText>
+        </GcdsNotice>
+      )}
         <ChatAppContainer
           lang={lang}
           chatId={chatId}
