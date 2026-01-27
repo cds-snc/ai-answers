@@ -271,19 +271,27 @@ code {
   word-break: break-all;
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850);
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
+  display: inline-block;
+  max-width: 100%; /* Ensure it doesn't exceed container */
 }
 
 .citation-url-text {
-  /* Reserve space for the icon so text doesn't fill 100% width */
-  max-width: calc(100% - 16px);
+  display: inline;
+  /* Force the last word and icon to stay together */
+  word-spacing: -0.05em; /* Slightly tighter word spacing */
 }
 
 .new-tab-link-icon {
+  display: inline-block;
   margin-left: 4px;
-  flex-shrink: 0; /* Prevent icon from shrinking */
+  vertical-align: middle;
+}
+
+/* Prevent orphaned icon by ensuring enough space */
+.citation-link a::after {
+  content: '';
+  display: inline-block;
+  width: 20px; /* Reserve space for icon */
 }
 
 @media screen and (max-width: 768px) {
@@ -294,13 +302,16 @@ code {
     padding-right: 20px; 
   }
   
+  .citation-link a::after {
+    display: none; /* Remove the spacer on mobile */
+  }
+  
   .citation-url-text {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: none; /* Remove the constraint on mobile */
   }
   
   .new-tab-link-icon {
