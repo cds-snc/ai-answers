@@ -266,6 +266,7 @@ const HomePage = ({ lang = "en" }) => {
           type="warning" 
           noticeTitleTag="h3" 
           noticeTitle={t("homepage.warning.title")}
+          className="mt-200"
         >
           <GcdsText>{t("homepage.warning.message")}</GcdsText>
         </GcdsNotice>
