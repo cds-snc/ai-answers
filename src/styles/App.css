@@ -267,59 +267,44 @@ code {
   display: inline-block;
 }
 
-/* Make the link use flexbox - prevents orphaned icon */
 .citation-link a {
-  display: inline-flex !important;
-  align-items: flex-start;
-  gap: 0.35rem;
+  display: inline;
   word-break: break-word;
   text-align: left;
-  max-width: 100%;
   line-height: 1.5;
 }
 
-/* URL text - flexible and wrappable, with truncation */
+/* URL text with truncation */
 .citation-url-text {
-  flex: 1 1 auto;
-  min-width: 0; /* CRITICAL - allows text to shrink */
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-  /* Truncation - always applied */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
-/* Icon - fixed size, never shrinks */
+/* Icon inline with text */
 .new-tab-link-icon {
-  flex: 0 0 auto;
+  display: inline-block;
   width: 12px;
   height: 12px;
-  min-width: 12px;
-  margin-top: 0.25em;
+  margin-left: 0.25rem;
+  vertical-align: baseline;
   transition: transform 0.2s ease;
 }
 
-/* ===== RESPONSIVE TRUNCATION ===== */
-
-/* Mobile - 3 lines */
+/* Mobile - 2 lines */
 @media screen and (max-width: 600px) {
   .citation-url-text {
     -webkit-line-clamp: 2;
     font-size: 14px;
   }
   
-  .citation-link a {
-    gap: 0.25rem;
-  }
-  
   .new-tab-link-icon {
     width: 14px;
     height: 14px;
-    min-width: 14px;
-    margin-top: 0.2em;
   }
 }
 
@@ -332,7 +317,6 @@ code {
   .new-tab-link-icon {
     width: 13px;
     height: 13px;
-    min-width: 13px;
   }
 }
 
