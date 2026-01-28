@@ -286,7 +286,7 @@ code {
 }
 
 /* Only apply mobile ellipsis styles to long URLs */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 480px) {
   .citation-link a.long-url-mobile {
     display: block;
     width: 100%;
