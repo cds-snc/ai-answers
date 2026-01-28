@@ -736,7 +736,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     return (
                       <>
                         {displayUrl.substring(0, Math.max(0, displayUrl.length - wrapLength))}
-                        <span style={{whiteSpace: 'nowrap', hyphens: 'manual'}}>
+                        <span style={{whiteSpace: 'nowrap'}}>
                           {displayUrl.substring(Math.max(0, displayUrl.length - wrapLength))}
                           <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                           <svg 
@@ -772,7 +772,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 return (
                   <>
                     {displayUrl.substring(0, breakPoint)}
-                    <span style={{whiteSpace: 'nowrap', hyphens: 'manual'}}>
+                    <span style={{whiteSpace: 'nowrap'}}>
                       {displayUrl.substring(breakPoint)}
                       <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                       <svg 
@@ -808,7 +808,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 return (
                   <>
                     {displayUrl.substring(0, breakPoint)}
-                    <span style={{whiteSpace: 'nowrap', hyphens: 'manual'}}>
+                    <span style={{whiteSpace: 'nowrap'}}>
                       {displayUrl.substring(breakPoint)}
                       <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                       <svg 
@@ -837,7 +837,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               return (
                 <>
                   {displayUrl.substring(0, displayUrl.length - wrapLength)}
-                  <span style={{whiteSpace: 'nowrap', hyphens: 'manual'}}>
+                  <span style={{whiteSpace: 'nowrap'}}>
                     {displayUrl.substring(displayUrl.length - wrapLength)}
                     <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                     <svg 
@@ -865,7 +865,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             return (
               <>
                 {displayUrl.substring(0, lastSlashIndex + 1)}
-                <span style={{whiteSpace: 'nowrap', hyphens: 'manual'}}>
+                <span style={{whiteSpace: 'nowrap'}}>
                   {lastSegment}
                   <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                   <svg 
