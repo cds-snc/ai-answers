@@ -699,7 +699,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   }
                   
                   // Desktop: only use wrapping if URL is long enough
-                  const needsWrapping = displayUrl.length > 70; // Adjust threshold as needed
+                  const needsWrapping = displayUrl.length > 85; // Adjust threshold as needed
                   
                   if (!needsWrapping) {
                     // Short URL: render normally
