@@ -670,74 +670,69 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     }
                   }}
             >
-              <span className="citation-url-text font-size-text-xsm-nr">
-                {(() => {
-                  // Mobile: always render full URL, CSS handles ellipsis for long URLs
-                  if (isMobile) {
-                    return (
+                  <span className="citation-url-text font-size-text-xsm-nr">
+                  {(() => {
+                    // Mobile: always render full URL, CSS handles ellipsis
+                    if (isMobile) {
+                      return (
+                        <>
+                          {displayUrl}
+                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                          <svg 
+                            width="12" 
+                            height="12" 
+                            viewBox="0 0 22 22" 
+                            aria-hidden="true"
+                            className="new-tab-link-icon"
+                          >
+                            <path 
+                              d="M20 2L2 20M20 2H8M20 2V14" 
+                              stroke="currentColor" 
+                              strokeWidth="3.5" 
+                              strokeLinecap="square" 
+                              strokeLinejoin="square"
+                              fill="none"
+                            />
+                          </svg>
+                        </>
+                      );
+                    }
+                    
+                    // Desktop: only use wrapping if URL is long enough
+                    const needsWrapping = displayUrl.length > 80;
+                    
+                    if (!needsWrapping) {
+                      // Short URL: render normally
+                      return (
+                        <>
+                          {displayUrl}
+                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                          <svg 
+                            width="12" 
+                            height="12" 
+                            viewBox="0 0 22 22" 
+                            aria-hidden="true"
+                            className="new-tab-link-icon"
+                          >
+                            <path 
+                              d="M20 2L2 20M20 2H8M20 2V14" 
+                              stroke="currentColor" 
+                              strokeWidth="3.5" 
+                              strokeLinecap="square" 
+                              strokeLinejoin="square"
+                              fill="none"
+                            />
+                          </svg>
+                        </>
+                      );
+                    }
+                    
+                    // Helper function for rendering wrapped URLs
+                    const renderWithWrap = (beforeWrap, insideWrap) => (
                       <>
-                        {displayUrl}
-                        <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                        <svg 
-                          width="12" 
-                          height="12" 
-                          viewBox="0 0 22 22" 
-                          aria-hidden="true"
-                          className="new-tab-link-icon"
-                        >
-                          <path 
-                            d="M20 2L2 20M20 2H8M20 2V14" 
-                            stroke="currentColor" 
-                            strokeWidth="3.5" 
-                            strokeLinecap="square" 
-                            strokeLinejoin="square"
-                            fill="none"
-                          />
-                        </svg>
-                      </>
-                    );
-                  }
-                  
-                  // Desktop: only use wrapping if URL is long enough
-                  const needsWrapping = displayUrl.length > 80; // Adjust threshold as needed
-                  
-                  if (!needsWrapping) {
-                    // Short URL: render normally
-                    return (
-                      <>
-                        {displayUrl}
-                        <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                        <svg 
-                          width="12" 
-                          height="12" 
-                          viewBox="0 0 22 22" 
-                          aria-hidden="true"
-                          className="new-tab-link-icon"
-                        >
-                          <path 
-                            d="M20 2L2 20M20 2H8M20 2V14" 
-                            stroke="currentColor" 
-                            strokeWidth="3.5" 
-                            strokeLinecap="square" 
-                            strokeLinejoin="square"
-                            fill="none"
-                          />
-                        </svg>
-                      </>
-                    );
-                  }
-                  
-                  // Long URL on desktop: intelligently wrap last portion
-                  const lastSlashIndex = displayUrl.lastIndexOf('/');
-
-                  if (lastSlashIndex === -1) {
-                    // No slash found, wrap last 20-30 chars
-                    const wrapLength = 25;
-                    return (
-                      <>
-                        {displayUrl.substring(0, Math.max(0, displayUrl.length - wrapLength)).replace(/-/g, '\u2011')}
+                        {beforeWrap.replace(/-/g, '\u2011')}
                         <span style={{whiteSpace: 'nowrap'}}>
-                          {displayUrl.substring(Math.max(0, displayUrl.length - wrapLength))}
+                          {insideWrap}
                           <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                           <svg 
                             width="12" 
@@ -758,144 +753,70 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         </span>
                       </>
                     );
-                  }
-                  
-                  const lastSegment = displayUrl.substring(lastSlashIndex + 1);
-                  
-           // If last segment is too long (>40 chars), find a natural break point
-            if (lastSegment.length > 40) {
-              // Check for query string first - if exists, break at ?
-              const queryIndex = lastSegment.indexOf('?');
-              if (queryIndex !== -1 && queryIndex < lastSegment.length - 15) {
-                // Query string exists and leaves at least 15 chars after it
-                const breakPoint = lastSlashIndex + 1 + queryIndex;
-                return (
-                  <>
-                    {displayUrl.substring(0, breakPoint).replace(/-/g, '\u2011')}
-                    <span style={{whiteSpace: 'nowrap'}}>
-                      {displayUrl.substring(breakPoint)}
-                      <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                      <svg 
-                        width="12" 
-                        height="12" 
-                        viewBox="0 0 22 22" 
-                        aria-hidden="true"
-                        className="new-tab-link-icon"
-                      >
-                        <path 
-                          d="M20 2L2 20M20 2H8M20 2V14" 
-                          stroke="currentColor" 
-                          strokeWidth="3.5" 
-                          strokeLinecap="square" 
-                          strokeLinejoin="square"
-                          fill="none"
-                        />
-                      </svg>
-                    </span>
-                  </>
-                );
-              }
-              
-              // No query string or it's too short, look for last hyphen in a reasonable range
-              const searchStart = Math.max(0, lastSegment.length - 35);
-              const searchEnd = lastSegment.length - 15; // Keep at least 15 chars with icon
-              const substringToSearch = lastSegment.substring(searchStart, searchEnd);
-              const lastHyphen = substringToSearch.lastIndexOf('-');
-              
-              if (lastHyphen !== -1) {
-                // Found a hyphen! Break there
-                const breakPoint = lastSlashIndex + 1 + searchStart + lastHyphen + 1; // +1 to include hyphen
-                return (
-                  <>
-                    {displayUrl.substring(0, breakPoint).replace(/-/g, '\u2011')}
-                    <span style={{whiteSpace: 'nowrap'}}>
-                      {displayUrl.substring(breakPoint)}
-                      <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                      <svg 
-                        width="12" 
-                        height="12" 
-                        viewBox="0 0 22 22" 
-                        aria-hidden="true"
-                        className="new-tab-link-icon"
-                      >
-                        <path 
-                          d="M20 2L2 20M20 2H8M20 2V14" 
-                          stroke="currentColor" 
-                          strokeWidth="3.5" 
-                          strokeLinecap="square" 
-                          strokeLinejoin="square"
-                          fill="none"
-                        />
-                      </svg>
-                    </span>
-                  </>
-                );
-              }
-              
-              // No hyphen or query string found, just wrap last 25 chars
-              const wrapLength = 25;
-              return (
-                <>
-                  {displayUrl.substring(0, displayUrl.length - wrapLength).replace(/-/g, '\u2011')}
-                  <span style={{whiteSpace: 'nowrap'}}>
-                    {displayUrl.substring(displayUrl.length - wrapLength)}
-                    <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                    <svg 
-                      width="12" 
-                      height="12" 
-                      viewBox="0 0 22 22" 
-                      aria-hidden="true"
-                      className="new-tab-link-icon"
-                    >
-                      <path 
-                        d="M20 2L2 20M20 2H8M20 2V14" 
-                        stroke="currentColor" 
-                        strokeWidth="3.5" 
-                        strokeLinecap="square" 
-                        strokeLinejoin="square"
-                        fill="none"
-                      />
-                    </svg>
-                  </span>
-                </>
-              );
-            }
-
-            // Last segment is short enough (<40 chars), wrap it all
-            return (
-              <>
-                {displayUrl.substring(0, lastSlashIndex + 1).replace(/-/g, '\u2011')}
-                <span style={{whiteSpace: 'nowrap'}}>
-                  {lastSegment}
-                  <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                  <svg 
-                    width="12" 
-                    height="12" 
-                    viewBox="0 0 22 22" 
-                    aria-hidden="true"
-                    className="new-tab-link-icon"
-                  >
-                    <path 
-                      d="M20 2L2 20M20 2H8M20 2V14" 
-                      stroke="currentColor" 
-                      strokeWidth="3.5" 
-                      strokeLinecap="square" 
-                      strokeLinejoin="square"
-                      fill="none"
-                    />
-                  </svg>
+                    
+                    // Long URL on desktop: intelligently wrap last portion
+                    const lastSlashIndex = displayUrl.lastIndexOf('/');
+                    
+                    if (lastSlashIndex === -1) {
+                      // No slash - wrap last 25 chars
+                      const wrapLength = 25;
+                      return renderWithWrap(
+                        displayUrl.substring(0, displayUrl.length - wrapLength),
+                        displayUrl.substring(displayUrl.length - wrapLength)
+                      );
+                    }
+                    
+                    const lastSegment = displayUrl.substring(lastSlashIndex + 1);
+                    
+                    // If last segment is too long (>40 chars), find a natural break point
+                    if (lastSegment.length > 40) {
+                      let breakPoint = null;
+                      
+                      // Check for query string first
+                      const queryIndex = lastSegment.indexOf('?');
+                      if (queryIndex !== -1 && queryIndex < lastSegment.length - 15) {
+                        breakPoint = lastSlashIndex + 1 + queryIndex;
+                      } else {
+                        // Look for last hyphen in a reasonable range
+                        const searchStart = Math.max(0, lastSegment.length - 35);
+                        const searchEnd = lastSegment.length - 15;
+                        const substringToSearch = lastSegment.substring(searchStart, searchEnd);
+                        const lastHyphen = substringToSearch.lastIndexOf('-');
+                        
+                        if (lastHyphen !== -1) {
+                          breakPoint = lastSlashIndex + 1 + searchStart + lastHyphen + 1;
+                        }
+                      }
+                      
+                      // Use break point or fallback to wrapping last 25 chars
+                      if (breakPoint !== null) {
+                        return renderWithWrap(
+                          displayUrl.substring(0, breakPoint),
+                          displayUrl.substring(breakPoint)
+                        );
+                      } else {
+                        const wrapLength = 25;
+                        return renderWithWrap(
+                          displayUrl.substring(0, displayUrl.length - wrapLength),
+                          displayUrl.substring(displayUrl.length - wrapLength)
+                        );
+                      }
+                    }
+                    
+                    // Last segment is short enough (<40 chars), wrap it all
+                    return renderWithWrap(
+                      displayUrl.substring(0, lastSlashIndex + 1),
+                      lastSegment
+                    );
+                  })()}
                 </span>
-              </>
-             );
-          })()}
-              </span>
-            </a>
-          </li>
-        </ul>
-      )}
-      </div>
-          </>
+              </a>
+            </li>
+          </ul>
         )}
+      </div>
+    </>
+  )}
         <div className="disclaimer">
           <p className="font-size-text-xsm-nr">
             {safeT('homepage.chat.input.disclaimer')}
