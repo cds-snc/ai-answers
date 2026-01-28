@@ -727,15 +727,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     );
                   }
                   
-                  // Long URL on desktop: wrap last segment with icon
+                  // Long URL on desktop: intelligently wrap last portion
                   const lastSlashIndex = displayUrl.lastIndexOf('/');
-                  
+
                   if (lastSlashIndex === -1) {
+                    // No slash found, wrap last 20-30 chars
+                    const wrapLength = 25;
                     return (
                       <>
-                        {displayUrl.substring(0, Math.max(0, displayUrl.length - 20))}
+                        {displayUrl.substring(0, Math.max(0, displayUrl.length - wrapLength))}
                         <span style={{whiteSpace: 'nowrap'}}>
-                          {displayUrl.substring(Math.max(0, displayUrl.length - 20))}
+                          {displayUrl.substring(Math.max(0, displayUrl.length - wrapLength))}
                           <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                           <svg 
                             width="12" 
@@ -760,60 +762,132 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   
                   const lastSegment = displayUrl.substring(lastSlashIndex + 1);
                   
-                  if (lastSegment.length < 20) {
-                    return (
-                      <>
-                        {displayUrl.substring(0, Math.max(0, displayUrl.length - 20))}
-                        <span style={{whiteSpace: 'nowrap'}}>
-                          {displayUrl.substring(Math.max(0, displayUrl.length - 20))}
-                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                          <svg 
-                            width="12" 
-                            height="12" 
-                            viewBox="0 0 22 22" 
-                            aria-hidden="true"
-                            className="new-tab-link-icon"
-                          >
-                            <path 
-                              d="M20 2L2 20M20 2H8M20 2V14" 
-                              stroke="currentColor" 
-                              strokeWidth="3.5" 
-                              strokeLinecap="square" 
-                              strokeLinejoin="square"
-                              fill="none"
-                            />
-                          </svg>
-                        </span>
-                      </>
-                    );
-                  }
-                  
-                  return (
-                    <>
-                      {displayUrl.substring(0, lastSlashIndex + 1)}
-                      <span style={{whiteSpace: 'nowrap'}}>
-                        {lastSegment}
-                        <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                        <svg 
-                          width="12" 
-                          height="12" 
-                          viewBox="0 0 22 22" 
-                          aria-hidden="true"
-                          className="new-tab-link-icon"
-                        >
-                          <path 
-                            d="M20 2L2 20M20 2H8M20 2V14" 
-                            stroke="currentColor" 
-                            strokeWidth="3.5" 
-                            strokeLinecap="square" 
-                            strokeLinejoin="square"
-                            fill="none"
-                          />
-                        </svg>
-                      </span>
-                    </>
-                  );
-                })()}
+           // If last segment is too long (>40 chars), find a natural break point
+            if (lastSegment.length > 40) {
+              // Check for query string first - if exists, break at ?
+              const queryIndex = lastSegment.indexOf('?');
+              if (queryIndex !== -1 && queryIndex < lastSegment.length - 15) {
+                // Query string exists and leaves at least 15 chars after it
+                const breakPoint = lastSlashIndex + 1 + queryIndex;
+                return (
+                  <>
+                    {displayUrl.substring(0, breakPoint)}
+                    <span style={{whiteSpace: 'nowrap'}}>
+                      {displayUrl.substring(breakPoint)}
+                      <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                      <svg 
+                        width="12" 
+                        height="12" 
+                        viewBox="0 0 22 22" 
+                        aria-hidden="true"
+                        className="new-tab-link-icon"
+                      >
+                        <path 
+                          d="M20 2L2 20M20 2H8M20 2V14" 
+                          stroke="currentColor" 
+                          strokeWidth="3.5" 
+                          strokeLinecap="square" 
+                          strokeLinejoin="square"
+                          fill="none"
+                        />
+                      </svg>
+                    </span>
+                  </>
+                );
+              }
+              
+              // No query string or it's too short, look for last hyphen in a reasonable range
+              const searchStart = Math.max(0, lastSegment.length - 35);
+              const searchEnd = lastSegment.length - 15; // Keep at least 15 chars with icon
+              const substringToSearch = lastSegment.substring(searchStart, searchEnd);
+              const lastHyphen = substringToSearch.lastIndexOf('-');
+              
+              if (lastHyphen !== -1) {
+                // Found a hyphen! Break there
+                const breakPoint = lastSlashIndex + 1 + searchStart + lastHyphen + 1; // +1 to include hyphen
+                return (
+                  <>
+                    {displayUrl.substring(0, breakPoint)}
+                    <span style={{whiteSpace: 'nowrap'}}>
+                      {displayUrl.substring(breakPoint)}
+                      <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                      <svg 
+                        width="12" 
+                        height="12" 
+                        viewBox="0 0 22 22" 
+                        aria-hidden="true"
+                        className="new-tab-link-icon"
+                      >
+                        <path 
+                          d="M20 2L2 20M20 2H8M20 2V14" 
+                          stroke="currentColor" 
+                          strokeWidth="3.5" 
+                          strokeLinecap="square" 
+                          strokeLinejoin="square"
+                          fill="none"
+                        />
+                      </svg>
+                    </span>
+                  </>
+                );
+              }
+              
+              // No hyphen or query string found, just wrap last 25 chars
+              const wrapLength = 25;
+              return (
+                <>
+                  {displayUrl.substring(0, displayUrl.length - wrapLength)}
+                  <span style={{whiteSpace: 'nowrap'}}>
+                    {displayUrl.substring(displayUrl.length - wrapLength)}
+                    <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                    <svg 
+                      width="12" 
+                      height="12" 
+                      viewBox="0 0 22 22" 
+                      aria-hidden="true"
+                      className="new-tab-link-icon"
+                    >
+                      <path 
+                        d="M20 2L2 20M20 2H8M20 2V14" 
+                        stroke="currentColor" 
+                        strokeWidth="3.5" 
+                        strokeLinecap="square" 
+                        strokeLinejoin="square"
+                        fill="none"
+                      />
+                    </svg>
+                  </span>
+                </>
+              );
+            }
+
+            // Last segment is short enough (<40 chars), wrap it all
+            return (
+              <>
+                {displayUrl.substring(0, lastSlashIndex + 1)}
+                <span style={{whiteSpace: 'nowrap'}}>
+                  {lastSegment}
+                  <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                  <svg 
+                    width="12" 
+                    height="12" 
+                    viewBox="0 0 22 22" 
+                    aria-hidden="true"
+                    className="new-tab-link-icon"
+                  >
+                    <path 
+                      d="M20 2L2 20M20 2H8M20 2V14" 
+                      stroke="currentColor" 
+                      strokeWidth="3.5" 
+                      strokeLinecap="square" 
+                      strokeLinejoin="square"
+                      fill="none"
+                    />
+                  </svg>
+                </span>
+              </>
+             );
+          })()}
               </span>
             </a>
           </li>
