@@ -55,20 +55,52 @@ function htmlToLeanMarkdown(html, baseUrl) {
 
 async function downloadWebPage(url) {
   const httpsAgent = new Agent({ rejectUnauthorized: false });
-  const res = await axios.get(url, {
+  const config = {
     httpsAgent,
     maxRedirects: 10,
-    timeout: 500,
-    headers: { "User-Agent": process.env.USER_AGENT || "Mozilla/5.0 (ContentFetcher)" },
+    timeout: 5000,
+    headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
+  };
+  console.log("User Agent config: ", process.env.USER_AGENT);
+  console.log("Attempting Request:", {
+    method: 'GET',
+    url,
+    headers: config.headers
   });
-  return htmlToLeanMarkdown(res.data, url);
+
+  const res = await axios.get(url, config);
+  return {
+    markdown: htmlToLeanMarkdown(res.data, url),
+    res
+  };
 }
 
 const downloadWebPageTool = tool(
   async ({ url }) => {
     try {
-      return await downloadWebPage(url);
+      const { markdown, res } = await downloadWebPage(url);
+
+      // Successfully received response
+      console.log("Read web page - Status:", res.status);
+      return markdown;
     } catch (error) {
+      const req = error.request || error.response?.request;
+      // Fallback to config if request object is incomplete (common in timeouts/network errors)
+      const config = error.config || {};
+
+      console.log("Read web page (Failed):", {
+        method: req?.method || config.method?.toUpperCase() || 'UNKNOWN',
+        path: req?.path || config.url || 'UNKNOWN',
+        headers: (typeof req?.getHeaders === 'function' ? req.getHeaders() : null) || config.headers || 'N/A'
+      });
+
+      console.error(`Read web page (Failed): ${url}:`, {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+
       if (error.code === "ECONNREFUSED") throw new Error(`Connection refused: ${url}`);
       if (error.response?.status === 403) throw new Error(`Access forbidden (403): ${url}`);
       if (error.response?.status === 404) throw new Error(`Page not found (404): ${url}`);
