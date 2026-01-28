@@ -647,7 +647,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   target="_blank"
                   rel="noopener noreferrer"
                   tabIndex="0"
-                  className={isMobile && displayUrl.length > 60 ? 'long-url-mobile' : ''}
+                  className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                   onClick={() => {
                     try {
                       if (window && window.adobeDataLayer) {
