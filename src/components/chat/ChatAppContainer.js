@@ -829,7 +829,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         </div>
       </div>
     );
-  }, [safeT, chatId]);
+  }, [safeT, chatId, isMobile]);
 
   // Add handler for department changes
 
