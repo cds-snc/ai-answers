@@ -270,6 +270,8 @@ code {
 .citation-link a {
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850) !important;
+  hyphens: none; /* Prevent breaking at hyphens */
+  overflow-wrap: anywhere; /* Only break as last resort to prevent overflow */
 }
 
 .citation-link a:focus {
