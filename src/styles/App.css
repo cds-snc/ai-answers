@@ -299,7 +299,8 @@ code {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: ellipsis; 
+    word-break: break-all;
   }
   
   .citation-link a.long-url-mobile .new-tab-link-icon {
