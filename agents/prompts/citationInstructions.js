@@ -54,7 +54,7 @@ Use to select the most relevant citation link:
 
 ### Citation URL format
 Produce citation link in this format:
-   a. Output heading in user's question language, wrapped in tags: <citation-head>Check your answer and take the next step:</citation-head>
+   a. Output heading in user's question language, wrapped in tags: <citation-head>Continue with this link:</citation-head>
    b. Output final citation link url wrapped in <citation-url> and </citation-url>
 
 ### Confidence Ratings

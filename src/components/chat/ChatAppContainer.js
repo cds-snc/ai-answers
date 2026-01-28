@@ -626,16 +626,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </p>
           ));
         })}
-        <div className="mistake-disc">
-          <p><FontAwesomeIcon icon="wand-magic-sparkles" />&nbsp;
-            {safeT('homepage.chat.input.loadingHint')}
-          </p>
-        </div>
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
+          <>
+         <hr className="citation-divider" />
           <div className="citation-container">
-            {citationHead && <p key={`${messageId}-head`} className="citation-head">{citationHead}</p>}
+            {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
             {displayUrl && (
-              <p key={`${messageId}-link`} className="citation-link">
+              <ul key={`${messageId}-link`} className="citation-link list-disc">
+                <li>
                 <a
                   href={displayUrl}
                   target="_blank"
@@ -663,12 +661,38 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     }
                   }}
                 >
+                <span className="citation-url-text font-size-text-xsm-nr">
                   {displayUrl}
+                </span>
+                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                  <svg 
+                      width="12" 
+                      height="12" 
+                      viewBox="0 0 22 22" 
+                      aria-hidden="true"
+                      className="new-tab-link-icon"
+                    >
+                      <path 
+                        d="M20 2L2 20M20 2H8M20 2V14" 
+                        stroke="currentColor" 
+                        strokeWidth="3.5" 
+                        strokeLinecap="square" 
+                        strokeLinejoin="square"
+                        fill="none"
+                      />
+                    </svg>
                 </a>
-              </p>
+              </li>
+              </ul>
             )}
           </div>
+          </>
         )}
+        <div className="disclaimer">
+          <p className="font-size-text-xsm-nr">
+            {safeT('homepage.chat.input.disclaimer')}
+          </p>
+        </div>
       </div>
     );
   }, [safeT, chatId]);
