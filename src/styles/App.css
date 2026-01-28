@@ -268,7 +268,7 @@ code {
 }
 
 .citation-link a {
-  word-break: break-word;
+  overflow-wrap: break-word;
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850) !important;
 }
@@ -308,10 +308,10 @@ code {
     bottom: 5px;
   }
 }
-  /* Extra aggressive breaking only for smaller phones */
+  /* Aggressive URL breaking only for smaller phones */
   @media screen and (max-width: 375px) {
     .citation-link a.long-url-mobile .citation-url-text {
-      word-break: break-all; /* Override to break anywhere */
+      word-break: break-all;
     }
   }
 
