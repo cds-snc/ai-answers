@@ -61,7 +61,7 @@ async function downloadWebPage(url) {
     timeout: 5000,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
   };
-
+  console.log("User Agent config: ", process.env.USER_AGENT);
   console.log("Attempting Request:", {
     method: 'GET',
     url,
@@ -81,20 +81,20 @@ const downloadWebPageTool = tool(
       const { markdown, res } = await downloadWebPage(url);
 
       // Successfully received response
-      console.log("Request Success - Status:", res.status);
+      console.log("Read web page - Status:", res.status);
       return markdown;
     } catch (error) {
       const req = error.request || error.response?.request;
       // Fallback to config if request object is incomplete (common in timeouts/network errors)
       const config = error.config || {};
 
-      console.log("Actual Request (Failed):", {
+      console.log("Read web page (Failed):", {
         method: req?.method || config.method?.toUpperCase() || 'UNKNOWN',
         path: req?.path || config.url || 'UNKNOWN',
         headers: (typeof req?.getHeaders === 'function' ? req.getHeaders() : null) || config.headers || 'N/A'
       });
 
-      console.error(`Download error for ${url}:`, {
+      console.error(`Read web page (Failed): ${url}:`, {
         message: error.message,
         code: error.code,
         status: error.response?.status,
