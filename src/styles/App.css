@@ -268,7 +268,7 @@ code {
 }
 
 .citation-link a {
-  /* word-break: break-all; */
+  word-break: break-word;
   margin-bottom: 0.5rem !important;
   color: var(--gcds-color-blue-850) !important;
 }
@@ -283,6 +283,30 @@ code {
 .new-tab-link-icon {
   display: inline-block;
   margin-left: 4px;
+}
+
+/* Only apply mobile ellipsis styles to long URLs */
+@media screen and (max-width: 768px) {
+  .citation-link a.long-url-mobile {
+    display: block;
+    width: 100%;
+    position: relative;
+    padding-right: 20px; 
+  }
+  
+  .citation-link a.long-url-mobile .citation-url-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .citation-link a.long-url-mobile .new-tab-link-icon {
+    position: absolute;
+    right: 0;
+    bottom: 5px;
+  }
 }
 
 .ai-icon {

@@ -54,7 +54,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [textareaKey, setTextareaKey] = useState(0);
-
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
@@ -138,7 +138,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       }, 200);
     }
   }, [initialMessages]);
-
+  // This effect sets up a resize listener to update isMobile state for citation icon and link styling
+   useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // This effect monitors displayStatus changes to update screen reader announcements
   useEffect(() => {
     if (isLoading) {
@@ -639,6 +647,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   target="_blank"
                   rel="noopener noreferrer"
                   tabIndex="0"
+                  className={isMobile && displayUrl.length > 60 ? 'long-url-mobile' : ''}
                   onClick={() => {
                     try {
                       if (window && window.adobeDataLayer) {
@@ -660,38 +669,65 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                       console.error('Error pushing to Adobe Data Layer:', e);
                     }
                   }}
-      >
-        <span className="citation-url-text font-size-text-xsm-nr">
-          {(() => {
-            // Only use the non-breaking wrapper if URL is long enough to potentially wrap
-            const needsWrapping = displayUrl.length > 80; // Adjust threshold as needed
-            
-            if (!needsWrapping) {
-              // Short URL: just render it normally with the icon
-              return (
-                <>
-                  {displayUrl}
-                  <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                  <svg 
-                    width="12" 
-                    height="12" 
-                    viewBox="0 0 22 22" 
-                    aria-hidden="true"
-                    className="new-tab-link-icon"
-                  >
-                    <path 
-                      d="M20 2L2 20M20 2H8M20 2V14" 
-                      stroke="currentColor" 
-                      strokeWidth="3.5" 
-                      strokeLinecap="square" 
-                      strokeLinejoin="square"
-                      fill="none"
-                    />
-                  </svg>
-                </>
-              );
-            }
-                  // Long URL: split and wrap last portion
+            >
+              <span className="citation-url-text font-size-text-xsm-nr">
+                {(() => {
+                  // Mobile: always render full URL, CSS handles ellipsis for long URLs
+                  if (isMobile) {
+                    return (
+                      <>
+                        {displayUrl}
+                        <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                        <svg 
+                          width="12" 
+                          height="12" 
+                          viewBox="0 0 22 22" 
+                          aria-hidden="true"
+                          className="new-tab-link-icon"
+                        >
+                          <path 
+                            d="M20 2L2 20M20 2H8M20 2V14" 
+                            stroke="currentColor" 
+                            strokeWidth="3.5" 
+                            strokeLinecap="square" 
+                            strokeLinejoin="square"
+                            fill="none"
+                          />
+                        </svg>
+                      </>
+                    );
+                  }
+                  
+                  // Desktop: only use wrapping if URL is long enough
+                  const needsWrapping = displayUrl.length > 85; // Adjust threshold as needed
+                  
+                  if (!needsWrapping) {
+                    // Short URL: render normally
+                    return (
+                      <>
+                        {displayUrl}
+                        <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                        <svg 
+                          width="12" 
+                          height="12" 
+                          viewBox="0 0 22 22" 
+                          aria-hidden="true"
+                          className="new-tab-link-icon"
+                        >
+                          <path 
+                            d="M20 2L2 20M20 2H8M20 2V14" 
+                            stroke="currentColor" 
+                            strokeWidth="3.5" 
+                            strokeLinecap="square" 
+                            strokeLinejoin="square"
+                            fill="none"
+                          />
+                        </svg>
+                      </>
+                    );
+                  }
+                  
+                  // Long URL on desktop: wrap last segment with icon
                   const lastSlashIndex = displayUrl.lastIndexOf('/');
                   
                   if (lastSlashIndex === -1) {
@@ -783,7 +819,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           </li>
         </ul>
       )}
-          </div>
+      </div>
           </>
         )}
         <div className="disclaimer">
