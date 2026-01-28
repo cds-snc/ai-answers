@@ -676,7 +676,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                   if (isMobile) {
                     return (
                       <>
-                        {displayUrl}
+                        {displayUrl.replace(/-/g, '\u2011')}
                         <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                         <svg 
                           width="12" 
@@ -705,7 +705,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     // Short URL: render normally
                     return (
                       <>
-                        {displayUrl}
+                        {displayUrl.replace(/-/g, '\u2011')}
                         <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                         <svg 
                           width="12" 
@@ -735,9 +735,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     const wrapLength = 25;
                     return (
                       <>
-                        {displayUrl.substring(0, Math.max(0, displayUrl.length - wrapLength))}
+                        {displayUrl.substring(0, Math.max(0, displayUrl.length - wrapLength)).replace(/-/g, '\u2011')}
                         <span style={{whiteSpace: 'nowrap'}}>
-                          {displayUrl.substring(Math.max(0, displayUrl.length - wrapLength))}
+                          {displayUrl.substring(Math.max(0, displayUrl.length - wrapLength)).replace(/-/g, '\u2011')}
                           <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                           <svg 
                             width="12" 
@@ -771,9 +771,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 const breakPoint = lastSlashIndex + 1 + queryIndex;
                 return (
                   <>
-                    {displayUrl.substring(0, breakPoint)}
+                    {displayUrl.substring(0, breakPoint).replace(/-/g, '\u2011')}
                     <span style={{whiteSpace: 'nowrap'}}>
-                      {displayUrl.substring(breakPoint)}
+                      {displayUrl.substring(breakPoint).replace(/-/g, '\u2011')}
                       <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                       <svg 
                         width="12" 
@@ -807,9 +807,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 const breakPoint = lastSlashIndex + 1 + searchStart + lastHyphen + 1; // +1 to include hyphen
                 return (
                   <>
-                    {displayUrl.substring(0, breakPoint)}
+                    {displayUrl.substring(0, breakPoint).replace(/-/g, '\u2011')}
                     <span style={{whiteSpace: 'nowrap'}}>
-                      {displayUrl.substring(breakPoint)}
+                      {displayUrl.substring(breakPoint).replace(/-/g, '\u2011')}
                       <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                       <svg 
                         width="12" 
@@ -836,9 +836,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               const wrapLength = 25;
               return (
                 <>
-                  {displayUrl.substring(0, displayUrl.length - wrapLength)}
+                  {displayUrl.substring(0, displayUrl.length - wrapLength).replace(/-/g, '\u2011')}
                   <span style={{whiteSpace: 'nowrap'}}>
-                    {displayUrl.substring(displayUrl.length - wrapLength)}
+                    {displayUrl.substring(displayUrl.length - wrapLength).replace(/-/g, '\u2011')}
                     <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                     <svg 
                       width="12" 
@@ -864,9 +864,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             // Last segment is short enough (<40 chars), wrap it all
             return (
               <>
-                {displayUrl.substring(0, lastSlashIndex + 1)}
+                {displayUrl.substring(0, lastSlashIndex + 1).replace(/-/g, '\u2011')}
                 <span style={{whiteSpace: 'nowrap'}}>
-                  {lastSegment}
+                  {lastSegment.replace(/-/g, '\u2011')}
                   <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                   <svg 
                     width="12" 
