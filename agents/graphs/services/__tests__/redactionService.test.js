@@ -94,6 +94,29 @@ describe('RedactionService', () => {
         expect(piiItems.length).toBeGreaterThanOrEqual(2);
     });
 
+    it('redacts North American phone number formats', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const phoneFormats = [
+            '555-123-4567',
+            '(555) 123-4567',
+            '555.123.4567',
+            '5551234567',
+            '1-555-123-4567',
+            '+1 555 123 4567',
+            '+1 (555) 123-4567',
+            '555-123-4567 ext. 890',
+            '555-123-4567 x890',
+        ];
+
+        for (const phone of phoneFormats) {
+            const result = redactionService.redactText(`Call me at ${phone} please`, 'en');
+            expect(result.redactedItems.length, `Expected "${phone}" to be redacted`).toBeGreaterThanOrEqual(1);
+            expect(result.redactedItems[0].type).toBe('private');
+        }
+    });
+
     it('redacts Canadian postal codes', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
