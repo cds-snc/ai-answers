@@ -94,12 +94,56 @@ class RedactionService {
     applyPattern(this.threatPattern, match => '#'.repeat(match.length), 'threat');
     applyPattern(this.manipulationPattern, match => '#'.repeat(match.length), 'manipulation');
 
-    // Basic PII patterns
+    // PII patterns — type 'private', replacement 'XXX'
     const piiPatterns = [
-      { pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{4}\b/g, replacement: 'XXX-XXX-XXXX', type: 'phone' },
-      { pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{4}\b/g, replacement: 'XXX-XXX-XXXX', type: 'phone' },
-      { pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, replacement: 'XXX@EMAIL', type: 'email' },
-      { pattern: /\b\d{9}\b/g, replacement: 'XXXXXXXXX', type: 'number' },
+      // Phone numbers (including international formats and extensions)
+      { pattern: /((\+\d{1,2}\s?)?1?[-.]?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?)/g, replacement: 'XXX', type: 'private' },
+      // Canadian postal codes (with flexible spacing)
+      { pattern: /[A-Za-z]\s*\d\s*[A-Za-z]\s*[ -]?\s*\d\s*[A-Za-z]\s*\d/g, replacement: 'XXX', type: 'private' },
+      // Email addresses (with flexible spacing and punctuation)
+      { pattern: /([a-zA-Z0-9_\-.]+)\s*@([\sa-zA-Z0-9_\-.]+)[.,]([a-zA-Z]{1,5})/g, replacement: 'XXX', type: 'private' },
+      // Passport Numbers
+      { pattern: /\b([A-Za-z]{2}\s*\d{6})\b/g, replacement: 'XXX', type: 'private' },
+      // {
+      //   pattern: /\b(?=[A-Z0-9-]*[0-9])(?=[A-Z0-9-]*[A-Z])(?!(?:GST\d{3}|RC\d{3}\b|RC\d+[A-Z-]*)\b)[A-Z0-9-]{6,}\b/gi,
+      //   description: 'Alphanumeric sequences of 6+ chars (excluded — too many false positives on form numbers)'
+      // },
+      // Long number sequences (6+ digits, excluding dollar amounts)
+      { pattern: /\b(?<!\$)\d{6,}\b/g, replacement: 'XXX', type: 'private' },
+      // Name patterns in EN/FR
+      { pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi, replacement: 'XXX', type: 'private' },
+      // Street addresses
+      { pattern: /\d+\s+([A-Za-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|circle|cir|Loop)\b/gi, replacement: 'XXX', type: 'private' },
+      // {
+      //   pattern: /\b(?<!\$)\d{5}(?:-\d{4})?\b/g,
+      //   description: 'US ZIP codes (excluded — catching too many CRA line/form numbers)'
+      // },
+      // Apartment/unit numbers
+      { pattern: /\b(apt|bldg|dept|fl|hngr|lot|pier|rm|ste|slip|trlr|unit|#)\.? *\d+[a-z]?\b/gi, replacement: 'XXX', type: 'private' },
+      // PO Box
+      { pattern: /P\.? ?O\.? *Box +\d+/gi, replacement: 'XXX', type: 'private' },
+      // IP addresses (IPv4 + IPv6)
+      { pattern: /(\d{1,3}(\.\d{1,3}){3}|[0-9A-Fa-f]{4}(:[0-9A-Fa-f]{4}){7}|[0-9A-Fa-f]{4}(:[0-9A-Fa-f]{4}){5}(::|(:0000)+))/gi, replacement: 'XXX', type: 'private' },
+      // URLs
+      { pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g, replacement: 'XXX', type: 'private' },
+      // Canadian SIN (Social Insurance Number)
+      { pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g, replacement: 'XXX', type: 'private' },
+      // Names with prefixes
+      { pattern: /\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, replacement: 'XXX', type: 'private' },
+      // Names in introduction phrases
+      { pattern: /\b(?:my name is|je m'appelle|je me nomme|my name's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi, replacement: 'XXX', type: 'private' },
+      // {
+      //   pattern: /\b([A-Z][a-z]{1,20}(?:\s+[A-Z][a-z]{1,20}){1,2})\b(?!\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|Circle|Cir|Loop))\b/g,
+      //   description: 'Capitalized names (2-3 words, not followed by street type)'
+      // },
+      // {
+      //   pattern: /\b(?:Dear|Hello|Hi|Bonjour|Cher|Chère|Salut)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
+      //   description: 'Names in greeting patterns'
+      // },
+      // {
+      //   pattern: /\b(?:Sincerely|Regards|Best|Cheers|Cordialement|Sincèrement|Amicalement)\s*,\s*\n*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
+      //   description: 'Names in signature patterns'
+      // },
     ];
 
     for (const { pattern, replacement, type } of piiPatterns) {

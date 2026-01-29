@@ -75,20 +75,85 @@ describe('RedactionService', () => {
         ]));
     });
 
-    it('redacts PII patterns', async () => {
+    it('redacts PII patterns with type private', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
         const input = 'Call me at 555-123-4567 or email test@example.com';
         const result = redactionService.redactText(input, 'en');
 
-        expect(result.redactedText).toContain('XXX-XXX-XXXX');
-        expect(result.redactedText).toContain('XXX@EMAIL');
+        expect(result.redactedText).toContain('XXX');
+        expect(result.redactedText).not.toContain('555-123-4567');
+        expect(result.redactedText).not.toContain('test@example.com');
 
         expect(result.redactedItems).toEqual(expect.arrayContaining([
-            expect.objectContaining({ type: 'phone' }),
-            expect.objectContaining({ type: 'email' })
+            expect.objectContaining({ type: 'private' }),
         ]));
+        // All PII items should be type 'private'
+        const piiItems = result.redactedItems.filter(i => i.type === 'private');
+        expect(piiItems.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('redacts Canadian postal codes', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('The address has postal code H3Z 2Y7', 'en');
+        expect(result.redactedText).not.toContain('H3Z');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts IP addresses (IPv4 and IPv6)', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const ipv4 = redactionService.redactText('Server at 192.168.1.1 is down', 'en');
+        expect(ipv4.redactedText).not.toContain('192.168.1.1');
+        expect(ipv4.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+
+        const ipv6 = redactionService.redactText('New IPv6 address is 2001:0DB8:85A3:0000:0000:8A2E:0370:7334', 'en');
+        expect(ipv6.redactedText).not.toContain('2001:0DB8');
+        expect(ipv6.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts Canadian SIN numbers', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('My SIN is 123-456-789', 'en');
+        expect(result.redactedText).not.toContain('123-456-789');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts street addresses', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('I live at 123 Main Street', 'en');
+        expect(result.redactedText).not.toContain('123 Main Street');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('does not have the bare 9-digit pattern that causes false positives', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        // A 9-digit number that is NOT a SIN format (no dashes/spaces in 3-3-3 pattern)
+        // and is NOT 6+ digits (it IS 9 digits so the 6+ pattern will catch it)
+        // The key point: we don't have a dedicated \b\d{9}\b with type 'number'
+        const result = redactionService.redactText('Form 123456789 is required', 'en');
+        const numberItems = result.redactedItems.filter(i => i.type === 'number');
+        expect(numberItems).toHaveLength(0);
     });
 
     it('handles empty settings gracefully', async () => {
