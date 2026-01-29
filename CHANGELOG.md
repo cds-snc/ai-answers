@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.92.0](https://github.com/cds-snc/ai-answers/compare/v1.91.1...v1.92.0) (2026-01-28)
+
+
+### Features
+
+* add detailed axios request logging to downloadWebPage tool ([d5481d3](https://github.com/cds-snc/ai-answers/commit/d5481d3cc33013ae682f7b4c6308df984412b703))
+* improve request logging with attempt log and error details ([2569127](https://github.com/cds-snc/ai-answers/commit/25691272ffc6dde6ff57dd12614af6b21dec3ccc))
+
+
+### Miscellaneous Chores
+
+* Refresh Terragrunt module cache by creating and modifying numerous module-related files. ([653dd47](https://github.com/cds-snc/ai-answers/commit/653dd47ecd3f732ace020678a243ddaaed84701e))
+
 ## [1.91.1](https://github.com/cds-snc/ai-answers/compare/v1.91.0...v1.91.1) (2026-01-27)
 
 
