@@ -117,51 +117,174 @@ describe('RedactionService', () => {
         }
     });
 
-    it('redacts Canadian postal codes', async () => {
+    // --- Contact Information (from Privacy approach doc) ---
+
+    it('redacts phone numbers: Please call me at 123-456-7890 to discuss my application.', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
-        const result = redactionService.redactText('The address has postal code H3Z 2Y7', 'en');
-        expect(result.redactedText).not.toContain('H3Z');
+        const result = redactionService.redactText('Please call me at 123-456-7890 to discuss my application.', 'en');
+        expect(result.redactedText).not.toContain('123-456-7890');
         expect(result.redactedItems).toEqual(expect.arrayContaining([
             expect.objectContaining({ type: 'private' }),
         ]));
     });
 
-    it('redacts IP addresses (IPv4 and IPv6)', async () => {
+    it('redacts emails: My email is user@sub.domain.com.', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
-        const ipv4 = redactionService.redactText('Server at 192.168.1.1 is down', 'en');
-        expect(ipv4.redactedText).not.toContain('192.168.1.1');
-        expect(ipv4.redactedItems).toEqual(expect.arrayContaining([
-            expect.objectContaining({ type: 'private' }),
-        ]));
-
-        const ipv6 = redactionService.redactText('New IPv6 address is 2001:0DB8:85A3:0000:0000:8A2E:0370:7334', 'en');
-        expect(ipv6.redactedText).not.toContain('2001:0DB8');
-        expect(ipv6.redactedItems).toEqual(expect.arrayContaining([
+        const result = redactionService.redactText('My email is user@sub.domain.com.', 'en');
+        expect(result.redactedText).not.toContain('user@sub.domain.com');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
             expect.objectContaining({ type: 'private' }),
         ]));
     });
 
-    it('redacts Canadian SIN numbers', async () => {
+    it('redacts IP addresses: Server IP est 192.168.1.1.', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
-        const result = redactionService.redactText('My SIN is 123-456-789', 'en');
+        const result = redactionService.redactText('Server IP est 192.168.1.1.', 'en');
+        expect(result.redactedText).not.toContain('192.168.1.1');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts IPv6 addresses', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('New IPv6 address is 2001:0DB8:85A3:0000:0000:8A2E:0370:7334', 'en');
+        expect(result.redactedText).not.toContain('2001:0DB8');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts URLs: Check my website at https://vaticanize.ca/', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Check my website at https://vaticanize.ca/', 'en');
+        expect(result.redactedText).not.toContain('https://vaticanize.ca/');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    // --- Location Identifiers (from Privacy approach doc) ---
+
+    it('redacts street addresses: New address: 333 Willow Court, Oshawa, ON', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('New address: 333 Willow Court, Oshawa, ON', 'en');
+        expect(result.redactedText).not.toContain('333 Willow Court');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts postal codes with spaces: Living at K 1 A 0 B 1 postal code.', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Living at K 1 A 0 B 1 postal code.', 'en');
+        expect(result.redactedText).not.toContain('K 1 A 0 B 1');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts postal codes without spaces: Code postal est H3Z2Y7.', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Code postal est H3Z2Y7.', 'en');
+        expect(result.redactedText).not.toContain('H3Z2Y7');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts PO Box: Mail to P.O. Box 1234.', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Mail to P.O. Box 1234.', 'en');
+        expect(result.redactedText).not.toContain('P.O. Box 1234');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    // --- Government-issued unique identifiers (from Privacy approach doc) ---
+
+    it('redacts SIN with dashes: SIN 123-456-789 needs verification.', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('SIN 123-456-789 needs verification.', 'en');
         expect(result.redactedText).not.toContain('123-456-789');
         expect(result.redactedItems).toEqual(expect.arrayContaining([
             expect.objectContaining({ type: 'private' }),
         ]));
     });
 
-    it('redacts street addresses', async () => {
+    it('redacts SIN with spaces: Social Insurance Number 123 456 789 provided.', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
-        const result = redactionService.redactText('I live at 123 Main Street', 'en');
-        expect(result.redactedText).not.toContain('123 Main Street');
+        const result = redactionService.redactText('Social Insurance Number 123 456 789 provided.', 'en');
+        expect(result.redactedText).not.toContain('123 456 789');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts SIN in French: Mon NAS 464 449 387 est expiré?', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Mon NAS 464 449 387 est expiré?', 'en');
+        expect(result.redactedText).not.toContain('464 449 387');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    // --- Names with introduction phrases and prefixes (from Privacy approach doc) ---
+
+    it('redacts names: My name is Robert Brown. Please help me with CRA.', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('My name is Robert Brown. Please help me with CRA.', 'en');
+        expect(result.redactedText).not.toContain('Robert Brown');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it("redacts names in French: Je m'appelle Claire Martin.", async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText("Je m'appelle Claire Martin.", 'en');
+        expect(result.redactedText).not.toContain('Claire Martin');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'private' }),
+        ]));
+    });
+
+    it('redacts names with prefixes: Bonjour, je suis Docteur Amelie Parsonne', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Bonjour, je suis Docteur Amelie Parsonne', 'en');
+        expect(result.redactedText).not.toContain('Amelie Parsonne');
         expect(result.redactedItems).toEqual(expect.arrayContaining([
             expect.objectContaining({ type: 'private' }),
         ]));
