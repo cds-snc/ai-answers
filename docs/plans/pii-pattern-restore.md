@@ -11,12 +11,12 @@ Replace the current minimal `piiPatterns` array (lines 98-103) with the `private
 
 - All PII patterns use type `'private'` and replacement `'XXX'` (matching old behavior)
 - **Remove** the bare `\b\d{9}\b` pattern (was causing false positives on form numbers)
+- **Remove** the generic `\d{6,}` long number sequence pattern (was causing false positives on serial/form/reference numbers)
 - **Restore** these patterns from the old file:
-  - Phone numbers (comprehensive international format)
+  - Phone numbers (comprehensive international format, with `(?<!\d)…(?!\d)` digit boundary guards to prevent matching substrings inside longer numbers like product serials)
   - Canadian postal codes (`A1A 1A1` flexible spacing)
   - Email addresses (flexible spacing/punctuation)
   - Passport numbers (`AB123456`)
-  - Long number sequences (6+ digits, excluding dollar amounts)
   - Name patterns (`name is...` / `nom est...`)
   - Street addresses
   - Apartment/unit numbers

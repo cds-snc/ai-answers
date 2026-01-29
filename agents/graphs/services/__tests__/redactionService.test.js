@@ -144,16 +144,27 @@ describe('RedactionService', () => {
         ]));
     });
 
-    it('does not have the bare 9-digit pattern that causes false positives', async () => {
+    it('does not block plain number sequences (no generic digit-length pattern)', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
-        // A 9-digit number that is NOT a SIN format (no dashes/spaces in 3-3-3 pattern)
-        // and is NOT 6+ digits (it IS 9 digits so the 6+ pattern will catch it)
-        // The key point: we don't have a dedicated \b\d{9}\b with type 'number'
-        const result = redactionService.redactText('Form 123456789 is required', 'en');
-        const numberItems = result.redactedItems.filter(i => i.type === 'number');
-        expect(numberItems).toHaveLength(0);
+        // 8-digit reference number should pass (not matching any specific PII pattern)
+        const result = redactionService.redactText('Reference 12345678 for your file', 'en');
+        expect(result.redactedItems).toHaveLength(0);
+
+        // 6-digit form number should pass (no generic 6+ digit catch-all)
+        const result2 = redactionService.redactText('See form 654321 for details', 'en');
+        expect(result2.redactedItems).toHaveLength(0);
+    });
+
+    it('does not false-positive on product serial numbers', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        // Phone pattern should not match digit substrings inside longer numbers
+        const result = redactionService.redactText('Product serial 987654321003 recalled?', 'en');
+        expect(result.redactedItems).toHaveLength(0);
+        expect(result.redactedText).toBe('Product serial 987654321003 recalled?');
     });
 
     it('handles empty settings gracefully', async () => {

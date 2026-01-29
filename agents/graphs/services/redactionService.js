@@ -97,7 +97,7 @@ class RedactionService {
     // PII patterns — type 'private', replacement 'XXX'
     const piiPatterns = [
       // Phone numbers (including international formats and extensions)
-      { pattern: /((\+\d{1,2}\s?)?1?[-.]?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?)/g, replacement: 'XXX', type: 'private' },
+      { pattern: /(?<!\d)((\+\d{1,2}\s?)?1?[-.]?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?)(?!\d)/g, replacement: 'XXX', type: 'private' },
       // Canadian postal codes (with flexible spacing)
       { pattern: /[A-Za-z]\s*\d\s*[A-Za-z]\s*[ -]?\s*\d\s*[A-Za-z]\s*\d/g, replacement: 'XXX', type: 'private' },
       // Email addresses (with flexible spacing and punctuation)
@@ -108,8 +108,10 @@ class RedactionService {
       //   pattern: /\b(?=[A-Z0-9-]*[0-9])(?=[A-Z0-9-]*[A-Z])(?!(?:GST\d{3}|RC\d{3}\b|RC\d+[A-Z-]*)\b)[A-Z0-9-]{6,}\b/gi,
       //   description: 'Alphanumeric sequences of 6+ chars (excluded — too many false positives on form numbers)'
       // },
-      // Long number sequences (6+ digits, excluding dollar amounts)
-      { pattern: /\b(?<!\$)\d{6,}\b/g, replacement: 'XXX', type: 'private' },
+      // {
+      //   pattern: /\b(?<!\$)\d{6,}\b/g,
+      //   description: 'Long number sequences 6+ digits (removed — too many false positives on serial/form/reference numbers)'
+      // },
       // Name patterns in EN/FR
       { pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi, replacement: 'XXX', type: 'private' },
       // Street addresses
