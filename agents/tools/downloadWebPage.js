@@ -61,7 +61,7 @@ async function downloadWebPage(url) {
     timeout: 5000,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
   };
-  console.log("User Agent config: ", process.env.USER_AGENT);
+  console.log("User Agent config:", process.env.USER_AGENT);
   console.log("Attempting Request:", {
     method: 'GET',
     url,
