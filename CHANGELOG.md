@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.93.1](https://github.com/cds-snc/ai-answers/compare/v1.93.0...v1.93.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* recover redaction patterns - used test set and manual tests ([f50729b](https://github.com/cds-snc/ai-answers/commit/f50729b253d4b5f0500473de877d22da2da6a60b))
+* update doc, tweak locales ([8e53134](https://github.com/cds-snc/ai-answers/commit/8e53134798b293a2476fd567639062838190cd60))
+
 ## [1.93.0](https://github.com/cds-snc/ai-answers/compare/v1.92.0...v1.93.0) (2026-01-30)
 
 
