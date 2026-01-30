@@ -75,6 +75,18 @@ describe('RedactionService', () => {
         ]));
     });
 
+    it('redacts emojis as profanity', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const result = redactionService.redactText('Hello 😀 how are you? 🙏', 'en');
+        expect(result.redactedText).not.toContain('😀');
+        expect(result.redactedText).not.toContain('🙏');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'profanity' }),
+        ]));
+    });
+
     it('redacts PII patterns with type private', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
