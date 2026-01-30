@@ -16,7 +16,6 @@ Replace the current minimal `piiPatterns` array (lines 98-103) with the `private
   - Phone numbers (comprehensive international format, with `(?<!\d)…(?!\d)` digit boundary guards to prevent matching substrings inside longer numbers like product serials)
   - Canadian postal codes (`A1A 1A1` flexible spacing)
   - Email addresses (flexible spacing/punctuation)
-  - Passport numbers (`AB123456`)
   - Name patterns (`name is...` / `nom est...`)
   - Street addresses
   - Apartment/unit numbers
@@ -26,7 +25,12 @@ Replace the current minimal `piiPatterns` array (lines 98-103) with the `private
   - Canadian SIN (`123-456-789`)
   - Names with prefixes (Mr., Dr., etc.)
   - Names in introduction phrases
+- **Remove** passport number pattern (`AB123456`) — was causing false positives on form numbers (e.g. IMM1294, PPTC326). Caught by AI stage instead.
 - **Keep commented-out** patterns that were already commented out in the old file (alphanumeric 6+ chars, US ZIP codes, capitalized names, greeting names, signature names)
+
+### Also in `redactionService.js` — Restore emoji blocking
+
+Restore the emoji regex from the pre-graph `RedactionService.js` on main. Emojis are treated as `profanity` type (replaced with `#` characters). This was dropped during the graph migration.
 
 ### 2. `agents/graphs/workflows/GraphWorkflowHelper.js` — Add `'private'` to blocking types
 
