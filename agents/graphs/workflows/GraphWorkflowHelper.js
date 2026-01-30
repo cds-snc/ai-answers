@@ -36,7 +36,7 @@ export class GraphWorkflowHelper {
     const { redactedText, redactedItems } = redactionService.redactText(userMessage, lang);
 
     // Check if any blocking-type redactions were applied (profanity, threat, manipulation)
-    const blockingTypes = ['profanity', 'threat', 'manipulation'];
+    const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
     const hasBlockingRedaction = redactedItems.some(item => blockingTypes.includes(item.type));
     if (hasBlockingRedaction) {
       throw new RedactionError('Blocked content detected', redactedText, redactedItems);
