@@ -24,6 +24,7 @@ import VectorPage from './pages/VectorPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
+import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
@@ -184,21 +185,18 @@ const AppLayout = () => {
 
   // Update Open Graph meta tags based on current language
   useEffect(() => {
+    // Pages can opt-out by setting window.__CUSTOM_METADATA_ACTIVE (set by frontmatter hook)
+    const isCustomMetadataPage =
+      typeof window !== 'undefined' && window.__CUSTOM_METADATA_ACTIVE === true;
+
+    const langKey = currentLang === 'fr' ? 'FR' : 'EN';
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
-    const title = currentLang === 'fr' ? 'Bêta : Réponses IA' : 'Beta: AI Answers';
-    const description = currentLang === 'fr'
-      ? 'Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada.'
-      : 'AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites.';
-    const dctermsDescription = currentLang === 'fr'
-      ? 'Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada.'
-      : 'AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites.';
+    const title = currentLang === 'fr' ? `Bêta : ${DEFAULT_METADATA.TITLE[langKey]}` : `Beta: ${DEFAULT_METADATA.TITLE[langKey]}`;
+    const description = DEFAULT_METADATA.DESCRIPTION[langKey];
+    const dctermsDescription = DEFAULT_METADATA.DESCRIPTION[langKey];
     const dctermsLang = currentLang === 'fr' ? 'fra' : 'eng';
-    const author = currentLang === 'fr'
-      ? 'Emploi et Développement social Canada'
-      : 'Employment and Social Development Canada';
-    const dctermsCreator = currentLang === 'fr'
-      ? 'Emploi et Développement social Canada'
-      : 'Employment and Social Development Canada';
+    const author = DCTERMS.CREATOR[langKey];
+    const dctermsCreator = DCTERMS.CREATOR[langKey];
     const dctermsAudience = currentLang === 'fr' ? 'grand public' : 'general public';
     let projectStatusMeta = document.querySelector('meta[name="project-status"]');
     if (projectStatusMeta) {
@@ -209,19 +207,22 @@ const AppLayout = () => {
     // Update html lang attribute
     document.documentElement.lang = currentLang;
 
-    // Update page title
-    document.title = title;
+    // Only update title and description for pages without custom metadata
+    if (!isCustomMetadataPage) {
+      // Update page title
+      document.title = title;
 
-    // Update dcterms.title
-    let dctermsTitleMeta = document.querySelector('meta[name="dcterms.title"]');
-    if (dctermsTitleMeta) {
-      dctermsTitleMeta.setAttribute('content', title);
-    }
+      // Update dcterms.title
+      let dctermsTitleMeta = document.querySelector('meta[name="dcterms.title"]');
+      if (dctermsTitleMeta) {
+        dctermsTitleMeta.setAttribute('content', title);
+      }
 
-    // Update description meta tag
-    let descMeta = document.querySelector('meta[name="description"]');
-    if (descMeta) {
-      descMeta.setAttribute('content', description);
+      // Update description meta tag
+      let descMeta = document.querySelector('meta[name="description"]');
+      if (descMeta) {
+        descMeta.setAttribute('content', description);
+      }
     }
 
     // Update dcterms.language
@@ -236,42 +237,63 @@ const AppLayout = () => {
       dctermsDescMeta.setAttribute('content', dctermsDescription);
     }
 
-    // Update og:title
-    let ogTitleMeta = document.querySelector('meta[property="og:title"]');
-    if (ogTitleMeta) {
-      ogTitleMeta.setAttribute('content', title);
+    // Update author meta tag
+    let authorMeta = document.querySelector('meta[name="author"]');
+    if (authorMeta) {
+      authorMeta.setAttribute('content', author);
     }
 
-    // Update og:description
-    let ogDescMeta = document.querySelector('meta[property="og:description"]');
-    if (ogDescMeta) {
-      ogDescMeta.setAttribute('content', description);
+    // Update dcterms.creator
+    let dctermsCreatorMeta = document.querySelector('meta[name="dcterms.creator"]');
+    if (dctermsCreatorMeta) {
+      dctermsCreatorMeta.setAttribute('content', dctermsCreator);
     }
 
-    // Update og:image meta tag
-    let ogImageMeta = document.querySelector('meta[property="og:image"]');
-    if (ogImageMeta) {
-      ogImageMeta.setAttribute('content', ogImage);
+    // Update dcterms.audience
+    let dctermsAudienceMeta = document.querySelector('meta[name="dcterms.audience"]');
+    if (dctermsAudienceMeta) {
+      dctermsAudienceMeta.setAttribute('content', dctermsAudience);
     }
 
-    // Update twitter:title
-    let twitterTitleMeta = document.querySelector('meta[property="twitter:title"]');
-    if (twitterTitleMeta) {
-      twitterTitleMeta.setAttribute('content', title);
-    }
+    // Only update social media meta tags for pages without custom metadata
+    if (!isCustomMetadataPage) {
+      // Update og:title
+      let ogTitleMeta = document.querySelector('meta[property="og:title"]');
+      if (ogTitleMeta) {
+        ogTitleMeta.setAttribute('content', title);
+      }
 
-    // Update twitter:description
-    let twitterDescMeta = document.querySelector('meta[property="twitter:description"]');
-    if (twitterDescMeta) {
-      twitterDescMeta.setAttribute('content', description);
-    }
+      // Update og:description
+      let ogDescMeta = document.querySelector('meta[property="og:description"]');
+      if (ogDescMeta) {
+        ogDescMeta.setAttribute('content', description);
+      }
 
-    // Update twitter:image meta tag
-    let twitterImageMeta = document.querySelector('meta[property="twitter:image"]');
-    if (twitterImageMeta) {
-      twitterImageMeta.setAttribute('content', ogImage);
+      // Update og:image meta tag
+      let ogImageMeta = document.querySelector('meta[property="og:image"]');
+      if (ogImageMeta) {
+        ogImageMeta.setAttribute('content', ogImage);
+      }
+
+      // Update twitter:title
+      let twitterTitleMeta = document.querySelector('meta[property="twitter:title"]');
+      if (twitterTitleMeta) {
+        twitterTitleMeta.setAttribute('content', title);
+      }
+
+      // Update twitter:description
+      let twitterDescMeta = document.querySelector('meta[property="twitter:description"]');
+      if (twitterDescMeta) {
+        twitterDescMeta.setAttribute('content', description);
+      }
+
+      // Update twitter:image meta tag
+      let twitterImageMeta = document.querySelector('meta[property="twitter:image"]');
+      if (twitterImageMeta) {
+        twitterImageMeta.setAttribute('content', ogImage);
+      }
     }
-  }, [currentLang]);
+  }, [currentLang, location.pathname]);
 
   return (
     <>
@@ -290,7 +312,7 @@ const AppLayout = () => {
       >
         <GcdsBreadcrumbs slot="breadcrumb">
           {/* Show AI Answers breadcrumb on About page */}
-          {(location.pathname.includes('/about')) && (
+          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos')) && (
             <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
               {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
             </GcdsBreadcrumbsItem>

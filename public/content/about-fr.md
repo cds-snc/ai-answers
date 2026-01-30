@@ -1,3 +1,9 @@
+---
+title: "À propos de Réponses IA"
+description: "En savoir plus sur Canada.ca Réponses IA, un agent de discussion IA spécialisé conçu pour les utilisateurs des sites Web du gouvernement du Canada"
+ogImage: "og-about-fr.png"
+---
+
 # À propos de Canada.ca Réponses IA
 
 ## Aperçu
@@ -34,15 +40,14 @@ Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gou
 Votre utilisation de ce système et de toute information générée est également soumise aux [Conditions d'utilisation de Canada.ca](https://www.canada.ca/fr/transparence/avis.html).
 
 ## Billets de blogue sur Réponses IA
-
-- [Réponses IA : Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
+- [Réponses IA&nbsp;: Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 - [Résultats de l'étude sur la confiance envers l'IA sur Canada.ca](https://blogue.canada.ca/2025/02/18/confiance-ia.html)
 
 ## Documentation de la fiche système
 
 Pour des informations détaillées sur le fonctionnement de Réponses IA, nos mesures de sécurité, nos méthodes d'évaluation et notre architecture technique, voir notre [Fiche système complète](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md).
 
-### Sections clés :
+### Sections clés&nbsp;:
 - [État actuel](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#état-actuel)
 - [Objectif et portée du système](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#objectif-et-portée-du-système)
 - [Architecture technique](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#architecture-technique)

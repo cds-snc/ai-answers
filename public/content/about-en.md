@@ -1,3 +1,9 @@
+---
+title: "About AI Answers"
+description: "Learn about Canada.ca AI Answers, a specialized AI chat agent designed for users of Government of Canada websites"
+ogImage: "og-about-en.png"
+---
+
 # About Canada.ca AI Answers
 
 ## Overview
@@ -34,7 +40,6 @@ This AI system relies on information provided on Government of Canada websites. 
 Your use of this system and any information generated is also subject to the [Canada.ca Terms and conditions](https://www.canada.ca/en/transparency/terms.html).
 
 ## AI Answers Blog posts
-
 - [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
 
