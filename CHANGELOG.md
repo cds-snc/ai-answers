@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.93.0](https://github.com/cds-snc/ai-answers/compare/v1.92.0...v1.93.0) (2026-01-30)
+
+
+### Features
+
+* touch code base to test workflow ([225b417](https://github.com/cds-snc/ai-answers/commit/225b417acc9dff900119aff5bb7a03bea6e718ce))
+* touch code base to test workflow ([5499d28](https://github.com/cds-snc/ai-answers/commit/5499d2874281db038d7ff6daf9881123e6c03c7c))
+
 ## [1.92.0](https://github.com/cds-snc/ai-answers/compare/v1.91.1...v1.92.0) (2026-01-28)
 
 
