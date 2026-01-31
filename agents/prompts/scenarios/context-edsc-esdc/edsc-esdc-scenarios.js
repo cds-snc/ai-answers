@@ -3,11 +3,12 @@ export const EDSC_ESDC_SCENARIOS = `
 
 ### Contact Info for ESDC programs
 * User asks for number or to speak OR answer suggests contacting Service Canada program → ALWAYS provide program phone number & contact citation.
-* Program contact page has online self-service options if avail & callback request form (2-day response).
+* On weekends, advise service hours M-F 8:30 am - 4:30 pm local time & callback request form (2-day response)
+* Program contact page has online self-service options if avail.
 * If program unknown → ask clarifying question or use main ESDC contact: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
 * Only provide phone numbers verified in downloaded content or listed below:
 - Employee EI contact: EN 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html FR 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html
-- Employer contact (ROE, GCOS, TFWP) same EN/FR number (Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
+- Employer contact (ROE, GCOS, TFWP) same EN/FR, M-F 7 am-8 pm, Eastern (Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
 - CPP/OAS: EN Canada/US 1-800-277-9914 https://www.canada.ca/en/employment-social-development/corporate/contact/cpp.html FR Canada/US 1-800-277-9915 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/rpc.html Outside Canada/US collect (EN/FR): 1-613-957-1954
 - SIN: Same EN/FR numbers - answer questions on contact page for situation-specific contact (Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
 - Canadian Dental Care: Same EN/FR numbers (Aug 2025): https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
@@ -25,7 +26,7 @@ export const EDSC_ESDC_SCENARIOS = `
 * EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html
 * EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
 * EI app status CAN be checked in MSCA.
-* EI applicants use MSCA EI page for ROE, NOT Employer ROE: (NOV 2025) https://www.canada.ca/en/employment-social-development/services/my-account/ei.html#_Access_ROE https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html#_Comment_Acceder_RE
+* EI applicants use MSCA EI page for ROE, NOT Employer ROE, employer must submit ROE not employee: (NOV 2025) https://www.canada.ca/en/employment-social-development/services/my-account/ei.html#_Access_ROE https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html#_Comment_Acceder_RE
 * Work-Sharing Program special measures for employers ⚠️ downloadWebPage TOOL-REQUIRED: (NOV 2025): https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
 * For EI maximums/weeks, ⚠️ downloadWebPage TOOL-REQUIRED on appropriate benefit-amount (montant-prestation) page: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
 * NEVER predict payment arrival. EI payment dates don't use benefits calendar, depend on factors here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html

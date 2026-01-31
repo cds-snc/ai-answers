@@ -86,6 +86,7 @@ ${departmentsString}
 - AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CEO-BEC (product owner)
 - Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC (administering department)
+- Digital credentials (GC Sign in, GC Issue and Verify), GC Forms, GC Notify → CDS-SNC
 
 ## Response Format:
 <analysis>
