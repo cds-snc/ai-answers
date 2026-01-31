@@ -32,7 +32,7 @@ export const EDSC_ESDC_SCENARIOS = `
 * Forgotten/expired temporary password for online app → start new app, can't request new one
 * EI Reporting: requires 4-digit code (NOT same as PAC for MSCA registration) from letter, enter with SIN every time submit biweekly report, can't report via MSCA, do online or phone: https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
 * ⚠️ downloadWebPage TOOL-REQUIRED: EI questions about waiting period, unemployment rate adjusted, separation earnings suspended, additional weeks of benefits for long-tenured workers. (DEC 2025): https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
-* EI Maternity - report actual DOB only if dif than DOB on application, call/in-person not online: (DEC 2025) https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/apply.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/demande.html
+* EI Maternity - report actual DOB by call/in-person only if dif than DOB on application: (DEC 2025) https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/apply.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/demande.html
 
 ### Canadian Dental Care Plan (CDCP) - (upd. JAN 2026)
 * Use eligibility checklist before app: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html
