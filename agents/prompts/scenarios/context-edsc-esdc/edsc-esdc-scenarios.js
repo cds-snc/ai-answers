@@ -2,12 +2,13 @@ export const EDSC_ESDC_SCENARIOS = `
 ### ⚠️ downloadWebPage TOOL-REQUIRED - MUST use downloadWebPage tool before answering
 
 ### Contact Info for ESDC programs
-* User asks for phone number or to speak to someone OR answer suggests contacting Service Canada program → ALWAYS provide phone number for that program.
-* Provide contact page as citation when answer suggests contacting Service Canada - program page will include online self-service options & callback request form (2-day response).
+* User asks for number or to speak OR answer suggests contacting Service Canada program → ALWAYS provide program phone number & contact citation.
+* On weekends, advise service hours M-F 8:30 am - 4:30 pm local time & callback request form (2-day response)
+* Program contact page has online self-service options if avail.
 * If program unknown → ask clarifying question or use main ESDC contact: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
 * Only provide phone numbers verified in downloaded content or listed below:
-- EI contact: EN 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html FR 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html
-- Employer contact (ROE, GCOS, TFWP) same EN/FR number (Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
+- Employee EI contact: EN 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html FR 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html
+- Employer contact (ROE, GCOS, TFWP) same EN/FR, M-F 7 am-8 pm, Eastern (Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
 - CPP/OAS: EN Canada/US 1-800-277-9914 https://www.canada.ca/en/employment-social-development/corporate/contact/cpp.html FR Canada/US 1-800-277-9915 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/rpc.html Outside Canada/US collect (EN/FR): 1-613-957-1954
 - SIN: Same EN/FR numbers - answer questions on contact page for situation-specific contact (Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
 - Canadian Dental Care: Same EN/FR numbers (Aug 2025): https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
@@ -16,24 +17,27 @@ export const EDSC_ESDC_SCENARIOS = `
 
 ### CHANGING PERSONAL INFO NOT AVAILABLE IN MSCA: Can't change mailing address, phone, or bank/direct deposit in MSCA. Don't direct to sign in or specific forms. ALWAYS give phone number for program with citation to contact page.
 
+### ALWAYS give eligibility as citation for q on app for any program unless specifically on apply process
+
 ### Employment Insurance
-* EI eligibility/amounts Qs: don't attempt to answer (too complex) - provide estimator: https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
+* EI eligibility/amounts Qs: don't attempt to answer (too complex) - provide estimator:(DEC 2025) https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
 * Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → refer to estimator
 * NEVER advise may not qualify for EI. If any uncertainty → advise to apply immediately as changes may not be reflected yet.
 * EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html
 * EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
 * EI app status CAN be checked in MSCA.
-* For EI applicants: provide MSCA sign-in page citation to view ROE, NOT Employer ROE submission page.
+* EI applicants use MSCA EI page for all ROE, NOT Employer ROE, employer must submit ROE not employee: (NOV 2025) https://www.canada.ca/en/employment-social-development/services/my-account/ei.html#_Access_ROE https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html#_Comment_Acceder_RE
 * Work-Sharing Program special measures for employers ⚠️ downloadWebPage TOOL-REQUIRED: (NOV 2025): https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
 * For EI maximums/weeks, ⚠️ downloadWebPage TOOL-REQUIRED on appropriate benefit-amount (montant-prestation) page: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
 * NEVER predict payment arrival. EI payment dates don't use benefits calendar, depend on factors here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
 * Forgotten/expired temporary password for online app → start new app, can't request new one
 * EI Reporting: requires 4-digit code (NOT same as PAC for MSCA registration) from letter, enter with SIN every time submit biweekly report, can't report via MSCA, do online or phone: https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
-* ⚠️ downloadWebPage TOOL-REQUIRED: EI questions about waiting period, unemployment rate adjusted, separation earnings suspended, additional weeks of benefits for long-tenured workers. Updated Dec 2025: https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
+* ⚠️ downloadWebPage TOOL-REQUIRED: EI questions about waiting period, unemployment rate adjusted, separation earnings suspended, additional weeks of benefits for long-tenured workers. (DEC 2025): https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
+* EI Maternity - report actual DOB by call or in-person only if dif than DOB on application, give phone #: (DEC 2025) https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/apply.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/demande.html
 
-### Canadian Dental Care Plan (CDCP) - pages upd. Dec 2025
-* Apply online via CDCP Apply button (1 app per family for children under 18) or via MSCA: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html
-* Use eligibility checklist before applying: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html
+### Canadian Dental Care Plan (CDCP) - (upd. JAN 2026)
+* Use eligibility checklist before app: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html
+* Apply via MSCA or via Apply button (1 app per family for children under 18) : https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html
 * Find dentist - confirm they'll accept CDCP client: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/visit-provider.html#find
 * Renew: Click Renew button online or renew in MSCA: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/renew.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/renouveler.html
 - Don't need Notice of Assessment to renew, just need filed tax return and assessment confirmation
@@ -57,7 +61,7 @@ export const EDSC_ESDC_SCENARIOS = `
 * Lived/living outside Canada - applying/receiving pensions (Jun 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales.html
 * Applying from outside Canada - process/forms differ by country, select country for correct form (Jun 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html
 * Don't advise applying for CPP a year in advance - just general guideline, could alarm those outside timeframe.
-* For CPP/OAS payment dates, direct to benefits calendar. Dates vary month-to-month: https://www.canada.ca/en/services/benefits/calendar.html https://www.canada.ca/fr/services/prestations/calendrier.html
+* CPP/OAS payment dates vary month to month, direct to benefits calendar:(JAN 2026) https://www.canada.ca/en/services/benefits/calendar.html https://www.canada.ca/fr/services/prestations/calendrier.html
 
 <example>
    <english-question> How do I apply for EI? </english-question>

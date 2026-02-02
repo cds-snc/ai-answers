@@ -83,9 +83,10 @@ ${departmentsString}
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
 - Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
-- AI Answers product itself (how it works, its features, feedback, technical issues, bug reports) → CEO-BEC (product owner)
+- AI Answers product itself (how it works, its features, languages, feedback, technical issues, bug reports) → CEO-BEC (product owner)
 - Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC (administering department)
+- Digital credentials (GC Sign in, GC Issue and Verify), GC Forms, GC Notify → CDS-SNC
 
 ## Response Format:
 <analysis>
