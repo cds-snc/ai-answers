@@ -8,6 +8,52 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } fro
 import { AzureOpenAI } from 'openai';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { QuoraCrossEncoderComparator } from './comparators/QuoraCrossEncoderComparator.js';
+
+/**
+ * Test Quora Cross-Encoder model (local Transformers.js)
+ */
+async function testQuoraModel() {
+    const startTime = Date.now();
+    try {
+        const comparator = new QuoraCrossEncoderComparator();
+
+        // Test with one identical and one different question
+        const q1 = "What is the SCIS form number?";
+        const candidates = [
+            "What is the SCIS form number?", // Same
+            "How do I bake a cake?"          // Different
+        ];
+
+        const result = await comparator.compare([q1], candidates);
+
+        const sameScore = result.results.find(r => r.index === 0)?.score || 0;
+        const diffScore = result.results.find(r => r.index === 1)?.score || 0;
+
+        return {
+            service: 'Quora Cross-Encoder',
+            status: 'connected',
+            message: `Model loaded and verified. Threshold: ${result.metadata.threshold}`,
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: {
+                model: result.metadata.model,
+                testPairs: [
+                    { q1, q2: candidates[0], score: sameScore, status: sameScore >= result.metadata.threshold ? 'MATCH' : 'REJECT' },
+                    { q1, q2: candidates[1], score: diffScore, status: diffScore >= result.metadata.threshold ? 'MATCH' : 'REJECT' }
+                ]
+            }
+        };
+    } catch (error) {
+        return {
+            service: 'Quora Cross-Encoder',
+            status: 'error',
+            message: error.message,
+            latencyMs: Date.now() - startTime,
+            configured: true
+        };
+    }
+}
 
 /**
  * Test DocumentDB/MongoDB connection
@@ -522,6 +568,8 @@ async function testAllConnections() {
         testRedis(),
         testS3(),
         testAzureOpenAI(),
+        testBedrockWithRole(),
+        testQuoraModel()
         testBedrockClaudeCanada(),
         testBedrockNova()
     ]);
@@ -546,6 +594,7 @@ export {
     testAzureOpenAI,
     testBedrock,
     testBedrockWithRole,
+    testQuoraModel,
     testBedrockClaudeCanada,
     testBedrockNova,
     testAllConnections
