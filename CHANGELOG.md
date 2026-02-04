@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.94.0](https://github.com/cds-snc/ai-answers/compare/v1.93.2...v1.94.0) (2026-02-04)
+
+
+### Features
+
+* Add GPT-5 mini and nano models to config ([8ebd03f](https://github.com/cds-snc/ai-answers/commit/8ebd03f0242afb4932fec7414e72a2529c14e771))
+* configure reasoning effort (low) for GPT-5 models ([5d01ede](https://github.com/cds-snc/ai-answers/commit/5d01ede13b5325a3d47de59d75568ed271c4c4c6))
+* configure reasoning effort (low) for GPT-5 models ([ed84c35](https://github.com/cds-snc/ai-answers/commit/ed84c3539f219c5103240abb50a9000bef0daee5))
+
+
+### Bug Fixes
+
+* **deps:** upgrade all langchain packages to v1.x compatible versions ([fc8b9a3](https://github.com/cds-snc/ai-answers/commit/fc8b9a3c91578fea799d9b8ca6a28417ef42b595))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump eslint from 8.57.1 to 9.26.0 ([b99142b](https://github.com/cds-snc/ai-answers/commit/b99142b413354eba04de57b5630ea166f1b7dd70))
+* **deps-dev:** bump eslint from 8.57.1 to 9.26.0 ([7a9505e](https://github.com/cds-snc/ai-answers/commit/7a9505e5a6841d9e5069578a75205e0a56287919))
+* **deps:** bump fast-xml-parser, @aws-sdk/client-bedrock-runtime, @aws-sdk/client-s3, @aws-sdk/client-sts, @langchain/anthropic, @aws-sdk/client-sagemaker and @aws-sdk/credential-providers ([7151de0](https://github.com/cds-snc/ai-answers/commit/7151de06a133fcec643fe894d5ce4ea448511301))
+* **deps:** bump fast-xml-parser, @aws-sdk/client-sagemaker and @aws-sdk/credential-providers ([ef5afa9](https://github.com/cds-snc/ai-answers/commit/ef5afa90c103c06e6e51df26b309b2928f2aeecd))
+* **deps:** bump fast-xml-parser, @aws-sdk/client-sagemaker and @aws-sdk/credential-providers in /server ([993b8e3](https://github.com/cds-snc/ai-answers/commit/993b8e340e69eca3783952d32b952fea869ccdb2))
+
 ## [1.93.2](https://github.com/cds-snc/ai-answers/compare/v1.93.1...v1.93.2) (2026-02-02)
 
 
