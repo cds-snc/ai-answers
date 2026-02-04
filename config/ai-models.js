@@ -27,11 +27,17 @@ const AI_MODELS = {
         maxTokens: 1024,
         temperature: 0.0,
         timeoutMs: 60000,
+        reasoning: {
+          effort: "low"
+        }
       },
       "openai-gpt5-nano": {
         maxTokens: 1024,
         temperature: 0.0,
         timeoutMs: 60000,
+        reasoning: {
+          effort: "low"
+        }
       },
     },
     embeddings: {
