@@ -99,7 +99,7 @@ test.describe('Admin Metrics Dashboard', () => {
 
         // 3. Trigger Metrics
         log('Clicking Apply...');
-        const applyBtn = page.locator('button').filter({ hasText: /Apply|Appliquer/ });
+        const applyBtn = page.locator('#filter-apply-button');
 
         // Wait for ANY response from metrics endpoint (not just 200)
         const metricsPromise = page.waitForResponse(response =>

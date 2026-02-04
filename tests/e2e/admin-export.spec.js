@@ -166,7 +166,7 @@ test.describe('Admin Chat Logs Export', () => {
         });
 
         // Click Apply/Export button in filter panel
-        const exportButton = page.locator('button:has-text("Export")');
+        const exportButton = page.locator('#filter-apply-button');
         if (await exportButton.isVisible()) {
             // Set up download promise
             const downloadPromise = page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
@@ -209,7 +209,7 @@ test.describe('Admin Chat Logs Export', () => {
 
         // 4. Trigger Export and Capture Download
         const downloadPromise = page.waitForEvent('download');
-        await page.locator('button:has-text("Export")').click();
+        await page.locator('#filter-apply-button').click();
         const download = await downloadPromise;
 
         // 5. Verify Content
@@ -225,8 +225,8 @@ test.describe('Admin Chat Logs Export', () => {
             // Check for critical fields requested by user
             expect(row).toHaveProperty('uniqueID');
             expect(row).toHaveProperty('sentence1');
-            expect(row).toHaveProperty('expertFeedback.totalScore');
-            expect(row).not.toHaveProperty('autoEval.sentenceMatchTrace'); // Should be excluded
+            expect(row['expertFeedback.totalScore']).toBeDefined();
+            expect(row['autoEval.sentenceMatchTrace']).toBeUndefined(); // Should be excluded
         }
     });
 });

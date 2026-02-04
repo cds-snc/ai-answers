@@ -541,6 +541,7 @@ const FilterPanel = ({
 
         <div className="filter-actions">
           <button
+            id="filter-apply-button"
             type="button"
             onClick={handleApply}
             className="filter-button filter-button-primary"

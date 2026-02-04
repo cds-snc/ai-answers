@@ -27,7 +27,7 @@ test.describe('Authenticated AI Answers Testing', () => {
             user = new User({
                 email: TEST_USER_EMAIL,
                 password: TEST_USER_PASSWORD,
-                role: 'user',
+                role: 'partner',
                 active: true
             });
             await user.save();
@@ -35,6 +35,7 @@ test.describe('Authenticated AI Answers Testing', () => {
         } else {
             // Ensure connection matches what we expect (in case of manual changes)
             user.password = TEST_USER_PASSWORD; // Will be hashed by pre-save hook
+            user.role = 'partner';
             user.active = true;
             await user.save();
             console.log('Test user updated/verified.');
