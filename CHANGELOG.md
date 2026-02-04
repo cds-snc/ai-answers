@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.93.2](https://github.com/cds-snc/ai-answers/compare/v1.93.1...v1.93.2) (2026-02-02)
+
+
+### Bug Fixes
+
+* address T3 errors ([efb267c](https://github.com/cds-snc/ai-answers/commit/efb267c8d303cef3e3cce50cb0205e98635e9076))
+* languages ([cc5c8cc](https://github.com/cds-snc/ai-answers/commit/cc5c8cca5be11a489b9bdfa05f1f9376706f564c))
+* last try ([e0caf8e](https://github.com/cds-snc/ai-answers/commit/e0caf8eebf2650334da7f84dd9a3b7b2dd53ea20))
+* more tweaks for errors ([a18d29e](https://github.com/cds-snc/ai-answers/commit/a18d29e65e3bc55dda41ee89e825ba0e2a432286))
+* service hours ([69ec07c](https://github.com/cds-snc/ai-answers/commit/69ec07c9bf0482a8f33f0441ae00e99c5a7ce34c))
+
 ## [1.93.1](https://github.com/cds-snc/ai-answers/compare/v1.93.0...v1.93.1) (2026-01-30)
 
 
