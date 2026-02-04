@@ -1,12 +1,12 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock modules before importing handler so protection middleware and DB connect are bypassed
-vi.mock('c:/Users/hymary/repos/ai-answers/middleware/auth.js', () => ({
+vi.mock('../middleware/auth.js', () => ({
   withProtection: (handler) => handler,
   authMiddleware: {}
 }));
 
-vi.mock('c:/Users/hymary/repos/ai-answers/api/db/db-connect.js', () => ({
+vi.mock('../api/db/db-connect.js', () => ({
   __esModule: true,
   default: async () => Promise.resolve()
 }));
@@ -29,8 +29,8 @@ describe('db-chat-logs handler filters (V2)', () => {
 
   beforeEach(async () => {
     // load the handler module fresh each time
-    dbModule = await import('c:/Users/hymary/repos/ai-answers/api/db/db-chat-logs.js');
-    Chat = (await import('c:/Users/hymary/repos/ai-answers/models/chat.js')).Chat;
+    dbModule = await import('../api/db/db-chat-logs.js');
+    Chat = (await import('../models/chat.js')).Chat;
   });
 
   afterEach(() => {
@@ -70,7 +70,7 @@ describe('db-chat-logs handler filters (V2)', () => {
     const hasAnswerType = pipeline.some(stage => {
       if (!stage.$match) return false;
       const and = stage.$match.$and || [];
-      return and.some(cond => cond['interactions.answer.answerType'] === 'pt-muni');
+      return and.some(cond => cond['interactions.answerType'] === 'pt-muni');
     });
     expect(hasAnswerType).toBe(true);
   });

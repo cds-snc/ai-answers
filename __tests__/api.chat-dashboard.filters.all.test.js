@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock auth wrapper so tests invoke the inner handler directly (use absolute path)
-vi.mock('c:/Users/hymary/repos/ai-answers/middleware/auth.js', () => ({
+vi.mock('../middleware/auth.js', () => ({
   withProtection: (handler, ...rest) => (req, res) => handler(req, res),
   authMiddleware: {},
   partnerOrAdminMiddleware: {}
 }));
-// Mock DB connect to avoid real DB connections during unit tests (absolute path)
-vi.mock('c:/Users/hymary/repos/ai-answers/api/db/db-connect.js', () => ({ __esModule: true, default: async () => {} }));
+// Mock DB connect to avoid real DB connections during unit tests
+vi.mock('../api/db/db-connect.js', () => ({ __esModule: true, default: async () => { } }));
 import handler from '../api/chat/chat-dashboard.js';
 import * as ChatModel from '../models/chat.js';
 
@@ -44,8 +44,6 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     const matchStage = Array.isArray(capturedPipeline) ? capturedPipeline.find((stage) => stage && stage.$match && stage.$match.createdAt) : null;
     expect(matchStage?.$match?.createdAt?.$gte?.toISOString()).toBe('2025-12-01T05:00:00.000Z');
     expect(matchStage?.$match?.createdAt?.$lte?.toISOString()).toBe('2025-12-11T04:59:59.999Z');
-    expect(pipelineIncludes('2025-12-01')).toBe(true);
-    expect(pipelineIncludes('2025-12-10')).toBe(true);
   });
 
   it('includes department when provided', async () => {

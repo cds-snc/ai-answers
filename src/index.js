@@ -62,28 +62,10 @@ function insertAdobeScriptsIfNeeded() {
 }
 // -------------------------------------------------------
 
-// ⭐ Unified Fingerprint Initialization (runs ONCE)
-async function initFingerprint() {
-  try {
-    if (
-      typeof window !== 'undefined' &&
-      SessionService &&
-      typeof SessionService.sendFingerprint === 'function'
-    ) {
-      await SessionService.sendFingerprint();
-    }
-  } catch (e) {
-    console.warn("Fingerprint initialization failed", e);
-  }
-}
-
 const renderApp = async () => {
   const root = ReactDOM.createRoot(document.getElementById('root'));
 
-  // ⭐ Fingerprint sent ONCE before render
-  await initFingerprint();
-
-  // Load runtime config (from /config.js) after fingerprint, then insert Adobe scripts.
+  // Load runtime config (from /config.js) then insert Adobe scripts.
   await loadRuntimeConfig();
   insertAdobeScriptsIfNeeded();
 

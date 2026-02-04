@@ -80,18 +80,6 @@ class DataStoreService {
 
 
 
-  static async getChatSession(newChat = false) {
-    try {
-      // Always creates a new chatId
-      const url = getApiUrl('chat-create');
-      const response = await AuthService.fetch(url);
-      if (!response.ok) throw new Error('Failed to get chat session');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting chat session:', error);
-      throw error;
-    }
-  }
 
   static async getLogs(chatId) {
     try {

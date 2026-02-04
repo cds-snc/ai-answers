@@ -1,5 +1,5 @@
 // src/pages/HomePage.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import ChatAppContainer from "../components/chat/ChatAppContainer.js";
 import {
@@ -108,60 +108,43 @@ const HomePage = ({ lang = "en" }) => {
   })();
   // Removed unused isLoadingSiteStatus state
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Use client SessionService wrapper which checks siteSetting + sessions via API
-    (async () => {
-      try {
-        const ok = await SessionService.isAvailable();
-        // isAvailable() returns true only when site is 'available' AND sessions exist
-        // We set sessionAvailable = ok and isAvailable = ok for compatibility with existing logic
-        setServiceStatus({ isAvailable: ok, sessionAvailable: ok, message: ok ? '' : t('homepage.errors.serviceUnavailable') });
-      } catch (e) {
-        setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });
-      }
-    })();
-  }, [t]);
-
-  const fetchingSession = useRef(false);
-
-  async function fetchSession() {
-    if (fetchingSession.current) return;
-    fetchingSession.current = true;
+  // Fetch session and availability in one go
+  const fetchSessionOnInit = useCallback(async () => {
+    if (reviewChatId || chatId) return;
+    setIsLoading(true);
     try {
-      // Always request a new chat ID on mount (new tab or reload)
-      // so that every tab/visit gets its own conversation context.
-      const data = await DataStoreService.getChatSession();
-      if (data && data.chatId) {
-        setChatId(data.chatId);
-        localStorage.setItem("chatId", data.chatId);
+      const { chatId: newChatId, available } = await SessionService.initChat();
+      if (available) {
+        setChatId(newChatId);
+        localStorage.setItem("chatId", newChatId);
+        setServiceStatus({ isAvailable: true, sessionAvailable: true, message: '' });
         setChatSessionFailed(false);
       } else {
+        setServiceStatus({
+          isAvailable: false,
+          sessionAvailable: false,
+          message: t('homepage.errors.serviceUnavailable')
+        });
         setChatSessionFailed(true);
       }
     } catch (error) {
+      console.error('Error initializing chat:', error);
+      setServiceStatus({
+        isAvailable: false,
+        sessionAvailable: false,
+        message: t('homepage.errors.serviceUnavailable')
+      });
       setChatSessionFailed(true);
-      console.error("Failed to get chat session:", error);
     } finally {
-      fetchingSession.current = false;
+      setIsLoading(false);
     }
-  }
+  }, [t, reviewChatId, chatId]);
 
   useEffect(() => {
-    if (reviewChatId) return;
-
-    // If privileged users, always fetch a chat.
-    if (isPrivileged) {
-      if (!chatId) fetchSession();
-      return;
-    }
-
-    // For normal users, wait until availability is confirmed (true)
-    const available = serviceStatus.isAvailable === true && serviceStatus.sessionAvailable === true;
-    if (available && !chatId) {
-      fetchSession();
-    }
-  }, [serviceStatus.isAvailable, serviceStatus.sessionAvailable, isPrivileged, chatId, reviewChatId]);
+    fetchSessionOnInit();
+  }, [fetchSessionOnInit]);
 
   useEffect(() => {
     if (reviewChatId) {
@@ -262,14 +245,14 @@ const HomePage = ({ lang = "en" }) => {
           </GcdsText>
         </GcdsDetails>
         {showWarningNotice && (
-        <GcdsNotice 
-          type="warning" 
-          noticeTitleTag="h3" 
-          noticeTitle={t("homepage.warning.title")}
-          className="mt-200"
-        >
-          <GcdsText>{t("homepage.warning.message")}</GcdsText>
-        </GcdsNotice>
+          <GcdsNotice
+            type="warning"
+            noticeTitleTag="h3"
+            noticeTitle={t("homepage.warning.title")}
+            className="mt-200"
+          >
+            <GcdsText>{t("homepage.warning.message")}</GcdsText>
+          </GcdsNotice>
         )}
         <ChatAppContainer
           lang={lang}
@@ -279,7 +262,7 @@ const HomePage = ({ lang = "en" }) => {
           // Pass saved review value separately, and clientReferrer separately.
           // ChatAppContainer will prefer pageUrl when present and ignore clientReferrer.
           initialReferringUrl={reviewReferringUrl}
-          chatCreatedAt={chatCreatedAt} 
+          chatCreatedAt={chatCreatedAt}
           clientReferrer={clientReferrer}
           targetInteractionId={targetInteractionId}
           onSessionError={handleSessionError}
