@@ -74,14 +74,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       }
 
       try {
-  // Hide the upload button immediately to prevent duplicate submissions
-  // and give the user immediate feedback that the upload started.
-  setFileUploaded(true);
-  // Indicate processing state so the UI can show a brief message while we
-  // parse the CSV and wait for the server to persist the batch.
-  setProcessing(true);
+        // Hide the upload button immediately to prevent duplicate submissions
+        // and give the user immediate feedback that the upload started.
+        setFileUploaded(true);
+        // Indicate processing state so the UI can show a brief message while we
+        // parse the CSV and wait for the server to persist the batch.
+        setProcessing(true);
 
-  const text = await file.text();
+        const text = await file.text();
         // Parse CSV to entries and prepare items for server-side BatchItem creation
         const entries = processCSV(text);
 
@@ -199,9 +199,9 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     }
   };
 
-  
-  
-  
+
+
+
 
 
   useEffect(() => {
@@ -330,6 +330,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                   <option value="InstantAndQAGraph">InstantAndQAGraph</option>
                   <option value="DefaultGraph">DefaultGraph</option>
+                  <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
                 </select>
               </div>
             </div>
@@ -388,11 +389,11 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
             {error && <div className="error-message mrgn-bttm-10 red">{error}</div>}
 
-              {processing && (
-                <div className="processing-message mrgn-bttm-10">
-                  {t('batch.upload.processing') || 'Processing file, please wait...'}
-                </div>
-              )}
+            {processing && (
+              <div className="processing-message mrgn-bttm-10">
+                {t('batch.upload.processing') || 'Processing file, please wait...'}
+              </div>
+            )}
 
             {file && !fileUploaded && (
               <button type="submit" className="primary-button force-style-button">
@@ -400,8 +401,8 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               </button>
             )}
 
-           
-           
+
+
           </form>
         </div>
       </div>
