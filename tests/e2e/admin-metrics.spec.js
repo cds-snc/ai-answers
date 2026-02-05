@@ -100,6 +100,7 @@ test.describe('Admin Metrics Dashboard', () => {
         // 3. Trigger Metrics
         log('Clicking Apply...');
         const applyBtn = page.locator('#filter-apply-button');
+        await applyBtn.waitFor({ state: 'visible', timeout: 5000 });
 
         // Wait for ANY response from metrics endpoint (not just 200)
         const metricsPromise = page.waitForResponse(response =>
