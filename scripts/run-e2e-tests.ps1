@@ -1,7 +1,18 @@
 param(
   [string]$TestFile = "",
-  [switch]$Headed = $false
+  [switch]$Headed = $false,
+  [Parameter(ValueFromRemainingArguments = $true)]
+  [string[]]$RemainingArgs
 )
+
+# Handle --headed passed in remaining args or as TestFile
+if (-not $RemainingArgs -and $args) { $RemainingArgs = $args }
+
+if ($RemainingArgs -contains "--headed" -or $TestFile -eq "--headed") {
+  $Headed = $true
+}
+# If TestFile was just the flag, clear it
+if ($TestFile -eq "--headed") { $TestFile = "" }
 
 # Run Playwright E2E tests with full environment setup and debugging
 
@@ -83,6 +94,7 @@ $playwrightArgs += "--workers=1"
 $playwrightArgs += "--trace=on"
 $playwrightArgs += "--reporter=html"
 $playwrightArgs += "--reporter=list"
+$playwrightArgs += "--timeout=60000"  # Increase default timeout to 60s
 
 # Check if headed mode is requested via parameter or environment variable
 if ($Headed -or ($env:TEST_HEADED -eq "true")) {

@@ -128,13 +128,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Unified chat initialization endpoint
-app.post('/api/chat/chat-init', chatInitHandler);
-
 app.use(createSessionMiddleware(app));
 // Initialize Passport for authentication
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Unified chat initialization endpoint
+app.post('/api/chat/chat-init', chatInitHandler);
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use('/api', botFingerprintPresence);
 // Block requests with known bot User-Agent strings
