@@ -108,18 +108,20 @@ test.describe('ChatViewer - Log Loading', () => {
 
         // 2. Navigate to ChatViewer
         console.log('Navigating to ChatViewer...');
-        await page.goto('http://localhost:3001/en/admin/chat-viewer');
-        await page.waitForLoadState('networkidle');
+        await page.goto('http://localhost:3001/en/chat-viewer');
+        await page.waitForSelector('#chatIdInput');
 
         // 3. Enter chatId and fetch logs
         console.log('Entering chat ID:', TEST_CHAT_ID);
-        await page.fill('#chatIdInput', TEST_CHAT_ID);
+        await page.click('#chatIdInput');
+        await page.type('#chatIdInput', TEST_CHAT_ID, { delay: 100 });
+        await page.waitForTimeout(500);
 
         console.log('Clicking refresh button...');
-        await page.click('gcds-button:has-text("Refresh")');
+        await page.click('#refresh-logs-button');
 
         // Wait for table to load
-        await page.waitForTimeout(3000); // Allow time for logs to load
+        await page.waitForTimeout(1000); // Allow time for logs to load
 
         // 4. Verify logs are displayed
         console.log('Verifying logs are displayed...');
@@ -179,13 +181,14 @@ test.describe('ChatViewer - Log Loading', () => {
         await page.waitForURL(url => !url.toString().includes('signin'), { timeout: 15000 });
 
         // Navigate to ChatViewer
-        await page.goto('http://localhost:3001/en/admin/chat-viewer');
-        await page.waitForLoadState('networkidle');
+        await page.goto('http://localhost:3001/en/chat-viewer');
+        await page.waitForSelector('#chatIdInput');
 
         // Enter chatId and fetch logs
-        await page.fill('#chatIdInput', TEST_CHAT_ID);
-        await page.click('gcds-button:has-text("Refresh")');
-        await page.waitForTimeout(3000);
+        await page.click('#chatIdInput');
+        await page.type('#chatIdInput', TEST_CHAT_ID, { delay: 100 });
+        await page.click('#refresh-logs-button');
+        await page.waitForTimeout(1000);
 
         // Filter by info level
         console.log('Filtering by info level...');
@@ -210,19 +213,20 @@ test.describe('ChatViewer - Log Loading', () => {
 
     test('should handle missing chatId gracefully', async ({ page }) => {
         // Login
-        await page.goto('http://localhost:3001/en/signin');
+        await pagegoto('http://localhost:3001/en/signin');
         await page.fill('#email', TEST_USER_EMAIL);
         await page.fill('#password', TEST_USER_PASSWORD);
         await page.click('button[type="submit"]');
         await page.waitForURL(url => !url.toString().includes('signin'), { timeout: 15000 });
 
         // Navigate to ChatViewer
-        await page.goto('http://localhost:3001/en/admin/chat-viewer');
-        await page.waitForLoadState('networkidle');
+        await page.goto('http://localhost:3001/en/chat-viewer');
+        await page.waitForSelector('#chatIdInput');
 
         // Don't enter any chatId, just verify "No logs available" shows
-        await page.fill('#chatIdInput', 'non-existent-chat-id-12345');
-        await page.click('gcds-button:has-text("Refresh")');
+        await page.click('#chatIdInput');
+        await page.type('#chatIdInput', 'non-existent-chat-id-12345', { delay: 100 });
+        await page.click('#refresh-logs-button');
         await page.waitForTimeout(2000);
 
         // Should show "No logs available" or empty state

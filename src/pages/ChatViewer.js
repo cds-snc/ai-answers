@@ -321,6 +321,7 @@ const ChatViewer = () => {
                 </select>
               </div>
               <GcdsButton
+                id="refresh-logs-button"
                 type="button"
                 disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
