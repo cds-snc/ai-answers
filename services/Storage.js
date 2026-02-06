@@ -13,8 +13,10 @@ const storage = createStorage({
         ? s3Driver({
             bucket: bucketName,
             region: region
-            // AWS SDK will automatically use IAM role credentials in Lambda/EC2
-            // Or environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) if present
+            // Credentials are optional and retrieved by AWS SDK via:
+            // - IAM roles (Lambda, EC2, ECS)
+            // - Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+            // - AWS credential files (~/.aws/credentials)
         })
         : fsDriver({
             base: "./storage/chat-logs",
