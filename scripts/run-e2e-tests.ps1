@@ -45,10 +45,13 @@ catch { }
 
 # Start the server in background if not already running
 if (-not $serverRunning) {
-  Write-Host "Starting server (node server/server.js) in background..." -ForegroundColor Green
   $serverPath = Join-Path $repoRoot 'server\server.js'
-  $serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru
-  Write-Host "Server process started with PID $($serverProc.Id)" -ForegroundColor Green
+  $outLog = Join-Path $repoRoot 'server-out.log'
+  $errLog = Join-Path $repoRoot 'server-err.log'
+  if (Test-Path $outLog) { Remove-Item $outLog }
+  if (Test-Path $errLog) { Remove-Item $errLog }
+  $serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+  Write-Host "Server process started with PID $($serverProc.Id). Logs: $outLog, $errLog" -ForegroundColor Green
 
   # Wait up to 30s for server to respond on http://localhost:3001
   $maxWait = 30
