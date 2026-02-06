@@ -31,6 +31,10 @@
         {
             "key": "site.baseUrl",
             "value": "http://localhost:3000"
+        },
+        {
+            "key": "workflow.default",
+            "value": "DefaultGraph"
         }
     ],
     "chats": [

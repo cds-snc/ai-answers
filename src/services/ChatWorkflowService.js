@@ -90,9 +90,9 @@ export const ChatWorkflowService = {
     let resolvedWorkflow = workflow;
     if (!resolvedWorkflow) {
       try {
-        resolvedWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'Default');
+        resolvedWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'DefaultGraph');
       } catch (err) {
-        resolvedWorkflow = 'Default';
+        resolvedWorkflow = 'DefaultGraph';
       }
     }
 
