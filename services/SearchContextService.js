@@ -1,6 +1,6 @@
 import { contextSearch as canadaContextSearch } from '../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../agents/tools/googleContextSearch.js';
-import { exponentialBackoff } from '../src/utils/backoff.js';
+import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../agents/AgentFactory.js';

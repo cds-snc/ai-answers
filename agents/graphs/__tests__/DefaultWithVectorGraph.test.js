@@ -57,7 +57,7 @@ vi.mock('../services/translationService.js', () => ({
 vi.mock('../../../services/ContextAgentService.js', () => ({
     invokeContextAgent: vi.fn().mockResolvedValue({ message: 'context msg', model: 'gpt' })
 }));
-vi.mock('../../../src/utils/backoff.js', () => ({
+vi.mock('../../../api/util/backoff.js', () => ({
     exponentialBackoff: vi.fn((fn) => fn())
 }));
 vi.mock('../../../services/ScenarioOverrideService.js', () => ({
