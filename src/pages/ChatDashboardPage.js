@@ -62,26 +62,26 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     [lang]
   );
 
-// Helper function to truncate URL to path only (max 3 segments)
-const truncateUrl = useCallback((url) => {
-  if (!url) return '';
-  try {
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
+  // Helper function to truncate URL to path only (max 3 segments)
+  const truncateUrl = useCallback((url) => {
+    if (!url) return '';
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
 
-    // If no path segments or only 1 segment, show the domain
-    if (pathParts.length <= 1) {
-      const domain = urlObj.hostname.replace(/^www\./, '');
-      return pathParts.length === 1 ? `${domain}/${pathParts[0]}` : domain;
+      // If no path segments or only 1 segment, show the domain
+      if (pathParts.length <= 1) {
+        const domain = urlObj.hostname.replace(/^www\./, '');
+        return pathParts.length === 1 ? `${domain}/${pathParts[0]}` : domain;
+      }
+
+      // Keep only the last 3 path segments for longer URLs
+      const truncatedParts = pathParts.slice(-3);
+      return '/' + truncatedParts.join('/');
+    } catch {
+      return url;
     }
-
-    // Keep only the last 3 path segments for longer URLs
-    const truncatedParts = pathParts.slice(-3);
-    return '/' + truncatedParts.join('/');
-  } catch {
-    return url;
-  }
-}, []);
+  }, []);
 
   // Helper function to truncate email to username only
   const truncateEmail = useCallback((email) => {
@@ -360,7 +360,7 @@ const truncateUrl = useCallback((url) => {
                       // ignore
                     }
                   },
-                  stateLoadCallback: function (settings) {
+                  stateLoadCallback: function () {
                     try {
                       if (typeof window !== 'undefined' && window.localStorage) {
                         const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);

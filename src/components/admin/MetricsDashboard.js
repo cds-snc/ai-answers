@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GcdsButton, GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import '../../styles/App.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -172,15 +172,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     fetchMetrics(getDefaultDateRange());
   };
 
-  // Helper to render loading overlay/spinner for a section
-  const renderSectionLoading = (isLoading) => {
-    if (!isLoading) return null;
-    return (
-      <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
-        <div className="loading-animation w-6 h-6 border-2 border-slate-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  };
+
 
   // Helper for Section Wrapper to handle relative positioning for overlay
   const SectionWrapper = ({ children, isLoading, title, error }) => (

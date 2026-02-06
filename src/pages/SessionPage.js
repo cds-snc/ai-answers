@@ -16,7 +16,7 @@ const SessionPage = ({ lang: propLang }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fetchSessions = async () => {
+  const fetchSessions = React.useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -44,31 +44,32 @@ const SessionPage = ({ lang: propLang }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchSessions();
     const iv = setInterval(fetchSessions, 5000);
     return () => clearInterval(iv);
-  }, []);
+  }, [fetchSessions]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
-  <h1 className="mb-400">{t('admin.session.title', 'Sessions')}</h1>
+      <h1 className="mb-400">{t('admin.session.title', 'Sessions')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
         </GcdsText>
       </nav>
 
-  {error && <div style={{ color: 'red' }}>{error}</div>}
-  {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
 
       <DataTable
         data={sessions}
         columns={[
           { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
-          { title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
+          {
+            title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
               const cid = data || row.chatId || '';
               return cid ? `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>` : '';
             }

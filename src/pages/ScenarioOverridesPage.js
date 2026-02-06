@@ -121,11 +121,11 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       try { console.log('ScenarioOverridesPage: loading overrides...'); } catch (e) { /* ignore */ }
       setLoading(true);
       try {
-  const data = await ScenarioOverrideService.listOverrides();
-  if (!isMounted) return;
-  try { console.log('Auth user during load:', AuthService.getUser()); } catch (e) { /* ignore */ }
-  try { console.log('Raw listOverrides response:', data); } catch (e) { /* ignore */ }
-  const serverRows = SUPPORTED_DEPARTMENTS.map((dept) => {
+        const data = await ScenarioOverrideService.listOverrides();
+        if (!isMounted) return;
+        try { console.log('Auth user during load:', AuthService.getUser()); } catch (e) { /* ignore */ }
+        try { console.log('Raw listOverrides response:', data); } catch (e) { /* ignore */ }
+        const serverRows = SUPPORTED_DEPARTMENTS.map((dept) => {
           const entry = Array.isArray(data) ? data.find((item) => item?.departmentKey === dept) : null;
           // Normalize whitespace for consistent display and diffing: trim leading/trailing whitespace
           const defaultTextRaw = entry?.defaultText ?? '';
@@ -238,21 +238,10 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleReset = (index) => {
-    setRows((prev) => prev.map((row, idx) => {
-      if (idx !== index) return row;
-      return {
-        ...row,
-        overrideText: row.defaultText,
-        enabled: false,
-        dirty: true,
-        error: null,
-      };
-    }));
-  };
+  // handleReset removed
 
   const handleSave = async (index) => {
-  setGlobalError(null);
+    setGlobalError(null);
 
     // read the latest row snapshot to avoid stale closures
     const row = (latestRowsRef.current && latestRowsRef.current[index]) ? latestRowsRef.current[index] : rows[index];
@@ -294,7 +283,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
           error: null,
         };
       }));
-  if (row && row.departmentKey) setSavingMap((s) => ({ ...s, [row.departmentKey]: false }));
+      if (row && row.departmentKey) setSavingMap((s) => ({ ...s, [row.departmentKey]: false }));
     } catch (error) {
       // clear saving flag and set error
       if (row && row.departmentKey) setSavingMap((s) => ({ ...s, [row.departmentKey]: false }));
@@ -312,100 +301,100 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
   return (
     <PageErrorBoundary t={t}>
       <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
-  {/* no overlay styles needed in simplified UI */}
+        {/* no overlay styles needed in simplified UI */}
         <h1 className="mb-400">{pageTitle}</h1>
-      <nav className="mb-400">
-        <GcdsLink href={`/${language}/admin`}>
-          {t('common.backToAdmin', 'Back to Admin')}
-        </GcdsLink>
-      </nav>
-      <GcdsText className="mb-200">{description1}</GcdsText>
-      <GcdsText className="mb-400">{description2}</GcdsText>
+        <nav className="mb-400">
+          <GcdsLink href={`/${language}/admin`}>
+            {t('common.backToAdmin', 'Back to Admin')}
+          </GcdsLink>
+        </nav>
+        <GcdsText className="mb-200">{description1}</GcdsText>
+        <GcdsText className="mb-400">{description2}</GcdsText>
 
-      {loading && <p>{loadingLabel}</p>}
+        {loading && <p>{loadingLabel}</p>}
 
-      {!loading && globalError && (
-        <p style={{ color: '#d3080c' }}>{globalError}</p>
-      )}
+        {!loading && globalError && (
+          <p style={{ color: '#d3080c' }}>{globalError}</p>
+        )}
 
-      {/* Global success messages removed; per-override saving indicators remain */}
+        {/* Global success messages removed; per-override saving indicators remain */}
 
-      {!loading && rows.map((row, index) => {
-        const formattedUpdatedAt = formatTimestamp(row.updatedAt, lang);
-        return (
-          <section key={row.departmentKey} className="mb-500">
-            <header className="mb-200">
-              <h2 className="mb-100">{row.departmentKey}</h2>
-              <div style={{ fontSize: '0.9rem', color: '#54616c' }}>
-                <span>{t('scenarioOverrides.table.lastUpdated', 'Last updated')}: {formattedUpdatedAt || emptyLabel}</span>
-                {/* updatedBy removed: overrides are scoped per-user (userId) so showing
+        {!loading && rows.map((row, index) => {
+          const formattedUpdatedAt = formatTimestamp(row.updatedAt, lang);
+          return (
+            <section key={row.departmentKey} className="mb-500">
+              <header className="mb-200">
+                <h2 className="mb-100">{row.departmentKey}</h2>
+                <div style={{ fontSize: '0.9rem', color: '#54616c' }}>
+                  <span>{t('scenarioOverrides.table.lastUpdated', 'Last updated')}: {formattedUpdatedAt || emptyLabel}</span>
+                  {/* updatedBy removed: overrides are scoped per-user (userId) so showing
                      an additional "updated by" field is redundant. */}
-              </div>
-            </header>
+                </div>
+              </header>
 
-            {/* original default details removed — default is shown in the left diff column */}
+              {/* original default details removed — default is shown in the left diff column */}
 
-            {row.error && (
-              <p style={{ color: '#d3080c' }}>{row.error}</p>
-            )}
+              {row.error && (
+                <p style={{ color: '#d3080c' }}>{row.error}</p>
+              )}
 
-            {/* Two details blocks: one for editing the override, one for viewing the side-by-side diff */}
-            <details className="mb-200" open={row.editOpen} onToggle={(e) => handleFieldChange(index, { editOpen: e.target.open })}>
-              <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>{t('scenarioOverrides.sections.editOverride', 'Edit override')}</span>
-                <span style={{ marginLeft: '1rem', color: '#54616c', fontSize: '0.9rem' }}>
-                  {(savingMap[row.departmentKey]) ? loadingLabel : (row.dirty ? t('scenarioOverrides.status.saving', 'Saving...') : null)}
-                </span>
-              </summary>
-              <div style={{ marginTop: '0.5rem' }}>
-                <textarea
-                  aria-label={t('scenarioOverrides.table.overrideLabel', 'Override text')}
-                  value={row.overrideText && row.overrideText.length > 0 ? row.overrideText : row.defaultText}
-                  onChange={(e) => handleFieldChange(index, { overrideText: e.target.value })}
-                  rows={Math.max(8, (row.overrideText || row.defaultText || '').split('\n').length)}
-                  ref={(el) => { if (el) textareaRefs.current[`override-${row.departmentKey}`] = el; }}
-                  style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.95rem' }}
-                />
-                {/* saving indicator moved above so the details block doesn't jump */}
-              </div>
-            </details>
+              {/* Two details blocks: one for editing the override, one for viewing the side-by-side diff */}
+              <details className="mb-200" open={row.editOpen} onToggle={(e) => handleFieldChange(index, { editOpen: e.target.open })}>
+                <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>{t('scenarioOverrides.sections.editOverride', 'Edit override')}</span>
+                  <span style={{ marginLeft: '1rem', color: '#54616c', fontSize: '0.9rem' }}>
+                    {(savingMap[row.departmentKey]) ? loadingLabel : (row.dirty ? t('scenarioOverrides.status.saving', 'Saving...') : null)}
+                  </span>
+                </summary>
+                <div style={{ marginTop: '0.5rem' }}>
+                  <textarea
+                    aria-label={t('scenarioOverrides.table.overrideLabel', 'Override text')}
+                    value={row.overrideText && row.overrideText.length > 0 ? row.overrideText : row.defaultText}
+                    onChange={(e) => handleFieldChange(index, { overrideText: e.target.value })}
+                    rows={Math.max(8, (row.overrideText || row.defaultText || '').split('\n').length)}
+                    ref={(el) => { if (el) textareaRefs.current[`override-${row.departmentKey}`] = el; }}
+                    style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.95rem' }}
+                  />
+                  {/* saving indicator moved above so the details block doesn't jump */}
+                </div>
+              </details>
 
-            <details className="mb-200" open={row.diffOpen} onToggle={(e) => handleFieldChange(index, { diffOpen: e.target.open })}>
-              <summary style={{ cursor: 'pointer' }}>{t('scenarioOverrides.sections.visualDiff', 'Visual diff (side-by-side)')}</summary>
-              <div style={{ marginTop: '0.5rem', border: '1px solid #e1e1e1', borderRadius: '4px', padding: '0.5rem', overflowX: 'auto' }}>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{t('scenarioOverrides.table.defaultLabel', 'Default')}</div>
-                    <div style={{ backgroundColor: '#fff', padding: '0.5rem', borderRadius: '4px' }}>
-                      {safeRenderDiffColumn(row.defaultText || '', row.overrideText || '', 'left')}
+              <details className="mb-200" open={row.diffOpen} onToggle={(e) => handleFieldChange(index, { diffOpen: e.target.open })}>
+                <summary style={{ cursor: 'pointer' }}>{t('scenarioOverrides.sections.visualDiff', 'Visual diff (side-by-side)')}</summary>
+                <div style={{ marginTop: '0.5rem', border: '1px solid #e1e1e1', borderRadius: '4px', padding: '0.5rem', overflowX: 'auto' }}>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{t('scenarioOverrides.table.defaultLabel', 'Default')}</div>
+                      <div style={{ backgroundColor: '#fff', padding: '0.5rem', borderRadius: '4px' }}>
+                        {safeRenderDiffColumn(row.defaultText || '', row.overrideText || '', 'left')}
+                      </div>
                     </div>
-                  </div>
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{t('scenarioOverrides.table.overrideLabel', 'Override')}</div>
-                    <div style={{ backgroundColor: '#fff', padding: '0.5rem', borderRadius: '4px' }}>
-                      {safeRenderDiffColumn(row.defaultText || '', row.overrideText || '', 'right')}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{t('scenarioOverrides.table.overrideLabel', 'Override')}</div>
+                      <div style={{ backgroundColor: '#fff', padding: '0.5rem', borderRadius: '4px' }}>
+                        {safeRenderDiffColumn(row.defaultText || '', row.overrideText || '', 'right')}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </details>
+              </details>
 
-            <div className="mb-400">
-              <label style={{ marginRight: '1rem', display: 'inline-flex', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  checked={row.enabled}
-                  onChange={(event) => handleFieldChange(index, { enabled: event.target.checked })}
-                />
-                <span style={{ marginLeft: '0.5rem' }}>{t('scenarioOverrides.table.enabled', 'Use override')}</span>
-              </label>
-              {/* per-override saving indicator moved into the edit summary to avoid layout jumps */}
-            </div>
-          </section>
-        );
-      })}
-    </GcdsContainer>
+              <div className="mb-400">
+                <label style={{ marginRight: '1rem', display: 'inline-flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={row.enabled}
+                    onChange={(event) => handleFieldChange(index, { enabled: event.target.checked })}
+                  />
+                  <span style={{ marginLeft: '0.5rem' }}>{t('scenarioOverrides.table.enabled', 'Use override')}</span>
+                </label>
+                {/* per-override saving indicator moved into the edit summary to avoid layout jumps */}
+              </div>
+            </section>
+          );
+        })}
+      </GcdsContainer>
     </PageErrorBoundary>
   );
 };

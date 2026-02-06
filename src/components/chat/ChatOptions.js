@@ -4,9 +4,9 @@ import { RoleBasedContent } from '../RoleBasedUI.js';
 
 const ChatOptions = ({
   safeT,
-  selectedAI,
+  // selectedAI,
   handleAIToggle,
-  selectedSearch,
+  // selectedSearch,
   handleSearchToggle,
   workflow,
   handleWorkflowChange,

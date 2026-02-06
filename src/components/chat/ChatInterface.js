@@ -184,7 +184,7 @@ const ChatInterface = ({
     const button = document.querySelector(".btn-primary-send");
 
     // Create loading hint
-   const placeholderHint = document.createElement("div");
+    const placeholderHint = document.createElement("div");
     placeholderHint.id = "temp-hint";
     placeholderHint.innerHTML = `<p><img 
       src="${aiStarsBlue}" 
@@ -231,7 +231,7 @@ const ChatInterface = ({
       }
 
       // Check if footer is visible - try input-area bottom first, then gcds-footer__sub top
-      const inputArea = document.querySelector('.input-area');
+      // const inputArea = document.querySelector('.input-area');
       const gcdsFooter = document.querySelector('.gcds-footer__sub');
 
       let isFooterVisible = false;
@@ -389,7 +389,7 @@ const ChatInterface = ({
   };
 
   const handleTextareaFocus = () => {
-  setIsTextareaFocused(true);
+    setIsTextareaFocused(true);
   };
 
   return (
@@ -417,10 +417,10 @@ const ChatInterface = ({
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${message.redactedText?.includes("XXX")
-                    ? "privacy-box"
-                    : message.redactedText?.includes("###")
-                      ? "redacted-box"
-                      : ""
+                  ? "privacy-box"
+                  : message.redactedText?.includes("###")
+                    ? "redacted-box"
+                    : ""
                   }`}
                 {...(message.redactedText && {
                   "aria-describedby": `description-${message.id}`,
@@ -483,10 +483,10 @@ const ChatInterface = ({
                 {message.error ? (
                   <div
                     className={`error-message-box ${messages[
-                        messages.findIndex((m) => m.id === message.id) - 1
-                      ]?.redactedText?.includes("XXX")
-                        ? "privacy-error-box"
-                        : "error-box"
+                      messages.findIndex((m) => m.id === message.id) - 1
+                    ]?.redactedText?.includes("XXX")
+                      ? "privacy-error-box"
+                      : "error-box"
                       }`}
                   >
                     <p
@@ -653,11 +653,11 @@ const ChatInterface = ({
               </div>
             </div>
             <div className="loading-hint-text">
-              <img 
-                src={aiStarsBlue} 
-                className="ai-icon" 
-                width="24" 
-                height="24" 
+              <img
+                src={aiStarsBlue}
+                className="ai-icon"
+                width="24"
+                height="24"
                 alt=""
                 aria-hidden="true"
               />
@@ -718,11 +718,11 @@ const ChatInterface = ({
                   </span>
                 </label>
                 <span className="hint-text">
-                  <img 
-                    src={isTextareaFocused ? aiStarsBlue : aiStarsGray} 
-                    className="ai-icon" 
-                    width="28" 
-                    height="28" 
+                  <img
+                    src={isTextareaFocused ? aiStarsBlue : aiStarsGray}
+                    className="ai-icon"
+                    width="28"
+                    height="28"
                     alt=""
                     aria-hidden="true"
                   />
@@ -746,7 +746,7 @@ const ChatInterface = ({
                     onKeyDown={handleKeyPress}
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
-                    onFocus={handleTextareaFocus} 
+                    onFocus={handleTextareaFocus}
                     aria-label={
                       turnCount === 0
                         ? safeT("homepage.chat.textarea.ariaLabel.first")
@@ -763,8 +763,8 @@ const ChatInterface = ({
                       handleSendMessage();
                     }}
                     className={`btn-primary-send ${inputText.trim().length > 0 && charCount <= MAX_CHARS
-                        ? "visible"
-                        : ""
+                      ? "visible"
+                      : ""
                       }`}
                     disabled={
                       isLoading ||

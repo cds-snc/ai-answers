@@ -55,7 +55,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         }
     }, [message]);
 
-    const handleNeverStaleToggle = useCallback(async (e) => {
+    const handleNeverStaleToggle = useCallback(async () => {
         try {
             setError(null);
             setUpdatingNeverStale(true);
@@ -77,7 +77,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         } catch (err) {
             // Revert optimistic update on error
             try {
-                const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
+                // const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
                 if (data && data.expertFeedback) {
                     setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: !data.expertFeedback.neverStale } });
                 } else if (message.interaction && message.interaction.expertFeedback) {
@@ -191,10 +191,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                         const totalVal = (efSource && typeof efSource.totalScore !== 'undefined' && efSource.totalScore !== null) ? efSource.totalScore : computeTotal(efSource, sentenceCount);
                         return (
                             <div>
-                                    {/* English question shown above total score when available */}
-                                    {englishQuestion ? (
-                                        <div style={{ marginBottom: '6px' }}><strong>{t('reviewPanels.englishQuestion') || 'English question'}:</strong> {englishQuestion}</div>
-                                    ) : null}
+                                {/* English question shown above total score when available */}
+                                {englishQuestion ? (
+                                    <div style={{ marginBottom: '6px' }}><strong>{t('reviewPanels.englishQuestion') || 'English question'}:</strong> {englishQuestion}</div>
+                                ) : null}
                                 <div><strong>{t('reviewPanels.totalScore') || 'Total score'}:</strong> {totalVal !== null ? totalVal : (t('reviewPanels.notAvailable') || 'N/A')}</div>
                                 {/* Show expert email if available */}
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
