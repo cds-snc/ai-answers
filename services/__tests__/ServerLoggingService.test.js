@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock Storage before importing ServerLoggingService
 const mockStorage = {
-    setItem: vi.fn(),
-    getKeys: vi.fn(),
-    getItem: vi.fn(),
+    put: vi.fn(),
+    listAll: vi.fn(),
+    get: vi.fn(),
 };
 
 vi.mock('../Storage.js', () => ({
@@ -61,35 +61,35 @@ describe('ServerLoggingService', () => {
 
     describe('log (write to storage)', () => {
         it('should write log entry to Storage with correct key format: chatId/interactionId/timestamp.json', async () => {
-            mockStorage.setItem.mockResolvedValue(undefined);
+            mockStorage.put.mockResolvedValue(undefined);
 
             await ServerLoggingService.log('info', 'Test message', 'chat-123', { interactionId: 'int-456' });
 
             // Allow queue processing
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            expect(mockStorage.setItem).toHaveBeenCalledTimes(1);
-            const [key, value] = mockStorage.setItem.mock.calls[0];
+            expect(mockStorage.put).toHaveBeenCalledTimes(1);
+            const [key, value] = mockStorage.put.mock.calls[0];
 
             // Key format: {chatId}/{interactionId}/{timestamp}.json
             expect(key).toMatch(/^chat-123\/int-456\/\d+\.json$/);
-            expect(value).toMatchObject({
+            expect(JSON.parse(value)).toMatchObject({
                 chatId: 'chat-123',
                 logLevel: 'info',
                 message: 'Test message',
             });
-            expect(value.createdAt).toBeDefined();
+            expect(JSON.parse(value).createdAt).toBeDefined();
         });
 
         it('should use "system" as interactionId when not provided', async () => {
-            mockStorage.setItem.mockResolvedValue(undefined);
+            mockStorage.put.mockResolvedValue(undefined);
 
             await ServerLoggingService.log('info', 'System message', 'chat-123', {});
 
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            expect(mockStorage.setItem).toHaveBeenCalledTimes(1);
-            const [key] = mockStorage.setItem.mock.calls[0];
+            expect(mockStorage.put).toHaveBeenCalledTimes(1);
+            const [key] = mockStorage.put.mock.calls[0];
 
             // Key format: {chatId}/system/{timestamp}.json
             expect(key).toMatch(/^chat-123\/system\/\d+\.json$/);
@@ -100,7 +100,7 @@ describe('ServerLoggingService', () => {
 
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            expect(mockStorage.setItem).not.toHaveBeenCalled();
+            expect(mockStorage.put).not.toHaveBeenCalled();
         });
 
         it('should NOT write to storage when chatId is null', async () => {
@@ -108,7 +108,7 @@ describe('ServerLoggingService', () => {
 
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            expect(mockStorage.setItem).not.toHaveBeenCalled();
+            expect(mockStorage.put).not.toHaveBeenCalled();
         });
     });
 
@@ -132,14 +132,14 @@ describe('ServerLoggingService', () => {
                 },
             ];
 
-            mockStorage.getKeys.mockResolvedValue(['chat-123/int-1/1707231600000.json']);
-            mockStorage.getItem.mockResolvedValue(storageLogs[0]);
+            mockStorage.listAll.mockResolvedValue({ objects: [{ key: 'chat-123/int-1/1707231600000.json' }] });
+            mockStorage.get.mockResolvedValue(JSON.stringify(storageLogs[0]));
             mockLogsFind.mockResolvedValue(mongoLogs);
             mockLogsCountDocuments.mockResolvedValue(1);
 
             const result = await ServerLoggingService.getLogs({ chatId: 'chat-123' });
 
-            expect(mockStorage.getKeys).toHaveBeenCalledWith('chat-123/');
+            expect(mockStorage.listAll).toHaveBeenCalledWith('chat-123/');
             expect(result.logs).toHaveLength(2);
             // Should be sorted by createdAt descending (newest first)
             expect(result.logs[0].message).toBe('New log');
@@ -164,7 +164,7 @@ describe('ServerLoggingService', () => {
                 },
             ];
 
-            mockStorage.getKeys.mockResolvedValue([]);
+            mockStorage.listAll.mockResolvedValue({ objects: [] });
             mockLogsFind.mockResolvedValue(mongoLogs);
             mockLogsCountDocuments.mockResolvedValue(1);
 
@@ -180,8 +180,8 @@ describe('ServerLoggingService', () => {
                 { chatId: 'chat-123', logLevel: 'debug', message: 'Storage only', createdAt: '2026-02-06T12:00:00.000Z' },
             ];
 
-            mockStorage.getKeys.mockResolvedValue(['chat-123/int-1/1707220800000.json']);
-            mockStorage.getItem.mockResolvedValue(storageLogs[0]);
+            mockStorage.listAll.mockResolvedValue({ objects: [{ key: 'chat-123/int-1/1707220800000.json' }] });
+            mockStorage.get.mockResolvedValue(JSON.stringify(storageLogs[0]));
             mockLogsFind.mockResolvedValue([]);
             mockLogsCountDocuments.mockResolvedValue(0);
 
@@ -208,7 +208,7 @@ describe('ServerLoggingService', () => {
                 },
             ];
 
-            mockStorage.getKeys.mockRejectedValue(new Error('S3 unavailable'));
+            mockStorage.listAll.mockRejectedValue(new Error('S3 unavailable'));
             mockLogsFind.mockResolvedValue(mongoLogs);
             mockLogsCountDocuments.mockResolvedValue(1);
 
@@ -222,7 +222,7 @@ describe('ServerLoggingService', () => {
 
     describe('convenience methods', () => {
         it('info() should call log with "info" level', async () => {
-            mockStorage.setItem.mockResolvedValue(undefined);
+            mockStorage.put.mockResolvedValue(undefined);
             const logSpy = vi.spyOn(ServerLoggingService, 'log');
 
             await ServerLoggingService.info('Info message', 'chat-1', { key: 'value' });
@@ -231,7 +231,7 @@ describe('ServerLoggingService', () => {
         });
 
         it('debug() should call log with "debug" level', async () => {
-            mockStorage.setItem.mockResolvedValue(undefined);
+            mockStorage.put.mockResolvedValue(undefined);
             const logSpy = vi.spyOn(ServerLoggingService, 'log');
 
             await ServerLoggingService.debug('Debug message', 'chat-2', {});
@@ -240,7 +240,7 @@ describe('ServerLoggingService', () => {
         });
 
         it('warn() should call log with "warn" level', async () => {
-            mockStorage.setItem.mockResolvedValue(undefined);
+            mockStorage.put.mockResolvedValue(undefined);
             const logSpy = vi.spyOn(ServerLoggingService, 'log');
 
             await ServerLoggingService.warn('Warn message', 'chat-3', {});
@@ -249,7 +249,7 @@ describe('ServerLoggingService', () => {
         });
 
         it('error() should call log with "error" level and error details', async () => {
-            mockStorage.setItem.mockResolvedValue(undefined);
+            mockStorage.put.mockResolvedValue(undefined);
             const logSpy = vi.spyOn(ServerLoggingService, 'log');
             const testError = new Error('Test error');
 

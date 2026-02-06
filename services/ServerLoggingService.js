@@ -166,13 +166,14 @@ const ServerLoggingService = {
         if (chatId) {
             try {
                 // Get all keys for this chatId using Flydrive's listAll
+                const listResult = await storageService.listAll(`${chatId}/`, { recursive: true });
                 const files = [];
-                for await (const file of storageService.listAll(`${chatId}/`)) {
-                    files.push(file.key);
-                }
 
-                // Sort keys descending by timestamp (timestamp is last part of key)
-                // Key format: chatId/interactionId/timestamp.json
+                for (const file of listResult.objects) {
+                    if (file.isFile) {
+                        files.push(file.key);
+                    }
+                }
                 files.sort((a, b) => {
                     const timeA = parseInt(a.split('/').pop().replace('.json', '')) || 0;
                     const timeB = parseInt(b.split('/').pop().replace('.json', '')) || 0;
