@@ -14,7 +14,7 @@ import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js'
 import { UrlValidationService } from '../../../services/UrlValidationService.js';
 import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
-import { exponentialBackoff } from '../../../src/utils/backoff.js';
+import { exponentialBackoff } from '../../../api/util/backoff.js';
 
 // RedactionError class
 class RedactionError extends Error {

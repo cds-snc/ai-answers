@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection } from '../../middleware/auth.js';
-import { getAiEvalAggregationExpression, getPartnerEvalAggregationExpression } from '../utils/chat-filters.js';
+import { getAiEvalAggregationExpression, getPartnerEvalAggregationExpression } from '../util/chat-filters.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {

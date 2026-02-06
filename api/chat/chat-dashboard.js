@@ -2,7 +2,7 @@
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../utils/chat-filters.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 

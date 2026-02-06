@@ -1,4 +1,4 @@
-import { getChatFilterConditions } from '../utils/chat-filters.js';
+import { getChatFilterConditions } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 

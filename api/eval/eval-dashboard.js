@@ -3,7 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
-import { getChatFilterConditions } from '../utils/chat-filters.js';
+import { getChatFilterConditions } from '../util/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
