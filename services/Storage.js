@@ -1,6 +1,6 @@
 import { createStorage } from "unstorage";
 import fsDriver from "unstorage/drivers/fs";
-import s3Driver from "unstorage/drivers/s3";
+import s3Driver from "unstorage-driver-aws-s3";
 
 // Determine if we are in S3 mode (Production/Staging/PR Review) or FS mode (Local)
 // Note: PR Review (Lambda) sets S3_BUCKET_NAME
@@ -12,12 +12,9 @@ const storage = createStorage({
     driver: isS3
         ? s3Driver({
             bucket: bucketName,
-            region: region,
-            // Provide endpoint - use S3_ENDPOINT env var or construct AWS S3 endpoint
-            endpoint: process.env.S3_ENDPOINT || `https://s3.${region}.amazonaws.com`,
-            // In Lambda/EC2, credentials are automatically loaded from the role
-            // In local with credentials, they are loaded from ~/.aws/credentials if using SDK,
-            // but unstorage might need explicitly or environment variables AWS_ACCESS_KEY_ID / SECRET_ACCESS_KEY
+            region: region
+            // AWS SDK will automatically use IAM role credentials in Lambda/EC2
+            // Or environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) if present
         })
         : fsDriver({
             base: "./storage/chat-logs",
