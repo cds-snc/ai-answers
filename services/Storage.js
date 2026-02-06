@@ -13,6 +13,8 @@ const storage = createStorage({
         ? s3Driver({
             bucket: bucketName,
             region: region,
+            // Provide endpoint - use S3_ENDPOINT env var or construct AWS S3 endpoint
+            endpoint: process.env.S3_ENDPOINT || `https://s3.${region}.amazonaws.com`,
             // In Lambda/EC2, credentials are automatically loaded from the role
             // In local with credentials, they are loaded from ~/.aws/credentials if using SDK,
             // but unstorage might need explicitly or environment variables AWS_ACCESS_KEY_ID / SECRET_ACCESS_KEY

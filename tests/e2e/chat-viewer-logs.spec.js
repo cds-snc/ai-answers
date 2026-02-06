@@ -213,7 +213,7 @@ test.describe('ChatViewer - Log Loading', () => {
 
     test('should handle missing chatId gracefully', async ({ page }) => {
         // Login
-        await pagegoto('http://localhost:3001/en/signin');
+        await page.goto('http://localhost:3001/en/signin');
         await page.fill('#email', TEST_USER_EMAIL);
         await page.fill('#password', TEST_USER_PASSWORD);
         await page.click('button[type="submit"]');
