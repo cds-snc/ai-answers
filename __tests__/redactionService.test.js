@@ -6,6 +6,10 @@ describe('RedactionService Regex Logic', () => {
     beforeAll(async () => {
         // Mock SettingsService to prevent DB calls and ensure patterns are initialized
         SettingsService.get = (key) => {
+            // Ensure key is treated as a string to avoid type confusion (e.g., arrays from req.query)
+            if (typeof key !== 'string') {
+                return null;
+            }
             if (key.includes('profanity')) return 'badword1,badword2';
             if (key.includes('threat')) return 'kill,bomb';
             if (key.includes('manipulation')) return 'ignore previous';
