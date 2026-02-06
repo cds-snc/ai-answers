@@ -118,13 +118,15 @@ export const ChatWorkflowService = {
         searchProvider,
         overrideUserId
       );
-    } else if (resolvedWorkflow === 'DefaultWithVectorGraph' || resolvedWorkflow === 'DefaultGraph' || resolvedWorkflow === 'InstantAndQAGraph') {
+    } else if (resolvedWorkflow === 'DefaultWithVectorGraph' || resolvedWorkflow === 'DefaultGraph' || resolvedWorkflow === 'InstantAndQAGraph' || resolvedWorkflow === 'GPT5MiniDefaultGraph') {
       const { default: GraphClient } = await import('../workflows/GraphClient.js');
       let graphName;
       if (resolvedWorkflow === 'DefaultGraph') {
         graphName = 'GenericWorkflowGraph';
       } else if (resolvedWorkflow === 'InstantAndQAGraph') {
         graphName = 'InstantAndQAGraph';
+      } else if (resolvedWorkflow === 'GPT5MiniDefaultGraph') {
+        graphName = 'GPT5MiniDefaultGraph';
       } else {
         graphName = 'DefaultWithVectorGraph';
       }

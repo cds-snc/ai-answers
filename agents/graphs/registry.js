@@ -12,6 +12,10 @@ const graphLoaders = {
     const mod = await import('./DefaultGraph.js');
     return mod.defaultGraphApp;
   },
+  GPT5MiniDefaultGraph: async () => {
+    const mod = await import('./GPT5MiniDefaultGraph.js');
+    return mod.gpt5MiniDefaultGraphApp;
+  },
 };
 
 const graphCache = new Map();

@@ -11,6 +11,27 @@ import mongoose from "mongoose";
 
 dotenv.config();
 
+/**
+ * Normalizes virtual provider names to their base embedding provider.
+ * Virtual providers like 'azure-gpt5-mini' use Azure for embeddings.
+ * @param {string} provider - The provider or virtual provider name
+ * @returns {string} The base provider for embeddings ('azure' or 'openai')
+ */
+function normalizeEmbeddingProvider(provider) {
+  if (!provider) return 'openai';
+
+  // Map virtual providers to their base embedding provider
+  if (provider.startsWith('azure-') || provider === 'azure') {
+    return 'azure';
+  }
+  if (provider.startsWith('openai-') || provider === 'openai') {
+    return 'openai';
+  }
+
+  // Fallback: if provider is unknown, default to openai
+  return 'openai';
+}
+
 class EmbeddingService {
   /**
    * Creates an embedding client using LangChain's OpenAIEmbeddings
@@ -107,6 +128,9 @@ class EmbeddingService {
   }
 
   async createEmbedding(interaction, provider = "openai", modelName = null) {
+    // Normalize virtual provider names to base embedding providers
+    const normalizedProvider = normalizeEmbeddingProvider(provider);
+
     try {
       const populatedInteraction = await interaction.populate(
         "question answer"
@@ -148,7 +172,7 @@ class EmbeddingService {
         if (chatInteraction.question) {
           const cleanedQuestion = this.cleanTextForEmbedding(
             chatInteraction.question.englishQuestion ||
-              chatInteraction.question.redactedQuestion
+            chatInteraction.question.redactedQuestion
           );
           if (cleanedQuestion.trim()) {
             const labeledQuestion = `Question ${questionCounter}: ${cleanedQuestion}`;
@@ -161,11 +185,11 @@ class EmbeddingService {
       // Process current question
       const questionText = this.cleanTextForEmbedding(
         populatedInteraction.question.englishQuestion ||
-          populatedInteraction.question.redactedQuestion
+        populatedInteraction.question.redactedQuestion
       );
       const answerText = this.cleanTextForEmbedding(
         populatedInteraction.answer.englishAnswer ||
-          populatedInteraction.answer.content
+        populatedInteraction.answer.content
       );
 
       // The current question/answer number is based on previous questions count + 1
@@ -199,7 +223,7 @@ class EmbeddingService {
 
       const embeddings = await this.embedDocuments(
         textsToEmbed,
-        provider,
+        normalizedProvider,
         modelName
       );
 
@@ -217,7 +241,7 @@ class EmbeddingService {
         questionsEmbedding: embeddings[1],
         answerEmbedding: embeddings[2],
         questionsAnswerEmbedding: embeddings[3],
-       
+
       };
       await dbConnect();
       const newEmbedding = await Embedding.create(embeddingDoc);
