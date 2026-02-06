@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.96.0](https://github.com/cds-snc/ai-answers/compare/v1.95.0...v1.96.0) (2026-02-06)
+
+
+### Features
+
+* e2e redaction tests, for regex ([1195d73](https://github.com/cds-snc/ai-answers/commit/1195d735c369afc3decb29dbbd15eb3ba9d605c3))
+* test results to gitignore ([1631bce](https://github.com/cds-snc/ai-answers/commit/1631bce2afb6f9df9a3bef4ff92873b01ecbfbd7))
+* update bot detection and test harness ([fdc59d8](https://github.com/cds-snc/ai-answers/commit/fdc59d801edc1237de41ed4245b44e50e6eef919))
+
+
+### Bug Fixes
+
+* make sure test passes ([3707545](https://github.com/cds-snc/ai-answers/commit/37075454c318b7fb08363e554acf6b43ca410305))
+* race condition when authenticated ([6954af7](https://github.com/cds-snc/ai-answers/commit/6954af71d88a783f94aee8927b9ec17d4cab9bd1))
+* repair failing tests ([025059e](https://github.com/cds-snc/ai-answers/commit/025059e3d9b53360df2750c594da5ca189f9d3c1))
+* update path for backoff.js ([97619cd](https://github.com/cds-snc/ai-answers/commit/97619cd03de2031b3aba0a5178aaeec70b066187))
+* Update to remove unneeded refernces ([179791c](https://github.com/cds-snc/ai-answers/commit/179791c205da1f47b3a70d55439226c7eb1a6d96))
+
+
+### Miscellaneous Chores
+
+* all tests passing ([efa32b9](https://github.com/cds-snc/ai-answers/commit/efa32b97e67b9f6ced6e535c5c5b7ae273407949))
+* fix utils folders ([71d6fc8](https://github.com/cds-snc/ai-answers/commit/71d6fc8ea0a70b19592ea36434d7074ccc4dadb6))
+* remove accidentally tracked .terraform modules ([ae21eef](https://github.com/cds-snc/ai-answers/commit/ae21eefbfe0c8c99dfb95adf8eb5a587091131cc))
+* Remove all unused workflow files and technical debt. ([d649019](https://github.com/cds-snc/ai-answers/commit/d649019b8258475b4d12163291edb4aa3e4f17ee))
+* remove unused labels ([6de8b98](https://github.com/cds-snc/ai-answers/commit/6de8b989e3c442f33625015e967b72d0cc5e8c8a))
+* remove unused test ([3ad64db](https://github.com/cds-snc/ai-answers/commit/3ad64db41609f7a73da19907327e7ea0e364d7c6))
+
 ## [1.95.0](https://github.com/cds-snc/ai-answers/compare/v1.94.0...v1.95.0) (2026-02-06)
 
 
