@@ -10,6 +10,7 @@ import {
   GcdsNotice,
 } from "@cdssnc/gcds-components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
 import SessionService from "../services/SessionService.js";
 import OutageComponent from "../components/OutageComponent.js";
@@ -51,6 +52,7 @@ class ErrorBoundary extends React.Component {
 }
 
 const HomePage = ({ lang = "en" }) => {
+  const { loading: authLoading } = useAuth();
   const { t } = useTranslations(lang);
   const [searchParams] = useSearchParams();
   const reviewChatId = searchParams.get("chat");
@@ -143,8 +145,10 @@ const HomePage = ({ lang = "en" }) => {
   }, [t, reviewChatId, chatId]);
 
   useEffect(() => {
-    fetchSessionOnInit();
-  }, [fetchSessionOnInit]);
+    if (!authLoading) {
+      fetchSessionOnInit();
+    }
+  }, [fetchSessionOnInit, authLoading]);
 
   useEffect(() => {
     if (reviewChatId) {
