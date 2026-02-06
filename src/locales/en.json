@@ -142,9 +142,7 @@
           "google": "Google"
         },
         "workflow": {
-          "label": "Workflow:",
-          "Default": "Default",
-          "DefaultWithVector": "Default with vector"
+          "label": "Workflow:"
         },
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)"
@@ -285,9 +283,7 @@
         "french": "French"
       },
       "workflow": {
-        "label": "Workflow",
-        "Default": "Default",
-        "DefaultWithVector": "Default with vector"
+        "label": "Workflow"
       },
       "file": {
         "label": "Select feedback CSV file:",
@@ -601,7 +597,6 @@
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
       "columnFilterPlaceholder": "Filter",
-      "searchPlaceholder": "Enter chat ID...",
       "columns": {
         "chatId": "Chat ID",
         "department": "Department",

@@ -141,9 +141,7 @@
           "google": "Google"
         },
         "workflow": {
-          "label": "Flux de travail :",
-          "Default": "Par défaut",
-          "DefaultWithVector": "Par défaut avec vecteur"
+          "label": "Flux de travail :"
         },
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
@@ -321,9 +319,7 @@
         "french": "Français"
       },
       "workflow": {
-        "label": "Flux de travail",
-        "Default": "Par défaut",
-        "DefaultWithVector": "Par défaut avec vecteur"
+        "label": "Flux de travail"
       },
       "file": {
         "label": "Sélectionner le fichier CSV de rétroaction :",
