@@ -14,9 +14,30 @@ async function logHandler(req, res) {
     } else if (req.method === 'GET') {
         try {
             const { chatId, level, skip = 0, limit = 1000 } = req.query;
+
+            // Sanitize and validate query parameters to avoid NoSQL injection
+            let safeChatId = null;
+            if (chatId !== undefined) {
+                // Reject objects/arrays to prevent operator injection
+                if (typeof chatId === 'object' && chatId !== null) {
+                    return res.status(400).json({ error: 'Invalid chatId' });
+                }
+                safeChatId = typeof chatId === 'string' ? chatId : String(chatId);
+            }
+
+            let safeLevel = null;
+            if (level !== undefined) {
+                const allowedLevels = ['info', 'debug', 'warn', 'error', 'all'];
+                const normalizedLevel = String(level).toLowerCase();
+                if (!allowedLevels.includes(normalizedLevel)) {
+                    return res.status(400).json({ error: 'Invalid level' });
+                }
+                safeLevel = normalizedLevel;
+            }
+
             const logs = await ServerLoggingService.getLogs({
-                chatId,
-                level,
+                chatId: safeChatId,
+                level: safeLevel,
                 skip: parseInt(skip),
                 limit: parseInt(limit)
             });

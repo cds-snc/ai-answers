@@ -24,9 +24,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
 
-  // New state for logging chats to database
-  const [logChats, setLogChats] = useState('no');
-  const [savingLogChats, setSavingLogChats] = useState(false);
+
 
   // Two-factor authentication settings
   const [twoFAEnabled, setTwoFAEnabled] = useState('false');
@@ -83,9 +81,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Validate default workflow against known options
       const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
-      // Load logChats setting
-      const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
-      setLogChats(logChatsSetting);
+
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
       const twoFATemplateSetting = await DataStoreService.getSetting('twoFA.templateId', '');
@@ -316,18 +312,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  // Handler for logChats setting
-  const handleLogChatsChange = async (e) => {
-    const newValue = e.target.value;
-    setLogChats(newValue);
-    setSavingLogChats(true);
-    try {
-      const current = await saveAndVerify('logChatsToDatabase', newValue);
-      setLogChats(current);
-    } finally {
-      setSavingLogChats(false);
-    }
-  };
+
 
   const handleBaseUrlChange = (e) => {
     setBaseUrl(e.target.value);
@@ -481,18 +466,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="InstantAndQAGraph">InstantAndQAGraph</option>
             <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
           </select>
-          <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
-            {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
-          </label>
-          <select
-            id="log-chats-db"
-            value={logChats}
-            onChange={handleLogChatsChange}
-            disabled={savingLogChats}
-          >
-            <option value="yes">{t('common.yes', 'Yes')}</option>
-            <option value="no">{t('common.no', 'No')}</option>
-          </select>
+
         </div>
       </GcdsDetails>
 

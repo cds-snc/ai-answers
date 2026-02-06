@@ -48,4 +48,6 @@ temp.jsonl
 .devcontainer/data
 
 
+# Chat logs storage (local development)
+/storage/chat-logs
 
