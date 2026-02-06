@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
+import dbConnect from '../../api/db/db-connect.js';
 import { InteractionPersistenceService } from '../InteractionPersistenceService.js';
 import { Chat } from '../../models/chat.js';
 import { Interaction } from '../../models/interaction.js';
@@ -8,14 +9,19 @@ import { Question } from '../../models/question.js';
 import { Citation } from '../../models/citation.js';
 import { Answer } from '../../models/answer.js';
 import { Tool } from '../../models/tool.js';
-import EmbeddingService from '../../services/EmbeddingService.js';
+import EmbeddingService from '../EmbeddingService.js';
+import EvaluationService from '../EvaluationService.js';
 
 // Mock dependencies
-vi.mock('../../services/EmbeddingService.js', () => ({
+vi.mock('../EmbeddingService.js', () => ({
     default: {
-        createEmbedding: vi.fn().mockResolvedValue(undefined),
+        createEmbedding: vi.fn().mockReturnValue(Promise.resolve()),
     },
 }));
+vi.mock('../EvaluationService.js', () => {
+    const mock = { evaluateInteraction: vi.fn(() => Promise.resolve({})) };
+    return { default: mock, ...mock };
+});
 vi.mock('../ServerLoggingService.js', () => ({
     default: {
         info: vi.fn(),
@@ -31,11 +37,7 @@ describeFn('InteractionPersistenceService', () => {
     let user;
 
     beforeAll(async () => {
-        // If running separately and no global URI, one might need setup logic from test/setup.js
-        // Assuming the environment matches db-persist-interaction.test.js
-        if (mongoUri) {
-            await mongoose.connect(mongoUri);
-        }
+        await dbConnect();
     });
 
     afterAll(async () => {
@@ -45,10 +47,13 @@ describeFn('InteractionPersistenceService', () => {
     });
 
     beforeEach(() => {
+        // Use unique IDs to prevent collisions when running full test suite
+        const uniqueId = new mongoose.Types.ObjectId().toString();
+
         // Construct payload simulating what endpoint passes to service
         initialPayload = {
-            chatId: 'test-chat-id',
-            userMessageId: 'test-message-id',
+            chatId: `test-chat-id-${uniqueId}`,
+            userMessageId: `test-message-id-${uniqueId}`,
             selectedAI: 'test-ai',
             searchProvider: 'test-provider',
             pageLanguage: 'en',
@@ -81,6 +86,7 @@ describeFn('InteractionPersistenceService', () => {
         user = { _id: new mongoose.Types.ObjectId(), name: 'Test User' };
 
         EmbeddingService.createEmbedding.mockResolvedValue(undefined);
+        EvaluationService.evaluateInteraction.mockResolvedValue({});
     });
 
     afterEach(async () => {
@@ -163,7 +169,8 @@ describeFn('InteractionPersistenceService', () => {
                 populate: ['citation', 'tools']
             });
 
-        expect(interaction.answer.tools).toHaveLength(0);
-        expect(interaction.answer.citation.confidenceRating).toBeFalsy();
+        expect(interaction).toBeTruthy();
+        expect(interaction?.answer?.tools).toHaveLength(0);
+        expect(interaction?.answer?.citation?.confidenceRating).toBeFalsy();
     });
 });
