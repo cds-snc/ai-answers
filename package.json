@@ -9,6 +9,7 @@
     "@aws-sdk/client-bedrock-runtime": "^3.981.0",
     "@aws-sdk/client-s3": "^3.981.0",
     "@aws-sdk/client-sts": "^3.981.0",
+    "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@cdssnc/gcds-components": "^0.26.1",
     "@cdssnc/gcds-components-react": "^0.34.3",
