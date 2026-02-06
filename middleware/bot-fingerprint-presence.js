@@ -4,17 +4,12 @@
 // Explicit list of routes that require fingerprint verification for anonymous users.
 // These are the chat flow endpoints called during user interactions.
 const FINGERPRINT_REQUIRED_PATHS = [
-  '/api/chat/chat-message',
-  '/api/chat/chat-context',
   '/api/chat/chat-graph-run',
-  '/api/chat/chat-pii-check',
   '/api/chat/chat-detect-language',
-  '/api/chat/chat-translate',
   '/api/chat/chat-similar-answer',
   '/api/chat/chat-report',
   '/api/chat/chat-persist-interaction',
   '/api/chat/chat-session-metrics',
-  '/api/search/search-context',
   '/api/batch/batch-register-chatid',
 ];
 
