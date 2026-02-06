@@ -4,7 +4,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 
 import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null, onSessionError }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -137,7 +137,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         }
       }, 200);
     }
-  }, [initialMessages]);
+  }, [initialMessages, targetInteractionId]);
   // This effect sets up a resize listener to update isMobile state for citation icon and link styling
   useEffect(() => {
     const handleResize = () => {

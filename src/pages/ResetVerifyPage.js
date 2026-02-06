@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
-import AuthService from '../services/AuthService.js';
+
 import styles from '../styles/auth.module.css';
 
 const ResetVerifyPage = ({ lang = 'en' }) => {
@@ -11,7 +11,7 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
   const email = searchParams.get('email');
   const [mode, setMode] = useState('unknown');
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {

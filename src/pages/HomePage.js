@@ -1,5 +1,5 @@
 // src/pages/HomePage.js
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import ChatAppContainer from "../components/chat/ChatAppContainer.js";
 import {
@@ -70,7 +70,7 @@ const HomePage = ({ lang = "en" }) => {
     }
   };
   const [targetInteractionId, setTargetInteractionId] = useState(getInteractionFromHash());
-  const isPrivileged = useHasAnyRole(["admin", "partner"]);
+  // const isPrivileged = useHasAnyRole(["admin", "partner"]);
   const [serviceStatus, setServiceStatus] = useState({
     isAvailable: null,
     sessionAvailable: null,
@@ -80,7 +80,7 @@ const HomePage = ({ lang = "en" }) => {
   const [initialMessages, setInitialMessages] = useState([]);
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
   const [chatCreatedAt, setChatCreatedAt] = useState(null);
-  const [showWarningNotice, setShowWarningNotice] = useState(true); // set to false to turn off warning, message is in locales
+  const [showWarningNotice] = useState(true); // set to false to turn off warning, message is in locales
 
 
   // Capture client-side referrer (if available) so we can pass it into the
@@ -110,12 +110,12 @@ const HomePage = ({ lang = "en" }) => {
   })();
   // Removed unused isLoadingSiteStatus state
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
 
   // Fetch session and availability in one go
   const fetchSessionOnInit = useCallback(async () => {
     if (reviewChatId || chatId) return;
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
       const { chatId: newChatId, available } = await SessionService.initChat();
       if (available) {
@@ -140,7 +140,7 @@ const HomePage = ({ lang = "en" }) => {
       });
       setChatSessionFailed(true);
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   }, [t, reviewChatId, chatId]);
 

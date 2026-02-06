@@ -251,7 +251,7 @@ class BatchService {
 
   async runBatch({
     entries = [],
-    batchName = `client-batch-${Date.now()}`,
+    // batchName = `client-batch-${Date.now()}`,
     selectedAI = 'openai',
     lang = 'en',
     searchProvider = '',
@@ -326,7 +326,7 @@ class BatchService {
           : entry;
         const question = this._extractQuestion(original);
         const existingChat = entry && entry.chat ? entry.chat : (original && original.chat ? original.chat : null);
-        
+
         // If this entry already has a chat id recorded, skip re-processing it
         if (existingChat) {
           results[i] = { index: i, chatId: existingChat, skipped: true };

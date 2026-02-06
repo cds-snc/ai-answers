@@ -68,8 +68,8 @@ export const InteractionPersistenceService = {
         // Persist workflow name when provided by callers
         dbInteraction.workflow = interaction.workflow || '';
 
-        const context = new Context();
-        Object.assign(context, interaction.context || {});
+        const context = new Context(interaction.context || {});
+        // Object.assign(context, interaction.context || {});
 
         const citation = new Citation();
         citation.aiCitationUrl = interaction.answer?.citationUrl || '';

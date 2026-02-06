@@ -14,12 +14,12 @@ const FeedbackComponent = ({
   sentences = [],
   // Add these new props for the skip button
   showSkipButton = false, // Determines if skip button should be shown
-  onSkip = () => {}, // Function to call when skip button is clicked
+  onSkip = () => { }, // Function to call when skip button is clicked
   skipButtonLabel = "", // Accessible label for the skip button
 }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
-  const [feedbackError, setFeedbackError] = useState(false);
+  const [feedbackError] = useState(false);
   const [showExpertRating, setShowExpertRating] = useState(false);
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);

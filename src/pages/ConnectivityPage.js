@@ -32,7 +32,7 @@ const StatusBadge = ({ status }) => {
 };
 
 const ServiceCard = ({ service }) => {
-    const { service: name, status, message, latencyMs, configured, details } = service;
+    const { service: name, status, message, latencyMs, details } = service;
 
     return (
         <div style={{

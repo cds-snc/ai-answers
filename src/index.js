@@ -10,7 +10,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
 import DataStoreService from './services/DataStoreService.js';
-import SessionService from './services/SessionService.js';
+
 
 // Add the icon packs
 library.add(fas, far);

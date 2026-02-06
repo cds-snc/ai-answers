@@ -166,7 +166,7 @@ const FilterPanel = ({
         dateRangePickerInstance.current = null;
       }
     };
-  }, [t]);
+  }, [t, dateRange.endDate, dateRange.startDate]);
 
   // Prevent nested details from closing parent details
   const handleNestedToggle = (e) => {
