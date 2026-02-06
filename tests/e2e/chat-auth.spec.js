@@ -27,7 +27,7 @@ test.describe('Authenticated AI Answers Testing', () => {
             user = new User({
                 email: TEST_USER_EMAIL,
                 password: TEST_USER_PASSWORD,
-                role: 'user',
+                role: 'partner',
                 active: true
             });
             await user.save();
@@ -35,6 +35,7 @@ test.describe('Authenticated AI Answers Testing', () => {
         } else {
             // Ensure connection matches what we expect (in case of manual changes)
             user.password = TEST_USER_PASSWORD; // Will be hashed by pre-save hook
+            user.role = 'partner';
             user.active = true;
             await user.save();
             console.log('Test user updated/verified.');
@@ -86,9 +87,25 @@ test.describe('Authenticated AI Answers Testing', () => {
 
         console.log('Login successful, redirected to:', url);
 
+
+        // Admin/Partner users are redirected to /admin, but we want to test chat on home page
+        if (url.includes('/admin')) {
+            console.log('Redirecting back to home page for chat test...');
+            await page.goto('http://localhost:3001/en/');
+        }
+
         // Wait for page to fully load
         await page.waitForTimeout(5000);
         console.log('Page loaded, waiting 5 seconds for full initialization');
+
+        // Navigate to Chat from Admin Page
+        console.log('Clicking "AI Answers" link...');
+        // We use a flexible locator because the link text might be inside a component
+        await page.click('text=AI Answers');
+
+        // Wait to land on the home/chat page
+        await page.waitForURL(url => url.pathname.endsWith('/en') || url.pathname.endsWith('/en/'), { timeout: 15000 });
+        console.log('Navigated to Chat page');
 
         // 2. Perform Chat Interaction
 
@@ -114,11 +131,15 @@ test.describe('Authenticated AI Answers Testing', () => {
         await sendButton.click();
 
         // Wait for response to appear
-        console.log('Waiting for response...');
-        // Wait for message count to increase
-        await page.waitForResponse(response =>
-            response.url().includes('/api/chat/chat-message') && response.status() === 200
-            , { timeout: 40000 }).catch(() => console.log('Timed out waiting for chat-message response'));
+        console.log('Waiting for response in UI...');
+
+        // Wait for the AI message element to be present in the DOM
+        // We look for the specific structure requested: .message.ai containing .ai-message-content
+        await page.waitForSelector('.message.ai .ai-message-content', { state: 'visible', timeout: 40000 });
+
+        // Verify the structure exists as requested (HTML layout)
+        const aiContent = page.locator('.message.ai .ai-message-content').last();
+        await expect(aiContent).toBeVisible();
 
         // Verify we have messages
         const messageCount = await page.locator('.message').count();

@@ -139,11 +139,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [initialMessages]);
   // This effect sets up a resize listener to update isMobile state for citation icon and link styling
-   useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 480);
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -396,19 +396,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   const handleSendMessage = useCallback(async () => {
     if (inputText.trim() !== '' && !isLoading) {
-
-      // Check session availability before sending
-      try {
-        const available = await SessionService.isAvailable();
-        if (!available) {
-          if (onSessionError) onSessionError();
-          return;
-        }
-      } catch (e) {
-        if (onSessionError) onSessionError();
-        return;
-      }
-
       setIsLoading(true);
 
       // Clear any pending status updates from previous requests
@@ -636,187 +623,187 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         })}
         {answer.answerType === 'normal' && (citationHead || displayUrl) && (
           <>
-         <hr className="citation-divider" />
-          <div className="citation-container">
-            {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
-            {displayUrl && (
-              <ul key={`${messageId}-link`} className="citation-link list-disc">
-                <li>
-                <a
-                  href={displayUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  tabIndex="0"
-                  className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
-                  onClick={() => {
-                    try {
-                      if (window && window.adobeDataLayer) {
-                        // Build customCall using the required structure:
-                        // Dept. Abbreviation:Custom Variable Name:Custom Value
-                        // Use department abbreviation ESDC-EDSC and describe this as a Citation Click.
-                        var customCallValue = `ESDC-EDSC:Citation Click:${displayUrl}`;
-                        console.log('Pushing customTracking to Adobe Data Layer (customCall):', customCallValue);
-                        var result = window.adobeDataLayer.push({
-                          event: 'customTracking',
-                          link: {
-                            customCall: customCallValue + '|' + chatId + '|' + interactionId
-                          },
-                        });
-                        console.log('Adobe Data Layer push result:', result);
-                      }
-                    } catch (e) {
-                      // swallow analytics errors — should not block navigation
-                      console.error('Error pushing to Adobe Data Layer:', e);
-                    }
-                  }}
-            >
-                  <span className="citation-url-text font-size-text-xsm-nr">
-                  {(() => {
-                    // Mobile: always render full URL, CSS handles ellipsis
-                    if (isMobile) {
-                      return (
-                        <>
-                          {displayUrl}
-                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                          <svg 
-                            width="12" 
-                            height="12" 
-                            viewBox="0 0 22 22" 
-                            aria-hidden="true"
-                            className="new-tab-link-icon"
-                          >
-                            <path 
-                              d="M20 2L2 20M20 2H8M20 2V14" 
-                              stroke="currentColor" 
-                              strokeWidth="3.5" 
-                              strokeLinecap="square" 
-                              strokeLinejoin="square"
-                              fill="none"
-                            />
-                          </svg>
-                        </>
-                      );
-                    }
-                    
-                    // Desktop: only use wrapping if URL is long enough
-                    const needsWrapping = displayUrl.length > 80;
-                    
-                    if (!needsWrapping) {
-                      // Short URL: render normally
-                      return (
-                        <>
-                          {displayUrl}
-                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                          <svg 
-                            width="12" 
-                            height="12" 
-                            viewBox="0 0 22 22" 
-                            aria-hidden="true"
-                            className="new-tab-link-icon"
-                          >
-                            <path 
-                              d="M20 2L2 20M20 2H8M20 2V14" 
-                              stroke="currentColor" 
-                              strokeWidth="3.5" 
-                              strokeLinecap="square" 
-                              strokeLinejoin="square"
-                              fill="none"
-                            />
-                          </svg>
-                        </>
-                      );
-                    }
-                    
-                    // Helper function for rendering wrapped URLs
-                    const renderWithWrap = (beforeWrap, insideWrap) => (
-                      <>
-                        {beforeWrap.replace(/-/g, '\u2011')}
-                        <span style={{whiteSpace: 'nowrap'}}>
-                          {insideWrap}
-                          <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
-                          <svg 
-                            width="12" 
-                            height="12" 
-                            viewBox="0 0 22 22" 
-                            aria-hidden="true"
-                            className="new-tab-link-icon"
-                          >
-                            <path 
-                              d="M20 2L2 20M20 2H8M20 2V14" 
-                              stroke="currentColor" 
-                              strokeWidth="3.5" 
-                              strokeLinecap="square" 
-                              strokeLinejoin="square"
-                              fill="none"
-                            />
-                          </svg>
-                        </span>
-                      </>
-                    );
-                    
-                    // Long URL on desktop: intelligently wrap last portion
-                    const lastSlashIndex = displayUrl.lastIndexOf('/');
-                    
-                    if (lastSlashIndex === -1) {
-                      // No slash - wrap last 25 chars
-                      const wrapLength = 25;
-                      return renderWithWrap(
-                        displayUrl.substring(0, displayUrl.length - wrapLength),
-                        displayUrl.substring(displayUrl.length - wrapLength)
-                      );
-                    }
-                    
-                    const lastSegment = displayUrl.substring(lastSlashIndex + 1);
-                    
-                    // If last segment is too long (>40 chars), find a natural break point
-                    if (lastSegment.length > 40) {
-                      let breakPoint = null;
-                      
-                      // Check for query string first
-                      const queryIndex = lastSegment.indexOf('?');
-                      if (queryIndex !== -1 && queryIndex < lastSegment.length - 15) {
-                        breakPoint = lastSlashIndex + 1 + queryIndex;
-                      } else {
-                        // Look for last hyphen in a reasonable range
-                        const searchStart = Math.max(0, lastSegment.length - 35);
-                        const searchEnd = lastSegment.length - 15;
-                        const substringToSearch = lastSegment.substring(searchStart, searchEnd);
-                        const lastHyphen = substringToSearch.lastIndexOf('-');
-                        
-                        if (lastHyphen !== -1) {
-                          breakPoint = lastSlashIndex + 1 + searchStart + lastHyphen + 1;
+            <hr className="citation-divider" />
+            <div className="citation-container">
+              {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
+              {displayUrl && (
+                <ul key={`${messageId}-link`} className="citation-link list-disc">
+                  <li>
+                    <a
+                      href={displayUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      tabIndex="0"
+                      className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
+                      onClick={() => {
+                        try {
+                          if (window && window.adobeDataLayer) {
+                            // Build customCall using the required structure:
+                            // Dept. Abbreviation:Custom Variable Name:Custom Value
+                            // Use department abbreviation ESDC-EDSC and describe this as a Citation Click.
+                            var customCallValue = `ESDC-EDSC:Citation Click:${displayUrl}`;
+                            console.log('Pushing customTracking to Adobe Data Layer (customCall):', customCallValue);
+                            var result = window.adobeDataLayer.push({
+                              event: 'customTracking',
+                              link: {
+                                customCall: customCallValue + '|' + chatId + '|' + interactionId
+                              },
+                            });
+                            console.log('Adobe Data Layer push result:', result);
+                          }
+                        } catch (e) {
+                          // swallow analytics errors — should not block navigation
+                          console.error('Error pushing to Adobe Data Layer:', e);
                         }
-                      }
-                      
-                      // Use break point or fallback to wrapping last 25 chars
-                      if (breakPoint !== null) {
-                        return renderWithWrap(
-                          displayUrl.substring(0, breakPoint),
-                          displayUrl.substring(breakPoint)
-                        );
-                      } else {
-                        const wrapLength = 25;
-                        return renderWithWrap(
-                          displayUrl.substring(0, displayUrl.length - wrapLength),
-                          displayUrl.substring(displayUrl.length - wrapLength)
-                        );
-                      }
-                    }
-                    
-                    // Last segment is short enough (<40 chars), wrap it all
-                    return renderWithWrap(
-                      displayUrl.substring(0, lastSlashIndex + 1),
-                      lastSegment
-                    );
-                  })()}
-                </span>
-              </a>
-            </li>
-          </ul>
+                      }}
+                    >
+                      <span className="citation-url-text font-size-text-xsm-nr">
+                        {(() => {
+                          // Mobile: always render full URL, CSS handles ellipsis
+                          if (isMobile) {
+                            return (
+                              <>
+                                {displayUrl}
+                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 22 22"
+                                  aria-hidden="true"
+                                  className="new-tab-link-icon"
+                                >
+                                  <path
+                                    d="M20 2L2 20M20 2H8M20 2V14"
+                                    stroke="currentColor"
+                                    strokeWidth="3.5"
+                                    strokeLinecap="square"
+                                    strokeLinejoin="square"
+                                    fill="none"
+                                  />
+                                </svg>
+                              </>
+                            );
+                          }
+
+                          // Desktop: only use wrapping if URL is long enough
+                          const needsWrapping = displayUrl.length > 80;
+
+                          if (!needsWrapping) {
+                            // Short URL: render normally
+                            return (
+                              <>
+                                {displayUrl}
+                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 22 22"
+                                  aria-hidden="true"
+                                  className="new-tab-link-icon"
+                                >
+                                  <path
+                                    d="M20 2L2 20M20 2H8M20 2V14"
+                                    stroke="currentColor"
+                                    strokeWidth="3.5"
+                                    strokeLinecap="square"
+                                    strokeLinejoin="square"
+                                    fill="none"
+                                  />
+                                </svg>
+                              </>
+                            );
+                          }
+
+                          // Helper function for rendering wrapped URLs
+                          const renderWithWrap = (beforeWrap, insideWrap) => (
+                            <>
+                              {beforeWrap.replace(/-/g, '\u2011')}
+                              <span style={{ whiteSpace: 'nowrap' }}>
+                                {insideWrap}
+                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 22 22"
+                                  aria-hidden="true"
+                                  className="new-tab-link-icon"
+                                >
+                                  <path
+                                    d="M20 2L2 20M20 2H8M20 2V14"
+                                    stroke="currentColor"
+                                    strokeWidth="3.5"
+                                    strokeLinecap="square"
+                                    strokeLinejoin="square"
+                                    fill="none"
+                                  />
+                                </svg>
+                              </span>
+                            </>
+                          );
+
+                          // Long URL on desktop: intelligently wrap last portion
+                          const lastSlashIndex = displayUrl.lastIndexOf('/');
+
+                          if (lastSlashIndex === -1) {
+                            // No slash - wrap last 25 chars
+                            const wrapLength = 25;
+                            return renderWithWrap(
+                              displayUrl.substring(0, displayUrl.length - wrapLength),
+                              displayUrl.substring(displayUrl.length - wrapLength)
+                            );
+                          }
+
+                          const lastSegment = displayUrl.substring(lastSlashIndex + 1);
+
+                          // If last segment is too long (>40 chars), find a natural break point
+                          if (lastSegment.length > 40) {
+                            let breakPoint = null;
+
+                            // Check for query string first
+                            const queryIndex = lastSegment.indexOf('?');
+                            if (queryIndex !== -1 && queryIndex < lastSegment.length - 15) {
+                              breakPoint = lastSlashIndex + 1 + queryIndex;
+                            } else {
+                              // Look for last hyphen in a reasonable range
+                              const searchStart = Math.max(0, lastSegment.length - 35);
+                              const searchEnd = lastSegment.length - 15;
+                              const substringToSearch = lastSegment.substring(searchStart, searchEnd);
+                              const lastHyphen = substringToSearch.lastIndexOf('-');
+
+                              if (lastHyphen !== -1) {
+                                breakPoint = lastSlashIndex + 1 + searchStart + lastHyphen + 1;
+                              }
+                            }
+
+                            // Use break point or fallback to wrapping last 25 chars
+                            if (breakPoint !== null) {
+                              return renderWithWrap(
+                                displayUrl.substring(0, breakPoint),
+                                displayUrl.substring(breakPoint)
+                              );
+                            } else {
+                              const wrapLength = 25;
+                              return renderWithWrap(
+                                displayUrl.substring(0, displayUrl.length - wrapLength),
+                                displayUrl.substring(displayUrl.length - wrapLength)
+                              );
+                            }
+                          }
+
+                          // Last segment is short enough (<40 chars), wrap it all
+                          return renderWithWrap(
+                            displayUrl.substring(0, lastSlashIndex + 1),
+                            lastSegment
+                          );
+                        })()}
+                      </span>
+                    </a>
+                  </li>
+                </ul>
+              )}
+            </div>
+          </>
         )}
-      </div>
-    </>
-  )}
         <div className="disclaimer">
           <p className="font-size-text-xsm-nr">
             {safeT('homepage.chat.input.disclaimer')}

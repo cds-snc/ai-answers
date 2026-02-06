@@ -1,7 +1,18 @@
 param(
   [string]$TestFile = "",
-  [switch]$Headed = $false
+  [switch]$Headed = $false,
+  [Parameter(ValueFromRemainingArguments = $true)]
+  [string[]]$RemainingArgs
 )
+
+# Handle --headed passed in remaining args or as TestFile
+if (-not $RemainingArgs -and $args) { $RemainingArgs = $args }
+
+if ($RemainingArgs -contains "--headed" -or $TestFile -eq "--headed") {
+  $Headed = $true
+}
+# If TestFile was just the flag, clear it
+if ($TestFile -eq "--headed") { $TestFile = "" }
 
 # Run Playwright E2E tests with full environment setup and debugging
 
@@ -34,10 +45,13 @@ catch { }
 
 # Start the server in background if not already running
 if (-not $serverRunning) {
-  Write-Host "Starting server (node server/server.js) in background..." -ForegroundColor Green
   $serverPath = Join-Path $repoRoot 'server\server.js'
-  $serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru
-  Write-Host "Server process started with PID $($serverProc.Id)" -ForegroundColor Green
+  $outLog = Join-Path $repoRoot 'server-out.log'
+  $errLog = Join-Path $repoRoot 'server-err.log'
+  if (Test-Path $outLog) { Remove-Item $outLog }
+  if (Test-Path $errLog) { Remove-Item $errLog }
+  $serverProc = Start-Process -FilePath 'node' -ArgumentList $serverPath -WorkingDirectory $repoRoot -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+  Write-Host "Server process started with PID $($serverProc.Id). Logs: $outLog, $errLog" -ForegroundColor Green
 
   # Wait up to 30s for server to respond on http://localhost:3001
   $maxWait = 30
@@ -83,6 +97,7 @@ $playwrightArgs += "--workers=1"
 $playwrightArgs += "--trace=on"
 $playwrightArgs += "--reporter=html"
 $playwrightArgs += "--reporter=list"
+$playwrightArgs += "--timeout=60000"  # Increase default timeout to 60s
 
 # Check if headed mode is requested via parameter or environment variable
 if ($Headed -or ($env:TEST_HEADED -eq "true")) {

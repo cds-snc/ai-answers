@@ -21,7 +21,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingProvider, setSavingProvider] = useState(false);
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('Default');
+  const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
 
   // New state for logging chats to database
@@ -79,10 +79,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       const providerSetting = await DataStoreService.getSetting('provider', 'openai');
       setProvider(providerSetting);
       // Load default workflow setting
-      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
+      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
       // Validate default workflow against known options
       const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'Default');
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
       setLogChats(logChatsSetting);
@@ -469,7 +469,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               try {
                 const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
                 const current = await saveAndVerify('workflow.default', v);
-                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
+                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
               } finally {
                 setSavingDefaultWorkflow(false);
               }

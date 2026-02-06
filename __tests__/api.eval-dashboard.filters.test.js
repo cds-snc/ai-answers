@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock auth wrapper and DB connect using absolute paths so mocks apply
-vi.mock('c:/Users/hymary/repos/ai-answers/middleware/auth.js', () => ({
+vi.mock('../middleware/auth.js', () => ({
   withProtection: (handler) => handler,
   authMiddleware: {},
   partnerOrAdminMiddleware: {}
 }));
-vi.mock('c:/Users/hymary/repos/ai-answers/api/db/db-connect.js', () => ({
+vi.mock('../api/db/db-connect.js', () => ({
   __esModule: true,
   default: async () => Promise.resolve()
 }));

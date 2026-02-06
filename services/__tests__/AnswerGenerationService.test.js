@@ -7,6 +7,11 @@ import ServerLoggingService from '../ServerLoggingService.js';
 vi.mock('../../agents/AgentFactory.js', () => ({
     createChatAgent: vi.fn(),
 }));
+vi.mock('../ConversationIntegrityService.js', () => ({
+    default: {
+        calculateSignature: vi.fn(() => 'mock-signature'),
+    },
+}));
 vi.mock('../ServerLoggingService.js', () => ({
     default: {
         info: vi.fn(),
@@ -53,6 +58,7 @@ describe('AnswerGenerationService', () => {
             outputTokens: 5,
             model: 'gpt-4',
             tools: {},
+            historySignature: 'mock-signature',
         });
     });
 

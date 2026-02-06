@@ -73,7 +73,7 @@
       "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
       "args": [
         "test",
-        "tests/e2e/chat-test.spec.js",
+        "tests/e2e/chat-regex-redaction.spec.js",
         "--browser=chromium"
       ],
       "runtimeArgs": [
@@ -90,12 +90,17 @@
   "compounds": [
     {
       "name": "Debug Both",
-      "configurations": ["Launch Server", "Launch Edge"]
-    }
-    ,
+      "configurations": [
+        "Launch Server",
+        "Launch Edge"
+      ]
+    },
     {
       "name": "Debug Server + Chrome",
-      "configurations": ["Launch Server", "Launch Chrome"]
+      "configurations": [
+        "Launch Server",
+        "Launch Chrome"
+      ]
     }
   ]
 }

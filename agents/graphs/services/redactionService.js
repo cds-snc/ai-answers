@@ -71,6 +71,7 @@ class RedactionService {
   }
 
   redactText(text = '', lang = 'en') {
+    console.log(`[Server RedactionService] redactText called with: "${text}" [lang=${lang}]`);
     if (!this.isInitialized || this.currentLang !== lang) {
       // Auto-initialize if possible, or throw
       // For now, consistent with previous behavior
@@ -136,15 +137,19 @@ class RedactionService {
       { pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g, replacement: 'XXX', type: 'private' },
       // Canadian SIN (Social Insurance Number)
       { pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g, replacement: 'XXX', type: 'private' },
-      // Names with prefixes- other names caught in second stage AI PI detection
-      { pattern: /\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, replacement: 'XXX', type: 'private' },
-      // Names in introduction phrases - other names caught in second stage AI PI detection
-      { pattern: /\b(?:my name is|je m'appelle|je me nomme|my name's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi, replacement: 'XXX', type: 'private' },
+      // Names with prefixes (use lookbehind to preserve prefix)
+      { pattern: /(?<=\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, replacement: 'XXX', type: 'private' },
+      // Names in introduction phrases (use lookbehind)
+      { pattern: /(?<=\b(my name is|je m'appelle|je me nomme|my name's)\s+)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi, replacement: 'XXX', type: 'private' },
 
     ];
 
     for (const { pattern, replacement, type } of piiPatterns) {
       applyPattern(pattern, replacement, type);
+    }
+
+    if (redactedItems.length > 0) {
+      console.log(`[Server RedactionService] Input: "${text}", Redacted: "${redactedText}", Items:`, JSON.stringify(redactedItems));
     }
 
     return { redactedText, redactedItems };

@@ -20,7 +20,7 @@ import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 
-import chatCreateHandler from '../api/chat/chat-create.js';
+import chatInitHandler from '../api/chat/chat-init.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
@@ -28,8 +28,6 @@ import chatTranslateHandler from '../api/chat/chat-translate.js';
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
 import chatReportHandler from '../api/chat/chat-report.js';
-import sessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
-import chatSessionFingerprintHandler from '../api/chat/chat-session-fingerprint.js';
 import chatPersistInteractionHandler from '../api/chat/chat-persist-interaction.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
@@ -130,13 +128,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Wide-open availability endpoint: skip session/auth/bot middleware
-app.get('/api/chat/chat-session-availability', sessionAvailabilityHandler);
-
 app.use(createSessionMiddleware(app));
 // Initialize Passport for authentication
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Unified chat initialization endpoint
+app.post('/api/chat/chat-init', chatInitHandler);
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use('/api', botFingerprintPresence);
 // Block requests with known bot User-Agent strings
@@ -201,10 +199,8 @@ app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
 app.post('/api/chat/chat-persist-interaction', chatPersistInteractionHandler);
-app.get('/api/chat/chat-create', chatCreateHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.post('/api/chat/chat-report', chatReportHandler);
-app.post('/api/chat/chat-session-fingerprint', chatSessionFingerprintHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
