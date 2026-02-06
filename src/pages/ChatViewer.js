@@ -392,13 +392,12 @@ const ChatViewer = () => {
                 style={{ maxWidth: '100%', fontSize: '14px', lineHeight: '1.5' }}
               >
                 <code
-                  className={`language-${
-                    typeof expandedMetadata === 'string' &&
+                  className={`language-${typeof expandedMetadata === 'string' &&
                     expandedMetadata.trim().startsWith('<') &&
                     expandedMetadata.trim().endsWith('>')
-                      ? 'xml'
-                      : 'json'
-                  }`}
+                    ? 'xml'
+                    : 'json'
+                    }`}
                 >
                   {typeof expandedMetadata === 'string'
                     ? expandedMetadata.replace(/\n/g, '\n')

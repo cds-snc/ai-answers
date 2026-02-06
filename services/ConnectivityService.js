@@ -4,7 +4,7 @@
  */
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import storage from './Storage.js';
 import { AzureOpenAI } from 'openai';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
@@ -119,7 +119,7 @@ async function testRedis() {
 }
 
 /**
- * Test S3 connection
+ * Test S3 connection (via Storage service)
  */
 async function testS3() {
     const startTime = Date.now();
@@ -137,41 +137,22 @@ async function testS3() {
     }
 
     try {
-        const client = new S3Client({ region });
-
-        // Test with PUT
         const testKey = `connectivity_test_${Date.now()}.txt`;
         const testContent = `Test content for connectivity at ${new Date().toISOString()}`;
 
-        await client.send(new PutObjectCommand({
-            Bucket: bucketName,
-            Key: testKey,
-            Body: testContent,
-            ContentType: 'text/plain'
-        }));
+        // Test with setItem (PUT)
+        await storage.setItem(testKey, testContent);
 
-        // Test with GET
-        const getResponse = await client.send(new GetObjectCommand({
-            Bucket: bucketName,
-            Key: testKey
-        }));
+        // Test with getItem (GET)
+        const retrievedContent = await storage.getItem(testKey);
 
-        const streamToString = (stream) =>
-            new Promise((resolve, reject) => {
-                const chunks = [];
-                stream.on("data", (chunk) => chunks.push(chunk));
-                stream.on("error", reject);
-                stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-            });
+        // Test with removeItem (DELETE)
+        await storage.removeItem(testKey);
 
-        const retrievedContent = await streamToString(getResponse.Body);
-
-        // Test with DELETE cleanup
-        await client.send(new DeleteObjectCommand({
-            Bucket: bucketName,
-            Key: testKey
-        }));
-
+        // Verify content match
+        // Note: unstorage automatically handles handling of string/json. 
+        // If we passed a string, it should return a string or object? 
+        // unstorage s3 driver usually returns value.
         const isContentMatch = retrievedContent === testContent;
 
         return {

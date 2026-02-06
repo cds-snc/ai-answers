@@ -1,6 +1,6 @@
 import { Logs } from '../models/logs.js';
-import dbConnect from '../api/db//db-connect.js';
-import { SettingsService } from './SettingsService.js';
+import dbConnect from '../api/db/db-connect.js';
+import storage from './Storage.js';
 import util from 'util';
 
 // Safe stringify that avoids throwing on circular refs. Prefer JSON when possible,
@@ -86,34 +86,28 @@ class LogQueue {
 
     async processLogEntry({ level, message, chatId, data }) {
 
-        // Only save to DB if chatId is present and not "system"
+        // Only save to storage if chatId is present and not "system"
         if (!chatId || chatId === 'system') {
-            // Do not save to DB, just log to console
             return;
         }
 
         try {
-            await dbConnect();
-            // If data is null/undefined, use empty string, otherwise process it
-            const processedData = data ? safeStringify(data) : '';
+            const interactionId = data?.interactionId || 'system';
+            const timestamp = Date.now();
+            const key = `${chatId}/${interactionId}/${timestamp}.json`;
 
-            // Try to parse back to an object if processedData starts as JSON; otherwise keep string
-            let metadata;
-            try {
-                metadata = processedData && processedData[0] === '{' ? JSON.parse(processedData) : processedData;
-            } catch (e) {
-                metadata = processedData;
-            }
-
-            const log = new Logs({
+            const logEntry = {
                 chatId,
                 logLevel: level,
                 message: typeof message === 'object' ? safeStringify(message) : message,
-                metadata
-            });
-            await log.save();
+                metadata: data,
+                createdAt: new Date().toISOString()
+            };
+
+            await storage.setItem(key, logEntry);
+
         } catch (error) {
-            console.error('Failed to save log to database:', error);
+            console.error('Failed to save log to storage:', error);
         }
     }
 }
@@ -137,41 +131,86 @@ process.on('SIGTERM', async () => {
 
 const ServerLoggingService = {
     log: async (level, message, chatId = 'system', data = {}) => {
-        const logChatsSetting = SettingsService.get('logChatsToDatabase');
+        // Log directly to console
         console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
-        if (logChatsSetting !== 'no') {
-            // Log directly to console and bypass queue
-            logQueue.add({ level, message, chatId, data });
 
-        }
-
+        // Always add to queue for storage (removed Settings check)
+        logQueue.add({ level, message, chatId, data });
     },
 
     getLogs: async ({ level = null, chatId = null, skip = 0, limit = 100 }) => {
-        await dbConnect();
+        let storageLogs = [];
+        let mongoLogs = [];
+        let totalStorage = 0;
+        let totalMongo = 0;
 
-        const query = {};
-
-        if (level && level !== 'all') {
-            query.logLevel = level;
-        }
-
+        // 1. Fetch from Storage (S3/FS)
         if (chatId) {
-            query.chatId = chatId;
+            try {
+                // Get all keys for this chatId
+                const keys = await storage.getKeys(`${chatId}/`);
+
+                // Sort keys descending by timestamp (timestamp is last part of key)
+                // Key format: chatId/interactionId/timestamp.json
+                keys.sort((a, b) => {
+                    const timeA = parseInt(a.split('/').pop().replace('.json', '')) || 0;
+                    const timeB = parseInt(b.split('/').pop().replace('.json', '')) || 0;
+                    return timeB - timeA;
+                });
+
+                totalStorage = keys.length;
+
+                // Determine which keys to fetch based on pagination
+                if (skip < totalStorage) {
+                    const keysToFetch = keys.slice(skip, skip + limit);
+                    const itemPromises = keysToFetch.map(k => storage.getItem(k));
+                    storageLogs = (await Promise.all(itemPromises)).filter(Boolean).map(log => ({
+                        ...log,
+                        source: 'bucket'
+                    }));
+                }
+            } catch (e) {
+                console.error('Failed to fetch logs from storage:', e);
+            }
         }
 
-        const logs = await Logs.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        // 2. Fetch from MongoDB (Legacy Fallback)
+        // Only fetch if we haven't filled the limit with storage logs
+        if (storageLogs.length < limit) {
+            const mongoSkip = Math.max(0, skip - totalStorage);
+            const mongoLimit = limit - storageLogs.length;
 
-        const total = await Logs.countDocuments(query);
-        const hasMore = total > skip + logs.length;
+            await dbConnect();
+            const query = {};
+            if (level && level !== 'all') query.logLevel = level;
+            if (chatId) query.chatId = chatId;
+
+            mongoLogs = (await Logs.find(query)
+                .sort({ createdAt: -1 })
+                .skip(mongoSkip)
+                .limit(mongoLimit)).map(l => {
+                    const log = l.toObject ? l.toObject() : l;
+                    return { ...log, source: 'database' };
+                });
+
+            totalMongo = await Logs.countDocuments(query);
+        } else {
+            // Just get count for total
+            await dbConnect();
+            const query = {};
+            if (level && level !== 'all') query.logLevel = level;
+            if (chatId) query.chatId = chatId;
+            totalMongo = await Logs.countDocuments(query);
+        }
+
+        const combinedLogs = [...storageLogs, ...mongoLogs.map(l => l.toObject ? l.toObject() : l)];
+        // Optional: Ensure overall sort if there's overlap in time (unlikely with this architecture)
+        // combinedLogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         return {
-            logs,
-            total,
-            hasMore
+            logs: combinedLogs,
+            total: totalStorage + totalMongo,
+            hasMore: (totalStorage + totalMongo) > (skip + combinedLogs.length)
         };
     },
 
