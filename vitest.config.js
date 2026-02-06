@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   esbuild: {
     loader: 'jsx',
-    include: /src\/.*\.js$/,
+    include: /src\/.*\.(js|jsx)$/,
     exclude: [],
   },
   test: {
@@ -28,6 +28,13 @@ export default defineConfig({
       }
     },
     testTimeout: 20000, // Increase timeout for database operations
-    hookTimeout: 60000 // Allow longer async hooks (e.g., database downloads)
+    hookTimeout: 60000, // Allow longer async hooks (e.g., database downloads)
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      'tests/e2e/**'
+    ]
   }
 });
