@@ -81,7 +81,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
       // Validate default workflow against known options
-      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
+      const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
@@ -467,7 +467,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
+                const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
               } finally {
@@ -476,12 +476,9 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingDefaultWorkflow}
           >
-            <option value="Default">Default</option>
-            <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
-            <option value="DefaultWithVector">DefaultWithVector</option>
+            <option value="DefaultGraph">DefaultGraph</option>
             <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
             <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-            <option value="DefaultGraph">DefaultGraph</option>
             <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
           </select>
           <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">

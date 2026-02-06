@@ -9,10 +9,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import dotenv from 'dotenv';
-import chatMessageHandler from '../api/chat/chat-message.js';
-import chatContextHandler from '../api/chat/chat-context.js';
+
 import dbChatLogsHandler from '../api/db/db-chat-logs.js';
-import contextSearchHandler from '../api/search/search-context.js';
+
 import dbBatchListHandler from '../api/batch/batch-list.js';
 import dbBatchRetrieveHandler from '../api/batch/batch-retrieve.js';
 import dbBatchPersistHandler from '../api/batch/batch-persist.js';
@@ -22,9 +21,7 @@ import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 
 import chatInitHandler from '../api/chat/chat-init.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
-import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
-import chatTranslateHandler from '../api/chat/chat-translate.js';
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
 import chatReportHandler from '../api/chat/chat-report.js';
@@ -247,13 +244,9 @@ app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
 app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
-app.post('/api/chat/chat-message', chatMessageHandler);
-app.post('/api/chat/chat-context', chatContextHandler);
-app.post('/api/search/search-context', contextSearchHandler);
+
 app.post('/api/chat/chat-similar-answer', chatSimilarAnswerHandler);
-app.post('/api/chat/chat-pii-check', chatPIICheckHandler);
 app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
-app.post('/api/chat/chat-translate', chatTranslateHandler);
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
 app.get('/api/util/util-connectivity', connectivityHandler);
