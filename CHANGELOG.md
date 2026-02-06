@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.96.1](https://github.com/cds-snc/ai-answers/compare/v1.96.0...v1.96.1) (2026-02-06)
+
+
+### Miscellaneous Chores
+
+* lint ([618f59a](https://github.com/cds-snc/ai-answers/commit/618f59a80775737a85a84f7c552b11000f22080e))
+
 ## [1.96.0](https://github.com/cds-snc/ai-answers/compare/v1.95.0...v1.96.0) (2026-02-06)
 
 
