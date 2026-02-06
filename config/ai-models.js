@@ -24,7 +24,8 @@ const AI_MODELS = {
         timeoutMs: 60000,
       },
       "openai-gpt5-mini": {
-        maxTokens: 1024,
+        model: "gpt-5-mini",
+        maxTokens: 10024,
         temperature: 0.0,
         timeoutMs: 60000,
         reasoning: {

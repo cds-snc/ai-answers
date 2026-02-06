@@ -81,7 +81,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'Default');
       // Validate default workflow against known options
-      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph'];
+      const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'Default');
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
@@ -467,7 +467,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph'];
+                const allowedWorkflows = ['Default', 'DefaultAlwaysContext', 'DefaultWithVector', 'DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'Default');
               } finally {
@@ -482,6 +482,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
             <option value="InstantAndQAGraph">InstantAndQAGraph</option>
             <option value="DefaultGraph">DefaultGraph</option>
+            <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
           </select>
           <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
             {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
