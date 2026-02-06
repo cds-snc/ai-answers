@@ -4,7 +4,7 @@
  */
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
-import storage from './Storage.js';
+import storageService from './Storage.js';
 import { AzureOpenAI } from 'openai';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
@@ -140,19 +140,17 @@ async function testS3() {
         const testKey = `connectivity_test_${Date.now()}.txt`;
         const testContent = `Test content for connectivity at ${new Date().toISOString()}`;
 
-        // Test with setItem (PUT)
-        await storage.setItem(testKey, testContent);
+        // Test with put (PUT)
+        await storageService.put(testKey, testContent);
 
-        // Test with getItem (GET)
-        const retrievedContent = await storage.getItem(testKey);
+        // Test with get (GET)
+        const retrievedContent = await storageService.get(testKey);
 
-        // Test with removeItem (DELETE)
-        await storage.removeItem(testKey);
+        // Test with delete (DELETE)
+        await storageService.delete(testKey);
 
         // Verify content match
-        // Note: unstorage automatically handles handling of string/json. 
-        // If we passed a string, it should return a string or object? 
-        // unstorage s3 driver usually returns value.
+        // Flydrive returns content as string
         const isContentMatch = retrievedContent === testContent;
 
         return {

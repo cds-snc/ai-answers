@@ -1,6 +1,6 @@
 import { Logs } from '../models/logs.js';
 import dbConnect from '../api/db/db-connect.js';
-import storage from './Storage.js';
+import storageService from './Storage.js';
 import util from 'util';
 
 // Safe stringify that avoids throwing on circular refs. Prefer JSON when possible,
@@ -104,7 +104,7 @@ class LogQueue {
                 createdAt: new Date().toISOString()
             };
 
-            await storage.setItem(key, logEntry);
+            await storageService.put(key, JSON.stringify(logEntry));
 
         } catch (error) {
             console.error('Failed to save log to storage:', error);
@@ -165,23 +165,29 @@ const ServerLoggingService = {
         // 1. Fetch from Storage (S3/FS)
         if (chatId) {
             try {
-                // Get all keys for this chatId
-                const keys = await storage.getKeys(`${chatId}/`);
+                // Get all keys for this chatId using Flydrive's listAll
+                const files = [];
+                for await (const file of storageService.listAll(`${chatId}/`)) {
+                    files.push(file.key);
+                }
 
                 // Sort keys descending by timestamp (timestamp is last part of key)
                 // Key format: chatId/interactionId/timestamp.json
-                keys.sort((a, b) => {
+                files.sort((a, b) => {
                     const timeA = parseInt(a.split('/').pop().replace('.json', '')) || 0;
                     const timeB = parseInt(b.split('/').pop().replace('.json', '')) || 0;
                     return timeB - timeA;
                 });
 
-                totalStorage = keys.length;
+                totalStorage = files.length;
 
                 // Determine which keys to fetch based on pagination
                 if (skip < totalStorage) {
-                    const keysToFetch = keys.slice(skip, skip + limit);
-                    const itemPromises = keysToFetch.map(k => storage.getItem(k));
+                    const keysToFetch = files.slice(skip, skip + limit);
+                    const itemPromises = keysToFetch.map(async k => {
+                        const content = await storageService.get(k);
+                        return content ? JSON.parse(content) : null;
+                    });
                     storageLogs = (await Promise.all(itemPromises)).filter(Boolean).map(log => ({
                         ...log,
                         source: 'bucket'
