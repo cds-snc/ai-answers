@@ -6,7 +6,7 @@ import {
     authMiddleware,
     withProtection
 } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../utils/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';

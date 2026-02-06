@@ -95,7 +95,7 @@ export const InteractionPersistenceService = {
         question.englishQuestion = interaction.answer?.englishQuestion || '';
 
         // Handle tools data with proper validation
-        const toolsData = Array.isArray(interaction.answer.tools) ? interaction.answer.tools : [];
+        const toolsData = Array.isArray(interaction.answer?.tools) ? interaction.answer.tools : [];
         const toolObjects = toolsData.map(toolData => new Tool({
             tool: toolData.tool,
             input: toolData.input,

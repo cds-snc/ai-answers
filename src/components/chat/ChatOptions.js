@@ -81,12 +81,9 @@ const ChatOptions = ({
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >
-                <option value="Default">Default</option>
-                <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
-                <option value="DefaultWithVector">DefaultWithVector</option>
+                <option value="DefaultGraph">DefaultGraph</option>
                 <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                 <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                <option value="DefaultGraph">DefaultGraph</option>
                 <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
               </select>
             </div>

@@ -119,6 +119,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       {!showPanel && (
         <div className="bg-white shadow rounded-lg p-4">
           <GcdsButton
+            id="get-logs-button"
             onClick={handleGetLogs}
             className="me-400 hydrated"
           >

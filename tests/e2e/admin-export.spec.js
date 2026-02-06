@@ -80,16 +80,11 @@ test.describe('Admin Chat Logs Export', () => {
         await page.goto('http://localhost:3001/en/admin');
         await page.waitForTimeout(2000);
 
-        // 3. Click on Chat Logs navigation if exists
-        const chatLogsLink = page.locator('text=Chat Logs').or(page.locator('text=Download chat logs'));
-        if (await chatLogsLink.count() > 0) {
-            await chatLogsLink.first().click();
-            await page.waitForTimeout(1000);
-        }
+
 
         // 4. Click "Get logs" button
         console.log('Looking for Get logs button...');
-        const getLogsButton = page.locator('text=Get logs');
+        const getLogsButton = page.locator('#get-logs-button');
         if (await getLogsButton.count() > 0) {
             await getLogsButton.click();
             await page.waitForTimeout(1000);
@@ -137,7 +132,7 @@ test.describe('Admin Chat Logs Export', () => {
         await page.waitForTimeout(2000);
 
         // Click Get logs
-        const getLogsButton = page.locator('text=Get logs');
+        const getLogsButton = page.locator('#get-logs-button');
         if (await getLogsButton.count() > 0) {
             await getLogsButton.click();
             await page.waitForTimeout(1000);
@@ -198,7 +193,7 @@ test.describe('Admin Chat Logs Export', () => {
 
         // 2. Navigate
         await page.goto('http://localhost:3001/en/admin');
-        const getLogsButton = page.locator('text=Get logs');
+        const getLogsButton = page.locator('#get-logs-button');
         if (await getLogsButton.count() > 0) {
             await getLogsButton.click();
         }

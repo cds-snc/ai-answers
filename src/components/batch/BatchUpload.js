@@ -19,7 +19,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
   const [selectedSearch, setSelectedSearch] = useState('google');
-  const [selectedWorkflow, setSelectedWorkflow] = useState('Default');
+  const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
 
   const handleFileChange = (event) => {
     setError(null);
@@ -324,12 +324,9 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   className="chat-border"
                   style={{ width: 'auto', display: 'inline-block' }}
                 >
-                  <option value="Default">Default</option>
-                  <option value="DefaultAlwaysContext">DefaultAlwaysContext</option>
-                  <option value="DefaultWithVector">DefaultWithVector</option>
+                  <option value="DefaultGraph">DefaultGraph</option>
                   <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                   <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                  <option value="DefaultGraph">DefaultGraph</option>
                   <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
                 </select>
               </div>

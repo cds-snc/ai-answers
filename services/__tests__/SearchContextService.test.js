@@ -23,7 +23,7 @@ vi.mock('../ServerLoggingService.js', () => ({
 }));
 
 // Mock backoff to just run the function immediately
-vi.mock('../../src/utils/backoff.js', () => ({
+vi.mock('../../api/util/backoff.js', () => ({
     exponentialBackoff: (fn) => fn()
 }));
 

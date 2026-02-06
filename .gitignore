@@ -32,6 +32,8 @@ temp.jsonl
 
 # Terragrunt and Terraform
 .terragrunt-cache
+.terraform
+.terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
 *.tfstate.lock.info
