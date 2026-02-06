@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.95.0](https://github.com/cds-snc/ai-answers/compare/v1.94.0...v1.95.0) (2026-02-06)
+
+
+### Features
+
+* add AgentFactory for creating various AI agents with tool integration and callback tracking. ([ee51d5f](https://github.com/cds-snc/ai-answers/commit/ee51d5f67c3cd12b0b17f533be5c4e7e5acd0f56))
+* Implement batch upload functionality with configurable AI models, search providers, and workflows, along with new agent and embedding services. ([b0160bf](https://github.com/cds-snc/ai-answers/commit/b0160bfd25c5e20e3e71dacf694fd79d086ff069))
+* Introduce configurable AI agents with tools, a chat options UI for model and workflow selection, an embedding service, and a batch upload component. ([2f7cf02](https://github.com/cds-snc/ai-answers/commit/2f7cf02b2ff421f5c22ce071d930c15210f2d8d8))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump jsonpath from 1.1.1 to 1.2.0 ([efcd273](https://github.com/cds-snc/ai-answers/commit/efcd27390423a63cad992b9bcd9b322af99444a1))
+* **deps:** bump jsonpath from 1.1.1 to 1.2.0 ([5db3818](https://github.com/cds-snc/ai-answers/commit/5db38186922a3c86790f975d392c95b24c73bfe4))
+
 ## [1.94.0](https://github.com/cds-snc/ai-answers/compare/v1.93.2...v1.94.0) (2026-02-04)
 
 
