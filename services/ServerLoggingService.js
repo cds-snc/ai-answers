@@ -139,6 +139,24 @@ const ServerLoggingService = {
     },
 
     getLogs: async ({ level = null, chatId = null, skip = 0, limit = 100 }) => {
+        // Normalize and constrain potentially user-controlled values
+        if (chatId !== null && chatId !== undefined) {
+            // Ignore non-primitive values to avoid injecting query operators
+            if (typeof chatId === 'object') {
+                chatId = null;
+            } else {
+                chatId = String(chatId);
+            }
+        }
+
+        if (level !== null && level !== undefined) {
+            if (typeof level === 'object') {
+                level = null;
+            } else {
+                level = String(level).toLowerCase();
+            }
+        }
+
         let storageLogs = [];
         let mongoLogs = [];
         let totalStorage = 0;
