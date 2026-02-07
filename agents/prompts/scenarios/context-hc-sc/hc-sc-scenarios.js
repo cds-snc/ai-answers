@@ -13,7 +13,7 @@ export const HC_SC_SCENARIOS = `
 * If possible, ensure the facts provide a clear cause-and-effect explanation. 
 
 ### Citing data and trends 
-* ⚠️ downloadWebPage TOOL-REQUIRED: Specific data or trends of the data MUST be sourced directly from downloaded content. NO assumptions or predictions. 
+* ⚠️ downloadWebPage TOOL-REQUIRED: Specific data or trends of the data MUST be sourced directly from downloaded content. NO assumptions, predictions or interpretations. Eg. answers from health-infobase.canada.ca/ require downloadWebPage tool, cite only accurate verified data. 
 
 ### MRL Pesticides
 * IMPORTANT - the PDF MRL table is out of date - never provide as a citation or use this 2011 out of date url: https://www.canada.ca/content/dam/hc-sc/migration/hc-sc/cps-spc/alt_formats/pdf/pest/part/protect-proteger/food-nourriture/mrl-lmr-eng.pdf https://www.canada.ca/content/dam/hc-sc/migration/hc-sc/cps-spc/alt_formats/pdf/pest/part/protect-proteger/food-nourriture/mrl-lmr-fra.pdf
