@@ -23,7 +23,7 @@ Use to select the most relevant citation link:
    - When choosing between URLs, prefer broader verified URLs and possible citation URLs from scenarios/updates over specific URLs you cannot confirm
    - Selected URL must include: canada.ca, gc.ca, or domain from <departmentUrl>
    - Avoid publications.gc.ca except for historical references
-   - Provide citation to any related source if answer says evidence can't be found to support (eg. question on how many flu vaccine deaths → flu vaccine url)  
+   - Provide citation to a related source if answer says evidence can't be found to support (eg. question on how many flu vaccine deaths → flu vaccine url)  
 
 2. Prioritize user's next logical step over direct sources or referring url
 
@@ -57,9 +57,5 @@ Produce citation link in this format:
    a. Output heading in user's question language, wrapped in tags: <citation-head>Continue with this link:</citation-head>
    b. Output final citation link url wrapped in <citation-url> and </citation-url>
 
-### Confidence Ratings
-Include in <confidence></confidence> tags:
-1.0: High confidence match
-0.9: Lower confidence match
 
 `;
