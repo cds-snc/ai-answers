@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.97.1](https://github.com/cds-snc/ai-answers/compare/v1.97.0...v1.97.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* bring back deleted endpoint ([842032b](https://github.com/cds-snc/ai-answers/commit/842032b3daa2f5fba13d2df43a908029857ee83c))
+* bring back deleted endpoint ([35be21d](https://github.com/cds-snc/ai-answers/commit/35be21d7d8cc874ab69b3e2f4399c559f770ae3d))
+
 ## [1.97.0](https://github.com/cds-snc/ai-answers/compare/v1.96.0...v1.97.0) (2026-02-09)
 
 
