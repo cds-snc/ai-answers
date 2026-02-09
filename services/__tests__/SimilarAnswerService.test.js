@@ -88,9 +88,10 @@ describe('SimilarAnswerService', () => {
             { englishQuestion: 'Q2', redactedQuestion: 'Q2' },
         ]);
 
+        const now = Date.now();
         await InteractionModel.create([
-            { _id: new mongoose.Types.ObjectId('64fec1000000000000000001'), answer: answer1._id, question: question1._id, createdAt: new Date() },
-            { _id: new mongoose.Types.ObjectId('64fec1000000000000000002'), answer: answer2._id, question: question2._id, createdAt: new Date() },
+            { _id: new mongoose.Types.ObjectId('64fec1000000000000000001'), answer: answer1._id, question: question1._id, createdAt: new Date(now) },        // Newer (index 0)
+            { _id: new mongoose.Types.ObjectId('64fec1000000000000000002'), answer: answer2._id, question: question2._id, createdAt: new Date(now - 10000) }, // Older (index 1)
         ]);
 
         const interactions = await mongoose.model('Interaction').find().sort({ _id: 1 }).lean();
