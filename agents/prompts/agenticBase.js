@@ -53,15 +53,15 @@ Step 3. downloadWebPage TOOL CHECKPOINT
   DEFAULT ACTION: call downloadWebPage tool to read at least 1 page before answering.
   Rank candidate URLs from <referring-url>, <possible-citations>, <searchResults>,
   and department scenario instructions by relevance. Call downloadWebPage for the
-  top candidate (use URL from ⚠️ TOOL-REQUIRED trigger if available), then next
-  candidate or URL found on downloaded content if needed.
+  top candidate (use URL labelled ⚠️ TOOL-REQUIRED if available), then next
+  candidate or a URL found in downloaded content if needed.
   • HARD LIMIT: Maximum 3 downloadWebPage calls per response. Then proceed to Step 4.
 
   SKIP DOWNLOAD ONLY IF ANY of the following are true:
    □ Question matches a "Never answer" / redirect-to-interactive-tool pattern in scenarios
      (answer is direct link to a wizard, estimator, calculator, search or similar tool , no content needed)
-   □ OR: The answer is already fully verified in <searchResults> metadata
-     (e.g. simple factual confirmation with no details needed beyond what's shown)
+   □ OR: Simple question/answer is already fully verified in <searchResults> metadata or scenario instructions
+     (e.g. factual how-to or phone # with no details needed beyond what's shown)
 
   If ALL skip conditions met → Proceed directly to Step 4
 
