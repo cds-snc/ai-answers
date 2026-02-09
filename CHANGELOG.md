@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.97.0](https://github.com/cds-snc/ai-answers/compare/v1.96.0...v1.97.0) (2026-02-09)
+
+
+### Features
+
+* add `unstorage`-based flexible storage service for chat logs and E2E tests for chat log viewer. ([fda4f7e](https://github.com/cds-snc/ai-answers/commit/fda4f7e84e38f64a759c9cb87b77239f6a4d73de))
+* add server logging service with database persistence and unit tests ([908cf5d](https://github.com/cds-snc/ai-answers/commit/908cf5dc0f8afa73d6e252c17478368bfe1d1512))
+* Chat view E2E for S3 changes. ([ffc8cc7](https://github.com/cds-snc/ai-answers/commit/ffc8cc750c30d49f75473e4c6ca5336944b2d63c))
+* docs for claude and copilot ([767667a](https://github.com/cds-snc/ai-answers/commit/767667a073104664db77ac0cc4a04855add8ada3))
+* implement dynamic storage configuration using unstorage with S3 and filesystem drivers. ([a56a8b4](https://github.com/cds-snc/ai-answers/commit/a56a8b432f50fe496039e5aa4bbc83cac4491954))
+* Implement server-side logging service with dedicated log files and tests. ([b18d11b](https://github.com/cds-snc/ai-answers/commit/b18d11bf6a59219c8f1511be9503d9de17c49400))
+* include libraries for unstorage ([1500b7c](https://github.com/cds-snc/ai-answers/commit/1500b7cdc97e0fa7973388de2ddc2ed75667a633))
+* install driver compatible with our security model ([1c3ab0e](https://github.com/cds-snc/ai-answers/commit/1c3ab0ebd5fd3cc640172d561d60c02b6a531287))
+
+
+### Bug Fixes
+
+* **deps:** add @aws-sdk/s3-request-presigner required by flydrive s3 ([ce6d5f5](https://github.com/cds-snc/ai-answers/commit/ce6d5f5951e068db6490a469aa1683ad28ef9f1b))
+* finetuning ([0f5e1ef](https://github.com/cds-snc/ai-answers/commit/0f5e1efb9bdb756875ae647f4aedc480a496f047))
+* health-infobase download required ([d082855](https://github.com/cds-snc/ai-answers/commit/d082855ee65e80e98e6807ed6f2046fc7e7a20b1))
+* protect against post log levels ([f1c6333](https://github.com/cds-snc/ai-answers/commit/f1c63337e25eb6d3324f66b5d9e78d4b9d903bfe))
+* remove confidence download-max ([46e3f42](https://github.com/cds-snc/ai-answers/commit/46e3f4227df21b9c21f8a86668b699799d43c767))
+* remove confidenceRating from exported logs ([7d25e7a](https://github.com/cds-snc/ai-answers/commit/7d25e7a66ace92bc158ecb0069c6f89a9eefd7ec))
+* remove old exploratory folder ([5936c14](https://github.com/cds-snc/ai-answers/commit/5936c14290ffe8a4ed23cd56748764ea6912a0ae))
+* try flydrive ([b828b71](https://github.com/cds-snc/ai-answers/commit/b828b719a5324717050c37468bf0bda578680a48))
+* tune download ([faec987](https://github.com/cds-snc/ai-answers/commit/faec987569093e91535a3202aaf4db609cf4736e))
+
+
+### Miscellaneous Chores
+
+* lint ([618f59a](https://github.com/cds-snc/ai-answers/commit/618f59a80775737a85a84f7c552b11000f22080e))
+
 ## [1.96.0](https://github.com/cds-snc/ai-answers/compare/v1.95.0...v1.96.0) (2026-02-06)
 
 
