@@ -40,6 +40,7 @@
     "compromise": "^14.14.4",
     "compute-cosine-similarity": "^1.1.0",
     "connect-mongo": "^5.1.0",
+    "connect-redis": "^9.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

@@ -28,7 +28,17 @@ services:
       # Use forward slashes and quote the path for compatibility
       - 'C:/qdrant_data:/qdrant/storage'
 
+  redis:
+    image: redis:7.2
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - 'C:/redis_data:/data'
+
 # We're using host bind mounts (no named Docker volumes). Make sure the
 # C: drive (or the specific host path) is shared with Docker Desktop
 # (Settings > Resources > File Sharing) and that permissions allow Docker
 # to write to the folder. You can create the folders manually if needed.
+# For Redis, ensure C:/redis_data exists.
