@@ -20,6 +20,8 @@ import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 
 import chatInitHandler from '../api/chat/chat-init.js';
+import chatSessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
+
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
@@ -132,6 +134,8 @@ app.use(passport.session());
 
 // Unified chat initialization endpoint
 app.post('/api/chat/chat-init', chatInitHandler);
+app.get('/api/chat/chat-session-availability', chatSessionAvailabilityHandler);
+
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use('/api', botFingerprintPresence);
 // Block requests with known bot User-Agent strings
