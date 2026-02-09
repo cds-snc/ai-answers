@@ -1,6 +1,7 @@
 import { ChatWorkflowService, ShortQueryValidation, RedactionError } from './ChatWorkflowService.js';
 import AuthService from './AuthService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
+import SessionService from './SessionService.js';
 
 /**
  * Client-side batch runner that treats each spreadsheet row as its own chat.
@@ -29,10 +30,11 @@ class BatchService {
   async registerBatchChatId() {
     try {
       const url = getApiUrl('batch-register-chatid');
+      const visitorId = await SessionService.getVisitorId();
       const res = await AuthService.fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ visitorId }),
       });
 
       if (!res.ok) {

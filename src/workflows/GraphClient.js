@@ -2,6 +2,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 import { ChatWorkflowService, ShortQueryValidation, RedactionError } from '../services/ChatWorkflowService.js';
 
 import AuthService from '../services/AuthService.js';
+import SessionService from '../services/SessionService.js';
 
 export class GraphClient {
   constructor(graphName = 'DefaultWithVectorGraph') {
@@ -35,6 +36,8 @@ export class GraphClient {
         lastAiMessage?.interaction?.answer?.historySignature ||
         null;
 
+      const visitorId = await SessionService.getVisitorId();
+
       const payload = {
         graph: this.graphName,
         input: {
@@ -50,6 +53,7 @@ export class GraphClient {
           translationF,
           searchProvider,
           overrideUserId,
+          visitorId,
         },
       };
 
