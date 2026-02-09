@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
-import dbConnect from '../../api/db/db-connect.js';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { InteractionPersistenceService } from '../InteractionPersistenceService.js';
 import { Chat } from '../../models/chat.js';
 import { Interaction } from '../../models/interaction.js';
@@ -29,20 +29,25 @@ vi.mock('../ServerLoggingService.js', () => ({
     },
 }));
 
-const mongoUri = global.__MONGO_URI__ || process.env.MONGODB_URI;
-const describeFn = mongoUri ? describe : describe.skip;
-
-describeFn('InteractionPersistenceService', () => {
+describe('InteractionPersistenceService', () => {
     let initialPayload;
     let user;
+    let mongoServer;
 
     beforeAll(async () => {
-        await dbConnect();
+        if (process.env.MONGODB_URI) {
+            await mongoose.connect(process.env.MONGODB_URI);
+        } else {
+            mongoServer = await MongoMemoryServer.create();
+            const uri = mongoServer.getUri();
+            await mongoose.connect(uri);
+        }
     });
 
     afterAll(async () => {
-        if (mongoose.connection.readyState !== 0) {
-            await mongoose.connection.close();
+        await mongoose.disconnect();
+        if (mongoServer) {
+            await mongoServer.stop();
         }
     });
 

@@ -54,9 +54,10 @@ export default function botFingerprintPresence(req, res, next) {
     }
 
     // 5. Lazy init: If visitorId missing from session but present in body, hash and store it now
-    if (!req.session.visitorId && req.body?.visitorId) {
+    const visitorId = req.body?.visitorId || req.body?.input?.visitorId;
+    if (!req.session.visitorId && visitorId) {
       const hashedVisitorId = crypto.createHmac('sha256', fingerprintPepper)
-        .update(String(req.body.visitorId)).digest('hex');
+        .update(String(visitorId)).digest('hex');
       req.session.visitorId = hashedVisitorId;
       // Save session synchronously if possible (fire-and-forget for perf)
       if (typeof req.session.save === 'function') {

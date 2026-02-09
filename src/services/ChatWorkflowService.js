@@ -50,24 +50,19 @@ export const ChatWorkflowService = {
     searchProvider,
     overrideUserId = null
   ) => {
-    // If caller didn't provide a workflow (null/undefined/empty), load the
-    // public default workflow setting so clients that haven't selected a
-    // personal preference will follow the global default.
+    // If caller didn't provide a workflow (null/undefined/empty), we pass null to the GraphClient.
+    // The server will then assign the configured 'workflow.default' for valid requests.
     let resolvedWorkflow = workflow;
-    if (!resolvedWorkflow) {
-      try {
-        resolvedWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'DefaultGraph');
-      } catch (err) {
-        resolvedWorkflow = 'DefaultGraph';
-      }
-    }
 
     // Select workflow implementation based on the resolved workflow.
     // We only support Graph-based workflows now.
     // Use the single GraphClient for graph-based client workflows to avoid duplicated code.
     const { default: GraphClient } = await import('../workflows/GraphClient.js');
     let graphName;
-    if (resolvedWorkflow === 'DefaultGraph') {
+
+    if (!resolvedWorkflow) {
+      graphName = null;
+    } else if (resolvedWorkflow === 'DefaultGraph') {
       graphName = 'GenericWorkflowGraph';
     } else if (resolvedWorkflow === 'InstantAndQAGraph') {
       graphName = 'InstantAndQAGraph';
@@ -76,7 +71,7 @@ export const ChatWorkflowService = {
     } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
       graphName = 'DefaultWithVectorGraph';
     } else {
-      // Fallback for any legacy values to DefaultWithVectorGraph
+      // Fallback for any other legacy string values
       graphName = 'DefaultWithVectorGraph';
     }
 

@@ -317,23 +317,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, []);
 
-  // If there's no user-local workflow, load the public default workflow (does
-  // not mark it as user-set or persist it).
-  useEffect(() => {
-    let mounted = true;
-    const loadDefaultWorkflow = async () => {
-      if (workflow === null) {
-        try {
-          const defaultWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'Default');
-          if (mounted) setWorkflow(defaultWorkflow || 'Default');
-        } catch (err) {
-          if (mounted) setWorkflow('Default');
-        }
-      }
-    };
-    loadDefaultWorkflow();
-    return () => { mounted = false; };
-  }, [workflow]);
+
 
   useEffect(() => {
     try {

@@ -185,16 +185,12 @@ const HomePage = ({ lang = "en" }) => {
     setChatSessionFailed(true);
   };
 
-  const WrappedErrorBoundary = ({ children }) => (
-    <ErrorBoundary t={t}>{children}</ErrorBoundary>
-  );
-
   if (serviceStatus.isAvailable === false || chatSessionFailed) {
     return <OutageComponent />;
   }
 
   return (
-    <WrappedErrorBoundary>
+    <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
         <h2
@@ -263,7 +259,7 @@ const HomePage = ({ lang = "en" }) => {
           </GcdsText>
         </div>
       )}
-    </WrappedErrorBoundary>
+    </ErrorBoundary>
   );
 };
 
