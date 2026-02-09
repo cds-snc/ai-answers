@@ -94,7 +94,8 @@ class LogQueue {
         try {
             const interactionId = data?.interactionId || 'system';
             const timestamp = Date.now();
-            const key = `${chatId}/${interactionId}/${timestamp}.json`;
+            const randomSuffix = Math.random().toString(36).slice(2, 6);
+            const key = `${chatId}/${interactionId}/${timestamp}-${randomSuffix}.json`;
 
             const logEntry = {
                 chatId,
@@ -112,24 +113,35 @@ class LogQueue {
     }
 }
 
+// Update LogQueue to handle listener cleanup
+const originalStop = LogQueue.prototype.stopProcessingLoop;
+LogQueue.prototype.stopProcessingLoop = function () {
+    originalStop.call(this);
+    process.removeListener('beforeExit', onBeforeExit);
+    process.removeListener('SIGTERM', onSigTerm);
+};
+
 const logQueue = new LogQueue();
 
-// Ensure cleanup on process exit
-process.on('beforeExit', () => {
+function onBeforeExit() {
     logQueue.stopProcessingLoop();
-});
+}
 
-// Handle remaining logs on shutdown
-process.on('SIGTERM', async () => {
+async function onSigTerm() {
     logQueue.stopProcessingLoop();
     if (logQueue.queue.length > 0) {
         console.log(`Processing ${logQueue.queue.length} remaining logs before shutdown...`);
         await logQueue.processQueue();
     }
     process.exit(0);
-});
+}
+
+// Ensure cleanup on process exit
+process.on('beforeExit', onBeforeExit);
+process.on('SIGTERM', onSigTerm);
 
 const ServerLoggingService = {
+    _stopQueue: () => logQueue.stopProcessingLoop(),
     log: async (level, message, chatId = 'system', data = {}) => {
         // Validate level to prevent console method injection
         const allowedLevels = ['log', 'info', 'debug', 'warn', 'error'];
@@ -179,8 +191,8 @@ const ServerLoggingService = {
                     }
                 }
                 files.sort((a, b) => {
-                    const timeA = parseInt(a.split('/').pop().replace('.json', '')) || 0;
-                    const timeB = parseInt(b.split('/').pop().replace('.json', '')) || 0;
+                    const timeA = parseInt(a.split('/').pop().split('-')[0]) || 0;
+                    const timeB = parseInt(b.split('/').pop().split('-')[0]) || 0;
                     return timeB - timeA;
                 });
 
@@ -232,7 +244,7 @@ const ServerLoggingService = {
             totalMongo = await Logs.countDocuments(query);
         }
 
-        const combinedLogs = [...storageLogs, ...mongoLogs.map(l => l.toObject ? l.toObject() : l)];
+        const combinedLogs = [...storageLogs, ...mongoLogs];
         // Optional: Ensure overall sort if there's overlap in time (unlikely with this architecture)
         // combinedLogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 

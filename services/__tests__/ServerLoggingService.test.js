@@ -43,8 +43,10 @@ describe('ServerLoggingService', () => {
     let ServerLoggingService;
 
     beforeEach(async () => {
+        vi.resetModules();
         vi.clearAllMocks();
         // Reset console mocks
+        vi.spyOn(console, 'log').mockImplementation(() => { });
         vi.spyOn(console, 'info').mockImplementation(() => { });
         vi.spyOn(console, 'debug').mockImplementation(() => { });
         vi.spyOn(console, 'warn').mockImplementation(() => { });
@@ -56,6 +58,9 @@ describe('ServerLoggingService', () => {
     });
 
     afterEach(() => {
+        if (ServerLoggingService && ServerLoggingService._stopQueue) {
+            ServerLoggingService._stopQueue();
+        }
         vi.restoreAllMocks();
     });
 
@@ -71,8 +76,8 @@ describe('ServerLoggingService', () => {
             expect(mockStorage.put).toHaveBeenCalledTimes(1);
             const [key, value] = mockStorage.put.mock.calls[0];
 
-            // Key format: {chatId}/{interactionId}/{timestamp}.json
-            expect(key).toMatch(/^chat-123\/int-456\/\d+\.json$/);
+            // Key format: {chatId}/{interactionId}/{timestamp}-{random}.json
+            expect(key).toMatch(/^chat-123\/int-456\/\d+-[a-z0-9]+\.json$/);
             expect(JSON.parse(value)).toMatchObject({
                 chatId: 'chat-123',
                 logLevel: 'info',
@@ -91,8 +96,8 @@ describe('ServerLoggingService', () => {
             expect(mockStorage.put).toHaveBeenCalledTimes(1);
             const [key] = mockStorage.put.mock.calls[0];
 
-            // Key format: {chatId}/system/{timestamp}.json
-            expect(key).toMatch(/^chat-123\/system\/\d+\.json$/);
+            // Key format: {chatId}/system/{timestamp}-{random}.json
+            expect(key).toMatch(/^chat-123\/system\/\d+-[a-z0-9]+\.json$/);
         });
 
         it('should fallback to "info" for invalid log level', async () => {
@@ -148,14 +153,14 @@ describe('ServerLoggingService', () => {
                 },
             ];
 
-            mockStorage.listAll.mockResolvedValue({ objects: [{ key: 'chat-123/int-1/1707231600000.json' }] });
+            mockStorage.listAll.mockResolvedValue({ objects: [{ key: 'chat-123/int-1/1707231600000.json', isFile: true }] });
             mockStorage.get.mockResolvedValue(JSON.stringify(storageLogs[0]));
             mockLogsFind.mockResolvedValue(mongoLogs);
             mockLogsCountDocuments.mockResolvedValue(1);
 
             const result = await ServerLoggingService.getLogs({ chatId: 'chat-123' });
 
-            expect(mockStorage.listAll).toHaveBeenCalledWith('chat-123/');
+            expect(mockStorage.listAll).toHaveBeenCalledWith('chat-123/', { recursive: true });
             expect(result.logs).toHaveLength(2);
             // Should be sorted by createdAt descending (newest first)
             expect(result.logs[0].message).toBe('New log');
@@ -196,7 +201,7 @@ describe('ServerLoggingService', () => {
                 { chatId: 'chat-123', logLevel: 'debug', message: 'Storage only', createdAt: '2026-02-06T12:00:00.000Z' },
             ];
 
-            mockStorage.listAll.mockResolvedValue({ objects: [{ key: 'chat-123/int-1/1707220800000.json' }] });
+            mockStorage.listAll.mockResolvedValue({ objects: [{ key: 'chat-123/int-1/1707220800000.json', isFile: true }] });
             mockStorage.get.mockResolvedValue(JSON.stringify(storageLogs[0]));
             mockLogsFind.mockResolvedValue([]);
             mockLogsCountDocuments.mockResolvedValue(0);
