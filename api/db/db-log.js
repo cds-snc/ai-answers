@@ -5,7 +5,20 @@ async function logHandler(req, res) {
     if (req.method === 'POST') {
         try {
             const { chatId, logLevel, message, metadata } = req.body;
-            ServerLoggingService.log(logLevel, message, chatId, metadata);
+
+            // Validate logLevel
+            const allowedLevels = ['info', 'debug', 'warn', 'error'];
+            if (!allowedLevels.includes(logLevel)) {
+                return res.status(400).json({ error: 'Invalid logLevel' });
+            }
+
+            // Sanitize chatId
+            let safeChatId = 'system';
+            if (chatId) {
+                safeChatId = typeof chatId === 'string' ? chatId : String(chatId);
+            }
+
+            ServerLoggingService.log(logLevel, message, safeChatId, metadata);
             return res.status(200).json({ success: true });
         } catch (error) {
             console.error('Error saving log:', error);

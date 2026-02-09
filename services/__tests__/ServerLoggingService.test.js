@@ -95,6 +95,22 @@ describe('ServerLoggingService', () => {
             expect(key).toMatch(/^chat-123\/system\/\d+\.json$/);
         });
 
+        it('should fallback to "info" for invalid log level', async () => {
+            mockStorage.put.mockResolvedValue(undefined);
+            const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
+
+            await ServerLoggingService.log('dangerousMethod', 'Safe message', 'chat-123', {});
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Should have called console.info as fallback
+            expect(infoSpy).toHaveBeenCalled();
+
+            // Should have used 'info' in storage
+            const [key, value] = mockStorage.put.mock.calls[0];
+            expect(JSON.parse(value).logLevel).toBe('info');
+        });
+
         it('should NOT write to storage for "system" chatId', async () => {
             await ServerLoggingService.log('info', 'System log', 'system', {});
 

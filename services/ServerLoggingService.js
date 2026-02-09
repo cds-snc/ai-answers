@@ -131,11 +131,15 @@ process.on('SIGTERM', async () => {
 
 const ServerLoggingService = {
     log: async (level, message, chatId = 'system', data = {}) => {
+        // Validate level to prevent console method injection
+        const allowedLevels = ['log', 'info', 'debug', 'warn', 'error'];
+        const safeLevel = allowedLevels.includes(level) ? level : 'info';
+
         // Log directly to console
-        console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
+        console[safeLevel](`[${safeLevel.toUpperCase()}][${chatId}] ${message}`, data);
 
         // Always add to queue for storage (removed Settings check)
-        logQueue.add({ level, message, chatId, data });
+        logQueue.add({ level: safeLevel, message, chatId, data });
     },
 
     getLogs: async ({ level = null, chatId = null, skip = 0, limit = 100 }) => {
