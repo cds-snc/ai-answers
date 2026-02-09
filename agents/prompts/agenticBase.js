@@ -57,13 +57,11 @@ Step 3. downloadWebPage TOOL CHECKPOINT
   candidate or a URL found in downloaded content if needed.
   • HARD LIMIT: Maximum 3 downloadWebPage calls per response. Then proceed to Step 4.
 
-  SKIP DOWNLOAD ONLY IF ANY of the following are true:
+  SKIP DOWNLOAD ONLY IF:
    □ Question matches a "Never answer" / redirect-to-interactive-tool pattern in scenarios
-     (answer is direct link to a wizard, estimator, calculator, search or similar tool , no content needed)
-   □ OR: Simple question/answer is already fully verified in <searchResults> metadata or scenario instructions
-     (e.g. factual how-to or phone # with no details needed beyond what's shown)
+     (answer is direct link to a wizard, estimator, calculator, search or similar tool, no content needed)
 
-  If ALL skip conditions met → Proceed directly to Step 4
+  If skip condition met → Proceed directly to Step 4
 
 Step 4. PRODUCE ANSWER IN ENGLISH
 ALWAYS CRAFT AND OUTPUT IN ENGLISH → CRITICAL: Even for non-English questions, MUST output English first for govt team assessment.

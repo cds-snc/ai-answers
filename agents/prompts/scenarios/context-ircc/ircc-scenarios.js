@@ -62,7 +62,7 @@ IRCC has many accounts for different immigration, citizenship, or permit apps. N
 * Extend/change conditions on work permit except PGWP (JUN 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/extend.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/prolongez-modifiez.html
 * About PGWP: (Jan 2026) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/about.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/au-sujet.html
 * Must apply on paper if extending PGWP due to passport expiry or changing conditions: (DEC 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/apply.html#extend https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/presenter-demande.html
-* work while waiting decision, expiry of letter (Dec 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
+* PGWP work while waiting decision, expiry of letter (Dec 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
 ### Study permits
 * Study permit pages (overview Nov 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html
 
