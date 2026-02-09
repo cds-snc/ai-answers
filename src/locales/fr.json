@@ -911,7 +911,8 @@
       "store": {
         "options": {
           "memory": "En mémoire (volatile)",
-          "mongo": "DocumentDB (persistant/cache)"
+          "mongo": "DocumentDB (persistant/cache)",
+          "redis": "Redis (persistant/cache)"
         }
       },
       "persistence": {

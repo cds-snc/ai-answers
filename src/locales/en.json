@@ -872,7 +872,8 @@
       "store": {
         "options": {
           "memory": "Memory (in-process)",
-          "mongo": "DocumentDB (persistent/cache)"
+          "mongo": "DocumentDB (persistent/cache)",
+          "redis": "Redis (persistent/cache)"
         }
       },
       "persistence": {

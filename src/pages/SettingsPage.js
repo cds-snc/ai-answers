@@ -114,7 +114,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load session store type (memory | mongo)
       const storeType = await DataStoreService.getSetting('session.type', 'memory');
       const storeNorm = (storeType || '').toString().trim().toLowerCase();
-      setSessionStoreType(storeNorm === 'mongo' || storeNorm === 'mongodb' ? 'mongo' : 'memory');
+      setSessionStoreType(['mongo', 'mongodb', 'redis'].includes(storeNorm) ? storeNorm : 'memory');
 
       // Load metrics store type (memory | mongo)
       const metricsType = await DataStoreService.getSetting('metrics.type', 'memory');
@@ -252,7 +252,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     try {
       const current = await saveAndVerify('session.type', val, (v) => {
         const n = (v || '').toString().trim().toLowerCase();
-        return n === 'mongo' || n === 'mongodb' ? 'mongo' : 'memory';
+        return ['mongo', 'mongodb', 'redis'].includes(n) ? n : 'memory';
       });
       setSessionStoreType(current);
     } finally {
@@ -536,6 +536,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         >
           <option value="memory">{t('settings.session.store.options.memory', 'Memory (in-process)')}</option>
           <option value="mongo">{t('settings.session.store.options.mongo', 'MongoDB (persistent)')}</option>
+          <option value="redis">{t('settings.session.store.options.redis', 'Redis (persistent)')}</option>
         </select>
 
         <label htmlFor="metrics-store-type" className="mb-200 display-block mt-200">
