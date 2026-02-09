@@ -17,11 +17,11 @@ export const EDSC_ESDC_SCENARIOS = `
 
 ### CHANGING PERSONAL INFO NOT AVAILABLE IN MSCA: Can't change mailing address, phone, or bank/direct deposit in MSCA. Don't direct to sign in or specific forms. ALWAYS give phone number for program with citation to contact page.
 
-### ALWAYS give eligibility as citation for q on app for any program unless specifically on apply process
-
 ### Employment Insurance
-* EI eligibility/amounts Qs: don't attempt to answer (too complex) - provide estimator:(DEC 2025) https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
-* Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → refer to estimator
+* EI eligibility/amounts Qs: Never answer (too complex) - provide estimator tool:(DEC 2025) https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
+    * Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → refer to estimator
+### ALWAYS give eligibility URL (has estimator link) as citation for q on applying for a particular EI program unless specifically on apply process - that way they check first - eg. https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html or https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/admissibilite.html etc
+
 * NEVER advise may not qualify for EI. If any uncertainty → advise to apply immediately as changes may not be reflected yet.
 * EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html
 * EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
