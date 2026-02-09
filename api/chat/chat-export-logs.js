@@ -98,7 +98,6 @@ const DEFAULT_HEADER_ORDER = [
     'aiService',
     'searchService',
     'citationUrl',
-    'confidenceRating',
     'englishAnswer',
     'answer',
     'sentence1',
@@ -240,7 +239,6 @@ function flattenInteraction(chat, interaction, view) {
             searchService: chat.searchProvider || '',
 
             citationUrl: get(interaction, 'answer.citation.providedCitationUrl') || get(interaction, 'answer.citation.url') || '',
-            confidenceRating: get(interaction, 'answer.citation.confidenceRating'),
             englishAnswer: get(interaction, 'answer.englishAnswer'),
             answer: get(interaction, 'answer.content'),
 
@@ -331,7 +329,7 @@ function flattenInteraction(chat, interaction, view) {
 
     // Cleanup
     for (const key of Object.keys(merged)) {
-        if (key.includes('_id') || key.includes('__v')) delete merged[key];
+        if (key.includes('_id') || key.includes('__v') || key.includes('confidenceRating')) delete merged[key];
     }
 
     return merged;
