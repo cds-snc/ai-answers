@@ -12,7 +12,6 @@ import {
 import { useTranslations } from "../hooks/useTranslations.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
-import SessionService from "../services/SessionService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 
@@ -113,42 +112,15 @@ const HomePage = ({ lang = "en" }) => {
   // const [isLoading, setIsLoading] = useState(false);
 
   // Fetch session and availability in one go
-  const fetchSessionOnInit = useCallback(async () => {
-    if (reviewChatId || chatId) return;
-    // setIsLoading(true);
-    try {
-      const { chatId: newChatId, available } = await SessionService.initChat();
-      if (available) {
-        setChatId(newChatId);
-        localStorage.setItem("chatId", newChatId);
-        setServiceStatus({ isAvailable: true, sessionAvailable: true, message: '' });
-        setChatSessionFailed(false);
-      } else {
-        setServiceStatus({
-          isAvailable: false,
-          sessionAvailable: false,
-          message: t('homepage.errors.serviceUnavailable')
-        });
-        setChatSessionFailed(true);
-      }
-    } catch (error) {
-      console.error('Error initializing chat:', error);
-      setServiceStatus({
-        isAvailable: false,
-        sessionAvailable: false,
-        message: t('homepage.errors.serviceUnavailable')
-      });
-      setChatSessionFailed(true);
-    } finally {
-      // setIsLoading(false);
-    }
-  }, [t, reviewChatId, chatId]);
+  // [DEPRECATED] Removal of chat-init call for lazy-init architecture
 
+  // Lazy init: chatId will be null initially and set from server response after first message
   useEffect(() => {
-    if (!authLoading) {
-      fetchSessionOnInit();
+    if (!authLoading && !reviewChatId) {
+      // No pre-generation needed - server will create chatId on first request
+      setServiceStatus({ isAvailable: true, sessionAvailable: true, message: '' });
     }
-  }, [fetchSessionOnInit, authLoading]);
+  }, [authLoading, reviewChatId]);
 
   useEffect(() => {
     if (reviewChatId) {
@@ -203,8 +175,14 @@ const HomePage = ({ lang = "en" }) => {
     }
   }, [reviewChatId]);
 
-  const handleSessionError = () => {
-    setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });
+  const handleSessionError = (err) => {
+    console.error('Session Error:', err);
+    setServiceStatus({
+      isAvailable: false,
+      sessionAvailable: false,
+      message: t('homepage.errors.serviceUnavailable')
+    });
+    setChatSessionFailed(true);
   };
 
   const WrappedErrorBoundary = ({ children }) => (
@@ -270,6 +248,7 @@ const HomePage = ({ lang = "en" }) => {
           clientReferrer={clientReferrer}
           targetInteractionId={targetInteractionId}
           onSessionError={handleSessionError}
+          onChatIdUpdate={setChatId}
         />
       </div>
       {!reviewMode && (

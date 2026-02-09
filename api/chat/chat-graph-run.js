@@ -107,7 +107,8 @@ async function handler(req, res) {
     onResult: (result) => {
       if (!resultSent && result && result.answer && result.answer.answerType) {
         resultSent = true;
-        writeEvent(res, 'result', result);
+        // Include server-generated chatId so client can store it
+        writeEvent(res, 'result', { ...result, chatId: req.chatId });
       }
     },
   };

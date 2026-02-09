@@ -1,5 +1,6 @@
 ﻿import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
+import SessionService from './SessionService.js';
 
 class DataStoreService {
   static async getPublicSetting(key, defaultValue = null) {
@@ -63,20 +64,6 @@ class DataStoreService {
 
   // ...existing code...
 
-  static async persistInteraction(interactionData) {
-    try {
-      const response = await AuthService.fetch(getApiUrl('chat-persist-interaction'), {
-        method: 'POST',
-        body: JSON.stringify(interactionData)
-      });
-
-      if (!response.ok) throw new Error('Failed to persist interaction');
-      return await response.json();
-    } catch (error) {
-      console.error('Error persisting interaction:', error);
-      throw error;
-    }
-  }
 
 
 

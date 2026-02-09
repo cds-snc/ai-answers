@@ -133,10 +133,13 @@ async function createNewChatId(req, res, managementEnabled) {
 // Helper: Handle incoming chatId validation
 // Returns: { chatId: string|null, error?: boolean }
 // ─────────────────────────────────────────────────────────────────────────────
-async function handleIncomingChatId(req, res) {
-  const incomingChatId = req.body?.chatId;
+async function handleIncomingChatId(req, res, managementEnabled) {
+  const incomingChatId = req.body?.chatId || req.body?.input?.chatId;
+
+  // If no chatId provided, generate one (lazy init)
   if (!incomingChatId) {
-    return { chatId: null };
+    const result = await createNewChatId(req, res, managementEnabled);
+    return result;
   }
 
   const chatId = await resolveIncomingChatId(req, incomingChatId);
@@ -205,7 +208,7 @@ export default function sessionMiddleware(options = {}) {
         if (result.error) return;
         chatId = result.chatId;
       } else {
-        const result = await handleIncomingChatId(req, res);
+        const result = await handleIncomingChatId(req, res, managementEnabled);
         if (result.error) return;
         chatId = result.chatId;
       }
