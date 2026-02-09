@@ -1,18 +1,8 @@
 import { vi, describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { InteractionPersistenceService } from '../InteractionPersistenceService.js';
-import { Chat } from '../../models/chat.js';
-import { Interaction } from '../../models/interaction.js';
-import { Context } from '../../models/context.js';
-import { Question } from '../../models/question.js';
-import { Citation } from '../../models/citation.js';
-import { Answer } from '../../models/answer.js';
-import { Tool } from '../../models/tool.js';
-import EmbeddingService from '../EmbeddingService.js';
-import EvaluationService from '../EvaluationService.js';
 
-// Mock dependencies
+// Mock dependencies before importing the service under test
 vi.mock('../EmbeddingService.js', () => ({
     default: {
         createEmbedding: vi.fn().mockReturnValue(Promise.resolve()),
@@ -29,26 +19,31 @@ vi.mock('../ServerLoggingService.js', () => ({
     },
 }));
 
+import { InteractionPersistenceService } from '../InteractionPersistenceService.js';
+import { Chat } from '../../models/chat.js';
+import { Interaction } from '../../models/interaction.js';
+import { Context } from '../../models/context.js';
+import { Question } from '../../models/question.js';
+import { Citation } from '../../models/citation.js';
+import { Answer } from '../../models/answer.js';
+import { Tool } from '../../models/tool.js';
+import EmbeddingService from '../EmbeddingService.js';
+import EvaluationService from '../EvaluationService.js';
+
 describe('InteractionPersistenceService', () => {
     let initialPayload;
     let user;
     let mongoServer;
 
     beforeAll(async () => {
-        if (process.env.MONGODB_URI) {
-            await mongoose.connect(process.env.MONGODB_URI);
-        } else {
-            mongoServer = await MongoMemoryServer.create();
-            const uri = mongoServer.getUri();
-            await mongoose.connect(uri);
-        }
+        const dbConnect = (await import('../../api/db/db-connect.js')).default;
+        await dbConnect();
     });
 
     afterAll(async () => {
-        await mongoose.disconnect();
-        if (mongoServer) {
-            await mongoServer.stop();
-        }
+        // We do not disconnect or stop mongoServer here to avoid killing 
+        // the database for other tests running in the same process.
+        // Deployment teardown is handled by the global setup/teardown.
     });
 
     beforeEach(() => {
