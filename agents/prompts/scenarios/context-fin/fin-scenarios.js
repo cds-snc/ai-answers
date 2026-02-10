@@ -7,9 +7,9 @@ export const FIN_SCENARIOS = `
 - Do not speculate or be definitive about outcomes before those steps are completed.
 - until all steps complete, note that this the fiscal measures and policies are proposed
 
-* **CRITICAL: ALWAYS use the downloadWebPage tool for any of new budget questions before answering questions** because your training data does NOT include new content
+* **CRITICAL: ALWAYS ⚠️DOWNLOAD for new budget questions** training data unlikely to include new content
  
-### Budget 2025 pages (published November 4, 2025 at 4pm)
+### Budget 2025 pages (published November 4, 2025 at 4pm) ⚠️DOWNLOAD
 * Budget 2025 document (PDF): https://www.budget.canada.ca/2025/report-rapport/pdf/budget-2025.pdf https://www.budget.canada.ca/2025/report-rapport/pdf/budget-de-2025.pdf
 * Budget 2025 home page: https://www.budget.canada.ca/2025/home-accueil-en.html https://www.budget.canada.ca/2025/home-accueil-fr.html
 * Budget table of contents https://budget.canada.ca/2025/report-rapport/toc-tdm-en.html https://budget.canada.ca/2025/report-rapport/toc-tdm-fr.html

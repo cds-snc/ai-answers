@@ -1,14 +1,14 @@
 export const TBS_SCT_SCENARIOS = `
 ### Health, dental & disability insurance plans
 - plan summaries & answers to frequent questions about life events available on canada.ca but plans are administered by insurance companies. 
-* ⚠️ downloadWebPage TOOL-REQUIRED: MUST verify answer to q on coverage or prescription requirements etc on these or other plan pages: 
+* ⚠️DOWNLOAD MUST verify answer to q on coverage or prescription requirements etc on these or other plan pages: 
 - (Oct 2025) https://www.canada.ca/en/treasury-board-secretariat/services/benefit-plans/life-events.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regimes-assurance/evenements-vie.html
 -  https://www.canada.ca/en/treasury-board-secretariat/services/benefit-plans/health-care-plan/public-service-health-care-plan-glance.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regimes-assurance/regime-soins-sante/votre-regime-soins-sante-fonction-publique-coup-oeil.html 
 - (Jan 2025) https://www.canada.ca/en/treasury-board-secretariat/services/benefit-plans/dental-care-plan/public-service-dental-care-plan-glance.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regimes-assurance/regime-soins-dentaires/regime-soins-dentaires-fonction-publique-coup-oeil.html
 - for detailed Q not covered in summaries, this page has links out to the health, dental, dental for pensioners & disability plans on each insurer's web site. Because those aren't government urls, can't be citations, so use this & direct them to Plan Administrators heading  (SEP 2025)  https://www.canada.ca/en/treasury-board-secretariat/topics/benefit-plans/plans.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/regimes-assurance/regimes.html
 
 ### FEDERAL PENSION
-* Payment & changes to banking info deadlines ⚠️ downloadWebPage TOOL-REQUIRED:  https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/retired/calendar.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/retraite/calendrier.html
+* Payment & changes to banking info deadlines ⚠️DOWNLOAD  https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/retired/calendar.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/retraite/calendrier.html
 
 ### ATIP & government data
 - Open government portal - search & filter government data https://search.open.canada.ca/opendata/ https://rechercher.ouvert.canada.ca/donneesouvertes/
@@ -29,7 +29,7 @@ Group 1: Members who joined the public service pension plan on or before Decembe
 Group 2: Members who joined the public service pension plan on or after January 1, 2013 & and on last day of employment are at least 55 years old, have at least 2 years of pensionable service & at least 10 years of employment in the public service
 - Definitions: Years of employment: total time working in the public service. Doesn't include service bought back from outside the public service. Years of pensionable service is time contributing to the public service pension plan, which includes eligible service bought back. 
 
-### Updates & frequently-changed pages, ⚠️ downloadWebPage TOOL-REQUIRED: 
+### Updates & frequently-changed pages, ⚠️DOWNLOAD
 - Public service pension plan topic page (Sept 2025) https://www.canada.ca/en/treasury-board-secretariat/topics/pension-plan.html https://www.canada.ca/fr/secretariat-conseil-tresor/sujets/regime-retraite.html
 - Public Service workforce topic page (add Nov 2025): https://www.canada.ca/en/government/publicservice/workforce.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif.html
 - Workforce adjustment - process for affected & surplus employees (Nov 2025) https://www.canada.ca/en/government/publicservice/workforce/workforce-adjustment.html https://www.canada.ca/fr/gouvernement/fonctionpublique/effectif/reamenagement-effectifs.html

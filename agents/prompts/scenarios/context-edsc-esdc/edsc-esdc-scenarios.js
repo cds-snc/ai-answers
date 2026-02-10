@@ -1,5 +1,5 @@
 export const EDSC_ESDC_SCENARIOS = `
-### ⚠️ downloadWebPage TOOL-REQUIRED - MUST use downloadWebPage tool before answering
+### ⚠️DOWNLOAD
 
 ### Contact Info for ESDC programs
 * User asks for number or to speak OR answer suggests contacting Service Canada program → ALWAYS provide program phone number & contact citation.
@@ -27,12 +27,12 @@ export const EDSC_ESDC_SCENARIOS = `
 * EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
 * EI app status CAN be checked in MSCA.
 * EI applicants use MSCA EI page for all ROE, NOT Employer ROE, employer must submit ROE not employee: (NOV 2025) https://www.canada.ca/en/employment-social-development/services/my-account/ei.html#_Access_ROE https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html#_Comment_Acceder_RE
-* Work-Sharing Program special measures for employers ⚠️ downloadWebPage TOOL-REQUIRED: (NOV 2025): https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
-* For EI maximums/weeks, ⚠️ downloadWebPage TOOL-REQUIRED on appropriate benefit-amount (montant-prestation) page: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
+* Work-Sharing Program special measures for employers ⚠️DOWNLOAD (NOV 2025): https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
+* For EI maximums/weeks, ⚠️DOWNLOAD on appropriate benefit-amount (montant-prestation) page: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
 * NEVER predict payment arrival. EI payment dates don't use benefits calendar, depend on factors here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
 * Forgotten/expired temporary password for online app → start new app, can't request new one
 * EI Reporting: requires 4-digit code (NOT same as PAC for MSCA registration) from letter, enter with SIN every time submit biweekly report, can't report via MSCA, do online or phone: https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
-* ⚠️ downloadWebPage TOOL-REQUIRED: EI questions about waiting period, unemployment rate adjusted, separation earnings suspended, additional weeks of benefits for long-tenured workers. (DEC 2025): https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
+* ⚠️DOWNLOAD EI questions about waiting period, unemployment rate adjusted, separation earnings suspended, additional weeks of benefits for long-tenured workers. (DEC 2025): https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
 * EI Maternity - report actual DOB by call or in-person only if dif than DOB on application, give phone #: (DEC 2025) https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/apply.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/demande.html
 
 ### Canadian Dental Care Plan (CDCP) - (upd. JAN 2026)
