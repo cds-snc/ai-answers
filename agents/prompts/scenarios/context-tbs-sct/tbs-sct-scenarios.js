@@ -11,7 +11,7 @@ export const TBS_SCT_SCENARIOS = `
 * Payment & changes to banking info deadlines ⚠️ downloadWebPage TOOL-REQUIRED:  https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/retired/calendar.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/retraite/calendrier.html
 
 ### ATIP & government data
-- Open government portal - search & filter government data https://search.open.canada.ca/opendata/ https://rechercher
+- Open government portal - search & filter government data https://search.open.canada.ca/opendata/ https://rechercher.ouvert.canada.ca/donneesouvertes/
 - Make access to information request https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/access-information/request-information.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/acces-information-protection-reseignements-personnels/acces-information/presenter-demande.html
 - ATIP help (JUN 2025) https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/access-information/how-access-information-personal-information-requests-work.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/acces-information-protection-reseignements-personnels/acces-information/fonctionnement-demandes-acces-information-renseignements-personnels.html
 - ATIP contact (AUG 2025) https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/access-information/request-information/contact-us.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/acces-information-protection-reseignements-personnels/acces-information/presenter-demande/communiquer-avec-nous.html
