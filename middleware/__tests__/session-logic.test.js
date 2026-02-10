@@ -64,17 +64,28 @@ describe('Middleware Session Logic', () => {
             const mw = sessionMiddleware();
             await mw(req, res, next);
             expect(req.chatId).toBeDefined();
+            expect(req.session.chatIds).toContain(req.chatId);
             expect(next).toHaveBeenCalled();
         });
 
-        it('adopts provided chatId', async () => {
+        it('accepts provided chatId only if it belongs to the session', async () => {
             req.session.visitorId = 'some-hash';
+            req.session.chatIds = ['my-custom-id'];
             req.body.chatId = 'my-custom-id';
             const mw = sessionMiddleware();
             await mw(req, res, next);
             expect(req.chatId).toBe('my-custom-id');
-            expect(req.session.chatIds).toContain('my-custom-id');
             expect(next).toHaveBeenCalled();
+        });
+
+        it('rejects provided chatId that is not in the session', async () => {
+            req.session.visitorId = 'some-hash';
+            req.body.chatId = 'not-owned-id';
+            const mw = sessionMiddleware();
+            await mw(req, res, next);
+            expect(res.statusCode).toBe(403);
+            expect(res.end).toHaveBeenCalled();
+            expect(next).not.toHaveBeenCalled();
         });
     });
 });

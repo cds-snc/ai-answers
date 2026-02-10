@@ -38,26 +38,10 @@ async function saveChatIdToSession(req, chatId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper: Resolve/validate an incoming chatId against the current session
+// Helper: Check if a chatId already belongs to this session
 // ─────────────────────────────────────────────────────────────────────────────
-async function resolveIncomingChatId(req, incomingChatId) {
-  if (!incomingChatId) return null;
-
-  const session = req.session;
-  const hasChatId = Array.isArray(session?.chatIds) && session.chatIds.includes(incomingChatId);
-
-  if (!hasChatId && session) {
-    // ChatId not found in session - adopt it
-    try {
-      await saveChatIdToSession(req, incomingChatId);
-      return incomingChatId;
-    } catch (e) {
-      console.error('[session] Failed to adopt chatId', e);
-      return null;
-    }
-  }
-
-  return hasChatId ? incomingChatId : null;
+function chatIdBelongsToSession(req, chatId) {
+  return Boolean(chatId && Array.isArray(req.session?.chatIds) && req.session.chatIds.includes(chatId));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,19 +120,18 @@ async function createNewChatId(req, res, managementEnabled) {
 async function handleIncomingChatId(req, res, managementEnabled) {
   const incomingChatId = req.body?.chatId || req.body?.input?.chatId;
 
-  // If no chatId provided, generate one (lazy init)
+  // If no chatId provided, always generate a new one (no reuse)
   if (!incomingChatId) {
     const result = await createNewChatId(req, res, managementEnabled);
     return result;
   }
 
-  const chatId = await resolveIncomingChatId(req, incomingChatId);
-  if (!chatId) {
+  if (!chatIdBelongsToSession(req, incomingChatId)) {
     sendError(res, 403, 'invalid_chatId', 'ChatId does not belong to session');
     return { chatId: null, error: true };
   }
 
-  return { chatId };
+  return { chatId: incomingChatId };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
