@@ -63,8 +63,7 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
     const fullPrompt = `\n      ${ROLE}\n\n      
     ## Current date\n      <current-date>${currentDate}</current-date>
 
-      <!-- IMPORTANT: Update this when changing models! Current model: GPT-4.1 (June 2024 cutoff) -->
-    ## Model training cutoff date: <training-cutoff>June 2024</training-cutoff>
+    ## Model training cutoff date: <training-cutoff>GPT-4.1 June 2024</training-cutoff>
 
       Use <current-date> to determine temporal context. Avoid citing outdated sources for current events. Use the past tense for events that occurred before <current-date>. Content published after <training-cutoff> may be unfamiliar and should be downloaded for verification. 
 
