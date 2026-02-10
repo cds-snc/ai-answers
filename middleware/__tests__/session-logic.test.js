@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import botFingerprintPresence from '../bot-fingerprint-presence.js';
+import { withBotProtection } from '../bot-protection.js';
 import sessionMiddleware from '../chat-session.js';
 import crypto from 'crypto';
 
@@ -19,10 +19,11 @@ vi.mock('../../services/ChatSessionMetricsService.js', () => ({
 }));
 
 describe('Middleware Session Logic', () => {
-    let req, res, next;
+    let req, res, next, handlerCalled;
 
     beforeEach(() => {
         vi.clearAllMocks();
+        handlerCalled = false;
         req = {
             url: '/api/chat/chat-graph-run',
             originalUrl: '/api/chat/chat-graph-run',
@@ -34,6 +35,7 @@ describe('Middleware Session Logic', () => {
         };
         res = {
             statusCode: 200,
+            headersSent: false,
             setHeader: vi.fn(),
             end: vi.fn(),
             status: vi.fn().mockReturnThis(),
@@ -43,18 +45,22 @@ describe('Middleware Session Logic', () => {
         process.env.FP_PEPPER = 'test-pepper';
     });
 
-    describe('botFingerprintPresence', () => {
-        it('blocks anonymous request with no fingerprint', () => {
-            botFingerprintPresence(req, res, next);
+    describe('withBotProtection', () => {
+        const mockHandler = async (req, res) => { handlerCalled = true; };
+
+        it('blocks anonymous request with no fingerprint', async () => {
+            const protected_ = withBotProtection(mockHandler);
+            await protected_(req, res);
             expect(res.statusCode).toBe(403);
-            expect(next).not.toHaveBeenCalled();
+            expect(handlerCalled).toBe(false);
         });
 
-        it('lazy initializes visitorId from body', () => {
+        it('lazy initializes visitorId from body and calls handler', async () => {
             req.body.visitorId = 'browser123';
-            botFingerprintPresence(req, res, next);
+            const protected_ = withBotProtection(mockHandler);
+            await protected_(req, res);
             expect(req.session.visitorId).toBeDefined();
-            expect(next).toHaveBeenCalled();
+            expect(handlerCalled).toBe(true);
         });
     });
 
@@ -64,13 +70,14 @@ describe('Middleware Session Logic', () => {
             const mw = sessionMiddleware();
             await mw(req, res, next);
             expect(req.chatId).toBeDefined();
-            expect(req.session.chatIds).toContain(req.chatId);
+            expect(req.session.chatIds).toBeDefined();
+            expect(Object.prototype.hasOwnProperty.call(req.session.chatIds, req.chatId)).toBe(true);
             expect(next).toHaveBeenCalled();
         });
 
         it('accepts provided chatId only if it belongs to the session', async () => {
             req.session.visitorId = 'some-hash';
-            req.session.chatIds = ['my-custom-id'];
+            req.session.chatIds = { 'my-custom-id': true };
             req.body.chatId = 'my-custom-id';
             const mw = sessionMiddleware();
             await mw(req, res, next);

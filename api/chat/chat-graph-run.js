@@ -1,6 +1,8 @@
 import { SettingsService } from '../../services/SettingsService.js';
-import { withSession } from '../../middleware/chat-session.js';
+import { withChatSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import { withBotProtection } from '../../middleware/bot-protection.js';
+import { withRateLimiter } from '../../middleware/rate-limiter.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 
@@ -78,6 +80,9 @@ async function handler(req, res) {
   if (typeof input !== 'object' || input === null) {
     return res.status(400).json({ message: 'input must be an object' });
   }
+
+  // Ensure the graph uses the validated/generated chatId from the session middleware
+  input.chatId = req.chatId;
 
   // Server-side Workflow Resolution
   let graphName;
@@ -206,4 +211,4 @@ async function handler(req, res) {
   }
 }
 
-export default withOptionalUser(withSession(handler));
+export default withOptionalUser(withRateLimiter(withBotProtection(withChatSession(handler))));
