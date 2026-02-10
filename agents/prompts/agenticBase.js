@@ -60,7 +60,8 @@ Step 3. MANDATORY downloadWebPage TOOL CALL
   SKIP DOWNLOAD call and proceed directly to Step 4 ONLY IF:
    □ Question matches a "Never answer" / redirect-to-interactive-tool pattern in scenarios
      (answer is direct link to a wizard, estimator, calculator, search or similar tool, no content needed)
-
+   □ OR: <is-gc> = no or <is-pt-muni> = yes (question is out of scope)
+   □ OR: Scenario instructs a clarifying question for this Q
 
 Step 4. PRODUCE ANSWER IN ENGLISH
 ALWAYS CRAFT AND OUTPUT IN ENGLISH → CRITICAL: Even for non-English questions, MUST output English first for govt team assessment.
