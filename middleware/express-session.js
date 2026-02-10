@@ -1,7 +1,7 @@
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { RedisStore } from 'connect-redis';
-import Redis from 'ioredis';
+import { createClient } from 'redis';
 import { SettingsService } from '../services/SettingsService.js';
 import { getParentDomain } from '../api/util/cookie-utils.js';
 import dbConnect from '../api/db/db-connect.js';
@@ -17,12 +17,8 @@ const _getSetting = (keys) => {
 // Singleton session middleware instance
 let instance = null;
 
-/**
- * Builds the session middleware once.
- * Configuration is primarily from SettingsService, falling back to process.env.
- */
 const buildSessionMiddleware = (app) => {
-  const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'memory')).toLowerCase();
+  const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
   const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
 
   const initialTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
@@ -31,18 +27,17 @@ const buildSessionMiddleware = (app) => {
 
   let sessionStore = null;
 
-  console.log(`[SESSION] Initializing session store: ${sessionType}`);
-
   if (sessionType === 'redis') {
-    const redisUrl = _getSetting(['redis.url', 'REDIS_URL']) || process.env.REDIS_URL || 'redis://localhost:6379';
-    const redisClient = new Redis(redisUrl);
-
+    const redisUrl = _getSetting(['redis.url', 'REDIS_URL']) || process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+    console.log(`[SESSION] Connecting to Redis at: ${redisUrl}`);
+    const redisClient = createClient({ url: redisUrl });
     redisClient.on('error', (err) => console.error('[SESSION] Redis error:', err));
-    redisClient.on('connect', () => console.log('[SESSION] Redis connected'));
+    redisClient.connect().catch(console.error);
 
     sessionStore = new RedisStore({
       client: redisClient,
       prefix: 'aianswers:sess:',
+      disableTouch: false,
     });
   } else if (sessionType === 'mongodb' || sessionType === 'mongo') {
     sessionStore = MongoStore.create({
@@ -51,7 +46,6 @@ const buildSessionMiddleware = (app) => {
       touchAfter: 0,
     });
   } else {
-    console.warn(`[SESSION] Using MemoryStore. Sessions will NOT persist between server restarts.`);
     sessionStore = new session.MemoryStore();
   }
 
@@ -60,30 +54,23 @@ const buildSessionMiddleware = (app) => {
   const isSecure = (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test');
   const INITIAL_MAX_AGE = initialMinutes * 60 * 1000;
 
-  const cookieDefaults = {
-    httpOnly: true,
-    secure: isSecure,
-    sameSite: isSecure ? 'strict' : 'lax',
-    maxAge: INITIAL_MAX_AGE,
-    path: '/'
-  };
-
   return session({
     name: 'aianswers.sid',
     secret: sessionSecret,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: sessionStore,
-    cookie: cookieDefaults,
+    cookie: {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: isSecure ? 'strict' : 'lax',
+      maxAge: INITIAL_MAX_AGE,
+      path: '/'
+    },
     rolling: true
   });
 };
 
-/**
- * Creates or retrieves the session middleware.
- * Implements a wrapper that ensures the middleware is initialized only once,
- * picking up settings after the server has started.
- */
 export default function createSessionMiddleware(app) {
   const applyParentDomainToCookieHeaders = (res, parentDomain) => {
     if (!parentDomain || typeof res.writeHead !== 'function' || res.__parentDomainCookieNormalized) return;
@@ -119,7 +106,6 @@ export default function createSessionMiddleware(app) {
   };
 
   return (req, res, next) => {
-    // Initialize singleton on first request to ensure SettingsService is ready
     if (!instance) {
       instance = buildSessionMiddleware(app);
     }
@@ -128,12 +114,8 @@ export default function createSessionMiddleware(app) {
     applyParentDomainToCookieHeaders(res, parentDomain);
 
     instance(req, res, () => {
-      try {
-        if (req && req.session && req.session.cookie && parentDomain) {
-          req.session.cookie.domain = parentDomain;
-        }
-      } catch (e) {
-        // ignore set-domain failures
+      if (req.session && req.session.cookie && parentDomain) {
+        req.session.cookie.domain = parentDomain;
       }
       next();
     });

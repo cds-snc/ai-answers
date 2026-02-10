@@ -3,7 +3,7 @@
  * Used by the admin connectivity dashboard to verify service health
  */
 import mongoose from 'mongoose';
-import Redis from 'ioredis';
+import { createClient } from 'redis';
 import storageService from './Storage.js';
 import { AzureOpenAI } from 'openai';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
@@ -71,11 +71,14 @@ async function testRedis() {
 
     let client;
     try {
-        client = new Redis(redisUrl, {
-            connectTimeout: 5000,
-            lazyConnect: true,
-            maxRetriesPerRequest: 1
+        client = createClient({
+            url: redisUrl,
+            socket: {
+                connectTimeout: 5000
+            }
         });
+
+        client.on('error', (err) => {/* ignore for test, caught in try/catch */ });
 
         await client.connect();
 
@@ -84,14 +87,14 @@ async function testRedis() {
 
         // Test with SET/GET
         const testKey = `connectivity_test_${Date.now()}`;
-        await client.set(testKey, 'test', 'EX', 10);
+        await client.set(testKey, 'test', { EX: 10 });
         const testValue = await client.get(testKey);
         await client.del(testKey);
 
         const info = await client.info('server');
         const versionMatch = info.match(/redis_version:([^\r\n]+)/);
 
-        await client.quit();
+        await client.disconnect();
 
         return {
             service: 'Redis',
@@ -106,7 +109,7 @@ async function testRedis() {
         };
     } catch (error) {
         if (client) {
-            try { await client.quit(); } catch (e) { /* ignore */ }
+            try { await client.disconnect(); } catch (e) { /* ignore */ }
         }
         return {
             service: 'Redis',

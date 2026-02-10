@@ -245,12 +245,10 @@ export default async function createRateLimiterMiddleware(app) {
         points,
         duration,
         msBeforeNext: reward.msBeforeNext,
-        lastUpdated: new Date(),
+        lastUpdated: new Date().toISOString(),
         authenticated: isAuthenticated
       };
-      if (req.session) {
-        req.session.rateLimiter = rateLimiterSnapshot;
-      }
+      // Attach to request for potential handler use (don't save to session - not needed)
       req.rateLimiterSnapshot = rateLimiterSnapshot;
       console.log(`RateLimiter: allowed request for key=${key} (auth=${isAuthenticated}) remaining=${reward.remainingPoints}`);
       return next();
@@ -270,3 +268,42 @@ export default async function createRateLimiterMiddleware(app) {
 }
 
 export const rateLimiters = { public: null, auth: null };
+
+// Store the initialized middleware promise for route-level use
+let rateLimiterMiddlewarePromise = null;
+
+/**
+ * Set the rate limiter middleware promise (called from server.js after init)
+ */
+export function setRateLimiterMiddleware(promise) {
+  rateLimiterMiddlewarePromise = promise;
+}
+
+/**
+ * HOF to apply rate limiting at route-level.
+ * Wraps handler and applies rate limiting before invoking it.
+ * If rate limiter not yet ready, allows request through.
+ */
+export function withRateLimiter(handler) {
+  return async (req, res) => {
+    try {
+      if (rateLimiterMiddlewarePromise) {
+        const mw = await rateLimiterMiddlewarePromise;
+        // Run the rate limiter middleware
+        await new Promise((resolve, reject) => {
+          mw(req, res, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+        // If rate limiter sent a response (429), don't call handler
+        if (res.headersSent) return;
+      }
+    } catch (e) {
+      // If rate limiter rejected (e.g., 429 already sent), don't proceed
+      if (res.headersSent) return;
+      console.error('Rate limiter error in withRateLimiter:', e);
+    }
+    return handler(req, res);
+  };
+}

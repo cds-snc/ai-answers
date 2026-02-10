@@ -1,5 +1,6 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
@@ -72,17 +73,14 @@ import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
-import createRateLimiterMiddleware from '../middleware/rate-limiter.js';
+import createRateLimiterMiddleware, { setRateLimiterMiddleware } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
-import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import connectivityHandler from '../api/util/util-connectivity.js';
 import createSessionMiddleware from '../middleware/express-session.js';
-import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
-import botIsBot from '../middleware/bot-isbot.js';
-import botDetector from '../middleware/bot-detector.js';
+// Bot protection moved to route-level via withBotProtection HOF
 import passport from '../config/passport.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -97,9 +95,10 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(cookieParser());
+
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 
 // Ensure `/api` never caches anything
@@ -126,29 +125,9 @@ app.use(createSessionMiddleware(app));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Ensure a visitor fingerprint (hashed) is present in the session for all requests
-app.use('/api', botFingerprintPresence);
-// Block requests with known bot User-Agent strings
-app.use('/api', botIsBot);
-// Additional detection using `bot-detector` (runs after isbot)
-app.use('/api', botDetector);
+// Bot protection applied at route-level via withBotProtection (see middleware/bot-protection.js)
+// Rate limiting applied at route-level via withRateLimiter (see middleware/rate-limiter.js)
 
-// Placeholder for async rate limiter initialization.
-// We register a wrapper middleware now (after bot detection) that will
-// await the actual rate limiter once it's initialized in the startup
-// sequence below. This ensures the rate limiter runs after session and
-// bot-detection, but before any route handlers.
-let rateLimitMiddlewareReady = null;
-app.use(async (req, res, next) => {
-  try {
-    if (!rateLimitMiddlewareReady) return next();
-    const mw = await rateLimitMiddlewareReady;
-    return mw(req, res, next);
-  } catch (e) {
-    console.error('Rate limiter init failed', e);
-    return next();
-  }
-});
 
 app.use((req, res, next) => {
   req.setTimeout(300000);
@@ -195,7 +174,6 @@ app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
 app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
-app.post('/api/batch/batch-register-chatid', batchRegisterChatIdHandler);
 app.delete('/api/batch/batch-delete', dbBatchDeleteHandler);
 app.delete('/api/batch/batch-delete-all', batchesDeleteAllHandler);
 app.get('/api/batch/batch-stats', dbBatchStatsHandler);
@@ -257,7 +235,8 @@ const PORT = process.env.PORT || 3001;
     // We assign the promise to `rateLimitMiddlewareReady` so the wrapper
     // registered earlier will start using it as soon as it's ready.
     try {
-      rateLimitMiddlewareReady = createRateLimiterMiddleware(app);
+      const rateLimitMiddlewareReady = createRateLimiterMiddleware(app);
+      setRateLimiterMiddleware(rateLimitMiddlewareReady);
       await rateLimitMiddlewareReady;
       console.log('Rate limiter middleware initialized');
     } catch (rlErr) {
