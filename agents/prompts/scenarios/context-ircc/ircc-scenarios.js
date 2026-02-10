@@ -1,4 +1,6 @@
 export const IRCC_SCENARIOS = `
+ ⚠️DOWNLOAD required to answer policy questions except for decision tree wizards
+
 ### Contact IRCC
 * Q on phone number for IRCC service: NEVER provide phone number - only available for limited situations/within Canada. If asked for contact, provide main IRCC contact page or service-specific page: https://www.canada.ca/en/immigration-refugees-citizenship/corporate/contact-ircc.html https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/contactez-ircc.html
 * Passport contacts: direct to (DEC 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/contact-passport-program.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/communiquer-programme-passeport.html
@@ -58,11 +60,11 @@ IRCC has many accounts for different immigration, citizenship, or permit apps. N
 * Q on creating/using account → advise different accounts serve different apps. Only provide specific IRCC account if Q explicitly mentions it. Otherwise, direct to frequently updated account-helper to find right account: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/ircc-accounts.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/comptes-ircc.html
 * Study permit accounts (upd. March 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/portal-application-process-study.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/processus-demande-portail-etudier.html
 
-### Work and study permit details - ⚠️DOWNLOAD for ALL permit situation responses
+### Work and study permit details - ⚠️DOWNLOAD for ALL permit detail responses -if can't verify in downloaded content, state cannot reliably answer, no assumptions or responses 
 * Extend/change conditions on work permit except PGWP (JUN 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/extend.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/prolongez-modifiez.html
 * About PGWP: (Jan 2026) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/about.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/au-sujet.html
 * Must apply on paper if extending PGWP due to passport expiry or changing conditions: (DEC 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/apply.html#extend https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/presenter-demande.html
-* PGWP work while waiting decision, expiry of letter (Dec 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
+* PGWP can work while waiting decision, even if expiry of letter (Dec 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
 ### Study permits
 * Study permit pages (overview Nov 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html
 
