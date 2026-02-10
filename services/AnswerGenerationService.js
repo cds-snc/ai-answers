@@ -46,7 +46,6 @@ async function invokeAgent({
     });
 
     const agent = await createChatAgent(provider, chatId);
-    ServerLoggingService.debug('Answer system prompt constructed', chatId, { systemPrompt });
     const messages = [
         { role: 'system', content: systemPrompt },
         ...convertInteractionsToMessages(conversationHistory),

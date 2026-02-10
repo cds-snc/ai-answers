@@ -15,7 +15,6 @@ vi.mock('../ConversationIntegrityService.js', () => ({
 vi.mock('../ServerLoggingService.js', () => ({
     default: {
         info: vi.fn(),
-        debug: vi.fn(),
         error: vi.fn(),
     },
 }));
