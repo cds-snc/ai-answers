@@ -1,8 +1,6 @@
 import { SettingsService } from '../../services/SettingsService.js';
 import { withChatSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
-import { withBotProtection } from '../../middleware/bot-protection.js';
-import { withRateLimiter } from '../../middleware/rate-limiter.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 
@@ -211,4 +209,4 @@ async function handler(req, res) {
   }
 }
 
-export default withOptionalUser(withRateLimiter(withBotProtection(withChatSession(handler))));
+export default withOptionalUser(withChatSession(handler));

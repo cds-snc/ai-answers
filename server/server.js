@@ -73,15 +73,19 @@ import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
-import createRateLimiterMiddleware, { setRateLimiterMiddleware } from '../middleware/rate-limiter.js';
+import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import connectivityHandler from '../api/util/util-connectivity.js';
 import createSessionMiddleware from '../middleware/express-session.js';
-// Bot protection moved to route-level via withBotProtection HOF
+import botIsBot from '../middleware/bot-isbot.js';
+import botDetector from '../middleware/bot-detector.js';
+import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -125,8 +129,15 @@ app.use(createSessionMiddleware(app));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Bot protection applied at route-level via withBotProtection (see middleware/bot-protection.js)
-// Rate limiting applied at route-level via withRateLimiter (see middleware/rate-limiter.js)
+// Ensure a visitor fingerprint (hashed) is present in the session for all requests
+app.use('/api', botFingerprintPresence);
+// Block requests with known bot User-Agent strings
+app.use('/api', botIsBot);
+// Additional detection using `bot-detector` (runs after isbot)
+app.use('/api', botDetector);
+
+// Rate limiter middleware (waits for async init internally)
+app.use('/api', rateLimiterMiddleware);
 
 
 app.use((req, res, next) => {
@@ -232,12 +243,9 @@ const PORT = process.env.PORT || 3001;
     console.log("Settings service started...");
 
     // Initialize rate limiter middleware (depends on settings).
-    // We assign the promise to `rateLimitMiddlewareReady` so the wrapper
-    // registered earlier will start using it as soon as it's ready.
+    // The middleware registered above will wait for this promise to resolve.
     try {
-      const rateLimitMiddlewareReady = createRateLimiterMiddleware(app);
-      setRateLimiterMiddleware(rateLimitMiddlewareReady);
-      await rateLimitMiddlewareReady;
+      await initializeRateLimiter();
       console.log('Rate limiter middleware initialized');
     } catch (rlErr) {
       console.error('Failed to initialize rate limiter middleware:', rlErr);
