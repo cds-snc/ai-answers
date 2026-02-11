@@ -79,7 +79,7 @@ const HomePage = ({ lang = "en" }) => {
   const [initialMessages, setInitialMessages] = useState([]);
   const [reviewReferringUrl, setReviewReferringUrl] = useState(null);
   const [chatCreatedAt, setChatCreatedAt] = useState(null);
-  const [showWarningNotice] = useState(true); // set to false to turn off warning, message is in locales
+  const [showWarningNotice] = useState(false); // set to true to turn on warning, message is in locales
 
 
   // Capture client-side referrer (if available) so we can pass it into the
