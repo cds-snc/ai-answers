@@ -23,6 +23,7 @@ import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
 import chatReportHandler from '../api/chat/chat-report.js';
+import chatSessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
 import feedbackGetExpertHandler from '../api/feedback/feedback-get-expert.js';
@@ -128,6 +129,9 @@ app.use(createSessionMiddleware(app));
 // Initialize Passport for authentication
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Unified chat availability endpoint
+app.get('/api/chat/chat-session-availability', chatSessionAvailabilityHandler);
 
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use('/api', botFingerprintPresence);
