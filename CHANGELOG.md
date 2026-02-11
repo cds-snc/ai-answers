@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.100.0](https://github.com/cds-snc/ai-answers/compare/v1.99.0...v1.100.0) (2026-02-11)
+
+
+### Features
+
+* e2e test for endpoint ([a3c0857](https://github.com/cds-snc/ai-answers/commit/a3c0857eb1a4d505db0360cb6c25aae1364a451b))
+* e2e test for endpoint ([8a8a8c7](https://github.com/cds-snc/ai-answers/commit/8a8a8c7cc758eaad7660d5f6a7b225c5b3b51e5b))
+
+
+### Bug Fixes
+
+* add the registration for availibility ([d9a52d2](https://github.com/cds-snc/ai-answers/commit/d9a52d2b19cbe6fbddff627f35362fd0ef4303f8))
+* chat-session-availability typo and public access ([c667f62](https://github.com/cds-snc/ai-answers/commit/c667f62fa97c698fd59a2de2c4a92d651b525a6c))
+* resolve graph short circuit issue for GPT-5.1 and handle embedding errors gracefully ([e1059f9](https://github.com/cds-snc/ai-answers/commit/e1059f9fce317b0a02efbacd4264dd0e42d547da))
+* Workflows for gpt5 and gpt5chat ([5c25b3d](https://github.com/cds-snc/ai-answers/commit/5c25b3d38a2c05b9ba782ba0021ae4e8aab1956e))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump axios from 1.13.2 to 1.13.5 ([02b85b9](https://github.com/cds-snc/ai-answers/commit/02b85b9b16ecb0b84a67de24d47d66ef2f4bccfe))
+
 ## [1.99.0](https://github.com/cds-snc/ai-answers/compare/v1.98.0...v1.99.0) (2026-02-11)
 
 
