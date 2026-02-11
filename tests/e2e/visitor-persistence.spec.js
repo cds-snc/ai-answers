@@ -9,24 +9,17 @@ test.describe('Visitor Persistence E2E', () => {
         console.log('Page loaded, waiting for initialization...');
         await page.waitForTimeout(5000); // Wait for scripts and fingerprinting
 
-        // 2. Intercept chat-create to get the initial chatId
-        // We wait for the second one if the first one happened already
-        let firstChatId = null;
-        try {
-            const chatCreateResponse = await page.waitForResponse(response =>
-                response.url().includes('/api/chat/chat-create') && response.status() === 200,
-                { timeout: 10000 }
-            );
-            const data = await chatCreateResponse.json();
-            firstChatId = data.chatId;
-        } catch (e) {
-            console.log('Initial chat-create not captured, checking if it already happened');
-        }
-
-        // 3. Send a message to ensure session is active and used
+        // 2. Send a message to ensure session is active and used
         await page.waitForSelector('textarea#message');
         await page.fill('textarea#message', 'Hello persistence test');
         await page.click('.btn-primary-send');
+
+        // Wait for the chat graph SSE request to start
+        const firstGraphResponse = await page.waitForResponse(response =>
+            response.url().includes('/api/chat/chat-graph-run'),
+            { timeout: 30000 }
+        );
+        expect(firstGraphResponse.status()).toBe(200);
 
         // Wait for response to Detach (meaning it finished)
         await page.waitForSelector('.loading-container', { state: 'detached', timeout: 30000 });
@@ -43,14 +36,14 @@ test.describe('Visitor Persistence E2E', () => {
         await page.fill('textarea#message', 'Follow up question');
         await page.click('.btn-primary-send');
 
-        // Wait for response - expect 200 OK
-        const response = await page.waitForResponse(response =>
-            response.url().includes('/api/chat/chat-message'),
+        // Wait for the chat graph SSE request to start - expect 200 OK
+        const secondGraphResponse = await page.waitForResponse(response =>
+            response.url().includes('/api/chat/chat-graph-run'),
             { timeout: 30000 }
         );
 
-        console.log('Second message response status:', response.status());
-        expect(response.status()).toBe(200);
+        console.log('Second message response status:', secondGraphResponse.status());
+        expect(secondGraphResponse.status()).toBe(200);
 
         // Optional: Verify message count in UI (history should be managed by chatId/session)
         const finalMessageCount = await page.locator('.message').count();
