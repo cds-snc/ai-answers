@@ -13,9 +13,9 @@ class ConversationIntegrityService {
         let content = text;
 
         // 1. "Take what you need" for AI responses
-        // If we find specific answer tags, use them as the source of truth, ignoring surrounding noise.
-        const answerMatch = text.match(/<english-answer>([\s\S]*?)<\/english-answer>/) ||
-            text.match(/<answer>([\s\S]*?)<\/answer>/);
+        // Check <answer> first: parseResponse.js uses <answer> as source of truth when both tags exist.
+        const answerMatch = text.match(/<answer>([\s\S]*?)<\/answer>/) ||
+            text.match(/<english-answer>([\s\S]*?)<\/english-answer>/);
 
         if (answerMatch) {
             content = answerMatch[1];

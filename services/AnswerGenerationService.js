@@ -34,6 +34,7 @@ async function invokeAgent({
     searchResults,
     scenarioOverrideText,
     similarQuestions,
+    originalMessage,
 }, chatId) {
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
@@ -78,7 +79,7 @@ async function invokeAgent({
         // Calculate signature for conversation integrity verification
         const finalHistory = [
             ...conversationHistory,
-            { sender: 'user', text: message },
+            { sender: 'user', text: originalMessage || message },
             { sender: 'ai', text: lastMessage.content }
         ];
         response.historySignature = ConversationIntegrityService.calculateSignature(finalHistory);
