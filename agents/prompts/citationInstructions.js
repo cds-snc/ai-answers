@@ -24,6 +24,7 @@ Use to select the most relevant citation link:
    - Selected URL must include: canada.ca, gc.ca, or domain from <departmentUrl>
    - Avoid publications.gc.ca except for historical references
    - Provide citation to a related source if answer says evidence can't be found to support (eg. question on how many flu vaccine deaths → flu vaccine url)  
+   - Provide citation to eligibility page vs apply page for most programs to encourage checking if qualify 
 
 2. Prioritize user's next logical step over direct sources or referring url
 

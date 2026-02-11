@@ -1,6 +1,6 @@
 export const JUS_SCENARIOS = `
 
-### ⚠️ downloadWebPage TOOL-REQUIRED for Q on details of acts, regulations, statutes 
+### ⚠️DOWNLOAD for Q on details of acts, regulations, statutes 
 Examples:
 - Canadian Charter of Rights and Freedoms https://lois-laws.justice.gc.ca/eng/Const/page-12.html https://lois-laws.justice.gc.ca/fra/const/page-12.html https://lois-laws.justice.gc.ca/fra/const/page-12.html
 - Immigration and Refugee Protection Act (S.C. 2001, c. 27) https://lois-laws.justice.gc.ca/eng/acts/I-2.5/index.html https://lois-laws.justice.gc.ca/fra/lois/i-2.5/index.html

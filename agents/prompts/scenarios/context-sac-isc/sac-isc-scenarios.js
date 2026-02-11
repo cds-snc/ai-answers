@@ -1,12 +1,10 @@
 export const SAC_ISC_SCENARIOS = `
 
-### ⚠️ downloadWebPage TOOL-REQUIRED TRIGGERS
-These questions MUST use downloadWebPage tool before answering:
-** CONTACTS: use downloadWebPage to read: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md**
+** CONTACTS: ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md**
 - When user asks for: phone, address, email, fax, office hours/location, status card in-person appointments, status card application status/updates 
 - Page has ALL contact types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services, public enquiries contact centre
 - Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
-**TREATY ANNUITY: use downloadWebPage to read: https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
+**TREATY ANNUITY: ⚠️DOWNLOAD https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
 - When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments
 - Why: Band tables are authoritative source; must verify against current treaty tables
 
@@ -22,7 +20,7 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
 
 ### Status cards - no online apps/renewal
 * Registered persons: download form, submit by mail or in-person only with photo and all documents, no email or online.
-* In-person appointment and mailing address: see ⚠️ TOOL-REQUIRED for contacts.
+* In-person appointment and mailing address: see ⚠️DOWNLOAD for contacts.
 * Mail-in: send to National SCIS Processing Unit. See Where to submit: https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 https://www.sac-isc.gc.ca/fra/1695839818435/1695839847447
 * Renewal: apply up to 1 year advance. Simplified renewal eligibility: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 https://www.sac-isc.gc.ca/fra/1695840367366/1695840394948
 * Expired cards cannot use simplified renewal.
@@ -54,7 +52,7 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
 * Individual/family forms: available for download. Avoid direct app form links; link to eligibility info pages or ask to determine correct form/eligibility. Only provide direct app form link if eligibility clear.
 * Group forms: not on website. Contact regional focal point: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
 * Submit via Jordan's Principle Call Centre 1-855-JP-CHILD (1-855-572-4453) or regional focal point: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387
-* Regional focal point contacts: see ⚠️ TOOL-REQUIRED
+* Regional focal point contacts: see ⚠️DOWNLOAD
 
 ### Jordan's Principle - coverage
 * Coverage depends on situation/needs of FN child. https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387#sec1 https://www.sac-isc.gc.ca/fra/1568396296543/1582657596387#sec1
@@ -69,7 +67,7 @@ Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 https
 
 ### Dental benefits
 * Q on dental → ask to clarify: NIHB dental for eligible FN/Inuit OR Canadian Dental Care Plan (CDCP)? https://www.sac-isc.gc.ca/eng/1574192221735/1574192306943 https://www.sac-isc.gc.ca/fra/1574192221735/1574192306943
-* Q on dentists enrolled in NIHB → direct to appropriate FNIHB regional office (see ⚠️ TOOL-REQUIRED). https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
+* Q on dentists enrolled in NIHB → direct to appropriate FNIHB regional office (see ⚠️DOWNLOAD). https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237 https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
 ### Valid ID for apps
 * Valid acceptable ID: issued by federal/provincial/territorial/state govt, not expired. Must include name, DOB, photo, signature. https://www.sac-isc.gc.ca/eng/1516981589880/1572461616199 https://www.sac-isc.gc.ca/fra/1516981589880/1572461616199

@@ -1,7 +1,5 @@
 export const CEO_BEC_SCENARIOS = `
-### ⚠️ downloadWebPage TOOL-REQUIRED TRIGGERS
-These questions MUST use downloadWebPage tool before answering:
-** Q ABOUT AI ANSWERS **: download https://raw.githubusercontent.com/cds-snc/ai-answers/main/public/content/about-en.md  - if ans not found then download https://raw.githubusercontent.com/cds-snc/ai-answers/main/SYSTEM_CARD.md 
+** Q ABOUT AI ANSWERS **: ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/public/content/about-en.md  - if ans not found then download https://raw.githubusercontent.com/cds-snc/ai-answers/main/SYSTEM_CARD.md 
 
 ### Questions about AI Answers
 - Answer only from about page and system card as official source, if q can't be answered from system card or this scenario, provide not-gc response
