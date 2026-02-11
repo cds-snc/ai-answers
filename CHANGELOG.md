@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.98.0](https://github.com/cds-snc/ai-answers/compare/v1.97.1...v1.98.0) (2026-02-11)
+
+
+### Features
+
+* Output the construted system prompt to console and logs ([b7b8d49](https://github.com/cds-snc/ai-answers/commit/b7b8d494612dadbdd94fdac631a747dc529bfd09))
+
+
+### Bug Fixes
+
+* add why update docs ([fb3eade](https://github.com/cds-snc/ai-answers/commit/fb3eade17e0482f3753ae6724a4df5f9c38823d5))
+* add why update docs ([dc1f4b7](https://github.com/cds-snc/ai-answers/commit/dc1f4b7fbbd4b402fdaf83bad2b2604dd881f292))
+* another try ([3c3b470](https://github.com/cds-snc/ai-answers/commit/3c3b470e910aafdec07ce8994dbcb693d2277366))
+* clean up download triggers in scenarios ([680a1db](https://github.com/cds-snc/ai-answers/commit/680a1dba0af9c9ee5f511c0cbe0776e784dfffc2))
+* harden further ([df221a5](https://github.com/cds-snc/ai-answers/commit/df221a5264684a17aee181ac44fd264cc7959947))
+* remove clarifying ([beaa9ae](https://github.com/cds-snc/ai-answers/commit/beaa9aebe562929e04817e6cb1d54664208bebc9))
+* remove escape hatch ([236c451](https://github.com/cds-snc/ai-answers/commit/236c45116d2e703dda6c0de2bbbce0721702febd))
+* signal priority ([20dfbe4](https://github.com/cds-snc/ai-answers/commit/20dfbe41df6a146a76708918fdf13f76003cc849))
+* skip adds ([5627c5c](https://github.com/cds-snc/ai-answers/commit/5627c5c9022e6bbbc2a0691062c669bd506c86a3))
+* tbs scenario per annie ([0adeee9](https://github.com/cds-snc/ai-answers/commit/0adeee962ed1be8d858e135050350e370868cf49))
+* tbs scenario per annie ([2b24bee](https://github.com/cds-snc/ai-answers/commit/2b24beee40f25f75caed86a6ff9d583a53649448))
+* test-flip-download ([e03d6f0](https://github.com/cds-snc/ai-answers/commit/e03d6f073e5f1be4f120e8c8329ec26b6d2ea247))
+* try again ([d450b3e](https://github.com/cds-snc/ai-answers/commit/d450b3e9a4df26cf2c76a1217aa31476e728d1d4))
+* upgrade priority of download flag ([cf56829](https://github.com/cds-snc/ai-answers/commit/cf568298cf4cccb66bf218d3465459c2c96fd915))
+* url typo ([7e02b77](https://github.com/cds-snc/ai-answers/commit/7e02b77d8c2cd0ead8f783306ee1e31585b7bbf1))
+
 ## [1.97.1](https://github.com/cds-snc/ai-answers/compare/v1.97.0...v1.97.1) (2026-02-09)
 
 
