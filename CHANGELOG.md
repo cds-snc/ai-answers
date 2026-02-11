@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.100.1](https://github.com/cds-snc/ai-answers/compare/v1.100.0...v1.100.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* scenario issues ([83d2d4f](https://github.com/cds-snc/ai-answers/commit/83d2d4f5bcec0b4a30745e3f279ef54dbffafa42))
+
 ## [1.100.0](https://github.com/cds-snc/ai-answers/compare/v1.99.0...v1.100.0) (2026-02-11)
 
 
