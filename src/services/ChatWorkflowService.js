@@ -68,11 +68,15 @@ export const ChatWorkflowService = {
       graphName = 'InstantAndQAGraph';
     } else if (resolvedWorkflow === 'GPT5MiniDefaultGraph') {
       graphName = 'GPT5MiniDefaultGraph';
+    } else if (resolvedWorkflow === 'GPT5OneDefaultGraph') {
+      graphName = 'GPT5OneDefaultGraph';
+    } else if (resolvedWorkflow === 'GPT5OneChatGraph') {
+      graphName = 'GPT5OneChatGraph';
     } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
       graphName = 'DefaultWithVectorGraph';
     } else {
       // Fallback for any other legacy string values
-      graphName = 'DefaultWithVectorGraph';
+      graphName = 'DefaultGraph';
     }
 
     const implInstance = new GraphClient(graphName);

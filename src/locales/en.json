@@ -37,6 +37,8 @@
       "aiServices": {
         "claude": "AI service Claude: Anthropic Claude Sonnet 3.7, knowledge to February 2025",
         "chatgpt": "AI service ChatGPT: OpenAI 4.1, knowledge to May 31 2025",
+        "chatgpt51": "AI service ChatGPT: OpenAI 5.1, knowledge to 2026",
+        "chatgpt51-chat": "AI service ChatGPT: OpenAI 5.1 Chat, knowledge to 2026",
         "azure": "Current AI model: Microsoft Azure OpenAI"
       },
       "cdslink": "Canadian Digital Service",
@@ -134,7 +136,9 @@
           "label": "AI:",
           "anthropic": "Anthropic",
           "openai": "OpenAI",
-          "azure": "Azure"
+          "azure": "Azure",
+          "azure-gpt51": "Azure GPT-5.1",
+          "azure-gpt51-chat": "Azure GPT-5.1 Chat"
         },
         "searchSelection": {
           "label": "Search:",
@@ -276,7 +280,9 @@
       "aiService": {
         "label": "AI Service:",
         "openai": "OpenAI",
-        "azure": "Azure OpenAI"
+        "azure": "Azure OpenAI",
+        "azure-gpt51": "Azure GPT-5.1",
+        "azure-gpt51-chat": "Azure GPT-5.1 Chat"
       },
       "language": {
         "label": "Evaluation Language:",

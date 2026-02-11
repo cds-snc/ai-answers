@@ -21,7 +21,8 @@ function normalizeEmbeddingProvider(provider) {
   if (!provider) return 'openai';
 
   // Map virtual providers to their base embedding provider
-  if (provider.startsWith('azure-') || provider === 'azure') {
+  // Note: GPT-5 models (openai-gpt5...) are currently deployed on Azure in our config
+  if (provider.startsWith('azure-') || provider === 'azure' || provider.startsWith('openai-gpt5')) {
     return 'azure';
   }
   if (provider.startsWith('openai-') || provider === 'openai') {

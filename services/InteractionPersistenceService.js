@@ -136,10 +136,14 @@ export const InteractionPersistenceService = {
         chat.interactions.push(dbInteraction._id);
         await chat.save();
 
-        // 5. Generate embeddings for the interaction
-        ServerLoggingService.info('[InteractionPersistenceService] Embedding creation start', chatId);
-        await EmbeddingService.createEmbedding(dbInteraction, interaction.selectedAI);
-        ServerLoggingService.info('[InteractionPersistenceService] Embedding creation end', chatId);
+        // 5. Generate embeddings for the interaction (non-blocking for persistence)
+        try {
+            ServerLoggingService.info('[InteractionPersistenceService] Embedding creation start', chatId);
+            await EmbeddingService.createEmbedding(dbInteraction, interaction.selectedAI);
+            ServerLoggingService.info('[InteractionPersistenceService] Embedding creation end', chatId);
+        } catch (embeddingError) {
+            ServerLoggingService.error('[InteractionPersistenceService] Embedding creation failed - continuing persistence', chatId, embeddingError);
+        }
 
         // 6. Perform evaluation on the saved interaction (mode depends on deploymentMode setting)
         let deploymentMode = 'CDS';

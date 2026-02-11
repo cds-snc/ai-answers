@@ -138,21 +138,18 @@ describe('InteractionPersistenceService', () => {
         expect(EmbeddingService.createEmbedding).toHaveBeenCalled();
     });
 
-    it('handles embedding generation errors gracefully (logs but throws/returns?)', async () => {
-        // Service might rethrow or swallow. 
-        // The original handler caught errors and returned 500.
-        // If Service handles internally, it might return. If it throws, we check rejection.
-        // Let's check Service implementation in previous turns?
-        // ChatPersistInteraction.js caught errors.
-        // InteractionPersistenceService.js likely throws if logic fails.
-
+    it('handles embedding generation errors gracefully (logs and continues)', async () => {
         EmbeddingService.createEmbedding.mockRejectedValueOnce(new Error('Embedding generation failed'));
 
-        // If the service doesn't catch embedding errors, this will throw.
-        // The previous test expected handler to return 500 => implies error propagates or is handled and rethrown/mapped.
-        // Let's assume it throws.
+        // The service should now catch the error and complete successfully
         await expect(InteractionPersistenceService.persistInteraction(initialPayload, user))
-            .rejects.toThrow();
+            .resolves.toEqual({ success: true });
+
+        expect(ServerLoggingService.error).toHaveBeenCalledWith(
+            expect.stringContaining('Embedding creation failed'),
+            initialPayload.chatId,
+            expect.any(Error)
+        );
     });
 
     it('should handle missing optional fields', async () => {
