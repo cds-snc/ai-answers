@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.99.0](https://github.com/cds-snc/ai-answers/compare/v1.98.0...v1.99.0) (2026-02-11)
+
+
+### Features
+
+* implement redis session store and robustness improvements ([75c377b](https://github.com/cds-snc/ai-answers/commit/75c377b3f7585835b4026cfef120b882f5f13481))
+* turn off alert/notice ([f13100c](https://github.com/cds-snc/ai-answers/commit/f13100cffd0b6fc42772b89768c7d844bcbfe19a))
+
 ## [1.98.0](https://github.com/cds-snc/ai-answers/compare/v1.97.1...v1.98.0) (2026-02-11)
 
 
