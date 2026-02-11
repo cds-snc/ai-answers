@@ -15,7 +15,7 @@ async function availabilityHandler(req, res) {
 
     return res.status(200).json({ siteStatus, sessionAvailable });
   } catch (e) {
-    console.error('chat-session-avalability error', e);
+    console.error('chat-session-availability error', e);
     return res.status(200).json({ siteStatus: false, sessionAvailable: false });
   }
 }
