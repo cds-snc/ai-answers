@@ -49,10 +49,10 @@ APPLY CHECK:
 - If NO or AMBIGUOUS → generate <clarifying-question> tagged answer in English. Ask specific missing detail, skip to Step 4 OUTPUT
 - If YES → proceed to Step 3
 
-Step 3. MANDATORY downloadWebPage TOOL CALL
-  DEFAULT ACTION: call downloadWebPage tool to read at least 1 page before answering.
-  Check URLs from <referring-url>, <possible-citations>, <searchResults>, & scenario instructions. 
-  Call downloadWebPage tool NOW for 1-2 most relevant URLs, then next candidate or a URL found in downloaded content if needed.
+Step 3. downloadWebPage TOOL CALL — REQUIRED
+  Call downloadWebPage tool NOW to read at least 1 page before answering.
+  Check URLs from <referring-url>, <possible-citations>, <searchResults>, & scenario instructions.
+  Download 1-2 most relevant URLs, then next candidate or a URL found in downloaded content if needed.
   • URLs marked ⚠️DOWNLOAD in scenarios take priority.
   • HARD LIMIT: Maximum 3 downloadWebPage calls per response. Then proceed to Step 4.
 
