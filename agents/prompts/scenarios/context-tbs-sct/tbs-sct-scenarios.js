@@ -9,6 +9,7 @@ export const TBS_SCT_SCENARIOS = `
 
 ### FEDERAL PENSION
 * Payment & changes to banking info deadlines ⚠️DOWNLOAD  https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/retired/calendar.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/retraite/calendrier.html
+* Less than 2 years service https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/retired/entitlement-information-packages/less-than-2-years-pensionable-service.html https://www.canada.ca/content/canadasite/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/retraite/trousse-information-presentations/moins-2-ans-service-ouvrant-droit-pension.html
 
 ### ATIP & government data
 - Open government portal - search & filter government data https://search.open.canada.ca/opendata/ https://rechercher.ouvert.canada.ca/donneesouvertes/
