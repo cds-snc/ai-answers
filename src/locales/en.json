@@ -175,7 +175,8 @@
         "warning": "Warning:",
         "shortQueryMessage": "Your question was too short.",
         "shortQueryDetails": "Try again with more details, or use this link to search Canada.ca for the words you entered.",
-        "shortQuerySearch": "Canada.ca search"
+        "shortQuerySearch": "Canada.ca search",
+        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat."
       },
       "citation": {
         "confidence": "Confidence:",
@@ -900,6 +901,9 @@
       "profanity": "Profanity",
       "threat": "Threats",
       "manipulation": "Manipulation"
+    },
+    "metrics": {
+      "storeType": "Chat Metrics Store (memory | mongo)"
     }
   },
   "outage": {

@@ -14,16 +14,17 @@ const _getSetting = (keys) => {
   return undefined;
 };
 
+const _getSessionMaxAgeMs = () => {
+  const minutes = Number(_getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '60');
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
+};
+
 // Singleton session middleware instance
 let instance = null;
 
 const buildSessionMiddleware = (app) => {
   const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
   const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
-
-  const initialTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
-  const parsedInitialMinutes = Number(initialTTLSetting);
-  const initialMinutes = Number.isFinite(parsedInitialMinutes) && parsedInitialMinutes > 0 ? parsedInitialMinutes : 60;
 
   let sessionStore = null;
 
@@ -52,7 +53,6 @@ const buildSessionMiddleware = (app) => {
   app.set('trust proxy', 1);
 
   const isSecure = (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test');
-  const INITIAL_MAX_AGE = initialMinutes * 60 * 1000;
 
   return session({
     name: 'aianswers.sid',
@@ -64,7 +64,7 @@ const buildSessionMiddleware = (app) => {
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? 'strict' : 'lax',
-      maxAge: INITIAL_MAX_AGE,
+      maxAge: _getSessionMaxAgeMs(),
       path: '/'
     },
     rolling: true
@@ -114,8 +114,12 @@ export default function createSessionMiddleware(app) {
     applyParentDomainToCookieHeaders(res, parentDomain);
 
     instance(req, res, () => {
-      if (req.session && req.session.cookie && parentDomain) {
-        req.session.cookie.domain = parentDomain;
+      if (req.session && req.session.cookie) {
+        req.session.cookie.maxAge = _getSessionMaxAgeMs();
+
+        if (parentDomain) {
+          req.session.cookie.domain = parentDomain;
+        }
       }
       next();
     });

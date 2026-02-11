@@ -540,6 +540,23 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             }
           }
 
+          // Handle session timeout / invalid chatId (403)
+          if (error.message?.includes('status=403') && (error.message?.includes('invalid_chatId') || error.message?.includes('no_session'))) {
+            const timeoutMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages,
+              {
+                id: timeoutMessageId,
+                text: safeT('homepage.chat.messages.sessionTimedOut'),
+                sender: 'ai',
+                error: true,
+                isSessionTimeout: true
+              }
+            ]);
+            setIsLoading(false);
+            return;
+          }
+
           const errorMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
             ...prevMessages,
