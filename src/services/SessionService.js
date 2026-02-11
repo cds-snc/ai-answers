@@ -1,8 +1,44 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
+let cachedVisitorId = null;
 
 const SessionService = {
+  /**
+   * Returns the visitor fingerprint, computing it if necessary and caching the result.
+   */
+  async getVisitorId() {
+    if (cachedVisitorId) return cachedVisitorId;
+
+    try {
+      const FingerprintJSImport = await import('@fingerprintjs/fingerprintjs');
+      const FingerprintJS = FingerprintJSImport && FingerprintJSImport.default ? FingerprintJSImport.default : FingerprintJSImport;
+      if (FingerprintJS && typeof FingerprintJS.load === 'function') {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        cachedVisitorId = result?.visitorId;
+        return cachedVisitorId;
+      }
+    } catch (e) {
+      if (console && console.error) console.error('Fingerprint computation failed', e);
+    }
+    return null;
+  },
+  async report(chatId, latencyMs = 0, error = false, errorType = null) {
+    const url = getApiUrl('chat-report');
+    const visitorId = await this.getVisitorId();
+    try {
+      await AuthService.fetch(url, {
+        method: 'POST',
+        // Pass visitorId in body to allow transparent session recovery if session expired
+        body: JSON.stringify({ chatId, latencyMs, error, errorType, visitorId })
+      });
+    } catch (e) {
+      // swallow - non-fatal client-side telemetry
+      if (console && console.error) console.error('SessionService.report failed', e);
+    }
+  },
+
   async getSessionMetrics() {
     const url = getApiUrl('chat-session-metrics');
     const resp = await AuthService.fetch(url, {
@@ -17,53 +53,7 @@ const SessionService = {
     }
     const json = await resp.json();
     return json.sessions || [];
-  },
-
-  async report(chatId, latencyMs = 0, error = false, errorType = null) {
-    const url = getApiUrl('chat-report');
-    try {
-      await AuthService.fetch(url, {
-        method: 'POST',
-        // Ensure cookies / session token are sent so the server can map chatId -> session
-        body: JSON.stringify({ chatId, latencyMs, error, errorType })
-      });
-    } catch (e) {
-      // swallow - non-fatal client-side telemetry
-      if (console && console.error) console.error('SessionService.report failed', e);
-    }
-  },
-  /**
-   * Initializes the chat session atomically.
-   * Computes fingerprint and sends it to the server to get a chatId and availability.
-   */
-  async initChat() {
-    let visitorId = null;
-    try {
-      const FingerprintJSImport = await import('@fingerprintjs/fingerprintjs');
-      const FingerprintJS = FingerprintJSImport && FingerprintJSImport.default ? FingerprintJSImport.default : FingerprintJSImport;
-      if (FingerprintJS && typeof FingerprintJS.load === 'function') {
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        visitorId = result?.visitorId;
-      }
-    } catch (e) {
-      if (console && console.error) console.error('Fingerprint computation failed', e);
-    }
-
-    const url = getApiUrl('chat-init');
-    const resp = await AuthService.fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ visitorId })
-    });
-
-    if (!resp.ok) {
-      throw new Error(`Failed to initialize chat: ${resp.status}`);
-    }
-
-    return await resp.json();
   }
 };
-
 
 export default SessionService;

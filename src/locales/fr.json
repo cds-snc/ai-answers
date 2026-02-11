@@ -174,7 +174,8 @@
         "warning": "Avertissement :",
         "shortQueryMessage": "Votre question était trop courte.",
         "shortQueryDetails": "Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer pour les mots que vous avez saisis.",
-        "shortQuerySearch": "Recherche Canada.ca"
+        "shortQuerySearch": "Recherche Canada.ca",
+        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion."
       },
       "citation": {
         "confidence": "Niveau de confiance :",
@@ -911,7 +912,8 @@
       "store": {
         "options": {
           "memory": "En mémoire (volatile)",
-          "mongo": "DocumentDB (persistant/cache)"
+          "mongo": "DocumentDB (persistant/cache)",
+          "redis": "Redis (persistant/cache)"
         }
       },
       "persistence": {
@@ -938,6 +940,9 @@
       "profanity": "Gros mots",
       "threat": "Menaces",
       "manipulation": "Manipulation"
+    },
+    "metrics": {
+      "storeType": "Magasin de métriques de discussion (mémoire | mongo)"
     }
   },
   "outage": {

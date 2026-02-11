@@ -2,6 +2,9 @@ import ChatSessionService from '../services/ChatSessionService.js';
 import ChatSessionMetricsService from '../services/ChatSessionMetricsService.js';
 import { v4 as uuidv4 } from 'uuid';
 import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
+import crypto from 'crypto';
+
+const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Check if the user is authenticated
@@ -25,36 +28,28 @@ function isAuthenticated(req) {
 async function saveChatIdToSession(req, chatId) {
   if (!req.session) return;
 
-  req.session.chatIds = (req.session.chatIds || []).concat(chatId).filter(Boolean);
+  // Store chatIds as a plain object map to avoid array serialization/race issues
+  // e.g. { "<chatId>": true }
+  const existing = (req.session.chatIds && typeof req.session.chatIds === 'object') ? { ...req.session.chatIds } : {};
+  existing[String(chatId)] = true;
+  req.session.chatIds = existing;
 
-  if (typeof req.session.save === 'function') {
-    await new Promise((resolve, reject) => {
-      req.session.save((err) => err ? reject(err) : resolve());
-    });
-  }
+  console.log('[session] saving chatId:', chatId, 'sessionID:', req.sessionID, 'chatIds:', req.session.chatIds);
+  // No explicit save needed - express-session auto-saves when response ends
+  // (now that chat-graph-run returns immediately before SSE starts)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper: Resolve/validate an incoming chatId against the current session
+// Helper: Check if a chatId already belongs to this session
 // ─────────────────────────────────────────────────────────────────────────────
-async function resolveIncomingChatId(req, incomingChatId) {
-  if (!incomingChatId) return null;
-
-  const session = req.session;
-  const hasChatId = Array.isArray(session?.chatIds) && session.chatIds.includes(incomingChatId);
-
-  if (!hasChatId && session) {
-    // ChatId not found in session - adopt it
-    try {
-      await saveChatIdToSession(req, incomingChatId);
-      return incomingChatId;
-    } catch (e) {
-      console.error('[session] Failed to adopt chatId', e);
-      return null;
-    }
-  }
-
-  return hasChatId ? incomingChatId : null;
+function chatIdBelongsToSession(req, chatId) {
+  return Boolean(
+    chatId &&
+    req.session &&
+    req.session.chatIds &&
+    typeof req.session.chatIds === 'object' &&
+    Object.prototype.hasOwnProperty.call(req.session.chatIds, chatId)
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,12 +65,13 @@ function sendError(res, statusCode, error, message) {
 // Helper: Handle session recovery for expired/missing sessions
 // Returns: { proceed: boolean, response?: sent }
 // ─────────────────────────────────────────────────────────────────────────────
-async function handleSessionRecovery(req, res, managementEnabled, options) {
+async function handleSessionRecovery(req, res, managementEnabled) {
   const session = req.session;
-  const isExpired = !session || (!session.chatIds && !isAuthenticated(req));
+  const hasChatIds = session && session.chatIds && typeof session.chatIds === 'object' && Object.keys(session.chatIds).length > 0;
+  const isExpired = !session || (!hasChatIds && !isAuthenticated(req));
 
-  // Skip recovery check if we're creating a new chat or session isn't expired
-  if (!managementEnabled || !isExpired || options.createChatId) {
+  // Skip recovery check if session isn't expired or management is disabled
+  if (!managementEnabled || !isExpired) {
     return { proceed: true };
   }
 
@@ -130,19 +126,21 @@ async function createNewChatId(req, res, managementEnabled) {
 // Helper: Handle incoming chatId validation
 // Returns: { chatId: string|null, error?: boolean }
 // ─────────────────────────────────────────────────────────────────────────────
-async function handleIncomingChatId(req, res) {
-  const incomingChatId = req.body?.chatId;
+async function handleIncomingChatId(req, res, managementEnabled) {
+  const incomingChatId = req.body?.chatId || req.body?.input?.chatId;
+
+  // If no chatId provided, always generate a new one (no reuse)
   if (!incomingChatId) {
-    return { chatId: null };
+    const result = await createNewChatId(req, res, managementEnabled);
+    return result;
   }
 
-  const chatId = await resolveIncomingChatId(req, incomingChatId);
-  if (!chatId) {
+  if (!chatIdBelongsToSession(req, incomingChatId)) {
     sendError(res, 403, 'invalid_chatId', 'ChatId does not belong to session');
     return { chatId: null, error: true };
   }
 
-  return { chatId };
+  return { chatId: incomingChatId };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,7 +157,8 @@ function finalizeRequest(req, chatId) {
     req.visitorId = session.visitorId;
     session.lastSeen = Date.now();
 
-    const rateLimiterSnapshot = req.rateLimiterSnapshot || session.rateLimiter;
+    // Record rate limiter metrics from request snapshot (not session - removed)
+    const rateLimiterSnapshot = req.rateLimiterSnapshot;
     if (rateLimiterSnapshot) {
       ChatSessionMetricsService.recordRateLimiterSnapshot(sessionId, rateLimiterSnapshot);
     }
@@ -173,10 +172,17 @@ function finalizeRequest(req, chatId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Middleware Factory
 // ─────────────────────────────────────────────────────────────────────────────
-export default function sessionMiddleware(options = {}) {
+export default function sessionMiddleware() {
   return async function (req, res, next) {
     try {
       const managementEnabled = ChatSessionService.isManagementEnabled();
+
+      // 0. Initialize visitorId from body if missing in session (Lazy Init / Recovery)
+      if (req.session && !req.session.visitorId && req.body?.input?.visitorId) {
+        const hashedVisitorId = crypto.createHmac('sha256', fingerprintPepper)
+          .update(String(req.body.visitorId)).digest('hex');
+        //req.session.visitorId = hashedVisitorId;
+      }
 
       // 1. Require session when management is enabled
       if (managementEnabled && !req.session) {
@@ -185,20 +191,15 @@ export default function sessionMiddleware(options = {}) {
       }
 
       // 2. Handle session recovery for expired sessions
-      const recovery = await handleSessionRecovery(req, res, managementEnabled, options);
+      const recovery = await handleSessionRecovery(req, res, managementEnabled);
       if (!recovery.proceed) return;
 
       // 3. Resolve chatId (create new or validate incoming)
+      // Always handle incoming chatId (this will create a new chatId when none provided)
       let chatId = null;
-      if (options.createChatId) {
-        const result = await createNewChatId(req, res, managementEnabled);
-        if (result.error) return;
-        chatId = result.chatId;
-      } else {
-        const result = await handleIncomingChatId(req, res);
-        if (result.error) return;
-        chatId = result.chatId;
-      }
+      const result = await handleIncomingChatId(req, res, managementEnabled);
+      if (result.error) return;
+      chatId = result.chatId;
 
       // 4. Finalize request properties and metrics
       finalizeRequest(req, chatId);
@@ -214,9 +215,9 @@ export default function sessionMiddleware(options = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Wrapper: ensureSession (Promise-based middleware invocation)
 // ─────────────────────────────────────────────────────────────────────────────
-export function ensureSession(req, res, options = {}) {
+export function ensureSession(req, res) {
   return new Promise((resolve) => {
-    const mw = sessionMiddleware(options);
+    const mw = sessionMiddleware();
     let nextCalled = false;
 
     mw(req, res, (err) => {
@@ -272,20 +273,23 @@ export function validateConversationIntegrity(req, res) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOF Wrapper: withSession (combines session + integrity checks)
+// HOF Wrapper: withChatSession (combines session + integrity checks)
+// Use for endpoints that create/validate chatIds (e.g., chat-graph-run)
 // ─────────────────────────────────────────────────────────────────────────────
-export function withSession(handler, options = {}) {
+export function withChatSession(handler) {
   return async function (req, res) {
     try {
-      const ok = await ensureSession(req, res, options);
+      const ok = await ensureSession(req, res);
       if (!ok) return;
 
       if (!validateConversationIntegrity(req, res)) return;
 
       return handler(req, res);
     } catch (e) {
-      console.error('withSession error', e);
+      console.error('withChatSession error', e);
       if (!res.headersSent) res.status(500).json({ error: 'session error' });
     }
   };
 }
+
+export const withSession = withChatSession;

@@ -481,36 +481,45 @@ const ChatInterface = ({
             ) : (
               <>
                 {message.error ? (
-                  <div
-                    className={`error-message-box ${messages[
-                      messages.findIndex((m) => m.id === message.id) - 1
-                    ]?.redactedText?.includes("XXX")
-                      ? "privacy-error-box"
-                      : "error-box"
-                      }`}
-                  >
-                    <p
-                      className={
-                        messages[
-                          messages.findIndex((m) => m.id === message.id) - 1
-                        ]?.redactedText?.includes("XXX")
-                          ? "privacy-error-message"
-                          : "error-message"
-                      }
+                  message.isSessionTimeout ? (
+                    <div className="limit-reached-message">
+                      <p>{message.text}</p>
+                      <button onClick={handleReload} className="btn-primary visible">
+                        {safeT("homepage.chat.buttons.reload")}
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`error-message-box ${messages[
+                        messages.findIndex((m) => m.id === message.id) - 1
+                      ]?.redactedText?.includes("XXX")
+                        ? "privacy-error-box"
+                        : "error-box"
+                        }`}
                     >
-                      {message.text}
-                      {message.searchUrl && (
-                        <>
-                          <br />
-                          {safeT("homepage.chat.messages.shortQueryDetails")}
-                          <br />
-                          <a href={message.searchUrl}>
-                            {safeT("homepage.chat.messages.shortQuerySearch")}
-                          </a>
-                        </>
-                      )}
-                    </p>
-                  </div>
+                      <p
+                        className={
+                          messages[
+                            messages.findIndex((m) => m.id === message.id) - 1
+                          ]?.redactedText?.includes("XXX")
+                            ? "privacy-error-message"
+                            : "error-message"
+                        }
+                      >
+                        {message.text}
+                        {message.searchUrl && (
+                          <>
+                            <br />
+                            {safeT("homepage.chat.messages.shortQueryDetails")}
+                            <br />
+                            <a href={message.searchUrl}>
+                              {safeT("homepage.chat.messages.shortQuerySearch")}
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  )
                 ) : (
                   <>
                     {formatAIResponse(message.aiService, message)}

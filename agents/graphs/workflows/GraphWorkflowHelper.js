@@ -142,6 +142,7 @@ export class GraphWorkflowHelper {
       lang,
       outputLang: this.determineOutputLang(lang, translationData),
       originalLang: translationData?.originalLanguage || lang,
+      originalUserMessage: userMessage,
     };
 
     const departmentKey = department || contextData.department;
@@ -330,7 +331,8 @@ export class GraphWorkflowHelper {
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',
       similarQuestions: context.similarQuestions || '',
-      referringUrl, // Service uses this; keep passed through to generator
+      referringUrl,
+      originalMessage: context.originalUserMessage,
     };
 
     // Call service directly

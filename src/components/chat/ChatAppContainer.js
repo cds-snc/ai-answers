@@ -38,7 +38,7 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null, onSessionError = null, onChatIdUpdate = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
   const { t } = useTranslations(lang);
@@ -317,23 +317,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, []);
 
-  // If there's no user-local workflow, load the public default workflow (does
-  // not mark it as user-set or persist it).
-  useEffect(() => {
-    let mounted = true;
-    const loadDefaultWorkflow = async () => {
-      if (workflow === null) {
-        try {
-          const defaultWorkflow = await DataStoreService.getPublicSetting('workflow.default', 'Default');
-          if (mounted) setWorkflow(defaultWorkflow || 'Default');
-        } catch (err) {
-          if (mounted) setWorkflow('Default');
-        }
-      }
-    };
-    loadDefaultWorkflow();
-    return () => { mounted = false; };
-  }, [workflow]);
+
 
   useEffect(() => {
     try {
@@ -454,10 +438,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         );
         const latencyMs = Date.now() - startMs;
 
+        // Capture server-generated chatId (if this was the first request)
+        if (interaction?.chatId && onChatIdUpdate) {
+          onChatIdUpdate(interaction.chatId);
+        }
+
         // Fire-and-forget report to server about latency (and success)
+        // Use the interaction's chatId if we didn't have one before
+        const effectiveChatId = interaction?.chatId || chatId;
         // fire-and-forget session report (no specific errorType for success)
         if (!overrideUserId) {
-          SessionService.report(chatId, latencyMs, false, null);
+          SessionService.report(effectiveChatId, latencyMs, false, null);
         }
 
         clearInput();
@@ -539,6 +530,33 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           return;
         } else {
           console.error('Error in handleSendMessage:', error);
+
+          // Handle session availability errors (503)
+          if (error.message?.includes('status=503')) {
+            if (typeof onSessionError === 'function') {
+              onSessionError(error);
+              setIsLoading(false);
+              return;
+            }
+          }
+
+          // Handle session timeout / invalid chatId (403)
+          if (error.message?.includes('status=403') && (error.message?.includes('invalid_chatId') || error.message?.includes('no_session'))) {
+            const timeoutMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages,
+              {
+                id: timeoutMessageId,
+                text: safeT('homepage.chat.messages.sessionTimedOut'),
+                sender: 'ai',
+                error: true,
+                isSessionTimeout: true
+              }
+            ]);
+            setIsLoading(false);
+            return;
+          }
+
           const errorMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
             ...prevMessages,

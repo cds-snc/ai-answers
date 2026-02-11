@@ -1,4 +1,4 @@
-import { withSession } from '../../middleware/chat-session.js';
+import { withChatSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 import ChatSessionMetricsService from '../../services/ChatSessionMetricsService.js';
@@ -24,4 +24,4 @@ export async function handler(req, res) {
     return res.status(500).json({ error: 'server_error' });
   }
 }
-export default withOptionalUser(withSession(handler));
+export default withOptionalUser(withChatSession(handler));

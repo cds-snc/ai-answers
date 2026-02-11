@@ -1,6 +1,7 @@
 import { ChatWorkflowService, ShortQueryValidation, RedactionError } from './ChatWorkflowService.js';
 import AuthService from './AuthService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
+import SessionService from './SessionService.js';
 
 /**
  * Client-side batch runner that treats each spreadsheet row as its own chat.
@@ -29,10 +30,11 @@ class BatchService {
   async registerBatchChatId() {
     try {
       const url = getApiUrl('batch-register-chatid');
+      const visitorId = await SessionService.getVisitorId();
       const res = await AuthService.fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ visitorId }),
       });
 
       if (!res.ok) {
@@ -334,17 +336,8 @@ class BatchService {
           continue;
         }
 
-        // Register batch chatId with the session before processing
+        // Do not pre-register a chatId: let the Graph run assign one and return it in the result
         let chatId = null;
-        try {
-          chatId = await this.registerBatchChatId();
-          console.log(`[batch] registered chatId=${chatId} for batchId=${batchId} rowIndex=${i}`);
-        } catch (regErr) {
-          const message = `Failed to register batch chatId: ${regErr.message}`;
-          results[i] = { index: i, error: message };
-          onProgress({ index: i, total, status: 'failed', chatId: null, error: message });
-          continue;
-        }
 
         // instrumentation: mark worker active and log
         activeWorkers++;
@@ -379,6 +372,10 @@ class BatchService {
                 searchProvider,
                 overrideUserId
               );
+
+              // The Graph run returns the server-assigned chatId in the result payload
+              const assignedChatId = (res && (res.chatId || res.chat_id)) || chatId || existingChat || null;
+              chatId = assignedChatId;
 
               results[i] = { index: i, chatId, result: res };
               onProgress({ index: i, total, status: 'completed', chatId, result: res });

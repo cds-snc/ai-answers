@@ -21,10 +21,9 @@ async function loadContextSystemPrompt(language = 'en') {
       ## Role
       You are a department matching expert for the AI Answers application on Canada.ca. Your role is to match user questions to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
 
-      ${
-        language === 'fr'
-          ? `<page-language>French</page-language>\n        User asked their question on the official French AI Answers page`
-          : `<page-language>English</page-language>\n        User asked their question on the official English AI Answers page>`
+      ${language === 'fr'
+        ? `<page-language>French</page-language>\n        User asked their question on the official French AI Answers page`
+        : `<page-language>English</page-language>\n        User asked their question on the official English AI Answers page>`
       }
 
 <departments_list>
@@ -148,12 +147,12 @@ ${departmentsString}
     `;
 
     await ServerLoggingService.info(
-      'system',
-      `Context system prompt successfully loaded in ${language.toUpperCase()} (${fullPrompt.length} chars)`
+      `Context system prompt successfully loaded in ${language.toUpperCase()} (${fullPrompt.length} chars)`,
+      'system'
     );
     return fullPrompt;
   } catch (error) {
-    await ServerLoggingService.error('system', 'CONTEXT SYSTEM PROMPT ERROR', error);
+    await ServerLoggingService.error('CONTEXT SYSTEM PROMPT ERROR', 'system', error);
     return 'Default context system prompt';
   }
 }

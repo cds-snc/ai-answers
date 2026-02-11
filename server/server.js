@@ -1,5 +1,6 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
@@ -19,15 +20,9 @@ import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 
-import chatInitHandler from '../api/chat/chat-init.js';
-import chatSessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
-
-import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
-import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
 import chatReportHandler from '../api/chat/chat-report.js';
-import chatPersistInteractionHandler from '../api/chat/chat-persist-interaction.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
 import feedbackGetExpertHandler from '../api/feedback/feedback-get-expert.js';
@@ -78,18 +73,19 @@ import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
-import createRateLimiterMiddleware from '../middleware/rate-limiter.js';
+import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
-import batchRegisterChatIdHandler from '../api/batch/batch-register-chatid.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import connectivityHandler from '../api/util/util-connectivity.js';
 import createSessionMiddleware from '../middleware/express-session.js';
-import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
+import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -103,9 +99,10 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(cookieParser());
+
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 
 // Ensure `/api` never caches anything
@@ -132,10 +129,6 @@ app.use(createSessionMiddleware(app));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Unified chat initialization endpoint
-app.post('/api/chat/chat-init', chatInitHandler);
-app.get('/api/chat/chat-session-availability', chatSessionAvailabilityHandler);
-
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use('/api', botFingerprintPresence);
 // Block requests with known bot User-Agent strings
@@ -143,22 +136,9 @@ app.use('/api', botIsBot);
 // Additional detection using `bot-detector` (runs after isbot)
 app.use('/api', botDetector);
 
-// Placeholder for async rate limiter initialization.
-// We register a wrapper middleware now (after bot detection) that will
-// await the actual rate limiter once it's initialized in the startup
-// sequence below. This ensures the rate limiter runs after session and
-// bot-detection, but before any route handlers.
-let rateLimitMiddlewareReady = null;
-app.use(async (req, res, next) => {
-  try {
-    if (!rateLimitMiddlewareReady) return next();
-    const mw = await rateLimitMiddlewareReady;
-    return mw(req, res, next);
-  } catch (e) {
-    console.error('Rate limiter init failed', e);
-    return next();
-  }
-});
+// Rate limiter middleware (waits for async init internally)
+app.use('/api', rateLimiterMiddleware);
+
 
 app.use((req, res, next) => {
   req.setTimeout(300000);
@@ -199,14 +179,12 @@ app.post('/api/feedback/feedback-get-expert', feedbackGetExpertHandler);
 app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
-app.post('/api/chat/chat-persist-interaction', chatPersistInteractionHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.post('/api/chat/chat-report', chatReportHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
 app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
-app.post('/api/batch/batch-register-chatid', batchRegisterChatIdHandler);
 app.delete('/api/batch/batch-delete', dbBatchDeleteHandler);
 app.delete('/api/batch/batch-delete-all', batchesDeleteAllHandler);
 app.get('/api/batch/batch-stats', dbBatchStatsHandler);
@@ -249,8 +227,6 @@ app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
 app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
 
-app.post('/api/chat/chat-similar-answer', chatSimilarAnswerHandler);
-app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
 app.get('/api/util/util-connectivity', connectivityHandler);
@@ -267,11 +243,9 @@ const PORT = process.env.PORT || 3001;
     console.log("Settings service started...");
 
     // Initialize rate limiter middleware (depends on settings).
-    // We assign the promise to `rateLimitMiddlewareReady` so the wrapper
-    // registered earlier will start using it as soon as it's ready.
+    // The middleware registered above will wait for this promise to resolve.
     try {
-      rateLimitMiddlewareReady = createRateLimiterMiddleware(app);
-      await rateLimitMiddlewareReady;
+      await initializeRateLimiter();
       console.log('Rate limiter middleware initialized');
     } catch (rlErr) {
       console.error('Failed to initialize rate limiter middleware:', rlErr);

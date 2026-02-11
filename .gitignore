@@ -51,3 +51,9 @@ temp.jsonl
 # Chat logs storage (local development)
 /storage/chat-logs
 
+# Local server logs
+# Avoid committing generated server log files
+server-out.log
+server-err.log
+server*.log
+

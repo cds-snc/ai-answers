@@ -1,4 +1,5 @@
-import { withSession } from '../../middleware/chat-session.js';
+import { SettingsService } from '../../services/SettingsService.js';
+import { withChatSession } from '../../middleware/chat-session.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
@@ -72,19 +73,57 @@ async function handler(req, res) {
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
 
-  const { graph, input } = req.body || {};
-  if (typeof graph !== 'string' || !graph.trim()) {
-    return res.status(400).json({ message: 'graph is required' });
-  }
+  const { graph: clientGraph, input } = req.body || {};
+
   if (typeof input !== 'object' || input === null) {
     return res.status(400).json({ message: 'input must be an object' });
   }
 
-  const name = graph.trim();
-  const graphApp = await getGraphApp(name);
-  if (!graphApp) {
-    return res.status(404).json({ message: `Unknown graph: ${name}` });
+  // Ensure the graph uses the validated/generated chatId from the session middleware
+  input.chatId = req.chatId;
+
+  // Server-side Workflow Resolution
+  let graphName;
+  const defaultWorkflow = SettingsService.get('workflow.default') || 'DefaultGraph';
+
+  if (req.user) {
+    // Authenticated users can choose their workflow, fallback to default if not provided
+    graphName = (typeof clientGraph === 'string' && clientGraph.trim())
+      ? clientGraph.trim()
+      : defaultWorkflow;
+  } else {
+    // Unauthenticated users are FORCED to use the system default workflow
+    // ignoring any client-provided value to prevent unauthorized graph usage
+    graphName = defaultWorkflow;
   }
+
+  // Map the configuration name (e.g. 'DefaultGraph') to the internal registry name if needed
+  // (The registry uses keys like 'GenericWorkflowGraph', 'InstantAndQAGraph', etc. matching the setting values)
+  // We need to ensure the setting value maps correctly to registry keys.
+  // The SettingsService returns values like 'DefaultGraph', 'InstantAndQAGraph'.
+  // The registry expects:
+  // 'DefaultGraph' -> 'GenericWorkflowGraph' (special mapping from ChatWorkflowService legacy)
+  // 'InstantAndQAGraph' -> 'InstantAndQAGraph'
+  // 'GPT5MiniDefaultGraph' -> 'GPT5MiniDefaultGraph'
+  // 'DefaultWithVectorGraph' -> 'DefaultWithVectorGraph'
+
+  let registryName = graphName;
+  if (graphName === 'DefaultGraph') {
+    registryName = 'GenericWorkflowGraph';
+  }
+
+  const graphApp = await getGraphApp(registryName);
+  if (!graphApp) {
+    // Fallback to DefaultWithVectorGraph if the resolved name is invalid/missing
+    const fallbackApp = await getGraphApp('DefaultWithVectorGraph');
+    if (fallbackApp) {
+      // Log warning but proceed with fallback
+      if (console && console.warn) console.warn(`Unknown graph '${registryName}', falling back to DefaultWithVectorGraph`);
+    } else {
+      return res.status(404).json({ message: `Unknown graph: ${registryName}` });
+    }
+  }
+  const appToRun = graphApp || await getGraphApp('DefaultWithVectorGraph');
 
   const forwardedHeaders = buildForwardedHeaders(req.headers || {});
 
@@ -101,13 +140,14 @@ async function handler(req, res) {
   const handlers = {
     onStatus: (status) => {
       if (status) {
-        writeEvent(res, 'status', { status, graph: name });
+        writeEvent(res, 'status', { status, graph: graphName });
       }
     },
     onResult: (result) => {
       if (!resultSent && result && result.answer && result.answer.answerType) {
         resultSent = true;
-        writeEvent(res, 'result', result);
+        // Include server-generated chatId so client can store it
+        writeEvent(res, 'result', { ...result, chatId: req.chatId });
       }
     },
   };
@@ -126,7 +166,7 @@ async function handler(req, res) {
     }
 
     await graphRequestContext.run(store, async () => {
-      const stream = await graphApp.stream(input, { streamMode: 'updates' });
+      const stream = await appToRun.stream(input, { streamMode: 'updates' });
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
         if (resultSent) {
@@ -169,4 +209,4 @@ async function handler(req, res) {
   }
 }
 
-export default withOptionalUser(withSession(handler));
+export default withOptionalUser(withChatSession(handler));

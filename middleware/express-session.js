@@ -1,5 +1,7 @@
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 import { SettingsService } from '../services/SettingsService.js';
 import { getParentDomain } from '../api/util/cookie-utils.js';
 import dbConnect from '../api/db/db-connect.js';
@@ -12,13 +14,62 @@ const _getSetting = (keys) => {
   return undefined;
 };
 
-// Internal reset hook (will be set when middleware initializes)
-let internalResetFn = async () => { };
+const _getSessionMaxAgeMs = () => {
+  const minutes = Number(_getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '60');
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
+};
 
-// Exported helper to force a reset from other modules (admin endpoint/tests)
-export async function resetSessionMiddleware() {
-  return internalResetFn();
-}
+// Singleton session middleware instance
+let instance = null;
+
+const buildSessionMiddleware = (app) => {
+  const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
+  const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
+
+  let sessionStore = null;
+
+  if (sessionType === 'redis') {
+    const redisUrl = _getSetting(['redis.url', 'REDIS_URL']) || process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+    console.log(`[SESSION] Connecting to Redis at: ${redisUrl}`);
+    const redisClient = createClient({ url: redisUrl });
+    redisClient.on('error', (err) => console.error('[SESSION] Redis error:', err));
+    redisClient.connect().catch(console.error);
+
+    sessionStore = new RedisStore({
+      client: redisClient,
+      prefix: 'aianswers:sess:',
+      disableTouch: false,
+    });
+  } else if (sessionType === 'mongodb' || sessionType === 'mongo') {
+    sessionStore = MongoStore.create({
+      clientPromise: dbConnect().then((m) => m.connection.getClient()),
+      collectionName: 'sessions',
+      touchAfter: 0,
+    });
+  } else {
+    sessionStore = new session.MemoryStore();
+  }
+
+  app.set('trust proxy', 1);
+
+  const isSecure = (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test');
+
+  return session({
+    name: 'aianswers.sid',
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: true,
+    store: sessionStore,
+    cookie: {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: isSecure ? 'strict' : 'lax',
+      maxAge: _getSessionMaxAgeMs(),
+      path: '/'
+    },
+    rolling: true
+  });
+};
 
 export default function createSessionMiddleware(app) {
   const applyParentDomainToCookieHeaders = (res, parentDomain) => {
@@ -54,149 +105,23 @@ export default function createSessionMiddleware(app) {
     };
   };
 
-  // Track current configuration so we can hot-swap when settings change
-  let currentConfig = null;
-
-  // sessionMiddleware is referenced by the request wrapper and can be swapped
-  // when settings change.
-  let sessionMiddleware = null;
-
-  const buildConfigFromSettings = () => {
-    const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
-    const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
-
-    const initialTTLSetting = _getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '10';
-    const parsedInitialMinutes = Number(initialTTLSetting);
-    const initialMinutes = Number.isFinite(parsedInitialMinutes) && parsedInitialMinutes > 0 ? parsedInitialMinutes : 60;
-
-    const authTTLSetting = _getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || initialTTLSetting;
-
-    const mongoUrl = _getSetting(['mongo.uri', 'MONGODB_URI']) || process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/ai-answers';
-
-    return {
-      sessionType,
-      sessionSecret,
-      initialMinutes,
-      authTTLSetting,
-      mongoUrl
-    };
-  };
-
-  const buildSessionMiddleware = (cfg) => {
-    let sessionStore = null;
-    if (cfg.sessionType === 'mongodb' || cfg.sessionType === 'mongo') {
-      sessionStore = MongoStore.create({
-        clientPromise: dbConnect().then((m) => m.connection.getClient()),
-        collectionName: 'sessions',
-        touchAfter: 0,
-      });
-    } else {
-      sessionStore = new session.MemoryStore();
+  return (req, res, next) => {
+    if (!instance) {
+      instance = buildSessionMiddleware(app);
     }
 
-    app.set('trust proxy', 1);
+    const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
+    applyParentDomainToCookieHeaders(res, parentDomain);
 
-    // We no longer set a static domain here based on baseUrl.
-    // Instead, we determine the domain dynamically in the request wrapper.
+    instance(req, res, () => {
+      if (req.session && req.session.cookie) {
+        req.session.cookie.maxAge = _getSessionMaxAgeMs();
 
-    const isSecure = (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test');
-
-    const INITIAL_MAX_AGE = cfg.initialMinutes * 60 * 1000;
-    const cookieDefaults = {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: isSecure ? 'strict' : 'lax',
-      maxAge: INITIAL_MAX_AGE,
-      path: '/'
-    };
-
-    return session({
-      name: 'aianswers.sid',
-      secret: cfg.sessionSecret,
-      resave: false,
-      saveUninitialized: false,
-      store: sessionStore,
-      cookie: cookieDefaults,
-      rolling: true // Reset the cookie expiration on every response
-    });
-  };
-
-  // Helper to get settings and determine if we need to rebuild
-  const ensureSessionUpToDate = async () => {
-    try {
-      const cfg = buildConfigFromSettings();
-      const needsRebuild = !currentConfig ||
-        cfg.sessionType !== currentConfig.sessionType ||
-        cfg.sessionSecret !== currentConfig.sessionSecret ||
-        cfg.initialMinutes !== currentConfig.initialMinutes ||
-        cfg.authTTLSetting !== currentConfig.authTTLSetting ||
-        cfg.mongoUrl !== currentConfig.mongoUrl;
-
-      if (needsRebuild) {
-        // Rebuild and atomically swap
-        sessionMiddleware = buildSessionMiddleware(cfg);
-        currentConfig = cfg;
+        if (parentDomain) {
+          req.session.cookie.domain = parentDomain;
+        }
       }
-    } catch (e) {
-      // Don't block requests if the dynamic check fails; keep using existing middleware
-    }
-  };
-
-  // Assign internal reset hook so other modules can trigger rebuilds
-  internalResetFn = async () => {
-    const cfg = buildConfigFromSettings();
-    sessionMiddleware = buildSessionMiddleware(cfg);
-    currentConfig = cfg;
-  };
-
-  // Initialize once synchronously
-  try {
-    const cfg = buildConfigFromSettings();
-    sessionMiddleware = buildSessionMiddleware(cfg);
-    currentConfig = cfg;
-  } catch (e) {
-    // If initial build failed, ensure we have a no-op middleware that forwards
-    sessionMiddleware = (req, res, next) => next();
-  }
-
-  const wrapped = (req, res, next) => {
-    // Ensure any config changes are picked up before handling the request
-    Promise.resolve(ensureSessionUpToDate()).then(() => {
-      console.log(`[DEBUG] Session middleware executing for ${req.url}`);
-      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
-
-      applyParentDomainToCookieHeaders(res, parentDomain);
-
-      // Run the session middleware and then set the cookie domain if available
-      sessionMiddleware(req, res, () => {
-        try {
-          if (req && req.session && req.session.cookie && parentDomain) {
-            req.session.cookie.domain = parentDomain;
-          }
-        } catch (e) {
-          // ignore set-domain failures
-        }
-        next();
-      });
-    }).catch(() => {
-      // If the ensure check fails, proceed with existing middleware
-      console.log(`[DEBUG] Session middleware executing (fallback) for ${req.url}`);
-      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
-
-      applyParentDomainToCookieHeaders(res, parentDomain);
-
-      sessionMiddleware(req, res, () => {
-        try {
-          if (req && req.session && req.session.cookie && parentDomain) {
-            req.session.cookie.domain = parentDomain;
-          }
-        } catch (e) {
-          // ignore set-domain failures
-        }
-        next();
-      });
+      next();
     });
   };
-
-  return wrapped;
 }

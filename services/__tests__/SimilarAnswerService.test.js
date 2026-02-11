@@ -1,18 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
 import { setup, teardown, reset } from '../../test/setup.js';
 import mongoose from 'mongoose';
-import { SimilarAnswerService } from '../SimilarAnswerService.js';
-// Import mocked modules to control them
-import { VectorService } from '../VectorServiceFactory.js';
-import EmbeddingService from '../EmbeddingService.js';
-import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 
-// Silence intermittent Mongo disconnect errors
-process.on('unhandledRejection', (err) => {
-    if (err && err.name === 'MongoNotConnectedError') return;
-});
-
-// Define mocks without using outer variables
+// Declare mocks before importing the module under test
 vi.mock('../VectorServiceFactory.js', () => ({
     VectorService: { matchQuestions: vi.fn() },
     initVectorService: vi.fn(),
@@ -42,6 +32,19 @@ vi.mock('../../agents/AgentOrchestratorService.js', () => ({
 vi.mock('../../agents/AgentFactory.js', () => ({
     createRankerAgent: vi.fn(),
 }));
+
+import { SimilarAnswerService } from '../SimilarAnswerService.js';
+// Import mocked modules to control them
+import { VectorService } from '../VectorServiceFactory.js';
+import EmbeddingService from '../EmbeddingService.js';
+import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
+
+// Silence intermittent Mongo disconnect errors
+process.on('unhandledRejection', (err) => {
+    if (err && err.name === 'MongoNotConnectedError') return;
+});
+
+// (mocks declared above before imports)
 
 describe('SimilarAnswerService', () => {
     beforeAll(async () => {
@@ -88,9 +91,10 @@ describe('SimilarAnswerService', () => {
             { englishQuestion: 'Q2', redactedQuestion: 'Q2' },
         ]);
 
+        const now = Date.now();
         await InteractionModel.create([
-            { _id: new mongoose.Types.ObjectId('64fec1000000000000000001'), answer: answer1._id, question: question1._id, createdAt: new Date() },
-            { _id: new mongoose.Types.ObjectId('64fec1000000000000000002'), answer: answer2._id, question: question2._id, createdAt: new Date() },
+            { _id: new mongoose.Types.ObjectId('64fec1000000000000000001'), answer: answer1._id, question: question1._id, createdAt: new Date(now) },        // Newer (index 0)
+            { _id: new mongoose.Types.ObjectId('64fec1000000000000000002'), answer: answer2._id, question: question2._id, createdAt: new Date(now - 10000) }, // Older (index 1)
         ]);
 
         const interactions = await mongoose.model('Interaction').find().sort({ _id: 1 }).lean();
@@ -98,7 +102,7 @@ describe('SimilarAnswerService', () => {
     });
 
     afterAll(async () => {
-        await teardown();
+        // Shared teardown handled globally
     });
 
     it('returns the answer matching the same turn index in the chosen flow', async () => {

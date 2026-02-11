@@ -82,7 +82,7 @@ describe('Integration: Metrics Dashboard Aggregation', () => {
             createdAt: new Date(),
             pageLanguage: 'en'
         });
-    });
+    }, 60000);
 
     afterAll(async () => {
         await mongoose.disconnect();
