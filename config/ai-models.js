@@ -40,6 +40,24 @@ const AI_MODELS = {
           effort: "low"
         }
       },
+      "openai-gpt51-chat": {
+        model: "gpt-5.1",
+        maxTokens: 10024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+        reasoning: {
+          effort: "low"
+        }
+      },
+      "openai-gpt51": {
+        model: "gpt-5.1",
+        maxTokens: 10024,
+        temperature: 0.0,
+        timeoutMs: 60000,
+        reasoning: {
+          effort: "low"
+        }
+      },
     },
     embeddings: {
       default: 'text-embedding-3-large',

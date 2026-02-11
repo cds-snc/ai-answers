@@ -16,6 +16,14 @@ const graphLoaders = {
     const mod = await import('./GPT5MiniDefaultGraph.js');
     return mod.gpt5MiniDefaultGraphApp;
   },
+  GPT5OneDefaultGraph: async () => {
+    const mod = await import('./GPT5OneDefaultGraph.js');
+    return mod.gpt5OneDefaultGraphApp;
+  },
+  GPT5OneChatGraph: async () => {
+    const mod = await import('./GPT5OneChatGraph.js');
+    return mod.gpt5OneChatGraphApp;
+  },
 };
 
 const graphCache = new Map();

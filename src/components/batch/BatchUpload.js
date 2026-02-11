@@ -270,6 +270,30 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                     />
                     <label htmlFor="azure">{t('batch.upload.aiService.azure')}</label>
                   </div>
+                  <div className="ai-toggle_option">
+                    <input
+                      type="radio"
+                      id="azure-gpt51"
+                      name="ai-selection"
+                      value="openai-gpt51"
+                      checked={selectedAI === 'openai-gpt51'}
+                      onChange={handleAIToggle}
+                      className="ai-toggle_radio-input"
+                    />
+                    <label htmlFor="azure-gpt51">{t('batch.upload.aiService.azure-gpt51')}</label>
+                  </div>
+                  <div className="ai-toggle_option">
+                    <input
+                      type="radio"
+                      id="azure-gpt51-chat"
+                      name="ai-selection"
+                      value="openai-gpt51-chat"
+                      checked={selectedAI === 'openai-gpt51-chat'}
+                      onChange={handleAIToggle}
+                      className="ai-toggle_radio-input"
+                    />
+                    <label htmlFor="azure-gpt51-chat">{t('batch.upload.aiService.azure-gpt51-chat')}</label>
+                  </div>
                 </div>
               </fieldset>
             </div>
@@ -328,6 +352,8 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                   <option value="InstantAndQAGraph">InstantAndQAGraph</option>
                   <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
+                  <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
+                  <option value="GPT5OneChatGraph">GPT5OneChatGraph</option>
                 </select>
               </div>
             </div>
