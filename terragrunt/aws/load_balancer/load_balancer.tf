@@ -108,7 +108,7 @@ resource "aws_alb_listener_rule" "security_txt" {
       message_body = <<-EOT
         Contact: mailto:ZZTBSCYBERS@tbs-sct.gc.ca
         Contact: https://hackerone.com/tbs-sct/
-        Canonical: https://${regex("[^.]+\\.[^.]+$", var.domain)}/.well-known/security.txt
+        Canonical: https://${replace(var.domain, "/^[^.]+\\./", "")}/.well-known/security.txt
         Expires: 2026-03-02T12:00:00.000Z
         Preferred-Languages: en, fr
       EOT
