@@ -53,7 +53,8 @@ ${departmentsString}
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       - All Government of Canada contacts: https://www.canada.ca/en/contact.html or fr: https://www.canada.ca/fr/contact.html
       - All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr: https://www.canada.ca/fr/gouvernement/min.html
-      - All Government of Canada services (updated April 2025): https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
+      - All Government of Canada services: https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
+      - Canada.ca design, blogs, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
 
 5. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
 
