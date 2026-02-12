@@ -83,13 +83,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  // Helper function to truncate email to username only
-  const truncateEmail = useCallback((email) => {
-    if (!email) return '';
-    return email.split('@')[0];
-  }, []);
-
-  // Helper function to format date as YYYY/MM/DD with time on separate line
+  // Helper function to format date as YYYY/MM/DD (date only)
   const formatDate = useCallback((dateStr) => {
     if (!dateStr) return '';
     try {
@@ -97,9 +91,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}/${month}/${day}<br/>${hours}:${minutes}`;
+      return `${year}/${month}/${day}`;
     } catch (err) {
       console.error('Failed to format date', err);
       return dateStr;
@@ -110,13 +102,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const orderByForColumn = useCallback((colIdx) => {
     switch (colIdx) {
       case 0: return 'chatId';
-      case 1: return 'department';
-      case 2: return 'pageLanguage';
-      case 3: return 'expertEmail';
-      case 4: return 'creatorEmail';
-      case 5: return 'createdAt';
-      case 6: return 'referringUrl';
-      case 7: return 'userType';
+      case 1: return 'interactionCount';
+      case 2: return 'department';
+      case 3: return 'createdAt';
+      case 4: return 'userType';
+      case 5: return 'pageLanguage';
+      case 6: return 'chatId'; // Question column — no direct sort, fallback to chatId
+      case 7: return 'referringUrl';
       case 8: return 'answerType';
       case 9: return 'partnerEval';
       case 10: return 'aiEval';
@@ -193,6 +185,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       }
     },
     {
+      title: t('admin.chatDashboard.columns.interactionCount', 'Length'),
+      data: 'interactionCount',
+      render: (value) => {
+        return value != null ? String(value) : '0';
+      }
+    },
+    {
       title: t('admin.chatDashboard.columns.department', 'Department'),
       data: 'department',
       render: (value, type, row) => {
@@ -209,6 +208,20 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       }
     },
     {
+      title: t('admin.chatDashboard.columns.date', 'Date'),
+      data: 'date',
+      render: (value) => formatDate(value)
+    },
+    {
+      title: t('admin.chatDashboard.columns.userType', 'User Type'),
+      data: 'userType',
+      render: (value) => {
+        const type = value || 'public';
+        const label = t(`admin.chatDashboard.labels.userType.${type}`, type);
+        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
+      }
+    },
+    {
       title: t('admin.chatDashboard.columns.pageLanguage', 'Page'),
       data: 'pageLanguage',
       render: (value) => {
@@ -218,23 +231,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       }
     },
     {
-      title: t('admin.chatDashboard.columns.expertEmail', 'Expert email'),
-      data: 'expertEmail',
+      title: t('admin.chatDashboard.columns.question', 'Question'),
+      data: 'redactedQuestion',
       render: (value) => {
-        return escapeHtmlAttribute(truncateEmail(value || ''));
+        if (!value) return '';
+        const safe = escapeHtmlAttribute(value);
+        if (value.length > 80) {
+          const truncated = escapeHtmlAttribute(value.substring(0, 80));
+          return `<span title="${safe}">${truncated}…</span>`;
+        }
+        return safe;
       }
-    },
-    {
-      title: t('admin.chatDashboard.columns.creatorEmail', 'Creator email'),
-      data: 'creatorEmail',
-      render: (value) => {
-        return escapeHtmlAttribute(truncateEmail(value || ''));
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.date', 'Date'),
-      data: 'date',
-      render: (value) => formatDate(value)
     },
     {
       title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'),
@@ -242,15 +249,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       render: (value) => {
         if (!value) return '<span style="font-style: italic; color: #666;">none</span>';
         return escapeHtmlAttribute(truncateUrl(value));
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.userType', 'User Type'),
-      data: 'userType',
-      render: (value) => {
-        const type = value || 'public';
-        const label = t(`admin.chatDashboard.labels.userType.${type}`, type);
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
       }
     },
     {
@@ -280,7 +278,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
       }
     }
-  ]), [formatDate, truncateEmail, truncateUrl, t]);
+  ]), [formatDate, truncateUrl, t]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
@@ -343,7 +341,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   paging: true,
                   searching: true,
                   ordering: true,
-                  order: [[5, 'desc']], // default to date desc
+                  order: [[3, 'desc']], // default to date desc
                   scrollX: true,
                   stateSave: true,
                   language: {
@@ -377,7 +375,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     try {
                       setLoading(true);
                       setError(null);
-                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
+                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 3, dir: 'desc' };
                       const orderBy = orderByForColumn(dtOrder.column);
                       const orderDir = dtOrder.dir || 'desc';
                       const searchValue = (dtParams.search && dtParams.search.value) || '';

@@ -298,20 +298,42 @@ export function getChatFilterConditions(filters, options = {}) {
   // partnerEval - support multi-select via comma-separated values
   if (filters.partnerEval && filters.partnerEval !== 'all') {
     const categories = filters.partnerEval.split(',').map(c => c.trim()).filter(Boolean);
-    if (categories.length === 1) {
-      conditions.push({ [withPath('partnerEval')]: categories[0] });
-    } else if (categories.length > 1) {
-      conditions.push({ [withPath('partnerEval')]: { $in: categories } });
+    const hasNoEval = categories.includes('noEval');
+    const evalCategories = categories.filter(c => c !== 'noEval');
+    const noEvalCondition = { $or: [{ [withPath('partnerEval')]: null }, { [withPath('partnerEval')]: '' }] };
+
+    if (hasNoEval && evalCategories.length === 0) {
+      conditions.push(noEvalCondition);
+    } else if (hasNoEval && evalCategories.length > 0) {
+      const evalMatch = evalCategories.length === 1
+        ? { [withPath('partnerEval')]: evalCategories[0] }
+        : { [withPath('partnerEval')]: { $in: evalCategories } };
+      conditions.push({ $or: [noEvalCondition, evalMatch] });
+    } else if (evalCategories.length === 1) {
+      conditions.push({ [withPath('partnerEval')]: evalCategories[0] });
+    } else if (evalCategories.length > 1) {
+      conditions.push({ [withPath('partnerEval')]: { $in: evalCategories } });
     }
   }
 
   // aiEval - support multi-select via comma-separated values
   if (filters.aiEval && filters.aiEval !== 'all') {
     const categories = filters.aiEval.split(',').map(c => c.trim()).filter(Boolean);
-    if (categories.length === 1) {
-      conditions.push({ [withPath('aiEval')]: categories[0] });
-    } else if (categories.length > 1) {
-      conditions.push({ [withPath('aiEval')]: { $in: categories } });
+    const hasNoEval = categories.includes('noEval');
+    const evalCategories = categories.filter(c => c !== 'noEval');
+    const noEvalCondition = { $or: [{ [withPath('aiEval')]: null }, { [withPath('aiEval')]: '' }] };
+
+    if (hasNoEval && evalCategories.length === 0) {
+      conditions.push(noEvalCondition);
+    } else if (hasNoEval && evalCategories.length > 0) {
+      const evalMatch = evalCategories.length === 1
+        ? { [withPath('aiEval')]: evalCategories[0] }
+        : { [withPath('aiEval')]: { $in: evalCategories } };
+      conditions.push({ $or: [noEvalCondition, evalMatch] });
+    } else if (evalCategories.length === 1) {
+      conditions.push({ [withPath('aiEval')]: evalCategories[0] });
+    } else if (evalCategories.length > 1) {
+      conditions.push({ [withPath('aiEval')]: { $in: evalCategories } });
     }
   }
 

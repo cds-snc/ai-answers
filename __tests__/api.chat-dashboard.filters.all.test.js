@@ -96,4 +96,80 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
     expect(pipelineIncludes(aiEval)).toBe(true);
   });
+
+  it('includes noEval null/empty condition for partnerEval', async () => {
+    await runHandler({ partnerEval: 'noEval', startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    // Should include a condition matching null for partnerEval
+    const pipelineStr = JSON.stringify(capturedPipeline);
+    expect(pipelineStr).toContain('"interactions.partnerEval":null');
+  });
+
+  it('includes noEval null/empty condition for aiEval', async () => {
+    await runHandler({ aiEval: 'noEval', startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const pipelineStr = JSON.stringify(capturedPipeline);
+    expect(pipelineStr).toContain('"interactions.aiEval":null');
+  });
+
+  it('combines noEval with other partnerEval categories', async () => {
+    await runHandler({ partnerEval: 'noEval,correct', startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const pipelineStr = JSON.stringify(capturedPipeline);
+    // Should contain both null match and the category
+    expect(pipelineStr).toContain('"interactions.partnerEval":null');
+    expect(pipelineStr).toContain('"interactions.partnerEval":"correct"');
+  });
+
+  it('includes interactionCount in $group stage', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const groupStage = capturedPipeline.find(stage => stage && stage.$group);
+    expect(groupStage).toBeDefined();
+    expect(groupStage.$group.interactionCount).toEqual({ $sum: 1 });
+  });
+
+  it('includes redactedQuestion in $group stage', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const groupStage = capturedPipeline.find(stage => stage && stage.$group);
+    expect(groupStage).toBeDefined();
+    expect(groupStage.$group.redactedQuestion).toEqual({ $first: '$interactions.redactedQuestion' });
+  });
+
+  it('includes questions collection lookup in pipeline', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const questionLookup = capturedPipeline.find(stage =>
+      stage && stage.$lookup && stage.$lookup.from === 'questions'
+    );
+    expect(questionLookup).toBeDefined();
+    expect(questionLookup.$lookup.localField).toBe('interactions.question');
+    expect(questionLookup.$lookup.foreignField).toBe('_id');
+  });
+
+  it('includes interactionCount and redactedQuestion in final $project', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    // Find the $project stage that has interactionCount (the final projection)
+    const projectStages = capturedPipeline.filter(stage => stage && stage.$project);
+    const finalProject = projectStages.find(stage => stage.$project.interactionCount);
+    expect(finalProject).toBeDefined();
+    expect(finalProject.$project.interactionCount).toBe(1);
+    expect(finalProject.$project.redactedQuestion).toBe(1);
+  });
+
+  it('includes interactionCount in sortFieldMap', async () => {
+    await runHandler({
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      orderBy: 'interactionCount',
+      start: 0,
+      length: 10
+    });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const sortStage = capturedPipeline.find(stage => stage && stage.$sort);
+    expect(sortStage).toBeDefined();
+    expect(sortStage.$sort.interactionCount).toBeDefined();
+  });
 });

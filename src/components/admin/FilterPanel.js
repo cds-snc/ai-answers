@@ -236,6 +236,7 @@ const FilterPanel = ({
   // Partner evaluation options
   const partnerEvalOptions = [
     { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
     { value: 'correct', label: t('metrics.dashboard.expertScored.correct') || 'Correct' },
     { value: 'needsImprovement', label: t('metrics.dashboard.expertScored.needsImprovement') || 'Needs Improvement' },
     { value: 'hasError', label: t('metrics.dashboard.expertScored.hasError') || 'Has Error' },
@@ -246,6 +247,7 @@ const FilterPanel = ({
   // AI evaluation options
   const aiEvalOptions = [
     { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
     { value: 'correct', label: t('metrics.dashboard.aiScored.correct') || 'Correct' },
     { value: 'needsImprovement', label: t('metrics.dashboard.aiScored.needsImprovement') || 'Needs Improvement' },
     { value: 'hasError', label: t('metrics.dashboard.aiScored.hasError') || 'Has Error' },

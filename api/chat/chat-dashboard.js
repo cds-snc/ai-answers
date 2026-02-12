@@ -155,12 +155,28 @@ async function chatDashboardHandler(req, res) {
       $addFields: {
         'interactions': {
           _id: '$interactions._id',
+          question: '$interactions.question',
           referringUrl: '$interactions.referringUrl',
           answer: '$interactions.answer',
           context: '$interactions.context',
           expertFeedback: '$interactions.expertFeedback',
           autoEval: '$interactions.autoEval'
         }
+      }
+    });
+
+    // Lookup questions to get redactedQuestion
+    pipeline.push({
+      $lookup: {
+        from: 'questions',
+        localField: 'interactions.question',
+        foreignField: '_id',
+        as: 'interactionQuestion'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] }
       }
     });
 
@@ -272,6 +288,7 @@ async function chatDashboardHandler(req, res) {
       $project: {
         interactionAnswer: 0,
         interactionContext: 0,
+        interactionQuestion: 0,
         expertFeedbackDocs: 0,
         interactionEval: 0,
         autoEvalExpertFeedbackDocs: 0
@@ -297,6 +314,7 @@ async function chatDashboardHandler(req, res) {
           department: '$interactions.department',
           expertEmail: '$interactions.expertEmail',
           referringUrl: '$interactions.referringUrl',
+          redactedQuestion: '$interactions.redactedQuestion',
           answerType: '$interactions.answerType',
           partnerEval: '$interactions.partnerEval',
           aiEval: '$interactions.aiEval'
@@ -339,6 +357,8 @@ async function chatDashboardHandler(req, res) {
         createdAt: { $first: '$createdAt' },
         creatorEmail: { $first: '$creatorEmail' },
         pageLanguage: { $first: '$pageLanguage' },
+        interactionCount: { $sum: 1 },
+        redactedQuestion: { $first: '$interactions.redactedQuestion' },
         departments: {
           $addToSet: '$interactions.department'
         },
@@ -366,6 +386,8 @@ async function chatDashboardHandler(req, res) {
         chatId: 1,
         createdAt: 1,
         creatorEmail: 1,
+        interactionCount: 1,
+        redactedQuestion: 1,
         department: {
           $let: {
             vars: {
@@ -508,7 +530,8 @@ async function chatDashboardHandler(req, res) {
       userType: 'userType',
       answerType: 'answerType',
       partnerEval: 'partnerEval',
-      aiEval: 'aiEval'
+      aiEval: 'aiEval',
+      interactionCount: 'interactionCount'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
@@ -547,7 +570,9 @@ async function chatDashboardHandler(req, res) {
       answerType: chat.answerType || '',
       partnerEval: chat.partnerEval || '',
       aiEval: chat.aiEval || '',
-      userType: chat.userType || 'public'
+      userType: chat.userType || 'public',
+      interactionCount: chat.interactionCount || 0,
+      redactedQuestion: chat.redactedQuestion || ''
     }));
 
     if (isDataTablesMode) {
