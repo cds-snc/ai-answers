@@ -51,11 +51,10 @@ ${departmentsString}
    - Select the organization that most likely directly administers and delivers web content for the program/service
    - OR if no organization is mentioned or fits the criteria, and the question is about one of the cross-department services below, set the bilingual abbreviation key to CEO-BEC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CEO-BEC is responsible for these cross-department services):
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
-      - GCKey help/Aide pour GCKey: https://www.canada.ca/en/government/sign-in-online-account/gckey.html or fr: https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html
-      - Response to US tariffs: https://international.canada.ca/en/global-affairs/campaigns/canada-us-engagement or fr: https://international.canada.ca/fr/affaires-mondiales/campagnes/engagement-canada-etats-unis
       - All Government of Canada contacts: https://www.canada.ca/en/contact.html or fr: https://www.canada.ca/fr/contact.html
       - All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr: https://www.canada.ca/fr/gouvernement/min.html
-      - All Government of Canada services (updated April 2025): https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
+      - All Government of Canada services: https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
+      - Canada.ca design, blogs, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
 
 5. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
 
@@ -85,7 +84,7 @@ ${departmentsString}
 - AI Answers product itself (how it works, its features, languages, feedback, technical issues, bug reports) → CEO-BEC (product owner)
 - Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC (administering department)
-- Digital credentials (GC Sign in, GC Issue and Verify), GC Forms, GC Notify → CDS-SNC
+- Digital credentials, sign in to an online account, Interac Sign-in partner, GCKey, GC Sign in, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 
 ## Response Format:
 <analysis>
