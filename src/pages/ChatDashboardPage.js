@@ -107,7 +107,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       case 3: return 'createdAt';
       case 4: return 'userType';
       case 5: return 'pageLanguage';
-      case 6: return 'chatId'; // Question column — no direct sort, fallback to chatId
       case 7: return 'referringUrl';
       case 8: return 'answerType';
       case 9: return 'partnerEval';
@@ -231,8 +230,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       }
     },
     {
-      title: t('admin.chatDashboard.columns.question', 'Question'),
+      title: t('admin.chatDashboard.columns.question', 'Question 1'),
       data: 'redactedQuestion',
+      orderable: false,
       render: (value) => {
         if (!value) return '';
         const safe = escapeHtmlAttribute(value);
