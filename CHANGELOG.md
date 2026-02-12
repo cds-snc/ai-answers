@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.100.2](https://github.com/cds-snc/ai-answers/compare/v1.100.1...v1.100.2) (2026-02-12)
+
+
+### Bug Fixes
+
+* add to ceo ([4d1eaae](https://github.com/cds-snc/ai-answers/commit/4d1eaaeda4d761908faadb22098048ea85b56bc8))
+* adds and moves ([086d845](https://github.com/cds-snc/ai-answers/commit/086d845f7b85acd729c05d37dc7559dc7f3e3ea2))
+* cra updates, cds vs ceo ([70a1e5e](https://github.com/cds-snc/ai-answers/commit/70a1e5e92a7064795ce8079d0b0e520b85599a47))
+* tighten up language brevity advice ([96a3227](https://github.com/cds-snc/ai-answers/commit/96a32272496e3d72725cd2db121ced242edee517))
+* weather too stern ([f4cf626](https://github.com/cds-snc/ai-answers/commit/f4cf626a15118f6b8dce8e1b93045135f80af642))
+
 ## [1.100.1](https://github.com/cds-snc/ai-answers/compare/v1.100.0...v1.100.1) (2026-02-11)
 
 
