@@ -1,5 +1,5 @@
-# Build stage: use AWS Lambda Node.js runtime base image for compatibility
-FROM public.ecr.aws/lambda/nodejs:20 AS build
+# Build stage: use Node.js LTS image so we can install utilities (apt available)
+FROM node:lts AS build
 
 # Set working directory
 WORKDIR /app
@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 RUN npm install --omit=dev
+
+# Install utilities in build stage so we can copy binaries to final image
+RUN apt-get update && apt-get install -y socat wget ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of the application
 COPY . .
@@ -20,14 +23,13 @@ FROM public.ecr.aws/lambda/nodejs:20
 # Set working directory to Lambda task root
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Use Amazon Linux package manager (yum) in Lambda base image
-RUN yum update -y \
-    && yum install -y socat wget \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+# Copy socat and wget binaries from build stage (no package manager in final image)
+COPY --from=build /usr/bin/socat /usr/bin/socat
+COPY --from=build /usr/bin/wget /usr/bin/wget
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Download AWS DocumentDB certificate bundle
-RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+# Download AWS DocumentDB certificate bundle using the copied wget
+RUN /usr/bin/wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
