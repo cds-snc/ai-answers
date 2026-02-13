@@ -23,13 +23,11 @@ FROM public.ecr.aws/lambda/nodejs:20
 # Set working directory to Lambda task root
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Copy socat and wget binaries from build stage (no package manager in final image)
+# Copy socat binary from build stage (no package manager in final image)
 COPY --from=build /usr/bin/socat /usr/bin/socat
-COPY --from=build /usr/bin/wget /usr/bin/wget
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Download AWS DocumentDB certificate bundle using the copied wget
-RUN /usr/bin/wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+# Download AWS DocumentDB certificate bundle using Node's fetch (no wget)
+RUN node -e "fetch('https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem').then(r=>r.text()).then(t=>require('fs').writeFileSync('global-bundle.pem',t)).catch(e=>{console.error(e);process.exit(1)})"
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
