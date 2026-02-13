@@ -64,4 +64,4 @@ ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/global-bundle.pem
 
 EXPOSE 3001
 
-CMD ["node", "server/server.js"]
+ENTRYPOINT ["node", "server/server.js"]
