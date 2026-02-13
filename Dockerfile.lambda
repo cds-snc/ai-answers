@@ -20,10 +20,11 @@ FROM public.ecr.aws/lambda/nodejs:20
 # Set working directory to Lambda task root
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-RUN apt-get update \
-    && apt-get install -y socat \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Use Amazon Linux package manager (yum) in Lambda base image
+RUN yum update -y \
+    && yum install -y socat wget \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
