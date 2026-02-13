@@ -152,6 +152,20 @@ describe('InteractionPersistenceService', () => {
         );
     });
 
+    it('should persist context.searchQuery to the database', async () => {
+        initialPayload.context.searchQuery = 'benefits for seniors';
+        initialPayload.context.searchResults = '[{"title":"Benefits"}]';
+
+        await InteractionPersistenceService.persistInteraction(initialPayload, user);
+
+        const interaction = await Interaction.findOne({ interactionId: initialPayload.userMessageId })
+            .populate('context');
+
+        expect(interaction.context).toBeTruthy();
+        expect(interaction.context.searchQuery).toBe('benefits for seniors');
+        expect(interaction.context.searchResults).toBe('[{"title":"Benefits"}]');
+    });
+
     it('should handle missing optional fields', async () => {
         delete initialPayload.answer.tools;
         delete initialPayload.answer.sentences;
