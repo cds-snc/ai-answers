@@ -1,40 +1,41 @@
-# Build stage: use Node.js LTS image so we can install utilities (apt available)
+# -------------------------------------------------
+# Build Stage (Debian-based, safe for building)
+# -------------------------------------------------
 FROM node:lts AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Install deps for build
 COPY package.json package-lock.json ./
 RUN npm install --omit=dev
 
-# Install utilities in build stage so we can copy binaries to final image
-RUN apt-get update && apt-get install -y socat wget ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Copy the rest of the application
+# Copy source
 COPY . .
 
-# Build the React app
+# Build React frontend
 RUN GENERATE_SOURCEMAP=false npm run build
 
-# Final stage: use AWS Lambda Node.js runtime for the final image
+
+# -------------------------------------------------
+# Runtime Stage (Amazon Linux 2023 - Lambda)
+# -------------------------------------------------
 FROM public.ecr.aws/lambda/nodejs:20
 
-# Set working directory to Lambda task root
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Copy socat binary from build stage (no package manager in final image)
-COPY --from=build /usr/bin/socat /usr/bin/socat
+# Ensure CA certs are present (AL2023 minimal image)
+RUN dnf install -y ca-certificates \
+    && dnf clean all
 
-# Download AWS DocumentDB certificate bundle using Node's fetch (no wget)
-RUN node -e "fetch('https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem').then(r=>r.text()).then(t=>require('fs').writeFileSync('global-bundle.pem',t)).catch(e=>{console.error(e);process.exit(1)})"
+# Copy RDS global bundle (commit this file in your repo)
+COPY global-bundle.pem /etc/ssl/certs/global-bundle.pem
 
-# Copy package files and install dependencies
+# Install runtime dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
 RUN npm install --omit=dev
 
-# Copy built frontend and backend code into Lambda task root
+# Copy built frontend + backend
 COPY --from=build /app/build ./build
 COPY server ./server
 COPY api ./api
@@ -45,10 +46,11 @@ COPY models ./models
 COPY services ./services
 COPY src ./src
 
-# Lambda web adapter: https://github.com/awslabs/aws-lambda-web-adapter
-COPY --from=public.ecr.aws/cds-snc/aws-lambda-adapter:0.9.0@sha256:19cd0b92bc4a376b2b63e3b02d8b9ad3b4031ea3549fd5e54faa848c49948e09 /lambda-adapter /opt/extensions/lambda-adapter
+# Lambda Web Adapter
+COPY --from=public.ecr.aws/cds-snc/aws-lambda-adapter:0.9.0@sha256:19cd0b92bc4a376b2b63e3b02d8b9ad3b4031ea3549fd5e54faa848c49948e09 \
+  /lambda-adapter /opt/extensions/lambda-adapter
 
-# Configure Lambda Web Adapter and runtime env
+# Adapter + readiness config
 ENV AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter
 ENV RUST_LOG=info
 ENV READINESS_CHECK_PATH=/health
@@ -57,8 +59,9 @@ ENV READINESS_CHECK_PROTOCOL=http
 ENV READINESS_CHECK_MAX_WAIT=60
 ENV READINESS_CHECK_INTERVAL=1
 
-# Expose the backend port for local testing (ignored by Lambda)
+# Optional: ensure Node trusts the RDS bundle
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/global-bundle.pem
+
 EXPOSE 3001
 
-# Start the backend server (keeps compatibility with current server entrypoint)
 CMD ["node", "server/server.js"]
