@@ -46,6 +46,7 @@ jobs:
 
       - name: Build Docker image
         run: |
+          export DOCKER_BUILDKIT=0
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ env.PR_NUMBER }} \
             -f Dockerfile.lambda .
 
