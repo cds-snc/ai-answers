@@ -139,18 +139,22 @@ export class GraphClient {
             const errorName = parsedData.name || parsedData.type;
             if (errorName === 'ShortQueryValidation') {
               const fallbackUrl = parsedData.fallbackUrl || parsedData.searchUrl || '';
-              throw new ShortQueryValidation(
+              const sq = new ShortQueryValidation(
                 parsedData.message || 'Short query detected',
                 parsedData.userMessage || userMessage,
                 fallbackUrl
               );
+              if (parsedData.historySignature) sq.historySignature = parsedData.historySignature;
+              throw sq;
             }
             if (errorName === 'RedactionError') {
-              throw new RedactionError(
+              const re = new RedactionError(
                 parsedData.message || 'Redaction error',
                 parsedData.redactedText || '',
                 parsedData.redactedItems || null
               );
+              if (parsedData.historySignature) re.historySignature = parsedData.historySignature;
+              throw re;
             }
             // Unknown named error: construct and throw Error with provided name
             const err = new Error(parsedData.message || 'Graph execution failed');

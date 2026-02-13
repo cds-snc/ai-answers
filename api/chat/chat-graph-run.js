@@ -1,5 +1,6 @@
 import { SettingsService } from '../../services/SettingsService.js';
 import { withChatSession } from '../../middleware/chat-session.js';
+import ConversationIntegrityService from '../../services/ConversationIntegrityService.js';
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
@@ -43,6 +44,11 @@ function buildGraphErrorPayload(error) {
 
   if (process.env.NODE_ENV !== 'production' && error?.stack) {
     base.stack = error.stack;
+  }
+
+  // Include any server-provided history signature so clients can persist it
+  if (error?.historySignature) {
+    base.historySignature = error.historySignature;
   }
 
   return base;
@@ -178,6 +184,19 @@ async function handler(req, res) {
     streamError = err;
     if (!resultSent) {
       try {
+        // If the graph error did not include a server-signed historySignature,
+        // attempt to compute a fallback signature from the provided input so
+        // the client can persist a consistent token for subsequent requests.
+        if (!err.historySignature) {
+          try {
+            const convo = Array.isArray(input.conversationHistory) ? input.conversationHistory : [];
+            const userMsg = input.userMessage || '';
+            const finalHistory = [...convo, { sender: 'user', text: userMsg }];
+            err.historySignature = ConversationIntegrityService.calculateSignature(finalHistory);
+          } catch (_sigErr) {
+            // ignore signature generation failures
+          }
+        }
         writeEvent(res, 'error', buildGraphErrorPayload(err));
       } catch (_e) {
         // fallback to minimal message if serialization fails

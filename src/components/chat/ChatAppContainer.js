@@ -507,7 +507,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 ? safeT('homepage.chat.messages.privateContent')
                 : safeT('homepage.chat.messages.blockedContent'),
               sender: 'system',
-              error: true
+              error: true,
+              ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
           clearInput();
@@ -523,13 +524,24 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               text: safeT('homepage.chat.messages.shortQueryMessage'),
               searchUrl: error.searchUrl,
               sender: 'system',
-              error: true
+              error: true,
+              ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
           setIsLoading(false);
           return;
         } else {
           console.error('Error in handleSendMessage:', error);
+          try {
+            console.log('handleSendMessage: caught error details', {
+              name: error?.name,
+              message: error?.message,
+              historySignature: error?.historySignature,
+              stack: error?.stack
+            });
+          } catch (e) {
+            // ignore logging errors
+          }
 
           // Handle session availability errors (503)
           if (error.message?.includes('status=503')) {
@@ -542,6 +554,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
           // Handle session timeout / invalid chatId (403)
           if (error.message?.includes('status=403') && (error.message?.includes('invalid_chatId') || error.message?.includes('no_session'))) {
+            try {
+              console.log('handleSendMessage: mapping 403->sessionTimedOut', { message: error?.message, historySignature: error?.historySignature });
+            } catch (e) {
+              // ignore logging errors
+            }
             const timeoutMessageId = messageIdCounter.current++;
             setMessages(prevMessages => [
               ...prevMessages,
@@ -557,6 +574,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             return;
           }
 
+          try {
+            console.log('handleSendMessage: falling back to generic error branch', { historySignature: error?.historySignature });
+          } catch (e) {
+            // ignore logging errors
+          }
+
           const errorMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
             ...prevMessages,
@@ -564,7 +587,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               id: errorMessageId,
               text: safeT('homepage.chat.messages.error'),
               sender: 'system',
-              error: true
+              error: true,
+              ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
           clearInput();
