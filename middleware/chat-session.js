@@ -243,28 +243,29 @@ export function validateConversationIntegrity(req, res) {
   const body = req.body || {};
   const input = body.input || body;
   const history = input.conversationHistory;
+  const historyArray = Array.isArray(history) ? history : [];
 
   // Filter out error messages - they don't participate in integrity checking
-  const filteredHistory = Array.isArray(history) ? history.filter(m => !m.error) : [];
+  const filteredHistory = historyArray.filter(m => !m.error);
 
   if (filteredHistory.length === 0) return true;
 
-  // Extract signature from various possible locations
-  const lastAi = [...filteredHistory].reverse().find(m => m.sender === 'ai' || m.interaction?.answer);
-  const signature = input.historySignature ||
-    lastAi?.historySignature ||
-    lastAi?.interaction?.historySignature ||
-    lastAi?.interaction?.answer?.historySignature ||
-    filteredHistory[0]?.interaction?.answer?.historySignature;
+  // Delegate prefix-signature extraction and verification to the integrity service
+  const verification = ConversationIntegrityService.verifySignedPrefix(historyArray, input.historySignature);
 
-  if (!signature) {
-    console.warn('[Integrity] Missing historySignature for non-empty history', { chatId: req.chatId });
-    res.status(403).json({ error: 'missing_signature', message: 'Conversation history signature missing' });
-    return false;
-  }
-
-  if (!ConversationIntegrityService.verifyHistory(history, signature)) {
-    console.error('[Integrity] Signature mismatch!', { received: signature, historyLength: history.length, chatId: req.chatId });
+  if (!verification.valid) {
+    if (verification.reason === 'missing_signature') {
+      console.warn('[Integrity] Missing historySignature for non-empty history', { chatId: req.chatId });
+      res.status(403).json({ error: 'missing_signature', message: 'Conversation history signature missing' });
+      return false;
+    }
+    if (verification.reason === 'invalid_signature') {
+      console.error('[Integrity] Signature mismatch!', { received: verification.signature, historyLength: history.length, chatId: req.chatId });
+      res.status(403).json({ error: 'invalid_signature', message: 'Conversation history integrity check failed' });
+      return false;
+    }
+    // Unknown reason -> block by default
+    console.error('[Integrity] Verification failed', { reason: verification.reason, chatId: req.chatId });
     res.status(403).json({ error: 'invalid_signature', message: 'Conversation history integrity check failed' });
     return false;
   }

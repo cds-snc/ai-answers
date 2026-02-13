@@ -117,6 +117,74 @@ class ConversationIntegrityService {
         const expected = this.calculateSignature(history);
         return signature === expected;
     }
+
+    /**
+     * Verify only the signed prefix of a history when a signature may refer
+     * to an earlier AI turn. Returns an object describing the result so
+     * callers can decide how to proceed.
+     *
+     * @param {Array} historyArray - Full conversation history (may include error turns)
+     * @param {string|null} inputSignature - Optional signature provided by client
+     * @returns {Object} - { valid: boolean, reason?: string, signature?: string, signatureSourceIndex?: number }
+     */
+    verifySignedPrefix(historyArray, inputSignature) {
+        const history = Array.isArray(historyArray) ? historyArray : [];
+
+        // Filter out error messages - they don't participate in integrity checking
+        const filteredHistory = history.filter(m => !m.error);
+
+        if (filteredHistory.length === 0) return { valid: true };
+
+        // Extract signature from possible locations
+        const lastAi = [...filteredHistory].reverse().find(m => m.sender === 'ai' || m.interaction?.answer);
+        let signature = inputSignature || null;
+        let signatureSource = null;
+
+        if (!signature && lastAi?.historySignature) {
+            signature = lastAi.historySignature;
+            signatureSource = lastAi;
+        }
+        if (!signature && lastAi?.interaction?.historySignature) {
+            signature = lastAi.interaction.historySignature;
+            signatureSource = lastAi;
+        }
+        if (!signature && lastAi?.interaction?.answer?.historySignature) {
+            signature = lastAi.interaction.answer.historySignature;
+            signatureSource = lastAi;
+        }
+        if (!signature && filteredHistory[0]?.interaction?.answer?.historySignature) {
+            signature = filteredHistory[0].interaction.answer.historySignature;
+            signatureSource = filteredHistory[0];
+        }
+
+        // If signature provided explicitly, try to locate message that carried it
+        if (!signatureSource && signature) {
+            signatureSource = [...filteredHistory].reverse().find(m =>
+                m?.historySignature === signature ||
+                m?.interaction?.historySignature === signature ||
+                m?.interaction?.answer?.historySignature === signature
+            ) || null;
+        }
+
+        if (!signature) {
+            return { valid: false, reason: 'missing_signature' };
+        }
+
+        // Default to verifying full historyArray; if we located the signature source
+        // verify only the prefix up to and including that message to allow client-only
+        // trailing error/system turns.
+        let historyToVerify = history;
+        if (signatureSource) {
+            const sourceIndex = history.findIndex((m) => m === signatureSource);
+            if (sourceIndex >= 0) {
+                historyToVerify = history.slice(0, sourceIndex + 1);
+            }
+        }
+
+        const valid = this.verifyHistory(historyToVerify, signature);
+        if (!valid) return { valid: false, reason: 'invalid_signature', signature };
+        return { valid: true, signature, signatureSourceIndex: signatureSource ? history.findIndex(m => m === signatureSource) : null };
+    }
 }
 
 export default new ConversationIntegrityService();
