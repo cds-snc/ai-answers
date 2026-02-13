@@ -151,7 +151,7 @@ else
   
   
   # Try to create the function and capture the error
-  if ! aws lambda create-function \
+  CREATE_OUTPUT="$(aws lambda create-function \
     --function-name "$FULL_FUNCTION_NAME" \
     --package-type Image \
     --role "$ROLE_ARN" \
@@ -160,10 +160,12 @@ else
     $VPC_CONFIG \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
     --environment "Variables={$ENV_VARS}" \
-    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1; then
+    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" 2>&1)" || {
     echo "Error: Failed to create Lambda function"
+    echo "AWS CLI output:"
+    echo "$CREATE_OUTPUT"
     exit 1
-  fi
+  }
   
 
   echo "Waiting for function to become active..."
