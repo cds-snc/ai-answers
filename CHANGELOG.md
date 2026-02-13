@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.101.0](https://github.com/cds-snc/ai-answers/compare/v1.100.2...v1.101.0) (2026-02-13)
+
+
+### Features
+
+* enhance chat dashboard with interaction count, question column, noEval filter ([991e01a](https://github.com/cds-snc/ai-answers/commit/991e01ad583f12d598f255ecb134ceec1d8d9b73))
+* enhance chat dashboard with interaction count, question column,… ([46acded](https://github.com/cds-snc/ai-answers/commit/46acded5e7d78384b940ba0bdf59f6b34d262e30))
+
+
+### Bug Fixes
+
+* code review fixes ([a232a24](https://github.com/cds-snc/ai-answers/commit/a232a24d6f96365f6a53dce54a11315e4eaf04ca))
+* update dockerfile to support new lamda version. ([f5191e4](https://github.com/cds-snc/ai-answers/commit/f5191e4c5daaa984d74da7a9dc102df4dd481c81))
+* update RDS global bundle path and `NODE_EXTRA_CA_CERTS` environment variable in Dockerfile. ([639e8a2](https://github.com/cds-snc/ai-answers/commit/639e8a2ffa2d0b2b6fd880544ffba7c90c6c2cf5))
+
 ## [1.100.2](https://github.com/cds-snc/ai-answers/compare/v1.100.1...v1.100.2) (2026-02-12)
 
 
