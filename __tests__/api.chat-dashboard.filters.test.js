@@ -114,6 +114,85 @@ describe('api/chat/chat-dashboard filter handling', () => {
     expect(deptProjection.$let).toBeDefined();
   });
 
+  it('should include interactionCount and redactedQuestion in $group stage', async () => {
+    let capturedPipeline;
+    ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
+      capturedPipeline = pipeline;
+      return { allowDiskUse: () => Promise.resolve([]) };
+    });
+    ChatModel.Chat.aggregate.mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+
+    const req = {
+      method: 'GET',
+      query: {
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      }
+    };
+
+    const res = {
+      status: vi.fn(() => res),
+      json: vi.fn(() => res)
+    };
+
+    try {
+      await handler(req, res);
+    } catch (e) {
+      // ignore errors as long as aggregate was invoked
+    }
+
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+
+    const groupStage = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
+      stage && stage.$group
+    );
+
+    expect(groupStage).toBeDefined();
+    expect(groupStage.$group.interactionCount).toEqual({ $sum: 1 });
+    expect(groupStage.$group.redactedQuestion).toEqual({ $first: '$interactions.redactedQuestion' });
+  });
+
+  it('should include redactedQuestion in interaction projection before $group', async () => {
+    let capturedPipeline;
+    ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
+      capturedPipeline = pipeline;
+      return { allowDiskUse: () => Promise.resolve([]) };
+    });
+    ChatModel.Chat.aggregate.mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+
+    const req = {
+      method: 'GET',
+      query: {
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      }
+    };
+
+    const res = {
+      status: vi.fn(() => res),
+      json: vi.fn(() => res)
+    };
+
+    try {
+      await handler(req, res);
+    } catch (e) {
+      // ignore errors as long as aggregate was invoked
+    }
+
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+
+    // Find the $project stage that shapes interactions before $group
+    // It should include redactedQuestion
+    const projectStages = Array.isArray(capturedPipeline)
+      ? capturedPipeline.filter(stage => stage && stage.$project && stage.$project.interactions)
+      : [];
+    const interactionProject = projectStages.find(stage =>
+      stage.$project.interactions && stage.$project.interactions.redactedQuestion
+    );
+    expect(interactionProject).toBeDefined();
+    expect(interactionProject.$project.interactions.redactedQuestion).toBe('$interactions.redactedQuestion');
+  });
+
   it('should include allDepartments field in projection', async () => {
     let capturedPipeline;
     ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
