@@ -25,10 +25,10 @@ WORKDIR ${LAMBDA_TASK_ROOT}
 
 # Ensure CA certs are present (AL2023 minimal image)
 RUN dnf install -y ca-certificates \
-    && dnf clean all
+  && dnf clean all
 
-# Copy RDS global bundle (commit this file in your repo)
-COPY global-bundle.pem /etc/ssl/certs/global-bundle.pem
+# Copy RDS global bundle (matches original path)
+COPY global-bundle.pem /app/global-bundle.pem
 
 # Install runtime dependencies
 COPY package.json package-lock.json ./
@@ -60,7 +60,7 @@ ENV READINESS_CHECK_MAX_WAIT=60
 ENV READINESS_CHECK_INTERVAL=1
 
 # Optional: ensure Node trusts the RDS bundle
-ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/global-bundle.pem
+ENV NODE_EXTRA_CA_CERTS=/app/global-bundle.pem
 
 EXPOSE 3001
 
