@@ -1,5 +1,5 @@
-# use Node.js LTS as the base image
-FROM node:lts AS build
+# Build stage: use AWS Lambda Node.js runtime base image for compatibility
+FROM public.ecr.aws/lambda/nodejs:20 AS build
 
 # Set working directory
 WORKDIR /app
@@ -14,39 +14,40 @@ COPY . .
 # Build the React app
 RUN GENERATE_SOURCEMAP=false npm run build
 
-# Use Node.js for the backend
-FROM node:lts
+# Final stage: use AWS Lambda Node.js runtime for the final image
+FROM public.ecr.aws/lambda/nodejs:20
 
-# Set working directory
-WORKDIR /app
+# Set working directory to Lambda task root
+WORKDIR ${LAMBDA_TASK_ROOT}
 
 RUN apt-get update \
     && apt-get install -y socat \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
-RUN npm install -omit=dev
+RUN npm install --omit=dev
 
-# Copy built frontend and backend code
-COPY --from=build /app/build /app/build
-COPY server /app/server
-COPY api /app/api
-COPY middleware /app/middleware
-COPY agents /app/agents
-COPY config /app/config
-COPY models /app/models
-COPY services /app/services
-COPY src /app/src
+# Copy built frontend and backend code into Lambda task root
+COPY --from=build /app/build ./build
+COPY server ./server
+COPY api ./api
+COPY middleware ./middleware
+COPY agents ./agents
+COPY config ./config
+COPY models ./models
+COPY services ./services
+COPY src ./src
 
 # Lambda web adapter: https://github.com/awslabs/aws-lambda-web-adapter
 COPY --from=public.ecr.aws/cds-snc/aws-lambda-adapter:0.9.0@sha256:19cd0b92bc4a376b2b63e3b02d8b9ad3b4031ea3549fd5e54faa848c49948e09 /lambda-adapter /opt/extensions/lambda-adapter
 
-# Configure Lambda Web Adapter
+# Configure Lambda Web Adapter and runtime env
 ENV AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter
 ENV RUST_LOG=info
 ENV READINESS_CHECK_PATH=/health
@@ -55,8 +56,8 @@ ENV READINESS_CHECK_PROTOCOL=http
 ENV READINESS_CHECK_MAX_WAIT=60
 ENV READINESS_CHECK_INTERVAL=1
 
-# Expose only the backend port
+# Expose the backend port for local testing (ignored by Lambda)
 EXPOSE 3001
 
-# Start the backend server
+# Start the backend server (keeps compatibility with current server entrypoint)
 CMD ["node", "server/server.js"]
