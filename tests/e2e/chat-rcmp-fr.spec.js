@@ -41,6 +41,13 @@ test.describe('AI Answers Webapp Testing (French RCMP)', () => {
     });
   });
 
+  test.afterEach(async ({ page }) => {
+    if (process.env.TEST_HEADED === 'true') {
+      console.log('Test finished, waiting 5s for inspection...');
+      await page.waitForTimeout(5000);
+    }
+  });
+
   test('should answer RCMP headquarters question in French with no errors', async ({ page }) => {
     // Capture JavaScript errors
     const jsErrors = [];
@@ -55,7 +62,7 @@ test.describe('AI Answers Webapp Testing (French RCMP)', () => {
     });
 
     // Navigate to French page
-    await page.goto('http://localhost:3001/fr');
+    await page.goto('/fr');
     await page.waitForTimeout(5000);
 
     // Confirm French chat UI
@@ -82,7 +89,7 @@ test.describe('AI Answers Webapp Testing (French RCMP)', () => {
     await expect(errorLocator).not.toBeVisible({ timeout: 1000 });
 
     // Validate we received a response
-    const lastMessage = page.locator('.message').last();
+    const lastMessage = page.locator('.ai-message-content').last();
     await expect(lastMessage).toBeVisible();
 
     const responseText = (await lastMessage.textContent())?.trim() || '';
@@ -98,8 +105,5 @@ test.describe('AI Answers Webapp Testing (French RCMP)', () => {
 
     console.log('Test passed: French response received with no errors.');
     console.log('JS Errors captured:', jsErrors);
-
-    // Allow time for manual inspection in headed mode
-    await page.waitForTimeout(5000);
   });
 });

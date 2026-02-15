@@ -9,13 +9,20 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const TEST_ENV = process.env.TEST_ENV || 'dev';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-answers';
-const TEST_USER_EMAIL = 'e2e-test-user@example.com';
-const TEST_USER_PASSWORD = 'password123';
+const TEST_USER_EMAIL = process.env.E2E_PARTNER_EMAIL;
+const TEST_USER_PASSWORD = process.env.E2E_PARTNER_PASSWORD;
 
 test.describe('Authenticated AI Answers Testing', () => {
 
     test.beforeAll(async () => {
+        // Only run database setup in dev environment
+        if (TEST_ENV !== 'dev') {
+            console.log(`Skipping database setup for environment: ${TEST_ENV}`);
+            return;
+        }
+
         // Connect to the database
         console.log('Connecting to DB at:', MONGODB_URI);
         await mongoose.connect(MONGODB_URI);
@@ -42,18 +49,28 @@ test.describe('Authenticated AI Answers Testing', () => {
         }
     });
 
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
     test.afterAll(async () => {
-        await mongoose.disconnect();
+        if (TEST_ENV === 'dev' && mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
     });
 
     test('should login and perform chat', async ({ page }) => {
+        console.log(`Using E2E Partner Email: ${TEST_USER_EMAIL?.substring(0, 5)}...`);
         // Handle console logs
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
         page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
 
         // 1. Login
         console.log('Navigating to login page...');
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
 
         console.log('Filling credentials...');
         await page.fill('#email', TEST_USER_EMAIL);
@@ -91,12 +108,8 @@ test.describe('Authenticated AI Answers Testing', () => {
         // Admin/Partner users are redirected to /admin, but we want to test chat on home page
         if (url.includes('/admin')) {
             console.log('Redirecting back to home page for chat test...');
-            await page.goto('http://localhost:3001/en/');
+            await page.goto('/en/');
         }
-
-        // Wait for page to fully load
-        await page.waitForTimeout(5000);
-        console.log('Page loaded, waiting 5 seconds for full initialization');
 
         // Navigate to Chat from Admin Page
         console.log('Clicking "AI Answers" link...');

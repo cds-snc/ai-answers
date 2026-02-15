@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Chat Session Availability Direct URL Test', () => {
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
     test('should be accessible from a completely fresh browser state without middleware interference', async ({ browser }) => {
         // Create a fresh context (no cookies, no session)
         const context = await browser.newContext();
@@ -8,7 +15,7 @@ test.describe('Chat Session Availability Direct URL Test', () => {
 
         // Navigate directly to the API endpoint defined in server.js
         // http://localhost:3001/api/chat/chat-session-availability
-        const response = await page.goto('http://localhost:3001/api/chat/chat-session-availability');
+        const response = await page.goto('/api/chat/chat-session-availability');
 
         // 1. Verify response status is 200 (not 403, 401, or 500)
         expect(response.status()).toBe(200);
@@ -38,7 +45,7 @@ test.describe('Chat Session Availability Direct URL Test', () => {
         });
         const page = await context.newPage();
 
-        const response = await page.goto('http://localhost:3001/api/chat/chat-session-availability');
+        const response = await page.goto('/api/chat/chat-session-availability');
 
         // Should still be 200 because it's registered above the bot detection middleware in server.js
         expect(response.status()).toBe(200);

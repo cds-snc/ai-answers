@@ -1,7 +1,4 @@
 import { test, expect } from '@playwright/test';
-import mongoose from 'mongoose';
-import { Interaction } from '../../models/interaction.js';
-import { Question } from '../../models/question.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,18 +7,13 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-answers';
-
 test.describe('Redaction Regex E2E Testing', () => {
 
-    test.beforeAll(async () => {
-        if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(MONGODB_URI);
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
         }
-    });
-
-    test.afterAll(async () => {
-        await mongoose.disconnect();
     });
 
     const testCases = [
@@ -38,7 +30,7 @@ test.describe('Redaction Regex E2E Testing', () => {
 
     for (const tc of testCases) {
         test(`should redact ${tc.name}`, async ({ page }) => {
-            await page.goto('http://localhost:3001');
+            await page.goto('/');
 
             // Wait for initialization
             await page.waitForSelector('textarea#message', { timeout: 30000 });
@@ -46,7 +38,7 @@ test.describe('Redaction Regex E2E Testing', () => {
             console.log(`UI Textarea:`, textarea);
             await textarea.focus();
             await page.keyboard.type(tc.text);
-            await expect(textarea).toHaveValue(tc.text, { timeout: 20000 });
+            await expect(textarea).toHaveValue(tc.text, { timeout: 5000 });
             console.log(`UI Textarea Value:`, await textarea.inputValue());
             await expect(page.locator('.btn-primary-send')).toBeVisible();
             await page.locator('.btn-primary-send').click();
@@ -55,7 +47,7 @@ test.describe('Redaction Regex E2E Testing', () => {
             // In ChatInterface, it's .message.user .user-message-box p (first p is the text, second is warning)
             // In ChatInterface, specific class for privacy message
             const userMessage = page.locator('.message.user').last().locator('.privacy-message').first();
-            await expect(userMessage).toBeVisible({ timeout: 20000 });
+            await expect(userMessage).toBeVisible({ timeout: 5000 });
 
             const userText = await userMessage.textContent();
             console.log(`UI User Message for ${tc.name}:`, userText);
@@ -66,7 +58,7 @@ test.describe('Redaction Regex E2E Testing', () => {
 
             // Verify that a system "blocked" message appeared (error-message-box)
             const systemMessage = page.locator('.message.system .error-message-box p').last();
-            await expect(systemMessage).toBeVisible({ timeout: 20000 });
+            await expect(systemMessage).toBeVisible({ timeout: 5000 });
             const systemText = await systemMessage.textContent();
             console.log(`UI System Message for ${tc.name}:`, systemText);
 

@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Helper: poll the public settings endpoint until the expected value is observed
 async function waitForSetting(page, key, expectedValue, timeoutMs = 10000, intervalMs = 500) {
-    const url = `http://localhost:3001/api/setting/setting-public-handler?key=${encodeURIComponent(key)}`;
+    const url = `/api/setting/setting-public-handler?key=${encodeURIComponent(key)}`;
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         try {
@@ -28,13 +28,15 @@ async function waitForSetting(page, key, expectedValue, timeoutMs = 10000, inter
     throw new Error(`Timed out waiting for setting ${key}=${expectedValue}`);
 }
 
+const TEST_ENV = process.env.TEST_ENV || 'dev';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dev-database?authSource=admin';
-const TEST_ADMIN_EMAIL = 'e2e-admin-metrics-v3@example.com';
-const TEST_ADMIN_PASSWORD = 'password123';
+const TEST_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const TEST_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+
 // Pause after the second test for local inspection (ms). Can be overridden with E2E_PAUSE_MS env var.
 // Only pause when running in headed mode. The test runner sets TEST_HEADED when running headed.
-// Default to 20s for headed inspection to reduce wait time
-const E2E_PAUSE_MS = Number(process.env.E2E_PAUSE_MS || '20000');
+// Default to 5s for headed inspection to reduce wait time
+const E2E_PAUSE_MS = Number(process.env.E2E_PAUSE_MS || '5000');
 const TEST_HEADED = String(process.env.TEST_HEADED || '').toLowerCase() === 'true' || String(process.env.TEST_HEADED || '') === '1';
 
 // Increase test timeout because this spec intentionally waits 121s + optional pause
@@ -43,6 +45,12 @@ test.setTimeout(300000);
 
 test.describe.serial('Session timeout behaviour', () => {
     test.beforeAll(async () => {
+        // Only run database setup in dev environment
+        if (TEST_ENV !== 'dev') {
+            console.log(`Skipping database setup for environment: ${TEST_ENV}`);
+            return;
+        }
+
         console.log('Connecting to DB at:', MONGODB_URI);
         await mongoose.connect(MONGODB_URI);
 
@@ -67,7 +75,24 @@ test.describe.serial('Session timeout behaviour', () => {
     });
 
     test.afterAll(async () => {
-        await mongoose.disconnect();
+        if (TEST_ENV === 'dev' && mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
+    });
+
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
+    // Skip tests that require mutating state in remote environments
+    test.beforeEach(async ({ }, testInfo) => {
+        if (TEST_ENV !== 'dev') {
+            console.log(`Skipping test ${testInfo.title} in environment: ${TEST_ENV} (requires configuration mutation)`);
+            test.skip();
+        }
     });
 
     test('unauthenticated single question does NOT trigger timeout', async ({ page }) => {
@@ -76,7 +101,7 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // 1) Login and set non-authenticated session TTL to 1 minute
         console.log('Navigating to login...');
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
 
         const loginResponsePromise = page.waitForResponse(response =>
             response.url().includes('/api/auth/auth-login'), { timeout: 15000 }
@@ -96,7 +121,7 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // Go to settings page and set non-authenticated session TTL to 1 minute
         console.log('Navigating to settings page...');
-        await page.goto('http://localhost:3001/en/settings');
+        await page.goto('/en/settings');
         try { await page.click('text=Session settings'); } catch (e) { }
         await page.waitForSelector('#session-ttl', { timeout: 10000 });
         await page.fill('#session-ttl', '1');
@@ -107,7 +132,7 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // Return to admin and logout so subsequent chat is unauthenticated
         console.log('Returning to admin page...');
-        await page.goto('http://localhost:3001/en/admin');
+        await page.goto('/en/admin');
         await page.waitForSelector('text=AI Answers');
         console.log('Logging out...');
         await page.click('text=Sign out');
@@ -115,8 +140,8 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // 2) Navigate to chat and send a single question as unauthenticated user
         console.log('Navigating to chat...');
-        await page.goto('http://localhost:3001/en/');
-        await page.waitForSelector('textarea#message', { timeout: 20000 });
+        await page.goto('/en/');
+        await page.waitForSelector('textarea#message', { timeout: 5000 });
         const textarea = page.locator('textarea#message');
         await textarea.focus();
         await page.keyboard.type('What is SCIS?');
@@ -138,7 +163,7 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // 1) Login
         console.log('Navigating to login...');
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
 
         const loginResponsePromise = page.waitForResponse(response =>
             response.url().includes('/api/auth/auth-login'), { timeout: 15000 }
@@ -158,7 +183,7 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // 2) Go to settings page and set non-authenticated session TTL to 1 minute
         console.log('Navigating to settings page...');
-        await page.goto('http://localhost:3001/en/settings');
+        await page.goto('/en/settings');
         // Expand the Session settings details panel if collapsed
         try {
             await page.click('text=Session settings');
@@ -178,7 +203,7 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // 3) Go back to admin
         console.log('Returning to admin page...');
-        await page.goto('http://localhost:3001/en/admin');
+        await page.goto('/en/admin');
         await page.waitForSelector('text=AI Answers');
 
         // 4) Logout
@@ -189,8 +214,8 @@ test.describe.serial('Session timeout behaviour', () => {
 
         // 5) Ask question(s) on chat as unauthenticated user — send two to ensure session starts
         console.log('Navigating to chat...');
-        await page.goto('http://localhost:3001/en/');
-        await page.waitForSelector('textarea#message', { timeout: 20000 });
+        await page.goto('/en/');
+        await page.waitForSelector('textarea#message', { timeout: 5000 });
         const textarea = page.locator('textarea#message');
         await textarea.focus();
         await page.keyboard.type('What is SCIS?');
@@ -231,12 +256,5 @@ test.describe.serial('Session timeout behaviour', () => {
         await page.waitForSelector(`text=${timeoutMessage}`, { timeout: 30000 });
         const foundText = await page.locator(`text=${timeoutMessage}`).count();
         expect(foundText).toBeGreaterThan(0);
-
-        if (E2E_PAUSE_MS > 0 && TEST_HEADED) {
-            console.log('Pausing test for inspection (ms):', E2E_PAUSE_MS);
-            await page.waitForTimeout(E2E_PAUSE_MS);
-        } else if (E2E_PAUSE_MS > 0 && !TEST_HEADED) {
-            console.log('Skipping inspection pause because test is not running in headed mode');
-        }
     });
 });

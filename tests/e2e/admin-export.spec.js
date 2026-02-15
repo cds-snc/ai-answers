@@ -9,13 +9,20 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const TEST_ENV = process.env.TEST_ENV || 'dev';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-answers';
-const TEST_ADMIN_EMAIL = 'e2e-admin-export@example.com';
-const TEST_ADMIN_PASSWORD = 'password123';
+const TEST_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const TEST_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 
 test.describe('Admin Chat Logs Export', () => {
 
     test.beforeAll(async () => {
+        // Only run database setup in dev environment
+        if (TEST_ENV !== 'dev') {
+            console.log(`Skipping database setup for environment: ${TEST_ENV}`);
+            return;
+        }
+
         // Connect to the database
         console.log('Connecting to DB at:', MONGODB_URI);
         await mongoose.connect(MONGODB_URI);
@@ -41,17 +48,27 @@ test.describe('Admin Chat Logs Export', () => {
         }
     });
 
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
     test.afterAll(async () => {
-        await mongoose.disconnect();
+        if (TEST_ENV === 'dev' && mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
     });
 
     test('should display export controls when Get logs is clicked', async ({ page }) => {
+        console.log(`Using E2E Admin Email: ${TEST_ADMIN_EMAIL?.substring(0, 5)}...`);
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
         page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
 
         // 1. Login as admin
         console.log('Navigating to login page...');
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
 
         console.log('Filling credentials...');
         await page.fill('#email', TEST_ADMIN_EMAIL);
@@ -77,7 +94,7 @@ test.describe('Admin Chat Logs Export', () => {
 
         // 2. Navigate to admin page
         console.log('Navigating to admin page...');
-        await page.goto('http://localhost:3001/en/admin');
+        await page.goto('/en/admin');
         await page.waitForTimeout(2000);
 
 
@@ -116,7 +133,7 @@ test.describe('Admin Chat Logs Export', () => {
         page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
 
         // 1. Login as admin
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
         await page.fill('#email', TEST_ADMIN_EMAIL);
         await page.fill('#password', TEST_ADMIN_PASSWORD);
         await page.click('button[type="submit"]');
@@ -128,7 +145,7 @@ test.describe('Admin Chat Logs Export', () => {
         }
 
         // Navigate to admin
-        await page.goto('http://localhost:3001/en/admin');
+        await page.goto('/en/admin');
         await page.waitForTimeout(2000);
 
         // Click Get logs
@@ -163,36 +180,42 @@ test.describe('Admin Chat Logs Export', () => {
         // Click Apply/Export button in filter panel
         const exportButton = page.locator('#filter-apply-button');
         if (await exportButton.isVisible()) {
-            // Set up download promise
-            const downloadPromise = page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
+            // Set up download promise and click simultaneously to avoid race conditions
+            console.log('Triggering export download...');
+            const [download] = await Promise.all([
+                page.waitForEvent('download', { timeout: 30000 }),
+                exportButton.click()
+            ]);
 
-            await exportButton.click();
-            console.log('Clicked Export button');
-
-            await page.waitForTimeout(5000);
+            console.log('Clicked Export button, download received');
 
             if (exportRequestMade) {
                 console.log('Export request was successfully triggered');
             }
 
-            const download = await downloadPromise;
             if (download) {
                 console.log('Download triggered:', download.suggestedFilename());
                 expect(download.suggestedFilename()).toContain('chat-logs');
+
+                if (process.env.TEST_HEADED === 'true') {
+                    console.log('Download finished, waiting 5s for inspection...');
+                    await page.waitForTimeout(5000);
+                }
             }
         }
     });
 
     test('should export default view with correct fields in JSON', async ({ page }) => {
+        console.log(`Using E2E Admin Email: ${TEST_ADMIN_EMAIL?.substring(0, 5)}...`);
         // 1. Login
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
         await page.fill('#email', TEST_ADMIN_EMAIL);
         await page.fill('#password', TEST_ADMIN_PASSWORD);
         await page.click('button[type="submit"]');
         await page.waitForURL(url => !url.toString().includes('signin'));
 
         // 2. Navigate
-        await page.goto('http://localhost:3001/en/admin');
+        await page.goto('/en/admin');
         const getLogsButton = page.locator('#get-logs-button');
         if (await getLogsButton.count() > 0) {
             await getLogsButton.click();
@@ -202,10 +225,12 @@ test.describe('Admin Chat Logs Export', () => {
         await page.locator('#export-view').selectOption('default');
         await page.locator('#export-format').selectOption('json');
 
-        // 4. Trigger Export and Capture Download
-        const downloadPromise = page.waitForEvent('download');
-        await page.locator('#filter-apply-button').click();
-        const download = await downloadPromise;
+        // 4. Trigger Export and Capture Download simultaneously
+        console.log('Triggering JSON export download...');
+        const [download] = await Promise.all([
+            page.waitForEvent('download', { timeout: 30000 }),
+            page.locator('#filter-apply-button').click()
+        ]);
 
         // 5. Verify Content
         const stream = await download.createReadStream();
@@ -222,6 +247,11 @@ test.describe('Admin Chat Logs Export', () => {
             expect(row).toHaveProperty('sentence1');
             expect(row['expertFeedback.totalScore']).toBeDefined();
             expect(row['autoEval.sentenceMatchTrace']).toBeUndefined(); // Should be excluded
+        }
+
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('JSON Export finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
         }
     });
 });

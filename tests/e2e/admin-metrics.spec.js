@@ -9,13 +9,20 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+const TEST_ENV = process.env.TEST_ENV || 'dev';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dev-database?authSource=admin';
-const TEST_ADMIN_EMAIL = 'e2e-admin-metrics-v3@example.com';
-const TEST_ADMIN_PASSWORD = 'password123';
+const TEST_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const TEST_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 
 test.describe('Admin Metrics Dashboard', () => {
 
     test.beforeAll(async () => {
+        // Only run database setup in dev environment
+        if (TEST_ENV !== 'dev') {
+            console.log(`Skipping database setup for environment: ${TEST_ENV}`);
+            return;
+        }
+
         console.log('Connecting to DB at:', MONGODB_URI);
         await mongoose.connect(MONGODB_URI);
 
@@ -39,8 +46,17 @@ test.describe('Admin Metrics Dashboard', () => {
         console.log('Test user setup complete.');
     });
 
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
     test.afterAll(async () => {
-        await mongoose.disconnect();
+        if (TEST_ENV === 'dev' && mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
     });
 
     test('should load metrics when Apply is clicked', async ({ page }) => {
@@ -68,7 +84,7 @@ test.describe('Admin Metrics Dashboard', () => {
 
         // 1. Login
         log('Navigating to login...');
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
 
         const loginResponsePromise = page.waitForResponse(response =>
             response.url().includes('/api/auth/auth-login'),
@@ -94,7 +110,7 @@ test.describe('Admin Metrics Dashboard', () => {
 
         // 2. Navigate to Metrics
         log('Navigating to metrics...');
-        await page.goto('http://localhost:3001/en/metrics');
+        await page.goto('/en/metrics');
         await page.waitForTimeout(2000);
 
         // 3. Trigger Metrics
