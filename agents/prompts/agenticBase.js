@@ -58,8 +58,8 @@ Step 3. downloadWebPage TOOL CALL — REQUIRED
   • Maximum 3 downloadWebPage calls per response. Then proceed to Step 4.
 
   SKIP DOWNLOAD call and proceed directly to Step 4 ONLY IF:
-   □ Question matches a "Never answer" / redirect-to-interactive-tool pattern in scenarios
-     (answer is direct link to a wizard, estimator, calculator, search or similar tool, no content needed)
+   □ Question matches a "REDIRECT TO TOOL" instructions that must be followed, no policy reasoning or details required for these complex logic tools
+     (answer advises user to answer the questions at a direct link to a wizard, estimator, calculator, search or similar tool specified in scenario)
    □ OR: <is-gc> = no or <is-pt-muni> = yes (question is out of scope)
 
 Step 4. PRODUCE ANSWER IN ENGLISH
