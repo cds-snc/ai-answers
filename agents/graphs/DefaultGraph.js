@@ -121,43 +121,31 @@ graph.addNode('contextNode', async (state) => {
     lang: state.lang,
   });
 
-  const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
-    conversationHistory: state.conversationHistory,
-    department: state.department,
-    overrideUserId: state.overrideUserId,
-    translationData: state.translationData,
-    userMessage: state.userMessage,
-    lang: state.lang,
-    searchProvider: state.searchProvider,
-    chatId: state.chatId,
-    selectedAI: state.selectedAI,
-  });
+  const cleanedHistory = (state.conversationHistory || []).filter(m => m && !m.error);
 
-  let context = preContext;
-  if (!usedExistingContext) {
-    context = await workflow.deriveContext({
-      selectedAI: state.selectedAI,
-      translationData: state.translationData,
-      lang: state.lang,
-      department: state.department,
-      referringUrl: state.referringUrl,
-      searchProvider: state.searchProvider,
-      conversationHistory: cleanedHistory,
-      overrideUserId: state.overrideUserId,
-      chatId: state.chatId,
-      userMessage: state.userMessage,
-    });
-  }
+  const context = await workflow.deriveContext({
+    selectedAI: state.selectedAI,
+    translationData: state.translationData,
+    lang: state.lang,
+    department: state.department,
+    referringUrl: state.referringUrl,
+    searchProvider: state.searchProvider,
+    conversationHistory: cleanedHistory,
+    overrideUserId: state.overrideUserId,
+    chatId: state.chatId,
+    userMessage: state.userMessage,
+  });
 
   const out = {
     context,
     cleanedHistory,
-    usedExistingContext,
+    usedExistingContext: false,
     status: WorkflowStatus.GENERATING_ANSWER,
   };
   logGraphEvent('info', 'node:context output', state.chatId, out);
   return out;
 });
+
 
 graph.addNode('answerNode', async (state) => {
   logGraphEvent('info', 'node:answer input', state.chatId, {
