@@ -29,7 +29,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 60000,
         reasoning: {
-          effort: "medium"
+          effort: "none"
         }
       },
       "openai-gpt5-nano": {
