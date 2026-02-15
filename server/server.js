@@ -159,7 +159,7 @@ app.get("/config.js", (req, res) => {
   res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);
 });
 
-app.get("{*path}", (req, res, next) => {
+app.get("*", (req, res, next) => {
   if (req.url.startsWith("/api")) {
     next();
     return;
