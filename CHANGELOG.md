@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.102.0](https://github.com/cds-snc/ai-answers/compare/v1.101.0...v1.102.0) (2026-02-16)
+
+
+### Features
+
+* Refactor E2E tests and server configuration ([a2ef7d0](https://github.com/cds-snc/ai-answers/commit/a2ef7d0bb242ab699cb8baf7aeb24d00cfb21c52))
+* Refactor E2E tests and server configuration ([d342977](https://github.com/cds-snc/ai-answers/commit/d342977dbf3c29ba0bbb5c3775578436e8b4ad9b))
+
+
+### Bug Fixes
+
+* add auto eval - update eval dashboard ([ed52018](https://github.com/cds-snc/ai-answers/commit/ed520183cebbdc549f7070f590805551187d90f5))
+* broken searchQuery in download logs ([7aad20c](https://github.com/cds-snc/ai-answers/commit/7aad20cd037769d0399f2e512514fb80d9c22aaa))
+* bug in chat dashboard ([0d444e5](https://github.com/cds-snc/ai-answers/commit/0d444e5da9ea0e600d0edaa1fd0e43e710fa6adc))
+* change order so evaluations is second ([d8cb85f](https://github.com/cds-snc/ai-answers/commit/d8cb85f8f38c4d973fe657db8c21cf8c26a317b1))
+* eval values weren't showing up ([ecedc4e](https://github.com/cds-snc/ai-answers/commit/ecedc4efc41fd9965e6469b028a5aed0f1573054))
+* Express 5 compatibility for catch-all route ([4543154](https://github.com/cds-snc/ai-answers/commit/4543154f258a4f1ae71f2b1fa368f6089a4ed8b4))
+* Express 5 compatibility for catch-all route and update lockfiles ([bc73ed7](https://github.com/cds-snc/ai-answers/commit/bc73ed7d84c90476b0dec9c927c6e0ea9a4a9f96))
+* force context regeneration in graph flows and disable context reuse ([8b946be](https://github.com/cds-snc/ai-answers/commit/8b946beabde5a4eb4eb1480f5ed7e0356a8603db))
+* get the eval values ([1706db9](https://github.com/cds-snc/ai-answers/commit/1706db9764e3279f3e7f9286016d573e5460a174))
+* **integrity:** consider signatures embedded in system/error turns when verifying signed prefix ([1b1ce24](https://github.com/cds-snc/ai-answers/commit/1b1ce241a4729470f55b5539b5e2f3c2936ff7fd))
+* remove cols from auto eval dashboard ([15f6e3f](https://github.com/cds-snc/ai-answers/commit/15f6e3fa430f2b026ca6df6442b434968d05e51f))
+* **tests:** update verification for AI answer visibility in short query tests ([f84a6f0](https://github.com/cds-snc/ai-answers/commit/f84a6f06f1669d67197049c25ddc154184b94baf))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump jsonpath from 1.1.1 to 1.2.1 ([32122d2](https://github.com/cds-snc/ai-answers/commit/32122d2f2258dd39267eea08cc1f13c14ac06580))
+* **deps:** bump jsonpath from 1.1.1 to 1.2.1 ([9e67695](https://github.com/cds-snc/ai-answers/commit/9e67695cb82da268ad077cc48734ab464ace8c6d))
+* **deps:** bump qs from 6.14.1 to 6.14.2 ([e279491](https://github.com/cds-snc/ai-answers/commit/e279491e82a19498150cb959c1691c89ae97197f))
+* **deps:** bump qs from 6.14.1 to 6.14.2 ([201cd28](https://github.com/cds-snc/ai-answers/commit/201cd289a81670235ca771c5a442f160ffd2420e))
+* **tests:** add DEBUG_CONV_INTEGRITY logging to ConversationIntegrityService for e2e debugging ([8a89f6e](https://github.com/cds-snc/ai-answers/commit/8a89f6e655a29b8091518c1c8a06c5f822048399))
+
+
+### Code Refactoring
+
+* **tests:** enhance context verification in InteractionPersistenceService tests and remove legacy FeedbackComponent test ([f1f26a9](https://github.com/cds-snc/ai-answers/commit/f1f26a9a7c1273d57e9718a733d679135c674f73))
+* **tests:** replace withBotProtection with botFingerprintPresence in session logic tests ([106b957](https://github.com/cds-snc/ai-answers/commit/106b9571556fc01ee35e02931f3b42e235690fee))
+
 ## [1.101.0](https://github.com/cds-snc/ai-answers/compare/v1.100.2...v1.101.0) (2026-02-13)
 
 
