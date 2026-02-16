@@ -59,6 +59,11 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
+              <GcdsLink href={`/${lang}/eval-dashboard`}>
+                {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
+              </GcdsLink>
+            </li>
+            <li>
               <GcdsLink href={`/${lang}/chat-dashboard`}>
                 {t('admin.navigation.chatDashboard', 'Chat dashboard')}
               </GcdsLink>
@@ -76,11 +81,6 @@ const AdminPage = ({ lang = 'en' }) => {
             <li>
               <GcdsLink href={`/${lang}/chat-viewer`}>
                 {t('admin.navigation.chatViewer')}
-              </GcdsLink>
-            </li>
-            <li>
-              <GcdsLink href={`/${lang}/eval-dashboard`}>
-                {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
               </GcdsLink>
             </li>
           </ul>
@@ -111,6 +111,11 @@ const AdminPage = ({ lang = 'en' }) => {
               <li>
                 <GcdsLink href={`/${lang}/eval`}>
                   {t('admin.navigation.eval', 'Evaluation Administration')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={`/${lang}/auto-eval-dashboard`}>
+                  {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
                 </GcdsLink>
               </li>
 

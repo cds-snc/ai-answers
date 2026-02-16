@@ -350,6 +350,9 @@ async function chatDashboardHandler(req, res) {
     // Handle search parameter for chatId (after grouping, so applied separately)
     const searchFilter = searchParam ? { chatId: { $regex: escapeRegex(searchParam), $options: 'i' } } : null;
 
+    // Sort by chat _id and interaction _id so $first in $group reliably picks the earliest interaction
+    pipeline.push({ $sort: { _id: 1, 'interactions._id': 1 } });
+
     pipeline.push({
       $group: {
         _id: '$_id',

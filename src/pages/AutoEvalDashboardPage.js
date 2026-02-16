@@ -17,28 +17,7 @@ const escapeHtmlAttribute = (value) => {
     .replace(/>/g, '&gt;');
 };
 
-const TABLE_STORAGE_KEY = `evalDashboard_tableState_v1_`;
-
-const truncateEmail = (email) => {
-  if (!email) return '';
-  return email.split('@')[0];
-};
-
-const truncateUrl = (url) => {
-  if (!url) return '';
-  try {
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
-    if (pathParts.length <= 1) {
-      const domain = urlObj.hostname.replace(/^www\./, '');
-      return pathParts.length === 1 ? `${domain}/${pathParts[0]}` : domain;
-    }
-    const truncatedParts = pathParts.slice(-3);
-    return '/' + truncatedParts.join('/');
-  } catch {
-    return url;
-  }
-};
+const TABLE_STORAGE_KEY = `autoEvalDashboard_tableState_v1_`;
 
 const getDefaultEvalFilters = () => {
   const now = new Date();
@@ -49,7 +28,7 @@ const getDefaultEvalFilters = () => {
     endDate: now.toISOString()
   };
 };
-const EvalDashboardPage = ({ lang = 'en' }) => {
+const AutoEvalDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -116,25 +95,25 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
   const resultsSummary = useMemo(() => {
-    const template = t('admin.evalDashboard.resultsSummary', 'Total matching evaluations: {count}');
+    const template = t('admin.autoEvalDashboard.resultsSummary', 'Total matching evaluations: {count}');
     return template.replace('{count}', numberFormatter.format(recordsFiltered));
   }, [numberFormatter, recordsFiltered, t]);
 
   const totalSummary = useMemo(() => {
-    const template = t('admin.evalDashboard.totalCount', 'Total eval rows in range: {total}');
+    const template = t('admin.autoEvalDashboard.totalCount', 'Total eval rows in range: {total}');
     return template.replace('{total}', numberFormatter.format(recordsTotal));
   }, [numberFormatter, recordsTotal, t]);
 
+  // Columns: Chat ID, Interaction ID, Department, Page Language, AutoEval, Processed, Has matches, Fallback, No-match reason, Date
   const columns = useMemo(() => ([
     {
-      title: t('admin.evalDashboard.columns.chatId', 'Chat ID'),
+      title: t('admin.autoEvalDashboard.columns.chatId', 'Chat ID'),
       data: 'chatId',
       render: (value, type, row) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
         const interactionId = row.interactionId || row._id || '';
-        // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
         return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
@@ -143,26 +122,25 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       orderable: true
     },
     {
-      title: t('admin.evalDashboard.columns.questionNumber', 'Q #'),
+      title: t('admin.autoEvalDashboard.columns.questionNumber', 'Q #'),
       data: 'questionNumber',
       render: (value) => value != null ? String(value) : '',
       width: '40px',
       searchable: true,
       orderable: true
     },
-    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
+    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
   ]), [formatDate, t]);
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
-      <h1 className="mb-400">{t('admin.evalDashboard.title', 'Evaluation dashboard')}</h1>
+      <h1 className="mb-400">{t('admin.autoEvalDashboard.title', 'Auto-Evaluation dashboard')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
@@ -170,7 +148,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-400">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
+      <p className="mb-400">{t('admin.autoEvalDashboard.description', 'Filter auto-evaluations and explore details in the table below.')}</p>
 
       <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
@@ -178,12 +156,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         <div className="loading-overlay" role="status" aria-live="polite">
           <div className="loading-overlay-content">
             <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.evalDashboard.loading', 'Loading evaluations...')}</span>
+            <span>{t('admin.autoEvalDashboard.loading', 'Loading evaluations...')}</span>
           </div>
         </div>
       )}
 
-      {error && (<div className="mt-400 error" role="alert">{t('admin.evalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
+      {error && (<div className="mt-400 error" role="alert">{t('admin.autoEvalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
 
       {hasAppliedFilters && (
         <div className="mt-400">
@@ -199,13 +177,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 searching: true,
                 ordering: true,
                 autoWidth: false,
-                order: [[9, 'desc']],
+                order: [[8, 'desc']],
                 stateSave: true,
                 language: {
-                  search: t('admin.evalDashboard.searchLabel', 'Search'),
-                  searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter search term...')
+                  search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
+                  searchPlaceholder: t('admin.autoEvalDashboard.searchPlaceholder', 'Enter search term...')
                 },
-                // Add per-column header inputs
                 initComplete: function () {
                   try {
                     const api = this.api();
@@ -219,18 +196,18 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                       const colInfo = column.settings()[0].aoColumns[idx] || {};
                       const colData = colInfo.data || '';
                       if (!colInfo.searchable) return;
-                      const headerEl = column.header(); // DOM element
+                      const headerEl = column.header();
                       if (!headerEl) return;
                       const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
                       if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
                       const filterContainer = document.createElement('div');
                       filterContainer.className = 'dt-col-filter-container';
                       filterContainer.style.marginTop = '4px';
-                      const booleanCols = [];
+                      const booleanCols = ['processed', 'hasMatches'];
                       if (booleanCols.includes(colData)) {
                         const sel = document.createElement('select');
                         sel.className = 'dt-col-search';
-                        const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.evalDashboard.columns.any', 'Any'); sel.appendChild(optAny);
+                        const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.autoEvalDashboard.columns.any', 'Any'); sel.appendChild(optAny);
                         const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
                         const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
                         sel.addEventListener('change', function () {
@@ -241,13 +218,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                         const input = document.createElement('input');
                         input.type = 'search';
                         input.className = 'dt-col-search';
-                        input.placeholder = t('admin.evalDashboard.columnFilterPlaceholder', 'Filter');
+                        input.placeholder = t('admin.autoEvalDashboard.columnFilterPlaceholder', 'Filter');
                         input.addEventListener('input', debounce(function (e) {
                           column.search(e.target.value).draw();
                         }, 350));
                         filterContainer.appendChild(input);
                       }
-                      // prevent clicks inside the filter container from sorting the column
                       const stopSort = (event) => event.stopPropagation();
                       filterContainer.addEventListener('click', stopSort);
                       filterContainer.addEventListener('mousedown', stopSort);
@@ -258,13 +234,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     });
                   } catch (e) { /* ignore initComplete errors */ }
                 },
-                // ajax collects per-column searches and sends them to backend
                 ajax: async (dtParams, callback) => {
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 9, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'department', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 8, dir: 'desc' };
+                    const orderByMap = ['chatId', 'questionNumber', 'aiEval', 'partnerEval', 'processed', 'hasMatches', 'fallbackType', 'noMatchReasonType', 'createdAt'];
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';
@@ -293,7 +268,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     setRecordsFiltered(result?.recordsFiltered || 0);
                     callback({ draw: dtParams.draw || 0, recordsTotal: result?.recordsTotal || 0, recordsFiltered: result?.recordsFiltered || 0, data: Array.isArray(result?.data) ? result.data : [] });
                   } catch (err) {
-                    console.error('Failed to load eval dashboard data', err);
+                    console.error('Failed to load auto-eval dashboard data', err);
                     setError(err.message || String(err));
                     callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                   } finally {
@@ -316,4 +291,4 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   );
 };
 
-export default EvalDashboardPage;
+export default AutoEvalDashboardPage;

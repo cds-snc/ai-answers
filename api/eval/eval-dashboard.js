@@ -3,7 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
-import { getChatFilterConditions } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -133,7 +133,13 @@ async function evalDashboardHandler(req, res) {
       $addFields: {
         chatId: { $ifNull: [{ $arrayElemAt: ['$chatDoc.chatId', 0] }, ''] },
         pageLanguage: { $ifNull: [{ $arrayElemAt: ['$chatDoc.pageLanguage', 0] }, ''] },
-        chatUser: { $arrayElemAt: ['$chatDoc.user', 0] }
+        chatUser: { $arrayElemAt: ['$chatDoc.user', 0] },
+        questionNumber: {
+          $add: [
+            { $indexOfArray: [{ $ifNull: [{ $arrayElemAt: ['$chatDoc.interactions', 0] }, []] }, '$_id'] },
+            1
+          ]
+        }
       }
     });
 
@@ -153,7 +159,7 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Lookup expert feedback attached directly to the interaction - only need expertEmail, overallRating
+    // Lookup expert feedback attached directly to the interaction
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
@@ -162,18 +168,30 @@ async function evalDashboardHandler(req, res) {
         as: 'interactionExpertDocs'
       }
     });
-    // Extract only needed fields immediately
+    // Extract score fields for partnerEval computation + expertEmail
     pipeline.push({
       $addFields: {
         interactionExpert: {
           expertEmail: { $arrayElemAt: ['$interactionExpertDocs.expertEmail', 0] },
           overallRating: { $arrayElemAt: ['$interactionExpertDocs.overallRating', 0] }
         },
-        hasInteractionExpert: { $gt: [{ $size: '$interactionExpertDocs' }, 0] }
+        hasInteractionExpert: { $gt: [{ $size: '$interactionExpertDocs' }, 0] },
+        expertFeedbackData: {
+          totalScore: { $arrayElemAt: ['$interactionExpertDocs.totalScore', 0] },
+          sentence1Score: { $arrayElemAt: ['$interactionExpertDocs.sentence1Score', 0] },
+          sentence2Score: { $arrayElemAt: ['$interactionExpertDocs.sentence2Score', 0] },
+          sentence3Score: { $arrayElemAt: ['$interactionExpertDocs.sentence3Score', 0] },
+          sentence4Score: { $arrayElemAt: ['$interactionExpertDocs.sentence4Score', 0] },
+          citationScore: { $arrayElemAt: ['$interactionExpertDocs.citationScore', 0] },
+          sentence1Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence1Harmful', 0] },
+          sentence2Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence2Harmful', 0] },
+          sentence3Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence3Harmful', 0] },
+          sentence4Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence4Harmful', 0] }
+        }
       }
     });
 
-    // Lookup expert feedback attached to the auto eval - only need expertEmail
+    // Lookup expert feedback attached to the auto eval
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
@@ -182,11 +200,23 @@ async function evalDashboardHandler(req, res) {
         as: 'evalExpertDocs'
       }
     });
-    // Extract only needed fields immediately
+    // Extract score fields for aiEval computation
     pipeline.push({
       $addFields: {
         evalExpert: {
           expertEmail: { $arrayElemAt: ['$evalExpertDocs.expertEmail', 0] }
+        },
+        autoEvalFeedbackData: {
+          totalScore: { $arrayElemAt: ['$evalExpertDocs.totalScore', 0] },
+          sentence1Score: { $arrayElemAt: ['$evalExpertDocs.sentence1Score', 0] },
+          sentence2Score: { $arrayElemAt: ['$evalExpertDocs.sentence2Score', 0] },
+          sentence3Score: { $arrayElemAt: ['$evalExpertDocs.sentence3Score', 0] },
+          sentence4Score: { $arrayElemAt: ['$evalExpertDocs.sentence4Score', 0] },
+          citationScore: { $arrayElemAt: ['$evalExpertDocs.citationScore', 0] },
+          sentence1Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence1Harmful', 0] },
+          sentence2Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence2Harmful', 0] },
+          sentence3Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence3Harmful', 0] },
+          sentence4Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence4Harmful', 0] }
         }
       }
     });
@@ -203,41 +233,11 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
+    // Compute partnerEval and aiEval using the same shared helpers as ChatDashboard
     pipeline.push({
       $addFields: {
-        partnerEval: {
-          $switch: {
-            branches: [
-              { case: { $eq: ['$interactionExpert.overallRating', 'correct'] }, then: 'correct' },
-              { case: { $eq: ['$interactionExpert.overallRating', 'incorrect'] }, then: 'incorrect' },
-              { case: { $eq: ['$interactionExpert.overallRating', 'needsImprovement'] }, then: 'needsImprovement' }
-            ],
-            default: {
-              $cond: {
-                if: { $ifNull: ['$interactionExpert', false] },
-                then: 'other',
-                else: 'none'
-              }
-            }
-          }
-        },
-        aiEval: {
-          $switch: {
-            branches: [
-              { case: { $eq: ['$eval.hasMatches', false] }, then: 'noMatch' },
-              { case: { $ne: ['$eval.fallbackType', null] }, then: 'fallback' },
-              { case: { $eq: ['$eval.hasCitationError', true] }, then: 'hasCitationError' },
-              { case: { $eq: ['$eval.hasError', true] }, then: 'hasError' }
-            ],
-            default: {
-              $cond: {
-                if: { $ifNull: ['$eval', false] },
-                then: 'normal',
-                else: 'none'
-              }
-            }
-          }
-        }
+        partnerEval: getPartnerEvalAggregationExpression('$expertFeedbackData'),
+        aiEval: getAiEvalAggregationExpression('$autoEvalFeedbackData')
       }
     });
 
@@ -298,8 +298,12 @@ async function evalDashboardHandler(req, res) {
         chatId: 1,  // Already extracted at top level
         pageLanguage: 1,  // Already extracted at top level
         department: 1,  // Already extracted at top level
+        referringUrl: { $ifNull: ['$referringUrl', ''] },
+        questionNumber: 1,
         // Indicate whether an auto-generated eval exists for this interaction
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
+        partnerEval: 1,
+        aiEval: 1,
         // Only consider expert feedback attached directly to the interaction
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
@@ -371,8 +375,12 @@ async function evalDashboardHandler(req, res) {
     const sortFieldMap = {
       createdAt: 'createdAt',
       chatId: 'chatId',
+      questionNumber: 'questionNumber',
       department: 'department',
+      referringUrl: 'referringUrl',
       pageLanguage: 'pageLanguage',
+      partnerEval: 'partnerEval',
+      aiEval: 'aiEval',
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType'
     };
@@ -403,11 +411,15 @@ async function evalDashboardHandler(req, res) {
     const rows = results.map((r) => ({
       _id: r._id ? String(r._id) : '',
       interactionId: r.interactionId || (r._id ? String(r._id) : ''),
+      questionNumber: r.questionNumber || 0,
       chatId: r.chatId || '',
       department: r.department || '',
+      referringUrl: r.referringUrl || '',
       pageLanguage: r.pageLanguage || '',
       hasAutoEval: !!r.hasAutoEval,
       hasExpertEval: !!r.hasExpertEval,
+      partnerEval: r.partnerEval || '',
+      aiEval: r.aiEval || '',
       expertEmail: r.expertEmail || '',
       processed: typeof r.processed === 'boolean' ? r.processed : false,
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
