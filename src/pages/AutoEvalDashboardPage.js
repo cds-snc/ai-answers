@@ -19,22 +19,6 @@ const escapeHtmlAttribute = (value) => {
 
 const TABLE_STORAGE_KEY = `autoEvalDashboard_tableState_v1_`;
 
-const truncateUrl = (url) => {
-  if (!url) return '';
-  try {
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split('/').filter(part => part !== '');
-    if (pathParts.length <= 1) {
-      const domain = urlObj.hostname.replace(/^www\./, '');
-      return pathParts.length === 1 ? `${domain}/${pathParts[0]}` : domain;
-    }
-    const truncatedParts = pathParts.slice(-3);
-    return '/' + truncatedParts.join('/');
-  } catch {
-    return url;
-  }
-};
-
 const getDefaultEvalFilters = () => {
   const now = new Date();
   const start = new Date(now);
@@ -145,9 +129,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       searchable: true,
       orderable: true
     },
-    { title: t('admin.autoEvalDashboard.columns.department', 'Department'), data: 'department', searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
@@ -196,7 +177,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 searching: true,
                 ordering: true,
                 autoWidth: false,
-                order: [[11, 'desc']],
+                order: [[8, 'desc']],
                 stateSave: true,
                 language: {
                   search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
@@ -257,8 +238,8 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 11, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'department', 'referringUrl', 'pageLanguage', 'aiEval', 'partnerEval', 'processed', 'hasMatches', 'fallbackType', 'noMatchReasonType', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 8, dir: 'desc' };
+                    const orderByMap = ['chatId', 'questionNumber', 'aiEval', 'partnerEval', 'processed', 'hasMatches', 'fallbackType', 'noMatchReasonType', 'createdAt'];
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';
