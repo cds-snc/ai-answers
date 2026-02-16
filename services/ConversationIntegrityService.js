@@ -70,7 +70,7 @@ class ConversationIntegrityService {
         // Filter out error messages - they don't affect conversation integrity
         // and their presence/absence shouldn't change the signature
         const filteredHistory = history.filter(m => !m.error);
-
+ 
         const lines = [];
         for (let i = 0; i < filteredHistory.length; i++) {
             const m = filteredHistory[i];
@@ -191,6 +191,18 @@ class ConversationIntegrityService {
                 m?.interaction?.historySignature === signature ||
                 m?.interaction?.answer?.historySignature === signature
             ) || null;
+        }
+
+        // If we still don't have a signature, check the full history (including error/system messages)
+        // because some system/error turns may carry the historySignature even though they are filtered out.
+        if (!signature) {
+            const lastWithSig = [...history].reverse().find(m =>
+                m?.historySignature || m?.interaction?.historySignature || m?.interaction?.answer?.historySignature
+            );
+            if (lastWithSig) {
+                signature = lastWithSig.historySignature || lastWithSig.interaction?.historySignature || lastWithSig.interaction?.answer?.historySignature || null;
+                signatureSource = lastWithSig;
+            }
         }
 
         if (!signature) {
