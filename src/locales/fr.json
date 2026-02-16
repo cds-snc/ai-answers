@@ -679,7 +679,13 @@
           "needsImprovement": "nécessite amélioration",
           "hasError": "erreur",
           "hasCitationError": "erreur de citation",
-          "harmful": "nuisible"
+          "harmful": "nuisible",
+          "none": "aucun",
+          "other": "autre",
+          "normal": "normal",
+          "noMatch": "aucune correspondance",
+          "fallback": "repli",
+          "incorrect": "incorrect"
         }
       },
       "departmentMore": "+{count} de plus"

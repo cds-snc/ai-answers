@@ -640,7 +640,13 @@
           "needsImprovement": "needs improvement",
           "hasError": "error",
           "hasCitationError": "citation error",
-          "harmful": "harmful"
+          "harmful": "harmful",
+          "none": "none",
+          "other": "other",
+          "normal": "normal",
+          "noMatch": "no match",
+          "fallback": "fallback",
+          "incorrect": "incorrect"
         }
       },
       "departmentMore": "+{count} more"
