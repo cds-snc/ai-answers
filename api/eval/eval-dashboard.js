@@ -133,7 +133,13 @@ async function evalDashboardHandler(req, res) {
       $addFields: {
         chatId: { $ifNull: [{ $arrayElemAt: ['$chatDoc.chatId', 0] }, ''] },
         pageLanguage: { $ifNull: [{ $arrayElemAt: ['$chatDoc.pageLanguage', 0] }, ''] },
-        chatUser: { $arrayElemAt: ['$chatDoc.user', 0] }
+        chatUser: { $arrayElemAt: ['$chatDoc.user', 0] },
+        questionNumber: {
+          $add: [
+            { $indexOfArray: [{ $ifNull: [{ $arrayElemAt: ['$chatDoc.interactions', 0] }, []] }, '$_id'] },
+            1
+          ]
+        }
       }
     });
 
@@ -298,8 +304,12 @@ async function evalDashboardHandler(req, res) {
         chatId: 1,  // Already extracted at top level
         pageLanguage: 1,  // Already extracted at top level
         department: 1,  // Already extracted at top level
+        referringUrl: { $ifNull: ['$referringUrl', ''] },
+        questionNumber: 1,
         // Indicate whether an auto-generated eval exists for this interaction
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
+        partnerEval: 1,
+        aiEval: 1,
         // Only consider expert feedback attached directly to the interaction
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
@@ -371,8 +381,12 @@ async function evalDashboardHandler(req, res) {
     const sortFieldMap = {
       createdAt: 'createdAt',
       chatId: 'chatId',
+      questionNumber: 'questionNumber',
       department: 'department',
+      referringUrl: 'referringUrl',
       pageLanguage: 'pageLanguage',
+      partnerEval: 'partnerEval',
+      aiEval: 'aiEval',
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType'
     };
@@ -403,11 +417,15 @@ async function evalDashboardHandler(req, res) {
     const rows = results.map((r) => ({
       _id: r._id ? String(r._id) : '',
       interactionId: r.interactionId || (r._id ? String(r._id) : ''),
+      questionNumber: r.questionNumber || 0,
       chatId: r.chatId || '',
       department: r.department || '',
+      referringUrl: r.referringUrl || '',
       pageLanguage: r.pageLanguage || '',
       hasAutoEval: !!r.hasAutoEval,
       hasExpertEval: !!r.hasExpertEval,
+      partnerEval: r.partnerEval || '',
+      aiEval: r.aiEval || '',
       expertEmail: r.expertEmail || '',
       processed: typeof r.processed === 'boolean' ? r.processed : false,
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,

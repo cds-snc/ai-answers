@@ -402,7 +402,8 @@
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios",
-      "connectivity": "Connectivité du service"
+      "connectivity": "Connectivité du service",
+      "autoEvalDashboard": "Tableau de bord des évaluations automatiques"
     },
     "database": {
       "createIndexes": "Créer/Reconstruire des index",
@@ -695,12 +696,37 @@
       "columnFilterPlaceholder": "Filtrer",
       "columns": {
         "chatId": "ID de chat",
-        "interactionId": "ID d'interaction",
+        "questionNumber": "Q #",
         "department": "Ministère",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
         "expertEval": "Éval. expert",
+        "creatorEmail": "Courriel du créateur",
         "expertEmail": "Courriel de l'expert",
+        "processed": "Traité",
+        "matches": "Correspondances trouvées",
+        "fallback": "Repli",
+        "any": "Tous",
+        "reason": "Raison de non-correspondance",
+        "date": "Date"
+      }
+    },
+    "autoEvalDashboard": {
+      "title": "Tableau de bord des évaluations automatiques",
+      "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
+      "loading": "Chargement des évaluations...",
+      "error": "Impossible de charger les données d'évaluation.",
+      "resultsSummary": "Total des évaluations correspondantes : {count}",
+      "totalCount": "Total des lignes d'évaluation dans la plage : {total}",
+      "searchLabel": "Rechercher par ID de chat ou d'interaction :",
+      "searchPlaceholder": "Entrez l'ID...",
+      "columnFilterPlaceholder": "Filtrer",
+      "columns": {
+        "chatId": "ID de chat",
+        "questionNumber": "Q #",
+        "department": "Ministère",
+        "pageLanguage": "Page",
+        "autoEval": "Éval. automatique",
         "processed": "Traité",
         "matches": "Correspondances trouvées",
         "fallback": "Repli",

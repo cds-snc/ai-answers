@@ -365,7 +365,8 @@
       "logout": "Sign out",
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios",
-      "connectivity": "Service Connectivity"
+      "connectivity": "Service Connectivity",
+      "autoEvalDashboard": "Auto-Evaluation dashboard"
     },
     "database": {
       "createIndexes": "Create/Rebuild Indexes",
@@ -656,12 +657,37 @@
       "columnFilterPlaceholder": "Filter",
       "columns": {
         "chatId": "Chat ID",
-        "interactionId": "Interaction ID",
+        "questionNumber": "Q #",
         "department": "Department",
         "pageLanguage": "Page",
         "autoEval": "AutoEval",
         "expertEval": "ExpertEval",
+        "creatorEmail": "Creator email",
         "expertEmail": "Expert email",
+        "processed": "Processed",
+        "matches": "Has matches",
+        "fallback": "Fallback",
+        "any": "Any",
+        "reason": "No-match reason",
+        "date": "Date"
+      }
+    },
+    "autoEvalDashboard": {
+      "title": "Auto-Evaluation dashboard",
+      "description": "Filter auto-evaluations and explore details in the table below.",
+      "loading": "Loading evaluations...",
+      "error": "Unable to load evaluation data.",
+      "resultsSummary": "Total matching evaluations: {count}",
+      "totalCount": "Total eval rows in range: {total}",
+      "searchLabel": "Search by Chat or Interaction ID:",
+      "searchPlaceholder": "Enter id...",
+      "columnFilterPlaceholder": "Filter",
+      "columns": {
+        "chatId": "Chat ID",
+        "questionNumber": "Q #",
+        "department": "Department",
+        "pageLanguage": "Page",
+        "autoEval": "AutoEval",
         "processed": "Processed",
         "matches": "Has matches",
         "fallback": "Fallback",
