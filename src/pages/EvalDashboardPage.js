@@ -170,7 +170,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-400">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
+      <p className="mb-0 small-text">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
 
       <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
@@ -186,12 +186,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       {error && (<div className="mt-400 error" role="alert">{t('admin.evalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
 
       {hasAppliedFilters && (
-        <div className="mt-400">
-          <div className="mb-200"><div>{resultsSummary}</div><div>{totalSummary}</div></div>
+        <div className="mt-200">
+          <div className="chat-dashboard-summary" role="status" aria-live="polite"><output>{resultsSummary}</output><output>{totalSummary}</output></div>
           {dataTableReady && (
+            <div className="chat-dashboard-table-container">
             <DataTable
               key={tableKey}
               columns={columns}
+              className="display chat-dashboard-table"
               options={{
                 processing: true,
                 serverSide: true,
@@ -309,6 +311,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 }
               }}
             />
+            </div>
           )}
         </div>
       )}
