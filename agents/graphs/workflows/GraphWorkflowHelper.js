@@ -137,7 +137,7 @@ export class GraphWorkflowHelper {
     const contextData = {
       ...parsed,
       systemPrompt: contextPayload.systemPrompt || '',
-      searchQuery: searchResult.query,
+      searchQuery: searchResult.query || searchResult.searchQuery || contextPayload.searchResults?.query || '',
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
       outputLang: this.determineOutputLang(lang, translationData),
