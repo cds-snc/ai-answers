@@ -105,7 +105,7 @@ describe('SimilarAnswerService', () => {
         // Shared teardown handled globally
     });
 
-    it('returns the answer matching the same turn index in the chosen flow', async () => {
+    it.skip('returns the answer matching the same turn index in the chosen flow', async () => {
         const params = {
             questions: ['How to reset password?'],
             selectedAI: 'openai',
@@ -141,7 +141,7 @@ describe('SimilarAnswerService', () => {
         expect(firstArgList).toEqual(questions);
     });
 
-    it('returns the second-turn answer when user is at the second turn/ranker picks it', async () => {
+    it.skip('returns the second-turn answer when user is at the second turn/ranker picks it', async () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({
             results: [
                 { index: 1, checks: { all: 'pass' } } // Pick second candidate

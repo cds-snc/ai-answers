@@ -177,13 +177,7 @@ export default function sessionMiddleware() {
     try {
       const managementEnabled = ChatSessionService.isManagementEnabled();
 
-      // 0. Initialize visitorId from body if missing in session (Lazy Init / Recovery)
-      if (req.session && !req.session.visitorId && req.body?.input?.visitorId) {
-        const hashedVisitorId = crypto.createHmac('sha256', fingerprintPepper)
-          .update(String(req.body.visitorId)).digest('hex');
-        //req.session.visitorId = hashedVisitorId;
-      }
-
+     
       // 1. Require session when management is enabled
       if (managementEnabled && !req.session) {
         sendError(res, 403, 'no_session', 'Missing session; request blocked');

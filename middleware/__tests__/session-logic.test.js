@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { withBotProtection } from '../bot-protection.js';
+import botFingerprintPresence from '../bot-fingerprint-presence.js';
 import sessionMiddleware from '../chat-session.js';
 import crypto from 'crypto';
 
@@ -45,20 +45,20 @@ describe('Middleware Session Logic', () => {
         process.env.FP_PEPPER = 'test-pepper';
     });
 
-    describe('withBotProtection', () => {
-        const mockHandler = async (req, res) => { handlerCalled = true; };
-
+    describe('botFingerprintPresence', () => {
         it('blocks anonymous request with no fingerprint', async () => {
-            const protected_ = withBotProtection(mockHandler);
-            await protected_(req, res);
+            handlerCalled = false;
+            const nextFn = () => { handlerCalled = true; };
+            await botFingerprintPresence(req, res, nextFn);
             expect(res.statusCode).toBe(403);
             expect(handlerCalled).toBe(false);
         });
 
         it('lazy initializes visitorId from body and calls handler', async () => {
             req.body.visitorId = 'browser123';
-            const protected_ = withBotProtection(mockHandler);
-            await protected_(req, res);
+            handlerCalled = false;
+            const nextFn = () => { handlerCalled = true; };
+            await botFingerprintPresence(req, res, nextFn);
             expect(req.session.visitorId).toBeDefined();
             expect(handlerCalled).toBe(true);
         });
