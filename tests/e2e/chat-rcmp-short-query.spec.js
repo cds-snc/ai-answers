@@ -41,9 +41,16 @@ test.describe('AI Answers Webapp Testing (Short Query Follow-ups)', () => {
     });
   });
 
+  test.afterEach(async ({ page }) => {
+    if (process.env.TEST_HEADED === 'true') {
+      console.log('Test finished, waiting 5s for inspection...');
+      await page.waitForTimeout(5000);
+    }
+  });
+
   test('should block short query then accept follow-up questions', async ({ page }) => {
     // Navigate to English page
-    await page.goto('http://localhost:3001');
+    await page.goto('/');
 
     // Wait for the textarea
     const textarea = page.locator('textarea#message');
@@ -69,8 +76,14 @@ test.describe('AI Answers Webapp Testing (Short Query Follow-ups)', () => {
 
     await page.waitForSelector('.loading-container', { state: 'detached', timeout: 30000 });
 
-    const firstAnswer = page.locator('.message').last();
-    await expect(firstAnswer).toBeVisible();
+    const firstAnswer = page.locator('.ai-message-content').last();
+    await expect(firstAnswer).toBeVisible({ timeout: 30000 });
+
+    // VERIFY: The next message should be a real AI answer (error box may remain)
+
+    const firstText = await firstAnswer.textContent();
+    console.log('First answer text:', firstText);
+    expect(firstText.toLowerCase()).toMatch(/ottawa|leikin|headquarters/);
 
     // 3) Add a follow-up
     await textarea.scrollIntoViewIfNeeded();
@@ -80,10 +93,13 @@ test.describe('AI Answers Webapp Testing (Short Query Follow-ups)', () => {
 
     await page.waitForSelector('.loading-container', { state: 'detached', timeout: 30000 });
 
-    const secondAnswer = page.locator('.message').last();
-    await expect(secondAnswer).toBeVisible();
+    const secondAnswer = page.locator('.ai-message-content').last();
+    await expect(secondAnswer).toBeVisible({ timeout: 30000 });
 
-    // Allow time for manual inspection in headed mode
-    await page.waitForTimeout(5000);
+    // VERIFY: The follow-up should also be a real answer
+    const secondText = await secondAnswer.textContent();
+    console.log('Second answer text:', secondText);
+    // It should talk about Manitoba or Winnipeg in the context of RCMP
+    expect(secondText.toLowerCase()).toMatch(/manitoba|winnipeg|d division/);
   });
 });

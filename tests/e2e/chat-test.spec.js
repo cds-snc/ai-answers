@@ -41,6 +41,13 @@ test.describe('AI Answers Webapp Testing', () => {
     });
   });
 
+  test.afterEach(async ({ page }) => {
+    if (process.env.TEST_HEADED === 'true') {
+      console.log('Test finished, waiting 5s for inspection...');
+      await page.waitForTimeout(5000);
+    }
+  });
+
 
   test('should ask two questions in the same session and get responses', async ({ page }) => {
     // Capture JavaScript errors
@@ -55,7 +62,7 @@ test.describe('AI Answers Webapp Testing', () => {
       console.log(`JS Error: ${err.toString()}`);
     });
 
-    await page.goto('http://localhost:3001');
+    await page.goto('/');
 
     // Wait for page to fully load
     await page.waitForTimeout(5000);
@@ -135,7 +142,7 @@ test.describe('AI Answers Webapp Testing', () => {
 
     // Wait for second response
     // First wait for loading to appear (it might be fast, so we handle it)
-    await page.waitForSelector('.loading-container', { timeout: 10000 }).catch(() => console.log('Loading container did not show, might have finished instantly'));
+    await page.waitForSelector('.loading-container', { timeout: 2000 }).catch(() => { });
     await page.waitForSelector('.loading-container', { state: 'detached', timeout: 30010 });
     console.log('Second response complete');
 
@@ -143,6 +150,10 @@ test.describe('AI Answers Webapp Testing', () => {
     const finalMessageCount = await page.locator('.message').count();
     console.log('Final message count:', finalMessageCount);
     expect(finalMessageCount).toBeGreaterThanOrEqual(4);
+
+    // Explicitly check for AI content and ensure no error box
+    await expect(page.locator('.ai-message-content').last()).toBeVisible();
+    await expect(page.locator('.error-message-box')).not.toBeVisible();
 
     console.log('Test completed successfully (multi-turn verified)');
   });

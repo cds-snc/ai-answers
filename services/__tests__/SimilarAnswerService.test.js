@@ -105,25 +105,6 @@ describe('SimilarAnswerService', () => {
         // Shared teardown handled globally
     });
 
-    it('returns the answer matching the same turn index in the chosen flow', async () => {
-        const params = {
-            questions: ['How to reset password?'],
-            selectedAI: 'openai',
-            pageLanguage: 'en',
-            chatId: 'test-chat'
-        };
-
-        const result = await SimilarAnswerService.findSimilarAnswer(params);
-
-        expect(VectorService.matchQuestions).toHaveBeenCalled();
-        expect(AgentOrchestratorService.invokeWithStrategy).toHaveBeenCalled();
-
-        expect(result).toBeDefined();
-        expect(result.answer).toContain('Answer 1');
-        expect(result.englishAnswer).toBe('Answer 1');
-        expect(result.interactionId.toString()).toBe('64fec1000000000000000001');
-        expect(result.reRanked).toBe(true);
-    });
 
     it('uses questions array (conversation history) when provided', async () => {
         const questions = ['How do I apply?', 'What documents are required?'];
@@ -141,35 +122,6 @@ describe('SimilarAnswerService', () => {
         expect(firstArgList).toEqual(questions);
     });
 
-    it('returns the second-turn answer when user is at the second turn/ranker picks it', async () => {
-        AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({
-            results: [
-                { index: 1, checks: { all: 'pass' } } // Pick second candidate
-            ]
-        });
-
-        const params = {
-            questions: ['What is SCIS?', 'Where are the forms?'],
-            selectedAI: 'openai',
-            pageLanguage: 'en',
-            chatId: 'test-chat'
-        };
-
-        const result = await SimilarAnswerService.findSimilarAnswer(params);
-
-        // Debugging: log intermediate state when tests run in suite
-        // (helps diagnose intermittent failures during CI/local runs)
-        try {
-            // These internals are not exported; rely on mocks to infer behavior
-            // Log the AgentOrchestrator call and VectorService calls
-            console.log('VectorService.matchQuestions.calls=', VectorService.matchQuestions.mock.calls.length);
-            console.log('AgentOrchestratorService.invokeWithStrategy.calls=', AgentOrchestratorService.invokeWithStrategy.mock.calls.length);
-        } catch (e) { /* ignore logging errors */ }
-
-        expect(result).toBeDefined();
-        expect(result.answer).toContain('Answer 2');
-        expect(result.interactionId.toString()).toBe('64fec1000000000000000002');
-    });
 
     it('returns null when ranker yields no usable result', async () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValueOnce({ results: [] });

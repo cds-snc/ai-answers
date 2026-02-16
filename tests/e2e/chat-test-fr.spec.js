@@ -41,6 +41,13 @@ test.describe('AI Answers Webapp Testing (French)', () => {
         });
     });
 
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
     test('should ask two questions in French and NOT see error message', async ({ page }) => {
         // Capture JavaScript errors
         const jsErrors = [];
@@ -55,7 +62,7 @@ test.describe('AI Answers Webapp Testing (French)', () => {
         });
 
         // 1. Navigate to French page
-        await page.goto('http://localhost:3001/fr');
+        await page.goto('/fr');
 
         // Wait for page to fully load
         await page.waitForTimeout(5000);
@@ -106,8 +113,8 @@ test.describe('AI Answers Webapp Testing (French)', () => {
         // CHECK FOR ERROR AGAIN
         await expect(errorLocator).not.toBeVisible({ timeout: 1000 });
 
-        // Expect an answer message
-        const lastMessage = page.locator('.message').last();
+        // Expect an answer message (specifically AI content)
+        const lastMessage = page.locator('.ai-message-content').last();
         await expect(lastMessage).toBeVisible();
 
         // Verify we have at least 4 messages (Q1, A1, Q2, A2)

@@ -11,14 +11,21 @@ import fs from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const TEST_ENV = process.env.TEST_ENV || 'dev';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-answers';
-const TEST_USER_EMAIL = 'e2e-chatviewer-test@example.com';
-const TEST_USER_PASSWORD = 'password123';
+const TEST_USER_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const TEST_USER_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 const TEST_CHAT_ID = 'e2e-test-chat-' + Date.now();
 const STORAGE_PATH = path.join(__dirname, '../../storage/chat-logs');
 
 test.describe('ChatViewer - Log Loading', () => {
     test.beforeAll(async () => {
+        // Only run database setup in dev environment
+        if (TEST_ENV !== 'dev') {
+            console.log(`Skipping database setup for environment: ${TEST_ENV}`);
+            return;
+        }
+
         // Connect to the database
         console.log('Connecting to DB at:', MONGODB_URI);
         await mongoose.connect(MONGODB_URI);
@@ -71,7 +78,16 @@ test.describe('ChatViewer - Log Loading', () => {
         console.log('Storage log created at:', logFilePath);
     });
 
+    test.afterEach(async ({ page }) => {
+        if (process.env.TEST_HEADED === 'true') {
+            console.log('Test finished, waiting 5s for inspection...');
+            await page.waitForTimeout(5000);
+        }
+    });
+
     test.afterAll(async () => {
+        if (TEST_ENV !== 'dev') return;
+
         // Cleanup test data
         console.log('Cleaning up test data...');
         await Logs.deleteMany({ chatId: TEST_CHAT_ID });
@@ -82,7 +98,9 @@ test.describe('ChatViewer - Log Loading', () => {
             fs.rmSync(chatStoragePath, { recursive: true, force: true });
         }
 
-        await mongoose.disconnect();
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
         console.log('Cleanup complete.');
     });
 
@@ -93,7 +111,7 @@ test.describe('ChatViewer - Log Loading', () => {
 
         // 1. Login
         console.log('Navigating to login page...');
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
 
         console.log('Filling credentials...');
         await page.fill('#email', TEST_USER_EMAIL);
@@ -108,7 +126,7 @@ test.describe('ChatViewer - Log Loading', () => {
 
         // 2. Navigate to ChatViewer
         console.log('Navigating to ChatViewer...');
-        await page.goto('http://localhost:3001/en/chat-viewer');
+        await page.goto('/en/chat-viewer');
         await page.waitForSelector('#chatIdInput');
 
         // 3. Enter chatId and fetch logs
@@ -174,14 +192,14 @@ test.describe('ChatViewer - Log Loading', () => {
 
     test('should filter logs by level', async ({ page }) => {
         // Login
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
         await page.fill('#email', TEST_USER_EMAIL);
         await page.fill('#password', TEST_USER_PASSWORD);
         await page.click('button[type="submit"]');
         await page.waitForURL(url => !url.toString().includes('signin'), { timeout: 15000 });
 
         // Navigate to ChatViewer
-        await page.goto('http://localhost:3001/en/chat-viewer');
+        await page.goto('/en/chat-viewer');
         await page.waitForSelector('#chatIdInput');
 
         // Enter chatId and fetch logs
@@ -213,14 +231,14 @@ test.describe('ChatViewer - Log Loading', () => {
 
     test('should handle missing chatId gracefully', async ({ page }) => {
         // Login
-        await page.goto('http://localhost:3001/en/signin');
+        await page.goto('/en/signin');
         await page.fill('#email', TEST_USER_EMAIL);
         await page.fill('#password', TEST_USER_PASSWORD);
         await page.click('button[type="submit"]');
         await page.waitForURL(url => !url.toString().includes('signin'), { timeout: 15000 });
 
         // Navigate to ChatViewer
-        await page.goto('http://localhost:3001/en/chat-viewer');
+        await page.goto('/en/chat-viewer');
         await page.waitForSelector('#chatIdInput');
 
         // Don't enter any chatId, just verify "No logs available" shows

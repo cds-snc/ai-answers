@@ -9,8 +9,11 @@ class ConversationIntegrityService {
      */
     normalizeText(text) {
         if (!text || typeof text !== 'string') return '';
-
         let content = text;
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] normalizeText input:', text);
+        }
 
         // 1. "Take what you need" for AI responses
         // Check <answer> first: parseResponse.js uses <answer> as source of truth when both tags exist.
@@ -46,10 +49,15 @@ class ConversationIntegrityService {
         }
 
         // 5. Final Polish: strip remaining tags (formatting, s-tags) and normalize whitespace
-        return content
+        const result = content
             .replace(/<[^>]+>/g, '')
             .replace(/\s+/g, ' ')
             .trim();
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] normalizeText output:', result);
+        }
+        return result;
     }
 
 
@@ -62,7 +70,7 @@ class ConversationIntegrityService {
         // Filter out error messages - they don't affect conversation integrity
         // and their presence/absence shouldn't change the signature
         const filteredHistory = history.filter(m => !m.error);
-
+ 
         const lines = [];
         for (let i = 0; i < filteredHistory.length; i++) {
             const m = filteredHistory[i];
@@ -91,7 +99,12 @@ class ConversationIntegrityService {
                 lines.push(`${role}:${text}`);
             }
         }
-        return lines.join('|');
+        const result = lines.join('|');
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] serializeHistory:', result);
+        }
+        return result;
     }
 
     /**
@@ -102,7 +115,12 @@ class ConversationIntegrityService {
      */
     calculateSignature(history) {
         const data = this.serializeHistory(history);
-        return crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+        const signature = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] calculateSignature:', { data, signature });
+        }
+        return signature;
     }
 
     /**
@@ -115,6 +133,10 @@ class ConversationIntegrityService {
     verifyHistory(history, signature) {
         if (!signature) return false;
         const expected = this.calculateSignature(history);
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] verifyHistory:', { signature, expected, match: signature === expected });
+        }
         return signature === expected;
     }
 
@@ -132,6 +154,11 @@ class ConversationIntegrityService {
 
         // Filter out error messages - they don't participate in integrity checking
         const filteredHistory = history.filter(m => !m.error);
+
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] verifySignedPrefix input:', { historyArray, inputSignature, filteredHistory });
+        }
 
         if (filteredHistory.length === 0) return { valid: true };
 
@@ -166,7 +193,23 @@ class ConversationIntegrityService {
             ) || null;
         }
 
+        // If we still don't have a signature, check the full history (including error/system messages)
+        // because some system/error turns may carry the historySignature even though they are filtered out.
         if (!signature) {
+            const lastWithSig = [...history].reverse().find(m =>
+                m?.historySignature || m?.interaction?.historySignature || m?.interaction?.answer?.historySignature
+            );
+            if (lastWithSig) {
+                signature = lastWithSig.historySignature || lastWithSig.interaction?.historySignature || lastWithSig.interaction?.answer?.historySignature || null;
+                signatureSource = lastWithSig;
+            }
+        }
+
+        if (!signature) {
+            if (process.env.DEBUG_CONV_INTEGRITY) {
+                // eslint-disable-next-line no-console
+                console.log('[ConversationIntegrityService] verifySignedPrefix: missing signature');
+            }
             return { valid: false, reason: 'missing_signature' };
         }
 
@@ -181,8 +224,19 @@ class ConversationIntegrityService {
             }
         }
 
+        if (process.env.DEBUG_CONV_INTEGRITY) {
+            // eslint-disable-next-line no-console
+            console.log('[ConversationIntegrityService] verifySignedPrefix verifying:', { signature, signatureSource, historyToVerify });
+        }
+
         const valid = this.verifyHistory(historyToVerify, signature);
-        if (!valid) return { valid: false, reason: 'invalid_signature', signature };
+        if (!valid) {
+            if (process.env.DEBUG_CONV_INTEGRITY) {
+                // eslint-disable-next-line no-console
+                console.log('[ConversationIntegrityService] verifySignedPrefix: invalid signature', { signature, historyToVerify });
+            }
+            return { valid: false, reason: 'invalid_signature', signature };
+        }
         return { valid: true, signature, signatureSourceIndex: signatureSource ? history.findIndex(m => m === signatureSource) : null };
     }
 }

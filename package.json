@@ -109,8 +109,12 @@
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
     "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
-    "test:e2e": "cross-env NODE_ENV=test dotenv -e .env powershell ./scripts/run-e2e-tests.ps1",
-    "test:e2e:headed": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env powershell ./scripts/run-e2e-tests.ps1"
+    "test:e2e": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1",
+    "test:e2e:headed": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1",
+    "test:e2e:sandbox": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment sandbox",
+    "test:e2e:production": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment production",
+    "test:e2e:headed:sandbox": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment sandbox",
+    "test:e2e:headed:production": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment production"
   },
   "eslintConfig": {
     "extends": [
