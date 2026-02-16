@@ -150,8 +150,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       searchable: true,
       orderable: true
     },
-    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v || v === 'none') return ''; const key = `admin.chatDashboard.labels.evaluation.${v}`; const label = t(key); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v || v === 'none') return ''; const key = `admin.chatDashboard.labels.evaluation.${v}`; const label = t(key); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
+    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
+    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
@@ -198,6 +198,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 paging: true,
                 searching: true,
                 ordering: true,
+                autoWidth: false,
                 order: [[9, 'desc']],
                 stateSave: true,
                 language: {
