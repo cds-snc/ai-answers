@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.103.0](https://github.com/cds-snc/ai-answers/compare/v1.102.0...v1.103.0) (2026-02-16)
+
+
+### Features
+
+* GPT5 for both context and answer generation ([34e551b](https://github.com/cds-snc/ai-answers/commit/34e551bc5b63a265251a09a259a85715b277e257))
+* introduce AgentFactory for centralized creation of AI agents with integrated tools and callbacks. ([dea4745](https://github.com/cds-snc/ai-answers/commit/dea47458feb1a4c7ce1d8b256e062c713773b87b))
+
 ## [1.102.0](https://github.com/cds-snc/ai-answers/compare/v1.101.0...v1.102.0) (2026-02-16)
 
 
