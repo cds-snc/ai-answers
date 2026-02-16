@@ -138,6 +138,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       }, 200);
     }
   }, [initialMessages, targetInteractionId]);
+
+  // Sync initialReferringUrl when it arrives asynchronously (e.g. after chat
+  // data is fetched in review mode). useState only captures the initial null.
+  useEffect(() => {
+    if (initialReferringUrl) {
+      setReferringUrl(initialReferringUrl);
+    }
+  }, [initialReferringUrl]);
   // This effect sets up a resize listener to update isMobile state for citation icon and link styling
   useEffect(() => {
     const handleResize = () => {
