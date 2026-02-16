@@ -183,7 +183,7 @@ const createContextAgent = async (agentType, chatId = 'system') => {
     }
     case 'openai-gpt51':
     case 'openai-gpt51-chat': {
-      const azureConfig = getModelConfig('azure', 'openai-gpt5-mini');
+      const azureConfig = getModelConfig('azure', agentType);
       llm = new AzureChatOpenAI({
         azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
@@ -194,7 +194,7 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
-      console.log('Creating GPT5 Mini (fallback) Azure OpenAI context agent for GPT5.1 workflow');
+      console.log('Creating GPT5.1 Azure OpenAI context agent with model:', azureConfig.name);
       break;
     }
     case 'cohere': {
