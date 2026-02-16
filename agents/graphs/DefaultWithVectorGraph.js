@@ -37,7 +37,6 @@ const GraphState = Annotation.Root({
   shortCircuitPayload: Annotation(),
   answer: Annotation(),
   finalCitationUrl: Annotation(),
-  confidenceRating: Annotation(),
   status: Annotation(),
   result: Annotation(),
 });
@@ -236,7 +235,6 @@ graph.addNode('shortCircuit', async (state) => {
     const out = {
       status: WorkflowStatus.GENERATING_ANSWER,
       shortCircuitPayload: payload,
-      confidenceRating: payload.confidenceRating,
       finalCitationUrl: payload.finalCitationUrl,
     };
     // Emit output log for shortCircuit node
@@ -274,7 +272,6 @@ graph.addNode('answerNode', async (state) => {
 
 graph.addNode('verifyNode', async (state) => {
   let finalCitationUrl = null;
-  let confidenceRating = null;
 
   // Emit input log for verifyNode
   logGraphEvent('info', 'node:verify input', state.chatId, {
@@ -293,7 +290,6 @@ graph.addNode('verifyNode', async (state) => {
     });
 
     finalCitationUrl = citationResult.url || citationResult.fallbackUrl;
-    confidenceRating = citationResult.confidenceRating;
   }
 
   // Build and return the result here so client gets it immediately
@@ -304,20 +300,17 @@ graph.addNode('verifyNode', async (state) => {
   const out = {
     status: WorkflowStatus.VERIFYING_CITATION,
     finalCitationUrl: finalCitationUrl ?? state.finalCitationUrl,
-    confidenceRating: confidenceRating ?? state.confidenceRating,
     result: {
       answer: answerData,
       context: contextData,
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
-      confidenceRating: confidenceRating ?? state.confidenceRating ?? state.shortCircuitPayload?.confidenceRating ?? null,
       historySignature: answerData?.historySignature ?? null,
     },
   };
   // Emit output log for verifyNode
   logGraphEvent('info', 'node:verify output', state.chatId, {
     finalCitationUrl: out.finalCitationUrl,
-    confidenceRating: out.confidenceRating,
   });
   return out;
 });
@@ -339,7 +332,6 @@ graph.addNode('persistNode', async (state) => {
     const answerData = state.answer;
     const contextData = state.context;
     const finalCitationUrl = state.finalCitationUrl ?? null;
-    const confidenceRating = state.confidenceRating ?? null;
 
     const ctx = graphRequestContext.getStore();
     const user = ctx?.user;
@@ -350,7 +342,6 @@ graph.addNode('persistNode', async (state) => {
       referringUrl: state.referringUrl,
       answer: answerData,
       finalCitationUrl,
-      confidenceRating,
       context: contextData,
       chatId: state.chatId,
       workflow: 'DefaultWithVectorGraph',

@@ -36,7 +36,6 @@ const GraphState = Annotation.Root({
   usedExistingContext: Annotation(),
   answer: Annotation(),
   finalCitationUrl: Annotation(),
-  confidenceRating: Annotation(),
   status: Annotation(),
   result: Annotation(),
 });
@@ -169,7 +168,6 @@ graph.addNode('answerNode', async (state) => {
 
 graph.addNode('verifyNode', async (state) => {
   let finalCitationUrl = null;
-  let confidenceRating = null;
 
   logGraphEvent('info', 'node:verify input', state.chatId, {
     answer: state.answer,
@@ -186,26 +184,22 @@ graph.addNode('verifyNode', async (state) => {
     });
 
     finalCitationUrl = citationResult.url || citationResult.fallbackUrl;
-    confidenceRating = citationResult.confidenceRating;
   }
 
   const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
   const out = {
     status: WorkflowStatus.VERIFYING_CITATION,
     finalCitationUrl: finalCitationUrl ?? state.finalCitationUrl,
-    confidenceRating: confidenceRating ?? state.confidenceRating,
     result: {
       answer: state.answer,
       context: state.context,
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? null,
-      confidenceRating: confidenceRating ?? state.confidenceRating ?? null,
       historySignature: state.answer?.historySignature ?? null,
     },
   };
   logGraphEvent('info', 'node:verify output', state.chatId, {
     finalCitationUrl: out.finalCitationUrl,
-    confidenceRating: out.confidenceRating,
   });
   return out;
 });
@@ -221,7 +215,6 @@ graph.addNode('persistNode', async (state) => {
   const answerData = state.answer;
   const contextData = state.context;
   const finalCitationUrl = state.finalCitationUrl ?? null;
-  const confidenceRating = state.confidenceRating ?? null;
 
   const ctx = graphRequestContext.getStore();
   const user = ctx?.user;
@@ -232,7 +225,6 @@ graph.addNode('persistNode', async (state) => {
     referringUrl: state.referringUrl,
     answer: answerData,
     finalCitationUrl,
-    confidenceRating,
     context: contextData,
     chatId: state.chatId,
     workflow: 'DefaultGraph',

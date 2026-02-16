@@ -161,7 +161,7 @@ function formatAnswerFromChosen(chosenEntry) {
         providedCitationUrl: citationDoc.providedCitationUrl || null,
         aiCitationUrl: citationDoc.aiCitationUrl || null,
         citationHead: citationDoc.citationHead || null,
-        confidenceRating: citationDoc.confidenceRating || null,
+        citationHead: citationDoc.citationHead || null,
     } : null;
 
     // Prefer the stored `interactionId` field when available (legacy or business id),
