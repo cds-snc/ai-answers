@@ -1,9 +1,9 @@
 # AI Answers System Card
 
 **Version**: 1.1
-**Date**: November 2025  
-**Organization**: Canadian Digital Service (CDS)  
-**Contact**: Peter Smith at cds.ca  
+**Date**: February 2026
+**Organization**: Canada.ca Experience Office, Service Canada  
+**Contact**: Michael Karlin at servicecanada.gc.ca   
 
 **Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
 
@@ -45,8 +45,8 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 ## Current Status
 - **Environment**: Beta-testing on Canada.ca 
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
-- **Evaluation**: Ongoing expert evaluation and response scoring feeding AI automated evals & answers
-- **Platform**: Departments can add prompts and files to meet specific needs
+- **Evaluation**: Ongoing expert evaluation and response scoring generating AI automated evals & answers
+- **Platform**: Departments can add scenario prompts and files to meet specific needs
 
 ## System Purpose and Scope
 
@@ -82,7 +82,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
-- **Current poduction models**: Azure OpenAI GPT-4.1 and GPT-4o Mini models
+- **Current production models**: Azure OpenAI GPT-4.1 family (configurable per pipeline step and graph variant), 5.1 in evaluation stage
 - **Temperature**: 0 (deterministic responses)
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
@@ -101,22 +101,22 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - **Context reuse optimization**: Can reuse valid context from previous questions in the same conversation to improve response time
 
 ### Pipeline Flow (LangGraph State Machine)
-The system uses a **9-step LangGraph pipeline** that orchestrates all processing server-side:
+The system uses a **multi-step LangGraph pipeline** that orchestrates all processing server-side. Multiple graph variants exist with different capabilities (e.g. vector short-circuit, QA lookup, reasoning models). Not all steps run in every variant.
 
 1. **Initialization**: Set up timing and state tracking
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
 3. **Two-Stage Question Blocking**:
-   - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI
-   - **Stage 2** (AI - GPT-4 mini): AI detects personal information that slipped through; question is then blocked
-4. **Translation** (AI - GPT-4 mini): Detects language and translates to English for processing
-5. **Context Derivation** (AI - GPT-4 mini):
+   - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI (word lists configurable by admins via Settings page)
+   - **Stage 2** (AI - configurable model): AI detects personal information that slipped through; question is then blocked
+4. **Translation** (AI - configurable mini model): Detects language and translates to English for processing
+5. **Context Derivation** (AI - mini model for query rewrite; full model for context generation):
    - Query rewrite for optimized search
    - Search execution (Canada.ca or Google)
    - Department matching and context generation
    - Optional: Load department-specific scenarios
-6. **Short-Circuit Check** (AI): Vector similarity search to find previously answered similar questions
+6. **Short-Circuit Check** (AI): Vector similarity search to find previously answered similar questions. Only present in certain graph variants, not the default pipeline
 7. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
-8. **Citation Verification** (Programmatic): Validate that citation URLs are accessible
+8. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
 9. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
@@ -162,7 +162,7 @@ The system uses a **9-step LangGraph pipeline** that orchestrates all processing
 - Providing advice outside government scope
 
 **Mitigation strategies:**
-- **Content filtering**: Blocks profanity, discriminatory language, threats, and manipulation attempts
+- **Content filtering**: Blocks profanity, discriminatory language, threats, and manipulation attempts (word lists configurable by admins via Settings page)
 - **Scope enforcement**: Strict limitation to Government of Canada information only
 - **Rate limiting**: 3 questions per session to prevent abuse
 - **Character limits**: 260 character limit per question to prevent prompt injection

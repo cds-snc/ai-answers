@@ -1,9 +1,9 @@
 # Fiche système Réponses IA
 
 **Version** : 1.1
-**Date** : Novembre 2025
-**Organisation** : Service numérique canadien (SNC)
-**Contact** : Peter Smith à cds.ca
+**Date** : Février 2026
+**Organisation** : Bureau de l’expérience Canada.ca de Service Canada
+**Contact** : Michael Karlin à servicecanada.gc.ca
 
 **English** : [SYSTEM_CARD.md](SYSTEM_CARD.md)
 
@@ -82,7 +82,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 **Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### Détails des modèles IA
-- **Modèles de production** : Modèles Azure OpenAI GPT-4 et GPT-4o Mini
+- **Modèles de production** : Famille Azure OpenAI GPT-4.1 (configurable par étape de pipeline et variante de graphe)
 - **Température** : 0 (réponses déterministes)
 - **Ingénierie d'invite** : Invites de chaîne de pensée avec sortie structurée, invite de département tirée au besoin
 - **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs IA, testé avec GPT et Claude
@@ -101,22 +101,22 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 - **Optimisation de réutilisation de contexte** : Peut réutiliser le contexte valide des questions précédentes dans la même conversation pour améliorer le temps de réponse
 
 ### Flux du pipeline (Machine à états LangGraph)
-Le système utilise un **pipeline LangGraph en 9 étapes** qui orchestre tout le traitement côté serveur :
+Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout le traitement côté serveur. Plusieurs variantes de graphe existent avec des capacités différentes (p. ex. court-circuit vectoriel, recherche QA, modèles de raisonnement). Toutes les étapes ne s'exécutent pas dans chaque variante.
 
 1. **Initialisation** : Configure le chronométrage et le suivi de l'état
 2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
 3. **Rédaction en deux étapes** :
-   - **Étape 1** (Programmatique) : Filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants
-   - **Étape 2** (IA - GPT-4 mini) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
-4. **Traduction** (IA - GPT-4 mini) : Détecte la langue et traduit en anglais pour le traitement
-5. **Dérivation de contexte** (IA - GPT-4 mini) :
+   - **Étape 1** (Programmatique) : Filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants (listes de mots configurables par les administrateurs via la page Paramètres)
+   - **Étape 2** (IA - modèle configurable) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
+4. **Traduction** (IA - mini modèle configurable) : Détecte la langue et traduit en anglais pour le traitement
+5. **Dérivation de contexte** (IA - mini modèle pour la réécriture de requête; modèle complet pour la génération de contexte) :
    - Réécriture de requête pour une recherche optimisée
    - Exécution de recherche (Canada.ca ou Google)
    - Correspondance de département et génération de contexte
    - Optionnel : Chargement de scénarios spécifiques au département
-6. **Vérification de court-circuit** (IA) : Recherche de similarité vectorielle pour trouver des questions similaires déjà répondues
+6. **Vérification de court-circuit** (IA) : Recherche de similarité vectorielle pour trouver des questions similaires déjà répondues. Présent uniquement dans certaines variantes de graphe, pas dans le pipeline par défaut
 7. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
-8. **Vérification de citation** (Programmatique) : Valide que les URLs de citation sont accessibles
+8. **Vérification de citation** (Programmatique) : Valide le formatage des URLs de citation et génère une URL de recherche de secours si nécessaire
 9. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
 
 **Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
@@ -162,7 +162,7 @@ Le système utilise un **pipeline LangGraph en 9 étapes** qui orchestre tout le
 - Fournir des conseils hors de la portée gouvernementale
 
 **Stratégies d'atténuation :**
-- **Filtrage de contenu** : Bloque la profanité, le langage discriminatoire, les menaces et les tentatives de manipulation
+- **Filtrage de contenu** : Bloque la profanité, le langage discriminatoire, les menaces et les tentatives de manipulation (listes de mots configurables par les administrateurs via la page Paramètres)
 - **Application de portée** : Limitation stricte aux informations du gouvernement du Canada seulement
 - **Limitation du taux** : 3 questions par session pour prévenir les abus
 - **Limites de caractères** : Limite de 260 caractères par question pour prévenir l'injection d'invite
