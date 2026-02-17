@@ -61,7 +61,6 @@ describe('UrlValidationService', () => {
             });
             const result = await UrlValidationService.validateUrl('https://example.com');
             expect(result.isValid).toBe(true);
-            expect(result.confidenceRating).toBe(1);
             // Only one call needed
             expect(axios).toHaveBeenCalledTimes(1);
         });
@@ -80,7 +79,6 @@ describe('UrlValidationService', () => {
 
             const result = await UrlValidationService.validateUrl('https://example.com');
             expect(result.isValid).toBe(true);
-            expect(result.confidenceRating).toBe(1);
             expect(axios).toHaveBeenCalledTimes(2);
         });
 
@@ -98,7 +96,6 @@ describe('UrlValidationService', () => {
 
             const result = await UrlValidationService.validateUrl('https://example.com');
             expect(result.isValid).toBe(false);
-            expect(result.confidenceRating).toBe(0);
         });
     });
 

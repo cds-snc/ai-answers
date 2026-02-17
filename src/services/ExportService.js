@@ -136,7 +136,7 @@ class ExportService {
     const headersSet = new Set(
       chats.flatMap((chat) => ExportService.getHeaders(chat.interactions))
     );
-    headersSet.forEach(h => { if (h.includes('confidenceRating')) headersSet.delete(h); });
+    // headersSet.forEach(h => { if (h.includes('confidenceRating')) headersSet.delete(h); });
     let headers = ['uniqueID', ...Array.from(headersSet)];
     // Move any header containing 'autoEval' to the second to last, and 'answer.tools' to the last
     const answerToolsHeaders = headers.filter(h => h.includes('answer.tools'));

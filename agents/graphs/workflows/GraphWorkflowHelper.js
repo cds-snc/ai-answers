@@ -234,7 +234,6 @@ export class GraphWorkflowHelper {
         citationUrl: aiCitationUrl,
       },
       finalCitationUrl: providedCitationUrl,
-      confidenceRating: similarShortCircuit.confidenceRating || similarShortCircuit.similarity || null,
       context: scContext,
       chatId,
       pageLanguage: lang,
@@ -295,7 +294,6 @@ export class GraphWorkflowHelper {
         context: null,
         question: userMessage,
         citationUrl: similarJson.citation?.providedCitationUrl || similarJson.citation?.aiCitationUrl || null,
-        confidenceRating: similarJson.similarity || null,
         sourceCitation: similarJson.citation || null,
       };
     }
@@ -355,7 +353,6 @@ export class GraphWorkflowHelper {
       isValid: false,
       url: null,
       fallbackUrl: null,
-      confidenceRating: '0.1',
     };
 
     if (!citationUrl) {
@@ -376,7 +373,6 @@ export class GraphWorkflowHelper {
       return {
         url: result.url || citationUrl,
         fallbackUrl: result.fallbackUrl || null,
-        confidenceRating: result.confidenceRating?.toString() || '0.5',
       };
     } catch (error) {
       await ServerLoggingService.error('Citation validation failed', chatId, error);

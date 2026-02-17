@@ -331,7 +331,7 @@ function flattenInteraction(chat, interaction, view) {
 
     // Cleanup
     for (const key of Object.keys(merged)) {
-        if (key.includes('_id') || key.includes('__v') || key.includes('confidenceRating')) delete merged[key];
+        if (key.includes('_id') || key.includes('__v')) delete merged[key];
     }
 
     return merged;
