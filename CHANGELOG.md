@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.104.0](https://github.com/cds-snc/ai-answers/compare/v1.103.0...v1.104.0) (2026-02-17)
+
+
+### Features
+
+* remove confidenceRating from the application no longer used ([243e2f6](https://github.com/cds-snc/ai-answers/commit/243e2f6652134f49a930f4722b1c35c91e7e3363))
+* remove confidenceRating from the application no longer used ([ffda351](https://github.com/cds-snc/ai-answers/commit/ffda351bd3137bf9421b9047c90e7c1262eb411a))
+
+
+### Bug Fixes
+
+* add nbsp ([a629c89](https://github.com/cds-snc/ai-answers/commit/a629c89b6f62996415e434305a86ac038878d4ba))
+* add space before colon in fr ([aa91c9e](https://github.com/cds-snc/ai-answers/commit/aa91c9e784951c9a14867c3fdab0e72d534e023e))
+* add useEffect ([18a1607](https://github.com/cds-snc/ai-answers/commit/18a16072338a6286f94df50602af166a933be034))
+* prevent English from showing up on FR page ([4a36f9c](https://github.com/cds-snc/ai-answers/commit/4a36f9cf740eb5128968229a32e786ad09a6c4b9))
+* prevent English from showing up on FR page ([ed39d37](https://github.com/cds-snc/ai-answers/commit/ed39d377f63f8eb901dc91bbf26302b117c66cd2))
+* searchQuery in default view and tools for log export ([7d95a8e](https://github.com/cds-snc/ai-answers/commit/7d95a8e31897b99428d99714c84422dc4ec7e596))
+
 ## [1.103.0](https://github.com/cds-snc/ai-answers/compare/v1.102.0...v1.103.0) (2026-02-16)
 
 
