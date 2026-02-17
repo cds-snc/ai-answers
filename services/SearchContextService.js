@@ -39,6 +39,7 @@ export const SearchContextService = {
         return {
             ...searchResults,
             ...rewriteResult,
+            query: searchQuery,
         };
     }
 };

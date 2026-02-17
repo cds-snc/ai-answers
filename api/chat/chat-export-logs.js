@@ -135,6 +135,7 @@ const DEFAULT_HEADER_ORDER = [
     'expertFeedback.createdAt',
     'expertFeedback.updatedAt',
     'context.department',
+    'context.searchQuery',
     'context.searchResults',
     'context.translatedQuestion',
     'autoEval.expertFeedback.totalScore'
@@ -284,6 +285,7 @@ function flattenInteraction(chat, interaction, view) {
             'expertFeedback.updatedAt': get(interaction, 'expertFeedback.updatedAt') ? new Date(get(interaction, 'expertFeedback.updatedAt')).toISOString() : '',
 
             'context.department': get(interaction, 'context.department'),
+            'context.searchQuery': get(interaction, 'context.searchQuery'),
             // Context search results might be array/object, flatten or stringify? Default behavior is usually stringify for cells if object.
             'context.searchResults': JSON.stringify(get(interaction, 'context.searchResults', '')),
             'context.translatedQuestion': get(interaction, 'context.translatedQuestion'),
