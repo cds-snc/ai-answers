@@ -4,88 +4,87 @@ import ServerLoggingService from './ServerLoggingService.js';
 import { logGraphEvent } from '../agents/graphs/GraphEventLogger.js';
 
 function getHttpsAgent() {
-    return new Agent({ rejectUnauthorized: false });
+  return new Agent({ rejectUnauthorized: false });
 }
 
 function isKnown404(finalUrl) {
-    return finalUrl.includes('404.html');
+  return finalUrl.includes('404.html');
 }
 
 function getFinalUrl(response, url) {
-    const final = response?.request?.res?.responseUrl || url;
-    // Remove trailing slash for consistency
-    return final.endsWith('/') && final.length > 1 ? final.slice(0, -1) : final;
+  const final = response?.request?.res?.responseUrl || url;
+  // Remove trailing slash for consistency
+  return final.endsWith('/') && final.length > 1 ? final.slice(0, -1) : final;
 }
 
 function logCheck(url, response, method, chatId) {
-    // Fire-and-forget log forwarding; do not await so callers remain sync
-    try {
-        logGraphEvent('info', `Checked URL: ${url} => ${response.status} (${getFinalUrl(response, url)}) [${method.toUpperCase()}]`, chatId || 'system', {
-            url,
-            status: response.status,
-            finalUrl: getFinalUrl(response, url),
-            method: method.toUpperCase(),
-        });
-    } catch (_e) {
-        // swallow to avoid affecting URL checks
-    }
+  // Fire-and-forget log forwarding; do not await so callers remain sync
+  try {
+    logGraphEvent('info', `Checked URL: ${url} => ${response.status} (${getFinalUrl(response, url)}) [${method.toUpperCase()}]`, chatId || 'system', {
+      url,
+      status: response.status,
+      finalUrl: getFinalUrl(response, url),
+      method: method.toUpperCase(),
+    });
+  } catch (_e) {
+    // swallow to avoid affecting URL checks
+  }
 }
 async function checkUrlWithMethod(url, method = 'head', chatId) {
-    const httpsAgent = getHttpsAgent();
-    let result = {
-        isValid: false,
-        status: null,
-        finalUrl: url,
-        error: null
-    };
-    try {
-        const response = await axios({
-            method,
-            url,
-            httpsAgent,
-            maxRedirects: 10,
-            timeout: 10000,
-            headers: {
-                'User-Agent': process.env.USER_AGENT || 'ai-answers',
-            },
-            validateStatus: () => true,
-        });
-        result.status = response.status;
-        result.finalUrl = getFinalUrl(response, url);
-        result.isValid = response.status === 200 && !isKnown404(result.finalUrl);
-        logCheck(url, response, method, chatId);
-        return result;
-    } catch (error) {
-        result.status = error.response?.status || 500;
-        result.finalUrl = url;
-        result.isValid = false;
-        result.error = error.message || 'Unknown error';
-        logCheck(url, error.response || { status: result.status }, method, chatId);
-        return result;
-    }
+  const httpsAgent = getHttpsAgent();
+  let result = {
+    isValid: false,
+    status: null,
+    finalUrl: url,
+    error: null
+  };
+  try {
+    const response = await axios({
+      method,
+      url,
+      httpsAgent,
+      maxRedirects: 10,
+      timeout: 10000,
+      headers: {
+        'User-Agent': process.env.USER_AGENT || 'ai-answers',
+      },
+      validateStatus: () => true,
+    });
+    result.status = response.status;
+    result.finalUrl = getFinalUrl(response, url);
+    result.isValid = response.status === 200 && !isKnown404(result.finalUrl);
+    logCheck(url, response, method, chatId);
+    return result;
+  } catch (error) {
+    result.status = error.response?.status || 500;
+    result.finalUrl = url;
+    result.isValid = false;
+    result.error = error.message || 'Unknown error';
+    logCheck(url, error.response || { status: result.status }, method, chatId);
+    return result;
+  }
 }
 
 export const UrlValidationService = {
-    async validateUrl(url, chatId) {
-        let headResult = await checkUrlWithMethod(url, 'head', chatId);
-        let result = headResult;
+  async validateUrl(url, chatId) {
+    let headResult = await checkUrlWithMethod(url, 'head', chatId);
+    let result = headResult;
 
-        if (!headResult.isValid) {
-            let getResult = await checkUrlWithMethod(url, 'get', chatId);
-            result = getResult;
-        }
+    if (!headResult.isValid) {
+      let getResult = await checkUrlWithMethod(url, 'get', chatId);
+      result = getResult;
+    }
 
-        return {
-            isValid: result.isValid,
-            url: result.finalUrl,
-            status: result.status,
-            confidenceRating: result.isValid ? 1 : 0,
-            error: result.error || undefined
-        };
-    },
+    return {
+      isValid: result.isValid,
+      url: result.finalUrl,
+      status: result.status,
+      error: result.error || undefined
+    };
+  },
 
-    // Expose internals for testing if needed
-    __private__: { checkUrlWithMethod, isKnown404, getFinalUrl }
+  // Expose internals for testing if needed
+  __private__: { checkUrlWithMethod, isKnown404, getFinalUrl }
 };
 
 // --- NEW: Lightweight formatting-only validation (bottom of file for visibility) ---
@@ -124,7 +123,6 @@ function generateFallbackSearchUrl(lang, question, department, t) {
     isValid: false,
     fallbackUrl: searchUrl,
     fallbackText: t ? t('homepage.chat.citation.fallbackText') : undefined,
-    confidenceRating: '0.1',
   };
 }
 
@@ -142,7 +140,6 @@ UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', q
     return {
       isValid: true,
       url: url,
-      confidenceRating: checkResult.confidenceRating || '0.5',
     };
   }
 

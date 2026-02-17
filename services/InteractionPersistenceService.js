@@ -74,7 +74,6 @@ export const InteractionPersistenceService = {
         const citation = new Citation();
         citation.aiCitationUrl = interaction.answer?.citationUrl || '';
         citation.providedCitationUrl = interaction.finalCitationUrl || '';
-        citation.confidenceRating = interaction.confidenceRating || '';
         citation.citationHead = interaction.answer?.citationHead || '';
 
         const answer = new Answer();

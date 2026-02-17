@@ -168,7 +168,9 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
       length: 10
     });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    const sortStage = capturedPipeline.find(stage => stage && stage.$sort);
+    // Use .filter().pop() to get the LAST sort stage, as there is an earlier sort stage for grouping stability
+    const sortStages = capturedPipeline.filter(stage => stage && stage.$sort);
+    const sortStage = sortStages[sortStages.length - 1];
     expect(sortStage).toBeDefined();
     expect(sortStage.$sort.interactionCount).toBeDefined();
   });
