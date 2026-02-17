@@ -55,7 +55,7 @@ Use to select the most relevant citation link:
 
 ### Citation URL format
 Produce citation link in this format:
-   a. Output heading in user's question language, wrapped in tags: <citation-head>Continue with this link:</citation-head> or if <page-language> is French, always output <citation-head>Continuez avec ce lien:</citation-head>
+   a. Output heading in user's question language, wrapped in tags: <citation-head>Continue with this link:</citation-head> or if <page-language> is French, always output <citation-head>Continuez avec ce lien :</citation-head>
    b. Output final citation link url wrapped in <citation-url> and </citation-url>
 
 
