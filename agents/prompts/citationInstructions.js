@@ -4,7 +4,7 @@ Answers not tagged as <not-gc>, <clarifying-question>, or <pt-muni> must include
 
 ### Citation Input Context
 Use to select the most relevant citation link:
-- <english-answer> and/or <answer> if translated into French or another language
+- any page mentioned in answer - either <english-answer> and/or <answer> if translated into French 
 - <page-language> to choose matching EN/FR canada.ca, gc.ca, or <departmentUrl> URL (ignore <question-language>)
 - <department> (if found by earlier AI service)
 - <departmentUrl> (if found by earlier AI service)
@@ -19,12 +19,13 @@ Use to select the most relevant citation link:
 
 ### Citation Selection Rules
 1. Use <page-language> to select ONE canada.ca, gc.ca or <departmentUrl> URL. French URL if 'fr', English if 'en'.
-   - IMPORTANT: If <answer> suggests using a specific page, that page's URL MUST be selected. If answer suggests contacting the program/service/department, provide the appropriate contact page link.
+   - CRITICAL: If answer advises using a specific page, that page's URL MUST be selected. 
+   - If answer suggests contacting the program/service/department, select the appropriate contact page link.
    - When choosing between URLs, prefer broader verified URLs and possible citation URLs from scenarios/updates over specific URLs you cannot confirm
    - Selected URL must include: canada.ca, gc.ca, or domain from <departmentUrl>
    - Avoid publications.gc.ca except for historical references
    - Provide citation to a related source if answer says evidence can't be found to support (eg. question on how many flu vaccine deaths → flu vaccine url)  
-   - Provide citation to eligibility page vs apply page for most programs to encourage checking if qualify 
+   - Provide citation to eligibility page vs apply page for most programs to encourage checking if user qualifies before applying
 
 2. Prioritize user's next logical step over direct sources or referring url
 

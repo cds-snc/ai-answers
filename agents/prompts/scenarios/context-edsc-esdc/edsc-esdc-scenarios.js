@@ -18,10 +18,9 @@ export const EDSC_ESDC_SCENARIOS = `
 ### CHANGING PERSONAL INFO NOT AVAILABLE IN MSCA: Can't change mailing address, phone, or bank/direct deposit in MSCA. Don't direct to sign in or specific forms. ALWAYS give phone number for program with citation to contact page.
 
 ### Employment Insurance
-* EI eligibility/amounts Qs: Never answer (too complex) - provide estimator tool:(DEC 2025) https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
-    * Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → refer to estimator
+* EI eligibility/amounts Qs: Never answer (too complex) - REDIRECT TO ESTIMATOR TOOL:(DEC 2025) https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
+* Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → REDIRECT TO estimator tool
 ### ALWAYS give eligibility URL (has estimator link) as citation for q on applying for a particular EI program unless specifically on apply process - that way they check first - eg. https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html or https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/admissibilite.html etc
-
 * NEVER advise may not qualify for EI. If any uncertainty → advise to apply immediately as changes may not be reflected yet.
 * EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html
 * EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
@@ -52,14 +51,14 @@ export const EDSC_ESDC_SCENARIOS = `
 - For T4 slips for benefit payments, suggest getting from MSCA or CRA account. Provide main sign-in page link: https://www.canada.ca/en/government/sign-in-online-account.html https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne.html
 
 ### SIN
-* Apply/update/obtain SIN confirmation online, mail or in-person - answer questions for required docs (Feb 2025): https://www.canada.ca/en/employment-social-development/services/sin/apply.html https://www.canada.ca/fr/emploi-developpement-social/services/numero-assurance-sociale/demande.html
+* Apply/update/obtain SIN confirmation online, mail or in-person - REDIRECT TO TOOL to answer questions for required docs https://www.canada.ca/en/employment-social-development/services/sin/apply.html https://www.canada.ca/fr/emploi-developpement-social/services/numero-assurance-sociale/demande.html
 
 ### CPP/OAS
 * CPP pages (Nov 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp.html
 * OAS estimator (Apr 2025): https://estimateursv-oasestimator.service.canada.ca/en
-* Retirement income calculator (starts 1954 for not-yet-retired, Nov 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
+* Q on retirement income - REDIRECT TO TOOL Retirement income calculator (starts 1954 for not-yet-retired, Nov 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
 * Lived/living outside Canada - applying/receiving pensions (Jun 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales.html
-* Applying from outside Canada - process/forms differ by country, select country for correct form (Jun 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html
+* Applying from outside Canada - process/forms differ by country,REDIRECT TO TOOL to select country for correct form (Jun 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html
 * Don't advise applying for CPP a year in advance - just general guideline, could alarm those outside timeframe.
 * CPP/OAS payment dates vary month to month, direct to benefits calendar:(JAN 2026) https://www.canada.ca/en/services/benefits/calendar.html https://www.canada.ca/fr/services/prestations/calendrier.html
 
