@@ -165,6 +165,21 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
+    // Lookup creator user - only need email
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'chatUser',
+        foreignField: '_id',
+        as: 'creatorDoc'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        creatorEmail: { $ifNull: [{ $arrayElemAt: ['$creatorDoc.email', 0] }, ''] }
+      }
+    });
+
     // Lookup context - only need department
     pipeline.push({
       $lookup: {
@@ -264,6 +279,7 @@ async function evalDashboardHandler(req, res) {
         answerDoc: 0,
         evalDoc: 0,
         chatDoc: 0,
+        creatorDoc: 0,
         contextDoc: 0,
         interactionExpertDocs: 0,
         evalExpertDocs: 0,
@@ -349,6 +365,7 @@ async function evalDashboardHandler(req, res) {
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
         expertEmail: { $ifNull: ['$interactionExpert.expertEmail', ''] },
+        creatorEmail: { $ifNull: ['$creatorEmail', ''] },
         processed: '$eval.processed',
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
@@ -373,6 +390,7 @@ async function evalDashboardHandler(req, res) {
         { department: { $regex: esc, $options: 'i' } },
         { pageLanguage: { $regex: esc, $options: 'i' } },
         { expertEmail: { $regex: esc, $options: 'i' } },
+        { creatorEmail: { $regex: esc, $options: 'i' } },
         { fallbackType: { $regex: esc, $options: 'i' } },
         { noMatchReasonType: { $regex: esc, $options: 'i' } },
         { feedback: { $regex: esc, $options: 'i' } }
@@ -428,6 +446,7 @@ async function evalDashboardHandler(req, res) {
       aiEval: 'aiEval',
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType',
+      creatorEmail: 'creatorEmail',
       hasDownload: 'hasDownload',
       feedback: 'feedback'
     };
@@ -468,6 +487,7 @@ async function evalDashboardHandler(req, res) {
       partnerEval: r.partnerEval || '',
       aiEval: r.aiEval || '',
       expertEmail: r.expertEmail || '',
+      creatorEmail: r.creatorEmail || '',
       processed: typeof r.processed === 'boolean' ? r.processed : false,
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
