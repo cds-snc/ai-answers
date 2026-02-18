@@ -144,8 +144,6 @@ const EvalPanel = ({ message, t }) => {
   let evalTitleSuffix = '';
   if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
     evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
-  } else if (evalObj || (message.interaction && message.interaction.autoEval)) {
-    evalTitleSuffix = ' \u2714';
   }
   const evalTitle = baseEvalTitle + evalTitleSuffix;
 
