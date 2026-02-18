@@ -19,6 +19,12 @@ import dbBatchPersistHandler from '../api/batch/batch-persist.js';
 import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
+import experimentalBatchCreateHandler from '../api/experimental/experimental-batch-create.js';
+import experimentalBatchListHandler from '../api/experimental/experimental-batch-list.js';
+import experimentalBatchProcessHandler from '../api/experimental/experimental-batch-process.js';
+import experimentalBatchStatusHandler from '../api/experimental/experimental-batch-status.js';
+import experimentalBatchExportHandler from '../api/experimental/experimental-batch-export.js';
+import experimentalBatchDeleteHandler from '../api/experimental/experimental-batch-delete.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
@@ -192,6 +198,14 @@ app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
 app.delete('/api/batch/batch-delete', dbBatchDeleteHandler);
 app.delete('/api/batch/batch-delete-all', batchesDeleteAllHandler);
 app.get('/api/batch/batch-stats', dbBatchStatsHandler);
+
+// Experimental Batch Endpoints
+app.post('/api/experimental/batch-create', experimentalBatchCreateHandler);
+app.get('/api/experimental/batch-list', experimentalBatchListHandler);
+app.post('/api/experimental/batch-process/:id', experimentalBatchProcessHandler);
+app.get('/api/experimental/batch-status/:id', experimentalBatchStatusHandler);
+app.get('/api/experimental/batch-export/:id', experimentalBatchExportHandler);
+app.delete('/api/experimental/batch-delete/:id', experimentalBatchDeleteHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
