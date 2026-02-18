@@ -243,18 +243,18 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
 }
 
 export function getChatFilterConditions(filters, options = {}) {
-  const { basePath = 'interactions' } = options;
+  const { basePath = 'interactions', userField = 'user' } = options;
   const prefix = basePath ? `${basePath}.` : '';
   const withPath = (field) => `${prefix}${field}`;
   const conditions = [];
 
   // userType
   if (filters.userType === 'public') {
-    conditions.push({ user: { $exists: false } });
+    conditions.push({ [userField]: { $exists: false } });
   } else if (filters.userType === 'admin') {
-    conditions.push({ user: { $exists: true, $ne: null } });
+    conditions.push({ [userField]: { $exists: true, $ne: null } });
   } else if (filters.userType === 'referredPublic') {
-    conditions.push({ user: { $exists: false } });
+    conditions.push({ [userField]: { $exists: false } });
     conditions.push({ [withPath('referringUrl')]: { $exists: true, $nin: [null, ''] } });
   }
 

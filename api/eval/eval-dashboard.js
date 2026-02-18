@@ -315,10 +315,11 @@ async function evalDashboardHandler(req, res) {
       referringUrl,
       urlEn,
       urlFr,
+      userType,
       answerType,
       partnerEval,
       aiEval
-    }, { basePath: '' });
+    }, { basePath: '', userField: 'chatUser' });
     if (sharedFilters.length) {
       andFilters.push(...sharedFilters);
     }
