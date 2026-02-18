@@ -139,7 +139,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
         return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       },
-      searchable: true,
+      searchable: false,
       orderable: true
     },
     {
@@ -147,19 +147,19 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       data: 'questionNumber',
       render: (value) => value != null ? String(value) : '',
       width: '40px',
-      searchable: true,
+      searchable: false,
       orderable: true
     },
-    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => v ? escapeHtmlAttribute(v) : '', searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: false },
+    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: false, orderable: true },
+    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: false, orderable: true },
+    { title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => v ? escapeHtmlAttribute(v) : '', searchable: false, orderable: true },
+    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
+    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: false, orderable: true }
   ]), [formatDate, t]);
 
   return (

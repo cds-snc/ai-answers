@@ -567,6 +567,7 @@
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
+      "referredPublicUsers": "Public référé",
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",

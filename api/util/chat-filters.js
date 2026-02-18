@@ -253,6 +253,9 @@ export function getChatFilterConditions(filters, options = {}) {
     conditions.push({ user: { $exists: false } });
   } else if (filters.userType === 'admin') {
     conditions.push({ user: { $exists: true, $ne: null } });
+  } else if (filters.userType === 'referredPublic') {
+    conditions.push({ user: { $exists: false } });
+    conditions.push({ [withPath('referringUrl')]: { $exists: true, $nin: [null, ''] } });
   }
 
   // department

@@ -232,6 +232,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.question', 'Question 1'),
       data: 'redactedQuestion',
+      searchable: true,
       orderable: false,
       render: (value) => {
         if (!value) return '';

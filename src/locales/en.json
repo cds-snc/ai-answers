@@ -530,6 +530,7 @@
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
+      "referredPublicUsers": "Public Referred",
       "adminUsers": "Admin",
       "answerType": "Answer Type",
       "allAnswerTypes": "All Answer Types",
