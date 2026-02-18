@@ -714,6 +714,7 @@
         "fallback": "Repli",
         "any": "Tous",
         "reason": "Raison de non-correspondance",
+        "download": "Téléchargement",
         "date": "Date"
       }
     },

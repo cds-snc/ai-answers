@@ -88,10 +88,32 @@ async function evalDashboardHandler(req, res) {
         as: 'answerDoc'
       }
     });
-    // Extract only answerType immediately
+
+    // Extract answerType and first tool ID immediately
     pipeline.push({
       $addFields: {
-        answerType: { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] }
+        answerType: { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
+        firstToolId: { $arrayElemAt: [{ $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }, 0] }
+      }
+    });
+
+    // Lookup the first tool document to check for downloadWebPage
+    pipeline.push({
+      $lookup: {
+        from: 'tools',
+        localField: 'firstToolId',
+        foreignField: '_id',
+        as: 'firstToolDoc'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        hasDownload: {
+          $and: [
+            { $eq: [{ $arrayElemAt: ['$firstToolDoc.tool', 0] }, 'downloadWebPage'] },
+            { $eq: [{ $arrayElemAt: ['$firstToolDoc.error', 0] }, 'none'] }
+          ]
+        }
       }
     });
 
@@ -229,7 +251,9 @@ async function evalDashboardHandler(req, res) {
         chatDoc: 0,
         contextDoc: 0,
         interactionExpertDocs: 0,
-        evalExpertDocs: 0
+        evalExpertDocs: 0,
+        firstToolId: 0,
+        firstToolDoc: 0
       }
     });
 
@@ -311,7 +335,8 @@ async function evalDashboardHandler(req, res) {
         processed: '$eval.processed',
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
-        noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] }
+        noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] },
+        hasDownload: { $ifNull: ['$hasDownload', false] }
       }
     });
 
@@ -340,6 +365,7 @@ async function evalDashboardHandler(req, res) {
         orClauses.push({ hasExpertEval: boolSearch });
         orClauses.push({ processed: boolSearch });
         orClauses.push({ hasMatches: boolSearch });
+        orClauses.push({ hasDownload: boolSearch });
       }
 
       pipeline.push({ $match: { $or: orClauses } });
@@ -382,7 +408,8 @@ async function evalDashboardHandler(req, res) {
       partnerEval: 'partnerEval',
       aiEval: 'aiEval',
       fallbackType: 'fallbackType',
-      noMatchReasonType: 'noMatchReasonType'
+      noMatchReasonType: 'noMatchReasonType',
+      hasDownload: 'hasDownload'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
@@ -425,6 +452,7 @@ async function evalDashboardHandler(req, res) {
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
+      hasDownload: r.hasDownload || false,
       date: r.createdAt ? r.createdAt.toISOString() : null
     }));
 

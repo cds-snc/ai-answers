@@ -157,6 +157,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '&#9745;' : '', width: '50px', searchable: false, orderable: false },
     { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
   ]), [formatDate, t]);
 
@@ -201,7 +202,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 searching: true,
                 ordering: true,
                 autoWidth: false,
-                order: [[9, 'desc']],
+                order: [[10, 'desc']],
                 stateSave: true,
                 language: {
                   search: t('admin.evalDashboard.searchLabel', 'Search'),
@@ -265,8 +266,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 9, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'department', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 10, dir: 'desc' };
+                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'department', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'hasDownload', 'createdAt'];
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';

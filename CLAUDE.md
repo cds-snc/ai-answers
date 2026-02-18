@@ -22,7 +22,7 @@ node scripts/generate-system-prompt-documentation.js
 This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the actual prompts.
 
 ## Official languages
-Locales files in src/locales have matching EN and FR versions of ui messages - make sure to suggest changing fr.json if changes are made to en.json
+**Never hardcode user-facing text in components or pages.** All UI strings must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new UI text (column headers, labels, buttons, messages, placeholders, etc.), always add the corresponding key to both locale files in the same PR — don't rely on the fallback string in `t('key', 'fallback')`.
 
 About page is different - text content is in .md files
  *   - English: public/content/about-en.md

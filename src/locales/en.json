@@ -675,6 +675,7 @@
         "fallback": "Fallback",
         "any": "Any",
         "reason": "No-match reason",
+        "download": "Download",
         "date": "Date"
       }
     },
