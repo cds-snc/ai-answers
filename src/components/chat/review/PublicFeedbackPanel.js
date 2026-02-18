@@ -31,8 +31,20 @@ const PublicFeedbackPanel = ({ message, t }) => {
     const fetchedPublicFeedback = data && (data.publicFeedback || data);
     const publicFeedback = fetchedPublicFeedback || interaction.publicFeedback || message.publicFeedback || {};
 
+    // Build title with indicator
+    const baseTitle = t('reviewPanels.publicFeedbackTitle') || 'Public feedback';
+    let publicTitleSuffix = '';
+    if (fetchedPublicFeedback && fetchedPublicFeedback.feedback) {
+        // After fetch: show the actual feedback value (Yes/No)
+        publicTitleSuffix = ` \u2714 ${fetchedPublicFeedback.feedback}`;
+    } else if (interaction.publicFeedback) {
+        // Before fetch: publicFeedback is an ObjectId reference — just show checkmark
+        publicTitleSuffix = ' \u2714';
+    }
+    const publicTitle = baseTitle + publicTitleSuffix;
+
     return (
-        <GcdsDetails detailsTitle={t('reviewPanels.publicFeedbackTitle') || 'Public feedback'} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <GcdsDetails detailsTitle={publicTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
             try {
                 // Call handleToggle when the details panel is opened (e.target.open === true)
                 if (e && e.target && !e.target.open) {
