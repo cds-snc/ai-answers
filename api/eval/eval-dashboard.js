@@ -243,6 +243,21 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
+    // Lookup public feedback - only need whether feedback string is non-empty
+    pipeline.push({
+      $lookup: {
+        from: 'publicfeedbacks',
+        localField: 'publicFeedback',
+        foreignField: '_id',
+        as: 'publicFeedbackDoc'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        feedbackValue: { $ifNull: [{ $arrayElemAt: ['$publicFeedbackDoc.feedback', 0] }, ''] }
+      }
+    });
+
     // Clean up temporary lookup arrays to free memory
     pipeline.push({
       $project: {
@@ -253,7 +268,9 @@ async function evalDashboardHandler(req, res) {
         interactionExpertDocs: 0,
         evalExpertDocs: 0,
         firstToolId: 0,
-        firstToolDoc: 0
+        firstToolDoc: 0,
+        publicFeedbackDoc: 0,
+        feedbackValue: 0
       }
     });
 
@@ -336,7 +353,8 @@ async function evalDashboardHandler(req, res) {
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
         noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] },
-        hasDownload: { $ifNull: ['$hasDownload', false] }
+        hasDownload: { $ifNull: ['$hasDownload', false] },
+        feedback: { $ifNull: ['$feedbackValue', ''] }
       }
     });
 
@@ -356,7 +374,8 @@ async function evalDashboardHandler(req, res) {
         { pageLanguage: { $regex: esc, $options: 'i' } },
         { expertEmail: { $regex: esc, $options: 'i' } },
         { fallbackType: { $regex: esc, $options: 'i' } },
-        { noMatchReasonType: { $regex: esc, $options: 'i' } }
+        { noMatchReasonType: { $regex: esc, $options: 'i' } },
+        { feedback: { $regex: esc, $options: 'i' } }
       ];
 
       // If the user searched a boolean-like term, also match boolean columns directly
@@ -409,7 +428,8 @@ async function evalDashboardHandler(req, res) {
       aiEval: 'aiEval',
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType',
-      hasDownload: 'hasDownload'
+      hasDownload: 'hasDownload',
+      feedback: 'feedback'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
@@ -453,6 +473,7 @@ async function evalDashboardHandler(req, res) {
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
       hasDownload: r.hasDownload || false,
+      feedback: r.feedback || '',
       date: r.createdAt ? r.createdAt.toISOString() : null
     }));
 
