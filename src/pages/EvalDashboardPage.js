@@ -158,7 +158,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '&#9745;' : '', width: '50px', searchable: false, orderable: false },
+    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: false },
     { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
   ]), [formatDate, t]);
 
