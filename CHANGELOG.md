@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.104.1](https://github.com/cds-snc/ai-answers/compare/v1.104.0...v1.104.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* more finetuning ([74e0624](https://github.com/cds-snc/ai-answers/commit/74e0624f1b09e3d78fcee5000d38396bacba2973))
+* system card updates ([8696a2d](https://github.com/cds-snc/ai-answers/commit/8696a2d9655a5642903adaea3e1ac07ef377f10d))
+
 ## [1.104.0](https://github.com/cds-snc/ai-answers/compare/v1.103.0...v1.104.0) (2026-02-17)
 
 
