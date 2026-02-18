@@ -1,4 +1,4 @@
-# Experimental Batch API & Dataset Management
+﻿# Experimental Batch API & Dataset Management
 
 ## Overview
 
@@ -20,6 +20,44 @@ The core philosophy is **Iterative Improvement**:
 
 > [!IMPORTANT]
 > **Graph Integration**: Batch processing MUST use the LangGraph pipeline directly via `getGraphApp()` and `graphRequestContext`, NOT `AnswerGenerationService`. Using `AnswerGenerationService` bypasses critical pipeline stages (PII redaction, translation, context matching, citation verification, persistence).
+
+## Finalized Decisions (Locked for Implementation)
+
+1. **Cancellation handling**:
+   - `ExperimentalBatchItem.status` includes `cancelled`.
+   - Cancelled items must persist a `cancellationReason`.
+   - Cancelled rows remain in batch results for auditability.
+   - If a dataset is created from a batch, cancelled rows are excluded from future processing input by default.
+2. **Batch orchestration direction**:
+   - Current client flow in `src/pages/BatchPage.js` is the behavior baseline.
+   - Execution orchestration moves server-side; UI triggers APIs only.
+3. **Migration strategy**:
+   - Keep `experimental-*` endpoints active and backward-compatible with the existing legacy batch flow until explicit retirement.
+4. **Authorization**:
+   - All `/api/experimental/*` endpoints are admin-only.
+5. **Comparator row pairing**:
+   - Use deterministic `pairKey` for row matching.
+   - Preferred source: user-selected shared key column (e.g., `questionId`).
+   - Fallback source: normalized question hash.
+   - Unmatched rows are stored with `status: 'skipped'` and reason (`missing_in_baseline` or `missing_in_candidate`).
+6. **Analyzer identity and persistence**:
+   - Use stable kebab-case analyzer IDs in API and DB (e.g., `semantic-comparison`, `safety`, `bias-detection`).
+   - Persist analyzer output in a uniform structure under `analysisResults.<analyzerId>`.
+7. **Promotion behavior**:
+   - Promotion is allowed for partially completed batches.
+   - API returns a warning when non-completed rows are included, with per-status counts.
+8. **Dataset deletion policy**:
+   - Dataset delete is hard delete (no soft delete lifecycle).
+   - UI must show confirmation and a pre-delete "Download Excel backup" link.
+9. **Duplicate-content behavior**:
+   - Detect duplicate content by hash and return a warning payload.
+   - Do not hard-block by default; admin can continue upload.
+10. **SSE progress payload**:
+   - Analyzer-level progress is always included when analyzers are configured.
+11. **Refusal and error visibility**:
+   - Refusals and processing errors must be persisted as dataset rows (not dropped).
+   - Row output must include standardized outcome fields so evaluators can test expected refusal behavior.
+   - Default downstream processing ignores non-completed rows unless explicitly enabled.
 
 ## Proposed Changes
 
@@ -85,9 +123,9 @@ ExperimentalQueueService.registerProcessor(QUEUE_NAME, processor, {
 ```
 
 **New Methods**:
-- `createBatch(batchData, itemsData)` — Accept `datasetId` to create batch from existing dataset
-- **`cancelBatch(batchId)`** — Mark batch as cancelled, stop processing pending items
-- **`promoteToDataset(batchId, details)`** — Create new dataset from completed batch results (with MongoDB transaction)
+- `createBatch(batchData, itemsData)` â€” Accept `datasetId` to create batch from existing dataset
+- **`cancelBatch(batchId)`** â€” Mark batch as cancelled, stop processing pending items
+- **`promoteToDataset(batchId, details)`** â€” Create new dataset from all batch rows, preserving completion/refusal/error outcomes for evaluator use
 
 **Promotion with Transaction**:
 ```javascript
@@ -97,8 +135,8 @@ async promoteToDataset(batchId, details) {
   
   try {
     const batch = await ExperimentalBatch.findById(batchId).session(session);
-    if (batch.status !== 'completed') {
-      throw new Error('Cannot promote incomplete batch');
+    if (!['completed', 'failed', 'cancelled'].includes(batch.status)) {
+      throw new Error('Cannot promote batch while it is still running');
     }
     
     // Check for duplicate dataset name
@@ -116,19 +154,24 @@ async promoteToDataset(batchId, details) {
       createdBy: details.userId,
     }], { session });
     
-    const items = await ExperimentalBatchItem.find({ 
-      experimentalBatch: batchId,
-      status: 'completed'
-    }).session(session);
+    const items = await ExperimentalBatchItem.find({
+      experimentalBatch: batchId
+    }).sort({ rowIndex: 1 }).session(session);
     
     const rows = items.map((item, idx) => ({
       experimentalDataset: dataset[0]._id,
       rowIndex: idx + 1,
       data: {
+        sourceRowIndex: item.rowIndex,
+        outcomeStatus: item.status, // completed | refused | failed | cancelled | skipped
+        outcomeCode: item.outcomeCode || null, // standardized reason code
+        outcomeText: item.outcomeText || item.error || item.cancellationReason || item.skipReason || null,
+        isProcessable: item.status === 'completed',
         question: item.question,
-        answer: item.answer,
+        answer: item.answer || null,
         ...(item.similarityScore !== undefined && { similarityScore: item.similarityScore }),
         ...(item.evaluatorOutput && { evaluatorOutput: item.evaluatorOutput }),
+        ...(item.analysisResults && { analysisResults: item.analysisResults }),
       }
     }));
     
@@ -139,7 +182,12 @@ async promoteToDataset(batchId, details) {
     await dataset[0].save({ session });
     
     await session.commitTransaction();
-    return dataset[0];
+    return {
+      dataset: dataset[0],
+      warning: {
+        code: rows.some(r => r.data.outcomeStatus !== 'completed') ? 'NON_COMPLETED_ROWS_INCLUDED' : null
+      }
+    };
   } catch (err) {
     await session.abortTransaction();
     throw err;
@@ -195,6 +243,67 @@ class ExperimentalAnalyzerRegistry {
   }
   // ... rest of registry methods
 }
+
+#### Multi-Analyzer Batch Runs
+
+- Support running multiple analyzers (evaluators and/or comparators) for each batch item.
+- Batch creation API and batch config will accept an `analyzers` array with stable IDs: `[{ id: 'safety', config: {...} }, { id: 'semantic-comparison', config: {...} }]`.
+- `ExperimentalAnalyzerRegistry` will expose a `getProcessor(analyzerId)` method that returns a callable processor for that analyzer (the processor should accept `{ item, batch, config }` and return the analyzer output object).
+- `ExperimentalBatchService` changes:
+  - After generating or retrieving an item's `answer`, call all configured analyzers for that item (in parallel where safe), collecting each analyzer's output.
+  - Persist analyzer outputs in a uniform shape under `item.analysisResults.<analyzerId>`, e.g.:
+
+```json
+{
+  "analysisResults": {
+    "safety": {
+      "status": "completed",
+      "score": 0.9,
+      "label": "safe",
+      "details": { "issues": [] },
+      "error": null
+    },
+    "semantic-comparison": {
+      "status": "completed",
+      "score": 0.85,
+      "label": "match",
+      "details": { "similarityScore": 0.85, "match": true, "explanation": "..." },
+      "error": null
+    }
+  }
+}
+```
+
+  - For CSV/flat export use a flattened naming scheme prefixed by analyzer id, e.g. `safety_score`, `semantic-comparison_similarityScore`.
+  - Ensure per-analyzer errors are recorded separately on the item (e.g. `item.analysisErrors = { safety: { code: 'timeout', message: '...' } }`) so a failing analyzer doesn't fail the whole item.
+
+- Comparator pairing flow:
+  - Add `pairKey` to dataset rows.
+  - On upload, derive `pairKey` from a selected shared key column when provided.
+  - If no shared key column is provided, derive `pairKey` from normalized `question` text hash.
+  - Comparator batches pair baseline/comparison rows by `pairKey`.
+  - Unmatched rows are persisted as `skipped` with a deterministic reason code.
+
+- Concurrency & throttling:
+  - Analyzer invocations should respect analyzer-specific concurrency limits (configurable) and the global `BATCH_CONCURRENCY` to avoid overloading LLMs.
+  - Registry entries may include an optional `concurrency` hint used by the queue/worker when scheduling analyzer runs.
+
+- Progress & SSE updates:
+  - The SSE `batch-progress` events always include analyzer-level counts when analyzers exist, e.g. `{ summary: { completed: X, failed: Y }, analyzers: { safety: { completed: a, failed: b }, semanticComparison: { completed: c, failed: d } } }`.
+
+- Promotion & dataset rows:
+  - When promoting a batch to a dataset, include analyzer outputs in the dataset rows either as a nested `analysis` object or as flattened prefixed fields depending on `promoteOptions.flattenAnalyzerOutput`.
+  - Default promote behavior: keep analyzer outputs nested under `analysis.{analyzerId}` in Mongo rows and provide an export utility to flatten fields for CSV/Excel.
+
+- API surface & UI:
+  - `POST /api/experimental/batches` (new alias) and existing `POST /api/experimental/batch-create` are both supported during migration.
+  - The batch-edit UI will allow selecting multiple analyzers and per-analyzer configuration.
+  - The `ExperimentalAnalysisPage` UI will show per-analyzer progress and results; allow toggling which analyzer columns to display in the results table.
+
+- Tests:
+  - Add tests to verify multiple analyzers run for each item and their outputs are stored under `analysisResults`.
+  - Test exporter to ensure prefixed/flattened fields match expected names.
+
 ```
 
 #### [NEW] [services/experimental/analyzers/AnalyzerBase.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/AnalyzerBase.js)
@@ -255,11 +364,13 @@ export default AnalyzerBase;
 
 #### [NEW] [api/experimental/batch-cancel.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/batch-cancel.js)
 - **POST /api/experimental/batches/:id/cancel**
+- Legacy alias during migration: **POST /api/experimental/batch-cancel/:id**
 - Marks batch status as `cancelled`.
 - Pending items are skipped; in-progress items complete but no new items start.
 
 #### [NEW] [api/experimental/batch-progress.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/batch-progress.js)
 - **GET /api/experimental/batches/:id/progress** (SSE endpoint)
+- Legacy alias during migration: **GET /api/experimental/batch-progress/:id**
 - Streams real-time progress events to the client:
 ```javascript
 // Server-Sent Events for batch progress
@@ -288,8 +399,8 @@ const interval = setInterval(async () => {
 
 #### [MODIFY] [AgentFactory.js](file:///c:/Users/hymary/repos/ai-answers/agents/AgentFactory.js)
 Add LLM factory methods for judge/evaluator agents (following existing naming pattern):
-- **`createJudgeLLM(provider)`** — Returns raw LLM for semantic comparison (no tools)
-- **`createSafetyLLM(provider)`** — Returns raw LLM for safety/bias evaluation (no tools)
+- **`createJudgeLLM(provider)`** â€” Returns raw LLM for semantic comparison (no tools)
+- **`createSafetyLLM(provider)`** â€” Returns raw LLM for safety/bias evaluation (no tools)
 
 ```javascript
 // Follow existing pattern from createRankerAgent, createTranslationAgent
@@ -364,8 +475,7 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
     type: String, 
     required: true, 
     trim: true, 
-    maxLength: 255,
-    index: { unique: true } // Prevents duplicate names
+    maxLength: 255
   },
   description: { type: String, default: '', maxLength: 2000 },
   type: { 
@@ -388,17 +498,19 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
     ref: 'ExperimentalBatch' 
   },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  // Soft delete support
-  deletedAt: { type: Date, default: null },
+  contentHash: { type: String, index: true },
 }, { 
   timestamps: true,
   versionKey: false
 });
 
 // Indexes
+ExperimentalDatasetSchema.index(
+  { name: 1 },
+  { unique: true, collation: { locale: 'en', strength: 2 } }
+);
 ExperimentalDatasetSchema.index({ createdAt: -1 });
 ExperimentalDatasetSchema.index({ type: 1 });
-ExperimentalDatasetSchema.index({ deletedAt: 1 }); // For cleanup queries
 ```
 
 #### [NEW] [models/experimentalDatasetRow.js](file:///c:/Users/hymary/repos/ai-answers/models/experimentalDatasetRow.js)
@@ -412,6 +524,7 @@ const ExperimentalDatasetRowSchema = new mongoose.Schema({
     required: true,
   },
   rowIndex: { type: Number, required: true },
+  pairKey: { type: String, index: true }, // Deterministic row-matching key for comparators
   data: { type: mongoose.Schema.Types.Mixed, required: true },
 }, {
   timestamps: true,
@@ -419,6 +532,7 @@ const ExperimentalDatasetRowSchema = new mongoose.Schema({
 });
 
 ExperimentalDatasetRowSchema.index({ experimentalDataset: 1, rowIndex: 1 });
+ExperimentalDatasetRowSchema.index({ experimentalDataset: 1, pairKey: 1 });
 ```
 
 #### [NEW] [services/experimental/ExperimentalDatasetService.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/ExperimentalDatasetService.js)
@@ -441,13 +555,18 @@ class ExperimentalDatasetService {
     }
     
     // Check for duplicate name
-    const existing = await ExperimentalDataset.findOne({ 
-      name: metadata.name, 
-      deletedAt: null 
-    });
+    const existing = await ExperimentalDataset.findOne({ name: metadata.name });
     if (existing) {
       throw new DuplicateError(`Dataset "${metadata.name}" already exists`);
     }
+
+    // Duplicate-content warning (non-blocking by default)
+    const contentHash = this._computeContentHash(rows);
+    const existingByContent = await ExperimentalDataset.findOne({ contentHash });
+    const duplicateContentWarning = existingByContent ? {
+      existingDatasetId: existingByContent._id,
+      existingName: existingByContent.name,
+    } : null;
     
     // Create dataset and rows in transaction
     const session = await mongoose.startSession();
@@ -458,18 +577,20 @@ class ExperimentalDatasetService {
         ...metadata,
         rowCount: rows.length,
         columns: this._inferColumns(rows),
+        contentHash,
         createdBy: userId,
       }], { session });
       
       const datasetRows = rows.map((row, idx) => ({
         experimentalDataset: dataset[0]._id,
         rowIndex: idx + 1,
+        pairKey: this._buildPairKey(row, metadata.pairKeyColumn),
         data: row,
       }));
       
       await ExperimentalDatasetRow.insertMany(datasetRows, { session });
       await session.commitTransaction();
-      return dataset[0];
+      return { dataset: dataset[0], warning: duplicateContentWarning };
     } catch (err) {
       await session.abortTransaction();
       throw err;
@@ -517,11 +638,12 @@ class ExperimentalDatasetService {
 
 #### [NEW] [api/experimental/dataset-list.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/dataset-list.js)
 - **GET /api/experimental/datasets**
-- List available datasets (excludes soft-deleted).
+- List available datasets.
 
 #### [NEW] [api/experimental/dataset-delete.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/dataset-delete.js)
 - **DELETE /api/experimental/datasets/:id**
-- Soft-deletes dataset by setting `deletedAt` timestamp.
+- Hard-deletes dataset and all rows in a transaction.
+- UI requires explicit confirmation and shows a "Download Excel backup" link before delete is confirmed.
 
 #### [NEW] [api/experimental/batch-promote.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/batch-promote.js)
 - **POST /api/experimental/batches/:id/promote**
@@ -551,6 +673,18 @@ useEffect(() => {
 ---
 
 ### Error Handling
+
+### Security / Authorization
+
+All experimental endpoints are admin-only and must be wrapped with auth middleware:
+
+```javascript
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+
+export default function handler(req, res) {
+  return withProtection(actualHandler, authMiddleware, adminMiddleware)(req, res);
+}
+```
 
 #### Dataset Upload Validation
 When uploading datasets, provide clear error messages for common issues:
@@ -601,6 +735,54 @@ catch (err) {
   await item.save();
 }
 ```
+
+#### Standardized Outcome Mapping (Required)
+All batch rows must map graph outcomes to a normalized envelope so refusal/error behavior is queryable in datasets and exports.
+
+```javascript
+// Row-level outcome fields persisted on ExperimentalBatchItem
+{
+  status: 'completed' | 'refused' | 'failed' | 'cancelled' | 'skipped',
+  outcomeCode: string | null, // e.g. SHORT_QUERY, REDACTION_BLOCK, POLICY_REFUSAL, PROCESSING_ERROR
+  outcomeText: string | null, // human-readable explanation / refusal text
+  error: string | null,       // raw error message where applicable
+}
+```
+
+Recommended minimum mapping:
+- Short query validation refusal -> `status: 'refused'`, `outcomeCode: 'SHORT_QUERY'`
+- Redaction blocking refusal -> `status: 'refused'`, `outcomeCode: 'REDACTION_BLOCK'`
+- Safety/policy refusal -> `status: 'refused'`, `outcomeCode: 'POLICY_REFUSAL'`
+- Runtime/infra error -> `status: 'failed'`, `outcomeCode: 'PROCESSING_ERROR'`
+
+These fields must be included in:
+- batch status item payload
+- batch export payload
+- promoted dataset rows
+- flattened CSV/Excel export (`outcomeStatus`, `outcomeCode`, `outcomeText`)
+
+#### Outcome Code Dictionary (Canonical)
+The following codes are based on current graph + prompt behavior and must be used consistently across API/DB/export/tests.
+
+| outcomeCode | status | Source signal | Notes |
+|---|---|---|---|
+| `SHORT_QUERY` | `refused` | `ShortQueryValidation` thrown in validate step | Include fallback search URL in row metadata if present |
+| `REDACTION_BLOCK` | `refused` | `RedactionError` with blocked redaction/manipulation/profanity/threat/private content | Include `redactedItems` summary in metadata |
+| `PII_DETECTED` | `refused` | `RedactionError` from PII flow (`PII detected in user message`) | Store masked/redacted text only |
+| `TRANSLATION_CONTENT_FILTER` | `refused` | translation service returns `blocked: true`, then graph throws redaction error | Normalize provider-specific content filter errors here |
+| `NOT_GC_SCOPE` | `refused` | parsed answer has `answerType = 'not-gc'` | Covers out-of-scope/manipulative/not-found-on-GC responses |
+| `PT_MUNI_SCOPE` | `refused` | parsed answer has `answerType = 'pt-muni'` | Provincial/territorial/municipal jurisdiction |
+| `CLARIFYING_QUESTION` | `refused` | parsed answer has `answerType = 'clarifying-question'` | Incomplete user info; intentionally no citation |
+| `PROCESSING_ERROR` | `failed` | uncaught/unknown runtime error in processing | fallback error bucket |
+| `BATCH_CANCELLED` | `cancelled` | item cancelled by admin batch cancel action | use `cancellationReason` detail |
+| `MISSING_IN_BASELINE` | `skipped` | comparator pairing mismatch | baseline row missing for pairKey |
+| `MISSING_IN_CANDIDATE` | `skipped` | comparator pairing mismatch | candidate row missing for pairKey |
+
+Mapping precedence (first match wins):
+1. Cancellation/skipped statuses set by batch orchestration (`cancelled`/`skipped`)
+2. Graph exception classes (`ShortQueryValidation`, `RedactionError`)
+3. Parsed answer type (`not-gc`, `pt-muni`, `clarifying-question`)
+4. Fallback runtime error (`PROCESSING_ERROR`)
 
 ---
 
@@ -702,11 +884,27 @@ export function BatchProgressBar({ batchId }) {
 
 ### Cancellation
 
+#### Schema Requirements
+
+`ExperimentalBatchItem` schema must include cancellation/skipped semantics:
+
+```javascript
+status: {
+  type: String,
+  enum: ['pending', 'processing', 'completed', 'refused', 'failed', 'cancelled', 'skipped'],
+  default: 'pending'
+},
+outcomeCode: { type: String }, // standardized refusal/error code
+outcomeText: { type: String }, // standardized refusal/error message
+cancellationReason: { type: String },
+skipReason: { type: String },
+```
+
 #### Batch Cancellation Flow
 1. User clicks "Cancel" button on in-progress batch
 2. API sets batch status to `cancelled`
 3. Queue processor checks batch status before processing each item
-4. Pending items are marked as `cancelled` without processing
+4. Pending items are marked as `cancelled` without processing, with a persisted `cancellationReason`
 5. Currently in-flight items complete normally
 
 ```javascript
@@ -729,7 +927,7 @@ async cancelBatch(batchId) {
   // Mark all pending items as cancelled
   await ExperimentalBatchItem.updateMany(
     { experimentalBatch: batchId, status: 'pending' },
-    { status: 'cancelled' }
+    { status: 'cancelled', cancellationReason: 'batch_cancelled_by_admin' }
   );
   
   // Update summary
@@ -744,7 +942,10 @@ async _processItem(batchId, itemId) {
   
   // Early exit if batch was cancelled
   if (batch.status === 'cancelled') {
-    await ExperimentalBatchItem.findByIdAndUpdate(itemId, { status: 'cancelled' });
+    await ExperimentalBatchItem.findByIdAndUpdate(itemId, {
+      status: 'cancelled',
+      cancellationReason: 'batch_cancelled_before_item_start'
+    });
     return { batchId, itemId, status: 'cancelled' };
   }
   
@@ -787,14 +988,13 @@ ExperimentalDatasetSchema.index(
   { name: 1 }, 
   { 
     unique: true, 
-    collation: { locale: 'en', strength: 2 }, // Case-insensitive
-    partialFilterExpression: { deletedAt: null } // Only for non-deleted
+    collation: { locale: 'en', strength: 2 } // Case-insensitive
   }
 );
 ```
 
 #### Content Hash for Deduplication (Optional)
-Optionally detect duplicate content by hashing:
+Detect duplicate content by hashing and return warning metadata:
 
 ```javascript
 // services/experimental/ExperimentalDatasetService.js
@@ -808,18 +1008,17 @@ async createFromUpload(file, metadata, userId) {
   const contentHash = this._computeContentHash(rows);
   
   // Check for duplicate content
-  const existingByContent = await ExperimentalDataset.findOne({ 
-    contentHash, 
-    deletedAt: null 
-  });
+  const existingByContent = await ExperimentalDataset.findOne({ contentHash });
   
   if (existingByContent) {
-    throw new DuplicateError(
-      `A dataset with identical content already exists: "${existingByContent.name}"`
-    );
+    warning = {
+      code: 'DUPLICATE_CONTENT',
+      existingDatasetId: existingByContent._id,
+      existingName: existingByContent.name
+    };
   }
   
-  // ... continue with creation
+  // Continue creation; API returns warning to admin caller
 }
 ```
 
@@ -892,42 +1091,42 @@ Add translations for experimental features in both languages:
 {
   "experimental": {
     "analysis": {
-      "title": "Analyse expérimentale",
-      "selectAnalyzer": "Sélectionner l'analyseur",
+      "title": "Analyse expÃ©rimentale",
+      "selectAnalyzer": "SÃ©lectionner l'analyseur",
       "choose": "-- Choisir un analyseur --",
       "runAnalysis": "Lancer l'analyse",
       "processing": "En cours...",
       "cancelBatch": "Annuler",
       "cancelConfirm": "Voulez-vous vraiment annuler ce lot?",
       "progress": "Progression",
-      "completed": "Terminé",
-      "failed": "Échoué"
+      "completed": "TerminÃ©",
+      "failed": "Ã‰chouÃ©"
     },
     "datasets": {
-      "title": "Ensembles de données",
-      "upload": "Téléverser un ensemble de données",
-      "uploadDescription": "Téléverser un fichier CSV ou Excel",
+      "title": "Ensembles de donnÃ©es",
+      "upload": "TÃ©lÃ©verser un ensemble de donnÃ©es",
+      "uploadDescription": "TÃ©lÃ©verser un fichier CSV ou Excel",
       "name": "Nom",
       "type": "Type",
       "rowCount": "Lignes",
-      "createdAt": "Créé le",
+      "createdAt": "CrÃ©Ã© le",
       "actions": "Actions",
       "delete": "Supprimer",
-      "deleteConfirm": "Voulez-vous vraiment supprimer cet ensemble de données?",
-      "preview": "Aperçu",
-      "promote": "Enregistrer comme ensemble de données",
-      "promoteSuccess": "Ensemble de données créé avec succès",
+      "deleteConfirm": "Voulez-vous vraiment supprimer cet ensemble de donnÃ©es?",
+      "preview": "AperÃ§u",
+      "promote": "Enregistrer comme ensemble de donnÃ©es",
+      "promoteSuccess": "Ensemble de donnÃ©es crÃ©Ã© avec succÃ¨s",
       "types": {
         "question-only": "Questions seulement",
         "qa-pair": "Paires Q/R",
-        "evaluation-set": "Ensemble d'évaluation",
+        "evaluation-set": "Ensemble d'Ã©valuation",
         "batch-output": "Sortie de lot"
       },
       "errors": {
-        "duplicateName": "Un ensemble de données avec ce nom existe déjà",
-        "invalidFormat": "Format de fichier invalide. Veuillez téléverser un fichier CSV ou Excel.",
+        "duplicateName": "Un ensemble de donnÃ©es avec ce nom existe dÃ©jÃ ",
+        "invalidFormat": "Format de fichier invalide. Veuillez tÃ©lÃ©verser un fichier CSV ou Excel.",
         "missingColumns": "Colonnes requises manquantes : {{columns}}",
-        "emptyFile": "Le fichier téléversé ne contient aucune donnée"
+        "emptyFile": "Le fichier tÃ©lÃ©versÃ© ne contient aucune donnÃ©e"
       }
     },
     "batches": {
@@ -935,9 +1134,9 @@ Add translations for experimental features in both languages:
       "status": {
         "pending": "En attente",
         "processing": "En cours",
-        "completed": "Terminé",
-        "failed": "Échoué",
-        "cancelled": "Annulé"
+        "completed": "TerminÃ©",
+        "failed": "Ã‰chouÃ©",
+        "cancelled": "AnnulÃ©"
       }
     }
   }
@@ -981,18 +1180,7 @@ class ExperimentalCleanupService {
     console.log(`[ExperimentalCleanupService] Running cleanup for items older than ${cutoffDate.toISOString()}`);
     
     try {
-      // 1. Delete soft-deleted datasets and their rows
-      const deletedDatasets = await ExperimentalDataset.find({
-        deletedAt: { $ne: null, $lt: cutoffDate }
-      });
-      
-      for (const dataset of deletedDatasets) {
-        await ExperimentalDatasetRow.deleteMany({ experimentalDataset: dataset._id });
-        await dataset.deleteOne();
-      }
-      console.log(`[ExperimentalCleanupService] Removed ${deletedDatasets.length} soft-deleted datasets`);
-      
-      // 2. Delete old completed/failed batches and their items
+      // Delete old completed/failed/cancelled batches and their items
       const oldBatches = await ExperimentalBatch.find({
         status: { $in: ['completed', 'failed', 'cancelled'] },
         updatedAt: { $lt: cutoffDate }
@@ -1016,7 +1204,7 @@ export default new ExperimentalCleanupService();
 #### Environment Configuration
 ```bash
 # .env
-EXPERIMENTAL_RETENTION_DAYS=90  # Days to keep completed batches/deleted datasets
+EXPERIMENTAL_RETENTION_DAYS=90  # Days to keep completed/failed/cancelled batches
 ```
 
 #### Manual Cleanup Endpoint (Admin only)
@@ -1034,51 +1222,143 @@ export default withAdmin(async function handler(req, res) {
 
 ### Tests
 
+#### Unit Tests (Required)
+
 #### [NEW] [services/__tests__/ExperimentalBatchService.test.js](file:///c:/Users/hymary/repos/ai-answers/services/__tests__/ExperimentalBatchService.test.js)
-- Batch creation, processing, and status updates.
-- Mock graph execution (not `AnswerGenerationService`).
-- **Test Dataset Flow**:
-    1.  Mock `ExperimentalDataset` creation.
-    2.  Create Batch from Dataset ID.
-    3.  Process Batch (mock Graph execution via `getGraphApp`).
-    4.  **Promote to Dataset**: Verify that `promoteToDataset` creates a new Dataset with the correct rows derived from the batch results.
-- **Cancellation Tests**:
-    - Cancel pending batch → all pending items marked cancelled
-    - Cancel in-progress batch → in-flight items complete, pending items cancelled
+- Creates batch from direct items and enqueues all rows.
+- Creates batch from `datasetId` and preserves source ordering.
+- Uses graph app (`getGraphApp` + `graphRequestContext`) and does not call `AnswerGenerationService`.
+- Persists `analysisResults.<analyzerId>` and `analysisErrors.<analyzerId>` in uniform shape.
+- Supports multi-analyzer execution for the same row.
+- Handles comparator pairing by `pairKey`.
+- Sets `skipped` with `MISSING_IN_BASELINE` and `MISSING_IN_CANDIDATE` for unmatched pairs.
+- Maps refusal/error outcomes to canonical codes:
+  - `SHORT_QUERY`
+  - `REDACTION_BLOCK`
+  - `PII_DETECTED`
+  - `TRANSLATION_CONTENT_FILTER`
+  - `NOT_GC_SCOPE`
+  - `PT_MUNI_SCOPE`
+  - `CLARIFYING_QUESTION`
+  - `PROCESSING_ERROR`
+- Cancellation behavior:
+  - pending batch cancel -> pending rows become `cancelled` with `BATCH_CANCELLED`.
+  - in-progress cancel -> in-flight rows finish; no new rows start.
+- Promotion behavior:
+  - promotes all rows (completed + refused + failed + cancelled + skipped).
+  - sets `isProcessable` correctly (`true` only for completed).
+  - includes `outcomeStatus`, `outcomeCode`, `outcomeText`.
+  - returns warning when non-completed rows are included.
 
 #### [NEW] [services/__tests__/ExperimentalDatasetService.test.js](file:///c:/Users/hymary/repos/ai-answers/services/__tests__/ExperimentalDatasetService.test.js)
-- Dataset upload validation (missing columns, empty file, invalid format).
-- Duplicate name detection.
-- Soft delete functionality.
+- Validates required columns by dataset type.
+- Rejects empty/invalid files.
+- Enforces case-insensitive duplicate dataset name uniqueness.
+- Computes and stores `contentHash`.
+- Returns duplicate-content warning (`DUPLICATE_CONTENT`) without blocking upload.
+- Generates `pairKey` from selected shared key column.
+- Falls back to normalized question hash when shared key missing.
+- Hard delete removes dataset and rows transactionally.
+- Export returns Excel-compatible flattened output including outcome fields.
 
 #### [NEW] [services/experimental/__tests__/ExperimentalAnalyzerRegistry.test.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/__tests__/ExperimentalAnalyzerRegistry.test.js)
-- Registry initialization from analyzers folder.
-- Analyzer retrieval by ID.
-- Processor invocation.
+- Auto-loads analyzers from folder.
+- Registers stable analyzer IDs (kebab-case).
+- Returns metadata used by UI/API.
+- Returns callable processors by analyzer ID.
+- Respects analyzer-specific concurrency hints.
 
 #### [NEW] [services/experimental/analyzers/__tests__/SemanticComparator.test.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/__tests__/SemanticComparator.test.js)
-- Mock LLM responses.
-- Test exact match detection.
-- Test semantic similarity scoring.
-- Test error handling for missing inputs.
+- Validates required comparison input.
+- Produces deterministic structured output.
+- Handles exact match and non-match.
+- Handles model failure with structured analyzer error payload.
 
 #### [NEW] [services/experimental/analyzers/__tests__/SafetyEvaluator.test.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/__tests__/SafetyEvaluator.test.js)
-- Safety score calculation.
-- Issue detection.
+- Validates single-input evaluator flow.
+- Returns normalized safety output.
+- Handles refusal/error classification from model output.
+
+#### [NEW] [services/experimental/analyzers/__tests__/BiasEvaluator.test.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/__tests__/BiasEvaluator.test.js)
+- Validates single-input evaluator flow.
+- Returns normalized bias output.
+- Handles model failure with structured analyzer error payload.
+
+#### [NEW] [api/experimental/__tests__/experimental-auth.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/experimental-auth.test.js)
+- Verifies all `/api/experimental/*` endpoints require admin auth.
+- Verifies non-admin requests return forbidden.
+- Verifies admin requests succeed for happy-path mocks.
 
 #### [NEW] [api/experimental/__tests__/batch-progress.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/batch-progress.test.js)
-- SSE connection establishment.
-- Progress event streaming.
-- Connection cleanup on batch completion.
+- Establishes SSE connection.
+- Streams summary and analyzer-level progress payload.
+- Closes stream on terminal statuses.
+- Cleans up interval on client disconnect.
 
 #### [NEW] [api/experimental/__tests__/batch-cancel.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/batch-cancel.test.js)
-- Cancel pending batch.
-- Error on already completed batch.
+- Cancels pending/processing batch.
+- Rejects cancel for completed/failed/cancelled batch.
+- Persists cancellation reason/code on affected rows.
 
 #### [NEW] [api/experimental/__tests__/dataset-upload.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/dataset-upload.test.js)
-- Successful upload.
-- Validation error responses.
-- Duplicate name handling.
+- Successful CSV and Excel upload paths.
+- Validation errors include actionable details.
+- Duplicate-name rejection path.
+- Duplicate-content warning path (non-blocking).
+
+#### [NEW] [api/experimental/__tests__/dataset-delete.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/dataset-delete.test.js)
+- Hard delete removes dataset + rows.
+- Delete requires explicit confirmation flag in request contract.
+- Returns conflict/error when dataset not found.
+
+#### [NEW] [api/experimental/__tests__/batch-promote.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/batch-promote.test.js)
+- Promotes terminal batches (`completed`, `failed`, `cancelled`).
+- Rejects promotion for running batch.
+- Includes non-completed rows with outcome fields.
+- Returns warning when non-completed rows exist.
+
+#### E2E Tests (Required)
+
+#### [NEW] [tests/e2e/experimental-admin-auth.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-admin-auth.spec.js)
+- Non-admin cannot access experimental pages/endpoints.
+- Admin can access datasets and analysis pages.
+
+#### [NEW] [tests/e2e/experimental-dataset-upload.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-dataset-upload.spec.js)
+- Upload CSV/Excel dataset successfully.
+- Show validation errors for malformed input.
+- Show duplicate-content warning and allow continue.
+
+#### [NEW] [tests/e2e/experimental-batch-run-and-progress.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-batch-run-and-progress.spec.js)
+- Create batch from dataset.
+- Process batch server-side.
+- Live progress updates via SSE with analyzer-level counts.
+- Status transitions are visible in UI.
+
+#### [NEW] [tests/e2e/experimental-refusal-outcomes.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-refusal-outcomes.spec.js)
+- Inject rows that trigger short query, redaction/PII block, not-gc, pt-muni, and clarifying-question.
+- Verify output rows contain standardized `outcomeCode` and `outcomeText`.
+- Verify rows remain in batch export and promoted dataset.
+
+#### [NEW] [tests/e2e/experimental-cancel-batch.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-cancel-batch.spec.js)
+- Cancel running batch from UI.
+- Pending rows marked cancelled with reason.
+- In-flight rows complete; no new rows start.
+
+#### [NEW] [tests/e2e/experimental-promote-partial.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-promote-partial.spec.js)
+- Promote mixed-outcome batch to dataset.
+- Dataset includes refused/failed/cancelled/skipped rows.
+- `isProcessable` false for non-completed rows.
+- Promotion warning surfaced in UI.
+
+#### [NEW] [tests/e2e/experimental-comparator-pairing.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-comparator-pairing.spec.js)
+- Pairing by shared key column works.
+- Fallback hash pairing works when shared key not provided.
+- Unmatched rows are marked skipped with expected codes.
+
+#### [NEW] [tests/e2e/experimental-dataset-hard-delete.spec.js](file:///c:/Users/hymary/repos/ai-answers/tests/e2e/experimental-dataset-hard-delete.spec.js)
+- Delete flow shows backup download link.
+- After confirmation, dataset is permanently deleted.
+- Excel export before delete succeeds.
 
 ## File Structure Overview
 
@@ -1086,148 +1366,123 @@ Here is the location of the files involved in this feature.
 
 ```text
 ai-answers/
-├── services/
-│   ├── experimental/
-│   │   ├── ExperimentalBatchService.js       # [MODIFY] Core batch logic (graph integration, cancellation)
-│   │   ├── ExperimentalDatasetService.js     # [NEW] Dataset CRUD + validation
-│   │   ├── ExperimentalAnalyzerRegistry.js   # [MODIFY] Auto-loads analyzers from `analyzers/`
-│   │   ├── ExperimentalQueueService.js       # [EXISTING] Queue management
-│   │   ├── ExperimentalCleanupService.js     # [NEW] Scheduled cleanup job
-│   │   ├── analyzers/                        # [NEW] Evaluators and Comparators
-│   │   │   ├── AnalyzerBase.js               # [NEW] Base class interface
-│   │   │   ├── SemanticComparator.js
-│   │   │   ├── SafetyEvaluator.js
-│   │   │   ├── BiasEvaluator.js
-│   │   │   └── __tests__/
-│   │   │       ├── SemanticComparator.test.js
-│   │   │       └── SafetyEvaluator.test.js
-│   │   └── __tests__/
-│   │       ├── ExperimentalQueueService.test.js  # [EXISTING]
-│   │       └── ExperimentalAnalyzerRegistry.test.js  # [NEW]
-│   └── __tests__/
-│       ├── ExperimentalBatchService.test.js  # [NEW]
-│       └── ExperimentalDatasetService.test.js  # [NEW]
-├── agents/
-│   ├── AgentFactory.js                       # [MODIFY] Add createJudgeLLM, createSafetyLLM
-│   └── prompts/
-│       └── judges/                           # [NEW] Group judge prompts
-│           ├── SemanticComparatorPrompt.js
-│           ├── SafetyEvaluatorPrompt.js
-│           └── BiasEvaluatorPrompt.js
-├── src/
-│   ├── locales/
-│   │   ├── en.json                           # [MODIFY] Add experimental.* keys
-│   │   └── fr.json                           # [MODIFY] Add experimental.* keys
-│   ├── components/
-│   │   └── experimental/
-│   │       └── BatchProgressBar.js           # [NEW] SSE progress component
-│   └── pages/
-│       └── experimental/
-│           ├── ExperimentalDatasetsPage.js   # [NEW] Dataset management UI
-│           └── ExperimentalAnalysisPage.js   # [MODIFY] Fetch analyzers, dataset selection, progress
-├── models/
-│   ├── experimentalBatch.js                  # [EXISTING] Batch schema
-│   ├── experimentalBatchItem.js              # [EXISTING] Item schema
-│   ├── experimentalDataset.js                # [NEW] Dataset schema with validation
-│   └── experimentalDatasetRow.js             # [NEW] Dataset Row schema
-└── api/
-    └── experimental/
-        ├── experimental-batch-create.js      # [EXISTING]
-        ├── experimental-batch-delete.js      # [EXISTING]
-        ├── experimental-batch-export.js      # [EXISTING]
-        ├── experimental-batch-list.js        # [EXISTING]
-        ├── experimental-batch-process.js     # [EXISTING]
-        ├── experimental-batch-status.js      # [EXISTING]
-        ├── experimental-analyzers-list.js    # [NEW] GET /analyzers
-        ├── batch-cancel.js                   # [NEW] POST /batches/:id/cancel
-        ├── batch-progress.js                 # [NEW] GET /batches/:id/progress (SSE)
-        ├── batch-promote.js                  # [NEW] POST /batches/:id/promote
-        ├── dataset-upload.js                 # [NEW] POST /datasets/upload
-        ├── dataset-list.js                   # [NEW] GET /datasets
-        ├── dataset-delete.js                 # [NEW] DELETE /datasets/:id
-        ├── cleanup.js                        # [NEW] POST /cleanup (admin)
-        └── __tests__/
-            ├── batch-progress.test.js        # [NEW]
-            ├── batch-cancel.test.js          # [NEW]
-            └── dataset-upload.test.js        # [NEW]
+â”œâ”€â”€ services/
+â”‚   â”œâ”€â”€ experimental/
+â”‚   â”‚   â”œâ”€â”€ ExperimentalBatchService.js       # [MODIFY] Core batch logic (graph integration, cancellation)
+â”‚   â”‚   â”œâ”€â”€ ExperimentalDatasetService.js     # [NEW] Dataset CRUD + validation
+â”‚   â”‚   â”œâ”€â”€ ExperimentalAnalyzerRegistry.js   # [MODIFY] Auto-loads analyzers from `analyzers/`
+â”‚   â”‚   â”œâ”€â”€ ExperimentalQueueService.js       # [EXISTING] Queue management
+â”‚   â”‚   â”œâ”€â”€ ExperimentalCleanupService.js     # [NEW] Scheduled cleanup job
+â”‚   â”‚   â”œâ”€â”€ analyzers/                        # [NEW] Evaluators and Comparators
+â”‚   â”‚   â”‚   â”œâ”€â”€ AnalyzerBase.js               # [NEW] Base class interface
+â”‚   â”‚   â”‚   â”œâ”€â”€ SemanticComparator.js
+â”‚   â”‚   â”‚   â”œâ”€â”€ SafetyEvaluator.js
+â”‚   â”‚   â”‚   â”œâ”€â”€ BiasEvaluator.js
+â”‚   â”‚   â”‚   â””â”€â”€ __tests__/
+â”‚   â”‚   â”‚       â”œâ”€â”€ SemanticComparator.test.js
+â”‚   â”‚   â”‚       â””â”€â”€ SafetyEvaluator.test.js
+â”‚   â”‚   â””â”€â”€ __tests__/
+â”‚   â”‚       â”œâ”€â”€ ExperimentalQueueService.test.js  # [EXISTING]
+â”‚   â”‚       â””â”€â”€ ExperimentalAnalyzerRegistry.test.js  # [NEW]
+â”‚   â””â”€â”€ __tests__/
+â”‚       â”œâ”€â”€ ExperimentalBatchService.test.js  # [NEW]
+â”‚       â””â”€â”€ ExperimentalDatasetService.test.js  # [NEW]
+â”œâ”€â”€ agents/
+â”‚   â”œâ”€â”€ AgentFactory.js                       # [MODIFY] Add createJudgeLLM, createSafetyLLM
+â”‚   â””â”€â”€ prompts/
+â”‚       â””â”€â”€ judges/                           # [NEW] Group judge prompts
+â”‚           â”œâ”€â”€ SemanticComparatorPrompt.js
+â”‚           â”œâ”€â”€ SafetyEvaluatorPrompt.js
+â”‚           â””â”€â”€ BiasEvaluatorPrompt.js
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ locales/
+â”‚   â”‚   â”œâ”€â”€ en.json                           # [MODIFY] Add experimental.* keys
+â”‚   â”‚   â””â”€â”€ fr.json                           # [MODIFY] Add experimental.* keys
+â”‚   â”œâ”€â”€ components/
+â”‚   â”‚   â””â”€â”€ experimental/
+â”‚   â”‚       â””â”€â”€ BatchProgressBar.js           # [NEW] SSE progress component
+â”‚   â””â”€â”€ pages/
+â”‚       â””â”€â”€ experimental/
+â”‚           â”œâ”€â”€ ExperimentalDatasetsPage.js   # [NEW] Dataset management UI
+â”‚           â””â”€â”€ ExperimentalAnalysisPage.js   # [MODIFY] Fetch analyzers, dataset selection, progress
+â”œâ”€â”€ models/
+â”‚   â”œâ”€â”€ experimentalBatch.js                  # [EXISTING] Batch schema
+â”‚   â”œâ”€â”€ experimentalBatchItem.js              # [EXISTING] Item schema
+â”‚   â”œâ”€â”€ experimentalDataset.js                # [NEW] Dataset schema with validation
+â”‚   â””â”€â”€ experimentalDatasetRow.js             # [NEW] Dataset Row schema
+â””â”€â”€ api/
+    â””â”€â”€ experimental/
+        â”œâ”€â”€ experimental-batch-create.js      # [EXISTING]
+        â”œâ”€â”€ experimental-batch-delete.js      # [EXISTING]
+        â”œâ”€â”€ experimental-batch-export.js      # [EXISTING]
+        â”œâ”€â”€ experimental-batch-list.js        # [EXISTING]
+        â”œâ”€â”€ experimental-batch-process.js     # [EXISTING]
+        â”œâ”€â”€ experimental-batch-status.js      # [EXISTING]
+        â”œâ”€â”€ experimental-analyzers-list.js    # [NEW] GET /analyzers
+        â”œâ”€â”€ batch-cancel.js                   # [NEW] POST /batches/:id/cancel
+        â”œâ”€â”€ batch-progress.js                 # [NEW] GET /batches/:id/progress (SSE)
+        â”œâ”€â”€ batch-promote.js                  # [NEW] POST /batches/:id/promote
+        â”œâ”€â”€ dataset-upload.js                 # [NEW] POST /datasets/upload
+        â”œâ”€â”€ dataset-list.js                   # [NEW] GET /datasets
+        â”œâ”€â”€ dataset-delete.js                 # [NEW] DELETE /datasets/:id
+        â”œâ”€â”€ cleanup.js                        # [NEW] POST /cleanup (admin)
+        â””â”€â”€ __tests__/
+            â”œâ”€â”€ batch-progress.test.js        # [NEW]
+            â”œâ”€â”€ batch-cancel.test.js          # [NEW]
+            â””â”€â”€ dataset-upload.test.js        # [NEW]
 ```
 
 ## Verification Plan
 
-### Automated Tests
-Run all experimental service tests:
-```bash
-npm test -- --grep "Experimental"
-```
+### TDD Completion Criteria (Must All Pass)
+1. All required unit tests pass.
+2. All required E2E tests pass.
+3. No skipped or quarantined tests in experimental suites.
+4. CI test exit code is 0 for both unit and E2E stages.
 
-Individual test suites:
+### Automated Unit Test Commands
 ```bash
 npm test services/__tests__/ExperimentalBatchService.test.js
 npm test services/__tests__/ExperimentalDatasetService.test.js
 npm test services/experimental/__tests__/ExperimentalAnalyzerRegistry.test.js
 npm test services/experimental/analyzers/__tests__/SemanticComparator.test.js
+npm test services/experimental/analyzers/__tests__/SafetyEvaluator.test.js
+npm test services/experimental/analyzers/__tests__/BiasEvaluator.test.js
+npm test api/experimental/__tests__/experimental-auth.test.js
 npm test api/experimental/__tests__/batch-progress.test.js
+npm test api/experimental/__tests__/batch-cancel.test.js
 npm test api/experimental/__tests__/dataset-upload.test.js
+npm test api/experimental/__tests__/dataset-delete.test.js
+npm test api/experimental/__tests__/batch-promote.test.js
 ```
 
-### Manual Verification
+### Automated E2E Test Commands
+```bash
+npx playwright test tests/e2e/experimental-admin-auth.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-dataset-upload.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-batch-run-and-progress.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-refusal-outcomes.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-cancel-batch.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-promote-partial.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-comparator-pairing.spec.js --reporter=list
+npx playwright test tests/e2e/experimental-dataset-hard-delete.spec.js --reporter=list
+```
 
-#### 1. Dataset Upload Flow
-1. Go to Datasets Page (`/experimental/datasets`)
-2. Click "Upload Dataset"
-3. Upload a CSV `questions.csv` with columns: `question`, `answer`
-4. Verify it appears in the list with correct row count
-5. **Error Case**: Upload a file with missing `question` column → expect validation error
+### CI Aggregate Commands
+```bash
+npm test -- --grep "Experimental"
+npx playwright test tests/e2e/experimental-*.spec.js --reporter=list
+```
 
-#### 2. Duplicate Detection
-1. Upload a dataset named "Test Dataset"
-2. Try to upload another dataset with the same name → expect "already exists" error
-
-#### 3. Run Experiment with Progress
-1. Go to Analysis Page (`/experimental/analysis`)
-2. Verify analyzers are fetched from API (not hardcoded)
-3. Select the uploaded dataset
-4. Run a "Safety Evaluation" batch
-5. **Verify Progress**: Watch real-time progress bar update via SSE
-6. Check status changes: `pending` → `processing` → `completed`
-
-#### 4. Cancellation
-1. Start a large batch (100+ items)
-2. While processing, click "Cancel"
-3. Verify batch status changes to `cancelled`
-4. Verify pending items are marked `cancelled`
-5. Verify in-progress items complete normally
-
-#### 5. Promote to Dataset
-1. Wait for a batch to complete
-2. Click "Save as Dataset"
-3. Enter name "Run 1 Results"
-4. Verify new dataset appears in Datasets list
-5. **Duplicate Check**: Try to promote again with same name → expect error
-
-#### 6. Iterative Testing
-1. Create a new "Semantic Comparator" batch
-2. Select "Run 1 Results" as the *Baseline* dataset
-3. Upload/select a new comparison dataset
-4. Run comparison and verify results
-
-#### 7. Cleanup Verification
-1. Create a test batch and complete it
-2. Soft-delete a dataset
-3. Wait for retention period (or manually trigger cleanup via admin endpoint)
-4. Verify old items are removed from database
-
-#### 8. Localization
-1. Switch language to French (`/fr/experimental/datasets`)
-2. Verify all UI text is translated
-3. Verify error messages appear in French
+### Optional Manual Smoke (Non-Blocking)
+Manual walkthrough can still be run for UX confidence, but implementation is considered complete only when all automated unit and E2E suites above pass.
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BATCH_CONCURRENCY` | `2` | Max concurrent batch items being processed |
-| `EXPERIMENTAL_RETENTION_DAYS` | `90` | Days to retain completed batches before cleanup |
+| `EXPERIMENTAL_RETENTION_DAYS` | `90` | Days to retain completed/failed/cancelled batches before cleanup |
 | `REDIS_URL` | (none) | Redis URL for BullMQ; if not set, uses in-memory queue |
 
 ## Future Optimizations (Post-MVP)
@@ -1238,3 +1493,5 @@ npm test api/experimental/__tests__/dataset-upload.test.js
 -   **Batch-mode Graph Variant**: Create a dedicated `BatchModeGraph` that skips certain nodes (like persist) to improve throughput.
 -   **Webhook Notifications**: Allow users to configure webhooks for batch completion notifications.
 -   **Export Formats**: Add CSV/Excel export for analysis results (in addition to existing functionality).
+
+
