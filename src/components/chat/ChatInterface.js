@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ChatOptions from "./ChatOptions.js";
 import ExpertFeedbackPanel from "./review/ExpertFeedbackPanel.js";
 import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
+import DownloadPanel from "./review/DownloadPanel.js";
 import EvalPanel from "./review/EvalPanel.js";
 import aiStarsGray from '../../assets/ai-stars-333-90.png';
 import aiStarsBlue from '../../assets/ai-stars-0535d2-90.png';
@@ -611,6 +612,7 @@ const ChatInterface = ({
                           extractSentences={extractSentences}
                           t={t}
                         />
+                        <DownloadPanel message={message} t={t} />
                         <EvalPanel message={message} t={t} />
                       </div>
                     </>

@@ -1074,7 +1074,8 @@
     "agentSelections": "Agent selections",
     "agentSelectedIndex": "Agent selected index",
     "agentSelectionExplanation": "Agent selection explanation",
-    "neverStale": "Never stale"
+    "neverStale": "Never stale",
+    "downloadedPagesTitle": "Downloaded pages"
   },
   "metrics": {
     "title": "Metrics dashboard",

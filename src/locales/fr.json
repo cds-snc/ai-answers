@@ -1080,7 +1080,8 @@
     "agentSelections": "Sélections de l'agent",
     "agentSelectedIndex": "Index sélectionné par l'agent",
     "agentSelectionExplanation": "Explication de la sélection de l'agent",
-    "neverStale": "Toujours valide"
+    "neverStale": "Toujours valide",
+    "downloadedPagesTitle": "Pages téléchargées"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
