@@ -269,8 +269,7 @@ async function evalDashboardHandler(req, res) {
         evalExpertDocs: 0,
         firstToolId: 0,
         firstToolDoc: 0,
-        publicFeedbackDoc: 0,
-        feedbackValue: 0
+        publicFeedbackDoc: 0
       }
     });
 

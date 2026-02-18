@@ -17,7 +17,7 @@ const escapeHtmlAttribute = (value) => {
     .replace(/>/g, '&gt;');
 };
 
-const TABLE_STORAGE_KEY = `evalDashboard_tableState_v1_`;
+const TABLE_STORAGE_KEY = `evalDashboard_tableState_v2_`;
 
 const truncateEmail = (email) => {
   if (!email) return '';
