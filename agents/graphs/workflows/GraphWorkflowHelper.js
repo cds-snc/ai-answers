@@ -16,6 +16,19 @@ import { InteractionPersistenceService } from '../../../services/InteractionPers
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
 
+// Extract URLs that were successfully downloaded during the answer step
+function getVerifiedUrls(tools) {
+  if (!Array.isArray(tools)) return new Set();
+  return new Set(
+    tools
+      .filter(t => t.tool === 'downloadWebPage' && t.status === 'completed')
+      .map(t => {
+        try { return JSON.parse(t.input)?.url; } catch { return null; }
+      })
+      .filter(Boolean)
+  );
+}
+
 // RedactionError class
 class RedactionError extends Error {
   constructor(message, redactedText, redactedItems) {
@@ -348,7 +361,7 @@ export class GraphWorkflowHelper {
     };
   }
 
-  async verifyCitation({ citationUrl, lang, question, department, translationF, chatId }) {
+  async verifyCitation({ citationUrl, lang, question, department, translationF, chatId, tools }) {
     const fallback = {
       isValid: false,
       url: null,
@@ -360,20 +373,32 @@ export class GraphWorkflowHelper {
     }
 
     try {
-      // Use the new formatting-only validator (no live HTTP checks). Pass
-      // args in the expected order: (url, lang, question, department, t, chatId).
-      const result = await UrlValidationService.validateUrlFormatting(
-        citationUrl,
-        lang,
-        question,
-        department,
-        translationF,
-        chatId
-      );
-      return {
-        url: result.url || citationUrl,
-        fallbackUrl: result.fallbackUrl || null,
-      };
+      // Extract URLs that were already successfully fetched during the answer step
+      const verifiedUrls = getVerifiedUrls(tools);
+
+      const isCanadaCa = citationUrl.startsWith('https://www.canada.ca') || citationUrl.startsWith('http://www.canada.ca');
+
+      // URLs already downloaded by the tool are trusted — skip live check
+      if (verifiedUrls.has(citationUrl)) {
+        return { url: citationUrl, fallbackUrl: null };
+      }
+
+      // canada.ca URLs that were NOT previously fetched need a live check
+      // to catch hallucinated URLs
+      if (isCanadaCa) {
+        const liveResult = await UrlValidationService.validateUrl(citationUrl, chatId);
+        if (liveResult.isValid) {
+          return { url: liveResult.url || citationUrl, fallbackUrl: null };
+        }
+        // Live check failed — generate a search fallback
+        const result = await UrlValidationService.validateUrlFormatting(
+          null, lang, question, department, translationF, chatId
+        );
+        return { url: null, fallbackUrl: result.fallbackUrl || null };
+      }
+
+      // Non-canada.ca URLs (from search results / scenarios) — pass through
+      return { url: citationUrl, fallbackUrl: null };
     } catch (error) {
       await ServerLoggingService.error('Citation validation failed', chatId, error);
       return fallback;

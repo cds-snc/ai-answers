@@ -303,6 +303,7 @@ graph.addNode('verifyNode', async (state) => {
       department: state.department,
       translationF: state.translationF,
       chatId: state.chatId,
+      tools: state.answer?.tools || [],
     });
 
     finalCitationUrl = citationResult.url || citationResult.fallbackUrl;
