@@ -530,6 +530,7 @@
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
+      "referredPublicUsers": "Public Referred",
       "adminUsers": "Admin",
       "answerType": "Answer Type",
       "allAnswerTypes": "All Answer Types",
@@ -675,6 +676,8 @@
         "fallback": "Fallback",
         "any": "Any",
         "reason": "No-match reason",
+        "feedback": "Feedback",
+        "download": "Download",
         "date": "Date"
       }
     },
@@ -1072,7 +1075,8 @@
     "agentSelections": "Agent selections",
     "agentSelectedIndex": "Agent selected index",
     "agentSelectionExplanation": "Agent selection explanation",
-    "neverStale": "Never stale"
+    "neverStale": "Never stale",
+    "downloadedPagesTitle": "Downloaded pages"
   },
   "metrics": {
     "title": "Metrics dashboard",

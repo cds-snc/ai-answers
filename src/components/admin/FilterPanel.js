@@ -221,6 +221,7 @@ const FilterPanel = ({
   const userTypeOptions = [
     { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
     { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
+    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') || 'Public Referred' },
     { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
   ];
 

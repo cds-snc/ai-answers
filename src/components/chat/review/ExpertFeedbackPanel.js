@@ -155,8 +155,18 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
 
     if (sentences.length === 0) return null;
 
+    // Build title with score indicator
+    const baseTitle = t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert evaluation';
+    const hasExpert = expert && (expert._id || expert.id || expert.totalScore !== undefined);
+    const expertTitleSuffix = hasExpert
+        ? (typeof expert.totalScore !== 'undefined' && expert.totalScore !== null
+            ? ` \u2714 ${expert.totalScore}`
+            : ' \u2714')
+        : '';
+    const expertTitle = baseTitle + expertTitleSuffix;
+
     return (
-        <GcdsDetails detailsTitle={t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert evaluation'} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <GcdsDetails detailsTitle={expertTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
             // e.target should be the gcds-details web component; check its open property
             try {
                 // call load when panel is being opened

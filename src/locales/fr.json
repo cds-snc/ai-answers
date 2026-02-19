@@ -567,6 +567,7 @@
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
+      "referredPublicUsers": "Public référé",
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",
@@ -714,6 +715,8 @@
         "fallback": "Repli",
         "any": "Tous",
         "reason": "Raison de non-correspondance",
+        "feedback": "Rétroaction",
+        "download": "Téléchargement",
         "date": "Date"
       }
     },
@@ -1078,7 +1081,8 @@
     "agentSelections": "Sélections de l'agent",
     "agentSelectedIndex": "Index sélectionné par l'agent",
     "agentSelectionExplanation": "Explication de la sélection de l'agent",
-    "neverStale": "Toujours valide"
+    "neverStale": "Toujours valide",
+    "downloadedPagesTitle": "Pages téléchargées"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",

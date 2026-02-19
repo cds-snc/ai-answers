@@ -88,10 +88,32 @@ async function evalDashboardHandler(req, res) {
         as: 'answerDoc'
       }
     });
-    // Extract only answerType immediately
+
+    // Extract answerType and first tool ID immediately
     pipeline.push({
       $addFields: {
-        answerType: { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] }
+        answerType: { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
+        firstToolId: { $arrayElemAt: [{ $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }, 0] }
+      }
+    });
+
+    // Lookup the first tool document to check for downloadWebPage
+    pipeline.push({
+      $lookup: {
+        from: 'tools',
+        localField: 'firstToolId',
+        foreignField: '_id',
+        as: 'firstToolDoc'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        hasDownload: {
+          $and: [
+            { $eq: [{ $arrayElemAt: ['$firstToolDoc.tool', 0] }, 'downloadWebPage'] },
+            { $eq: [{ $arrayElemAt: ['$firstToolDoc.error', 0] }, 'none'] }
+          ]
+        }
       }
     });
 
@@ -140,6 +162,21 @@ async function evalDashboardHandler(req, res) {
             1
           ]
         }
+      }
+    });
+
+    // Lookup creator user - only need email
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'chatUser',
+        foreignField: '_id',
+        as: 'creatorDoc'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        creatorEmail: { $ifNull: [{ $arrayElemAt: ['$creatorDoc.email', 0] }, ''] }
       }
     });
 
@@ -221,15 +258,34 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
+    // Lookup public feedback - only need whether feedback string is non-empty
+    pipeline.push({
+      $lookup: {
+        from: 'publicfeedbacks',
+        localField: 'publicFeedback',
+        foreignField: '_id',
+        as: 'publicFeedbackDoc'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        feedbackValue: { $ifNull: [{ $arrayElemAt: ['$publicFeedbackDoc.feedback', 0] }, ''] }
+      }
+    });
+
     // Clean up temporary lookup arrays to free memory
     pipeline.push({
       $project: {
         answerDoc: 0,
         evalDoc: 0,
         chatDoc: 0,
+        creatorDoc: 0,
         contextDoc: 0,
         interactionExpertDocs: 0,
-        evalExpertDocs: 0
+        evalExpertDocs: 0,
+        firstToolId: 0,
+        firstToolDoc: 0,
+        publicFeedbackDoc: 0
       }
     });
 
@@ -274,10 +330,11 @@ async function evalDashboardHandler(req, res) {
       referringUrl,
       urlEn,
       urlFr,
+      userType,
       answerType,
       partnerEval,
       aiEval
-    }, { basePath: '' });
+    }, { basePath: '', userField: 'chatUser' });
     if (sharedFilters.length) {
       andFilters.push(...sharedFilters);
     }
@@ -308,10 +365,13 @@ async function evalDashboardHandler(req, res) {
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
         expertEmail: { $ifNull: ['$interactionExpert.expertEmail', ''] },
+        creatorEmail: { $ifNull: ['$creatorEmail', ''] },
         processed: '$eval.processed',
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
-        noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] }
+        noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] },
+        hasDownload: { $ifNull: ['$hasDownload', false] },
+        feedback: { $ifNull: ['$feedbackValue', ''] }
       }
     });
 
@@ -330,8 +390,10 @@ async function evalDashboardHandler(req, res) {
         { department: { $regex: esc, $options: 'i' } },
         { pageLanguage: { $regex: esc, $options: 'i' } },
         { expertEmail: { $regex: esc, $options: 'i' } },
+        { creatorEmail: { $regex: esc, $options: 'i' } },
         { fallbackType: { $regex: esc, $options: 'i' } },
-        { noMatchReasonType: { $regex: esc, $options: 'i' } }
+        { noMatchReasonType: { $regex: esc, $options: 'i' } },
+        { feedback: { $regex: esc, $options: 'i' } }
       ];
 
       // If the user searched a boolean-like term, also match boolean columns directly
@@ -340,6 +402,7 @@ async function evalDashboardHandler(req, res) {
         orClauses.push({ hasExpertEval: boolSearch });
         orClauses.push({ processed: boolSearch });
         orClauses.push({ hasMatches: boolSearch });
+        orClauses.push({ hasDownload: boolSearch });
       }
 
       pipeline.push({ $match: { $or: orClauses } });
@@ -382,7 +445,10 @@ async function evalDashboardHandler(req, res) {
       partnerEval: 'partnerEval',
       aiEval: 'aiEval',
       fallbackType: 'fallbackType',
-      noMatchReasonType: 'noMatchReasonType'
+      noMatchReasonType: 'noMatchReasonType',
+      creatorEmail: 'creatorEmail',
+      hasDownload: 'hasDownload',
+      feedback: 'feedback'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
@@ -421,10 +487,13 @@ async function evalDashboardHandler(req, res) {
       partnerEval: r.partnerEval || '',
       aiEval: r.aiEval || '',
       expertEmail: r.expertEmail || '',
+      creatorEmail: r.creatorEmail || '',
       processed: typeof r.processed === 'boolean' ? r.processed : false,
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
+      hasDownload: r.hasDownload || false,
+      feedback: r.feedback || '',
       date: r.createdAt ? r.createdAt.toISOString() : null
     }));
 

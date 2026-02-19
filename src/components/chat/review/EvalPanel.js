@@ -139,9 +139,17 @@ const EvalPanel = ({ message, t }) => {
     }
   };
 
+  // Build title with score indicator
+  const baseEvalTitle = t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Automated evaluation';
+  let evalTitleSuffix = '';
+  if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
+    evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
+  }
+  const evalTitle = baseEvalTitle + evalTitleSuffix;
+
   return (
     <GcdsDetails
-      detailsTitle={t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Automated evaluation'}
+      detailsTitle={evalTitle}
       className="review-details"
       tabIndex="0"
       onGcdsClick={handleToggle}
