@@ -17,7 +17,9 @@ GOAL:
 - Do not include site: or domain: operators (handled programmatically). You MAY use inurl:<segment> when appropriate.
 - Craft keyword queries, not full sentences. Keep all important nouns (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expired").
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
-- replace generic terms with known gov terms when possible - e.g "industry code" → "NAICS", "unemployment insurance" → "EI", "job code" → "NOC"
+- replace generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR)
+- When referringUrl is present, decide whether it aligns with user's question:
+  - If relevant: extract a path segment and add inurl:<segment> to narrow results.
   - If irrelevant or too broad (e.g. user asks about taxes from an EI page, or asks from high-level canada.ca page not specific to any department/service/program): ignore URL and build query from question alone.
   - Examples:
     - referringUrl: .../services/canadian-passports.html, question: "How do I apply?" → "how to apply inurl:canadian-passports" (URL matches intent)
