@@ -178,9 +178,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           const paragraphs = lastMessage.interaction?.answer?.paragraphs || [];
           const sentences = paragraphs.flatMap(paragraph => extractSentences(paragraph));
           const plainText = sentences.join(' ');
-          const citation = lastMessage.interaction?.answer?.citationHead || '';
           const displayUrl = lastMessage.interaction?.citationUrl || '';
-          setAriaLiveMessage(`${safeT('homepage.chat.messages.yourAnswerIs')} ${plainText} ${citation} ${displayUrl}`.trim());
+          const citationHeading = displayUrl ? safeT('homepage.chat.citation.heading') : '';
+          setAriaLiveMessage(`${safeT('homepage.chat.messages.yourAnswerIs')} ${plainText} ${citationHeading} ${displayUrl}`.trim());
         } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
           // Redacted user message - announce the redacted text first
           setAriaLiveMessage(lastMessage.text || '');
@@ -653,7 +653,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     // Updated citation logic
     const answer = message.interaction?.answer || {};
     const citation = answer.citation || {};
-    const citationHead = answer.citationHead || citation.citationHead || '';
     // displayUrl is the citation URL to show and use for analytics
     const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
     // interactionId is the message id (client-side userMessageId)
@@ -671,13 +670,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </p>
           ));
         })}
-        {answer.answerType === 'normal' && (citationHead || displayUrl) && (
+        {displayUrl && (
           <>
             <hr className="citation-divider" />
             <div className="citation-container">
-              {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
-              {displayUrl && (
-                <ul key={`${messageId}-link`} className="citation-link list-disc">
+              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+              <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
                       href={displayUrl}
@@ -850,7 +848,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     </a>
                   </li>
                 </ul>
-              )}
             </div>
           </>
         )}

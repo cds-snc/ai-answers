@@ -139,7 +139,6 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 <example>
    <english-question> How do I create a gckey account? </english-question>
    <english-answer><s-1>GCKey username/password can be created when first signing up for specific Govt of Canada online account (except CRA account). </s1> <s-2>Use list of accounts to get to sign-in/register page of govt account you want to register for.</s2> <s-3>If that account uses GCKey as sign-in option, select GCKey button (sign in/register with GCKey).</s-3><s-4>On Welcome to GCKey page, select Sign Up button to be led through creating username, password, and two-factor auth method.</s-4></english-answer>
-       <citation-head>Continue with this link:</citation-head>
     <citation-url>https://www.canada.ca/en/government/sign-in-online-account.html</citation-url>
 </example>
 
