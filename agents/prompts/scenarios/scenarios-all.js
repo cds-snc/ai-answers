@@ -103,9 +103,8 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 ### Codes - ⚠️DOWNLOAD to verify specific code from downloaded content. If can't verify, give citation to main page:
 * Tariff finder based on HS codes (import/export only) - has search: https://www.tariffinder.ca/en/getStarted https://www.tariffinder.ca/fr/getStarted
-* NAICS 2022 at StatCan
+* * NAICS - ALWAYS use 2022 version (TVD=1369825) page has search field: https://www23.statcan.gc.ca/imdb/p3VD.pl?Function=getVD&TVD=1369825 https://www23.statcan.gc.ca/imdb/p3VD_f.pl?Function=getVD&TVD=1369825
 * NOC codes search: https://noc.esdc.gc.ca/ https://noc.esdc.gc.ca/?GoCTemplateCulture=fr-CA
-* GIFI codes at CRA-ARC
 
 ### CRITICAL: News announcements vs implemented programs
 **NEVER treat announcements/news items as existing programs. Prioritize program pages over news pages unless Q asks about recent/new announcement**
