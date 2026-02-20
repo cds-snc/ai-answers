@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.104.2](https://github.com/cds-snc/ai-answers/compare/v1.104.1...v1.104.2) (2026-02-19)
+
+
+### Bug Fixes
+
+* add download column to eval dashboard ([6ed0fbf](https://github.com/cds-snc/ai-answers/commit/6ed0fbf2e6ebac184c65af4396da8012d3d97d2d))
+* add download column to eval dashboard ([3dd0f46](https://github.com/cds-snc/ai-answers/commit/3dd0f4681a714785bffe8b5886ebe252dc9d07f4))
+* add download to chat view ([7a10715](https://github.com/cds-snc/ai-answers/commit/7a1071515c72b1e5bfebf1588e078d2e8bbeb091))
+* add for auto-eval ([a199052](https://github.com/cds-snc/ai-answers/commit/a199052c98bf2bccf978c1835f121024b481a010))
+* add new filter option and filter on question ([d1b7f8c](https://github.com/cds-snc/ai-answers/commit/d1b7f8c0d49b306978d50ed386db5af2c0405913))
+* add public feedback column ([08ff643](https://github.com/cds-snc/ai-answers/commit/08ff643994265061cf5b4d75376cabdd166ff4b0))
+* add status to expando titles ([3358b5c](https://github.com/cds-snc/ai-answers/commit/3358b5cb4dbc2b7d74ec7745aff576281ab6c8ea))
+* autoeval checkbox only if score present ([4f19e1c](https://github.com/cds-snc/ai-answers/commit/4f19e1c2746b06896284ae112e556e4e17a054e0))
+* bug with stale filter columns ([d5d95f2](https://github.com/cds-snc/ai-answers/commit/d5d95f2405050540dde85a35e8745db56b4c6268))
+* creator email ([1d1231a](https://github.com/cds-snc/ai-answers/commit/1d1231a294be18f5428661d534b9588e3db8c003))
+* more visible checkbox for downloads ([24489ef](https://github.com/cds-snc/ai-answers/commit/24489ef918d41cf01aa1b90b101977e9a57777f8))
+* move download up earlier in table ([40e5bac](https://github.com/cds-snc/ai-answers/commit/40e5bace25ec6a1102ff42e8b507d129801a6bb1))
+* update claude.md with learning ([b1d58d6](https://github.com/cds-snc/ai-answers/commit/b1d58d6132436b44cb51d85af2a1e55bdf9618a1))
+* user type Public referred ([e915222](https://github.com/cds-snc/ai-answers/commit/e915222c9a486e180763bf040a1db26de1e0c460))
+
 ## [1.104.1](https://github.com/cds-snc/ai-answers/compare/v1.104.0...v1.104.1) (2026-02-17)
 
 
