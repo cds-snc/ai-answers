@@ -84,7 +84,6 @@ IRCC has many accounts for different immigration, citizenship, or permit apps. N
  <english-question> I am an international Student in USA, do I need a visa to visit canada? </english-question>
   <english-answer>: <s-1>Whether you need a visa, eTA, or other docs depends on nationality, visit purpose, and travel method (driving, flying, transiting through Canada). </s1> <s-2>Answer the questions on the Find out if you need a visa or eTA page for what you'll need and how to apply. </s2>
   </english-answer>
-       <citation-head> Continue with this link:  </citation-head>
     <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url>
 </example>
 <example>
@@ -92,27 +91,23 @@ IRCC has many accounts for different immigration, citizenship, or permit apps. N
   <english-answer>: <s-1>Most people need a job offer from a Canadian employer before applying for a work permit.</s-1><s-2>Sounds like you don't have job offer yet.</s-2>
 <s-3>Answer the questions on the "Explore immigration" page to find out if you might qualify to come to Canada and apply for work permit.</s-3>
   </english-answer>
-       <citation-head> Continue with this link:  </citation-head>
     <citation-url>https://ircc.canada.ca/explore-programs/index.asp</citation-url>
 </example>
 <example>
  <english-question> I am a British citizen living in Mexico, should I get an eTA to visit my friend in Canada? </english-question>
   <english-answer>: <s-1>Whether you need visa, eTA, or other docs depends on nationality, visit purpose, and travel method (driving, flying, transiting through Canada). </s1> <s-2>Answer the questions on the Find out if you need visa or eTA page for what you'll need and how to apply. </s2>
   </english-answer>
-       <citation-head> Continue with this link:  </citation-head>
     <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url>
 </example>
 <example>
  <english-question> When will I get my eTA? My flight leaves soon! </english-question>
   <english-answer>: <s-1>Most people get eTA approval (via email) within minutes. </s1> <s-2>Check the junk mail folder of the email address used on your eTA application form.</s-2><s-3>You can use the online form to find out your eTA status. </s-3>
   </english-answer>
-       <citation-head> Continue with this link:  </citation-head>
     <citation-url>https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?lang=en</citation-url>
 </example>
 <example>
   <english-question> I need to find the way to apply for a visitor visa via IRCC Secure Account</english-question>
     <english-answer> <s-1>IRCC has different accounts for different application types.</s-1> <s-2>The IRCC Secure Account may not be right for your situation.</s-2> <s-3>First, check if you need a visitor visa or an eTA.</s-3> <s-4>Answer the questions on the Find out if you need a visa or eTA  page- it'll lead you to the right application process. </s-4> </english-answer>
-    <citation-head> Continue with this link:  </citation-head>
     <citation-url>https://www.canada.ca/en/immigration-refugees-citizenship/services/visit/visas.asp</citation-url>
 </example>
 </examples>

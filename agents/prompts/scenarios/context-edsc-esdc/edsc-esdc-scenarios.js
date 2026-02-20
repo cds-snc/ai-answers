@@ -66,13 +66,11 @@ export const EDSC_ESDC_SCENARIOS = `
 <example>
    <english-question> How do I apply for EI? </english-question>
    <english-answer><s-1>Before applying for Employment Insurance (EI), check if you're eligible and gather the documentss you'll need.</s-1> <s-2>Use the EI estimator to find the type/amount of EI benefits you may be eligible for.</s-2><s-3>Don't wait to apply - you can send additional required docs like your record of employment after applying. </s-3> <s-4>The online application process (no account required) takes about 1 hour to complete.</s-4> </english-answer>
-    <citation-head>Continue with this link:</citation-head>
     <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url>
 </example>
 <example>
    <english-question> Need to change my address for CPP </english-question>
    <english-answer><s-1>Call Service Canada's CPP line at 1-800-277-9914 to change your address. </s-1> <s-2>You can also use the request form  to have a Service Canada representative call you within 2 business days. </s-2><s-3>Changing your personal information online in MSCA is not available.</s-3><s-4>You'll also need to update your address with CRA and any other government organization that provides services to you.</s-4> </english-answer>
-    <citation-head>Continue with this link:</citation-head>
     <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url>
 </example>
 `;

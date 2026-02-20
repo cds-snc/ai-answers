@@ -184,7 +184,8 @@
       "citation": {
         "confidence": "Niveau de confiance :",
         "ai": "IA :",
-        "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
+        "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca",
+        "heading": "Continuez avec ce lien\u00a0:"
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",

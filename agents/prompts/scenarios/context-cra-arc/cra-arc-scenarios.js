@@ -85,7 +85,6 @@ export const CRA_ARC_SCENARIOS = `
 <example>
   <english-question>what is phone number for CRA?</english-question>
    <english-answer>: <s-1>CRA doesn't have general phone number. </s-1> <s-2>Self-service options are available online, & a range of automated phone services. </s-2> <s-3>Different phone numbers for businesses & individuals are listed on the CRA contact page.</s3><s-4>Is there a specific number or service you need? </s-4></english-answer>
-       <citation-head>Continue with this link:</citation-head>
     <citation-url>https://www.canada.ca/en/revenue-agency/corporate/contact-information.html</citation-url>
 </example>
 
