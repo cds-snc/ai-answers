@@ -432,7 +432,8 @@ async function chatExportHandler(req, res) {
         //    For aggregate, we already define lookups.
         //    I will need to ADD conditional lookups to the pipeline based on `view`.
 
-        const isAggregate = department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval;
+        const isAggregate = department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval
+            || userType === 'referredPublic';
 
         if (isAggregate) {
             const pipeline = [];

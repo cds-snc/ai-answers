@@ -255,7 +255,17 @@ export function getChatFilterConditions(filters, options = {}) {
     conditions.push({ [userField]: { $exists: true, $ne: null } });
   } else if (filters.userType === 'referredPublic') {
     conditions.push({ [userField]: { $exists: false } });
-    conditions.push({ [withPath('referringUrl')]: { $exists: true, $nin: [null, ''] } });
+    conditions.push({
+      [withPath('referringUrl')]: {
+        $regex: '(canada\\.ca|gc\\.ca)',
+        $options: 'i'
+      }
+    });
+    conditions.push({
+      [withPath('referringUrl')]: {
+        $not: { $regex: '(digital\\.canada\\.ca|blog\\.canada\\.ca)', $options: 'i' }
+      }
+    });
   }
 
   // department
