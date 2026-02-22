@@ -672,7 +672,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         })}
         {displayUrl && (
           <>
-            <hr className="citation-divider" />
+            <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
               <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
