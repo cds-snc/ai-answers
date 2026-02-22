@@ -681,7 +681,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                       href={displayUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      tabIndex="0"
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
