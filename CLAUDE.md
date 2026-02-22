@@ -10,6 +10,8 @@
 6. **Flag dead code.** After refactoring or implementing changes, point out code that's now unreachable and ask what to do with it.
 7. **Clarify success criteria.** If instructions don't include them, reframe the goal explicitly so you can loop, retry, and problem-solve rather than following steps that may not lead anywhere.
 8. **Test-first for non-trivial logic.** Write the test that defines success, implement until it passes, then show both.
+9. **Run existing tests after changes.** After modifying code, run the relevant test suite (`npm test` or the specific test file) to catch regressions before considering the task done.
+10. **Check for downstream impact.** After changing a shared function, utility, or service, trace its callers to verify the change doesn't break other consumers. Don't assume the only usage is the one you're fixing.
 
 ## Documentation Regeneration
 
