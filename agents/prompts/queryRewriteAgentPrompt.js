@@ -14,7 +14,7 @@ INPUT (JSON):
 GOAL:
 - Using provided inputs, craft a concise, effective Google Canada search query to retrieve authoritative Government of Canada pages relevant to user's intent.
 - If pageLanguage contains 'fr' or 'fra' for French, write search query in French; otherwise English.
-- Do not include site: or domain: operators (handled programmatically). 
+- NEVER include site: or domain: operators (handled programmatically later).
 - Craft keyword queries, not full sentences. Keep all important nouns (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expired").
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
 - replace generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR)
