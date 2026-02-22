@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.104.4](https://github.com/cds-snc/ai-answers/compare/v1.104.3...v1.104.4) (2026-02-22)
+
+
+### Bug Fixes
+
+* add tests ([1fd7eec](https://github.com/cds-snc/ai-answers/commit/1fd7eec64af6f649c1437382e600cd0fd931fd78))
+* isAvailable no longer hardcoded to true ([7cd83fe](https://github.com/cds-snc/ai-answers/commit/7cd83fed8a377bb1822906d16ab6d1b59fd62b96))
+* remove stale comments replace ([c6e8859](https://github.com/cds-snc/ai-answers/commit/c6e88591eae11706743d1c11acb99e5571ce24d5))
+* update claude.md ([5c76392](https://github.com/cds-snc/ai-answers/commit/5c763929c4be01fb4827affd6d6443f86f1018f5))
+
 ## [1.104.3](https://github.com/cds-snc/ai-answers/compare/v1.104.2...v1.104.3) (2026-02-20)
 
 
