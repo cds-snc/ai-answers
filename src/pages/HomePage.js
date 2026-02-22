@@ -111,9 +111,6 @@ const HomePage = ({ lang = "en" }) => {
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
   // const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch session and availability in one go
-  // [DEPRECATED] Removal of chat-init call for lazy-init architecture
-
   // Lazy init: chatId will be null initially and set from server response after first message.
   // Check siteStatus so admins can take the site offline via SettingsPage.
   useEffect(() => {
