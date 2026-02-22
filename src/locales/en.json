@@ -952,7 +952,7 @@
   },
   "outage": {
     "title": "Service Unavailable",
-    "message": "This service is currently unavailable."
+    "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
     "backToAdmin": "Back to Admin",
