@@ -764,7 +764,7 @@ const createJudgeLLM = async (agentType = 'openai') => {
   return llm;
 };
 
-const createSafetyLLM = async (agentType = 'openai') => {
+const createSafetyLLM = async (agentType = 'azure') => {
   // Safety evaluation can often use smaller/faster models
   let llm;
   switch (agentType) {
