@@ -40,11 +40,16 @@ describe('ExperimentalQueueService (In-Memory)', () => {
         const event = await completedPromise;
 
         expect(processor).toHaveBeenCalled();
-        expect(processor).toHaveBeenCalledWith(expect.objectContaining({ data: jobData }));
-        expect(event).toMatchObject({
-            queueName,
-            returnvalue: 'success'
-        });
+        const calledArg = processor.mock.calls[0][0];
+        // Ensure the job argument passed to processor has a BullMQ-like structure
+        expect(calledArg).toHaveProperty('data', jobData);
+        expect(calledArg).toHaveProperty('id');
+        expect(calledArg).toHaveProperty('name', queueName);
+
+        // Ensure the emitted 'completed' event matches what BullMQ consumers expect
+        expect(event).toHaveProperty('queueName', queueName);
+        expect(event).toHaveProperty('jobId');
+        expect(event).toHaveProperty('returnvalue', 'success');
     });
 
     it('should handle failed jobs', async () => {

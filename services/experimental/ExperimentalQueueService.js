@@ -72,10 +72,15 @@ class ExperimentalQueueService extends EventEmitter {
                 const jobWrapper = async () => {
                     try {
                         this.emit('active', { queueName, jobId });
-                        const result = await worker.processor({ data, id: jobId, name: queueName });
+                        // BullMQ passes a `job` object that has `.data`, `.id`, `.name`, etc.
+                        const mockJob = { data, id: jobId, name: queueName };
+                        const result = await worker.processor(mockJob);
+                        console.log(`[ExperimentalQueueService] Job ${jobId} completed. Emitting 'completed' event...`);
+                        // ExperimentalBatchService expects event `returnvalue` object
                         this.emit('completed', { queueName, jobId, returnvalue: result });
                         return result;
                     } catch (err) {
+                        console.error(`[ExperimentalQueueService] Job ${jobId} failed:`, err);
                         this.emit('failed', { queueName, jobId, failedReason: err.message });
                         throw err;
                     }

@@ -36,6 +36,7 @@ class ExperimentalBatchService {
 
         ExperimentalQueueService.on('completed', async ({ queueName, returnvalue }) => {
             if (queueName === QUEUE_NAME && returnvalue && returnvalue.batchId) {
+                console.log(`[ExperimentalBatchService] Received 'completed' event from queue for batch ${returnvalue.batchId}`);
                 await this._updateBatchSummary(returnvalue.batchId);
             }
         });
@@ -320,6 +321,7 @@ class ExperimentalBatchService {
     }
 
     async _updateBatchSummary(batchId) {
+        console.log(`[ExperimentalBatchService] Updating summary for batch ${batchId}...`);
         const stats = await ExperimentalBatchItem.aggregate([
             { $match: { experimentalBatch: new mongoose.Types.ObjectId(batchId) } },
             {

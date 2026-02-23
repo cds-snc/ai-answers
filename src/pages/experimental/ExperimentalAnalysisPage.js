@@ -52,6 +52,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
             const result = await ExperimentalBatchClientService.listBatches(1, 20, 'analysis');
             setBatches(result.data);
+
+            // Auto-track progress for any processing batches on page load
+            const processingBatch = result.data?.find(b => b.status === 'processing');
+            if (processingBatch && (!batchProgress[processingBatch._id] || batchProgress[processingBatch._id].status !== 'completed')) {
+                trackProgress(processingBatch._id);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -213,27 +219,46 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     const trackProgress = (batchId) => {
-        if (eventSourceRef.current) eventSourceRef.current.close();
+        if (eventSourceRef.current) clearInterval(eventSourceRef.current);
 
         const url = ExperimentalBatchClientService.getBatchProgressUrl(batchId);
-        const es = new EventSource(url);
 
-        es.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            setBatchProgress(prev => ({ ...prev, [batchId]: data }));
+        const pollProgress = async () => {
+            try {
+                const res = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include' // matches AuthService behavior
+                });
 
-            if (['completed', 'failed', 'cancelled'].includes(data.status)) {
-                es.close();
-                fetchBatches();
+                if (!res.ok) {
+                    throw new Error(`Polling failed with status ${res.status}`);
+                }
+
+                const data = await res.json();
+
+                // If the backend returns an error message inside the json payload
+                if (data.error) {
+                    console.error('Progress Polling Error:', data.error);
+                    clearInterval(eventSourceRef.current);
+                    return;
+                }
+
+                setBatchProgress(prev => ({ ...prev, [batchId]: data }));
+
+                if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+                    clearInterval(eventSourceRef.current);
+                    fetchBatches();
+                }
+            } catch (err) {
+                console.error('Progress Polling Error:', err);
+                clearInterval(eventSourceRef.current);
             }
         };
 
-        es.onerror = (err) => {
-            console.error('SSE Error:', err);
-            es.close();
-        };
-
-        eventSourceRef.current = es;
+        // Initial fetch then poll every 5 seconds
+        pollProgress();
+        eventSourceRef.current = setInterval(pollProgress, 5000);
     };
 
     return (
