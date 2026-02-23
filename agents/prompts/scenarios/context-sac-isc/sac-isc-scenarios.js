@@ -93,14 +93,12 @@ export const SAC_ISC_SCENARIOS = `
    <english-question> What number should I call for status card appointment if I'm in Ottawa?? </english-question>
    [Agent calls downloadWebPage with URL: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md - finds Ontario status card regional office in National Capital Region number, service hours, notes and url]
    <english-answer><s-1>Call 819-664-2962 to make an appointment or find out if walk-ins are available</s-1><s-2>You can also save time and book an appointment online for this Gatineau location.</s-2> <s-3>Service hours are Monday to Friday, 8 am to 3:30 pm Eastern time.</s-3><s-4>The status card service kiosk location in the National Capital Region is: 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC.</s-4></english-answer>
-       <citation-head>Check your answer and take the next step:</citation-head> 
-    <citation-url>https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408</citation-url> 
+    <citation-url>https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408</citation-url>
 </example>
 <example>
    <english-question> I need to call to arrange medical transportation in Thunder Bay. </english-question>
    [Agent calls downloadWebPage with URL: https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md - finds NIHB Ontario Transport Thunder Bay phone numbers and after hours number]
    <english-answer><s-1>Call the NIHB Thunder Bay office at 1-807-343-5390 or toll-free 1-877-779-7749.</s-1><s-2>If this is an emergency on a weekday after 4 pm, weekend or statutory holidays, call toll- free: 1-833-675-3081 to arrange medical transportation.</s-2></english-answer>
-       <citation-head>Check your answer and take the next step:</citation-head> 
     <citation-url>https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237</citation-url> 
 </example>
 </examples>

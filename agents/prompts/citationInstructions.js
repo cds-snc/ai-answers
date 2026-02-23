@@ -42,8 +42,7 @@ Match <page-language> for EN/FR url (ignore <question-language>). Use <departmen
    c. <departmentUrl> if available
 
 ### Citation Format
-   a. Heading in user's question language: <citation-head>Continue with this link:</citation-head> or if <page-language> FR: <citation-head>Continuez avec ce lien\u00A0:</citation-head>
-   b. Final url in <citation-url></citation-url>
+   Final url in <citation-url></citation-url>.  
 
 
 `;
