@@ -12,7 +12,7 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ['pending', 'processing', 'completed', 'failed'],
+        enum: ['pending', 'processing', 'completed', 'failed', 'cancelled', 'refused', 'skipped'],
         default: 'pending'
     },
 
@@ -21,6 +21,8 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
 
     // For 'batch' generation results
     answer: { type: String },   // Generated answer
+    chatId: { type: String },   // Added for reference
+    referringUrl: { type: String }, // Per-row referring URL context
 
     // For 'comparison' inputs
     baselineAnswer: { type: String },
@@ -31,8 +33,20 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
     match: { type: Boolean },
     explanation: { type: String },
 
+    // Multi-analyzer results
+    analysisResults: { type: mongoose.Schema.Types.Mixed, default: {} }, // { [analyzerId]: result }
+    analysisErrors: { type: mongoose.Schema.Types.Mixed, default: {} }, // { [analyzerId]: error }
+
     // For other evaluators (extensible)
     evaluatorOutput: { type: mongoose.Schema.Types.Mixed }, // Arbitrary JSON results
+
+    // Outcome tracking
+    outcomeCode: { type: String },
+    outcomeText: { type: String },
+    cancellationReason: { type: String },
+    skipReason: { type: String },
+    retryCount: { type: Number, default: 0 },
+    lastAttemptAt: { type: Date },
 
     // User input auditing
     originalData: { type: mongoose.Schema.Types.Mixed }, // The raw row data

@@ -49,6 +49,15 @@ export const ExperimentalBatchClientService = {
     },
 
     /**
+     * Cancel a running batch
+     * @param {string} id 
+     */
+    async cancelBatch(id) {
+        const response = await axios.post(`${API_BASE}/batch-cancel/${id}`);
+        return response.data;
+    },
+
+    /**
      * Export batch results
      * @param {string} id 
      */
@@ -64,5 +73,54 @@ export const ExperimentalBatchClientService = {
     async deleteBatch(id) {
         const response = await axios.delete(`${API_BASE}/batch-delete/${id}`);
         return response.data;
+    },
+
+    /**
+     * List available analyzers
+     */
+    async listAnalyzers() {
+        const response = await axios.get(`${API_BASE}/analyzers`);
+        return response.data;
+    },
+
+    /**
+     * Upload a dataset from base64 string
+     */
+    async uploadDataset(fileContent, mimetype, fileName, metadata) {
+        const response = await axios.post(`${API_BASE}/dataset-upload`, {
+            fileContent, mimetype, fileName, metadata
+        });
+        return response.data;
+    },
+
+    /**
+     * List datasets
+     */
+    async listDatasets(page = 1, limit = 20) {
+        const response = await axios.get(`${API_BASE}/dataset-list`, { params: { page, limit } });
+        return response.data;
+    },
+
+    /**
+     * Delete a dataset
+     */
+    async deleteDataset(id, force = false) {
+        const response = await axios.delete(`${API_BASE}/dataset-delete/${id}`, { params: { force } });
+        return response.data;
+    },
+
+    /**
+     * Promote a batch to a dataset
+     */
+    async promoteBatch(id, details) {
+        const response = await axios.post(`${API_BASE}/batch-promote/${id}`, details);
+        return response.data;
+    },
+
+    /**
+     * Get SSE progress URL
+     */
+    getBatchProgressUrl(id) {
+        return `${API_BASE}/batch-progress/${id}`;
     }
 };

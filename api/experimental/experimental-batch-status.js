@@ -1,11 +1,12 @@
 import ExperimentalBatchService from '../../services/experimental/ExperimentalBatchService.js';
 import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 /**
  * GET /api/experimental/batch-status/:id
  * Query: ?items=true&page=1&limit=50
  */
-export default async function batchStatusHandler(req, res) {
+async function handler(req, res) {
     try {
         const { id } = req.params;
         const includeItems = req.query.items === 'true';
@@ -41,4 +42,8 @@ export default async function batchStatusHandler(req, res) {
         console.error('Batch Status Error:', error);
         res.status(500).json({ error: 'Failed to get batch status' });
     }
+}
+
+export default function (req, res) {
+    return withProtection(handler, authMiddleware, adminMiddleware)(req, res);
 }

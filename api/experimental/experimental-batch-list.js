@@ -1,9 +1,10 @@
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 /**
  * GET /api/experimental/batch-list
  */
-export default async function batchListHandler(req, res) {
+async function handler(req, res) {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
@@ -38,4 +39,8 @@ export default async function batchListHandler(req, res) {
         console.error('List Batches Error:', error);
         res.status(500).json({ error: 'Failed to list batches' });
     }
+}
+
+export default function (req, res) {
+    return withProtection(handler, authMiddleware, adminMiddleware)(req, res);
 }

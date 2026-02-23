@@ -148,6 +148,11 @@ const AdminPage = ({ lang = 'en' }) => {
                       {t('admin.navigation.experimentalAnalysis', 'Analysis Batches')}
                     </GcdsLink>
                   </li>
+                  <li>
+                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                      {t('admin.navigation.experimentalDatasets', 'Dataset Management')}
+                    </GcdsLink>
+                  </li>
                 </ul>
               </li>
             </ul>

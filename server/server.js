@@ -25,6 +25,13 @@ import experimentalBatchProcessHandler from '../api/experimental/experimental-ba
 import experimentalBatchStatusHandler from '../api/experimental/experimental-batch-status.js';
 import experimentalBatchExportHandler from '../api/experimental/experimental-batch-export.js';
 import experimentalBatchDeleteHandler from '../api/experimental/experimental-batch-delete.js';
+import experimentalAnalyzersListHandler from '../api/experimental/experimental-analyzers-list.js';
+import experimentalBatchCancelHandler from '../api/experimental/batch-cancel.js';
+import experimentalBatchProgressHandler from '../api/experimental/batch-progress.js';
+import experimentalDatasetUploadHandler from '../api/experimental/dataset-upload.js';
+import experimentalDatasetListHandler from '../api/experimental/dataset-list.js';
+import experimentalDatasetDeleteHandler from '../api/experimental/dataset-delete.js';
+import experimentalBatchPromoteHandler from '../api/experimental/batch-promote.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
@@ -206,6 +213,13 @@ app.post('/api/experimental/batch-process/:id', experimentalBatchProcessHandler)
 app.get('/api/experimental/batch-status/:id', experimentalBatchStatusHandler);
 app.get('/api/experimental/batch-export/:id', experimentalBatchExportHandler);
 app.delete('/api/experimental/batch-delete/:id', experimentalBatchDeleteHandler);
+app.get('/api/experimental/analyzers', experimentalAnalyzersListHandler);
+app.post('/api/experimental/batch-cancel/:id', experimentalBatchCancelHandler);
+app.get('/api/experimental/batch-progress/:id', experimentalBatchProgressHandler);
+app.post('/api/experimental/dataset-upload', experimentalDatasetUploadHandler);
+app.get('/api/experimental/dataset-list', experimentalDatasetListHandler);
+app.delete('/api/experimental/dataset-delete/:id', experimentalDatasetDeleteHandler);
+app.post('/api/experimental/batch-promote/:id', experimentalBatchPromoteHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);

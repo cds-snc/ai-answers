@@ -1,9 +1,10 @@
 import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 /**
  * GET /api/experimental/batch-export/:id
  */
-export default async function batchExportHandler(req, res) {
+async function handler(req, res) {
     try {
         const { id } = req.params;
 
@@ -17,4 +18,8 @@ export default async function batchExportHandler(req, res) {
         console.error('Batch Export Error:', error);
         res.status(500).json({ error: 'Failed to export batch' });
     }
+}
+
+export default function (req, res) {
+    return withProtection(handler, authMiddleware, adminMiddleware)(req, res);
 }

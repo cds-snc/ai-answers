@@ -1,10 +1,11 @@
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 /**
  * DELETE /api/experimental/batch-delete/:id
  */
-export default async function batchDeleteHandler(req, res) {
+async function handler(req, res) {
     try {
         const { id } = req.params;
 
@@ -16,4 +17,8 @@ export default async function batchDeleteHandler(req, res) {
         console.error('Batch Delete Error:', error);
         res.status(500).json({ error: 'Failed to delete batch' });
     }
+}
+
+export default function (req, res) {
+    return withProtection(handler, authMiddleware, adminMiddleware)(req, res);
 }

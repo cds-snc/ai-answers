@@ -396,6 +396,7 @@
       "eval": "Administration des évaluations",
       "experimental": "Expérimental",
       "experimentalAnalysis": "Lots d'analyse",
+      "experimentalDatasets": "Gestion des ensembles de données",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluer un chat public",
@@ -1221,10 +1222,55 @@
     "serviceDetails": "Détails du service"
   },
   "experimental": {
+    "datasets": {
+      "title": "Gestion des ensembles de données",
+      "uploadNew": "Télécharger un nouvel ensemble de données",
+      "upload": "Télécharger un ensemble de données",
+      "uploading": "Téléchargement en cours...",
+      "uploadSuccess": "Ensemble de données téléchargé avec succès !",
+      "uploadFailed": "Le téléchargement a échoué",
+      "readFailed": "Impossible de lire le fichier",
+      "delete": "Supprimer l'ensemble de données",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
+      "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
+      "promote": "Promouvoir en ensemble de données",
+      "nameLabel": "Nom de l'ensemble de données",
+      "descLabel": "Description",
+      "typeLabel": "Type d'ensemble de données",
+      "fileLabel": "Fichier Excel / CSV",
+      "requiredColumns": "Colonnes requises",
+      "rowCount": "Lignes",
+      "created": "Créé le",
+      "existing": "Ensembles de données existants",
+      "loading": "Chargement des ensembles de données...",
+      "empty": "Aucun ensemble de données trouvé.",
+      "actions": "Actions",
+      "typeInfo": {
+        "question-only": {
+          "label": "Questions seulement",
+          "description": "Une liste de questions auxquelles l'IA doit répondre. Utilisez ce type pour lancer une génération par lot et obtenir des réponses de l'IA.",
+          "columns": "question (requis), referringUrl (optionnel), chatId (optionnel)"
+        },
+        "qa-pair": {
+          "label": "Paire Q et R",
+          "description": "Un ensemble de questions associées à des réponses existantes. Utilisez ce type pour exécuter des analyseurs qui évaluent une réponse IA existante sans référence séparée.",
+          "columns": "question, answer (requis), referringUrl (optionnel), chatId (optionnel)"
+        },
+        "evaluation-set": {
+          "label": "Ensemble d'évaluation (Réponses de référence)",
+          "description": "Des questions associées à une réponse de référence (dorée) et optionnellement une nouvelle réponse à comparer. Utilisez ce type avec des analyseurs de comparaison comme Expert Scorer.",
+          "columns": "question, answer (requis), comparisonAnswer (optionnel), referringUrl (optionnel), chatId (optionnel)"
+        }
+      }
+    },
     "analysis": {
       "title": "Analyse expérimentale",
-      "selectAnalyzer": "Sélectionner l'analyseur",
-      "choose": "Choisir..."
+      "selectAnalyzer": "Sélectionner un ou des analyseurs",
+      "choose": "Choisir...",
+      "run": "Lancer l'analyse",
+      "items": "Éléments",
+      "progress": "Progrès",
+      "status": "Statut"
     }
   }
 }

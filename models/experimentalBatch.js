@@ -25,7 +25,9 @@ const ExperimentalBatchSchema = new mongoose.Schema({
         pageLanguage: { type: String, default: 'en' },
 
         // For 'analysis' type
-        analyzerId: { type: String }, // e.g., 'semantic-comparison', 'bias-detection'
+        analyzerId: { type: String }, // Backwards compatibility
+        analyzerIds: [{ type: String }],
+        datasetId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalDataset' },
         analyzerConfig: { type: mongoose.Schema.Types.Mixed, default: {} }, // threshold, etc.
     },
 
@@ -56,6 +58,8 @@ const ExperimentalBatchSchema = new mongoose.Schema({
         differences: { type: Number, default: 0 },
         flagged: { type: Number, default: 0 },
     },
+
+    analyzerSummary: { type: mongoose.Schema.Types.Mixed, default: {} }, // { [analyzerId]: { completed, failed, skipped } }
 
     error: { type: String }
 

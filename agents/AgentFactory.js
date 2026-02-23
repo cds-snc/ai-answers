@@ -714,6 +714,106 @@ const createChatAgent = async (provider, chatId = 'system') => {
   }
 };
 
-export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent };
+// Create LLM for judge/evaluator agents (no tools, high temperature=0)
+const createJudgeLLM = async (agentType = 'openai') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const cfg = getModelConfig('openai', 'gpt-4.1');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: cfg.name,
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const cfg = getModelConfig('azure', 'openai-gpt41');
+      llm = new AzureChatOpenAI({
+        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        azureOpenAIApiDeploymentName: cfg.name,
+        azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'openai-gpt5-mini':
+    case 'azure-gpt5-mini': {
+      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
+      llm = new AzureChatOpenAI({
+        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        azureOpenAIApiDeploymentName: cfg.name,
+        azureOpenAIApiVersion: "2025-04-01-preview",
+        model: cfg.model,
+        reasoning: cfg.reasoningeffort,
+        temperature: 0,
+        maxCompletionTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for judge: ${agentType}`);
+  }
+  return llm;
+};
+
+const createSafetyLLM = async (agentType = 'openai') => {
+  // Safety evaluation can often use smaller/faster models
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: cfg.name,
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        azureOpenAIApiDeploymentName: cfg.name,
+        azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'openai-gpt5-mini':
+    case 'azure-gpt5-mini': {
+      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
+      llm = new AzureChatOpenAI({
+        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        azureOpenAIApiDeploymentName: cfg.name,
+        azureOpenAIApiVersion: "2025-04-01-preview",
+        model: cfg.model,
+        reasoning: cfg.reasoningeffort,
+        temperature: 0,
+        maxCompletionTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for safety: ${agentType}`);
+  }
+  return llm;
+};
+
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createJudgeLLM, createSafetyLLM };
 
 

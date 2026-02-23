@@ -359,6 +359,7 @@
       "eval": "Evaluation administration",
       "experimental": "Experimental",
       "experimentalAnalysis": "Analysis Batches",
+      "experimentalDatasets": "Dataset Management",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
       "publicEval": "Evaluate a public chat",
@@ -1215,10 +1216,55 @@
     "serviceDetails": "Service Details"
   },
   "experimental": {
+    "datasets": {
+      "title": "Dataset Management",
+      "uploadNew": "Upload New Dataset",
+      "upload": "Upload Dataset",
+      "uploading": "Uploading...",
+      "uploadSuccess": "Dataset uploaded successfully!",
+      "uploadFailed": "Upload failed",
+      "readFailed": "Failed to read file",
+      "delete": "Delete Dataset",
+      "confirmDelete": "Are you sure you want to delete this dataset? This action cannot be undone.",
+      "inUse": "This dataset is in use by active batches and cannot be deleted.",
+      "promote": "Promote to Dataset",
+      "nameLabel": "Dataset Name",
+      "descLabel": "Description",
+      "typeLabel": "Dataset Type",
+      "fileLabel": "Excel / CSV File",
+      "requiredColumns": "Required columns",
+      "rowCount": "Rows",
+      "created": "Created",
+      "existing": "Existing Datasets",
+      "loading": "Loading datasets...",
+      "empty": "No datasets found.",
+      "actions": "Actions",
+      "typeInfo": {
+        "question-only": {
+          "label": "Question Only",
+          "description": "A list of questions to be answered by the AI. Use this to run a batch generation and obtain AI responses.",
+          "columns": "question (required), referringUrl (optional), chatId (optional)"
+        },
+        "qa-pair": {
+          "label": "Q&A Pair",
+          "description": "A matched set of questions and existing answers. Use this to run analyzers that evaluate an existing AI response without a separate baseline.",
+          "columns": "question, answer (required), referringUrl (optional), chatId (optional)"
+        },
+        "evaluation-set": {
+          "label": "Evaluation Set (Golden Answers)",
+          "description": "Questions paired with a golden/baseline answer and optionally a new answer to compare against. Use this with comparison analyzers like Expert Scorer.",
+          "columns": "question, answer (required), comparisonAnswer (optional), referringUrl (optional), chatId (optional)"
+        }
+      }
+    },
     "analysis": {
       "title": "Experimental Analysis",
-      "selectAnalyzer": "Select Analyzer",
-      "choose": "Choose..."
+      "selectAnalyzer": "Select Analyzer(s)",
+      "choose": "Choose...",
+      "run": "Run Analysis",
+      "items": "Items",
+      "progress": "Progress",
+      "status": "Status"
     }
   }
 }
