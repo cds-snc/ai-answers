@@ -301,10 +301,17 @@ class ExperimentalAnalyzerRegistry {
 
 - Concurrency & throttling:
   - Analyzer invocations should respect analyzer-specific concurrency limits (configurable) and the global `BATCH_CONCURRENCY` to avoid overloading LLMs.
-  - Registry entries may include an optional `concurrency` hint used by the queue/worker when scheduling analyzer runs.
+  - Registry entries may include an optional `concurrency` hint (integer) on each analyzer definition. `ExperimentalBatchService` reads this hint when running analyzers for an item and uses a `p-limit` semaphore (or equivalent) **per analyzer** to cap parallel invocations across all concurrent batch items. If no hint is set, the global `BATCH_CONCURRENCY` cap applies.
 
-- Progress & SSE updates:
-  - The SSE `batch-progress` events always include analyzer-level counts when analyzers exist, e.g. `{ summary: { completed: X, failed: Y }, analyzers: { safety: { completed: a, failed: b }, expertScorer: { completed: c, failed: d } } }`.
+- Retry & timeout for analyzer calls:
+  - Each analyzer invocation is wrapped in a retry loop: **3 attempts** with **exponential backoff** (1s, 2s, 4s).
+  - Each individual attempt has a **60-second timeout**.
+  - All 3 attempts failing records a structured error under `item.analysisErrors.<analyzerId>` (see above) and does **not** fail the batch item itself.
+
+- Batch-level analyzer summary:
+  - `ExperimentalBatch` persists a top-level `analyzerSummary: { [analyzerId]: { completed, failed, skipped } }` field, updated each time `_updateBatchSummary` runs.
+  - The SSE endpoint reads this field directly — no re-aggregation from items needed per event.
+  - SSE `batch-progress` events include: `{ summary: { completed: X, failed: Y }, analyzerSummary: { safety: { completed: a, failed: b }, 'expert-scorer': { completed: c, failed: d } } }`.
 
 - Promotion & dataset rows:
   - When promoting a batch to a dataset, include analyzer outputs in the dataset rows either as a nested `analysis` object or as flattened prefixed fields depending on `promoteOptions.flattenAnalyzerOutput`.
@@ -317,6 +324,7 @@ class ExperimentalAnalyzerRegistry {
 
 - Tests:
   - Add tests to verify multiple analyzers run for each item and their outputs are stored under `analysisResults`.
+  - Add tests to verify analyzer retry behavior: 1 failure then success = stored in `analysisResults`; 3 failures = stored in `analysisErrors`.
   - Test exporter to ensure prefixed/flattened fields match expected names.
 
 ```
@@ -698,11 +706,13 @@ class ExperimentalDatasetService {
 
 #### [NEW] [api/experimental/dataset-list.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/dataset-list.js)
 - **GET /api/experimental/datasets**
-- List available datasets.
+- List available datasets with **pagination**: accepts `page` (default: 1) and `limit` (default: 20, max: 100) query params.
+- Returns `{ data: [...], total, page, limit, totalPages }` envelope.
 
 #### [NEW] [api/experimental/dataset-delete.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/dataset-delete.js)
 - **DELETE /api/experimental/datasets/:id**
-- Hard-deletes dataset and all rows in a transaction.
+- Before deleting, check if any `ExperimentalBatch` references this dataset as its source (`batch.config.datasetId === id`). If so, return a `409` warning with the list of referencing batch IDs; the admin must confirm explicitly to proceed (pass `?force=true`).
+- Hard-deletes dataset and all rows in a transaction after confirmation.
 - UI requires explicit confirmation and shows a "Download Excel backup" link before delete is confirmed.
 
 #### [NEW] [api/experimental/batch-promote.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/batch-promote.js)
@@ -851,61 +861,75 @@ Mapping precedence (first match wins):
 
 ### Progress Events
 
-#### Server-Sent Events (SSE) Endpoint
-Real-time progress streaming for batch operations:
+#### Server-Sent Events (SSE) — Push Architecture
+Progress events are **pushed from `ExperimentalBatchService`** using Node's built-in `EventEmitter` — no DB polling per open connection.
 
+**Service-side (emit on every summary update):**
+```javascript
+// services/experimental/ExperimentalBatchService.js
+import { EventEmitter } from 'events';
+export const batchProgressEmitter = new EventEmitter();
+batchProgressEmitter.setMaxListeners(50); // Allow up to 50 concurrent SSE subscribers
+
+// Called inside _updateBatchSummary after saving the batch:
+batchProgressEmitter.emit(`batch:${batchId}`, {
+  status: batch.status,
+  summary: batch.summary,
+  analyzerSummary: batch.analyzerSummary,
+  percentComplete: batch.summary.total > 0
+    ? Math.round(((batch.summary.completed + batch.summary.failed) / batch.summary.total) * 100)
+    : 0,
+  updatedAt: batch.updatedAt,
+});
+```
+
+**SSE endpoint (subscribe to emitter, no polling):**
 ```javascript
 // api/experimental/batch-progress.js
+import { batchProgressEmitter } from '../../services/experimental/ExperimentalBatchService.js';
+
 export default async function handler(req, res) {
   const { id: batchId } = req.params;
-  
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
-  
-  const sendProgress = async () => {
-    const batch = await ExperimentalBatch.findById(batchId);
-    if (!batch) {
-      res.write(`event: error\ndata: ${JSON.stringify({ error: 'Batch not found' })}\n\n`);
-      res.end();
-      return false;
-    }
-    
-    const progress = {
-      status: batch.status,
-      summary: batch.summary,
-      percentComplete: batch.summary.total > 0 
-        ? Math.round(((batch.summary.completed + batch.summary.failed) / batch.summary.total) * 100)
-        : 0,
-      updatedAt: batch.updatedAt,
-    };
-    
-    res.write(`event: progress\ndata: ${JSON.stringify(progress)}\n\n`);
-    
-    return !['completed', 'failed', 'cancelled'].includes(batch.status);
-  };
-  
-  // Initial send
-  const shouldContinue = await sendProgress();
-  if (!shouldContinue) {
+
+  // Send current state immediately on connect
+  const batch = await ExperimentalBatch.findById(batchId);
+  if (!batch) {
+    res.write(`event: error\ndata: ${JSON.stringify({ error: 'Batch not found' })}\n\n`);
     res.end();
     return;
   }
-  
-  // Poll every 2 seconds
-  const interval = setInterval(async () => {
-    const shouldContinue = await sendProgress();
-    if (!shouldContinue) {
-      clearInterval(interval);
+
+  const sendProgress = (progress) => {
+    res.write(`event: progress\ndata: ${JSON.stringify(progress)}\n\n`);
+    if (['completed', 'failed', 'cancelled'].includes(progress.status)) {
+      cleanup();
       res.end();
     }
-  }, 2000);
-  
-  // Cleanup on client disconnect
-  req.on('close', () => {
-    clearInterval(interval);
+  };
+
+  // Send initial snapshot
+  sendProgress({
+    status: batch.status,
+    summary: batch.summary,
+    analyzerSummary: batch.analyzerSummary,
+    percentComplete: batch.summary.total > 0
+      ? Math.round(((batch.summary.completed + batch.summary.failed) / batch.summary.total) * 100)
+      : 0,
+    updatedAt: batch.updatedAt,
   });
+
+  batchProgressEmitter.on(`batch:${batchId}`, sendProgress);
+
+  const cleanup = () => {
+    batchProgressEmitter.off(`batch:${batchId}`, sendProgress);
+  };
+
+  req.on('close', cleanup);
 }
 ```
 
@@ -965,53 +989,52 @@ skipReason: { type: String },
 
 #### Batch Cancellation Flow
 1. User clicks "Cancel" button on in-progress batch
-2. API sets batch status to `cancelled`
-3. Queue processor checks batch status before processing each item
-4. Pending items are marked as `cancelled` without processing, with a persisted `cancellationReason`
+2. API atomically sets batch status to `cancelled` using a status guard (`findOneAndUpdate`) to prevent race conditions with concurrent processors
+3. Queue processor atomically claims each item before processing using `findOneAndUpdate` with a `pending → processing` guard — preventing a dequeued item from starting after the batch is cancelled
+4. Pending items not yet claimed are marked as `cancelled` without processing, with a persisted `cancellationReason`
 5. Currently in-flight items complete normally
 
 ```javascript
 // services/experimental/ExperimentalBatchService.js
 async cancelBatch(batchId) {
-  const batch = await ExperimentalBatch.findById(batchId);
-  
+  // Atomic status guard — prevents concurrent cancel race
+  const batch = await ExperimentalBatch.findOneAndUpdate(
+    { _id: batchId, status: { $in: ['pending', 'processing'] } },
+    { $set: { status: 'cancelled' } },
+    { new: true }
+  );
+
   if (!batch) {
-    throw new Error('Batch not found');
+    // Either not found, or already in a terminal state
+    const existing = await ExperimentalBatch.findById(batchId);
+    if (!existing) throw new Error('Batch not found');
+    throw new Error(`Cannot cancel batch with status: ${existing.status}`);
   }
-  
-  if (!['pending', 'processing'].includes(batch.status)) {
-    throw new Error(`Cannot cancel batch with status: ${batch.status}`);
-  }
-  
-  // Update batch status
-  batch.status = 'cancelled';
-  await batch.save();
-  
+
   // Mark all pending items as cancelled
   await ExperimentalBatchItem.updateMany(
     { experimentalBatch: batchId, status: 'pending' },
-    { status: 'cancelled', cancellationReason: 'batch_cancelled_by_admin' }
+    { $set: { status: 'cancelled', cancellationReason: 'batch_cancelled_by_admin' } }
   );
-  
-  // Update summary
+
   await this._updateBatchSummary(batchId);
-  
   return batch;
 }
 
-// In _processItem - check for cancellation
+// In _processItem — atomically claim item before processing
 async _processItem(batchId, itemId) {
-  const batch = await ExperimentalBatch.findById(batchId);
-  
-  // Early exit if batch was cancelled
-  if (batch.status === 'cancelled') {
-    await ExperimentalBatchItem.findByIdAndUpdate(itemId, {
-      status: 'cancelled',
-      cancellationReason: 'batch_cancelled_before_item_start'
-    });
-    return { batchId, itemId, status: 'cancelled' };
+  // Atomic claim: only proceed if item is still 'pending'
+  const item = await ExperimentalBatchItem.findOneAndUpdate(
+    { _id: itemId, status: 'pending' },
+    { $set: { status: 'processing' } },
+    { new: true }
+  );
+
+  if (!item) {
+    // Item was already cancelled or claimed by another worker
+    return { batchId, itemId, status: 'skipped' };
   }
-  
+
   // ... continue processing
 }
 ```
@@ -1086,20 +1109,23 @@ ExperimentalDatasetSchema.index(
 #### Content Hash for Deduplication (Optional)
 Detect duplicate content by hashing and return warning metadata:
 
+> [!NOTE]
+> **Known limitation:** The hash is computed from only the **first 100 rows** for performance. Datasets that differ only after row 100 will not be flagged as duplicates. This is an intentional trade-off — the check is a best-effort warning, not a hard uniqueness guarantee on content.
+
 ```javascript
 // services/experimental/ExperimentalDatasetService.js
 _computeContentHash(rows) {
-  const content = JSON.stringify(rows.slice(0, 100)); // Hash first 100 rows
+  const content = JSON.stringify(rows.slice(0, 100)); // First 100 rows — see limitation note above
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
 async createFromUpload(file, metadata, userId) {
   const rows = await this._parseFile(file);
   const contentHash = this._computeContentHash(rows);
-  
-  // Check for duplicate content
+
+  // Check for duplicate content (non-blocking warning)
   const existingByContent = await ExperimentalDataset.findOne({ contentHash });
-  
+
   if (existingByContent) {
     warning = {
       code: 'DUPLICATE_CONTENT',
@@ -1107,7 +1133,7 @@ async createFromUpload(file, metadata, userId) {
       existingName: existingByContent.name
     };
   }
-  
+
   // Continue creation; API returns warning to admin caller
 }
 ```
@@ -1253,37 +1279,37 @@ class ExperimentalCleanupService {
       scheduled: false
     });
   }
-  
+
   start() {
     this.job.start();
-    console.log('[ExperimentalCleanupService] Cleanup job scheduled');
+    ServerLoggingService.info('[ExperimentalCleanupService] Cleanup job scheduled');
   }
-  
+
   stop() {
     this.job.stop();
   }
-  
+
   async runCleanup() {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
-    
-    console.log(`[ExperimentalCleanupService] Running cleanup for items older than ${cutoffDate.toISOString()}`);
-    
+
+    ServerLoggingService.info(`[ExperimentalCleanupService] Running cleanup for items older than ${cutoffDate.toISOString()}`);
+
     try {
       // Delete old completed/failed/cancelled batches and their items
       const oldBatches = await ExperimentalBatch.find({
         status: { $in: ['completed', 'failed', 'cancelled'] },
         updatedAt: { $lt: cutoffDate }
       });
-      
+
       for (const batch of oldBatches) {
         await ExperimentalBatchItem.deleteMany({ experimentalBatch: batch._id });
         await batch.deleteOne();
       }
-      console.log(`[ExperimentalCleanupService] Removed ${oldBatches.length} old batches`);
-      
+      ServerLoggingService.info(`[ExperimentalCleanupService] Removed ${oldBatches.length} old batches`);
+
     } catch (err) {
-      console.error('[ExperimentalCleanupService] Cleanup failed:', err);
+      ServerLoggingService.error('[ExperimentalCleanupService] Cleanup failed:', err);
     }
   }
 }
@@ -1472,10 +1498,11 @@ ai-answers/
 â”‚   â”‚   â”‚   â”œâ”€â”€ AnalyzerBase.js               # [NEW] Base class interface
 â”‚   â”‚   â”‚   â”œâ”€â”€ ExpertScorerAnalyzer.js
 â”‚   â”‚   â”‚   â”œâ”€â”€ SafetyEvaluator.js
-â”‚   â”‚   â”‚   â”œâ”€â”€ BiasEvaluator.js
+â”‚   â”‚   â”‚   â””â”€â”€ BiasEvaluator.js
 â”‚   â”‚   â”‚   â””â”€â”€ __tests__/
 â”‚   â”‚   â”‚       â”œâ”€â”€ ExpertScorerAnalyzer.test.js
-â”‚   â”‚   â”‚       â””â”€â”€ SafetyEvaluator.test.js
+â”‚   â”‚   â”‚       â”œâ”€â”€ SafetyEvaluator.test.js
+â”‚   â”‚   â”‚       â””â”€â”€ BiasEvaluator.test.js
 â”‚   â”‚   â””â”€â”€ __tests__/
 â”‚   â”‚       â”œâ”€â”€ ExperimentalQueueService.test.js  # [EXISTING]
 â”‚   â”‚       â””â”€â”€ ExperimentalAnalyzerRegistry.test.js  # [NEW]
