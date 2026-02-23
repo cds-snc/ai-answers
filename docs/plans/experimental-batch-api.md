@@ -41,7 +41,7 @@ The core philosophy is **Iterative Improvement**:
    - Fallback source: normalized question hash.
    - Unmatched rows are stored with `status: 'skipped'` and reason (`missing_in_baseline` or `missing_in_candidate`).
 6. **Analyzer identity and persistence**:
-   - Use stable kebab-case analyzer IDs in API and DB (e.g., `semantic-comparison`, `safety`, `bias-detection`).
+   - Use stable kebab-case analyzer IDs in API and DB (e.g., `expert-scorer`, `safety`, `bias-detection`).
    - Persist analyzer output in a uniform structure under `analysisResults.<analyzerId>`.
 7. **Promotion behavior**:
    - Promotion is allowed for partially completed batches.
@@ -247,7 +247,7 @@ class ExperimentalAnalyzerRegistry {
 #### Multi-Analyzer Batch Runs
 
 - Support running multiple analyzers (evaluators and/or comparators) for each batch item.
-- Batch creation API and batch config will accept an `analyzers` array with stable IDs: `[{ id: 'safety', config: {...} }, { id: 'semantic-comparison', config: {...} }]`.
+- Batch creation API and batch config will accept an `analyzers` array with stable IDs: `[{ id: 'safety', config: {...} }, { id: 'expert-scorer', config: {...} }]`.
 - `ExperimentalAnalyzerRegistry` will expose a `getProcessor(analyzerId)` method that returns a callable processor for that analyzer (the processor should accept `{ item, batch, config }` and return the analyzer output object).
 - `ExperimentalBatchService` changes:
   - After generating or retrieving an item's `answer`, call all configured analyzers for that item (in parallel where safe), collecting each analyzer's output.
@@ -263,18 +263,20 @@ class ExperimentalAnalyzerRegistry {
       "details": { "issues": [] },
       "error": null
     },
-    "semantic-comparison": {
+    "expert-scorer": {
       "status": "completed",
-      "score": 0.85,
-      "label": "match",
-      "details": { "similarityScore": 0.85, "match": true, "explanation": "..." },
-      "error": null
+      "verdict": "pass",
+      "confidence": 0.92,
+      "explanation": "All 3 key ideas present. Extra detail about eligibility added, verified in downloaded page.",
+      "keyIdeas": { "found": ["..."], "missing": [] },
+      "extraInfo": { "present": true, "valid": true, "details": "..." },
+      "answerTypeCheck": { "goldenType": "normal", "newType": "normal", "flag": null }
     }
   }
 }
 ```
 
-  - For CSV/flat export use a flattened naming scheme prefixed by analyzer id, e.g. `safety_score`, `semantic-comparison_similarityScore`.
+  - For CSV/flat export use a flattened naming scheme prefixed by analyzer id, e.g. `safety_score`, `expert-scorer_verdict`.
   - Ensure per-analyzer errors are recorded separately on the item (e.g. `item.analysisErrors = { safety: { code: 'timeout', message: '...' } }`) so a failing analyzer doesn't fail the whole item.
 
 - Comparator pairing flow:
@@ -284,12 +286,25 @@ class ExperimentalAnalyzerRegistry {
   - Comparator batches pair baseline/comparison rows by `pairKey`.
   - Unmatched rows are persisted as `skipped` with a deterministic reason code.
 
+- **Question-number pairing for ExpertScorer:**
+  - Extract question number prefix from Problem Details / question column using regex: `/^(\d{1,3})\.\s*/`
+  - Use extracted number (zero-padded) as `pairKey`
+  - Fallback: normalized question text hash (existing plan behavior)
+  - Pairing runs client-side in `ExperimentalAnalysisPage.js` before batch creation
+
+- **Downloaded page content extraction:**
+  - From batch output xlsx, extract `answer.tools.*.output` columns (the `downloadWebPage` results)
+  - Truncate each page to 8,000 characters (~2K tokens)
+  - Max 3 pages per row
+  - Store in `originalData.downloadedPages` on the batch item
+  - Total token budget per ExpertScorer call: ~10K input, ~500 output
+
 - Concurrency & throttling:
   - Analyzer invocations should respect analyzer-specific concurrency limits (configurable) and the global `BATCH_CONCURRENCY` to avoid overloading LLMs.
   - Registry entries may include an optional `concurrency` hint used by the queue/worker when scheduling analyzer runs.
 
 - Progress & SSE updates:
-  - The SSE `batch-progress` events always include analyzer-level counts when analyzers exist, e.g. `{ summary: { completed: X, failed: Y }, analyzers: { safety: { completed: a, failed: b }, semanticComparison: { completed: c, failed: d } } }`.
+  - The SSE `batch-progress` events always include analyzer-level counts when analyzers exist, e.g. `{ summary: { completed: X, failed: Y }, analyzers: { safety: { completed: a, failed: b }, expertScorer: { completed: c, failed: d } } }`.
 
 - Promotion & dataset rows:
   - When promoting a batch to a dataset, include analyzer outputs in the dataset rows either as a nested `analysis` object or as flattened prefixed fields depending on `promoteOptions.flattenAnalyzerOutput`.
@@ -316,11 +331,11 @@ Base class defining the analyzer interface:
  */
 export class AnalyzerBase {
   // Required static properties - subclasses must override
-  static id = '';           // e.g., 'semantic-comparison'
-  static name = '';         // e.g., 'Semantic Comparison'
+  static id = '';           // e.g., 'expert-scorer'
+  static name = '';         // e.g., 'Expert Scorer'
   static description = '';  // Human-readable description
   static inputType = '';    // 'single' | 'comparison'
-  static outputColumns = []; // e.g., ['similarityScore', 'match', 'explanation']
+  static outputColumns = []; // e.g., ['verdict', 'confidence', 'explanation']
   
   constructor(config = {}) {
     this.config = config;
@@ -399,7 +414,7 @@ const interval = setInterval(async () => {
 
 #### [MODIFY] [AgentFactory.js](file:///c:/Users/hymary/repos/ai-answers/agents/AgentFactory.js)
 Add LLM factory methods for judge/evaluator agents (following existing naming pattern):
-- **`createJudgeLLM(provider)`** â€” Returns raw LLM for semantic comparison (no tools)
+- **`createJudgeLLM(provider)`** â€” Returns raw LLM for expert scoring / judge evaluation (no tools)
 - **`createSafetyLLM(provider)`** â€” Returns raw LLM for safety/bias evaluation (no tools)
 
 ```javascript
@@ -437,20 +452,65 @@ const createJudgeLLM = async (agentType = 'openai') => {
 };
 ```
 
-#### [NEW] [agents/prompts/judges/SemanticComparatorPrompt.js](file:///c:/Users/hymary/repos/ai-answers/agents/prompts/judges/SemanticComparatorPrompt.js)
-- Define the "Judge" system prompt with JSON schema output for semantic comparison.
+#### [NEW] `agents/prompts/judges/ExpertScorerPrompt.js`
+
+Judge prompt with three sections:
+- **Scoring rubric** — condensed from `agents/prompts/agenticBase.js` (key rules: 1-4 sentences with s-tags, GC-only sources, no hallucination, not-gc/pt-muni/clarifying-question tagging, manipulation resistance)
+- **Comparison instructions** — how to evaluate:
+  - All key ideas from golden must be present in new (semantic equivalence, not exact wording)
+  - Extra information is OK if supported by downloaded page content and follows system prompt rules
+  - Better answers should PASS (e.g., golden was vague, new is specific with page evidence)
+  - answerType changes: normal→clarifying-question = likely fail; clarifying-question→normal with correct answer = pass; normal→not-gc = fail
+- **Per-row data** — question, golden answer, new answer, golden answerType, new answerType, downloaded page content (truncated to ~8K chars per page, max 3 pages)
+
+#### [NEW] `services/experimental/analyzers/ExpertScorerAnalyzer.js`
+
+- **Type**: Comparator (extends `AnalyzerBase`)
+- **ID**: `expert-scorer`
+- **inputType**: `comparison`
+- **outputColumns**: `['verdict', 'confidence', 'explanation', 'flags', 'keyIdeasFound', 'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck']`
+- Uses `AgentFactory.createJudgeLLM` (GPT-4.1 or equivalent, temperature=0)
+- Uses `agents/prompts/judges/ExpertScorerPrompt.js`
+
+**Pre-LLM auto-flags** (cheap checks before calling LLM):
+- answerType regression (normal→not-gc) = instant `fail`
+- Empty new answer = instant `fail`
+- answerType downgrade (normal→clarifying-question) = flag for `needs-review`
+
+**Three-tier output:**
+```json
+{
+  "verdict": "pass | fail | needs-review",
+  "confidence": 0.0-1.0,
+  "explanation": "Brief reason for verdict",
+  "keyIdeas": {
+    "found": ["s-1 idea about X was present"],
+    "missing": ["s-3 idea about Z was not in new answer"]
+  },
+  "extraInfo": {
+    "present": true,
+    "valid": true,
+    "details": "Added info about X, supported by downloaded page from canada.ca/..."
+  },
+  "answerTypeCheck": {
+    "goldenType": "normal",
+    "newType": "normal",
+    "flag": null,
+    "details": ""
+  }
+}
+```
+
+Verdict mapping:
+- `pass`: confidence ≥ 0.8, all key ideas found, no problematic answerType change, extra info valid or absent
+- `fail`: key ideas missing, OR answerType regression, OR fabricated/unsupported info
+- `needs-review`: confidence < 0.8, OR mixed signals, OR ambiguous edge cases
 
 #### [NEW] [agents/prompts/judges/SafetyEvaluatorPrompt.js](file:///c:/Users/hymary/repos/ai-answers/agents/prompts/judges/SafetyEvaluatorPrompt.js)
 - Define the system prompt for safety analysis.
 
 #### [NEW] [agents/prompts/judges/BiasEvaluatorPrompt.js](file:///c:/Users/hymary/repos/ai-answers/agents/prompts/judges/BiasEvaluatorPrompt.js)
 - Define the system prompt for bias analysis.
-
-#### [NEW] [services/experimental/analyzers/SemanticComparator.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/SemanticComparator.js)
-- **Type**: Comparator
-- Extends `AnalyzerBase`.
-- Uses `AgentFactory.createJudgeLLM`.
-- Uses `agents/prompts/judges/SemanticComparatorPrompt.js`.
 
 #### [NEW] [services/experimental/analyzers/SafetyEvaluator.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/SafetyEvaluator.js)
 - **Type**: Evaluator
@@ -669,6 +729,9 @@ useEffect(() => {
 - **Input Selection**: Replace/augment file upload with a "Select Dataset" dropdown.
 - **Output Options**: Add checkbox "Save results as new Dataset" upon completion.
 - **Progress Display**: Connect to SSE endpoint for real-time progress updates.
+- **Question-number row pairing**: Replace index-based matching with question-number extraction and Map-based lookup between golden and comparison files.
+- **Downloaded page extraction**: Parse `answer.tools.*.output` columns from comparison file, attach to batch items as `originalData.downloadedPages`.
+- **Unmatched rows**: Mark as `skipped` with `MISSING_IN_BASELINE` or `MISSING_IN_CANDIDATE`.
 
 ---
 
@@ -977,6 +1040,33 @@ export default async function handler(req, res) {
 
 ---
 
+### Batch Comparison Workflow (ExpertScorer)
+
+#### Overview
+The ExpertScorer enables automated comparison of batch outputs across model versions.
+It complements the existing autoEval system (~33% coverage) by evaluating another ~30%
+of rows, reducing manual review from ~67% to ~37%.
+
+#### Three-tier evaluation
+1. **autoEval** (runs during batch processing): Sentence-matching against scored answers in DB
+2. **ExpertScorer** (runs post-hoc): LLM-as-expert-scorer for rows autoEval couldn't match
+3. **Manual review**: Remaining ambiguous cases
+
+#### When to use
+- Comparing a golden batch (all scored 100) against output from a new model or graph
+- Regression testing after model upgrades
+- Validating that prompt/scenario changes don't break previously-correct answers
+
+#### What "correct" means
+Defined by the system prompt rules in `agents/prompts/agenticBase.js`:
+- Answer sourced from canada.ca / gc.ca content
+- 1-4 sentences with s-tags, 4-18 words each
+- No hallucination, no opinions, no first-person
+- Proper use of not-gc / pt-muni / clarifying-question tags
+- Verified against downloaded page content when available
+
+---
+
 ### Duplicate Detection
 
 #### Dataset Name Uniqueness
@@ -1268,10 +1358,15 @@ export default withAdmin(async function handler(req, res) {
 - Returns callable processors by analyzer ID.
 - Respects analyzer-specific concurrency hints.
 
-#### [NEW] [services/experimental/analyzers/__tests__/SemanticComparator.test.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/__tests__/SemanticComparator.test.js)
-- Validates required comparison input.
-- Produces deterministic structured output.
-- Handles exact match and non-match.
+#### [NEW] `services/experimental/analyzers/__tests__/ExpertScorerAnalyzer.test.js`
+- Pre-LLM auto-flags (answerType regression, empty answer).
+- Pass: all key ideas present, same answerType.
+- Pass: new answer adds extra verified info (better answer).
+- Fail: key idea missing from new answer.
+- Fail: answerType normal→not-gc regression.
+- Needs-review: ambiguous answerType change (normal→clarifying-question).
+- Handles missing downloaded page content gracefully.
+- Structured output matches expected schema.
 - Handles model failure with structured analyzer error payload.
 
 #### [NEW] [services/experimental/analyzers/__tests__/SafetyEvaluator.test.js](file:///c:/Users/hymary/repos/ai-answers/services/experimental/analyzers/__tests__/SafetyEvaluator.test.js)
@@ -1375,11 +1470,11 @@ ai-answers/
 â”‚   â”‚   â”œâ”€â”€ ExperimentalCleanupService.js     # [NEW] Scheduled cleanup job
 â”‚   â”‚   â”œâ”€â”€ analyzers/                        # [NEW] Evaluators and Comparators
 â”‚   â”‚   â”‚   â”œâ”€â”€ AnalyzerBase.js               # [NEW] Base class interface
-â”‚   â”‚   â”‚   â”œâ”€â”€ SemanticComparator.js
+â”‚   â”‚   â”‚   â”œâ”€â”€ ExpertScorerAnalyzer.js
 â”‚   â”‚   â”‚   â”œâ”€â”€ SafetyEvaluator.js
 â”‚   â”‚   â”‚   â”œâ”€â”€ BiasEvaluator.js
 â”‚   â”‚   â”‚   â””â”€â”€ __tests__/
-â”‚   â”‚   â”‚       â”œâ”€â”€ SemanticComparator.test.js
+â”‚   â”‚   â”‚       â”œâ”€â”€ ExpertScorerAnalyzer.test.js
 â”‚   â”‚   â”‚       â””â”€â”€ SafetyEvaluator.test.js
 â”‚   â”‚   â””â”€â”€ __tests__/
 â”‚   â”‚       â”œâ”€â”€ ExperimentalQueueService.test.js  # [EXISTING]
@@ -1391,7 +1486,7 @@ ai-answers/
 â”‚   â”œâ”€â”€ AgentFactory.js                       # [MODIFY] Add createJudgeLLM, createSafetyLLM
 â”‚   â””â”€â”€ prompts/
 â”‚       â””â”€â”€ judges/                           # [NEW] Group judge prompts
-â”‚           â”œâ”€â”€ SemanticComparatorPrompt.js
+â”‚           â”œâ”€â”€ ExpertScorerPrompt.js
 â”‚           â”œâ”€â”€ SafetyEvaluatorPrompt.js
 â”‚           â””â”€â”€ BiasEvaluatorPrompt.js
 â”œâ”€â”€ src/
@@ -1445,7 +1540,7 @@ ai-answers/
 npm test services/__tests__/ExperimentalBatchService.test.js
 npm test services/__tests__/ExperimentalDatasetService.test.js
 npm test services/experimental/__tests__/ExperimentalAnalyzerRegistry.test.js
-npm test services/experimental/analyzers/__tests__/SemanticComparator.test.js
+npm test services/experimental/analyzers/__tests__/ExpertScorerAnalyzer.test.js
 npm test services/experimental/analyzers/__tests__/SafetyEvaluator.test.js
 npm test services/experimental/analyzers/__tests__/BiasEvaluator.test.js
 npm test api/experimental/__tests__/experimental-auth.test.js
