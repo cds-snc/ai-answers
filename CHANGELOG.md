@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.105.0](https://github.com/cds-snc/ai-answers/compare/v1.104.4...v1.105.0) (2026-02-23)
+
+
+### Features
+
+* fix tab state ([2549829](https://github.com/cds-snc/ai-answers/commit/2549829f4cebef7a9760d127ec69d294e0b0aa75))
+* rmv tabindex ([28c6274](https://github.com/cds-snc/ai-answers/commit/28c6274758c1c9830b87d1b0c16c8ccebb2b1fb2))
+
+
+### Bug Fixes
+
+* change citation heading to programmatic ([87922b2](https://github.com/cds-snc/ai-answers/commit/87922b2c7ff8be0035ffb3bda25b16d0b2b29c6f))
+
 ## [1.104.4](https://github.com/cds-snc/ai-answers/compare/v1.104.3...v1.104.4) (2026-02-22)
 
 
