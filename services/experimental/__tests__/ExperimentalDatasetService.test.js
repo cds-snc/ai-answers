@@ -155,6 +155,33 @@ describe('ExperimentalDatasetService', () => {
         });
     });
 
+    describe('getDatasetRows', () => {
+        it('should return paginated rows for a specific dataset', async () => {
+            const ds1 = await ExperimentalDataset.create({ name: 'DS 1', type: 'question-only' });
+            const ds2 = await ExperimentalDataset.create({ name: 'DS 2', type: 'question-only' });
+
+            await ExperimentalDatasetRow.create([
+                { experimentalDataset: ds1._id, rowIndex: 1, data: { q: 'ds1-r1' } },
+                { experimentalDataset: ds1._id, rowIndex: 2, data: { q: 'ds1-r2' } },
+                { experimentalDataset: ds1._id, rowIndex: 3, data: { q: 'ds1-r3' } },
+                { experimentalDataset: ds2._id, rowIndex: 1, data: { q: 'ds2-r1' } }
+            ]);
+
+            const result = await ExperimentalDatasetService.getDatasetRows(ds1._id, { page: 1, limit: 2 });
+
+            expect(result.rows).toHaveLength(2);
+            expect(result.rows[0].data.q).toBe('ds1-r1');
+            expect(result.rows[1].data.q).toBe('ds1-r2');
+            expect(result.total).toBe(3);
+            expect(result.totalPages).toBe(2);
+
+            // Second page
+            const result2 = await ExperimentalDatasetService.getDatasetRows(ds1._id, { page: 2, limit: 2 });
+            expect(result2.rows).toHaveLength(1);
+            expect(result2.rows[0].data.q).toBe('ds1-r3');
+        });
+    });
+
     describe('list', () => {
         it('should return paginated results', async () => {
             await ExperimentalDataset.create([

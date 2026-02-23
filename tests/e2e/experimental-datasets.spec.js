@@ -86,7 +86,7 @@ test.describe('Experimental Datasets Upload Error', () => {
         const uploadBtn = page.getByRole('button', { name: /Upload Dataset/i });
 
         const uploadPromise = page.waitForResponse(response =>
-            response.url().includes('/api/experimental/dataset-upload'),
+            response.url().includes('/api/experimental/experimental-dataset-upload'),
             { timeout: 10000 }
         );
 

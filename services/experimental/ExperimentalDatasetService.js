@@ -164,6 +164,28 @@ class ExperimentalDatasetService {
         return crypto.createHash('md5').update(question.toLowerCase().trim()).digest('hex');
     }
 
+    async getDatasetRows(datasetId, options = {}) {
+        const { page = 1, limit = 50 } = options;
+        const skip = (page - 1) * limit;
+
+        const [rows, total] = await Promise.all([
+            ExperimentalDatasetRow.find({ experimentalDataset: datasetId })
+                .sort({ rowIndex: 1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            ExperimentalDatasetRow.countDocuments({ experimentalDataset: datasetId })
+        ]);
+
+        return {
+            rows,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        };
+    }
+
     async list(options = {}) {
         const { page = 1, limit = 20 } = options;
         const skip = (page - 1) * limit;

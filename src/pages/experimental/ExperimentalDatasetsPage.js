@@ -80,11 +80,34 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
+    const [selectedDataset, setSelectedDataset] = useState(null);
+    const [rows, setRows] = useState([]);
+    const [rowsLoading, setRowsLoading] = useState(false);
+    const [rowsPage, setRowsPage] = useState(1);
+    const [rowsTotal, setRowsTotal] = useState(0);
+
+    const fetchRows = async (dataset, page = 1) => {
+        setRowsLoading(true);
+        try {
+            const result = await ExperimentalBatchClientService.getDatasetRows(dataset._id, page);
+            setRows(result.rows);
+            setRowsTotal(result.total);
+            setRowsPage(page);
+            setSelectedDataset(dataset);
+        } catch (err) {
+            console.error(err);
+            alert(t('experimental.datasets.errorLoadingRows') || 'Failed to load rows');
+        } finally {
+            setRowsLoading(false);
+        }
+    };
+
     const handleDelete = async (id) => {
         if (!window.confirm(t('experimental.datasets.confirmDelete'))) return;
 
         try {
             await ExperimentalBatchClientService.deleteDataset(id);
+            if (selectedDataset?._id === id) setSelectedDataset(null);
             fetchDatasets();
         } catch (err) {
             if (err.response?.data?.code === 'IN_USE') {
@@ -96,6 +119,81 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     };
 
     const typeInfo = t(`experimental.datasets.typeInfo.${newType}`) || {};
+
+    if (selectedDataset) {
+        return (
+            <GcdsContainer size="xl" centered className="my-400">
+                <div className="mb-400">
+                    <GcdsButton buttonRole="secondary" size="small" onClick={() => setSelectedDataset(null)}>
+                        &larr; {t('experimental.datasets.backToList')}
+                    </GcdsButton>
+                </div>
+
+                <GcdsHeading tag="h1">
+                    {t('experimental.datasets.viewing', { name: selectedDataset.name }).replace('{name}', selectedDataset.name)}
+                </GcdsHeading>
+                <GcdsText className="mb-400">{selectedDataset.description}</GcdsText>
+
+                <div className="overflow-auto border rounded p-200 bg-light">
+                    {rowsLoading ? (
+                        <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
+                    ) : (
+                        <>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
+                                        <th className="p-100">#</th>
+                                        {selectedDataset.columns?.map(col => (
+                                            <th key={col.name} className="p-100">{col.name}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rows.map(row => (
+                                        <tr key={row._id} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td className="p-100" style={{ color: '#666' }}>{row.rowIndex}</td>
+                                            {selectedDataset.columns?.map(col => {
+                                                const val = row.data[col.name];
+                                                return (
+                                                    <td key={col.name} className="p-100">
+                                                        {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '')}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            <div className="mt-400 d-flex justify-content-between align-items-center">
+                                <GcdsText>
+                                    Showing {rows.length} of {rowsTotal} rows
+                                </GcdsText>
+                                <div className="d-flex gap-200">
+                                    <GcdsButton
+                                        size="small"
+                                        buttonRole="secondary"
+                                        disabled={rowsPage === 1}
+                                        onClick={() => fetchRows(selectedDataset, rowsPage - 1)}
+                                    >
+                                        &larr; Prev
+                                    </GcdsButton>
+                                    <GcdsButton
+                                        size="small"
+                                        buttonRole="secondary"
+                                        disabled={rowsPage * 50 >= rowsTotal}
+                                        onClick={() => fetchRows(selectedDataset, rowsPage + 1)}
+                                    >
+                                        Next &rarr;
+                                    </GcdsButton>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </GcdsContainer>
+        );
+    }
 
     return (
         <GcdsContainer size="xl" centered className="my-400">
@@ -207,9 +305,14 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     <td className="p-200">{ds.rowCount}</td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
-                                        <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
-                                            {t('experimental.datasets.delete')}
-                                        </GcdsButton>
+                                        <div className="d-flex gap-200">
+                                            <GcdsButton size="small" onClick={() => fetchRows(ds)}>
+                                                {t('experimental.datasets.view')}
+                                            </GcdsButton>
+                                            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
+                                                {t('experimental.datasets.delete')}
+                                            </GcdsButton>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

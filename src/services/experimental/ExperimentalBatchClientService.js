@@ -1,6 +1,5 @@
-import axios from 'axios';
-
-const API_BASE = '/api/experimental';
+import AuthService from '../AuthService.js';
+import { getApiUrl } from '../../utils/apiToUrl.js';
 
 export const ExperimentalBatchClientService = {
     /**
@@ -8,8 +7,14 @@ export const ExperimentalBatchClientService = {
      * @param {object} data { name, description, type, config, items }
      */
     async createBatch(data) {
-        const response = await axios.post(`${API_BASE}/batch-create`, data);
-        return response.data;
+        const url = getApiUrl('experimental-batch-create');
+        const res = await AuthService.fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error(`Failed to create batch: ${res.status} ${res.statusText}`);
+        return await res.json();
     },
 
     /**
@@ -19,10 +24,11 @@ export const ExperimentalBatchClientService = {
      * @param {string} type 
      */
     async listBatches(page = 1, limit = 20, type = null) {
-        const params = { page, limit };
-        if (type) params.type = type;
-        const response = await axios.get(`${API_BASE}/batch-list`, { params });
-        return response.data;
+        let url = getApiUrl(`experimental-batch-list?page=${page}&limit=${limit}`);
+        if (type) url += `&type=${encodeURIComponent(type)}`;
+        const res = await AuthService.fetch(url);
+        if (!res.ok) throw new Error(`Failed to list batches: ${res.status} ${res.statusText}`);
+        return await res.json();
     },
 
     /**
@@ -33,10 +39,13 @@ export const ExperimentalBatchClientService = {
      * @param {number} limit 
      */
     async getBatchStatus(id, includeItems = false, page = 1, limit = 50) {
-        const response = await axios.get(`${API_BASE}/batch-status/${id}`, {
-            params: { items: includeItems, page, limit }
-        });
-        return response.data;
+        const url = getApiUrl(`experimental-batch-status/${encodeURIComponent(id)}?items=${includeItems}&page=${page}&limit=${limit}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to get batch status: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
@@ -44,8 +53,13 @@ export const ExperimentalBatchClientService = {
      * @param {string} id 
      */
     async processBatch(id) {
-        const response = await axios.post(`${API_BASE}/batch-process/${id}`);
-        return response.data;
+        const url = getApiUrl(`experimental-batch-process/${encodeURIComponent(id)}`);
+        const res = await AuthService.fetch(url, { method: 'POST' });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to process batch: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
@@ -53,8 +67,13 @@ export const ExperimentalBatchClientService = {
      * @param {string} id 
      */
     async cancelBatch(id) {
-        const response = await axios.post(`${API_BASE}/batch-cancel/${id}`);
-        return response.data;
+        const url = getApiUrl(`experimental-batch-cancel/${encodeURIComponent(id)}`);
+        const res = await AuthService.fetch(url, { method: 'POST' });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to cancel batch: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
@@ -62,8 +81,10 @@ export const ExperimentalBatchClientService = {
      * @param {string} id 
      */
     async exportBatch(id) {
-        const response = await axios.get(`${API_BASE}/batch-export/${id}`);
-        return response.data;
+        const url = getApiUrl(`experimental-batch-export/${encodeURIComponent(id)}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) throw new Error(`Failed to export batch: ${res.status} ${res.statusText}`);
+        return await res.json();
     },
 
     /**
@@ -71,56 +92,112 @@ export const ExperimentalBatchClientService = {
      * @param {string} id 
      */
     async deleteBatch(id) {
-        const response = await axios.delete(`${API_BASE}/batch-delete/${id}`);
-        return response.data;
+        const url = getApiUrl(`experimental-batch-delete/${encodeURIComponent(id)}`);
+        const res = await AuthService.fetch(url, { method: 'DELETE' });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to delete batch: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
      * List available analyzers
      */
     async listAnalyzers() {
-        const response = await axios.get(`${API_BASE}/analyzers`);
-        return response.data;
+        const url = getApiUrl('experimental-analyzers');
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to list analyzers: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
      * Upload a dataset from base64 string
      */
     async uploadDataset(fileContent, mimetype, fileName, metadata) {
-        const response = await axios.post(`${API_BASE}/dataset-upload`, {
-            fileContent, mimetype, fileName, metadata
+        const url = getApiUrl('experimental-dataset-upload');
+        const res = await AuthService.fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileContent, mimetype, fileName, metadata })
         });
-        return response.data;
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            const err = new Error(errBody.error || `Failed to upload dataset: ${res.status} ${res.statusText}`);
+            err.response = { data: errBody };
+            throw err;
+        }
+        return await res.json();
     },
 
     /**
      * List datasets
      */
     async listDatasets(page = 1, limit = 20) {
-        const response = await axios.get(`${API_BASE}/dataset-list`, { params: { page, limit } });
-        return response.data;
+        const url = getApiUrl(`experimental-dataset-list?page=${page}&limit=${limit}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to list datasets: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
      * Delete a dataset
      */
     async deleteDataset(id, force = false) {
-        const response = await axios.delete(`${API_BASE}/dataset-delete/${id}`, { params: { force } });
-        return response.data;
+        const url = getApiUrl(`experimental-dataset-delete/${encodeURIComponent(id)}?force=${force}`);
+        const res = await AuthService.fetch(url, { method: 'DELETE' });
+        if (!res.ok) {
+            // Re-throw full response for UI error handling (e.g. IN_USE code)
+            const errBody = await res.json().catch(() => ({}));
+            const err = new Error(errBody.error || `Failed to delete dataset`);
+            err.response = { data: errBody };
+            throw err;
+        }
+        return await res.json();
+    },
+
+    /**
+     * Get rows for a specific dataset
+     */
+    async getDatasetRows(id, page = 1, limit = 50) {
+        const url = getApiUrl(`experimental-dataset-rows?id=${encodeURIComponent(id)}&page=${page}&limit=${limit}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to get dataset rows: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
     },
 
     /**
      * Promote a batch to a dataset
      */
     async promoteBatch(id, details) {
-        const response = await axios.post(`${API_BASE}/batch-promote/${id}`, details);
-        return response.data;
+        const url = getApiUrl(`experimental-batch-promote/${encodeURIComponent(id)}`);
+        const res = await AuthService.fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(details)
+        });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            const err = new Error(errBody.error || `Failed to promote batch`);
+            err.response = { data: errBody };
+            throw err;
+        }
+        return await res.json();
     },
 
     /**
      * Get SSE progress URL
      */
     getBatchProgressUrl(id) {
-        return `${API_BASE}/batch-progress/${id}`;
+        return getApiUrl(`experimental-batch-progress/${encodeURIComponent(id)}`);
     }
 };
