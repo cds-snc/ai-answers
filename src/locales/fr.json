@@ -992,7 +992,7 @@
   },
   "outage": {
     "title": "Service indisponible",
-    "message": "Ce service est actuellement indisponible."
+    "message": "Réponses IA fait l'objet de mises à niveau ou de problèmes de capacité en ce moment. Veuillez revenir plus tard."
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
