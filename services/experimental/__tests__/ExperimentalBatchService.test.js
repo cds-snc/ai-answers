@@ -335,7 +335,7 @@ describe('ExperimentalBatchService', () => {
 
             const updatedItem = await ExperimentalBatchItem.findById(item._id);
             expect(updatedItem.analysisResults['expert-scorer']).toEqual({ verdict: 'pass', score: 0.9 });
-            expect(updatedItem.match).toBe(true); // From verdict mapping
+            expect(updatedItem.match).toBe(true);
         });
 
         it('should handle analyzer errors gracefully', async () => {
@@ -355,6 +355,35 @@ describe('ExperimentalBatchService', () => {
 
             const updatedItem = await ExperimentalBatchItem.findById(item._id);
             expect(updatedItem.analysisErrors['failing-analyzer'].code).toBe('ANALYSIS_FAILED');
+        });
+
+        it('should persist the resolved answer when item has no pre-existing answer', async () => {
+            // REGRESSION TEST: When an analysis-type batch item has answer: '',
+            // _processItem uses `item.answer || item.question` to run the analyzer,
+            // but the resolved value must also be saved back to item.answer in the DB.
+            // Previously the export would always show answer: '' even after analysis ran.
+            const batch = await ExperimentalBatch.create({
+                name: 'No-Answer Analysis Batch',
+                type: 'analysis',
+                config: { analyzerIds: ['bias-detection'] }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'How to find job in Canada?',
+                answer: ''
+            });
+
+            ExperimentalAnalyzerRegistry.get.mockResolvedValue({
+                id: 'bias-detection',
+                processor: vi.fn().mockResolvedValue({ status: 'pass', score: 1 })
+            });
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            const updatedItem = await ExperimentalBatchItem.findById(item._id);
+            expect(updatedItem.status).toBe('completed');
+            expect(updatedItem.answer).toBe('How to find job in Canada?');
         });
     });
 

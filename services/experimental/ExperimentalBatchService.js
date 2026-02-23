@@ -215,6 +215,10 @@ class ExperimentalBatchService {
                 analyzerConfigs.push({ id: batch.config.analyzerId, config: batch.config.analyzerConfig || {} });
             }
 
+            // Resolve answer before analysis: if item has no answer, fall back to question.
+            // This ensures the export always shows the text that was actually analyzed.
+            if (!item.answer) item.answer = item.question;
+
             if (analyzerConfigs.length > 0) {
                 const analysisPromises = analyzerConfigs.map(async (aConfig) => {
                     const analyzerDef = await ExperimentalAnalyzerRegistry.get(aConfig.id);
