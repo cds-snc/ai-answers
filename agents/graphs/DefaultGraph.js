@@ -48,7 +48,6 @@ graph.addNode('init', async (state) => {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
-    userMessage: state.userMessage,
   });
 
   await ServerLoggingService.info('Starting DefaultGraph', state.chatId, {
@@ -63,7 +62,6 @@ graph.addNode('init', async (state) => {
 
 graph.addNode('validate', async (state) => {
   logGraphEvent('info', 'node:validate input', state.chatId, {
-    userMessage: state.userMessage,
     conversationHistory: state.conversationHistory,
     lang: state.lang,
     department: state.department,
@@ -82,7 +80,6 @@ graph.addNode('validate', async (state) => {
 graph.addNode('redact', async (state) => {
   try {
     logGraphEvent('info', 'node:redact input', state.chatId, {
-      userMessage: state.userMessage,
       lang: state.lang,
       selectedAI: state.selectedAI,
     });
@@ -116,7 +113,6 @@ graph.addNode('contextNode', async (state) => {
   logGraphEvent('info', 'node:context input', state.chatId, {
     conversationHistory: state.conversationHistory,
     translationData: state.translationData,
-    userMessage: state.userMessage,
     lang: state.lang,
   });
 
