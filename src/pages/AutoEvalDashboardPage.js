@@ -150,7 +150,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       <p className="mb-0 small-text">{t('admin.autoEvalDashboard.description', 'Filter auto-evaluations and explore details in the table below.')}</p>
 
-      <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+      <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">

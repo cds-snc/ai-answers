@@ -203,6 +203,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   return (
     <GcdsContainer size="xl" className="space-y-6">
       <FilterPanel
+        lang={lang}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}

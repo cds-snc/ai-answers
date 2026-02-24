@@ -298,6 +298,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       </p>
 
       <FilterPanel
+        lang={lang}
         onApplyFilters={(filters) => { handleApplyFilters(filters); }}
         onClearFilters={handleClearFilters}
         isVisible={true}

@@ -243,27 +243,32 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
 }
 
 export function getChatFilterConditions(filters, options = {}) {
-  const { basePath = 'interactions', userField = 'user' } = options;
+  const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;
   const prefix = basePath ? `${basePath}.` : '';
   const withPath = (field) => `${prefix}${field}`;
   const conditions = [];
 
   // userType
-  if (filters.userType === 'public') {
-    conditions.push({ [userField]: { $exists: false } });
-  } else if (filters.userType === 'admin') {
-    conditions.push({ [userField]: { $exists: true, $ne: null } });
-  } else if (filters.userType === 'referredPublic') {
-    conditions.push({ [userField]: { $exists: false } });
+  if (!skipUserCondition) {
+    if (filters.userType === 'public') {
+      conditions.push({ [userField]: { $exists: false } });
+    } else if (filters.userType === 'admin') {
+      conditions.push({ [userField]: { $exists: true, $ne: null } });
+    } else if (filters.userType === 'referredPublic') {
+      conditions.push({ [userField]: { $exists: false } });
+    }
+  }
+
+  if (filters.userType === 'referredPublic') {
     conditions.push({
       [withPath('referringUrl')]: {
-        $regex: '(canada\\.ca|gc\\.ca)',
+        $regex: '(://|\\.)(canada\\.ca|gc\\.ca)(/|$)',
         $options: 'i'
       }
     });
     conditions.push({
       [withPath('referringUrl')]: {
-        $not: { $regex: '(digital\\.canada\\.ca|blog\\.canada\\.ca)', $options: 'i' }
+        $not: { $regex: '(://|\\.)(blog|digital|design|alpha|staging|[^./]*test[^./]*)\\.canada\\.ca(/|$)', $options: 'i' }
       }
     });
   }

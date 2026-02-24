@@ -189,7 +189,7 @@ const HomePage = ({ lang = "en" }) => {
   };
 
   if (serviceStatus.isAvailable === false || chatSessionFailed) {
-    return <OutageComponent />;
+    return <OutageComponent lang={lang} />;
   }
 
   return (
