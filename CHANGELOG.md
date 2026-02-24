@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.105.1](https://github.com/cds-snc/ai-answers/compare/v1.105.0...v1.105.1) (2026-02-24)
+
+
+### Bug Fixes
+
+* remove raw userMessage from logGraphEvent and RedactionService t… ([4bbc27e](https://github.com/cds-snc/ai-answers/commit/4bbc27ed13a915aa0b9f6204a9815b0f2cecac75))
+* remove raw userMessage from logGraphEvent and RedactionService to prevent PII leakage ([e747fec](https://github.com/cds-snc/ai-answers/commit/e747fecb35eb609db0e08e3ee3e60fe165d5f5e6))
+
 ## [1.105.0](https://github.com/cds-snc/ai-answers/compare/v1.104.4...v1.105.0) (2026-02-23)
 
 
