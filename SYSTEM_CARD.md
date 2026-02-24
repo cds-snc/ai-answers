@@ -281,7 +281,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 ### User Roles and Access Control
 - **Admin Users**: Full system access including user management, database operations, and system configuration
-- **Partner Users**: Access to evaluation tools, batch processing, and performance metrics
+- **Partner Users**: Access to suite of evaluation tools to score sentences and citation for chat responses, batch processing, and performance metrics
 - **Role-Based UI**: Different interfaces and capabilities based on user permissions
 - **Authentication**: Secure login system with role-based route protection
 

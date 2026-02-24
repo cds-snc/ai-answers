@@ -281,7 +281,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 ### Rôles d'utilisateurs et contrôle d'accès
 - **Utilisateurs administrateurs** : Accès complet au système incluant la gestion des utilisateurs, les opérations de base de données et la configuration du système
-- **Utilisateurs partenaires** : Accès aux outils d'évaluation, au traitement par lot et aux métriques de performance
+- **Utilisateurs partenaires** : Accès à une suite d'outils d'évaluation pour noter les phrases et les citations des réponses de clavardage, au traitement par lot et aux métriques de performance
 - **Interface basée sur les rôles** : Différentes interfaces et capacités basées sur les permissions d'utilisateurs
 - **Authentification** : Système d'authentification sécurisé avec protection des routes basée sur les rôles
 
