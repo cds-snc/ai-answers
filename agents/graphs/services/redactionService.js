@@ -71,7 +71,6 @@ class RedactionService {
   }
 
   redactText(text = '', lang = 'en') {
-    console.log(`[Server RedactionService] redactText called with: "${text}" [lang=${lang}]`);
     if (!this.isInitialized || this.currentLang !== lang) {
       // Auto-initialize if possible, or throw
       // For now, consistent with previous behavior
@@ -149,7 +148,7 @@ class RedactionService {
     }
 
     if (redactedItems.length > 0) {
-      console.log(`[Server RedactionService] Input: "${text}", Redacted: "${redactedText}", Items:`, JSON.stringify(redactedItems));
+      console.log(`[Server RedactionService] Redacted items detected:`, JSON.stringify(redactedItems));
     }
 
     return { redactedText, redactedItems };
