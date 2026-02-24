@@ -403,7 +403,7 @@ async function chatExportHandler(req, res) {
             dateFilter.createdAt = { $gte: start, $lte: now };
         }
 
-        if (userType === 'public') dateFilter.user = { $exists: false };
+        if (userType === 'public' || userType === 'referredPublic') dateFilter.user = { $exists: false };
         else if (userType === 'admin') dateFilter.user = { $exists: true };
 
         const chatPopulate = getPopulateOptions(view);
@@ -541,7 +541,7 @@ async function chatExportHandler(req, res) {
             });
 
             // Filtering Logic - now includes all conditions including partnerEval and aiEval
-            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval });
+            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval }, { skipUserCondition: true });
             if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });
 
             // Reconstruct Chat Object Structure
