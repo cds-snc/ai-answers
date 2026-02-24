@@ -179,6 +179,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
           {/* Filter Panel - Apply triggers export */}
           <FilterPanel
+            lang={lang}
             onApplyFilters={handleApplyFilters}
             onClearFilters={handleClearFilters}
             isVisible={true}

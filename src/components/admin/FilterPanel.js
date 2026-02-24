@@ -7,6 +7,7 @@ import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 
 const FilterPanel = ({
+  lang,
   onApplyFilters,
   onClearFilters,
   isVisible = false,
@@ -14,7 +15,7 @@ const FilterPanel = ({
   applyButtonText = null,
   applyDisabled = false
 }) => {
-  const { t } = useTranslations();
+  const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
 
