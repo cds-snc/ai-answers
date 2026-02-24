@@ -87,6 +87,8 @@ describe('getChatFilterConditions - referredPublic regex', () => {
             ['https://rcaanc-cirnac.gc.ca/eng/1100100010002', true],
             ['https://canada.ca/', true],
             ['https://some.deep.sub.canada.ca/path', true],
+            ['canada.ca/en/services', true],
+            ['gc.ca/eng/home', true],
         ])('should MATCH: %s', (url, expected) => {
             expect(getInclusionRegex().test(url)).toBe(expected);
         });
@@ -115,6 +117,10 @@ describe('getChatFilterConditions - referredPublic regex', () => {
             ['https://test.canada.ca/', true],
             ['https://loadtest.canada.ca/', true],
             ['https://perftest99.canada.ca/', true],
+            ['design.canada.ca', true],
+            ['design.canada.ca/', true],
+            ['blog.canada.ca/2024/post', true],
+            ['test.canada.ca/', true],
         ])('should EXCLUDE: %s', (url, expected) => {
             expect(getExclusionRegex().test(url)).toBe(expected);
         });

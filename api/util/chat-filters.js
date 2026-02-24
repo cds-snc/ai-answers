@@ -262,13 +262,13 @@ export function getChatFilterConditions(filters, options = {}) {
   if (filters.userType === 'referredPublic') {
     conditions.push({
       [withPath('referringUrl')]: {
-        $regex: '(://|\\.)(canada\\.ca|gc\\.ca)(/|$)',
+        $regex: '(://|\\.|^)(canada\\.ca|gc\\.ca)(/|$)',
         $options: 'i'
       }
     });
     conditions.push({
       [withPath('referringUrl')]: {
-        $not: { $regex: '(://|\\.)(blog|digital|design|alpha|staging|[^./]*test[^./]*)\\.canada\\.ca(/|$)', $options: 'i' }
+        $not: { $regex: '(://|\\.|^)(blog|digital|design|alpha|staging|[^./]*test[^./]*)\\.canada\\.ca(/|$)', $options: 'i' }
       }
     });
   }
