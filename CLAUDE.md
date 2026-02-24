@@ -1,5 +1,8 @@
 # Claude Code Instructions
 
+## Environment notes
+- `gh` CLI is not installed — use `WebFetch` for GitHub PR/issue details instead.
+
 ## How to work well in this codebase
 
 1. **State assumptions early.** Before implementing anything non-trivial, say what you're assuming so we can catch misalignment before code is written.

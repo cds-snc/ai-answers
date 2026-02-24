@@ -2,8 +2,8 @@ import React from 'react';
 import { GcdsContainer, GcdsNotice, GcdsText } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 
-const OutageComponent = () => {
-  const { t } = useTranslations();
+const OutageComponent = ({ lang }) => {
+  const { t } = useTranslations(lang);
   return (
     <GcdsContainer size="xl" mainContainer centered style={{ paddingBottom: '2rem' }}>
       <GcdsNotice type="warning" noticeTitleTag="h2" noticeTitle={t('outage.title')} className="mb-400">

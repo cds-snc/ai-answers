@@ -6,8 +6,8 @@ import { usePageContext } from '../hooks/usePageParam.js';
 import EvaluationService from '../services/EvaluationService.js';
 
 const EvalPage = () => {
-  const { t } = useTranslations();
   const { language } = usePageContext();
+  const { t } = useTranslations(language);
   const [evalProgress, setEvalProgress] = useState(null);
   const [isAutoProcessingEvals, setIsAutoProcessingEvals] = useState(false);
   const [isRegeneratingAll] = useState(false);
