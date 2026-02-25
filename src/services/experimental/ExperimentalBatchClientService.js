@@ -23,9 +23,10 @@ export const ExperimentalBatchClientService = {
      * @param {number} limit 
      * @param {string} type 
      */
-    async listBatches(page = 1, limit = 20, type = null) {
+    async listBatches(page = 1, limit = 20, type = null, datasetId = null) {
         let url = getApiUrl(`experimental-batch-list?page=${page}&limit=${limit}`);
         if (type) url += `&type=${encodeURIComponent(type)}`;
+        if (datasetId) url += `&datasetId=${encodeURIComponent(datasetId)}`;
         const res = await AuthService.fetch(url);
         if (!res.ok) throw new Error(`Failed to list batches: ${res.status} ${res.statusText}`);
         return await res.json();
@@ -79,11 +80,15 @@ export const ExperimentalBatchClientService = {
     /**
      * Export batch results
      * @param {string} id 
+     * @param {string} format 'json' or 'excel'
      */
-    async exportBatch(id) {
-        const url = getApiUrl(`experimental-batch-export/${encodeURIComponent(id)}`);
+    async exportBatch(id, format = 'json') {
+        const url = getApiUrl(`experimental-batch-export/${encodeURIComponent(id)}?format=${format}`);
         const res = await AuthService.fetch(url);
         if (!res.ok) throw new Error(`Failed to export batch: ${res.status} ${res.statusText}`);
+        if (format === 'excel') {
+            return await res.blob();
+        }
         return await res.json();
     },
 
@@ -171,25 +176,6 @@ export const ExperimentalBatchClientService = {
         if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));
             throw new Error(errBody.error || `Failed to get dataset rows: ${res.status} ${res.statusText}`);
-        }
-        return await res.json();
-    },
-
-    /**
-     * Promote a batch to a dataset
-     */
-    async promoteBatch(id, details) {
-        const url = getApiUrl(`experimental-batch-promote/${encodeURIComponent(id)}`);
-        const res = await AuthService.fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(details)
-        });
-        if (!res.ok) {
-            const errBody = await res.json().catch(() => ({}));
-            const err = new Error(errBody.error || `Failed to promote batch`);
-            err.response = { data: errBody };
-            throw err;
         }
         return await res.json();
     },

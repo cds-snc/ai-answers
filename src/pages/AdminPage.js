@@ -138,23 +138,18 @@ const AdminPage = ({ lang = 'en' }) => {
                   {t('admin.navigation.connectivity', 'Service Connectivity')}
                 </GcdsLink>
               </li>
-
               {/* Experimental Features */}
               <li className="mt-400">
                 <strong>{t('admin.navigation.experimental', 'Experimental')}</strong>
                 <ul className="list-none pl-400">
                   <li>
-                    <GcdsLink href={`/${lang}/experimental/analysis`}>
-                      {t('admin.navigation.experimentalAnalysis', 'Analysis Batches')}
-                    </GcdsLink>
-                  </li>
-                  <li>
                     <GcdsLink href={`/${lang}/experimental/datasets`}>
-                      {t('admin.navigation.experimentalDatasets', 'Dataset Management')}
+                      {t('admin.navigation.dataAnalysis', 'Data Analysis')}
                     </GcdsLink>
                   </li>
                 </ul>
               </li>
+
             </ul>
           </section>
         </RoleBasedContent>

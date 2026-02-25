@@ -31,7 +31,6 @@ import experimentalBatchProgressHandler from '../api/experimental/experimental-b
 import experimentalDatasetUploadHandler from '../api/experimental/experimental-dataset-upload.js';
 import experimentalDatasetListHandler from '../api/experimental/experimental-dataset-list.js';
 import experimentalDatasetDeleteHandler from '../api/experimental/experimental-dataset-delete.js';
-import experimentalBatchPromoteHandler from '../api/experimental/experimental-batch-promote.js';
 import experimentalDatasetRowsHandler from '../api/experimental/experimental-dataset-rows.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
@@ -221,7 +220,6 @@ app.post('/api/experimental/experimental-dataset-upload', experimentalDatasetUpl
 app.get('/api/experimental/experimental-dataset-list', experimentalDatasetListHandler);
 app.get('/api/experimental/experimental-dataset-rows', experimentalDatasetRowsHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
-app.post('/api/experimental/experimental-batch-promote/:id', experimentalBatchPromoteHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
@@ -311,7 +309,6 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
-
 
 
 

@@ -12,10 +12,10 @@ async function handler(req, res) {
 
         const query = {};
         if (rawType !== undefined) {
-            if (typeof rawType !== 'string') {
-                return res.status(400).json({ error: 'Invalid type parameter' });
-            }
-            query.type = { $eq: rawType };
+            query.type = rawType;
+        }
+        if (req.query.datasetId) {
+            query['config.datasetId'] = req.query.datasetId;
         }
 
         const batches = await ExperimentalBatch.find(query)

@@ -1,22 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsDetails, GcdsInput } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
+import { useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const [searchParams] = useSearchParams();
+    const datasetIdParam = searchParams.get('datasetId');
 
     // State
     const [analyzers, setAnalyzers] = useState([]);
     const [selectedAnalyzerIds, setSelectedAnalyzerIds] = useState([]);
 
     const [datasets, setDatasets] = useState([]);
-    const [selectedDatasetId, setSelectedDatasetId] = useState('');
+    const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
+    const [baselineBatchId, setBaselineBatchId] = useState('');
 
     const [inputFile, setInputFile] = useState(null);
     const [comparisonFile, setComparisonFile] = useState(null);
-    const [iterations, setIterations] = useState(1);
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -27,22 +30,27 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const eventSourceRef = useRef(null);
 
     useEffect(() => {
+        if (datasetIdParam) setSelectedDatasetId(datasetIdParam);
         fetchInitialData();
         return () => {
-            if (eventSourceRef.current) eventSourceRef.current.close();
+            if (eventSourceRef.current) clearInterval(eventSourceRef.current);
         };
-    }, []);
+    }, [datasetIdParam]);
+
+    useEffect(() => {
+        fetchBatches();
+    }, [selectedDatasetId]);
 
     const fetchInitialData = async () => {
         try {
             const [az, ds, bt] = await Promise.all([
                 ExperimentalBatchClientService.listAnalyzers(),
                 ExperimentalBatchClientService.listDatasets(),
-                ExperimentalBatchClientService.listBatches(1, 20, 'analysis')
+                ExperimentalBatchClientService.listBatches(1, 100, 'analysis', datasetIdParam)
             ]);
             setAnalyzers(az);
             setDatasets(ds.data || []);
-            setBatches(bt.data);
+            setBatches(bt.data || []);
         } catch (err) {
             console.error('Failed to fetch initial data:', err);
         }
@@ -50,14 +58,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const fetchBatches = async () => {
         try {
-            const result = await ExperimentalBatchClientService.listBatches(1, 20, 'analysis');
-            setBatches(result.data);
-
-            // Auto-track progress for any processing batches on page load
-            const processingBatch = result.data?.find(b => b.status === 'processing');
-            if (processingBatch && (!batchProgress[processingBatch._id] || batchProgress[processingBatch._id].status !== 'completed')) {
-                trackProgress(processingBatch._id);
-            }
+            const result = await ExperimentalBatchClientService.listBatches(1, 100, 'analysis', selectedDatasetId);
+            setBatches(result.data || []);
         } catch (err) {
             console.error(err);
         }
@@ -142,20 +144,24 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 config: {
                     analyzerIds: selectedAnalyzerIds,
                     datasetId: selectedDatasetId || undefined,
+                    baselineRunId: baselineBatchId || undefined,
                     pageLanguage: 'en',
                 },
-                items: items.length > 0 ? items : []
+                items: items.length > 0 ? items : undefined
             };
 
             const result = await ExperimentalBatchClientService.createBatch(batchData);
 
-            // Start SSE tracking
-            trackProgress(result._id);
-
-            // Trigger Processing
-            await ExperimentalBatchClientService.processBatch(result._id);
-
-            setMessage(`Analysis started! Batch ID: ${result._id}`);
+            if (result.multiple) {
+                result.batches.forEach(b => {
+                    trackProgress(b._id);
+                    ExperimentalBatchClientService.processBatch(b._id);
+                });
+                setMessage(t('experimental.analysis.messages.startedCount', { count: result.batches.length }) || `Started ${result.batches.length} analysis runs.`);
+            } else {
+                trackProgress(result._id);
+                await ExperimentalBatchClientService.processBatch(result._id);
+            }
             fetchBatches();
 
         } catch (err) {
@@ -163,15 +169,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setMessage(`Error: ${err.message || 'Failed to start analysis'}`);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchDatasets = async () => {
-        try {
-            const ds = await ExperimentalBatchClientService.listDatasets();
-            setDatasets(ds.data || []);
-        } catch (err) {
-            console.error(err);
         }
     };
 
@@ -188,12 +185,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleExport = async (batchId) => {
         try {
-            const data = await ExperimentalBatchClientService.exportBatch(batchId);
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = await ExperimentalBatchClientService.exportBatch(batchId, 'excel');
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `batch-${batchId}-results.json`;
+            a.download = `batch-${batchId}-results.xlsx`;
             a.click();
             URL.revokeObjectURL(url);
         } catch (err) {
@@ -202,21 +198,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const handlePromote = async (batch) => {
-        const name = window.prompt('Enter a name for the new dataset:', `Results from ${batch.name}`);
-        if (!name) return;
-        try {
-            await ExperimentalBatchClientService.promoteBatch(batch._id, {
-                name,
-                description: `Promoted from batch: ${batch.name} (${batch._id})`
-            });
-            alert('Batch promoted to dataset successfully!');
-            fetchDatasets();
-        } catch (err) {
-            console.error('Promote error:', err);
-            alert('Failed to promote batch');
-        }
+    const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
+
+    const getAnalyzerLabel = (batch) => {
+        const ids = batch.config?.analyzerIds || (batch.config?.analyzerId ? [batch.config.analyzerId] : []);
+        if (!ids || ids.length === 0) return batch.name;
+        const names = ids.map(id => analyzers.find(a => a.id === id)?.name || id);
+        return names.join(', ');
     };
+
+    const baselineOptions = batches.filter(batch => batch.status === 'completed');
+    const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
 
     const trackProgress = (batchId) => {
         if (eventSourceRef.current) clearInterval(eventSourceRef.current);
@@ -264,6 +256,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     return (
         <GcdsContainer size="xl" centered className="my-400">
             <GcdsHeading tag="h1">Experimental Analysis</GcdsHeading>
+            {selectedDataset && (
+                <GcdsText className="mt-200">
+                    <strong>{t('experimental.analysis.datasetLabel') || 'Dataset:'}</strong> {selectedDataset.name} ({selectedDataset.rowCount} rows). Dataset already selected from Datasets page.
+                </GcdsText>
+            )}
 
             <div className="p-400 my-400 border rounded">
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '2rem' }}>
@@ -312,6 +309,27 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </select>
                         </div>
 
+                        {selectedDatasetId && (
+                            <div className="mb-400">
+                                <label htmlFor="baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                    {t('experimental.analysis.selectBaseline') || 'Select Baseline Run (Comparison)'}
+                                </label>
+                                <select
+                                    id="baseline-select"
+                                    value={baselineBatchId}
+                                    onChange={(e) => setBaselineBatchId(e.target.value)}
+                                    style={{ padding: '8px', width: '100%' }}
+                                >
+                                    <option value="">{t('experimental.analysis.noBaseline') || '-- No baseline (Standalone Evaluation) --'}</option>
+                                    {baselineOptions.map(batch => (
+                                        <option key={batch._id} value={batch._id}>
+                                            {getAnalyzerLabel(batch)} - {new Date(batch.createdAt).toLocaleString()}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         {/* File Upload (Fallback) */}
                         {!selectedDatasetId && (
                             <div className="border p-300 rounded mb-400 bg-light">
@@ -358,24 +376,25 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             </div>
 
             {/* History List */}
-            <GcdsHeading tag="h2" className="mt-600">History</GcdsHeading>
+            <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns') || 'Previous Runs'}</GcdsHeading>
             <div className="overflow-auto">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-                            <th className="p-200">Name</th>
-                            <th className="p-200">Analyzers</th>
-                            <th className="p-200">Status</th>
-                            <th className="p-200">Progress</th>
-                            <th className="p-200">Date</th>
+                            <th className="p-300">{t('experimental.analysis.columns.name')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.analyzer')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.status')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.flagged')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.date')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {batches.map(batch => (
                             <tr key={batch._id} style={{ borderBottom: '1px solid #eee' }}>
                                 <td className="p-200">{batch.name}</td>
-                                <td className="p-200">{(batch.config?.analyzerIds || [batch.config?.analyzerId] || []).join(', ')}</td>
-                                <td className="p-200">
+                                <td className="p-200">{getAnalyzerLabel(batch)}</td>
+                                <td className="p-300">
                                     <span style={{
                                         color: batch.status === 'completed' ? 'green' : (batch.status === 'failed' ? 'red' : 'orange'),
                                         fontWeight: 'bold'
@@ -383,15 +402,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         {batch.status}
                                     </span>
                                 </td>
-                                <td className="p-200">
-                                    {batch.summary?.completed}/{batch.summary?.total}
+                                <td className="p-300">
+                                    {batch.summary?.flagged > 0 ? (
+                                        <span style={{ color: '#d30800', fontWeight: 'bold' }}>⚠ {batch.summary.flagged}</span>
+                                    ) : (
+                                        <span>0</span>
+                                    )}
                                 </td>
-                                <td className="p-200">{new Date(batch.createdAt).toLocaleDateString()}</td>
+                                <td className="p-300">{new Date(batch.createdAt).toLocaleDateString()}</td>
                                 <td className="p-200">
                                     <div className="flex gap-200">
                                         <GcdsButton size="small" onClick={() => handleExport(batch._id)}>Export</GcdsButton>
                                         {batch.status === 'completed' && (
-                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handlePromote(batch)}>Promote</GcdsButton>
+                                            <GcdsButton size="small" buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'} onClick={() => handleUseAsBaseline(batch._id)}>
+                                                {baselineBatchId === batch._id ? 'Baseline Selected' : 'Use as Baseline'}
+                                            </GcdsButton>
                                         )}
                                         <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>Delete</GcdsButton>
                                     </div>

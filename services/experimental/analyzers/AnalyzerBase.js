@@ -7,7 +7,7 @@ export class AnalyzerBase {
     static id = '';           // e.g., 'expert-scorer'
     static name = '';         // e.g., 'Expert Scorer'
     static description = '';  // Human-readable description
-    static inputType = '';    // 'single' | 'comparison'
+    static inputType = '';    // 'single' | 'comparison' | 'universal'
     static outputColumns = []; // e.g., ['verdict', 'confidence', 'explanation']
 
     constructor(config = {}) {
@@ -33,9 +33,14 @@ export class AnalyzerBase {
             if (!input.baselineAnswer || !input.comparisonAnswer) {
                 return { valid: false, error: 'Comparison requires baselineAnswer and comparisonAnswer' };
             }
-        } else {
+        } else if (this.constructor.inputType === 'single') {
             if (!input.answer && !input.question) {
                 return { valid: false, error: 'Single input requires answer or question' };
+            }
+        } else if (this.constructor.inputType === 'universal') {
+            // Universal analyzers handle both with/without baseline gracefully
+            if (!input.answer && !input.question) {
+                return { valid: false, error: 'Universal input requires answer or question' };
             }
         }
         return { valid: true };

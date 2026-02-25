@@ -64,7 +64,34 @@ class ExperimentalBatchService {
                 experimentalDataset: new mongoose.Types.ObjectId(batchData.config.datasetId)
             }).sort({ rowIndex: 1 }).lean();
 
-            finalItems = rows.map(r => r.data);
+            // Check if we are comparing against a previous run
+            let baselineRunItems = [];
+            if (batchData.config?.baselineRunId) {
+                baselineRunItems = await ExperimentalBatchItem.find({
+                    experimentalBatch: new mongoose.Types.ObjectId(batchData.config.baselineRunId)
+                }).sort({ rowIndex: 1 }).lean();
+            }
+
+            finalItems = rows.map((r, idx) => {
+                const data = { ...r.data };
+                // If comparing against previous run, set baselineAnswer to previous run's answer
+                if (baselineRunItems.length > 0) {
+                    const match = baselineRunItems[idx] || baselineRunItems.find(bi => bi.rowIndex === r.rowIndex);
+                    if (match) {
+                        data.baselineAnswer = match.answer;
+                        data.baselineAnalysisResults = match.analysisResults || {};
+                        data.baselineMatch = match.match;
+                        data.baselineFlagged = match.flagged;
+
+                        // If we are NOT in 'batch' mode (generation), the 'answer' to analyze 
+                        // should be the one from the dataset itself (or the baseline being re-evaluated).
+                        if (batchData.type === 'analysis' && !data.answer) {
+                            data.answer = match.answer;
+                        }
+                    }
+                }
+                return data;
+            });
         }
 
         if (finalItems.length === 0) {
@@ -81,6 +108,9 @@ class ExperimentalBatchService {
             question: item.question || item.Question || item.REDACTEDQUESTION || item.Prompt || '',
             answer: item.answer || item.Answer || item.Response || '',
             baselineAnswer: item.baselineAnswer || item.baseline || item.GoldenAnswer || '',
+            baselineAnalysisResults: item.baselineAnalysisResults || {},
+            baselineMatch: item.baselineMatch,
+            baselineFlagged: item.baselineFlagged,
             comparisonAnswer: item.comparisonAnswer || item.comparison || item.NewAnswer || '',
             referringUrl: item.referringUrl || item.ReferringUrl || item.referringurl || '',
             chatId: item.chatId || item.ChatId || item.chatid || '',
@@ -215,9 +245,11 @@ class ExperimentalBatchService {
                 analyzerConfigs.push({ id: batch.config.analyzerId, config: batch.config.analyzerConfig || {} });
             }
 
-            // Resolve answer before analysis: if item has no answer, fall back to question.
-            // This ensures the export always shows the text that was actually analyzed.
-            if (!item.answer) item.answer = item.question;
+            // Resolve answer before analysis: prioritize comparisonAnswer for comparison runs,
+            // otherwise keep existing answer (from dataset or generation).
+            if (!item.answer && item.comparisonAnswer) {
+                item.answer = item.comparisonAnswer;
+            }
 
             if (analyzerConfigs.length > 0) {
                 const analysisPromises = analyzerConfigs.map(async (aConfig) => {
@@ -257,6 +289,17 @@ class ExperimentalBatchService {
                                 item.match = res.result.verdict === 'pass';
                                 item.explanation = res.result.explanation;
                             }
+                        }
+
+                        // Propagate flags/diffs to item level for unified counts/UI
+                        if (res.result.differenceFound === true) {
+                            item.flagged = true;
+                        }
+                        if (res.result.label === 'biased' || res.result.label === 'caution') {
+                            item.flagged = true;
+                        }
+                        if (res.result.status === 'flagged' || res.result.verdict === 'fail') {
+                            item.flagged = true;
                         }
                     } else if (res.error) {
                         if (!item.analysisErrors) item.analysisErrors = {};
@@ -347,6 +390,7 @@ class ExperimentalBatchService {
                     },
                     cancelled: { $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] } },
                     matches: { $sum: { $cond: [{ $eq: ["$match", true] }, 1, 0] } },
+                    flagged: { $sum: { $cond: [{ $eq: ["$flagged", true] }, 1, 0] } },
                 }
             }
         ]).allowDiskUse(true);
@@ -384,6 +428,7 @@ class ExperimentalBatchService {
                 'summary.completed': s.completed,
                 'summary.failed': s.failed,
                 'summary.matches': s.matches,
+                'summary.flagged': s.flagged || 0,
                 'analyzerSummary': analyzerSummary,
                 status: nextStatus
             });

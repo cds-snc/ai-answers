@@ -395,8 +395,7 @@
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
       "experimental": "Expérimental",
-      "experimentalAnalysis": "Lots d'analyse",
-      "experimentalDatasets": "Gestion des ensembles de données",
+      "dataAnalysis": "Analyse de données",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluer un chat public",
@@ -1223,7 +1222,8 @@
   },
   "experimental": {
     "datasets": {
-      "title": "Gestion des ensembles de données",
+      "title": "Ensembles de données expérimentaux",
+      "analyze": "Analyser",
       "uploadNew": "Télécharger un nouvel ensemble de données",
       "upload": "Télécharger un ensemble de données",
       "uploading": "Téléchargement en cours...",
@@ -1237,7 +1237,6 @@
       "errorLoadingRows": "Échec du chargement des données.",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
       "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
-      "promote": "Promouvoir en ensemble de données",
       "nameLabel": "Nom de l'ensemble de données",
       "descLabel": "Description",
       "typeLabel": "Type d'ensemble de données",
@@ -1268,13 +1267,47 @@
       }
     },
     "analysis": {
-      "title": "Analyse expérimentale",
-      "selectAnalyzer": "Sélectionner un ou des analyseurs",
-      "choose": "Choisir...",
+      "title": "Analyse par lot",
+      "datasetLabel": "Ensemble de données :",
+      "changeDataset": "Changer d'ensemble de données",
+      "configuration": "Configuration",
+      "selectAnalyzers": "Sélectionner les analyseurs",
+      "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
+      "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
+      "noBaseline": "-- Aucune référence (évaluation autonome) --",
+      "useExistingDataset": "Utiliser un ensemble de données existant",
+      "uploadInstead": "-- Télécharger un nouveau fichier à la place --",
+      "orUpload": "Ou télécharger de nouvelles données :",
+      "inputFile": "Fichier d'entrée (Excel/CSV)",
+      "comparisonFile": "Fichier de comparaison (optionnel)",
       "run": "Lancer l'analyse",
-      "items": "Éléments",
-      "progress": "Progrès",
-      "status": "Statut"
+      "starting": "Démarrage...",
+      "runningStatus": "Statut de l'exécution",
+      "noActiveRuns": "Aucune exécution active n'est actuellement suivie.",
+      "previousRuns": "Exécutions précédentes",
+      "columns": {
+        "name": "Nom de l'exécution",
+        "analyzer": "Analyseur",
+        "status": "Statut",
+        "issues": "Problèmes",
+        "flagged": "Signalés",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "baseline": "RÉFÉRENCE",
+      "export": "Exporter",
+      "useAsBaseline": "Utiliser comme référence",
+      "delete": "Supprimer",
+      "empty": "Aucune exécution précédente trouvée pour cet ensemble de données.",
+      "messages": {
+        "selectAnalyzer": "Veuillez sélectionner au moins un analyseur.",
+        "selectData": "Veuillez sélectionner un ensemble de données ou télécharger un fichier.",
+        "comparisonRequired": "L'analyse de comparaison nécessite un deuxième fichier ou un type d'ensemble de données spécifique.",
+        "startedCount": "{count} exécutions d'analyse lancées.",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
+        "deleteError": "Échec de la suppression du lot",
+        "exportError": "Échec de l'exportation du lot"
+      }
     }
   }
 }
