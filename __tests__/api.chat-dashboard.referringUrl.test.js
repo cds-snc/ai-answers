@@ -108,18 +108,27 @@ describe('getChatFilterConditions - referredPublic regex', () => {
 
     describe('exclusion regex (CDS/internal subdomains)', () => {
         it.each([
+            // English CDS sites
             ['https://blog.canada.ca/2024/01/post', true],
             ['https://digital.canada.ca/products', true],
             ['https://design.canada.ca/common-design-patterns', true],
+            // French CDS sites
+            ['https://blogue.canada.ca/2024/01/article', true],
+            ['https://numerique.canada.ca/produits', true],
+            ['https://conception.canada.ca/', true],
+            // Pre-production / internal
             ['https://alpha.canada.ca/en', true],
             ['https://ai-answers.alpha.canada.ca/en/chat', true],
             ['https://staging.canada.ca/en', true],
+            // Test wildcard
             ['https://test.canada.ca/', true],
             ['https://loadtest.canada.ca/', true],
             ['https://perftest99.canada.ca/', true],
+            // Without protocol prefix (as stored in some pipelines)
             ['design.canada.ca', true],
             ['design.canada.ca/', true],
             ['blog.canada.ca/2024/post', true],
+            ['conception.canada.ca/', true],
             ['test.canada.ca/', true],
         ])('should EXCLUDE: %s', (url, expected) => {
             expect(getExclusionRegex().test(url)).toBe(expected);
