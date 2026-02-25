@@ -86,17 +86,17 @@ class ExperimentalQueueService extends EventEmitter {
                     }
                 };
 
-                return queueInstance.add(jobWrapper, { priority: options.priority });
+                // Fire and forget, catching errors so they don't crash process
+                queueInstance.add(jobWrapper, { priority: options.priority }).catch(err => {
+                    console.error(`[ExperimentalQueueService] Unhandled error in job ${jobId}:`, err);
+                });
+
+                // Return immediately to match BullMQ's .add() behavior (resolves when queued, not when done)
+                return { id: jobId, data, name: jobId };
             } else {
-                // No worker registered yet?
-                // In BullMQ you can add jobs before workers. In PQueue (wrapped) we can't easily do that without a custom buffer.
-                // For this Experimental service, we will enforce: Register Processor FIRST for in-memory mode, 
-                // OR we just store it in a simplified buffer if needed. 
-                // Let's throw a warning or handle it.
                 console.warn(`[ExperimentalQueueService] In-memory queue '${queueName}' has no processor registered yet. Job ${jobId} dropped or deferred (not implemented). Register processor first!`);
-                // Ideally we'd push to a pending array, but for now let's assume startup registers queues.
             }
-            return { id: jobId, data };
+            return { id: jobId, data, name: jobId };
         }
     }
 
