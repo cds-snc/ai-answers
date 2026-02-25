@@ -120,10 +120,8 @@ describe('getChatFilterConditions - referredPublic regex', () => {
             ['https://alpha.canada.ca/en', true],
             ['https://ai-answers.alpha.canada.ca/en/chat', true],
             ['https://staging.canada.ca/en', true],
-            // Test wildcard
+            // Test (exact match only — not wildcard, to avoid excluding e.g. contest.canada.ca)
             ['https://test.canada.ca/', true],
-            ['https://loadtest.canada.ca/', true],
-            ['https://perftest99.canada.ca/', true],
             // Without protocol prefix (as stored in some pipelines)
             ['design.canada.ca', true],
             ['design.canada.ca/', true],
@@ -136,6 +134,9 @@ describe('getChatFilterConditions - referredPublic regex', () => {
 
         it.each([
             ['https://www.canada.ca/en/services', false],
+            // Subdomains containing "test" but not exact match — should NOT be excluded
+            ['https://loadtest.canada.ca/', false],
+            ['https://contest.canada.ca/', false],
             ['https://ised-isde.canada.ca/site/spectrum', false],
             ['https://sac-isc.gc.ca/eng/home', false],
         ])('should NOT exclude: %s', (url, expected) => {

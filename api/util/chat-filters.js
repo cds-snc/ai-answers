@@ -244,22 +244,23 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
 
 // Subdomains of canada.ca to exclude from the "Public Referred" filter.
 // These are CDS-owned, internal, or non-public-facing sites.
-// Add both EN and FR variants. The "test" wildcard is handled separately below.
+// Add both EN and FR variants when applicable.
 const EXCLUDED_CANADA_CA_SUBDOMAINS = [
-  // CDS sites
-  'blog', 'blogue',           // blog.canada.ca / blogue.canada.ca
-  'digital', 'numerique',     // digital.canada.ca / numerique.canada.ca
-  'design', 'conception',     // design.canada.ca / conception.canada.ca
+  // CDS sites (EN / FR)
+  'blog', 'blogue',
+  'digital', 'numerique',
+  'design', 'conception',
   // Pre-production / internal
-  'alpha',                    // alpha.canada.ca (includes ai-answers.alpha.canada.ca)
+  'alpha',                    // includes ai-answers.alpha.canada.ca
   'staging',
+  'test',
 ];
 
-// Build exclusion regex from the list + a wildcard for any subdomain containing "test"
+// Build exclusion regex from the list (exact subdomain match only)
 // Anchored to ://, . or ^ to handle URLs with or without protocol prefix
-const _excludedExact = EXCLUDED_CANADA_CA_SUBDOMAINS.map(s => escapeRegex(s)).join('|');
+const _excluded = EXCLUDED_CANADA_CA_SUBDOMAINS.map(s => escapeRegex(s)).join('|');
 const REFERRED_PUBLIC_EXCLUSION_REGEX =
-  `(://|\\.|^)(${_excludedExact}|[^./]*test[^./]*)\\.canada\\.ca(/|$)`;
+  `(://|\\.|^)(${_excluded})\\.canada\\.ca(/|$)`;
 
 export function getChatFilterConditions(filters, options = {}) {
   const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;
