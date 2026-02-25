@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.105.2](https://github.com/cds-snc/ai-answers/compare/v1.105.1...v1.105.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* filterPanel.js wasn't passed lang argument ([9b753cb](https://github.com/cds-snc/ai-answers/commit/9b753cb2a2c4dd60a4b187783345ab45007e089a))
+* had missed the french - added list ([2c67d93](https://github.com/cds-snc/ai-answers/commit/2c67d936458c95b0341f48c5edf19bf9e461842f))
+* remove test wildcard ([b18f94d](https://github.com/cds-snc/ai-answers/commit/b18f94d02075ff42fd9bdfea57e8ed80666556eb))
+* system card clarifcation ([a4363dd](https://github.com/cds-snc/ai-answers/commit/a4363ddc96d442cd9091740ad9da74ddde6f5def))
+* translation of outageComponent and evalpage ([1582991](https://github.com/cds-snc/ai-answers/commit/1582991434ce6a42e066ba1f122f18e4fce31cd0))
+* was missing design.canada.ca ([21fa8af](https://github.com/cds-snc/ai-answers/commit/21fa8afd8790fe5413d5452ab5d5611ff6290806))
+* was missing design.canada.ca ([64a39f9](https://github.com/cds-snc/ai-answers/commit/64a39f91fd4a635bfcb8d640795f7486400e67fe))
+
 ## [1.105.1](https://github.com/cds-snc/ai-answers/compare/v1.105.0...v1.105.1) (2026-02-24)
 
 
