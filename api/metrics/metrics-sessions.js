@@ -25,14 +25,6 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             {
-                $lookup: {
-                    from: 'contexts',
-                    localField: 'interactions.context',
-                    foreignField: '_id',
-                    as: 'contexts'
-                }
-            },
-            {
                 $project: {
                     chatId: 1,
                     questionCount: { $size: '$interactions' },
