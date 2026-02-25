@@ -45,6 +45,16 @@ Before starting work, read the relevant reference doc:
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
 
+## FilterPanel and filter logic
+When changing `FilterPanel.js` or the backend filter logic in `getChatFilterConditions` (`api/util/chat-filters.js`), you must verify the change works across **all consumers**:
+- **ChatDashboardPage** (`api/chat/chat-dashboard.js`)
+- **EvalDashboardPage** (`api/eval/eval-dashboard.js`) — aggregates from `Interaction` with `basePath: ''` and `userField: 'chatUser'`; `referringUrl` may be stored without protocol prefix
+- **AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`, same backend)
+- **MetricsDashboard** (`api/metrics/metrics-common.js` + individual metric endpoints)
+- **Export/Download** (`api/chat/chat-export-logs.js`) — has a `$lookup` that overwrites `user`; user-type filter must be applied early in `dateFilter` before the overwrite
+
+Each consumer has a different aggregation pipeline shape. A regex or filter condition that works on one may fail on another due to different field paths, `$lookup` ordering, or stored data formats.
+
 ## Dashboard gotchas
 - **DataTables `stateSave`**: When changing column `searchable`/`orderable` settings, bump the `TABLE_STORAGE_KEY` version — stale localStorage can silently apply old column filters that no longer have visible inputs.
 - **Eval dashboard aggregates from `Interaction`, not `Chat`**: Fields from the parent chat (like `user`, `chatId`, `pageLanguage`) must be `$lookup`'d and extracted. The `user` field lives on `Chat`, so in the eval pipeline it's `chatUser` — pass `userField: 'chatUser'` to `getChatFilterConditions`.
