@@ -345,6 +345,8 @@ describe('ExperimentalBatchService', () => {
                 config: { analyzerId: 'failing-analyzer' }
             });
             const item = await ExperimentalBatchItem.create({ experimentalBatch: batch._id, rowIndex: 1 });
+            item.answer = 'Pre-existing answer';
+            await item.save();
 
             ExperimentalAnalyzerRegistry.get.mockResolvedValue({
                 id: 'failing-analyzer',
@@ -357,11 +359,9 @@ describe('ExperimentalBatchService', () => {
             expect(updatedItem.analysisErrors['failing-analyzer'].code).toBe('ANALYSIS_FAILED');
         });
 
-        it('should persist the resolved answer when item has no pre-existing answer', async () => {
-            // REGRESSION TEST: When an analysis-type batch item has answer: '',
-            // _processItem uses `item.answer || item.question` to run the analyzer,
-            // but the resolved value must also be saved back to item.answer in the DB.
-            // Previously the export would always show answer: '' even after analysis ran.
+        it('should generate and persist answer when analysis item has no pre-existing answer', async () => {
+            // REGRESSION TEST: question-only analysis rows should get a generated answer
+            // before analyzers run so exports include a real answer.
             const batch = await ExperimentalBatch.create({
                 name: 'No-Answer Analysis Batch',
                 type: 'analysis',
@@ -374,16 +374,29 @@ describe('ExperimentalBatchService', () => {
                 answer: ''
             });
 
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield { result: { answer: 'Generated analysis answer' } };
+                }
+            };
+            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
+            getGraphApp.mockResolvedValue(mockApp);
+
+            const processor = vi.fn().mockResolvedValue({ status: 'pass', score: 1 });
             ExperimentalAnalyzerRegistry.get.mockResolvedValue({
                 id: 'bias-detection',
-                processor: vi.fn().mockResolvedValue({ status: 'pass', score: 1 })
+                processor
             });
 
             await ExperimentalBatchService._processItem(batch._id, item._id);
 
             const updatedItem = await ExperimentalBatchItem.findById(item._id);
             expect(updatedItem.status).toBe('completed');
-            expect(updatedItem.answer).toBe('How to find job in Canada?');
+            expect(updatedItem.answer).toBe('Generated analysis answer');
+            expect(processor).toHaveBeenCalledWith(expect.objectContaining({
+                question: 'How to find job in Canada?',
+                answer: 'Generated analysis answer'
+            }));
         });
     });
 

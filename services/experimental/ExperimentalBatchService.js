@@ -179,8 +179,12 @@ class ExperimentalBatchService {
                 throw makeError(`Retry limit reached (${MAX_ITEM_RETRIES})`, 'RETRY_LIMIT', 409);
             }
 
-            // 1. Generation Phase (if type is batch)
-            if (batch.type === 'batch') {
+            // 1. Generation Phase
+            // - Always for batch runs.
+            // - For analysis runs, generate only when no answer-like input exists.
+            const shouldGenerateAnswer = batch.type === 'batch'
+                || (batch.type === 'analysis' && !item.answer && !item.comparisonAnswer);
+            if (shouldGenerateAnswer) {
                 const graphName = batch.config.workflow || 'GenericWorkflowGraph';
                 const app = await getGraphApp(graphName);
                 if (!app) throw new Error(`Graph ${graphName} not found`);
@@ -261,7 +265,7 @@ class ExperimentalBatchService {
                     try {
                         const result = await this._runAnalyzer(analyzerDef, {
                             question: item.question,
-                            answer: item.answer || item.question,
+                            answer: item.answer || '',
                             baselineAnswer: item.baselineAnswer,
                             comparisonAnswer: item.comparisonAnswer,
                             config: { ...aConfig.config, aiProvider: batch.config.aiProvider },

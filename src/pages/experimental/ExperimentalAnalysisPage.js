@@ -3,7 +3,6 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams } from 'react-router-dom';
-import * as XLSX from 'xlsx';
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -17,9 +16,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
     const [baselineBatchId, setBaselineBatchId] = useState('');
-
-    const [inputFile, setInputFile] = useState(null);
-    const [comparisonFile, setComparisonFile] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -71,38 +67,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         );
     };
 
-    const readExcel = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                resolve(jsonData);
-            };
-            reader.onerror = reject;
-            reader.readAsArrayBuffer(file);
-        });
-    };
-
     const handleRunAnalysis = async () => {
         if (selectedAnalyzerIds.length === 0) {
             setMessage('Please select at least one analyzer.');
             return;
         }
 
-        if (!selectedDatasetId && !inputFile) {
-            setMessage('Please select a dataset or upload a file.');
-            return;
-        }
-
-        const isComparison = selectedAnalyzerIds.some(id =>
-            analyzers.find(a => a.id === id)?.inputType === 'comparison'
-        );
-
-        if (isComparison && !comparisonFile && !selectedDatasetId) {
-            setMessage('Comparison analysis requires a second file or a specific dataset type.');
+        if (!selectedDatasetId) {
+            setMessage('Please select an existing dataset before starting analysis.');
             return;
         }
 
@@ -110,31 +82,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         setMessage('');
 
         try {
-            let items = [];
-
-            if (selectedDatasetId) {
-                // Backend will handle fetching rows by datasetId if we pass it in config
-                // For now, let's assume we want to send items if we follow the existing API
-                // Better: update batch-create to support datasetId
-                items = []; // Placeholder, we'll send datasetId in config
-            } else {
-                const inputData = await readExcel(inputFile);
-                if (isComparison) {
-                    const comparisonData = await readExcel(comparisonFile);
-                    items = inputData.map((row, index) => ({
-                        question: row.question || row.Question || `Row ${index + 1}`,
-                        baselineAnswer: row.answer || row.Answer || '',
-                        comparisonAnswer: comparisonData[index]?.answer || comparisonData[index]?.Answer || '',
-                        originalData: { baseline: row, comparison: comparisonData[index] }
-                    }));
-                } else {
-                    items = inputData.map((row, index) => ({
-                        question: row.question || row.Question || `Row ${index + 1}`,
-                        answer: row.answer || row.Answer || '',
-                        originalData: row
-                    }));
-                }
-            }
 
             // Create Batch
             const batchData = {
@@ -145,9 +92,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     analyzerIds: selectedAnalyzerIds,
                     datasetId: selectedDatasetId || undefined,
                     baselineRunId: baselineBatchId || undefined,
-                    pageLanguage: 'en',
-                },
-                items: items.length > 0 ? items : undefined
+                pageLanguage: 'en',
+            }
             };
 
             const result = await ExperimentalBatchClientService.createBatch(batchData);
@@ -256,17 +202,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     return (
         <GcdsContainer size="xl" centered className="my-400">
             <GcdsHeading tag="h1">Experimental Analysis</GcdsHeading>
-            {selectedDataset && (
-                <GcdsText className="mt-200">
-                    <strong>{t('experimental.analysis.datasetLabel') || 'Dataset:'}</strong> {selectedDataset.name} ({selectedDataset.rowCount} rows). Dataset already selected from Datasets page.
-                </GcdsText>
-            )}
+            
 
-            <div className="p-400 my-400 border rounded">
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '2rem' }}>
-
-                    {/* LEFT: Configuration */}
-                    <div>
+            
+                    <section>
                         <GcdsHeading tag="h2">Configuration</GcdsHeading>
 
                         {/* Analyzer Multi-Selector */}
@@ -302,11 +241,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 onChange={(e) => setSelectedDatasetId(e.target.value)}
                                 style={{ padding: '8px', width: '100%' }}
                             >
-                                <option value="">-- Upload a new file instead --</option>
+                                <option value="">-- Select an existing dataset --</option>
                                 {datasets.map(ds => (
                                     <option key={ds._id} value={ds._id}>{ds.name} ({ds.rowCount} rows)</option>
                                 ))}
                             </select>
+                            {!selectedDatasetId && (
+                                <GcdsText className="mt-200">
+                                    Upload and manage datasets through the Datasets page, then select one here.
+                                </GcdsText>
+                            )}
                         </div>
 
                         {selectedDatasetId && (
@@ -330,50 +274,35 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </div>
                         )}
 
-                        {/* File Upload (Fallback) */}
-                        {!selectedDatasetId && (
-                            <div className="border p-300 rounded mb-400 bg-light">
-                                <GcdsText>Or upload new data:</GcdsText>
-                                <div className="my-200">
-                                    <label style={{ display: 'block', marginBottom: '5px' }}>Input File (Excel/CSV)</label>
-                                    <input type="file" accept=".xlsx, .xls, .csv" onChange={(e) => setInputFile(e.target.files[0])} />
-                                </div>
-                                <div className="my-200">
-                                    <label style={{ display: 'block', marginBottom: '5px' }}>Comparison File (Optional)</label>
-                                    <input type="file" accept=".xlsx, .xls, .csv" onChange={(e) => setComparisonFile(e.target.files[0])} />
-                                </div>
-                            </div>
-                        )}
-
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || selectedAnalyzerIds.length === 0}>
                             {loading ? 'Starting...' : 'Run Analysis'}
                         </GcdsButton>
                         {message && <GcdsText className="mt-200" role="status"><strong>{message}</strong></GcdsText>}
-                    </div>
+                    </section>
 
-                    {/* RIGHT: Active Batches / Status */}
-                    <div>
-                        <GcdsHeading tag="h2">Running Status</GcdsHeading>
-                        {Object.entries(batchProgress).map(([id, prog]) => (
-                            <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                <div><strong>Batch {id.slice(-6)}</strong>: {prog.status}</div>
-                                <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
-                                    <div style={{
-                                        width: `${prog.percentComplete}%`,
-                                        backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
-                                        height: '100%',
-                                        transition: 'width 0.5s ease-in-out'
-                                    }}></div>
+                    {Object.keys(batchProgress).length > 0 && (
+                        <section>
+                            <GcdsHeading tag="h2">Running Status</GcdsHeading>
+                            {Object.entries(batchProgress).map(([id, prog]) => (
+                                <div key={id} className="border p-200 mb-200 rounded bg-light">
+                                    <div><strong>Batch {id.slice(-6)}</strong>: {prog.status}</div>
+                                    <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
+                                        <div style={{
+                                            width: `${prog.percentComplete}%`,
+                                            backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
+                                            height: '100%',
+                                            transition: 'width 0.5s ease-in-out'
+                                        }}></div>
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
+                                        Completed: {prog.completed} | Failed: {prog.failed} | Total: {prog.total}
+                                    </div>
                                 </div>
-                                <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
-                                    Completed: {prog.completed} | Failed: {prog.failed} | Total: {prog.total}
-                                </div>
-                            </div>
-                        ))}
-                        {Object.keys(batchProgress).length === 0 && <GcdsText>No active processing tracked via SSE yet.</GcdsText>}
-                    </div>
-                </div>
-            </div>
+                            ))}
+                        </section>
+                    )}
+                
+            
 
             {/* History List */}
             <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns') || 'Previous Runs'}</GcdsHeading>

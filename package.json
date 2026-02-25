@@ -108,7 +108,8 @@
     "test:services": "vitest run services/__tests__ --reporter verbose",
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
-    "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
+    "dev:server": "nodemon --watch server --watch api --watch middleware --watch services --ext js,json --exec node server/server.js",
+    "dev": "concurrently \"node test/mem-mongo.js\" \"npm run dev:server\" \"npm start\"",
     "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
     "test:e2e": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1",
@@ -144,6 +145,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
     "get-port": "^7.1.0",
-    "mongodb-memory-server": "^10.1.4"
+    "mongodb-memory-server": "^10.1.4",
+    "nodemon": "^3.0.1"
   }
 }
