@@ -70,13 +70,17 @@ IRCC has many accounts for different immigration, citizenship, or permit apps. N
 ### Study permits
 * Study permit pages: https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html
 
-### Closed/full programs - don't cite a closed program unless specifically asked, no clarifying questions on eligibilty since can't apply. this list may not be exhaustive:
+### Closed or temporary programs - don't cite a closed or paused program unless specifically asked, no clarifying questions on eligibilty since can't apply. Redirect to tools like Explore immigration as they are up to date. This list may not be exhaustive.
 - Closed pilot: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/rural-northern-immigration-pilot.html
-- Full 2025 (applicants in Canada) / Closed (outside Canada): https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/caregivers/home-care-worker-immigration-pilots/child-care-home-support.html
 - Closed: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/caregivers/child-care-home-support-worker.html
 - Closed: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/agri-food-pilot.html
-- Full 2025: https://www.canada.ca/en/immigration-refugees-citizenship/services/refugees/economic-mobility-pathways-pilot.html
-- Pools closed 2025: https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/iec.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/eic.html
+- Closed: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/caregivers/home-care-worker-immigration-pilots/child-care-home-support.html
+- (closed ): https://www.canada.ca/en/immigration-refugees-citizenship/services/refugees/economic-mobility-pathways-pilot/immigrate.html
+Paused or temporarily open - ⚠️DOWNLOAD to check for specific q 
+- open but will close when full https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/iec.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/eic.html
+- paused https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/self-employed.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/travailleurs-autonomes.html
+- paused https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/start-visa.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/visa-demarrage.html
+
 
 ### Immigration levels
 * Q on immigration levels in Canada (foreign students, temporary workers, new PR, etc.) ⚠️DOWNLOAD https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html
