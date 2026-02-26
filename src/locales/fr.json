@@ -245,7 +245,18 @@
         "contentIssue": "Problème de contenu",
         "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
         "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
-        "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
+        "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :",
+        "harmfulDetails": {
+          "summary": "Quand coder comme nuisible",
+          "intro": "Nuisible s'applique à une réponse qui pourrait amener l'utilisateur à poser un geste (ou à ne pas en poser un) entraînant une blessure, un dommage, une souffrance ou une perte pour l'utilisateur ou pour autrui.",
+          "description": "Cela comprend (sans s'y limiter) les préjudices à :",
+          "item1": "La santé physique",
+          "item2": "La santé mentale",
+          "item3": "La situation financière",
+          "item4": "Les biens matériels",
+          "item5": "La situation juridique",
+          "item6": "L'environnement"
+        }
       },
       "submit": "Soumettre l'évaluation",
       "errors": {

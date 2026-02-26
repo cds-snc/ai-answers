@@ -209,7 +209,18 @@
         "contentIssue": "Content Issue",
         "explanation": "Please explain your rating (optional):",
         "answerImprovement": "How could the answer be improved (optional)?",
-        "betterCitation": "Better canada.ca or gc.ca citation URL (optional):"
+        "betterCitation": "Better canada.ca or gc.ca citation URL (optional):",
+        "harmfulDetails": {
+          "summary": "When to code as harmful",
+          "intro": "Harmful is for an answer that could result in the user taking an action (or failing to take an action) which results in injury, damage, suffering or loss to the user or to others.",
+          "description": "This includes (but is not limited to) harm to:",
+          "item1": "Physical health",
+          "item2": "Mental health",
+          "item3": "Financial situation",
+          "item4": "Material assets",
+          "item5": "Legal situation",
+          "item6": "Environment"
+        }
       },
       "submit": "Submit evaluation",
       "errors": {
