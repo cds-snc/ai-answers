@@ -48,7 +48,6 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
         },
         {
             $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] },
                 department: { $arrayElemAt: ['$ctx.department', 0] },
                 autoEval: { $arrayElemAt: ['$autoEval', 0] }
             }

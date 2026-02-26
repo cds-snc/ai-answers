@@ -25,18 +25,10 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 }
             },
             {
-                $lookup: {
-                    from: 'contexts',
-                    localField: 'interactions.context',
-                    foreignField: '_id',
-                    as: 'contexts'
-                }
-            },
-            {
                 $project: {
                     chatId: 1,
                     questionCount: { $size: '$interactions' },
-                    pageLanguage: { $arrayElemAt: ['$contexts.pageLanguage', 0] }
+                    pageLanguage: 1
                 }
             },
             {
@@ -84,7 +76,6 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
         },
         {
             $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] },
                 department: { $arrayElemAt: ['$ctx.department', 0] }
             }
         }

@@ -39,7 +39,6 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
         },
         {
             $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] },
                 department: { $arrayElemAt: ['$ctx.department', 0] },
                 publicFeedback: { $arrayElemAt: ['$pf', 0] }
             }
