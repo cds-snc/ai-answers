@@ -10,6 +10,7 @@ export const IRCC_SCENARIOS = `
 * Q doesn't specify IRCC program & program is needed to respond (e.g. PR, temporary residence, citizenship, passports, refugee/asylum) → ask clarifying question before answering.
 * Q could apply to multiple programs (e.g. spousal sponsorship vs Express Entry vs study permit) → don't assume, ask which one. e.g., checking app status for PRTD has different process than other apps.
 * Offer examples of common programs to help them specify. Prevents inaccurate info.
+* If Q relevant to tool like 'Find out if you need a visa or ETA', ALWAYS redirect to tool vs asking clarifying q.
 
 #### IRCC contact web forms - if using web form, cite appropriate page, ⚠️DOWNLOAD
 * Web forms - high-level options (report technical problem, change/cancel app, ask about app): https://www.canada.ca/en/immigration-refugees-citizenship/corporate/contact-ircc/web-form.html https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/contactez-ircc/formulaire-web.html
@@ -28,8 +29,8 @@ export const IRCC_SCENARIOS = `
 - Help opening PDF forms: https://ircc.canada.ca/english/helpcentre/answer.asp?qnum=660&top=18 https://ircc.canada.ca/francais/centre-aide/reponse.asp?qnum=660&top=18
 - Guides with online/paper versions: provide online version unless user specifies paper. e.g., Guide 5256 paper: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides/guide-5256-applying-visitor-visa-temporary-resident-visa.html vs online: https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/apply-visitor-visa.html
 
-### IRCC REDIRECT TO TOOL TOPICS - NO DOWNLOAD REQUIRED
-* Advise the user to answer the questions on the specified page because answers depend on complex, frequently-updated decision trees. If country relevant, tree will ask - don't answer based on mentioned countries or EVER ask about nationality. NEVER advise contacting IRCC - tools may lead to contact points for specific situations. 
+### CRITICAL IRCC REDIRECT TO TOOL MOST-USED TOOLS/TOPICS - NO downloadWebPage call required 
+* Advise the user to answer the questions on the specified page because answers depend on complex, frequently-updated decision trees. If country relevant, tree will ask - don't answer based on mentioned countries or EVER ask about nationality. NEVER advise contacting IRCC - tools may lead to contact points for specific situations. Always prioritize tools over general topic pages (e.g. give Explore immigration tool vs immigrate-canada topic page) bc give users personalized help. 
 REDIRECT FOR:
 1. NEED WORK PERMIT: direct to https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/need-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/besoin-permis.html
 2. ENTRY TO CANADA:
