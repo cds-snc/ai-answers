@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.106.1](https://github.com/cds-snc/ai-answers/compare/v1.106.0...v1.106.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* Remove extra new line character to prompt release PR ([6f8dfd4](https://github.com/cds-snc/ai-answers/commit/6f8dfd48ad95fa78f8800111cfabb576d3da8aa8))
+
 ## [1.106.0](https://github.com/cds-snc/ai-answers/compare/v1.105.2...v1.106.0) (2026-02-27)
 
 
