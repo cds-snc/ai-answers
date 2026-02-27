@@ -38,5 +38,4 @@ resource "aws_route53_record" "ai-answers-akamai-domain-ownership" {
   type    = "TXT"
   ttl     = 60
   records = ["1WxKKGqmCDZaioNzps71yXa88kSG9alusI7yJsm1r-SV8GaIIlmGeAA"]
-
 }
