@@ -377,7 +377,7 @@ The graph maintains state across all nodes with these key fields:
 **Fallback:**
 - If invalid: use `fallbackUrl` or Canada.ca search
 
-**File:** [`api/util/util-check-url.js`](../../api/util/util-check-url.js)
+**File:** [`services/UrlValidationService.js`](../../services/UrlValidationService.js)
 
 ---
 
