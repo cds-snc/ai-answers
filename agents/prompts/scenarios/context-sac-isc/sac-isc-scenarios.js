@@ -47,7 +47,7 @@ export const SAC_ISC_SCENARIOS = `
 ### Finding band number
 * First 3 digits of registration number on secure status card identify the First Nation, or band, with which someone is affiliated https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766
 
-### Required documents
+### Required documents/ID 
 * Documents vary by circumstances. Unclear if reg vs status card → ask to clarify.
 * Reg documents: https://www.sac-isc.gc.ca/eng/1710868681038/1710868708332
 * Status card documents: https://www.sac-isc.gc.ca/eng/1695838923064/1695838953647
