@@ -35,6 +35,7 @@
     "bcryptjs": "^3.0.2",
     "bot-detector": "^1.0.5",
     "buffer": "^6.0.3",
+    "bullmq": "^5.66.5",
     "cheerio": "^1.0.0",
     "cohere-ai": "^2.3.0",
     "compromise": "^14.14.4",
@@ -74,6 +75,7 @@
     "notifications-node-client": "^8.2.1",
     "openai": "^4.73.1",
     "otplib": "^12.0.1",
+    "p-queue": "^9.1.0",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "piscina": "^5.0.0",
@@ -106,7 +108,8 @@
     "test:services": "vitest run services/__tests__ --reporter verbose",
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
-    "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
+    "dev:server": "nodemon --watch server --watch api --watch middleware --watch services --ext js,json --exec node server/server.js",
+    "dev": "concurrently \"node test/mem-mongo.js\" \"npm run dev:server\" \"npm start\"",
     "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
     "test:e2e": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1",
@@ -142,6 +145,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
     "get-port": "^7.1.0",
-    "mongodb-memory-server": "^10.1.4"
+    "mongodb-memory-server": "^10.1.4",
+    "nodemon": "^3.0.1"
   }
 }

@@ -406,6 +406,8 @@
       "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
+      "experimental": "Expérimental",
+      "dataAnalysis": "Analyse de données",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluer un chat public",
@@ -1233,5 +1235,95 @@
     "notConfigured": "Non configuré",
     "lastRun": "Dernière exécution",
     "serviceDetails": "Détails du service"
+  },
+  "experimental": {
+    "datasets": {
+      "title": "Ensembles de données expérimentaux",
+      "analyze": "Analyser",
+      "uploadNew": "Télécharger un nouvel ensemble de données",
+      "upload": "Télécharger un ensemble de données",
+      "uploading": "Téléchargement en cours...",
+      "uploadSuccess": "Ensemble de données téléchargé avec succès !",
+      "uploadFailed": "Le téléchargement a échoué",
+      "readFailed": "Impossible de lire le fichier",
+      "delete": "Supprimer l'ensemble de données",
+      "view": "Voir les données",
+      "viewing": "Affichage des données : {name}",
+      "backToList": "Retour aux ensembles",
+      "errorLoadingRows": "Échec du chargement des données.",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
+      "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
+      "nameLabel": "Nom de l'ensemble de données",
+      "descLabel": "Description",
+      "typeLabel": "Type d'ensemble de données",
+      "fileLabel": "Fichier Excel / CSV",
+      "requiredColumns": "Colonnes requises",
+      "rowCount": "Lignes",
+      "created": "Créé le",
+      "existing": "Ensembles de données existants",
+      "loading": "Chargement des ensembles de données...",
+      "empty": "Aucun ensemble de données trouvé.",
+      "actions": "Actions",
+      "typeInfo": {
+        "question-only": {
+          "label": "Questions seulement",
+          "description": "Une liste de questions auxquelles l'IA doit répondre. Utilisez ce type pour lancer une génération par lot et obtenir des réponses de l'IA.",
+          "columns": "question (requis), referringUrl (optionnel), chatId (optionnel)"
+        },
+        "qa-pair": {
+          "label": "Paire Q et R",
+          "description": "Un ensemble de questions associées à des réponses existantes. Utilisez ce type pour exécuter des analyseurs qui évaluent une réponse IA existante sans référence séparée.",
+          "columns": "question, answer (requis), referringUrl (optionnel), chatId (optionnel)"
+        },
+        "evaluation-set": {
+          "label": "Ensemble d'évaluation (Réponses de référence)",
+          "description": "Des questions associées à une réponse de référence (dorée) et optionnellement une nouvelle réponse à comparer. Utilisez ce type avec des analyseurs de comparaison comme Expert Scorer.",
+          "columns": "question, answer (requis), comparisonAnswer (optionnel), referringUrl (optionnel), chatId (optionnel)"
+        }
+      }
+    },
+    "analysis": {
+      "title": "Analyse par lot",
+      "datasetLabel": "Ensemble de données :",
+      "changeDataset": "Changer d'ensemble de données",
+      "configuration": "Configuration",
+      "selectAnalyzers": "Sélectionner les analyseurs",
+      "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
+      "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
+      "noBaseline": "-- Aucune référence (évaluation autonome) --",
+      "useExistingDataset": "Utiliser un ensemble de données existant",
+      "uploadInstead": "-- Télécharger un nouveau fichier à la place --",
+      "orUpload": "Ou télécharger de nouvelles données :",
+      "inputFile": "Fichier d'entrée (Excel/CSV)",
+      "comparisonFile": "Fichier de comparaison (optionnel)",
+      "run": "Lancer l'analyse",
+      "starting": "Démarrage...",
+      "runningStatus": "Statut de l'exécution",
+      "noActiveRuns": "Aucune exécution active n'est actuellement suivie.",
+      "previousRuns": "Exécutions précédentes",
+      "columns": {
+        "name": "Nom de l'exécution",
+        "analyzer": "Analyseur",
+        "status": "Statut",
+        "issues": "Problèmes",
+        "flagged": "Signalés",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "baseline": "RÉFÉRENCE",
+      "export": "Exporter",
+      "useAsBaseline": "Utiliser comme référence",
+      "delete": "Supprimer",
+      "empty": "Aucune exécution précédente trouvée pour cet ensemble de données.",
+      "messages": {
+        "selectAnalyzer": "Veuillez sélectionner au moins un analyseur.",
+        "selectData": "Veuillez sélectionner un ensemble de données ou télécharger un fichier.",
+        "comparisonRequired": "L'analyse de comparaison nécessite un deuxième fichier ou un type d'ensemble de données spécifique.",
+        "startedCount": "{count} exécutions d'analyse lancées.",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
+        "deleteError": "Échec de la suppression du lot",
+        "exportError": "Échec de l'exportation du lot"
+      }
+    }
   }
 }

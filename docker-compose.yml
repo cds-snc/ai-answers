@@ -7,16 +7,15 @@ services:
     restart: unless-stopped
     ports:
       - "27017:27017"
-    #environment:
+      #environment:
       # Change these for production; consider using an .env file or Docker secrets
       #MONGO_INITDB_ROOT_USERNAME: root
       #MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
-      # Bind mount the host folder C:\\mongodb data into the container so
-      # MongoDB files persist on the Windows host between container restarts.
-      # Note: quote the path because it contains a space. Use forward slashes
-      # for compatibility with Docker on Windows.
-      - 'C:/mongodb data:/data/db'
+      # Use a named volume instead of a direct Windows host bind mount.
+      # This prevents "Operation not permitted" errors caused by MongoDB's 
+      # WiredTiger engine trying to allocate new files on NTFS folders.
+      - mongo_data:/data/db
   qdrant:
     image: qdrant/qdrant
     container_name: qdrant
@@ -24,9 +23,7 @@ services:
     ports:
       - "6333:6333"
     volumes:
-      # Bind mount for Qdrant storage on Windows
-      # Use forward slashes and quote the path for compatibility
-      - 'C:/qdrant_data:/qdrant/storage'
+      - qdrant_data:/qdrant/storage
 
   redis:
     image: redis:7.2
@@ -35,10 +32,12 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - 'C:/redis_data:/data'
+      - redis_data:/data
 
-# We're using host bind mounts (no named Docker volumes). Make sure the
-# C: drive (or the specific host path) is shared with Docker Desktop
-# (Settings > Resources > File Sharing) and that permissions allow Docker
-# to write to the folder. You can create the folders manually if needed.
-# For Redis, ensure C:/redis_data exists.
+# We are using named volumes for persistent storage.
+# This ensures that OS-level permission issues (like NTFS/Docker file mapping)
+# do not interfere with database operations like creating new collections.
+volumes:
+  mongo_data:
+  qdrant_data:
+  redis_data:
