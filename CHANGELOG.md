@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.106.0](https://github.com/cds-snc/ai-answers/compare/v1.105.2...v1.106.0) (2026-02-27)
+
+
+### Features
+
+* harmful instructions ([d50b1b2](https://github.com/cds-snc/ai-answers/commit/d50b1b2ef5c28dc6317645e84447ed213e9f80ff))
+* harmful instructions ([f994ddd](https://github.com/cds-snc/ai-answers/commit/f994ddd6f173a3a6dbda38f2628fcd17a53c1b3a))
+* style harmful ([e3806ee](https://github.com/cds-snc/ai-answers/commit/e3806ee837e94d4864b88c75538fa81ffd7c982d))
+* styles ([b4bb8ee](https://github.com/cds-snc/ai-answers/commit/b4bb8ee43f5d321578b8d877250bb9010a87a527))
+
+
+### Bug Fixes
+
+* ircc program section was out of date ([026c82b](https://github.com/cds-snc/ai-answers/commit/026c82bf1c1edfdf0dcc8660da631effef31b1dd))
+* metrics showing zeroes ([084ca32](https://github.com/cds-snc/ai-answers/commit/084ca322a8fc6b576fe4065449d7615fd3694d8c))
+* metrics showing zeroes for EN and FR columns ([31e2963](https://github.com/cds-snc/ai-answers/commit/31e296350f4df6d8fa5fe6ccb231396d6c565a81))
+* mitigate security vulneerability ([b4f2300](https://github.com/cds-snc/ai-answers/commit/b4f23006592def7c8514eb186f27b6b54f07c59b))
+* remove access to generate context ([549ce16](https://github.com/cds-snc/ai-answers/commit/549ce1621b903ce52f411d2f2ab4d54de69e1392))
+* remove dead lookup ([9e1c2d7](https://github.com/cds-snc/ai-answers/commit/9e1c2d730ca314f74113d2943d20a805b986f1c4))
+* remove unused file ([285ea0a](https://github.com/cds-snc/ai-answers/commit/285ea0a85cc89951048bae486459935e8b68de83))
+* replace 'tool' with 'self-service page' ([98d8396](https://github.com/cds-snc/ai-answers/commit/98d8396c76c067ccc7360828cf10f2e368f8de64))
+* revise for download-first ([9934611](https://github.com/cds-snc/ai-answers/commit/993461102308955d45280392739ca773c6484792))
+* still not redirecting to tool for ircc ([b3c0ada](https://github.com/cds-snc/ai-answers/commit/b3c0ada3f365ff3033f5ff2301c8b38149dcfda2))
+* tiny format ([4f23331](https://github.com/cds-snc/ai-answers/commit/4f233319e6aefd85a89e83204b19bdd3e0b9636b))
+
 ## [1.105.2](https://github.com/cds-snc/ai-answers/compare/v1.105.1...v1.105.2) (2026-02-25)
 
 
