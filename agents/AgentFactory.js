@@ -5,7 +5,6 @@ import { ChatCohere } from '@langchain/cohere';
 import OpenAI from 'openai';
 import downloadWebPageTool from './tools/downloadWebPage.js';
 import checkUrlStatusTool from './tools/checkURL.js';
-import createContextAgentTool from './tools/contextAgentTool.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
 import dotenv from 'dotenv';
@@ -29,14 +28,13 @@ const createTools = (chatId = 'system', agentType = 'openai') => {
     }
   });
 
-  const contextTool = createContextAgentTool(agentType);
-
   return {
     tools: [
       wrapToolWithCallbacks(downloadWebPageTool),
       wrapToolWithCallbacks(checkUrlStatusTool),
-      wrapToolWithCallbacks(contextTool),
-
+      // generateContext tool removed from answer agent — context is already
+      // derived by the pipeline's contextNode before the answer agent runs.
+      // Tool code kept in agents/tools/contextAgentTool.js for future use.
     ],
     callbacks
   };
