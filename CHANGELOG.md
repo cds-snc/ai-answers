@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.106.2](https://github.com/cds-snc/ai-answers/compare/v1.106.1...v1.106.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* Triggering release ([94b456e](https://github.com/cds-snc/ai-answers/commit/94b456e0e818142c909bbe75ffb3f017294470cb))
+
 ## [1.106.1](https://github.com/cds-snc/ai-answers/compare/v1.106.0...v1.106.1) (2026-02-27)
 
 
