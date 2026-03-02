@@ -99,14 +99,28 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             const result = await ExperimentalBatchClientService.createBatch(batchData);
 
             if (result.multiple) {
-                result.batches.forEach(b => {
+                // For multiple results, kick off processing for each and track progress.
+                for (const b of result.batches) {
                     trackProgress(b._id);
-                    ExperimentalBatchClientService.processBatch(b._id);
-                });
+                    try {
+                        const resp = await ExperimentalBatchClientService.processBatch(b._id);
+                        // Show server message for first batch to aid debugging
+                        if (!message) setMessage(resp.message || `Processing started for ${b._id}`);
+                    } catch (err) {
+                        console.error('Process batch error:', err);
+                        setMessage(`Error starting processing: ${err.message}`);
+                    }
+                }
                 setMessage(t('experimental.analysis.messages.startedCount', { count: result.batches.length }) || `Started ${result.batches.length} analysis runs.`);
             } else {
                 trackProgress(result._id);
-                await ExperimentalBatchClientService.processBatch(result._id);
+                try {
+                    const procResp = await ExperimentalBatchClientService.processBatch(result._id);
+                    setMessage(procResp.message || 'Processing started');
+                } catch (err) {
+                    console.error('Process batch error:', err);
+                    setMessage(`Error starting processing: ${err.message}`);
+                }
             }
             fetchBatches();
 
