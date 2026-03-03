@@ -54,7 +54,7 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
     azureOpenAIApiVersion: isGPT5 ? "2025-04-01-preview" : (process.env.AZURE_OPENAI_API_VERSION || '2024-06-01'),
     temperature: isGPT5 ? undefined : modelConfig.temperature,
     model: isGPT5 ? modelConfig.model : undefined,
-    reasoning: isGPT5 ? modelConfig.reasoningeffort : undefined,
+    reasoning: isGPT5 ? modelConfig.reasoning : undefined,
     maxTokens: isGPT5 ? undefined : modelConfig.maxTokens,
     maxCompletionTokens: isGPT5 ? modelConfig.maxTokens : undefined,
     timeout: modelConfig.timeoutMs,
@@ -172,7 +172,7 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: azureConfig.model,
-        reasoning: azureConfig.reasoningeffort,
+        reasoning: azureConfig.reasoning,
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
@@ -188,7 +188,7 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: azureConfig.model,
-        reasoning: azureConfig.reasoningeffort,
+        reasoning: azureConfig.reasoning,
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
@@ -264,7 +264,7 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: azureConfig.model,
-        reasoning: azureConfig.reasoningeffort,
+        reasoning: azureConfig.reasoning,
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
@@ -279,7 +279,7 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: azureConfig.model,
-        reasoning: azureConfig.reasoningeffort,
+        reasoning: azureConfig.reasoning,
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
@@ -328,7 +328,7 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: azureConfig.model,
-        reasoning: azureConfig.reasoningeffort,
+        reasoning: azureConfig.reasoning,
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
@@ -343,7 +343,7 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: azureConfig.model,
-        reasoning: azureConfig.reasoningeffort,
+        reasoning: azureConfig.reasoning,
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
@@ -395,7 +395,7 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: 4000,
         timeout: cfg.timeoutMs,
       });
@@ -410,7 +410,7 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: 4000,
         timeout: cfg.timeoutMs,
       });
@@ -462,7 +462,7 @@ const createTranslationAgent = async (agentType = 'openai', chatId = 'system') =
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -477,7 +477,7 @@ const createTranslationAgent = async (agentType = 'openai', chatId = 'system') =
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -529,7 +529,7 @@ const createSentenceCompareAgent = async (agentType = 'openai', chatId = 'system
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: maxTokens ?? cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -544,7 +544,7 @@ const createSentenceCompareAgent = async (agentType = 'openai', chatId = 'system
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: maxTokens ?? cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -595,7 +595,7 @@ const createFallbackCompareAgent = async (agentType = 'openai', chatId = 'system
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: maxTokens ?? cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -610,7 +610,7 @@ const createFallbackCompareAgent = async (agentType = 'openai', chatId = 'system
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: maxTokens ?? cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -662,7 +662,7 @@ const createDetectLanguageAgent = async (agentType = 'openai', chatId = 'system'
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -677,7 +677,7 @@ const createDetectLanguageAgent = async (agentType = 'openai', chatId = 'system'
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
+        reasoning: cfg.reasoning,
         maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
