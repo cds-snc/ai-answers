@@ -22,7 +22,7 @@ jobs:
       - name: Audit DNS requests
         uses: cds-snc/dns-proxy-action@main
         env:
-          DNS_PROXY_FORWARDTOSENTINEL: 'true'
+          DNS_PROXY_FORWARDTOSENTINEL: "true"
           DNS_PROXY_LOGANALYTICSWORKSPACEID: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
           DNS_PROXY_LOGANALYTICSSHAREDKEY: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
 
@@ -34,7 +34,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::992382783569:role/ai-answers-apply
           role-session-name: AIAnswersGitHubActions
-          aws-region: 'ca-central-1'
+          aws-region: "ca-central-1"
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -86,11 +86,11 @@ jobs:
           log_analytics_workspace_key: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
 
       - name: Docker generate SBOM
-        uses: cds-snc/security-tools/.github/actions/generate-sbom@34794baf2af592913bb5b51d8df4f8d0acc49b6f # v3.2.0
+        uses: cds-snc/security-tools/.github/actions/generate-sbom@12a0cdea1c5a515dfcbe353693db804a1793c0ed # v4.0.1
         env:
           TRIVY_DB_REPOSITORY: ${{ vars.TRIVY_DB_REPOSITORY }}
         with:
-          docker_image: '${{ env.REGISTRY }}/ai-answers:latest'
-          dockerfile_path: './Dockerfile'
-          sbom_name: 'ai-answers'
-          token: '${{ secrets.GITHUB_TOKEN }}'
+          docker_image: "${{ env.REGISTRY }}/ai-answers:latest"
+          dockerfile_path: "./Dockerfile"
+          sbom_name: "ai-answers"
+          token: "${{ secrets.GITHUB_TOKEN }}"
