@@ -3,9 +3,10 @@ import dbConnect from './db-connect.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import config from '../../config/eval.js';
 import { Setting } from '../../models/setting.js';
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 
-export default async function handler(req, res) {
+async function generateEvalsHandler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -58,4 +59,8 @@ export default async function handler(req, res) {
         console.error('Error in generate-evals:', error);
         res.status(500).json({ error: 'Failed to process evaluations' });
     }
+}
+
+export default function handler(req, res) {
+    return withProtection(generateEvalsHandler, authMiddleware, adminMiddleware)(req, res);
 }
