@@ -84,8 +84,7 @@ async function invokeAgent({
         ];
         response.historySignature = ConversationIntegrityService.calculateSignature(finalHistory);
 
-        const reasoningEffort = lastMessage.response_metadata?.reasoning?.effort ?? lastMessage.response_metadata?.reasoning_effort ?? 'none returned';
-        ServerLoggingService.info(`${provider} chat request completed | model: ${response.model} | reasoning_effort: ${reasoningEffort}`, chatId, response);
+        ServerLoggingService.info(`${provider} chat request completed`, chatId, response);
         return response;
     }
     throw new Error(`${provider} returned no messages`);

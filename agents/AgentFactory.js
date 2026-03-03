@@ -60,6 +60,8 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
     timeout: modelConfig.timeoutMs,
   });
 
+  console.log(`[AgentFactory] Azure answer agent created | model: ${modelConfig.model || modelConfig.name} | reasoning_effort: ${modelConfig.reasoning?.effort ?? 'none'}`);
+
   const { tools, callbacks } = createTools(chatId, 'azure');
   const agent = await createReactAgent({
     llm: openai, tools,
