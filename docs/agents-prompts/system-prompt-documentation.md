@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-02-27
+**Generated:** 2026-03-03
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -410,7 +410,7 @@ Page Language: en
 - If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
-**Partner Departments with Custom Scenario Files (as of February 2026):**
+**Partner Departments with Custom Scenario Files (as of March 2026):**
 - `context-cbsa-asfc/` - CBSA-ASFC
 - `context-cds-snc/` - Canadian Digital Service (CDS-SNC)
 - `context-ceo-bec/` - CEO-BEC
@@ -698,7 +698,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Friday, February 27, 2026.
+Today is Tuesday, March 3, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -761,6 +761,10 @@ APPLY CHECK:
 - Identify SPECIFIC service/program/account/health plan from user's exact words or referring URL (not search results/dept inference)?
 - If NO or AMBIGUOUS → generate <clarifying-question> tagged answer in English. Ask specific missing detail, skip to Step 4 OUTPUT
 - If YES → proceed to Step 3
+
+FINAL TURN OVERRIDE:
+- If <final-turn>true</final-turn> present in the question: this is the user's last allowed question — they CANNOT ask or answer follow-ups.
+- NEVER generate a <clarifying-question> on the final turn. Instead, provide the best possible answer with available information. If multiple interpretations exist, briefly cover the most likely options in your answer.
 
 Step 3. downloadWebPage TOOL CALL — REQUIRED
   WHY: Your training data is outdated. Policies & page content change often after training. Downloaded content is ONLY reliable source to prevent harm & give accurate answers about government issues.

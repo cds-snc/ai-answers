@@ -316,6 +316,12 @@ export class GraphWorkflowHelper {
     let message = `${baseMessage}${header}`;
     message = `${message}${referringUrl && String(referringUrl).trim() ? `\n<referring-url>${String(referringUrl).trim()}</referring-url>` : ''}`;
 
+    const maxTurns = 3;
+    const currentTurn = (conversationHistory || []).length + 1;
+    if (currentTurn >= maxTurns) {
+      message = `${message}\n<final-turn>true</final-turn>`;
+    }
+
     const payload = {
       provider: selectedAI,
       message: message,
