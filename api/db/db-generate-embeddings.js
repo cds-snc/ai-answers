@@ -2,6 +2,7 @@ import dbConnect from './db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import EmbeddingService from '../../services/EmbeddingService.js';
 import config from '../../config/eval.js';
+import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 // Updated handler to include regenerate functionality for embeddings
 async function regenerateEmbeddingsHandler(req, res) {
@@ -27,4 +28,6 @@ async function regenerateEmbeddingsHandler(req, res) {
     }
 }
 
-export default regenerateEmbeddingsHandler;
+export default function handler(req, res) {
+    return withProtection(regenerateEmbeddingsHandler, authMiddleware, adminMiddleware)(req, res);
+}

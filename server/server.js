@@ -85,7 +85,6 @@ import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
-import { ensureAuthenticated } from '../middleware/auth.js';
 
 
 
@@ -211,8 +210,8 @@ app.get('/api/user/user-stats', userStatsHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
 app.get('/api/chat/chat-dashboard', chatDashboardHandler);
 app.get('/api/chat/chat-export-logs', chatExportLogsHandler);
-app.post('/api/db/db-generate-embeddings', ensureAuthenticated, generateEmbeddingsHandler);
-app.post('/api/db/db-generate-evals', ensureAuthenticated, generateEvalsHandler);
+app.post('/api/db/db-generate-embeddings', generateEmbeddingsHandler);
+app.post('/api/db/db-generate-evals', generateEvalsHandler);
 app.all('/api/db/db-database-management', dbDatabaseManagementHandler);
 app.delete('/api/db/db-delete-system-logs', dbDeleteSystemLogsHandler);
 app.all('/api/db/db-integrity-checks', dbIntegrityChecksHandler);
