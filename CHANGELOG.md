@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.106.3](https://github.com/cds-snc/ai-answers/compare/v1.106.2...v1.106.3) (2026-03-03)
+
+
+### Bug Fixes
+
+* authenticate endpoints ([d645545](https://github.com/cds-snc/ai-answers/commit/d6455454e1b6ffdbcf9f3bee1fc9192f0b25becd))
+* authenticate endpoints ([725c593](https://github.com/cds-snc/ai-answers/commit/725c593d8087e2e15dc6c02c69f18446f5c3f32e))
+* endpoints should be admin protected. ([28f4b46](https://github.com/cds-snc/ai-answers/commit/28f4b469ccbaef710158d9aa43851227d9346588))
+* log reasoning to console ([bef688b](https://github.com/cds-snc/ai-answers/commit/bef688b5f0a5acea519216ba6b17c34f4f4e1555))
+* log when sent instead ([fce0227](https://github.com/cds-snc/ai-answers/commit/fce02279de314c3db1c3893f23657271de4b6c68))
+* pre-existing bug in reasoning model ([fb9abe8](https://github.com/cds-snc/ai-answers/commit/fb9abe8da5fb758658217a7cb7bda4fed4140e5d))
+* prevent-question-on-final-turn ([8950114](https://github.com/cds-snc/ai-answers/commit/895011434a93507e44afdafaf29e66b48f7744f4))
+* remove the temporary logging ([3b2f946](https://github.com/cds-snc/ai-answers/commit/3b2f9468660909084adf0f93f6aec5399cfc4658))
+* update SBOM version ([e3f5ae7](https://github.com/cds-snc/ai-answers/commit/e3f5ae74e7077b682e945683a27525489e046992))
+* update SBOM version ([20b4205](https://github.com/cds-snc/ai-answers/commit/20b420531033263e4917b6b4b6f7f0cc4bedc8c0))
+
 ## [1.106.2](https://github.com/cds-snc/ai-answers/compare/v1.106.1...v1.106.2) (2026-02-28)
 
 
