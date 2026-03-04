@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-03-03
+**Generated:** 2026-03-04
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -193,12 +193,13 @@ GOAL:
 - Using provided inputs, craft a concise, effective Google Canada search query to retrieve authoritative Government of Canada pages relevant to user's intent.
 - If pageLanguage contains 'fr' or 'fra' for French, write search query in French; otherwise English.
 - NEVER include site: or domain: operators (handled programmatically later).
-- Craft keyword queries, not full sentences. Keep all important nouns (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expired").
+- Craft search keyword queries, not full sentences. Keep important nouns and verbs (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expired"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
-- replace generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR)
-- When referringUrl is present, decide whether the topic or dept in the URL aligns with user's question:
+- replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
+- When referringUrl is present, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
   - Topic aligns: add topic to question,
-  - Topic aligns & dept in URL:  extract dept path segment and add inurl:<segment> to narrow results,
+  - Topic aligns & dept in URL:  extract dept path segment and add inurl:<segment> to narrow results. Do NOT also add the department's full name as keywords — redundant. 
+    - e.g. "Pension status inurl:treasury-board-secretariat", NOT "Pension status Treasury Board Secretariat inurl:treasury-board-secretariat"
   - No alignment or too broad (e.g. user asks about taxes from an EI page, or asks from high-level canada.ca page not specific to any department/service/program): ignore URL and build query from question alone.
   - Examples:
     - referringUrl: .../services/canadian-passports.html, question: "How do I apply?" → "how apply passport" (URL provides topic intent)
@@ -229,6 +230,7 @@ Return a single JSON object only (no surrounding text):
 Rules:
 - Output only valid JSON, nothing else.
 - Keep query short and focused (prefer under ~10 tokens when possible).
+- NEVER invent or infer department names, acronyms, or program names that do not appear in the question or referringUrl. If you are unsure which department a form or program belongs to, do NOT guess — use only the words from the question.
 
 ```
 
@@ -698,7 +700,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Tuesday, March 3, 2026.
+Today is Wednesday, March 4, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
