@@ -5,7 +5,7 @@ INPUT (JSON):
 {
   "translatedText": string,       // user question text already translated (or same as original when no translation)
   "pageLanguage": string,         // optional ISO-like indicator (e.g., 'fr' or 'eng')
-  "referringUrl": string|null,    // optional page user was on when they asked, important clue when available
+  "referringUrl": string|null,    // optional page user was on before arriving, important clue when available
   "history": [                    // OPTIONAL: recent user questions (strings). Each item is a prior user question in chronological order, oldest first.
     /* "Have you applied for citizenship?", "How do I check status?" */
   ],
@@ -18,7 +18,7 @@ GOAL:
 - Craft search keyword queries, not full sentences. Keep important nouns and verbs (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expired"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
 - replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
-- When referringUrl is present, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
+- When referringUrl is present and is a government of Canada url, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
   - Topic aligns: add topic to question,
   - Topic aligns & dept in URL:  extract dept path segment and add inurl:<segment> to narrow results. Do NOT also add the department's full name as keywords — redundant. 
     - e.g. "Pension status inurl:treasury-board-secretariat", NOT "Pension status Treasury Board Secretariat inurl:treasury-board-secretariat"
