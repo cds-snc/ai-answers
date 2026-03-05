@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.107.0](https://github.com/cds-snc/ai-answers/compare/v1.106.3...v1.107.0) (2026-03-05)
+
+
+### Features
+
+* extend hackerone pilot till march 29th ([e7c32e9](https://github.com/cds-snc/ai-answers/commit/e7c32e9bf399498dc2906c40831b8e49032dc1da))
+* extend hackerone pilot till march 29th ([9e8482d](https://github.com/cds-snc/ai-answers/commit/9e8482d4dcb300a2e1ac3503290d8e1dbc1194ea))
+
+
+### Bug Fixes
+
+* add role to search agent ([838b4a9](https://github.com/cds-snc/ai-answers/commit/838b4a9da1a49e4bc25c8e2c1cbf8e8861d549e8))
+* advise re multiple questions at once ([f12d8bf](https://github.com/cds-snc/ai-answers/commit/f12d8bf43d297fda74bf58c90803c29e0302cd76))
+* context errors ([f610c11](https://github.com/cds-snc/ai-answers/commit/f610c11cde9d5eb107c6b7985d385854972846b2))
+* context failures ([94f4621](https://github.com/cds-snc/ai-answers/commit/94f462128ca89fd2959fc8978ec4020924d4406d))
+* regenerate system prompt doc ([754a9b7](https://github.com/cds-snc/ai-answers/commit/754a9b738aca739db8aa2dd9f08e2ec3c0def113))
+* review for reasoning ([727e74f](https://github.com/cds-snc/ai-answers/commit/727e74f5dcf44b11ec3b33da95a760f54a711714))
+* search query and IRCC issues for reasoning model ([6b57e65](https://github.com/cds-snc/ai-answers/commit/6b57e65b5fe234c63af8fe03117435e5877e99ed))
+
 ## [1.106.3](https://github.com/cds-snc/ai-answers/compare/v1.106.2...v1.106.3) (2026-03-03)
 
 
