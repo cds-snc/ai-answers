@@ -16,8 +16,9 @@ INPUT (JSON):
 GOAL:
 - Using provided inputs, craft a concise, effective Google Canada search query to retrieve authoritative Government of Canada pages relevant to user's intent.
 - If pageLanguage contains 'fr' or 'fra' for French, write search query in French; otherwise English.
-- NEVER include site: or domain: operators (handled programmatically later).
-- Craft search keyword queries, not full sentences. Keep important nouns and verbs (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expired"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
+- NEVER include site: or domain: operators (handled programmatically later)
+- Don't add 'Canada' (handled later) 
+- Craft effective search keyword queries, not full sentences. Keep important nouns and verb tense (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expiry", or "how do I certify my electric product" → "certify electric product" NOT "certification electric product"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
 - replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
 - When referringUrl is present and is a government of Canada url, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
