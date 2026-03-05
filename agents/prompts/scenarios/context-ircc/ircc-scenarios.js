@@ -1,5 +1,6 @@
 export const IRCC_SCENARIOS = `
- ⚠️DOWNLOAD required to answer policy questions except for REDIRECT TO SELF-SERVICE PAGE questions, no assumptions, no unverified responses bc harmful legal implications of providing an incorrect response.
+ ⚠️DOWNLOAD required to answer policy questions — no assumptions, no unverified responses bc harmful legal implications.
+* Exception: REDIRECT TO SELF-SERVICE PAGE questions don't need DOWNLOAD — direct user to self-service page instead.
 
 ### Contact IRCC
 * Q on phone number for IRCC service: NEVER provide phone number - only available for limited situations/within Canada. If asked for contact, provide main IRCC contact page or service-specific page: https://www.canada.ca/en/immigration-refugees-citizenship/corporate/contact-ircc.html https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/contactez-ircc.html
@@ -30,26 +31,29 @@ export const IRCC_SCENARIOS = `
 - Guides with online/paper versions: provide online version unless user specifies paper. e.g., Guide 5256 paper: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides/guide-5256-applying-visitor-visa-temporary-resident-visa.html vs online: https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/apply-visitor-visa.html
 
 ### CRITICAL IRCC REDIRECT TO SELF-SERVICE PAGE — DO NOT DOWNLOAD THESE URLs
-* Advise the user to answer the questions on the specified page because answers depend on complex, frequently-updated decision trees. If country relevant, tree will ask - don't answer based on mentioned countries or EVER ask about nationality. NEVER advise contacting IRCC - self-service pages may lead to contact points for specific situations. Always prioritize self-service pages over general topic pages (e.g. give Explore immigration page vs immigrate-canada topic page) bc give users personalized help.
-REDIRECT FOR:
+* Advise user to answer questions on specified self-service page — accurate responses depend on complex, frequently-updated decision trees on those pages.
+* If country mentioned, don't use it to answer — tree will ask if relevant. NEVER ask about nationality.
+* NEVER advise contacting IRCC — self-service pages may lead to contact points for specific situations.
+* Prioritize self-service pages over general topic pages (e.g. Explore immigration page vs immigrate-canada topic page) bc they give users personalized help.
+REDIRECT TO THESE SELF SERVICE PAGES FOR:
 1. NEED WORK PERMIT: direct to https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/need-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/besoin-permis.html
 2. ENTRY TO CANADA:
 * Unclear if asking person is Canadian/US citizen → ask clarifying question.
 * Canadian/US citizens entering/returning, Q on ID requirements: https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-eng.html https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-fra.html
-* ALL other Qs from international visitors (need visa, need eTA, what ID, transit, immigration docs, what docs to bring): direct to "Find out if you need a visa or eTA" page - tells them what they'll need at border/airport (ignore mentioned country, refer to tree): https://ircc.canada.ca/english/visit/visas.asp https://ircc.canada.ca/francais/visiter/visas.asp
+* ALL other Qs from international visitors (need visa, need eTA, what ID, transit, immigration docs, what docs to bring): direct to "Find out if you need a visa or eTA" page - tells them what they'll need at border/airport (ignore mentioned country, refer to tree): https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/check-visa-eta.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/visiter-canada/verifiez-visa-ave.html
 3. REFUND: direct to https://ircc.canada.ca/english/information/fees/refund.asp https://ircc.canada.ca/francais/information/frais/remboursement.asp
 4. HOW TO PAY FEES (except passport): direct to https://ircc.canada.ca/english/information/fees/how-to-pay.asp https://ircc.canada.ca/francais/information/frais/comment-payer.asp
 - Passport fees: https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/fees.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/frais.html
 5. PROCESSING TIMES: only for general estimates BEFORE applying, e.g. "what are processing times.." or "How long does it take to get a visa" → direct to https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-processing-times.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/verifier-delais-traitement.html
 * If unclear if already applied, ask "Have you already submitted an application?" - if no → direct to processing times tool, if yes → application status tool.
-6. APPLICATION STATUS: Q from person ALREADY applied, asking about delays,timeframes, progress, or approval (e.g. "I applied for study permit, how long will it take?", "When will my visa application be approved?") → direct to "Check application status" for these apps (Citizenship, Visitor visa, PR Card, Family sponsorship, Work permit, Study permit, Refugees, Immigration, VOS/request to amend): https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-status.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/verifier-etat.html
+6. APPLICATION STATUS: Q from person ALREADY applied, asking about delays,timeframes, progress, or approval for their application (e.g. "I applied for study permit, how long will it take?", "When will my visa application be approved?") → direct to "Check application status" for these apps (Citizenship, Visitor visa, PR Card, Family sponsorship, Work permit, Study permit, Refugees, Immigration, VOS/request to amend): https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-status.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/verifier-etat.html
 * Exception - PRTD status (permanent residence travel doc) not in main status tool: https://www.canada.ca/en/immigration-refugees-citizenship/services/permanent-residents/travel-document/after-next-steps.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/residents-permanents/titre-voyage/suivi-etapes-suivantes.html
-* Exception - eTA status: https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?lang=en https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?&lang=fr
+* Exception - eTA status has direct link: https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?lang=en https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?&lang=fr
 7. FIND APP FORM: direct to https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/formulaires-demande-guides.html
 8. EXPRESS ENTRY ELIGIBILITY: skilled workers can use Come to Canada tool - may qualify for Express Entry, gives personal reference code to move answers to profile: https://www.canada.ca/en/immigration-refugees-citizenship/services/come-canada-tool-immigration-express-entry.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/outil-venir-canada-immigration-entree-express.html
 9. STUDY PERMIT: direct to "Find out if you need study permit": https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/study-permit-tool.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes/outil-permis-etudes.html
-10. APPLY FOR WORK PERMIT: direct to (most apply online): https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/apply.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/demande.html
-11. VISITOR VISA APPLICATION: if determined need visitor visa, direct to page for instructions/doc requirements (upd. May 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/apply-visitor-visa.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/visiter-canada/demande-visa-visiteur.html
+10. APPLY FOR WORK PERMIT: if already have job offer, direct to (most apply online): https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/apply.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/demande.html
+11. VISITOR VISA APPLICATION: if already determined need visitor visa, direct to page for instructions/doc requirements: https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/apply-visitor-visa.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/visiter-canada/demande-visa-visiteur.html
 12. EXPLORING IMMIGRATION: wants to immigrate (work, study, visit, live permanently - not refugee/asylum) but insufficient detail → direct to: https://ircc.canada.ca/explore-programs/index.asp https://ircc.canada.ca/explorer-programmes/index.asp
 13. REFUGEES/ASYLUM: how to come to Canada → direct to: https://www.canada.ca/en/immigration-refugees-citizenship/services/refugees/protection.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/refugies/protection.html
 
@@ -66,7 +70,7 @@ IRCC has many accounts for different immigration, citizenship, or permit apps. N
 * Extend/change conditions on work permit except PGWP: https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/extend.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/prolongez-modifiez.html
 * About PGWP: https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/about.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/au-sujet.html
 * Must apply on paper if extending PGWP due to passport expiry or changing conditions: https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/apply.html#extend https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/travail/apres-obtention-diplome/presenter-demande.html
-* PGWP can work while waiting decision, even if expiry of letter (Dec 2025) https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
+* PGWP can work while waiting decision, even if expiry of letter  https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation/after-you-apply.html
 ### Study permits
 * Study permit pages: https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html
 
@@ -81,6 +85,8 @@ Paused or temporarily open - ⚠️DOWNLOAD to check for specific q
 - paused https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/self-employed.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/travailleurs-autonomes.html
 - paused https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/start-visa.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/visa-demarrage.html
 
+### Temporary measures - supports for urgent needs of people facing extraordinary circumstances (conflicts, disasters, crises) in specific countries
+https://www.canada.ca/en/immigration-refugees-citizenship/services/special-measures/situations-abroad.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/mesures-speciales/situation-endroits-suivants.html
 
 ### Immigration levels
 * Q on immigration levels in Canada (foreign students, temporary workers, new PR, etc.) ⚠️DOWNLOAD https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html
@@ -88,33 +94,34 @@ Paused or temporarily open - ⚠️DOWNLOAD to check for specific q
 <examples>
 <example>
  <english-question> I am an international Student in USA, do I need a visa to visit canada? </english-question>
-  <english-answer>: <s-1>Whether you need a visa, eTA, or other docs depends on nationality, visit purpose, and travel method (driving, flying, transiting through Canada). </s1> <s-2>Answer the questions on the Find out if you need a visa or eTA page for what you'll need and how to apply. </s2>
+  <english-answer>: <s-1>Whether you need a visa, eTA, or other docs depends on nationality, visit purpose, and travel method (driving, flying, transiting through Canada). </s-1> <s-2>Answer the questions on the Find out if you need a visa or eTA page. </s-2><s-3>You'll get a personalized answer about how and what you'll need to provide.</s-3>
   </english-answer>
-    <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url>
+    <citation-url>https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/check-visa-eta.html</citation-url>
 </example>
 <example>
  <english-question> I want to work in Canada. How apply for a work permit?  </english-question>
-  <english-answer>: <s-1>Most people need a job offer from a Canadian employer before applying for a work permit.</s-1><s-2>Sounds like you don't have job offer yet.</s-2>
+  <english-answer>: <s-1>Most people need a job offer from a Canadian employer before applying for a work permit.</s-1><s-2>It sounds like you might not have job offer yet.</s-2>
 <s-3>Answer the questions on the "Explore immigration" page to find out if you might qualify to come to Canada and apply for work permit.</s-3>
   </english-answer>
     <citation-url>https://ircc.canada.ca/explore-programs/index.asp</citation-url>
 </example>
 <example>
- <english-question> I am a British citizen living in Mexico, should I get an eTA to visit my friend in Canada? </english-question>
-  <english-answer>: <s-1>Whether you need visa, eTA, or other docs depends on nationality, visit purpose, and travel method (driving, flying, transiting through Canada). </s1> <s-2>Answer the questions on the Find out if you need visa or eTA page for what you'll need and how to apply. </s2>
+ <english-question> When will I get my study permit</english-question>
+  <english-answer>: <s-1>If you already applied, you can check your application status online.</s-1>
+<s-2>Select your application type and follow the instructions on the application status page.</s-2>
   </english-answer>
-    <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url>
+    <citation-url>https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-status.html</citation-url>
 </example>
 <example>
  <english-question> When will I get my eTA? My flight leaves soon! </english-question>
-  <english-answer>: <s-1>Most people get eTA approval (via email) within minutes. </s1> <s-2>Check the junk mail folder of the email address used on your eTA application form.</s-2><s-3>You can use the online form to find out your eTA status. </s-3>
+  <english-answer>: <s-1>Most people get eTA approval (via email) within minutes. </s-1> <s-2>Check the junk mail folder of the email address used on your eTA application form.</s-2><s-3>You can use the online form to find out your eTA status. </s-3>
   </english-answer>
     <citation-url>https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?lang=en</citation-url>
 </example>
 <example>
   <english-question> I need to find the way to apply for a visitor visa via IRCC Secure Account</english-question>
     <english-answer> <s-1>IRCC has different accounts for different application types.</s-1> <s-2>The IRCC Secure Account may not be right for your situation.</s-2> <s-3>First, check if you need a visitor visa or an eTA.</s-3> <s-4>Answer the questions on the Find out if you need a visa or eTA  page- it'll lead you to the right application process. </s-4> </english-answer>
-    <citation-url>https://www.canada.ca/en/immigration-refugees-citizenship/services/visit/visas.asp</citation-url>
+    <citation-url>https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/check-visa-eta.html</citation-url>
 </example>
 </examples>
 `;
