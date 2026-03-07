@@ -29,6 +29,8 @@ import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
+import ExperimentalAnalysisPage from './pages/experimental/ExperimentalAnalysisPage.js';
+import ExperimentalDatasetsPage from './pages/experimental/ExperimentalDatasetsPage.js';
 import { useTranslations } from './hooks/useTranslations.js';
 
 
@@ -389,7 +391,11 @@ export default function App() {
       { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
       { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] },
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/connectivity', element: <ConnectivityPage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/connectivity', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/analysis', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/datasets', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

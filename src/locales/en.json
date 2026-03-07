@@ -369,6 +369,8 @@
       "chatViewer": "View full trace for a chat",
       "database": "Manage the database",
       "eval": "Evaluation administration",
+      "experimental": "Experimental",
+      "dataAnalysis": "Data Analysis",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
       "publicEval": "Evaluate a public chat",
@@ -1227,5 +1229,95 @@
     "notConfigured": "Not Configured",
     "lastRun": "Last run",
     "serviceDetails": "Service Details"
+  },
+  "experimental": {
+    "datasets": {
+      "title": "Experimental Datasets",
+      "analyze": "Analyze",
+      "uploadNew": "Upload New Dataset",
+      "upload": "Upload Dataset",
+      "uploading": "Uploading...",
+      "uploadSuccess": "Dataset uploaded successfully!",
+      "uploadFailed": "Upload failed",
+      "readFailed": "Failed to read file",
+      "delete": "Delete Dataset",
+      "view": "View Data",
+      "viewing": "Viewing Data: {name}",
+      "backToList": "Back to Datasets",
+      "errorLoadingRows": "Failed to load rows.",
+      "confirmDelete": "Are you sure you want to delete this dataset? This action cannot be undone.",
+      "inUse": "This dataset is in use by active batches and cannot be deleted.",
+      "nameLabel": "Dataset Name",
+      "descLabel": "Description",
+      "typeLabel": "Dataset Type",
+      "fileLabel": "Excel / CSV File",
+      "requiredColumns": "Required columns",
+      "rowCount": "Rows",
+      "created": "Created",
+      "existing": "Existing Datasets",
+      "loading": "Loading datasets...",
+      "empty": "No datasets found.",
+      "actions": "Actions",
+      "typeInfo": {
+        "question-only": {
+          "label": "Question Only",
+          "description": "A list of questions to be answered by the AI. Use this to run a batch generation and obtain AI responses.",
+          "columns": "question (required), referringUrl (optional), chatId (optional)"
+        },
+        "qa-pair": {
+          "label": "Q&A Pair",
+          "description": "A matched set of questions and existing answers. Use this to run analyzers that evaluate an existing AI response without a separate baseline.",
+          "columns": "question, answer (required), referringUrl (optional), chatId (optional)"
+        },
+        "evaluation-set": {
+          "label": "Evaluation Set (Golden Answers)",
+          "description": "Questions paired with a golden/baseline answer and optionally a new answer to compare against. Use this with comparison analyzers like Expert Scorer.",
+          "columns": "question, answer (required), comparisonAnswer (optional), referringUrl (optional), chatId (optional)"
+        }
+      }
+    },
+    "analysis": {
+      "title": "Batch Analysis",
+      "datasetLabel": "Dataset:",
+      "changeDataset": "Change Dataset",
+      "configuration": "Configuration",
+      "selectAnalyzers": "Select Analyzers",
+      "selectBaseline": "Select Baseline Run (Comparison)",
+      "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
+      "noBaseline": "-- No baseline (Standalone Evaluation) --",
+      "useExistingDataset": "Use Existing Dataset",
+      "uploadInstead": "-- Upload a new file instead --",
+      "orUpload": "Or upload new data:",
+      "inputFile": "Input File (Excel/CSV)",
+      "comparisonFile": "Comparison File (Optional)",
+      "run": "Run Analysis",
+      "starting": "Starting...",
+      "runningStatus": "Running Status",
+      "noActiveRuns": "No active runs currently tracked.",
+      "previousRuns": "Previous Runs",
+      "columns": {
+        "name": "Run Name",
+        "analyzer": "Analyzer",
+        "status": "Status",
+        "issues": "Issues",
+        "flagged": "Flagged",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "baseline": "BASELINE",
+      "export": "Export",
+      "useAsBaseline": "Use as Baseline",
+      "delete": "Delete",
+      "empty": "No previous runs found for this dataset.",
+      "messages": {
+        "selectAnalyzer": "Please select at least one analyzer.",
+        "selectData": "Please select a dataset or upload a file.",
+        "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
+        "startedCount": "Started {count} analysis runs.",
+        "confirmDelete": "Are you sure you want to delete this batch?",
+        "deleteError": "Failed to delete batch",
+        "exportError": "Failed to export batch"
+      }
+    }
   }
 }

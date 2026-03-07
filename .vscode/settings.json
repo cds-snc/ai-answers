@@ -3,6 +3,7 @@
         "git checkout": true,
         "git add": true,
         "git commit": true,
-        "git push": true
+        "git push": true,
+        "git rebase": true
     }
 }
