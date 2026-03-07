@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.107.1](https://github.com/cds-snc/ai-answers/compare/v1.107.0...v1.107.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* final clean-up dates scenarios ([f72aaa0](https://github.com/cds-snc/ai-answers/commit/f72aaa08761615a00406265e33a76f74dc73bf34))
+* hallucinated urls provincial birth cert ([7f06f73](https://github.com/cds-snc/ai-answers/commit/7f06f7309ca77216b0650874ad6dd38a32180a32))
+* hallucinated urls provincial birth cert - tested batches until all clear ([bc208d0](https://github.com/cds-snc/ai-answers/commit/bc208d06a7f062e9ec4c0170aae4f2ee11920b6b))
+
 ## [1.107.0](https://github.com/cds-snc/ai-answers/compare/v1.106.3...v1.107.0) (2026-03-05)
 
 
