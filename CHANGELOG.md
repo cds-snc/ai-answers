@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.107.2](https://github.com/cds-snc/ai-answers/compare/v1.107.1...v1.107.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* finetuning of answer sentences ([7467374](https://github.com/cds-snc/ai-answers/commit/74673746effa2fa5e53d86460303b1e7053e79d0))
+* finetuning of answer sentences ([dd5531c](https://github.com/cds-snc/ai-answers/commit/dd5531c9913faabffc452953933ed8bb30cc9ac1))
+
 ## [1.107.1](https://github.com/cds-snc/ai-answers/compare/v1.107.0...v1.107.1) (2026-03-07)
 
 
