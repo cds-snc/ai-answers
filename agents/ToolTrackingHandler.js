@@ -22,6 +22,9 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
             const ctx = graphRequestContext.getStore();
             if (ctx?.onStatus) {
                 ctx.onStatus(status);
+                ServerLoggingService.debug(`ToolTrackingHandler emitted status: ${status}`, this.chatId);
+            } else {
+                ServerLoggingService.debug(`ToolTrackingHandler: no onStatus in context for ${status}`, this.chatId);
             }
         } catch (_e) {
             // Ignore — status emission is best-effort
