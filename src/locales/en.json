@@ -170,6 +170,7 @@
         "searching": "Searching for relevant information...",
         "generatingAnswer": "Generating answer...",
         "buildingContext": "Building context...",
+        "readingWebPages": "Reading government web pages...",
         "verifyingCitation": "Testing citation link",
         "moderatingAnswer": "Moderating answer...",
         "moderatingQuestion": "Assessing question",
