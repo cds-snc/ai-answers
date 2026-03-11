@@ -871,7 +871,7 @@ const handleTextareaInput = (event) => {
       </div>
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (
-          <div aria-live="assertive" aria-atomic="true" className="sr-only">
+          <div role="alert" className="sr-only">
             {charCountAlert}
           </div>
         )}
