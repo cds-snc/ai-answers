@@ -442,7 +442,7 @@ const ChatInterface = ({
   };
 
   return (
-    <div className="chat-container">
+<div className="chat-container" role="region" aria-label={safeT("homepage.chat.ariaLabel")}>
       {/* Show referring URL at the top for review mode */}
       {readOnly && referringUrl && (
         <span className="referring-url-chat">
