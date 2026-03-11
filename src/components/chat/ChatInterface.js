@@ -872,7 +872,7 @@ const handleTextareaInput = (event) => {
         {redactionAlert}
       </div>
       {/* Live region for character count alerts */}
-      <div aria-live="polite" aria-atomic="true" className="sr-only">
+      <div role="alert" className="sr-only">
         {charCountAlert}
       </div>
       {/* Show chat date at bottom for review mode */}
