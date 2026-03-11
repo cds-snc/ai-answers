@@ -430,7 +430,7 @@ const handleTextareaInput = (event) => {
   };
 
   return (
-    <div className="chat-container">
+    <div className="chat-container" aria-label={safeT("homepage.chat.ariaLabel")}>
       {/* Show referring URL at the top for review mode */}
       {readOnly && referringUrl && (
         <span className="referring-url-chat">
