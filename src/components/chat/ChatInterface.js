@@ -670,6 +670,10 @@ const handleTextareaInput = (event) => {
 
         {isLoading && (
           <>
+            {/* Screen reader announcement - only announces initial thinking state */}
+            <div role="status" aria-live="polite" className="sr-only">
+              {displayStatus === "thinking" ? safeT("homepage.chat.messages.thinking") : ""}
+            </div>
             <div key="loading" className="loading-container">
               <div className="loading-animation"></div>
               <div className="loading-text">
