@@ -316,6 +316,13 @@ const ChatInterface = ({
     }
   }, [turnCount]);
 
+  // Reset char count on submission
+  useEffect(() => {
+    if (isLoading) {
+      setCharCount(0);
+    }
+  }, [isLoading]);
+
   const getLabelForInput = () => {
     if (turnCount >= 1) {
       const followUp = t("homepage.chat.input.followUp");
