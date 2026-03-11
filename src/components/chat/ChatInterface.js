@@ -136,7 +136,7 @@ const ChatInterface = ({
       const answerText = lastMessage.interaction?.answer?.content || 
         lastMessage.interaction?.answer?.paragraphs?.join(" ") || "";
       setAnswerAlert(answerText);
-      setTimeout(() => setAnswerAlert(""), 5000);
+      setTimeout(() => setAnswerAlert(""), 8000);
     }
   }, [messages, isLoading, safeT]);
 
