@@ -416,7 +416,6 @@ const ChatInterface = ({
         }
 
       event.preventDefault();
-      if (textareaRef.current) textareaRef.current.blur();
       handleSendMessage(event);
     }
   };
@@ -824,7 +823,6 @@ const ChatInterface = ({
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (textareaRef.current) textareaRef.current.blur();
                       handleSendMessage();
                     }}
                     className={`btn-primary-send ${inputText.trim().length > 0 && charCount <= MAX_CHARS
