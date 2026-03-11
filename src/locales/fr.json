@@ -127,6 +127,7 @@
       },
       "buttons": {
         "send": "Envoyer",
+        "sendDisabledTooLong": "Votre message est trop long, veuillez simplifier votre question.",
         "reload": "Actualiser la page"
       },
       "options": {

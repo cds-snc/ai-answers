@@ -129,6 +129,7 @@ const ChatInterface = ({
   }, [messages, safeT, lastProcessedMessageId]);
 
   const [charCount, setCharCount] = useState(0);
+  const [charCountAlert, setCharCountAlert] = useState("");
   const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
   const textareaRef = useRef(null);
 
@@ -349,10 +350,27 @@ const ChatInterface = ({
     return 1;
   };
 
-  const handleTextareaInput = (event) => {
-    const textarea = event.target;
-    setCharCount(textarea.value.length);
-    handleInputChange(event);
+const handleTextareaInput = (event) => {
+  const textarea = event.target;
+  const newCount = textarea.value.length;
+  setCharCount(newCount);                   
+  handleInputChange(event);
+
+     if (newCount === MAX_CHARS - 10) {
+    setCharCountAlert(
+      safeT("homepage.chat.messages.characterWarning")
+        .replace("{count}", 10)
+        .replace("{unit}", safeT("homepage.chat.messages.characters"))
+    );
+  } else if (newCount > MAX_CHARS && charCount <= MAX_CHARS) {
+    setCharCountAlert(
+      safeT("homepage.chat.messages.characterLimit")
+        .replace("{count}", 1)
+        .replace("{unit}", safeT("homepage.chat.messages.character"))
+    );
+  } else {
+    setCharCountAlert("");
+  }
 
     // Auto-resize
     textarea.style.height = "auto";
@@ -783,8 +801,10 @@ const ChatInterface = ({
                       charCount > MAX_CHARS ||
                       inputText.trim().length === 0
                     }
-                    aria-label={
-                      safeT("homepage.chat.buttons.send") || "Send message"
+                   aria-label={
+                      charCount > MAX_CHARS
+                        ? safeT("homepage.chat.buttons.sendDisabledTooLong")
+                        : safeT("homepage.chat.buttons.send")
                     }
                   >
                     <span className="button-text">
@@ -850,6 +870,10 @@ const ChatInterface = ({
       {/* Live region for redaction warnings */}
       <div role="alert" className="sr-only">
         {redactionAlert}
+      </div>
+      {/* Live region for character count alerts */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {charCountAlert}
       </div>
       {/* Show chat date at bottom for review mode */}
       {readOnly && chatCreatedAt && (
