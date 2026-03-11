@@ -355,9 +355,9 @@ const handleTextareaInput = (event) => {
   const newCount = textarea.value.length;
   setCharCount(newCount);                   
   handleInputChange(event);
-   if (newCount > MAX_CHARS && charCount <= MAX_CHARS) {
-    setCharCountAlert(safeT("homepage.chat.buttons.sendDisabledTooLong"));
-  } else {
+   if (newCount > MAX_CHARS && inputText.length <= MAX_CHARS) {
+  setCharCountAlert(safeT("homepage.chat.buttons.sendDisabledTooLong"));
+  } else if (newCount <= MAX_CHARS) {
     setCharCountAlert("");
   }
 
@@ -370,10 +370,19 @@ const handleTextareaInput = (event) => {
     if (event.key === "Enter") {
       if (event.shiftKey) return;
 
-      if (inputText.trim().length === 0 || charCount > MAX_CHARS) {
-        event.preventDefault();
-        return;
-      }
+      if (charCount > MAX_CHARS) {
+          event.preventDefault();
+          setCharCountAlert("");
+          setTimeout(() => {
+            setCharCountAlert(safeT("homepage.chat.buttons.sendDisabledTooLong"));
+          }, 50);
+          return;
+        }
+
+        if (inputText.trim().length === 0) {
+          event.preventDefault();
+          return;
+        }
 
       event.preventDefault();
       handleSendMessage(event);
@@ -771,15 +780,10 @@ const handleTextareaInput = (event) => {
                         ? safeT("homepage.chat.textarea.ariaLabel.first")
                         : safeT("homepage.chat.textarea.ariaLabel.followon")
                     }
-                    aria-describedby="char-limit-desc"
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}
                   />
-                  {/* SR description for character limit - associated with textarea via aria-describedby */}
-                  <div id="char-limit-desc" className="sr-only">
-                    {charCount > MAX_CHARS ? safeT("homepage.chat.buttons.sendDisabledTooLong") : ""}
-                  </div>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -865,10 +869,12 @@ const handleTextareaInput = (event) => {
       <div role="alert" className="sr-only">
         {redactionAlert}
       </div>
-      {/* Live region for character count alerts */}
-      <div role="alert" className="sr-only">
-        {charCountAlert}
-      </div>
+      {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
+        {charCountAlert && (
+          <div role="alert" className="sr-only">
+            {charCountAlert}
+          </div>
+        )}
       {/* Show chat date at bottom for review mode */}
       {readOnly && chatCreatedAt && (
         <div className="admin-date">
