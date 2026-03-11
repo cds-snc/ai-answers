@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.108.0](https://github.com/cds-snc/ai-answers/compare/v1.107.2...v1.108.0) (2026-03-11)
+
+
+### Features
+
+* add download status message ([3795781](https://github.com/cds-snc/ai-answers/commit/3795781432087b92a99c8924e94fed36b81d67ab))
+* add download status message ([d2f95ac](https://github.com/cds-snc/ai-answers/commit/d2f95ac49134ba0eb8a0d1e1c4468cb43ad02289))
+* add open data search tool plan ([4be6554](https://github.com/cds-snc/ai-answers/commit/4be65545f9012d92d23000cf26c0883579c3edab))
+
+
+### Bug Fixes
+
+* address follow-on issue debug ([cc2c153](https://github.com/cds-snc/ai-answers/commit/cc2c1531fd41aa082b0a652f46d0f115bf49e238))
+* remove debug calls ([4dfb5f3](https://github.com/cds-snc/ai-answers/commit/4dfb5f36033ff62c7b0c3f8cd7e388e31ed8a10b))
+
 ## [1.107.2](https://github.com/cds-snc/ai-answers/compare/v1.107.1...v1.107.2) (2026-03-08)
 
 
