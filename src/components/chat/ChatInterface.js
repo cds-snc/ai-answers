@@ -355,19 +355,8 @@ const handleTextareaInput = (event) => {
   const newCount = textarea.value.length;
   setCharCount(newCount);                   
   handleInputChange(event);
-
-     if (newCount === MAX_CHARS - 10) {
-    setCharCountAlert(
-      safeT("homepage.chat.messages.characterWarning")
-        .replace("{count}", 10)
-        .replace("{unit}", safeT("homepage.chat.messages.characters"))
-    );
-  } else if (newCount > MAX_CHARS && charCount <= MAX_CHARS) {
-    setCharCountAlert(
-      safeT("homepage.chat.messages.characterLimit")
-        .replace("{count}", 1)
-        .replace("{unit}", safeT("homepage.chat.messages.character"))
-    );
+   if (newCount > MAX_CHARS && charCount <= MAX_CHARS) {
+    setCharCountAlert(safeT("homepage.chat.buttons.sendDisabledTooLong"));
   } else {
     setCharCountAlert("");
   }
@@ -782,10 +771,15 @@ const handleTextareaInput = (event) => {
                         ? safeT("homepage.chat.textarea.ariaLabel.first")
                         : safeT("homepage.chat.textarea.ariaLabel.followon")
                     }
+                    aria-describedby="char-limit-desc"
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}
                   />
+                  {/* SR description for character limit - associated with textarea via aria-describedby */}
+                  <div id="char-limit-desc" className="sr-only">
+                    {charCount > MAX_CHARS ? safeT("homepage.chat.buttons.sendDisabledTooLong") : ""}
+                  </div>
                   <button
                     type="button"
                     onClick={(e) => {
