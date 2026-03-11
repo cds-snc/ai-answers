@@ -100,7 +100,6 @@
       }
     },
     "chat": {
-      "ariaLabel": "Interface de chat",
       "chatId": "ID de chat",
       "input": {
         "initial": {
