@@ -159,7 +159,7 @@ async function handler(req, res) {
   };
 
   try {
-    const store = { headers: forwardedHeaders, user: req.user };
+    const store = { headers: forwardedHeaders, user: req.user, onStatus: handlers.onStatus };
     // Only enable graph event streaming for authenticated users
     if (req.user) {
       store.graphEventWriter = (eventName, data) => {

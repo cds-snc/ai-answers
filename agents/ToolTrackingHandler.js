@@ -1,5 +1,6 @@
 import { ConsoleCallbackHandler } from '@langchain/core/tracers/console';
 import ServerLoggingService from '../services/ServerLoggingService.js';
+import { graphRequestContext } from './graphs/requestContext.js';
 
 /**
  * Custom callback handler to track tool usage in LangChain agents
@@ -10,6 +11,21 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
         super();
         this.toolCalls = [];
         this.chatId = chatId;
+    }
+
+    /**
+     * Emit a status update via the graph request context's onStatus handler (if available).
+     * This writes an SSE status event to the client during agent tool execution.
+     */
+    _emitStatus(status) {
+        try {
+            const ctx = graphRequestContext.getStore();
+            if (ctx?.onStatus) {
+                ctx.onStatus(status);
+            }
+        } catch (_e) {
+            // Ignore — status emission is best-effort
+        }
     }
 
     async handleToolStart(tool, input, runId, parentRunId, tags, metadata, runName) {
@@ -25,6 +41,10 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                 error: 'none'
             });
             ServerLoggingService.debug(`Tool execution started: ${this.chatId}`, this.chatId, { input });
+
+            if (toolName === 'downloadWebPage') {
+                this._emitStatus('readingWebPages');
+            }
         } catch (error) {
             ServerLoggingService.error(`Error in handleToolStart: ${error.message}`, this.chatId, error);
             // Don't throw, just log the error
@@ -45,6 +65,10 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                     duration: toolCall.duration,
                     output: typeof output === 'object' ? JSON.stringify(output) : output
                 });
+
+                if (toolCall.tool === 'downloadWebPage') {
+                    this._emitStatus('generatingAnswer');
+                }
             } else {
                 ServerLoggingService.warn(`No matching tool call found for runId: ${runId}`, this.chatId);
             }
@@ -66,6 +90,10 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                 toolCall.duration = toolCall.endTime - toolCall.startTime;
                 toolCall.status = 'error';
                 ServerLoggingService.error(`Tool execution failed: ${toolCall.tool}`, this.chatId, errorMessage);
+
+                if (toolCall.tool === 'downloadWebPage') {
+                    this._emitStatus('generatingAnswer');
+                }
             } else {
                 ServerLoggingService.warn(`No matching tool call found for runId: ${runId}`, this.chatId);
             }

@@ -390,12 +390,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     if (inputText.trim() !== '' && !isLoading) {
       setIsLoading(true);
 
-      // Clear any pending status updates from previous requests
+      // Clear any pending status updates from previous requests and reset display
       if (statusTimeoutRef.current) {
         clearTimeout(statusTimeoutRef.current);
         statusTimeoutRef.current = null;
       }
       statusQueueRef.current = [];
+      setDisplayStatus('moderatingQuestion');
 
       // Initial validation checks
       if (inputText.length > MAX_CHAR_LIMIT) {
