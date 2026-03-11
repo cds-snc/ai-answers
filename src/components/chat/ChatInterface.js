@@ -144,6 +144,7 @@ const ChatInterface = ({
   const [charCountAlert, setCharCountAlert] = useState("");
   const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
   const textareaRef = useRef(null);
+  const charCountAlertTimer = useRef(null);
 
   // Function to focus textarea when skip button is clicked
   const focusTextarea = () => {
@@ -369,16 +370,27 @@ const ChatInterface = ({
     return 1;
   };
 
-const handleTextareaInput = (event) => {
-  const textarea = event.target;
-  const newCount = textarea.value.length;
-  setCharCount(newCount);                   
-  handleInputChange(event);
-   if (newCount > MAX_CHARS && inputText.length <= MAX_CHARS) {
-  setCharCountAlert(safeT("homepage.chat.buttons.sendDisabledTooLong"));
-  } else if (newCount <= MAX_CHARS) {
-    setCharCountAlert("");
-  }
+  const handleTextareaInput = (event) => {
+    const textarea = event.target;
+    const newCount = textarea.value.length;
+    setCharCount(newCount);
+    handleInputChange(event);
+
+    if (newCount > MAX_CHARS) {
+      clearTimeout(charCountAlertTimer.current);
+      charCountAlertTimer.current = setTimeout(() => {
+        setCharCountAlert(
+          safeT("homepage.chat.messages.characterLimit")
+            .replace("{count}", Math.max(1, newCount - MAX_CHARS))
+            .replace("{unit}", newCount - MAX_CHARS === 1
+              ? safeT("homepage.chat.messages.character")
+              : safeT("homepage.chat.messages.characters"))
+        );
+        setTimeout(() => setCharCountAlert(""), 1000);
+      }, 500);
+    } else {
+      setCharCountAlert("");
+    }
 
     // Auto-resize
     textarea.style.height = "auto";
