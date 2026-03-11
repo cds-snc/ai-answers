@@ -128,6 +128,18 @@ const ChatInterface = ({
     }
   }, [messages, safeT, lastProcessedMessageId]);
 
+  // Effect to announce answer ready
+  const [answerAlert, setAnswerAlert] = useState("");
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.sender === "ai" && !lastMessage.error && !isLoading) {
+      const answerText = lastMessage.interaction?.answer?.content || 
+        lastMessage.interaction?.answer?.paragraphs?.join(" ") || "";
+      setAnswerAlert(answerText);
+      setTimeout(() => setAnswerAlert(""), 5000);
+    }
+  }, [messages, isLoading, safeT]);
+
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
   const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
@@ -392,6 +404,7 @@ const handleTextareaInput = (event) => {
         }
 
       event.preventDefault();
+      if (textareaRef.current) textareaRef.current.blur();
       handleSendMessage(event);
     }
   };
@@ -677,10 +690,10 @@ const handleTextareaInput = (event) => {
 
         {isLoading && (
           <>
-            {/* Screen reader announcement - only announces initial thinking state
+            {/* Screen reader announcement - only announces initial thinking state */}
             <div role="status" aria-live="polite" className="sr-only">
               {displayStatus === "thinking" ? safeT("homepage.chat.messages.thinking") : ""}
-            </div> */}
+            </div>
             <div key="loading" className="loading-container">
               <div className="loading-animation"></div>
               <div className="loading-text">
@@ -799,6 +812,7 @@ const handleTextareaInput = (event) => {
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
+                      if (textareaRef.current) textareaRef.current.blur();
                       handleSendMessage();
                     }}
                     className={`btn-primary-send ${inputText.trim().length > 0 && charCount <= MAX_CHARS
@@ -880,6 +894,12 @@ const handleTextareaInput = (event) => {
       <div role="alert" className="sr-only">
         {redactionAlert}
       </div>
+      {/* Live region for answer announcement */}
+      {answerAlert && (
+        <div role="status" aria-live="polite" className="sr-only">
+          {answerAlert}
+        </div>
+      )}
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (
           <div role="alert" className="sr-only">
