@@ -351,9 +351,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   <option value="DefaultGraph">DefaultGraph</option>
                   <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                   <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                  <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
                   <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
-                  <option value="GPT5OneChatGraph">GPT5OneChatGraph</option>
                 </select>
               </div>
             </div>
