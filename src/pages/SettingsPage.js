@@ -79,7 +79,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
       // Validate default workflow against known options
-      const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
+      const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5OneDefaultGraph'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
@@ -452,7 +452,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
+                const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5OneDefaultGraph'];
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
               } finally {
@@ -464,7 +464,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="DefaultGraph">DefaultGraph</option>
             <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
             <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-            <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
+            <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
           </select>
 
         </div>

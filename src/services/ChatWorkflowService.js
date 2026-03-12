@@ -68,8 +68,6 @@ export const ChatWorkflowService = {
       graphName = 'GenericWorkflowGraph';
     } else if (resolvedWorkflow === 'InstantAndQAGraph') {
       graphName = 'InstantAndQAGraph';
-    } else if (resolvedWorkflow === 'GPT5MiniDefaultGraph') {
-      graphName = 'GPT5MiniDefaultGraph';
     } else if (resolvedWorkflow === 'GPT5OneDefaultGraph') {
       graphName = 'GPT5OneDefaultGraph';
     } else if (resolvedWorkflow === 'GPT5OneChatGraph') {
