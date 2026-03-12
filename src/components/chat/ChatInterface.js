@@ -128,18 +128,6 @@ const ChatInterface = ({
     }
   }, [messages, safeT, lastProcessedMessageId]);
 
-  // Effect to announce answer ready
-  const [answerAlert, setAnswerAlert] = useState("");
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.sender === "ai" && !lastMessage.error && !isLoading) {
-      const answerText = lastMessage.interaction?.answer?.content || 
-        lastMessage.interaction?.answer?.paragraphs?.join(" ") || "";
-      setAnswerAlert(answerText);
-      setTimeout(() => setAnswerAlert(""), 8000);
-    }
-  }, [messages, isLoading, safeT]);
-
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
   const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
@@ -441,7 +429,7 @@ const ChatInterface = ({
   };
 
   return (
-<div className="chat-container" role="region" aria-label={safeT("homepage.chat.ariaLabel")}>
+<section className="chat-container">
       {/* Show referring URL at the top for review mode */}
       {readOnly && referringUrl && (
         <span className="referring-url-chat">
@@ -904,12 +892,6 @@ const ChatInterface = ({
       <div role="alert" className="sr-only">
         {redactionAlert}
       </div>
-      {/* Live region for answer announcement */}
-      {answerAlert && (
-        <div role="status" aria-live="polite" className="sr-only">
-          {answerAlert}
-        </div>
-      )}
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (
           <div role="alert" className="sr-only">
@@ -922,7 +904,7 @@ const ChatInterface = ({
           <b>{safeT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
         </div>
       )}
-    </div>
+    </section>
 
   );
 };
