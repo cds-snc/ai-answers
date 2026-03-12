@@ -254,7 +254,7 @@
       "responsibleAI": "Responsible AI Principles and Governance"
     },
     "accessibilityUsability": {
-      "title": "Accessibility and Usability",
+      "title": "Accessibility and usability",
       "designRationale": "Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.",
       "testing": "These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.",
       "wcag": "The service meets WCAG 2.1 AA accessibility standards for web content accessibility."
