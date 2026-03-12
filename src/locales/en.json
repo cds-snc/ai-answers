@@ -178,7 +178,8 @@
         "limitReachedHeading": "Limit of 3 questions reached",
         "answerLabel1": "Response",
         "answerLabel2": "Response two",
-        "answerLabel3": "Response three"
+        "answerLabel3": "Response three",
+        "errorHeading": "Error"
       },
       "citation": {
         "confidence": "Confidence:",

@@ -537,6 +537,13 @@ const ChatInterface = ({
                         : "error-box"
                         }`}
                     >
+                      <h3 className="sr-only">
+                        {messages[
+                          messages.findIndex((m) => m.id === message.id) - 1
+                        ]?.redactedText?.includes("XXX")
+                          ? safeT("homepage.chat.messages.warning")
+                          : safeT("homepage.chat.messages.errorHeading")}
+                      </h3>
                       <p
                         className={
                           messages[

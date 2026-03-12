@@ -178,7 +178,8 @@
         "limitReachedHeading": "Limite de 3 questions atteinte",
         "answerLabel1": "Réponse",
         "answerLabel2": "Deuxième réponse",
-        "answerLabel3": "Troisième réponse"
+        "answerLabel3": "Troisième réponse",
+        "errorHeading": "Erreur"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
