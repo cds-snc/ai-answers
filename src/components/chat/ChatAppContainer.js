@@ -187,9 +187,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }, 1000);
 
     statusTimersRef.current = [
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.startingToThink')), 3000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 5000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 7000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.startingToThink')), 5000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 9000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 13000),
     ];
 
     return clearAll;
