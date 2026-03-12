@@ -85,6 +85,7 @@ const ChatInterface = ({
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const prevIsLoadingRef = useRef(false);
   const lastAIMessageRef = useRef(null);
+  const loadingContainerRef = useRef(null);
 
   // Effect to announce redaction warnings immediately
   useEffect(() => {
@@ -152,10 +153,16 @@ const ChatInterface = ({
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // Focus the new AI message when loading completes so screen reader users
-  // read the response in document order (answer → citation → feedback → skip → textarea).
+  // Manage focus across the loading lifecycle so screen reader users are never
+  // stranded on the browser chrome:
+  //   loading starts → focus the loading container (textarea is disabled, focus drops otherwise)
+  //   loading ends   → focus the new AI message to read response in document order
   useEffect(() => {
-    if (prevIsLoadingRef.current && !isLoading) {
+    if (!prevIsLoadingRef.current && isLoading) {
+      if (loadingContainerRef.current) {
+        loadingContainerRef.current.focus();
+      }
+    } else if (prevIsLoadingRef.current && !isLoading) {
       if (lastAIMessageRef.current) {
         lastAIMessageRef.current.focus();
       }
@@ -675,7 +682,13 @@ const ChatInterface = ({
 
         {isLoading && (
           <>
-            <div key="loading" className="loading-container">
+            <div
+              key="loading"
+              className="loading-container"
+              ref={loadingContainerRef}
+              tabIndex={-1}
+              aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
+            >
               <div className="loading-animation"></div>
               <div className="loading-text">
                 {displayStatus && (displayStatus === "thinkingWithContext"
