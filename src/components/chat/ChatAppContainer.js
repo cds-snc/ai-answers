@@ -174,13 +174,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
       if (lastMessage) {
         if (lastMessage.sender === 'ai' && !lastMessage.error) {
-          // AI response
-          const paragraphs = lastMessage.interaction?.answer?.paragraphs || [];
-          const sentences = paragraphs.flatMap(paragraph => extractSentences(paragraph));
-          const plainText = sentences.join(' ');
-          const displayUrl = lastMessage.interaction?.citationUrl || '';
-          const citationHeading = displayUrl ? safeT('homepage.chat.citation.heading') : '';
-          setAriaLiveMessage(`${safeT('homepage.chat.messages.yourAnswerIs')} ${plainText} ${citationHeading} ${displayUrl}`.trim());
+          // Focus management in ChatInterface moves focus to the new AI message,
+          // so the screen reader reads it naturally. Clear the live region to avoid
+          // double-announcing the response.
+          setAriaLiveMessage('');
         } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
           // Redacted user message - announce the redacted text first
           setAriaLiveMessage(lastMessage.text || '');

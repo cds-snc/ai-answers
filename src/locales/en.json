@@ -16,14 +16,6 @@
       "title": "Use with caution",
       "message": "We're upgrading and experiencing a higher volume of errors. Use with caution, for testing only."
     },
-    "textarea": {
-      "title": "Ask your question here.",
-      "ariaLabel": {
-        "first": "This is Canada dot CA AI answers, please enter your question.",
-        "followon": "Ask a follow-up question or reply.",
-        "skipfo": "Skip and ask a follow-up question"
-      }
-    },
     "scroll": {
       "ariaLabel": "Scroll down to view more content.",
       "title": "Scroll down"
@@ -155,7 +147,6 @@
       },
       "messages": {
         "startingToThink": "Generating answer...",
-        "thinking": "Generating answer...",
         "thinkingWithContext": "Deriving answer from search results and department.",
         "thinkingMore": "Generating answer...",
         "limitReached": "You've reached the limit of 3 questions per conversation.\nReload to start a new conversation.",
@@ -193,6 +184,9 @@
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:"
+      },
+      "section": {
+        "heading": "Chat conversation"
       }
     },
     "expertRating": {

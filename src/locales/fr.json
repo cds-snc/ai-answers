@@ -16,13 +16,6 @@
       "title": "À utiliser avec précaution",
       "message": "Nous effectuons une mise à niveau et rencontrons un nombre plus élevé d'erreurs. À utiliser avec précaution, à des fins de test uniquement."
     },
-    "textarea": {
-      "ariaLabel": {
-        "first": "Voici les réponses de Canada point CA, veuillez entrer votre question.",
-        "followon": "Posez une question de suivi ou répondez.",
-        "skipfo": "Passer pour poser une autre question"
-      }
-    },
     "scroll": {
       "ariaLabel": "Faites défiler vers le bas pour voir plus de contenu.",
       "title": "Faites défiler vers le bas"
@@ -154,7 +147,6 @@
       },
       "messages": {
         "startingToThink": "Génération de la réponse...",
-        "thinking": "Génération de la réponse...",
         "thinkingWithContext": "Génération de la réponse à partir de ",
         "thinkingMore": "Génération de la réponse en cours...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
@@ -187,11 +179,14 @@
         "confidence": "Niveau de confiance :",
         "ai": "IA :",
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca",
-        "heading": "Continuez avec ce lien\u00a0:"
+        "heading": "Continuez avec ce lien :"
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :"
+      },
+      "section": {
+        "heading": "Conversation par clavardage"
       }
     },
     "expertRating": {
