@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.109.0](https://github.com/cds-snc/ai-answers/compare/v1.108.0...v1.109.0) (2026-03-12)
+
+
+### Features
+
+* 8 seconds ([f212b82](https://github.com/cds-snc/ai-answers/commit/f212b82e03d6dabcf0f83b2987e0e576b976e497))
+* add back in loading announcement for SR ([ee03e47](https://github.com/cds-snc/ai-answers/commit/ee03e47ccd78b8637cf1218174bcb20ed41051f4))
+* add label for relevant info called out ([9656d79](https://github.com/cds-snc/ai-answers/commit/9656d79642f15c5d5ec6327e47f5f875e92a12f4))
+* back to div ([6ee41f9](https://github.com/cds-snc/ai-answers/commit/6ee41f9ca7f4cb01c399c5746eae6a31b3c3e260))
+* better handling for character count SR ([4b74732](https://github.com/cds-snc/ai-answers/commit/4b7473263470503f841e2b698f0a20f40822c792))
+* change to assertive to prevent textarea label re-reading ([c781dbb](https://github.com/cds-snc/ai-answers/commit/c781dbbc85475c90f05624b8af24652d40a61931))
+* clear form group chatter ([be4ff3d](https://github.com/cds-snc/ai-answers/commit/be4ff3deabaa81204510963ecd1dbb4b05735948))
+* conflicts ([f20c72e](https://github.com/cds-snc/ai-answers/commit/f20c72ebff5574fb00e029cdd9b764588304115a))
+* corrections, sr alert improvements ([44eea2c](https://github.com/cds-snc/ai-answers/commit/44eea2cd8f90ff9fbe9a81db7fe53549077f083d))
+* corrections, sr alert improvements ([4f343ea](https://github.com/cds-snc/ai-answers/commit/4f343eac3f806b413260fc312631c7c92f8445f9))
+* fix blur area? ([22448c9](https://github.com/cds-snc/ai-answers/commit/22448c91ef7dc26746d9b1dde5d11fa748457cac))
+* not working as assertive ([b1f245d](https://github.com/cds-snc/ai-answers/commit/b1f245de77e8213c69ea8e788ce52e6fe70b3713))
+* persistent error in text area if too many characters ([9bbc984](https://github.com/cds-snc/ai-answers/commit/9bbc98472642731578cf3f62b363d3e503495f5a))
+* polite isn't enough, can't hear it while typing ([07ddc0b](https://github.com/cds-snc/ai-answers/commit/07ddc0b384cc7a10e6ddc69c83b3e49273fa4d9f))
+* reset char count on submit ([e6bb31e](https://github.com/cds-snc/ai-answers/commit/e6bb31ee23b6c03b2c24edbf0d18671df0f07c6a))
+* revert blur, will handle differently ([dd40a60](https://github.com/cds-snc/ai-answers/commit/dd40a60e73978961eae36e886f9aa5af07681365))
+* rmv blur ([1de385f](https://github.com/cds-snc/ai-answers/commit/1de385fd928f9ab47346917f7e71a18359cae226))
+* rmv label ([6f73763](https://github.com/cds-snc/ai-answers/commit/6f73763ef832b2b12bd32ccf36d1773f7456b0eb))
+* test ([61f3041](https://github.com/cds-snc/ai-answers/commit/61f3041b7d0aeaa714cb15d8f3bc8a899d4ba4ce))
+* test ([fe539f5](https://github.com/cds-snc/ai-answers/commit/fe539f54a74f6ce838629d40215c7351d99d0b07))
+* try different way ([aca1390](https://github.com/cds-snc/ai-answers/commit/aca139014ca2e93a8a3d5fffd0862fd4b0436b84))
+* try role region ([0481e35](https://github.com/cds-snc/ai-answers/commit/0481e35b868a7b434bf0880140033b2421039d9a))
+
 ## [1.108.0](https://github.com/cds-snc/ai-answers/compare/v1.107.2...v1.108.0) (2026-03-11)
 
 
