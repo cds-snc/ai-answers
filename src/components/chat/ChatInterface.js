@@ -116,15 +116,12 @@ const ChatInterface = ({
 
         if (warningMessage) {
           setLastProcessedMessageId(lastMessage.id);
-          // Announce warning message followed by the original user message
           setTimeout(() => {
             setRedactionAlert(
               `${warningMessage} ${safeT(
                 "homepage.chat.messages.yourQuestionWas"
               )} ${secondLastMessage.text}`
             );
-            // Clear the alert after a moment
-            setTimeout(() => setRedactionAlert(""), 2000);
           }, 500);
         }
       }
@@ -304,10 +301,11 @@ const ChatInterface = ({
     }
   }, [turnCount]);
 
-  // Reset char count on submission
+  // Reset char count on submission, and clear any stale redaction alert
   useEffect(() => {
     if (isLoading) {
       setCharCount(0);
+      setRedactionAlert("");
     }
   }, [isLoading]);
 
@@ -523,8 +521,15 @@ const ChatInterface = ({
                 {message.error ? (
                   message.isSessionTimeout ? (
                     <div className="limit-reached-message">
+                      <h3 className="sr-only">
+                        {safeT("homepage.chat.messages.sessionTimeoutHeading")}
+                      </h3>
                       <p>{message.text}</p>
-                      <button onClick={handleReload} className="btn-primary visible">
+                      <button
+                        onClick={handleReload}
+                        className="btn-primary visible"
+                        aria-label={safeT("homepage.chat.buttons.reloadSessionAriaLabel")}
+                      >
                         {safeT("homepage.chat.buttons.reload")}
                       </button>
                     </div>
@@ -708,6 +713,7 @@ const ChatInterface = ({
               ref={loadingContainerRef}
               tabIndex={-1}
               aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
+              aria-describedby="loading-hint"
             >
               <div className="loading-animation"></div>
               <div className="loading-text">
@@ -717,7 +723,7 @@ const ChatInterface = ({
                   : safeT(`homepage.chat.messages.${displayStatus}`))}
               </div>
             </div>
-            <div className="loading-hint-text">
+            <div className="loading-hint-text" id="loading-hint">
               <img
                 src={aiStarsBlue}
                 className="ai-icon"

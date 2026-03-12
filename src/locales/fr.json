@@ -122,7 +122,8 @@
         "send": "Envoyer",
         "sendDisabledTooLong": "Votre message est trop long, veuillez simplifier votre question.",
         "reload": "Actualiser la page",
-        "reloadAriaLabel": "Recharger la page — limite de 3 questions atteinte"
+        "reloadAriaLabel": "Recharger la page — limite de 3 questions atteinte",
+        "reloadSessionAriaLabel": "Recharger la page — session expirée"
       },
       "options": {
         "title": "Options",
@@ -179,7 +180,8 @@
         "answerLabel1": "Réponse",
         "answerLabel2": "Deuxième réponse",
         "answerLabel3": "Troisième réponse",
-        "errorHeading": "Erreur"
+        "errorHeading": "Erreur",
+        "sessionTimeoutHeading": "Session expirée"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
