@@ -719,6 +719,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                                   viewBox="0 0 22 22"
                                   aria-hidden="true"
                                   className="new-tab-link-icon"
+                                  tabIndex="0"
                                 >
                                   <path
                                     d="M20 2L2 20M20 2H8M20 2V14"
