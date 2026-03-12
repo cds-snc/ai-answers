@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.109.1](https://github.com/cds-snc/ai-answers/compare/v1.109.0...v1.109.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* settings were out of sync ([e85d041](https://github.com/cds-snc/ai-answers/commit/e85d041148f7816e82e67ee6f4c717cf2c19b71d))
+* settings were out of sync ([5e349e8](https://github.com/cds-snc/ai-answers/commit/5e349e8b28b5773948406d3e18bc0f4cac002957))
+
 ## [1.109.0](https://github.com/cds-snc/ai-answers/compare/v1.108.0...v1.109.0) (2026-03-12)
 
 
