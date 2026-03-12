@@ -175,8 +175,10 @@
         "shortQueryDetails": "Try again with more details, or use this link to search Canada.ca for the words you entered.",
         "shortQuerySearch": "Canada.ca search",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
-        "answerLabel": "Answer",
-        "limitReachedHeading": "Limit of 3 questions reached"
+        "limitReachedHeading": "Limit of 3 questions reached",
+        "answerLabel1": "Response",
+        "answerLabel2": "Response two",
+        "answerLabel3": "Response three"
       },
       "citation": {
         "confidence": "Confidence:",

@@ -432,14 +432,14 @@ const ChatInterface = ({
         <div className="message-list" role="log" aria-live="off">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
-          const showAnswerNumbers = nonErrorAIMessages.length > 1;
+          const answerLabelKeys = ['answerLabel1', 'answerLabel2', 'answerLabel3'];
           return messages.map((message) => {
           const isLastAIMessage =
             message.sender === "ai" &&
             !message.error &&
             message.id === nonErrorAIMessages[nonErrorAIMessages.length - 1]?.id;
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
-            ? nonErrorAIMessages.findIndex(m => m.id === message.id) + 1
+            ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
           return (
           <div
@@ -449,9 +449,9 @@ const ChatInterface = ({
             ref={isLastAIMessage ? lastAIMessageRef : null}
             tabIndex={isLastAIMessage ? -1 : undefined}
           >
-            {message.sender === "ai" && !message.error && showAnswerNumbers && aiAnswerIndex !== null && (
+            {message.sender === "ai" && !message.error && aiAnswerIndex !== null && (
               <h3 className="sr-only">
-                {safeT("homepage.chat.messages.answerLabel")} {aiAnswerIndex}
+                {safeT(`homepage.chat.messages.${answerLabelKeys[aiAnswerIndex]}`)}
               </h3>
             )}
             {message.sender === "user" ? (
