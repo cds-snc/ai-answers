@@ -429,7 +429,7 @@ const ChatInterface = ({
         <h2 id="chat-section-heading" className="sr-only">
           {safeT("homepage.chat.section.heading")}
         </h2>
-        <div className="message-list" role="list">
+        <div className="message-list" role="log" aria-live="off">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
           const showAnswerNumbers = nonErrorAIMessages.length > 1;
@@ -446,7 +446,6 @@ const ChatInterface = ({
             key={`message-${message.id}`}
             id={message.id ? `interactionId${message.id}` : undefined}
             className={`message ${message.sender}`}
-            role="listitem"
             ref={isLastAIMessage ? lastAIMessageRef : null}
             tabIndex={isLastAIMessage ? -1 : undefined}
           >
@@ -727,7 +726,7 @@ const ChatInterface = ({
         )}
 
         {!readOnly && turnCount >= MAX_CONVERSATION_TURNS && (
-          <div key="limit-reached" className="message ai" role="listitem">
+          <div key="limit-reached" className="message ai">
             <div className="limit-reached-message">
               <h3 className="sr-only">
                 {safeT("homepage.chat.messages.limitReachedHeading")}
