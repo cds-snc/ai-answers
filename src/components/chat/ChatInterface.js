@@ -130,7 +130,7 @@ const ChatInterface = ({
 
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
-  // const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
+  const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
   const textareaRef = useRef(null);
   const charCountAlertTimer = useRef(null);
 
@@ -151,36 +151,36 @@ const ChatInterface = ({
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // useEffect(() => {
-  //   const handleCitationAppearance = () => {
-  //     if (textareaRef.current && !userHasClickedTextarea) {
-  //       textareaRef.current.blur();
-  //     }
-  //   };
+  useEffect(() => {
+    const handleCitationAppearance = () => {
+      if (textareaRef.current && !userHasClickedTextarea) {
+        textareaRef.current.blur();
+      }
+    };
 
-  //   const observer = new MutationObserver((mutations) => {
-  //     for (const mutation of mutations) {
-  //       if (mutation.addedNodes.length) {
-  //         for (const node of mutation.addedNodes) {
-  //           if (
-  //             node.classList &&
-  //             node.classList.contains("citation-container")
-  //           ) {
-  //             handleCitationAppearance();
-  //             break;
-  //           }
-  //         }
-  //       }
-  //     }
-  //   });
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length) {
+          for (const node of mutation.addedNodes) {
+            if (
+              node.classList &&
+              node.classList.contains("citation-container")
+            ) {
+              handleCitationAppearance();
+              break;
+            }
+          }
+        }
+      }
+    });
 
-  //   observer.observe(document.body, {
-  //     childList: true,
-  //     subtree: true,
-  //   });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
 
-  //   return () => observer.disconnect();
-  // }, [userHasClickedTextarea]);
+    return () => observer.disconnect();
+  }, [userHasClickedTextarea]);
 
   useEffect(() => {
     const textarea = document.querySelector("#message");
@@ -409,7 +409,7 @@ const ChatInterface = ({
   };
 
   const handleTextareaClick = () => {
-    // setUserHasClickedTextarea(true);
+    setUserHasClickedTextarea(true);
     setIsTextareaFocused(true);
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -418,10 +418,10 @@ const ChatInterface = ({
 
   const handleTextareaBlur = () => {
     setIsTextareaFocused(false);
-    // const chatContainer = document.querySelector(".chat-container");
-    // if (!chatContainer.contains(document.activeElement)) {
-    //   setUserHasClickedTextarea(false);
-    // }
+    const chatContainer = document.querySelector(".chat-container");
+    if (!chatContainer.contains(document.activeElement)) {
+      setUserHasClickedTextarea(false);
+    }
   };
 
   const handleTextareaFocus = () => {
