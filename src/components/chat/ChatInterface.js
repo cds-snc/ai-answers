@@ -429,19 +429,32 @@ const ChatInterface = ({
         <h2 id="chat-section-heading" className="sr-only">
           {safeT("homepage.chat.section.heading")}
         </h2>
-        <div className="message-list" role="log" aria-live="off">
-        {messages.map((message) => {
+        <div className="message-list" role="list">
+        {(() => {
+          const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
+          const showAnswerNumbers = nonErrorAIMessages.length > 1;
+          return messages.map((message) => {
           const isLastAIMessage =
             message.sender === "ai" &&
             !message.error &&
-            message.id === messages.filter(m => m.sender === "ai" && !m.error).slice(-1)[0]?.id;
+            message.id === nonErrorAIMessages[nonErrorAIMessages.length - 1]?.id;
+          const aiAnswerIndex = (message.sender === "ai" && !message.error)
+            ? nonErrorAIMessages.findIndex(m => m.id === message.id) + 1
+            : null;
           return (
           <div
             key={`message-${message.id}`}
             id={message.id ? `interactionId${message.id}` : undefined}
             className={`message ${message.sender}`}
-            {...(isLastAIMessage && { tabIndex: -1, ref: lastAIMessageRef })}
+            role="listitem"
+            ref={isLastAIMessage ? lastAIMessageRef : null}
+            tabIndex={isLastAIMessage ? -1 : undefined}
           >
+            {message.sender === "ai" && !message.error && showAnswerNumbers && aiAnswerIndex !== null && (
+              <h3 className="sr-only">
+                {safeT("homepage.chat.messages.answerLabel")} {aiAnswerIndex}
+              </h3>
+            )}
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${message.redactedText?.includes("XXX")
@@ -678,7 +691,8 @@ const ChatInterface = ({
             )}
           </div>
           );
-        })}
+        });
+        })()}
 
         {isLoading && (
           <>
@@ -713,14 +727,21 @@ const ChatInterface = ({
         )}
 
         {!readOnly && turnCount >= MAX_CONVERSATION_TURNS && (
-          <div key="limit-reached" className="message ai">
+          <div key="limit-reached" className="message ai" role="listitem">
             <div className="limit-reached-message">
+              <h3 className="sr-only">
+                {safeT("homepage.chat.messages.limitReachedHeading")}
+              </h3>
               <p>
                 {safeT("homepage.chat.messages.limitReached", {
                   count: MAX_CONVERSATION_TURNS,
                 })}
               </p>
-              <button onClick={handleReload} className="btn-primary visible">
+              <button
+                onClick={handleReload}
+                className="btn-primary visible"
+                aria-label={safeT("homepage.chat.buttons.reloadAriaLabel")}
+              >
                 {safeT("homepage.chat.buttons.reload")}
               </button>
             </div>

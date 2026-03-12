@@ -121,7 +121,8 @@
       "buttons": {
         "send": "Envoyer",
         "sendDisabledTooLong": "Votre message est trop long, veuillez simplifier votre question.",
-        "reload": "Actualiser la page"
+        "reload": "Actualiser la page",
+        "reloadAriaLabel": "Recharger la page — limite de 3 questions atteinte"
       },
       "options": {
         "title": "Options",
@@ -173,7 +174,9 @@
         "shortQueryMessage": "Votre question était trop courte.",
         "shortQueryDetails": "Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer pour les mots que vous avez saisis.",
         "shortQuerySearch": "Recherche Canada.ca",
-        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion."
+        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
+        "answerLabel": "Réponse",
+        "limitReachedHeading": "Limite de 3 questions atteinte"
       },
       "citation": {
         "confidence": "Niveau de confiance :",

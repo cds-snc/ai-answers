@@ -109,6 +109,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
   // Add this new state to prevent multiple loading announcements
   const [loadingAnnounced, setLoadingAnnounced] = useState(false);
+  // Increments every 3s while loading to force AT re-announcement of the same status text
+  const [announcementKey, setAnnouncementKey] = useState(0);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -203,6 +205,25 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       }
     }
   }, [isLoading, displayStatus, messages, t, selectedDepartment, safeT, loadingAnnounced]);
+
+  // Re-announce the current loading status every 3 seconds so users on slow
+  // connections know processing is still ongoing.
+  useEffect(() => {
+    if (!isLoading) return;
+    const interval = setInterval(() => {
+      setAnnouncementKey(k => k + 1);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  // Announce when the conversation limit is reached (polite, non-interruptive).
+  useEffect(() => {
+    if (turnCount >= MAX_CONVERSATION_TURNS) {
+      setTimeout(() => {
+        setAriaLiveMessage(safeT('homepage.chat.messages.limitReachedHeading'));
+      }, 500);
+    }
+  }, [turnCount, MAX_CONVERSATION_TURNS, safeT]);
 
   const currentRequestId = useRef(null);
 
@@ -913,7 +934,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         role="status"
         style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
       >
-        {ariaLiveMessage}
+        <span key={isLoading ? announcementKey : 'static'}>{ariaLiveMessage}</span>
       </div>
     </>
   );

@@ -121,7 +121,8 @@
       "buttons": {
         "send": "Send",
         "sendDisabledTooLong": "Your message is too long, please shorten your question.",
-        "reload": "Reload page"
+        "reload": "Reload page",
+        "reloadAriaLabel": "Reload page - limit of 3 questions reached"
       },
       "options": {
         "title": "Options",
@@ -173,7 +174,9 @@
         "shortQueryMessage": "Your question was too short.",
         "shortQueryDetails": "Try again with more details, or use this link to search Canada.ca for the words you entered.",
         "shortQuerySearch": "Canada.ca search",
-        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat."
+        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
+        "answerLabel": "Answer",
+        "limitReachedHeading": "Limit of 3 questions reached"
       },
       "citation": {
         "confidence": "Confidence:",
