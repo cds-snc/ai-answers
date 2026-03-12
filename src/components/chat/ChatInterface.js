@@ -429,7 +429,7 @@ const ChatInterface = ({
   };
 
   return (
-<section className="chat-container">
+<div className="chat-container">
       {/* Show referring URL at the top for review mode */}
       {readOnly && referringUrl && (
         <span className="referring-url-chat">
@@ -904,7 +904,7 @@ const ChatInterface = ({
           <b>{safeT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
         </div>
       )}
-    </section>
+    </div>
 
   );
 };
