@@ -129,8 +129,10 @@ const ChatInterface = ({
   }, [messages, safeT, lastProcessedMessageId]);
 
   const [charCount, setCharCount] = useState(0);
+  const [charCountAlert, setCharCountAlert] = useState("");
   const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
   const textareaRef = useRef(null);
+  const charCountAlertTimer = useRef(null);
 
   // Function to focus textarea when skip button is clicked
   const focusTextarea = () => {
@@ -315,6 +317,13 @@ const ChatInterface = ({
     }
   }, [turnCount]);
 
+  // Reset char count on submission
+  useEffect(() => {
+    if (isLoading) {
+      setCharCount(0);
+    }
+  }, [isLoading]);
+
   const getLabelForInput = () => {
     if (turnCount >= 1) {
       const followUp = t("homepage.chat.input.followUp");
@@ -351,8 +360,25 @@ const ChatInterface = ({
 
   const handleTextareaInput = (event) => {
     const textarea = event.target;
-    setCharCount(textarea.value.length);
+    const newCount = textarea.value.length;
+    setCharCount(newCount);
     handleInputChange(event);
+
+    if (newCount > MAX_CHARS) {
+      clearTimeout(charCountAlertTimer.current);
+      charCountAlertTimer.current = setTimeout(() => {
+        setCharCountAlert(
+          safeT("homepage.chat.messages.characterLimit")
+            .replace("{count}", Math.max(1, newCount - MAX_CHARS))
+            .replace("{unit}", newCount - MAX_CHARS === 1
+              ? safeT("homepage.chat.messages.character")
+              : safeT("homepage.chat.messages.characters"))
+        );
+        setTimeout(() => setCharCountAlert(""), 1000);
+      }, 500);
+    } else {
+      setCharCountAlert("");
+    }
 
     // Auto-resize
     textarea.style.height = "auto";
@@ -363,10 +389,19 @@ const ChatInterface = ({
     if (event.key === "Enter") {
       if (event.shiftKey) return;
 
-      if (inputText.trim().length === 0 || charCount > MAX_CHARS) {
-        event.preventDefault();
-        return;
-      }
+      if (charCount > MAX_CHARS) {
+          event.preventDefault();
+          setCharCountAlert("");
+          setTimeout(() => {
+            setCharCountAlert(safeT("homepage.chat.buttons.sendDisabledTooLong"));
+          }, 50);
+          return;
+        }
+
+        if (inputText.trim().length === 0) {
+          event.preventDefault();
+          return;
+        }
 
       event.preventDefault();
       handleSendMessage(event);
@@ -394,7 +429,7 @@ const ChatInterface = ({
   };
 
   return (
-    <div className="chat-container">
+<div className="chat-container">
       {/* Show referring URL at the top for review mode */}
       {readOnly && referringUrl && (
         <span className="referring-url-chat">
@@ -654,6 +689,10 @@ const ChatInterface = ({
 
         {isLoading && (
           <>
+            {/* Screen reader announcement - only announces initial thinking state */}
+            <div role="status" aria-live="polite" className="sr-only">
+              {displayStatus === "thinking" ? safeT("homepage.chat.messages.thinking") : ""}
+            </div>
             <div key="loading" className="loading-container">
               <div className="loading-animation"></div>
               <div className="loading-text">
@@ -783,8 +822,10 @@ const ChatInterface = ({
                       charCount > MAX_CHARS ||
                       inputText.trim().length === 0
                     }
-                    aria-label={
-                      safeT("homepage.chat.buttons.send") || "Send message"
+                   aria-label={
+                      charCount > MAX_CHARS
+                        ? safeT("homepage.chat.buttons.sendDisabledTooLong")
+                        : safeT("homepage.chat.buttons.send")
                     }
                   >
                     <span className="button-text">
@@ -851,6 +892,12 @@ const ChatInterface = ({
       <div role="alert" className="sr-only">
         {redactionAlert}
       </div>
+      {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
+        {charCountAlert && (
+          <div role="alert" className="sr-only">
+            {charCountAlert}
+          </div>
+        )}
       {/* Show chat date at bottom for review mode */}
       {readOnly && chatCreatedAt && (
         <div className="admin-date">

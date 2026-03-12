@@ -20,8 +20,8 @@
       "title": "Ask your question here.",
       "ariaLabel": {
         "first": "This is Canada dot CA AI answers, please enter your question.",
-        "followon": "Ask a follow-on question or reply.",
-        "skipfo": "Skip and ask a follow-on question"
+        "followon": "Ask a follow-up question or reply.",
+        "skipfo": "Skip and ask a follow-up question"
       }
     },
     "scroll": {
@@ -122,12 +122,13 @@
         "title": "Ask your question here.",
         "ariaLabel": {
           "first": "Ask a Canada dot CA question",
-          "followon": "Ask a follow-on question or reply",
-          "skipfo": "Skip to ask follow-on question"
+          "followon": "Ask a follow-up question or reply",
+          "skipfo": "Skip to ask follow-up question"
         }
       },
       "buttons": {
         "send": "Send",
+        "sendDisabledTooLong": "Your message is too long, please shorten your question.",
         "reload": "Reload page"
       },
       "options": {
