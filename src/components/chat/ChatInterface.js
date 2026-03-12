@@ -713,7 +713,6 @@ const ChatInterface = ({
               ref={loadingContainerRef}
               tabIndex={-1}
               aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
-              aria-describedby="loading-hint"
             >
               <div className="loading-animation"></div>
               <div className="loading-text">
@@ -778,7 +777,7 @@ const ChatInterface = ({
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
         <div className="input-area mt-200">
           {!isLoading && (
-            <form className="mrgn-tp-xl mrgn-bttm-lg">
+            <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
                 <label
                   htmlFor="message"

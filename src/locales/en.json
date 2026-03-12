@@ -177,9 +177,9 @@
         "shortQuerySearch": "Canada.ca search",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
         "limitReachedHeading": "Limit of 3 questions reached",
-        "answerLabel1": "Response",
-        "answerLabel2": "Response two",
-        "answerLabel3": "Response three",
+        "answerLabel1": "Your answer is,",
+        "answerLabel2": "Your answer 2 is,",
+        "answerLabel3": "Your answer 3 is,",
         "errorHeading": "Error",
         "sessionTimeoutHeading": "Session expired"
       },

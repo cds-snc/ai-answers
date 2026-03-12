@@ -177,9 +177,9 @@
         "shortQuerySearch": "Recherche Canada.ca",
         "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
         "limitReachedHeading": "Limite de 3 questions atteinte",
-        "answerLabel1": "Réponse",
-        "answerLabel2": "Deuxième réponse",
-        "answerLabel3": "Troisième réponse",
+        "answerLabel1": "Votre réponse est,",
+        "answerLabel2": "Votre réponse 2 est,",
+        "answerLabel3": "Votre réponse 3 est,",
         "errorHeading": "Erreur",
         "sessionTimeoutHeading": "Session expirée"
       },
