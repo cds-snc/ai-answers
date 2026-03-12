@@ -216,15 +216,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // Announce when the conversation limit is reached (polite, non-interruptive).
-  useEffect(() => {
-    if (turnCount >= MAX_CONVERSATION_TURNS) {
-      setTimeout(() => {
-        setAriaLiveMessage(safeT('homepage.chat.messages.limitReachedHeading'));
-      }, 500);
-    }
-  }, [turnCount, MAX_CONVERSATION_TURNS, safeT]);
-
   const currentRequestId = useRef(null);
 
   const processNextStatus = useCallback(() => {
