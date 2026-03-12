@@ -107,11 +107,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Add a ref to track if we're currently typing
   const isTyping = useRef(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
-  // Tracks the text currently being repeated so the interval doesn't need to re-run on status changes
-  const currentStatusRef = useRef('');
-  // Counts how many times the current status has been repeated (max 3)
-  const repeatCountRef = useRef(0);
   const hintTimerRef = useRef(null);
+  const statusTimersRef = useRef([]);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -164,55 +161,49 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     setTimeout(() => setAriaLiveMessage(text), 100);
   }, []);
 
-  // Announce status changes during loading.
-  // Skip moderatingQuestion — the aria-label on the loading container reads it when focus lands.
+  // Timed loading announcements while in moderatingQuestion phase:
+  // 1s  — hint text
+  // 3s  — "Generating answer..." (startingToThink)
+  // 5s  — "Still thinking..."   (thinkingMore)
+  // 7s  — "Still thinking..."   (thinkingMore repeat)
+  // All timers are cancelled if status advances or loading ends.
   useEffect(() => {
-    if (!isLoading) return;
-    if (displayStatus === 'moderatingQuestion') return;
-    const statusText = safeT(`homepage.chat.messages.${displayStatus}`);
-    currentStatusRef.current = statusText;
-    repeatCountRef.current = 0;
-    announceToLiveRegion(statusText);
-  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
-
-  // Announce loading hint via live region ~1s after loading starts, giving the
-  // aria-label on the loading container time to be read by AT first.
-  useEffect(() => {
-    if (!isLoading) {
-      if (hintTimerRef.current) {
-        clearTimeout(hintTimerRef.current);
-        hintTimerRef.current = null;
-      }
-      return;
-    }
-    hintTimerRef.current = setTimeout(() => {
-      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
-    }, 1000);
-    return () => {
+    const clearAll = () => {
+      statusTimersRef.current.forEach(id => clearTimeout(id));
+      statusTimersRef.current = [];
       if (hintTimerRef.current) {
         clearTimeout(hintTimerRef.current);
         hintTimerRef.current = null;
       }
     };
-  }, [isLoading, safeT, announceToLiveRegion]);
 
-  // Repeat the current status every 3s while loading, up to 3 times per status.
+    if (!isLoading || displayStatus !== 'moderatingQuestion') {
+      clearAll();
+      return;
+    }
+
+    hintTimerRef.current = setTimeout(() => {
+      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
+    }, 1000);
+
+    statusTimersRef.current = [
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.startingToThink')), 3000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 5000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 7000),
+    ];
+
+    return clearAll;
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+
+  // Announce other status changes immediately when they occur.
   useEffect(() => {
-    if (!isLoading) return;
-    const interval = setInterval(() => {
-      if (currentStatusRef.current && repeatCountRef.current < 3) {
-        repeatCountRef.current += 1;
-        setAriaLiveMessage('');
-        setTimeout(() => setAriaLiveMessage(currentStatusRef.current), 100);
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isLoading]);
+    if (!isLoading || displayStatus === 'moderatingQuestion') return;
+    announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
 
   // Announce outcomes once loading ends.
   useEffect(() => {
     if (isLoading) return;
-    currentStatusRef.current = '';
 
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage) return;

@@ -148,9 +148,9 @@
         }
       },
       "messages": {
-        "startingToThink": "Generating answer...",
+        "startingToThink": "Thinking...",
         "thinkingWithContext": "Deriving answer from search results and department.",
-        "thinkingMore": "Generating answer...",
+        "thinkingMore": "Still thinking...",
         "limitReached": "You've reached the limit of 3 questions per conversation.\nReload to start a new conversation.",
         "error": "Sorry, we're having a problem connecting to the service right now. Please try again in a few minutes.",
         "blockedContent": "Your question used words or emojis that aren't accepted. Please ask it differently below.",
