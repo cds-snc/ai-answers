@@ -85,6 +85,7 @@ const ChatInterface = ({
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const prevIsLoadingRef = useRef(false);
   const lastAIMessageRef = useRef(null);
+  const lastErrorRef = useRef(null);
   const loadingContainerRef = useRef(null);
 
   // Effect to announce redaction warnings immediately
@@ -160,7 +161,9 @@ const ChatInterface = ({
         loadingContainerRef.current.focus();
       }
     } else if (prevIsLoadingRef.current && !isLoading) {
-      if (lastAIMessageRef.current) {
+      if (lastErrorRef.current) {
+        lastErrorRef.current.focus();
+      } else if (lastAIMessageRef.current) {
         lastAIMessageRef.current.focus();
       }
     }
@@ -439,6 +442,8 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
+          const isLastErrorMessage =
+            message.error && message.id === messages[messages.length - 1]?.id;
           return (
           <div
             key={`message-${message.id}`}
@@ -520,7 +525,11 @@ const ChatInterface = ({
               <>
                 {message.error ? (
                   message.isSessionTimeout ? (
-                    <div className="limit-reached-message">
+                    <div
+                      className="limit-reached-message"
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
+                    >
                       <h3 className="sr-only">
                         {safeT("homepage.chat.messages.sessionTimeoutHeading")}
                       </h3>
@@ -541,6 +550,8 @@ const ChatInterface = ({
                         ? "privacy-error-box"
                         : "error-box"
                         }`}
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
                       <h3 className="sr-only">
                         {messages[
