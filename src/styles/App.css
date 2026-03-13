@@ -1,5 +1,10 @@
 /* Add Font Awesome CSS import at the top */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
+/* Suppress focus ring on programmatically focused elements (tabindex="-1").
+   These are never reachable via keyboard tab so removing the outline is safe. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
 /* temp fix spacing shenangians */
 .user-message-box p,
 .chat-id p {
