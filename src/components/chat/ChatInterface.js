@@ -454,7 +454,7 @@ const ChatInterface = ({
                       <h3 className="sr-only">
                         {safeT("homepage.chat.messages.warning")}
                       </h3>
-                      <p className="sr-only">{safeT("homepage.chat.messages.yourQuestionWas")} {message.redactedText}</p>
+                      <p className="privacy-message">{safeT("homepage.chat.messages.yourQuestionWas")} {message.redactedText}</p>
                       <p className="privacy-preview" aria-hidden="true">
                         <FontAwesomeIcon icon="fa-circle-exclamation" />{" "}
                         {safeT("homepage.chat.messages.privacyMessage")}
