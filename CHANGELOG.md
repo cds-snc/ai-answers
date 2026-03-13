@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.111.0](https://github.com/cds-snc/ai-answers/compare/v1.110.0...v1.111.0) (2026-03-13)
+
+
+### Features
+
+* CSS for programmatic focus elements ([d740139](https://github.com/cds-snc/ai-answers/commit/d7401397e06981398654ae4857c19313533e1816))
+* CSS for programmatic focus elements ([1bb8047](https://github.com/cds-snc/ai-answers/commit/1bb8047498f88e6ef575f5d789ce9ec1f0e9a4e9))
+* improve short query search link with query text ([8019136](https://github.com/cds-snc/ai-answers/commit/80191364dcd2bb9cb1320ea3389835c169ac86c9))
+* tighten text ([a67db56](https://github.com/cds-snc/ai-answers/commit/a67db56d0962e82074f6a957377e9f02bfa04b41))
+* timing of messages ([20c9118](https://github.com/cds-snc/ai-answers/commit/20c911863830c487e88ade997c031cf987a6f83b))
+
 ## [1.110.0](https://github.com/cds-snc/ai-answers/compare/v1.109.1...v1.110.0) (2026-03-13)
 
 
