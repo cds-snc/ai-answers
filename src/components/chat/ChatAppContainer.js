@@ -555,6 +555,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 text: safeT('homepage.chat.messages.blockedContent'),
                 sender: 'system',
                 error: true,
+                isRedactionError: true,
                 ...(error.historySignature ? { historySignature: error.historySignature } : {})
               }
             ]);

@@ -480,7 +480,7 @@ const ChatInterface = ({
             ) : (
               <>
                 {message.error ? (
-                  message.isRedactionError ? (
+                  message.isRedactionError && message.redactedText ? (
                     <div
                       className={`error-message-box ${message.redactedText?.includes("XXX") ? "privacy-error-box" : "error-box"}`}
                       ref={isLastErrorMessage ? lastErrorRef : null}
