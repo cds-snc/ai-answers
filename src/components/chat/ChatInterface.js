@@ -262,11 +262,10 @@ const ChatInterface = ({
     }
   }, [turnCount]);
 
-  // Reset char count on submission, and clear any stale redaction alert
+  // Reset char count on submission
   useEffect(() => {
     if (isLoading) {
       setCharCount(0);
-      setRedactionAlert("");
     }
   }, [isLoading]);
 
