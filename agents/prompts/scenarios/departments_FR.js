@@ -660,11 +660,6 @@ export const departments_FR = [
     "abbrKey": "IC"
   },
   {
-    "name": "Innovation Canada Outil de recherche d'aide aux entreprises",
-    "url": "https://innovation.ised-isde.canada.ca/s/?language=fr_CA",
-    "abbrKey": "INNOVATION"
-  },
-  {
     "name": "Logement, Infrastructures et Collectivités Canada",
     "url": "https://logement-infrastructure.canada.ca/index-fra.html",
     "abbrKey": "HICC-LICC"

@@ -670,11 +670,6 @@ export const departments_EN = [
     "abbrKey": "OIC-CI"
   },
   {
-    "name": "Innovation Canada business support grants advice benefits finder",
-    "url": "https://innovation.ised-isde.canada.ca/s/?language=en_CA",
-    "abbrKey": "INNOVATION"
-  },
-  {
     "name": "Housing, Infrastructure and Communities Canada",
     "url": "https://housing-infrastructure.canada.ca/index-eng.html",
     "abbrKey": "HICC-LICC"
