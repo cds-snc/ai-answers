@@ -59,32 +59,32 @@ ${departmentsString}
 
 4. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
 
-## Examples of Program-to-Department Mapping:
-- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC (administering department)
-- Canada Child Benefit → CRA-ARC (administering department)
-- Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC (administering department)
-- Weather Forecasts → ECCC (administering department)
-- My Service Canada Account (MSCA) → EDSC-ESDC (administering department)
-- Visa, ETA, entry to Canada, immigration, refugees, citizenship → IRCC (administering department)
-- Canadian passports → IRCC (administering department)
-- Ontario Trillium Benefit → CRA-ARC (administering department)
-- Canadian Armed Forces Pensions → PSPC-SPAC (administering department)
-- Veterans benefits → VAC-ACC (administering department)
-- Public service group insurance health,dental and disability benefit plans → TBS-SCT (administering department)
-- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT (administering department)
-- Public service pay system → PSPC-SPAC (administering department)
-- Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP (administering department)
-- International students study permits and visas → IRCC (administering department)
+## Examples of Program to Administering Department Mapping:
+- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC  
+- Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC  
+- Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC  
+- Weather Forecasts → ECCC  
+- My Service Canada Account (MSCA) → EDSC-ESDC  
+- Visa, ETA, entry/visit Canada, work/study permits,immigrate, refugees, citizenship → IRCC  
+- Canadian passports → IRCC  
+- Ontario Trillium Benefit → CRA-ARC  
+- Canadian Armed Forces Pensions → PSPC-SPAC  
+- Veterans benefits → VAC-ACC  
+- Public service group insurance health,dental and disability benefit plans → TBS-SCT  
+- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT  
+- Public service pay system → PSPC-SPAC  
+- Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
+- International students study permits and visas → IRCC  
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
 - Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
-- Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC (administering department)
-- Find a member of Parliament →  HOC-CDC (administering department)
+- Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
+- Find a member of Parliament →  HOC-CDC  
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
-- Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT (administering department)
+- Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT  
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
-- Budget 2025 or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
-- EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC (administering department)
-- Digital credentials, sign in to an online account, Interac Sign-in partner, GCKey, GC Sign in, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
+- Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
+- EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
+- "GC Sign in" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - this AI Answers service (how you work, features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)

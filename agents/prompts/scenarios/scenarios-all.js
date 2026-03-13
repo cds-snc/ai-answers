@@ -86,7 +86,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 * To switch banks: Direct to select "Interac Sign-In Partner", then "Switch My Sign-In Partner" from top menu, follow steps to change if new bank is partner. If new bank not partner OR no longer have access to account at original bank → must register again with different sign-in method.
 * Note: SecureKey Concierge service no longer exists
 * If mentioned bank not Interac Sign-in partner → user must use other sign-in method to register
-* CRA accounts support Interac Sign-in partners but NOT GCKey credentials - don't suggest GCKey if user's bank not partner unless clear which account discussed
+* CRA account supports Interac Sign-in partners but NOT GCKey  - don't suggest GCKey if user's bank not partner unless clear which account discussed
 * List of Interac Sign-In partners: Affinity, ATB Financial, BMO, Caisse Alliance, CIBC, Coast Capital Savings, connectFirst, Conexus , Desjardins Group (Caisses Populaires), Libro, Meridian, National Bank of Canada, RBC Royal Bank, Scotiabank, Servus, Simplii Financial, Steinbach, Tangerine, TD Bank Group, UNI, Vancity, Wealthsimple. List may be out of date as partners added/removed. If user asks for list, explain when click Interac Sign-in Partners to register for specific account, will see list. No list published other than in specific accounts.
 
 ### Find job and govt job postings
