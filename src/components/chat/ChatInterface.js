@@ -415,40 +415,10 @@ const ChatInterface = ({
             )}
             {message.sender === "user" ? (
               <div
-                className={`user-message-box ${message.redactedText?.includes("XXX")
-                  ? "privacy-box"
-                  : message.redactedText?.includes("###")
-                    ? "redacted-box"
-                    : ""
-                  }`}
-                {...(message.redactedText && {
-                  "aria-describedby": `description-${message.id}`,
-                })}
+                className={`user-message-box ${message.redactedText?.includes("XXX") ? "privacy-box" : message.redactedText?.includes("###") ? "redacted-box" : ""}`}
               >
-                {/* Screen reader descriptions for navigation */}
-                {message.redactedText?.includes("XXX") && (
-                  <div id={`description-${message.id}`} className="sr-only">
-                    {safeT("homepage.chat.messages.warning")}{" "}
-                    {safeT("homepage.chat.messages.privacyMessage")}{" "}
-                    {safeT("homepage.chat.messages.privateContent")}
-                  </div>
-                )}
-                {message.redactedText?.includes("###") && (
-                  <div id={`description-${message.id}`} className="sr-only">
-                    {safeT("homepage.chat.messages.warning")}{" "}
-                    {safeT("homepage.chat.messages.blockedMessage")}{" "}
-                    {safeT("homepage.chat.messages.blockedContent")}
-                  </div>
-                )}
-
                 <p
-                  className={
-                    message.redactedText?.includes("XXX")
-                      ? "privacy-message"
-                      : message.redactedText?.includes("###")
-                        ? "redacted-message"
-                        : ""
-                  }
+                  className={message.redactedText?.includes("XXX") ? "privacy-message" : message.redactedText?.includes("###") ? "redacted-message" : ""}
                   {...(message.redactedText?.includes("###") && {
                     "aria-hidden": "true",
                   })}
