@@ -216,11 +216,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     } else if (lastMessage.sender === 'user' && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
     } else if (lastMessage.error) {
-      // Brief assertive alert to chime and signal an error arrived, even if the user wandered off.
-      // Focus management handles reading the full content — this is just the attention signal.
-      const cue = safeT('homepage.chat.messages.chatIssue');
-      setErrorAlert(cue);
-      setTimeout(() => setErrorAlert(''), 1000);
+      // Only fire alert if focus has drifted outside the chat — focus management handles the in-situ case.
+      const chatEl = document.querySelector('.chat-container');
+      if (!chatEl?.contains(document.activeElement)) {
+        const cue = safeT('homepage.chat.messages.chatIssue');
+        setErrorAlert(cue);
+        setTimeout(() => setErrorAlert(''), 1000);
+      }
     }
   }, [isLoading, messages, safeT]);
 
@@ -516,22 +518,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         }
         if (error instanceof RedactionError) {
           if (error.redactedText.includes('XXX')) {
-            // Privacy (XXX): user bubble shows the question, system bubble shows the warning with SR context
-            const userMessageId = messageIdCounter.current++;
-            const privacyMessageId = messageIdCounter.current++;
+            // Privacy (XXX): single combined system bubble — one bounding box for question + warning
+            const redactionMessageId = messageIdCounter.current++;
             setMessages(prevMessages => [
               ...prevMessages.slice(0, -1),
               {
-                id: userMessageId,
-                text: error.redactedText,
+                id: redactionMessageId,
                 redactedText: error.redactedText,
                 redactedItems: error.redactedItems,
-                sender: 'user',
-                error: true
-              },
-              {
-                id: privacyMessageId,
-                redactedText: error.redactedText,
                 text: safeT('homepage.chat.messages.privateContent'),
                 sender: 'system',
                 error: true,
@@ -559,6 +553,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 sender: 'system',
                 error: true,
                 isRedactionError: true,
+                isBlockedError: true,
                 ...(error.historySignature ? { historySignature: error.historySignature } : {})
               }
             ]);
@@ -962,10 +957,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         {ariaLiveMessage}
       </div>
       {errorAlert && (
-        <div
-          role="alert"
-          className="sr-only"
-        >
+        <div role="alert" className="sr-only">
           {errorAlert}
         </div>
       )}

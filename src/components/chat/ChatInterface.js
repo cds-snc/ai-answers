@@ -425,16 +425,27 @@ const ChatInterface = ({
                 >
                   {message.text}
                 </p>
-                {message.redactedText?.includes("###") && (
-                  <p className="redacted-preview" aria-hidden="true">
-                    {safeT("homepage.chat.messages.blockedMessage")}
-                  </p>
-                )}
               </div>
             ) : (
               <>
                 {message.error ? (
-                  message.isRedactionError && message.redactedText ? (
+                  message.isBlockedError ? (
+                    <div
+                      className="error-message-box blocked-error-box"
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
+                    >
+                      <h3 className="sr-only">
+                        {safeT("homepage.chat.messages.warning")}
+                      </h3>
+                      <p className="redacted-preview">
+                        {safeT("homepage.chat.messages.blockedMessage")}
+                      </p>
+                      <p className="error-message">
+                        {message.text}
+                      </p>
+                    </div>
+                  ) : message.isRedactionError && message.redactedText ? (
                     <div
                       className={`error-message-box ${message.redactedText?.includes("XXX") ? "privacy-error-box" : "error-box"}`}
                       ref={isLastErrorMessage ? lastErrorRef : null}
@@ -443,7 +454,7 @@ const ChatInterface = ({
                       <h3 className="sr-only">
                         {safeT("homepage.chat.messages.warning")}
                       </h3>
-                      <p className="sr-only">{message.redactedText}</p>
+                      <p className="sr-only">{safeT("homepage.chat.messages.yourQuestionWas")} {message.redactedText}</p>
                       <p className="privacy-preview" aria-hidden="true">
                         <FontAwesomeIcon icon="fa-circle-exclamation" />{" "}
                         {safeT("homepage.chat.messages.privacyMessage")}
