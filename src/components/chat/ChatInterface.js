@@ -106,23 +106,15 @@ const ChatInterface = ({
         let warningMessage = "";
 
         if (secondLastMessage.redactedText.includes("XXX")) {
-          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT(
-            "homepage.chat.messages.privacyMessage"
-          )} ${safeT("homepage.chat.messages.privateContent")}`;
+          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT("homepage.chat.messages.yourQuestionWas")} ${secondLastMessage.text} ${safeT("homepage.chat.messages.privacyMessage")} ${safeT("homepage.chat.messages.privateContent")}`;
         } else if (secondLastMessage.redactedText.includes("###")) {
-          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT(
-            "homepage.chat.messages.blockedMessage"
-          )} ${safeT("homepage.chat.messages.blockedContent")}`;
+          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT("homepage.chat.messages.yourQuestionWas")} ${secondLastMessage.text} ${safeT("homepage.chat.messages.blockedMessage")} ${safeT("homepage.chat.messages.blockedContent")}`;
         }
 
         if (warningMessage) {
           setLastProcessedMessageId(lastMessage.id);
           setTimeout(() => {
-            setRedactionAlert(
-              `${warningMessage} ${safeT(
-                "homepage.chat.messages.yourQuestionWas"
-              )} ${secondLastMessage.text}`
-            );
+            setRedactionAlert(warningMessage);
           }, 500);
         }
       }
@@ -576,7 +568,7 @@ const ChatInterface = ({
                             {safeT("homepage.chat.messages.shortQueryDetails")}
                             <br />
                             <a href={message.searchUrl}>
-                              {safeT("homepage.chat.messages.shortQuerySearch")}
+                              {safeT("homepage.chat.messages.shortQuerySearch")}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
                             </a>
                           </>
                         )}
