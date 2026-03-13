@@ -6,6 +6,10 @@
   outline: none;
 }
 
+.redacted-preview, .privacy-message {
+    max-width: 100% !important;
+  }
+
 .blocked-error-box {
   color: var(--gcds-color-red-900);
   background-color: var(--gcds-color-red-100);
