@@ -215,6 +215,7 @@ code {
 }
 .privacy-message {
   color: #33465c;
+  background-color: #f7fafd;
   padding: 2rem;
   border-radius: 6px 6px 0 0;
   border: 1px solid #33465c;
