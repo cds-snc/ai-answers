@@ -80,46 +80,12 @@ const ChatInterface = ({
     }
   }, []);
 
-  const [redactionAlert, setRedactionAlert] = useState("");
-  const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const prevIsLoadingRef = useRef(false);
   const lastAIMessageRef = useRef(null);
   const lastErrorRef = useRef(null);
   const loadingContainerRef = useRef(null);
 
-  // Effect to announce redaction warnings immediately
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      const secondLastMessage = messages[messages.length - 2];
-
-      // Check for redaction warnings (system messages following redacted user messages)
-      if (
-        lastMessage.sender === "system" &&
-        lastMessage.error &&
-        secondLastMessage &&
-        secondLastMessage.sender === "user" &&
-        secondLastMessage.redactedText &&
-        lastMessage.id !== lastProcessedMessageId
-      ) {
-        let warningMessage = "";
-
-        if (secondLastMessage.redactedText.includes("XXX")) {
-          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT("homepage.chat.messages.yourQuestionWas")} ${secondLastMessage.text} ${safeT("homepage.chat.messages.privacyMessage")} ${safeT("homepage.chat.messages.privateContent")}`;
-        } else if (secondLastMessage.redactedText.includes("###")) {
-          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT("homepage.chat.messages.yourQuestionWas")} ${secondLastMessage.text} ${safeT("homepage.chat.messages.blockedMessage")} ${safeT("homepage.chat.messages.blockedContent")}`;
-        }
-
-        if (warningMessage) {
-          setLastProcessedMessageId(lastMessage.id);
-          setTimeout(() => {
-            setRedactionAlert(warningMessage);
-          }, 500);
-        }
-      }
-    }
-  }, [messages, safeT, lastProcessedMessageId]);
 
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
@@ -153,21 +119,14 @@ const ChatInterface = ({
         loadingContainerRef.current.focus();
       }
     } else if (prevIsLoadingRef.current && !isLoading) {
-      // For redaction errors (XXX privacy or ### blocked), the question is read back
-      // via role="alert" — focus the textarea so the user can rephrase immediately
-      // rather than landing on the error box and double-announcing.
-      const secondLast = messages[messages.length - 2];
-      const isRedactionError = secondLast?.redactedText;
-      if (isRedactionError) {
-        setTimeout(() => textareaRef.current?.focus(), 600);
-      } else if (lastErrorRef.current) {
+      if (lastErrorRef.current) {
         lastErrorRef.current.focus();
       } else if (lastAIMessageRef.current) {
         lastAIMessageRef.current.focus();
       }
     }
     prevIsLoadingRef.current = isLoading;
-  }, [isLoading, messages]);
+  }, [isLoading]);
 
   useEffect(() => {
     const textarea = document.querySelector("#message");
@@ -541,33 +500,40 @@ const ChatInterface = ({
                         {safeT("homepage.chat.buttons.reload")}
                       </button>
                     </div>
-                  ) : (
+                  ) : message.isRedactionError ? (
                     <div
-                      className={`error-message-box ${messages[
-                        messages.findIndex((m) => m.id === message.id) - 1
-                      ]?.redactedText?.includes("XXX")
-                        ? "privacy-error-box"
-                        : "error-box"
-                        }`}
+                      className={`error-message-box ${message.redactedText?.includes("XXX") ? "privacy-error-box" : "error-box"}`}
                       ref={isLastErrorMessage ? lastErrorRef : null}
                       tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
-                      <h3 className="sr-only">
-                        {messages[
-                          messages.findIndex((m) => m.id === message.id) - 1
-                        ]?.redactedText?.includes("XXX")
-                          ? safeT("homepage.chat.messages.warning")
-                          : safeT("homepage.chat.messages.errorHeading")}
-                      </h3>
+                      <h3 className="sr-only">{safeT("homepage.chat.messages.warning")}</h3>
                       <p
-                        className={
-                          messages[
-                            messages.findIndex((m) => m.id === message.id) - 1
-                          ]?.redactedText?.includes("XXX")
-                            ? "privacy-error-message"
-                            : "error-message"
-                        }
+                        className={message.redactedText?.includes("XXX") ? "privacy-message" : "redacted-message"}
+                        {...(message.redactedText?.includes("###") && { "aria-hidden": "true" })}
                       >
+                        {message.redactedText}
+                      </p>
+                      <p
+                        className={message.redactedText?.includes("XXX") ? "privacy-preview" : "redacted-preview"}
+                        aria-hidden="true"
+                      >
+                        {message.redactedText?.includes("XXX") && (
+                          <><FontAwesomeIcon icon="fa-circle-exclamation" /> {safeT("homepage.chat.messages.privacyMessage")}</>
+                        )}
+                        {message.redactedText?.includes("###") && safeT("homepage.chat.messages.blockedMessage")}
+                      </p>
+                      <p className={message.redactedText?.includes("XXX") ? "privacy-error-message" : "error-message"}>
+                        {message.text}
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className="error-message-box error-box"
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
+                    >
+                      <h3 className="sr-only">{safeT("homepage.chat.messages.errorHeading")}</h3>
+                      <p className="error-message">
                         {message.text}
                         {message.searchUrl && (
                           <>
@@ -926,10 +892,6 @@ const ChatInterface = ({
       )}
       </section>
 
-      {/* Live region for redaction warnings */}
-      <div role="alert" className="sr-only">
-        {redactionAlert}
-      </div>
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (
           <div role="alert" className="sr-only">

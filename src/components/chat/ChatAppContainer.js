@@ -217,9 +217,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
     } else if (lastMessage.error && lastMessage.sender === 'system') {
-      // Skip redaction cases — ChatInterface handles the full sequence via setRedactionAlert
-      const secondLast = messages[messages.length - 2];
-      if (secondLast?.redactedText) return;
+      // Skip redaction cases — ChatInterface handles announcement via focus on the combined bubble
+      if (lastMessage.isRedactionError) return;
       if (lastMessage.text) {
         if (React.isValidElement(lastMessage.text)) {
           const tempDiv = document.createElement('div');
@@ -523,25 +522,19 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           // ignore
         }
         if (error instanceof RedactionError) {
-          const userMessageId = messageIdCounter.current++;
-          const blockedMessageId = messageIdCounter.current++;
+          const redactionMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
             ...prevMessages.slice(0, -1),
             {
-              id: userMessageId,
-              text: error.redactedText,
+              id: redactionMessageId,
               redactedText: error.redactedText,
               redactedItems: error.redactedItems,
-              sender: 'user',
-              error: true
-            },
-            {
-              id: blockedMessageId,
               text: error.redactedText.includes('XXX')
                 ? safeT('homepage.chat.messages.privateContent')
                 : safeT('homepage.chat.messages.blockedContent'),
               sender: 'system',
               error: true,
+              isRedactionError: true,
               ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
