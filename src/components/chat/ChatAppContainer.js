@@ -107,6 +107,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Add a ref to track if we're currently typing
   const isTyping = useRef(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
+  const [errorAlert, setErrorAlert] = useState('');
   const hintTimerRef = useRef(null);
   const statusTimersRef = useRef([]);
 
@@ -214,18 +215,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       setAriaLiveMessage('');
     } else if (lastMessage.sender === 'user' && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
-    } else if (lastMessage.error && lastMessage.sender === 'system' && !lastMessage.isRedactionError) {
-      if (lastMessage.text) {
-        if (React.isValidElement(lastMessage.text)) {
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = lastMessage.text.props.dangerouslySetInnerHTML.__html;
-          setAriaLiveMessage(tempDiv.textContent || tempDiv.innerText || '');
-        } else {
-          setAriaLiveMessage(lastMessage.text);
-        }
-      }
+    } else if (lastMessage.error) {
+      // Brief assertive alert to chime and signal an error arrived, even if the user wandered off.
+      // Focus management handles reading the full content — this is just the attention signal.
+      const cue = safeT('homepage.chat.messages.chatIssue');
+      setErrorAlert(cue);
+      setTimeout(() => setErrorAlert(''), 1000);
     }
-  }, [isLoading, messages]);
+  }, [isLoading, messages, safeT]);
 
   const currentRequestId = useRef(null);
 
@@ -964,6 +961,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       >
         {ariaLiveMessage}
       </div>
+      {errorAlert && (
+        <div
+          role="alert"
+          className="sr-only"
+        >
+          {errorAlert}
+        </div>
+      )}
     </>
   );
 };

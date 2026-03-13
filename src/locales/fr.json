@@ -180,7 +180,8 @@
         "answerLabel2": "Votre réponse 2 est,",
         "answerLabel3": "Votre réponse 3 est,",
         "errorHeading": "Erreur",
-        "sessionTimeoutHeading": "Session expirée"
+        "sessionTimeoutHeading": "Session expirée",
+        "chatIssue": "Problème avec le chat"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
