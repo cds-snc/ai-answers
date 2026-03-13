@@ -576,7 +576,7 @@ const ChatInterface = ({
                             {safeT("homepage.chat.messages.shortQueryDetails")}
                             <br />
                             <a href={message.searchUrl}>
-                              {safeT("homepage.chat.messages.shortQuerySearch")}
+                              {safeT("homepage.chat.messages.shortQuerySearch")}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
                             </a>
                           </>
                         )}
