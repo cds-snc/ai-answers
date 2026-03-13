@@ -16,14 +16,6 @@
       "title": "Use with caution",
       "message": "We're upgrading and experiencing a higher volume of errors. Use with caution, for testing only."
     },
-    "textarea": {
-      "title": "Ask your question here.",
-      "ariaLabel": {
-        "first": "This is Canada dot CA AI answers, please enter your question.",
-        "followon": "Ask a follow-up question or reply.",
-        "skipfo": "Skip and ask a follow-up question"
-      }
-    },
     "scroll": {
       "ariaLabel": "Scroll down to view more content.",
       "title": "Scroll down"
@@ -129,7 +121,9 @@
       "buttons": {
         "send": "Send",
         "sendDisabledTooLong": "Your message is too long, please shorten your question.",
-        "reload": "Reload page"
+        "reload": "Reload page",
+        "reloadAriaLabel": "Reload page - limit of 3 questions reached",
+        "reloadSessionAriaLabel": "Reload page - session expired"
       },
       "options": {
         "title": "Options",
@@ -154,15 +148,13 @@
         }
       },
       "messages": {
-        "startingToThink": "Generating answer...",
-        "thinking": "Generating answer...",
         "thinkingWithContext": "Deriving answer from search results and department.",
-        "thinkingMore": "Generating answer...",
+        "thinkingMore": "Still generating answer...",
         "limitReached": "You've reached the limit of 3 questions per conversation.\nReload to start a new conversation.",
         "error": "Sorry, we're having a problem connecting to the service right now. Please try again in a few minutes.",
         "blockedContent": "Your question used words or emojis that aren't accepted. Please ask it differently below.",
         "blockedMessage": "Your question was not sent to the AI service.",
-        "privateContent": "To protect your privacy, your question was not sent to the AI service. Ask again without any names, or other identifying details.",
+        "privateContent": "To protect your privacy, your question was not sent to the AI service. Ask again below without any names or other identifying details.",
         "privacyMessage": "Personal information in your question is marked as XXX.",
         "characterWarning": "{count} {unit} remaining",
         "characterLimit": "Your message is {count} {unit} too long. Please simplify your question.",
@@ -180,9 +172,15 @@
         "yourAnswerIs": "Your answer is:",
         "warning": "Warning:",
         "shortQueryMessage": "Your question was too short.",
-        "shortQueryDetails": "Try again with more details, or use this link to search Canada.ca for the words you entered.",
+        "shortQueryDetails": "Try again with more details below, or use this link to search Canada.ca for the words you entered.",
         "shortQuerySearch": "Canada.ca search",
-        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat."
+        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
+        "limitReachedHeading": "Limit of 3 questions reached",
+        "answerLabel1": "Your answer is,",
+        "answerLabel2": "Your answer 2 is,",
+        "answerLabel3": "Your answer 3 is,",
+        "errorHeading": "Error",
+        "sessionTimeoutHeading": "Session expired"
       },
       "citation": {
         "confidence": "Confidence:",
@@ -193,6 +191,9 @@
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:"
+      },
+      "section": {
+        "heading": "Chat conversation"
       }
     },
     "expertRating": {
@@ -252,7 +253,7 @@
       "responsibleAI": "Responsible AI Principles and Governance"
     },
     "accessibilityUsability": {
-      "title": "Accessibility and Usability",
+      "title": "Accessibility and usability",
       "designRationale": "Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.",
       "testing": "These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.",
       "wcag": "The service meets WCAG 2.1 AA accessibility standards for web content accessibility."

@@ -16,13 +16,6 @@
       "title": "À utiliser avec précaution",
       "message": "Nous effectuons une mise à niveau et rencontrons un nombre plus élevé d'erreurs. À utiliser avec précaution, à des fins de test uniquement."
     },
-    "textarea": {
-      "ariaLabel": {
-        "first": "Voici les réponses de Canada point CA, veuillez entrer votre question.",
-        "followon": "Posez une question de suivi ou répondez.",
-        "skipfo": "Passer pour poser une autre question"
-      }
-    },
     "scroll": {
       "ariaLabel": "Faites défiler vers le bas pour voir plus de contenu.",
       "title": "Faites défiler vers le bas"
@@ -128,7 +121,9 @@
       "buttons": {
         "send": "Envoyer",
         "sendDisabledTooLong": "Votre message est trop long, veuillez simplifier votre question.",
-        "reload": "Actualiser la page"
+        "reload": "Actualiser la page",
+        "reloadAriaLabel": "Recharger la page — limite de 3 questions atteinte",
+        "reloadSessionAriaLabel": "Recharger la page — session expirée"
       },
       "options": {
         "title": "Options",
@@ -153,15 +148,13 @@
         }
       },
       "messages": {
-        "startingToThink": "Génération de la réponse...",
-        "thinking": "Génération de la réponse...",
         "thinkingWithContext": "Génération de la réponse à partir de ",
-        "thinkingMore": "Génération de la réponse en cours...",
+        "thinkingMore": "Toujours en train de générer la réponse...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
         "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
-        "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Demandez à nouveau sans mentionner de noms ou d'autres détails permettant d'identifier la personne.",
+        "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Demandez à nouveau ci-dessous sans mentionner de noms ou d'autres détails permettant d'identifier la personne.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
         "characterWarning": "{count} {unit} restants",
         "characterLimit": "Votre message est trop long de {count} {unit}. Veuillez simplifier votre question.",
@@ -179,9 +172,15 @@
         "yourAnswerIs": "Votre réponse est :",
         "warning": "Avertissement :",
         "shortQueryMessage": "Votre question était trop courte.",
-        "shortQueryDetails": "Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer pour les mots que vous avez saisis.",
+        "shortQueryDetails": "Veuillez réessayer ci-dessous en fournissant plus de détails ou utilisez ce lien pour effectuer une recherche sur Canada.ca pour les mots que vous avez saisis.",
         "shortQuerySearch": "Recherche Canada.ca",
-        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion."
+        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
+        "limitReachedHeading": "Limite de 3 questions atteinte",
+        "answerLabel1": "Votre réponse est,",
+        "answerLabel2": "Votre réponse 2 est,",
+        "answerLabel3": "Votre réponse 3 est,",
+        "errorHeading": "Erreur",
+        "sessionTimeoutHeading": "Session expirée"
       },
       "citation": {
         "confidence": "Niveau de confiance :",
@@ -192,6 +191,9 @@
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :"
+      },
+      "section": {
+        "heading": "Conversation par clavardage"
       }
     },
     "expertRating": {

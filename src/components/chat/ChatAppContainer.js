@@ -107,8 +107,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Add a ref to track if we're currently typing
   const isTyping = useRef(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
-  // Add this new state to prevent multiple loading announcements
-  const [loadingAnnounced, setLoadingAnnounced] = useState(false);
+  const hintTimerRef = useRef(null);
+  const statusTimersRef = useRef([]);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -155,57 +155,79 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  // This effect monitors displayStatus changes to update screen reader announcements
+  // Announce via live region using clear → set for reliable AT re-read (avoids JAWS duplicate suppression)
+  const announceToLiveRegion = useCallback((text) => {
+    setAriaLiveMessage('');
+    setTimeout(() => setAriaLiveMessage(text), 100);
+  }, []);
+
+  // Timed loading announcements while in moderatingQuestion phase:
+  // 1s  — hint text
+  // 5s  — "Building context..."          (buildingContext)
+  // 8s  — "Generating answer..."         (generatingAnswer)
+  // 12s — "Still generating answer..."   (thinkingMore)
+  // All timers are cancelled if status advances or loading ends.
   useEffect(() => {
-    if (isLoading) {
-      // Update aria-live message whenever displayStatus changes to key statuses
-      if (displayStatus === 'moderatingQuestion') {
-        setAriaLiveMessage(safeT('homepage.chat.messages.moderatingQuestion'));
-        setLoadingAnnounced(true);
-      } else if (displayStatus === 'generatingAnswer') {
-        setAriaLiveMessage(safeT('homepage.chat.messages.generatingAnswer'));
-        setLoadingAnnounced(true);
+    const clearAll = () => {
+      statusTimersRef.current.forEach(id => clearTimeout(id));
+      statusTimersRef.current = [];
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+        hintTimerRef.current = null;
       }
-    } else {
-      // Reset the flag when loading completes
-      setLoadingAnnounced(false);
+    };
 
-      const lastMessage = messages[messages.length - 1];
+    if (!isLoading || displayStatus !== 'moderatingQuestion') {
+      clearAll();
+      return;
+    }
 
-      if (lastMessage) {
-        if (lastMessage.sender === 'ai' && !lastMessage.error) {
-          // AI response
-          const paragraphs = lastMessage.interaction?.answer?.paragraphs || [];
-          const sentences = paragraphs.flatMap(paragraph => extractSentences(paragraph));
-          const plainText = sentences.join(' ');
-          const displayUrl = lastMessage.interaction?.citationUrl || '';
-          const citationHeading = displayUrl ? safeT('homepage.chat.citation.heading') : '';
-          setAriaLiveMessage(`${safeT('homepage.chat.messages.yourAnswerIs')} ${plainText} ${citationHeading} ${displayUrl}`.trim());
-        } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
-          // Redacted user message - announce the redacted text first
-          setAriaLiveMessage(lastMessage.text || '');
-          // Don't set a timeout here - let ChatInterface handle the warning announcement
-        } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
-          // Regular user message
-          setAriaLiveMessage(lastMessage.text || '');
-        } else if (lastMessage.error && lastMessage.sender === 'system') {
-          // System error messages (including character limit, general errors, etc.)
-          if (lastMessage.text) {
-            // Handle React elements by extracting text content
-            if (React.isValidElement(lastMessage.text)) {
-              // For system messages with dangerouslySetInnerHTML, we need the actual text
-              // This is a fallback - ideally the error message should be stored as plain text
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = lastMessage.text.props.dangerouslySetInnerHTML.__html;
-              setAriaLiveMessage(tempDiv.textContent || tempDiv.innerText || '');
-            } else {
-              setAriaLiveMessage(lastMessage.text);
-            }
-          }
+    hintTimerRef.current = setTimeout(() => {
+      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
+    }, 1000);
+
+    statusTimersRef.current = [
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.buildingContext')), 5000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 8000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 12000),
+    ];
+
+    return clearAll;
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+
+  // Announce other status changes immediately when they occur.
+  useEffect(() => {
+    if (!isLoading || displayStatus === 'moderatingQuestion') return;
+    announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+
+  // Announce outcomes once loading ends.
+  useEffect(() => {
+    if (isLoading) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage) return;
+
+    if (lastMessage.sender === 'ai' && !lastMessage.error) {
+      // Focus management in ChatInterface moves focus to the new AI message,
+      // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
+      setAriaLiveMessage('');
+    } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
+      setAriaLiveMessage(lastMessage.text || '');
+    } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
+      setAriaLiveMessage(lastMessage.text || '');
+    } else if (lastMessage.error && lastMessage.sender === 'system') {
+      if (lastMessage.text) {
+        if (React.isValidElement(lastMessage.text)) {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = lastMessage.text.props.dangerouslySetInnerHTML.__html;
+          setAriaLiveMessage(tempDiv.textContent || tempDiv.innerText || '');
+        } else {
+          setAriaLiveMessage(lastMessage.text);
         }
       }
     }
-  }, [isLoading, displayStatus, messages, t, selectedDepartment, safeT, loadingAnnounced]);
+  }, [isLoading, messages]);
 
   const currentRequestId = useRef(null);
 
@@ -890,7 +912,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        privacyMessage={safeT('homepage.chat.messages.privacy')}
         getLabelForInput={() =>
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.text : initialInput)

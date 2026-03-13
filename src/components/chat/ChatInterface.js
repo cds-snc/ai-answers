@@ -83,6 +83,10 @@ const ChatInterface = ({
   const [redactionAlert, setRedactionAlert] = useState("");
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const prevIsLoadingRef = useRef(false);
+  const lastAIMessageRef = useRef(null);
+  const lastErrorRef = useRef(null);
+  const loadingContainerRef = useRef(null);
 
   // Effect to announce redaction warnings immediately
   useEffect(() => {
@@ -113,15 +117,12 @@ const ChatInterface = ({
 
         if (warningMessage) {
           setLastProcessedMessageId(lastMessage.id);
-          // Announce warning message followed by the original user message
           setTimeout(() => {
             setRedactionAlert(
               `${warningMessage} ${safeT(
                 "homepage.chat.messages.yourQuestionWas"
               )} ${secondLastMessage.text}`
             );
-            // Clear the alert after a moment
-            setTimeout(() => setRedactionAlert(""), 2000);
           }, 500);
         }
       }
@@ -130,7 +131,6 @@ const ChatInterface = ({
 
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
-  const [userHasClickedTextarea, setUserHasClickedTextarea] = useState(false);
   const textareaRef = useRef(null);
   const charCountAlertTimer = useRef(null);
 
@@ -151,36 +151,24 @@ const ChatInterface = ({
     return () => clearTimeout(timeoutId);
   }, []);
 
+  // Manage focus across the loading lifecycle so screen reader users are never
+  // stranded on the browser chrome:
+  //   loading starts → focus the loading container (textarea is disabled, focus drops otherwise)
+  //   loading ends   → focus the new AI message to read response in document order
   useEffect(() => {
-    const handleCitationAppearance = () => {
-      if (textareaRef.current && !userHasClickedTextarea) {
-        textareaRef.current.blur();
+    if (!prevIsLoadingRef.current && isLoading) {
+      if (loadingContainerRef.current) {
+        loadingContainerRef.current.focus();
       }
-    };
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.addedNodes.length) {
-          for (const node of mutation.addedNodes) {
-            if (
-              node.classList &&
-              node.classList.contains("citation-container")
-            ) {
-              handleCitationAppearance();
-              break;
-            }
-          }
-        }
+    } else if (prevIsLoadingRef.current && !isLoading) {
+      if (lastErrorRef.current) {
+        lastErrorRef.current.focus();
+      } else if (lastAIMessageRef.current) {
+        lastAIMessageRef.current.focus();
       }
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    return () => observer.disconnect();
-  }, [userHasClickedTextarea]);
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   useEffect(() => {
     const textarea = document.querySelector("#message");
@@ -309,18 +297,18 @@ const ChatInterface = ({
     };
   }, [messages, isLoading]);
 
-  // Reset textarea focus when switching to follow-up question for icon
+  // Reset icon state when a new turn begins
   useEffect(() => {
-    if (turnCount > 0 && textareaRef.current) {
+    if (turnCount > 0) {
       setIsTextareaFocused(false);
-      textareaRef.current.blur();
     }
   }, [turnCount]);
 
-  // Reset char count on submission
+  // Reset char count on submission, and clear any stale redaction alert
   useEffect(() => {
     if (isLoading) {
       setCharCount(0);
+      setRedactionAlert("");
     }
   }, [isLoading]);
 
@@ -409,7 +397,6 @@ const ChatInterface = ({
   };
 
   const handleTextareaClick = () => {
-    setUserHasClickedTextarea(true);
     setIsTextareaFocused(true);
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -418,10 +405,6 @@ const ChatInterface = ({
 
   const handleTextareaBlur = () => {
     setIsTextareaFocused(false);
-    const chatContainer = document.querySelector(".chat-container");
-    if (!chatContainer.contains(document.activeElement)) {
-      setUserHasClickedTextarea(false);
-    }
   };
 
   const handleTextareaFocus = () => {
@@ -443,13 +426,37 @@ const ChatInterface = ({
           </a>
         </span>
       )}
-      <div className="message-list">
-        {messages.map((message) => (
+      <section aria-labelledby="chat-section-heading">
+        <h2 id="chat-section-heading" className="sr-only">
+          {safeT("homepage.chat.section.heading")}
+        </h2>
+        <div className="message-list" role="log" aria-live="off">
+        {(() => {
+          const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
+          const answerLabelKeys = ['answerLabel1', 'answerLabel2', 'answerLabel3'];
+          return messages.map((message) => {
+          const isLastAIMessage =
+            message.sender === "ai" &&
+            !message.error &&
+            message.id === nonErrorAIMessages[nonErrorAIMessages.length - 1]?.id;
+          const aiAnswerIndex = (message.sender === "ai" && !message.error)
+            ? nonErrorAIMessages.findIndex(m => m.id === message.id)
+            : null;
+          const isLastErrorMessage =
+            message.error && message.id === messages[messages.length - 1]?.id;
+          return (
           <div
             key={`message-${message.id}`}
             id={message.id ? `interactionId${message.id}` : undefined}
             className={`message ${message.sender}`}
+            ref={isLastAIMessage ? lastAIMessageRef : null}
+            tabIndex={isLastAIMessage ? -1 : undefined}
           >
+            {message.sender === "ai" && !message.error && aiAnswerIndex !== null && (
+              <h3 className="sr-only">
+                {safeT(`homepage.chat.messages.${answerLabelKeys[aiAnswerIndex]}`)}
+              </h3>
+            )}
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${message.redactedText?.includes("XXX")
@@ -518,9 +525,20 @@ const ChatInterface = ({
               <>
                 {message.error ? (
                   message.isSessionTimeout ? (
-                    <div className="limit-reached-message">
+                    <div
+                      className="limit-reached-message"
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
+                    >
+                      <h3 className="sr-only">
+                        {safeT("homepage.chat.messages.sessionTimeoutHeading")}
+                      </h3>
                       <p>{message.text}</p>
-                      <button onClick={handleReload} className="btn-primary visible">
+                      <button
+                        onClick={handleReload}
+                        className="btn-primary visible"
+                        aria-label={safeT("homepage.chat.buttons.reloadSessionAriaLabel")}
+                      >
                         {safeT("homepage.chat.buttons.reload")}
                       </button>
                     </div>
@@ -532,7 +550,16 @@ const ChatInterface = ({
                         ? "privacy-error-box"
                         : "error-box"
                         }`}
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
+                      <h3 className="sr-only">
+                        {messages[
+                          messages.findIndex((m) => m.id === message.id) - 1
+                        ]?.redactedText?.includes("XXX")
+                          ? safeT("homepage.chat.messages.warning")
+                          : safeT("homepage.chat.messages.errorHeading")}
+                      </h3>
                       <p
                         className={
                           messages[
@@ -685,15 +712,19 @@ const ChatInterface = ({
               </>
             )}
           </div>
-        ))}
+          );
+        });
+        })()}
 
         {isLoading && (
           <>
-            {/* Screen reader announcement - only announces initial thinking state */}
-            <div role="status" aria-live="polite" className="sr-only">
-              {displayStatus === "thinking" ? safeT("homepage.chat.messages.thinking") : ""}
-            </div>
-            <div key="loading" className="loading-container">
+            <div
+              key="loading"
+              className="loading-container"
+              ref={loadingContainerRef}
+              tabIndex={-1}
+              aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
+            >
               <div className="loading-animation"></div>
               <div className="loading-text">
                 {displayStatus && (displayStatus === "thinkingWithContext"
@@ -702,7 +733,7 @@ const ChatInterface = ({
                   : safeT(`homepage.chat.messages.${displayStatus}`))}
               </div>
             </div>
-            <div className="loading-hint-text">
+            <div className="loading-hint-text" id="loading-hint">
               <img
                 src={aiStarsBlue}
                 className="ai-icon"
@@ -720,12 +751,19 @@ const ChatInterface = ({
         {!readOnly && turnCount >= MAX_CONVERSATION_TURNS && (
           <div key="limit-reached" className="message ai">
             <div className="limit-reached-message">
+              <h3 className="sr-only">
+                {safeT("homepage.chat.messages.limitReachedHeading")}
+              </h3>
               <p>
                 {safeT("homepage.chat.messages.limitReached", {
                   count: MAX_CONVERSATION_TURNS,
                 })}
               </p>
-              <button onClick={handleReload} className="btn-primary visible">
+              <button
+                onClick={handleReload}
+                className="btn-primary visible"
+                aria-label={safeT("homepage.chat.buttons.reloadAriaLabel")}
+              >
                 {safeT("homepage.chat.buttons.reload")}
               </button>
             </div>
@@ -733,7 +771,7 @@ const ChatInterface = ({
         )}
       </div>
 
-      {/* Accessible Scroll Down Button */}
+        {/* Accessible Scroll Down Button */}
       <button
         className="scroll-down-btn"
         aria-label={safeT('homepage.scroll.ariaLabel')}
@@ -750,7 +788,7 @@ const ChatInterface = ({
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
         <div className="input-area mt-200">
           {!isLoading && (
-            <form className="mrgn-tp-xl mrgn-bttm-lg">
+            <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
                 <label
                   htmlFor="message"
@@ -887,6 +925,7 @@ const ChatInterface = ({
           />
         </div>
       )}
+      </section>
 
       {/* Live region for redaction warnings */}
       <div role="alert" className="sr-only">
