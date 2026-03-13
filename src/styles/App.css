@@ -5,6 +5,26 @@
 [tabindex="-1"]:focus {
   outline: none;
 }
+
+.blocked-error-box {
+  color: var(--gcds-color-red-900);
+  background-color: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-100);
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-bottom: 10px;
+}
+
+.privacy-error-box {
+  color: #33465c;
+  background-color: #f7fafd;
+  border: 1px solid var(--gcds-color-blue-100);
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
 /* temp fix spacing shenangians */
 .user-message-box p,
 .chat-id p {
@@ -179,9 +199,10 @@ code {
 .redacted-preview {
   background-color: var(--gcds-color-red-900);
   color: white;
-  display: block;
-  padding: 0.75rem;
-  border-radius: 0 0 6px 6px;
+  font-weight: 600;
+  /* display: block;
+  padding: 0.75rem; */
+  border-radius: 6px 6px 6px 6px;
 }
 .redacted-preview p {
   margin: 0;
@@ -192,24 +213,24 @@ code {
   padding: 0;
 }
 .privacy-message {
-  color: #333;
+  color: #33465c;
   padding: 1rem;
-  /* border-radius: 6px 6px 0 0;
-    border: 1px solid #853C00; */
+  border-radius: 6px 6px 0 0;
+  border: 1px solid #33465c;
 }
 .privacy-preview {
-  background-color: #f7fafd;
+  /* background-color: #f7fafd; */
   color: #33465c;
   font-weight: 600;
-  display: block;
+  /* display: block;
   padding: 0.75rem;
-  border-radius: 0 0 6px 6px;
-  font-size: 18px;
-  padding: 1.5em 1.5em 1.5em 1.5em;
+  border-radius: 0 0 6px 6px; */
+  font-size: 20px;
+  /* padding: 1.5em 1.5em 1.5em 1.5em;
   text-align: center;
   text-wrap: balance;
   border: 1px solid var(--gcds-color-blue-100);
-  margin-top: -1px;
+  margin-top: -1px; */
 }
 .privacy-preview p {
   margin: 0;
@@ -451,16 +472,16 @@ code {
   font-weight: 600;
 }
 
-.error-message {
+/* .error-message {
   color: var(--gcds-color-red-900);
   background-color: var(--gcds-color-red-100);
   border: 1px solid var(--gcds-color-red-100);
   border-radius: 4px;
   padding: 0.75rem;
   margin-bottom: 10px;
-}
+} */
 
-.privacy-error-message {
+/* .privacy-error-message {
   color: #33465c;
   background-color: #f7fafd;
   border: 1px solid var(--gcds-color-blue-100);
@@ -468,7 +489,7 @@ code {
   padding: 0.75rem;
   margin-bottom: 10px;
   font-weight: 500;
-}
+} */
 
 .redacted-error-message i {
   margin-right: 6px;
