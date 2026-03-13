@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.110.0](https://github.com/cds-snc/ai-answers/compare/v1.109.1...v1.110.0) (2026-03-13)
+
+
+### Features
+
+* 4 seconds ([e7ce508](https://github.com/cds-snc/ai-answers/commit/e7ce5084217808c070254c560f69399a338bc1a8))
+* too soon, gets cut off ([1a93676](https://github.com/cds-snc/ai-answers/commit/1a93676a378d9a54486ff7c77781b1c84f37bc73))
+* unused locales ([006cc9c](https://github.com/cds-snc/ai-answers/commit/006cc9cdd1834d71f0553a7f940ab6586944c027))
+
+
+### Bug Fixes
+
+* improve loading announcements for screen readers and remove dead prop ([57f0c13](https://github.com/cds-snc/ai-answers/commit/57f0c13c5406ade9abfa92e1570e77a4611711b3))
+* prompt issues ([e71d267](https://github.com/cds-snc/ai-answers/commit/e71d267b8c4397bf32b61475d96472d2635b4e83))
+* remove innovation from dept list ([cf7bb1c](https://github.com/cds-snc/ai-answers/commit/cf7bb1c212b9586682a35473f33947b0c9abb7de))
+* search results zero issue ([2c9aea2](https://github.com/cds-snc/ai-answers/commit/2c9aea29f30c9cf36ce4d4d3f601992a45147445))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump ajv from 6.12.6 to 6.14.0 ([0ebb5c3](https://github.com/cds-snc/ai-answers/commit/0ebb5c35eeb57c84d86188f105a67f72e21deb14))
+* **deps:** bump bn.js from 4.12.2 to 4.12.3 ([a038bdb](https://github.com/cds-snc/ai-answers/commit/a038bdb907734f5e5a1b46a22b015c92e12bc6c4))
+
 ## [1.109.1](https://github.com/cds-snc/ai-answers/compare/v1.109.0...v1.109.1) (2026-03-12)
 
 
