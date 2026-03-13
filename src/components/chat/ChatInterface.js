@@ -153,14 +153,21 @@ const ChatInterface = ({
         loadingContainerRef.current.focus();
       }
     } else if (prevIsLoadingRef.current && !isLoading) {
-      if (lastErrorRef.current) {
+      // For redaction errors (XXX privacy or ### blocked), the question is read back
+      // via role="alert" — focus the textarea so the user can rephrase immediately
+      // rather than landing on the error box and double-announcing.
+      const secondLast = messages[messages.length - 2];
+      const isRedactionError = secondLast?.redactedText;
+      if (isRedactionError) {
+        setTimeout(() => textareaRef.current?.focus(), 600);
+      } else if (lastErrorRef.current) {
         lastErrorRef.current.focus();
       } else if (lastAIMessageRef.current) {
         lastAIMessageRef.current.focus();
       }
     }
     prevIsLoadingRef.current = isLoading;
-  }, [isLoading]);
+  }, [isLoading, messages]);
 
   useEffect(() => {
     const textarea = document.querySelector("#message");
