@@ -172,7 +172,7 @@
         "yourAnswerIs": "Your answer is:",
         "warning": "Warning:",
         "shortQueryMessage": "Your question was too short.",
-        "shortQueryDetails": "You can ask again with more details below, or use this link to search the words you entered on Canada.ca.",
+        "shortQueryDetails": "You can try again with more details below, or use this link to search the words you entered on Canada.ca.",
         "shortQuerySearch": "Search Canada.ca for:",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
         "limitReachedHeading": "Limit of 3 questions reached",
