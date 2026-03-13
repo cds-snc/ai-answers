@@ -11,7 +11,6 @@
   background-color: var(--gcds-color-red-100);
   border: 1px solid var(--gcds-color-red-100);
   border-radius: 4px;
-  padding: 0.75rem;
   margin-bottom: 10px;
 }
 
@@ -20,7 +19,6 @@
   background-color: #f7fafd;
   border: 1px solid var(--gcds-color-blue-100);
   border-radius: 4px;
-  padding: 0.75rem;
   margin-bottom: 10px;
   font-weight: 500;
 }
@@ -200,10 +198,8 @@ code {
   background-color: var(--gcds-color-red-900);
   color: white;
   font-weight: 600;
-  /* display: block;
-  padding: 0.75rem; */
   border-radius: 6px 6px 0 0;
-  padding: 2rem;
+  padding: 1rem 2rem;
 }
 .redacted-preview p {
   margin: 0;
@@ -216,7 +212,7 @@ code {
 .privacy-message {
   color: #33465c;
   background-color: #f7fafd;
-  padding: 2rem;
+  padding: 1rem 2rem;
   border-radius: 6px 6px 0 0;
   border: 1px solid #33465c;
 }
@@ -224,6 +220,8 @@ code {
   /* background-color: #f7fafd; */
   color: #33465c;
   font-weight: 600;
+  padding: .5rem 1rem;
+  
   /* display: block;
   padding: 0.75rem;
   border-radius: 0 0 6px 6px; */
@@ -483,15 +481,9 @@ code {
   margin-bottom: 10px;
 } */
 
-/* .privacy-error-message {
-  color: #33465c;
-  background-color: #f7fafd;
-  border: 1px solid var(--gcds-color-blue-100);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 10px;
-  font-weight: 500;
-} */
+.privacy-error-message, .error-message {
+  padding: 0rem 1.5rem;
+}
 
 .redacted-error-message i {
   margin-right: 6px;
