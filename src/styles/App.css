@@ -14,6 +14,13 @@
   margin-bottom: 10px;
 }
 
+.error-box {
+  color: var(--gcds-color-red-900);
+  background-color: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-100);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
 .privacy-error-box {
   color: #33465c;
   background-color: #f7fafd;
