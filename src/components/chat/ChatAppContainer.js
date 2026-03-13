@@ -163,9 +163,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // Timed loading announcements while in moderatingQuestion phase:
   // 1s  — hint text
-  // 3s  — "Generating answer..." (startingToThink)
-  // 5s  — "Still thinking..."   (thinkingMore)
-  // 7s  — "Still thinking..."   (thinkingMore repeat)
+  // 5s  — "Building context..."          (buildingContext)
+  // 8s  — "Generating answer..."         (generatingAnswer)
+  // 12s — "Still generating answer..."   (thinkingMore)
   // All timers are cancelled if status advances or loading ends.
   useEffect(() => {
     const clearAll = () => {
@@ -187,8 +187,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }, 1000);
 
     statusTimersRef.current = [
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.startingToThink')), 5000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 8000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.buildingContext')), 5000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 8000),
       setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 12000),
     ];
 
@@ -912,7 +912,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        privacyMessage={safeT('homepage.chat.messages.privacy')}
         getLabelForInput={() =>
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
