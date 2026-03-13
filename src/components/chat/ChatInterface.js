@@ -455,25 +455,9 @@ const ChatInterface = ({
                 >
                   {message.text}
                 </p>
-                {message.redactedText && (
-                  <p
-                    className={
-                      message.redactedText?.includes("XXX")
-                        ? "privacy-preview"
-                        : message.redactedText?.includes("###")
-                          ? "redacted-preview"
-                          : ""
-                    }
-                    aria-hidden="true"
-                  >
-                    {message.redactedText?.includes("XXX") && (
-                      <>
-                        <FontAwesomeIcon icon="fa-circle-exclamation" />{" "}
-                        {safeT("homepage.chat.messages.privacyMessage")}
-                      </>
-                    )}
-                    {message.redactedText?.includes("###") &&
-                      safeT("homepage.chat.messages.blockedMessage")}
+                {message.redactedText?.includes("###") && (
+                  <p className="redacted-preview" aria-hidden="true">
+                    {safeT("homepage.chat.messages.blockedMessage")}
                   </p>
                 )}
               </div>
@@ -489,10 +473,12 @@ const ChatInterface = ({
                       <h3 className="sr-only">
                         {safeT("homepage.chat.messages.warning")}
                       </h3>
-                      <p className={message.redactedText?.includes("XXX") ? "privacy-message" : "redacted-message"}>
-                        {message.redactedText}
+                      <p className="sr-only">{message.redactedText}</p>
+                      <p className="privacy-preview" aria-hidden="true">
+                        <FontAwesomeIcon icon="fa-circle-exclamation" />{" "}
+                        {safeT("homepage.chat.messages.privacyMessage")}
                       </p>
-                      <p className={message.redactedText?.includes("XXX") ? "privacy-error-message" : "error-message"}>
+                      <p className="privacy-error-message">
                         {message.text}
                       </p>
                     </div>

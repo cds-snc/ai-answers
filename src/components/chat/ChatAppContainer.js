@@ -212,9 +212,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       // Focus management in ChatInterface moves focus to the new AI message,
       // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
       setAriaLiveMessage('');
-    } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
-      setAriaLiveMessage(lastMessage.text || '');
-    } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
+    } else if (lastMessage.sender === 'user' && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
     } else if (lastMessage.error && lastMessage.sender === 'system' && !lastMessage.isRedactionError) {
       if (lastMessage.text) {
@@ -521,14 +519,22 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         }
         if (error instanceof RedactionError) {
           if (error.redactedText.includes('XXX')) {
-            // Privacy (XXX): combine into a single system bubble so SR gets the full context in one focused element
-            const redactionMessageId = messageIdCounter.current++;
+            // Privacy (XXX): user bubble shows the question, system bubble shows the warning with SR context
+            const userMessageId = messageIdCounter.current++;
+            const privacyMessageId = messageIdCounter.current++;
             setMessages(prevMessages => [
               ...prevMessages.slice(0, -1),
               {
-                id: redactionMessageId,
+                id: userMessageId,
+                text: error.redactedText,
                 redactedText: error.redactedText,
                 redactedItems: error.redactedItems,
+                sender: 'user',
+                error: true
+              },
+              {
+                id: privacyMessageId,
+                redactedText: error.redactedText,
                 text: safeT('homepage.chat.messages.privateContent'),
                 sender: 'system',
                 error: true,
