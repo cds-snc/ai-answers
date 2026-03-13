@@ -217,6 +217,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
     } else if (lastMessage.error && lastMessage.sender === 'system') {
+      // Skip redaction cases — ChatInterface handles the full sequence via setRedactionAlert
+      const secondLast = messages[messages.length - 2];
+      if (secondLast?.redactedText) return;
       if (lastMessage.text) {
         if (React.isValidElement(lastMessage.text)) {
           const tempDiv = document.createElement('div');
