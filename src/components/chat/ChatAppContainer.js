@@ -554,6 +554,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               id: shortQueryMessageId,
               text: safeT('homepage.chat.messages.shortQueryMessage'),
               searchUrl: error.searchUrl,
+              searchQuery: error.userMessage,
               sender: 'system',
               error: true,
               ...(error.historySignature ? { historySignature: error.historySignature } : {})
