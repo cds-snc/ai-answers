@@ -148,7 +148,6 @@
         }
       },
       "messages": {
-        "startingToThink": "Thinking...",
         "thinkingWithContext": "Deriving answer from search results and department.",
         "thinkingMore": "Still generating answer...",
         "limitReached": "You've reached the limit of 3 questions per conversation.\nReload to start a new conversation.",
