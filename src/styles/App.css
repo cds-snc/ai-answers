@@ -218,10 +218,10 @@ code {
 }
 .privacy-message {
   color: #33465c;
-  background-color: #f7fafd;
+  background-color: var(--gcds-color-blue-100);
   padding: 1rem 2rem;
   border-radius: 6px 6px 0 0;
-  border: 1px solid #33465c;
+  border: 1px solid var(--gcds-color-blue-100);
 }
 .privacy-preview {
   /* background-color: #f7fafd; */
