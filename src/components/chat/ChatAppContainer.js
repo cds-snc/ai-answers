@@ -520,22 +520,45 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           // ignore
         }
         if (error instanceof RedactionError) {
-          const redactionMessageId = messageIdCounter.current++;
-          setMessages(prevMessages => [
-            ...prevMessages.slice(0, -1),
-            {
-              id: redactionMessageId,
-              redactedText: error.redactedText,
-              redactedItems: error.redactedItems,
-              text: error.redactedText.includes('XXX')
-                ? safeT('homepage.chat.messages.privateContent')
-                : safeT('homepage.chat.messages.blockedContent'),
-              sender: 'system',
-              error: true,
-              isRedactionError: true,
-              ...(error.historySignature ? { historySignature: error.historySignature } : {})
-            }
-          ]);
+          if (error.redactedText.includes('XXX')) {
+            // Privacy (XXX): combine into a single system bubble so SR gets the full context in one focused element
+            const redactionMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages.slice(0, -1),
+              {
+                id: redactionMessageId,
+                redactedText: error.redactedText,
+                redactedItems: error.redactedItems,
+                text: safeT('homepage.chat.messages.privateContent'),
+                sender: 'system',
+                error: true,
+                isRedactionError: true,
+                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              }
+            ]);
+          } else {
+            // Blocked (###): keep user bubble so the user can see their original message, error box below
+            const userMessageId = messageIdCounter.current++;
+            const blockedMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages.slice(0, -1),
+              {
+                id: userMessageId,
+                text: error.redactedText,
+                redactedText: error.redactedText,
+                redactedItems: error.redactedItems,
+                sender: 'user',
+                error: true
+              },
+              {
+                id: blockedMessageId,
+                text: safeT('homepage.chat.messages.blockedContent'),
+                sender: 'system',
+                error: true,
+                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              }
+            ]);
+          }
           clearInput();
           setIsLoading(false);
           return;
