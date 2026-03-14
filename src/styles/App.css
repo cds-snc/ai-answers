@@ -24,6 +24,7 @@
   border: 1px solid var(--gcds-color-red-100);
   border-radius: 4px;
   margin-bottom: 10px;
+  padding-top: 20px;
 }
 .privacy-error-box {
   color: #33465c;
