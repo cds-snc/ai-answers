@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.112.0](https://github.com/cds-snc/ai-answers/compare/v1.111.0...v1.112.0) (2026-03-15)
+
+
+### Features
+
+* adjust  focus management if leaves chat-container ([433c1a3](https://github.com/cds-snc/ai-answers/commit/433c1a395853a88907da538586518dd8ea5cfd17))
+* clean up ([417d34e](https://github.com/cds-snc/ai-answers/commit/417d34ed573f35546759c2c6b6b20ad0b2bb0d22))
+* cleanup css ([8ac872f](https://github.com/cds-snc/ai-answers/commit/8ac872f3def7c9f021fd3e4b8777787c98c733b4))
+* combine redaction error into single focusable system bubble ([3430455](https://github.com/cds-snc/ai-answers/commit/3430455d354c58f9c7f72ca4e0a592aec7457f6a))
+* correction to focus listener ([a34e512](https://github.com/cds-snc/ai-answers/commit/a34e5122e43887788fbb938c1e2a30abcc45694d))
+* css cleanup ([c1c5b06](https://github.com/cds-snc/ai-answers/commit/c1c5b069a645b8fcf4647d07a2933215e2569cbc))
+* css cleanup ([12dbfcb](https://github.com/cds-snc/ai-answers/commit/12dbfcb016ad8742069e122ff6723d5218b39790))
+* css cleanup for scope ([e93e52d](https://github.com/cds-snc/ai-answers/commit/e93e52d681e2016b6156aa678b53c5c4149a762e))
+* css tweaks, sr-only ([cefe0f2](https://github.com/cds-snc/ai-answers/commit/cefe0f27307ad14fc59e454f220304d8a5cbe994))
+* finessing text ([3e3317b](https://github.com/cds-snc/ai-answers/commit/3e3317b6aeff7350c18cb05ddeb11d6927348142))
+* flag only for real elements ([c5d1ec4](https://github.com/cds-snc/ai-answers/commit/c5d1ec4e923c543002e7868c892925280f7b0461))
+* focus based reading ([1605e63](https://github.com/cds-snc/ai-answers/commit/1605e637c1964aa91d0aba0a6f896c1f68d092a2))
+* improve messaging ([0eba48d](https://github.com/cds-snc/ai-answers/commit/0eba48de55d83018311a60584cd5d16abd02be61))
+* make visible ([8568650](https://github.com/cds-snc/ai-answers/commit/85686505f4cd64e4cc9bf6f684ed0a95ca781345))
+* refinement ([79ee266](https://github.com/cds-snc/ai-answers/commit/79ee266d8c49017ac00482e5d7a1e0cfd5634d4a))
+* spacing for other errors ([0787cb5](https://github.com/cds-snc/ai-answers/commit/0787cb51fab4974a7582a7fdfd7051bfb7daf76b))
+* split up XXX and ### for design ([faf34a9](https://github.com/cds-snc/ai-answers/commit/faf34a922bc86fb6a618f79d96722b2aa0c38486))
+* structure error messages ([e92380e](https://github.com/cds-snc/ai-answers/commit/e92380eb5d616335abb3d6dd6ac218d9507a27a9))
+* style containers ([e110ebc](https://github.com/cds-snc/ai-answers/commit/e110ebc513f5f2db86bb3e526d5bea11a0678ea3))
+* style other errors ([6449f7d](https://github.com/cds-snc/ai-answers/commit/6449f7dd8c941676b462c3d5521606efae3ee478))
+* style refinement ([bb9360c](https://github.com/cds-snc/ai-answers/commit/bb9360cbf9999bd76e77c85f7887b45b5aa5e8f6))
+* timing a bit tighter on late announcements ([18fc83d](https://github.com/cds-snc/ai-answers/commit/18fc83d529472e3e3253f503561724bca3e3f793))
+
+
+### Bug Fixes
+
+* keep user bubble for ### blocked errors, combine only for XXX privacy ([13a838e](https://github.com/cds-snc/ai-answers/commit/13a838e3097ef2a17fbdfe3b4b7bea8faae45e32))
+
 ## [1.111.0](https://github.com/cds-snc/ai-answers/compare/v1.110.0...v1.111.0) (2026-03-13)
 
 
