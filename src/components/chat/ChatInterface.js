@@ -118,10 +118,14 @@ const ChatInterface = ({
         loadingContainerRef.current.focus();
       }
     } else if (prevIsLoadingRef.current && !isLoading) {
-      if (lastErrorRef.current) {
-        lastErrorRef.current.focus();
-      } else if (lastAIMessageRef.current) {
-        lastAIMessageRef.current.focus();
+      const chatEl = document.querySelector('.chat-container');
+      const focusIsInsideChat = chatEl?.contains(document.activeElement);
+      if (focusIsInsideChat) {
+        if (lastErrorRef.current) {
+          lastErrorRef.current.focus();
+        } else if (lastAIMessageRef.current) {
+          lastAIMessageRef.current.focus();
+        }
       }
     }
     prevIsLoadingRef.current = isLoading;

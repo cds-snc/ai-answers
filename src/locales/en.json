@@ -181,7 +181,8 @@
         "answerLabel3": "Your answer 3 is,",
         "errorHeading": "Error",
         "sessionTimeoutHeading": "Session expired",
-        "chatIssue": "Chat issue"
+        "chatIssue": "Chat problem",
+        "answerReady": "Your answer is ready"
       },
       "citation": {
         "confidence": "Confidence:",

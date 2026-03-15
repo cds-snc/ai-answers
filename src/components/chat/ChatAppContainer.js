@@ -210,9 +210,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     if (!lastMessage) return;
 
     if (lastMessage.sender === 'ai' && !lastMessage.error) {
-      // Focus management in ChatInterface moves focus to the new AI message,
-      // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
-      setAriaLiveMessage('');
+      const chatEl = document.querySelector('.chat-container');
+      if (!chatEl?.contains(document.activeElement)) {
+        // User has navigated away — announce politely so they know to come back.
+        announceToLiveRegion(safeT('homepage.chat.messages.answerReady'));
+      } else {
+        // Focus management in ChatInterface moves focus to the new AI message,
+        // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
+        setAriaLiveMessage('');
+      }
     } else if (lastMessage.sender === 'user' && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
     } else if (lastMessage.error) {
