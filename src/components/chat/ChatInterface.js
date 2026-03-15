@@ -40,6 +40,7 @@ const ChatInterface = ({
   extractSentences,
   chatId,
   readOnly = false,
+  userLeftChatRef,
 }) => {
   // Add safeT helper function
   const safeT = useCallback(
@@ -80,55 +81,11 @@ const ChatInterface = ({
     }
   }, []);
 
-  const [redactionAlert, setRedactionAlert] = useState("");
-  const [lastProcessedMessageId, setLastProcessedMessageId] = useState(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const prevIsLoadingRef = useRef(false);
   const lastAIMessageRef = useRef(null);
   const lastErrorRef = useRef(null);
   const loadingContainerRef = useRef(null);
-
-  // Effect to announce redaction warnings immediately
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      const secondLastMessage = messages[messages.length - 2];
-
-      // Check for redaction warnings (system messages following redacted user messages)
-      if (
-        lastMessage.sender === "system" &&
-        lastMessage.error &&
-        secondLastMessage &&
-        secondLastMessage.sender === "user" &&
-        secondLastMessage.redactedText &&
-        lastMessage.id !== lastProcessedMessageId
-      ) {
-        let warningMessage = "";
-
-        if (secondLastMessage.redactedText.includes("XXX")) {
-          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT(
-            "homepage.chat.messages.privacyMessage"
-          )} ${safeT("homepage.chat.messages.privateContent")}`;
-        } else if (secondLastMessage.redactedText.includes("###")) {
-          warningMessage = `${safeT("homepage.chat.messages.warning")} ${safeT(
-            "homepage.chat.messages.blockedMessage"
-          )} ${safeT("homepage.chat.messages.blockedContent")}`;
-        }
-
-        if (warningMessage) {
-          setLastProcessedMessageId(lastMessage.id);
-          setTimeout(() => {
-            setRedactionAlert(
-              `${warningMessage} ${safeT(
-                "homepage.chat.messages.yourQuestionWas"
-              )} ${secondLastMessage.text}`
-            );
-          }, 500);
-        }
-      }
-    }
-  }, [messages, safeT, lastProcessedMessageId]);
-
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
   const textareaRef = useRef(null);
@@ -155,16 +112,19 @@ const ChatInterface = ({
   // stranded on the browser chrome:
   //   loading starts → focus the loading container (textarea is disabled, focus drops otherwise)
   //   loading ends   → focus the new AI message to read response in document order
+  //                    (skipped if user navigated away — ChatAppContainer handles notification)
   useEffect(() => {
     if (!prevIsLoadingRef.current && isLoading) {
       if (loadingContainerRef.current) {
         loadingContainerRef.current.focus();
       }
     } else if (prevIsLoadingRef.current && !isLoading) {
-      if (lastErrorRef.current) {
-        lastErrorRef.current.focus();
-      } else if (lastAIMessageRef.current) {
-        lastAIMessageRef.current.focus();
+      if (!userLeftChatRef.current) {
+        if (lastErrorRef.current) {
+          lastErrorRef.current.focus();
+        } else if (lastAIMessageRef.current) {
+          lastAIMessageRef.current.focus();
+        }
       }
     }
     prevIsLoadingRef.current = isLoading;
@@ -304,11 +264,10 @@ const ChatInterface = ({
     }
   }, [turnCount]);
 
-  // Reset char count on submission, and clear any stale redaction alert
+  // Reset char count on submission
   useEffect(() => {
     if (isLoading) {
       setCharCount(0);
-      setRedactionAlert("");
     }
   }, [isLoading]);
 
@@ -459,72 +418,56 @@ const ChatInterface = ({
             )}
             {message.sender === "user" ? (
               <div
-                className={`user-message-box ${message.redactedText?.includes("XXX")
-                  ? "privacy-box"
-                  : message.redactedText?.includes("###")
-                    ? "redacted-box"
-                    : ""
-                  }`}
-                {...(message.redactedText && {
-                  "aria-describedby": `description-${message.id}`,
-                })}
+                className={`user-message-box ${message.redactedText?.includes("XXX") ? "privacy-box" : message.redactedText?.includes("###") ? "redacted-box" : ""}`}
               >
-                {/* Screen reader descriptions for navigation */}
-                {message.redactedText?.includes("XXX") && (
-                  <div id={`description-${message.id}`} className="sr-only">
-                    {safeT("homepage.chat.messages.warning")}{" "}
-                    {safeT("homepage.chat.messages.privacyMessage")}{" "}
-                    {safeT("homepage.chat.messages.privateContent")}
-                  </div>
-                )}
-                {message.redactedText?.includes("###") && (
-                  <div id={`description-${message.id}`} className="sr-only">
-                    {safeT("homepage.chat.messages.warning")}{" "}
-                    {safeT("homepage.chat.messages.blockedMessage")}{" "}
-                    {safeT("homepage.chat.messages.blockedContent")}
-                  </div>
-                )}
-
                 <p
-                  className={
-                    message.redactedText?.includes("XXX")
-                      ? "privacy-message"
-                      : message.redactedText?.includes("###")
-                        ? "redacted-message"
-                        : ""
-                  }
+                  className={message.redactedText?.includes("XXX") ? "privacy-message" : message.redactedText?.includes("###") ? "redacted-message" : ""}
                   {...(message.redactedText?.includes("###") && {
                     "aria-hidden": "true",
                   })}
                 >
                   {message.text}
                 </p>
-                {message.redactedText && (
-                  <p
-                    className={
-                      message.redactedText?.includes("XXX")
-                        ? "privacy-preview"
-                        : message.redactedText?.includes("###")
-                          ? "redacted-preview"
-                          : ""
-                    }
-                    aria-hidden="true"
-                  >
-                    {message.redactedText?.includes("XXX") && (
-                      <>
-                        <FontAwesomeIcon icon="fa-circle-exclamation" />{" "}
-                        {safeT("homepage.chat.messages.privacyMessage")}
-                      </>
-                    )}
-                    {message.redactedText?.includes("###") &&
-                      safeT("homepage.chat.messages.blockedMessage")}
-                  </p>
-                )}
               </div>
             ) : (
               <>
                 {message.error ? (
-                  message.isSessionTimeout ? (
+                  message.isBlockedError ? (
+                    <div
+                      className="error-message-box blocked-error-box"
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
+                    >
+                      <h3 className="sr-only">
+                        {safeT("homepage.chat.messages.warning")}
+                      </h3>
+                      <p className="redacted-preview">
+                        {safeT("homepage.chat.messages.blockedMessage")}
+                      </p>
+                      <p className="error-message">
+                        {message.text}
+                      </p>
+                    </div>
+                  ) : message.isRedactionError && message.redactedText ? (
+                    <div
+                      className={`error-message-box ${message.redactedText?.includes("XXX") ? "privacy-error-box" : "error-box"}`}
+                      ref={isLastErrorMessage ? lastErrorRef : null}
+                      tabIndex={isLastErrorMessage ? -1 : undefined}
+                    >
+                      <h3 className="sr-only">
+                        {safeT("homepage.chat.messages.warning")}
+                      </h3>
+                      <p className="sr-only">{safeT("homepage.chat.messages.yourQuestionWas")}</p>
+                      <p className="privacy-message">{message.redactedText}</p>
+                      <p className="privacy-preview">
+                        <FontAwesomeIcon icon="fa-circle-exclamation" aria-hidden="true" />{" "}
+                        {safeT("homepage.chat.messages.privacyMessage")}
+                      </p>
+                      <p className="privacy-error-message">
+                        {message.text}
+                      </p>
+                    </div>
+                  ) : message.isSessionTimeout ? (
                     <div
                       className="limit-reached-message"
                       ref={isLastErrorMessage ? lastErrorRef : null}
@@ -544,31 +487,14 @@ const ChatInterface = ({
                     </div>
                   ) : (
                     <div
-                      className={`error-message-box ${messages[
-                        messages.findIndex((m) => m.id === message.id) - 1
-                      ]?.redactedText?.includes("XXX")
-                        ? "privacy-error-box"
-                        : "error-box"
-                        }`}
+                      className="error-message-box error-box"
                       ref={isLastErrorMessage ? lastErrorRef : null}
                       tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
                       <h3 className="sr-only">
-                        {messages[
-                          messages.findIndex((m) => m.id === message.id) - 1
-                        ]?.redactedText?.includes("XXX")
-                          ? safeT("homepage.chat.messages.warning")
-                          : safeT("homepage.chat.messages.errorHeading")}
+                        {safeT("homepage.chat.messages.errorHeading")}
                       </h3>
-                      <p
-                        className={
-                          messages[
-                            messages.findIndex((m) => m.id === message.id) - 1
-                          ]?.redactedText?.includes("XXX")
-                            ? "privacy-error-message"
-                            : "error-message"
-                        }
-                      >
+                      <p className="error-message">
                         {message.text}
                         {message.searchUrl && (
                           <>
@@ -927,10 +853,6 @@ const ChatInterface = ({
       )}
       </section>
 
-      {/* Live region for redaction warnings */}
-      <div role="alert" className="sr-only">
-        {redactionAlert}
-      </div>
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (
           <div role="alert" className="sr-only">

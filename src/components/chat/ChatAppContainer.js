@@ -107,6 +107,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Add a ref to track if we're currently typing
   const isTyping = useRef(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
+  const [errorAlert, setErrorAlert] = useState('');
+  const userLeftChatRef = useRef(false);
   const hintTimerRef = useRef(null);
   const statusTimersRef = useRef([]);
 
@@ -161,6 +163,22 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     setTimeout(() => setAriaLiveMessage(text), 100);
   }, []);
 
+  // Track if user navigated outside the chat during loading.
+  // Resets when loading starts; set to true on focusout to outside the chat container.
+  useEffect(() => {
+    if (!isLoading) return;
+    userLeftChatRef.current = false;
+    const chatEl = document.querySelector('.chat-container');
+    if (!chatEl) return;
+    const handleFocusOut = (e) => {
+      if (e.relatedTarget && !chatEl.contains(e.relatedTarget)) {
+        userLeftChatRef.current = true;
+      }
+    };
+    chatEl.addEventListener('focusout', handleFocusOut);
+    return () => chatEl.removeEventListener('focusout', handleFocusOut);
+  }, [isLoading]);
+
   // Timed loading announcements while in moderatingQuestion phase:
   // 1s  — hint text
   // 5s  — "Building context..."          (buildingContext)
@@ -188,8 +206,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
     statusTimersRef.current = [
       setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.buildingContext')), 5000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 10000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 15000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 12000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 17000),
     ];
 
     return clearAll;
@@ -209,25 +227,25 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     if (!lastMessage) return;
 
     if (lastMessage.sender === 'ai' && !lastMessage.error) {
-      // Focus management in ChatInterface moves focus to the new AI message,
-      // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
-      setAriaLiveMessage('');
-    } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
+      if (userLeftChatRef.current) {
+        // User navigated away — announce politely so they know to come back.
+        announceToLiveRegion(safeT('homepage.chat.messages.answerReady'));
+      } else {
+        // Focus management in ChatInterface moves focus to the new AI message,
+        // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
+        setAriaLiveMessage('');
+      }
+    } else if (lastMessage.sender === 'user' && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
-    } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
-      setAriaLiveMessage(lastMessage.text || '');
-    } else if (lastMessage.error && lastMessage.sender === 'system') {
-      if (lastMessage.text) {
-        if (React.isValidElement(lastMessage.text)) {
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = lastMessage.text.props.dangerouslySetInnerHTML.__html;
-          setAriaLiveMessage(tempDiv.textContent || tempDiv.innerText || '');
-        } else {
-          setAriaLiveMessage(lastMessage.text);
-        }
+    } else if (lastMessage.error) {
+      // Only fire alert if user navigated away — focus management handles the in-situ case.
+      if (userLeftChatRef.current) {
+        const cue = safeT('homepage.chat.messages.chatIssue');
+        setErrorAlert(cue);
+        setTimeout(() => setErrorAlert(''), 1000);
       }
     }
-  }, [isLoading, messages]);
+  }, [isLoading, messages, safeT]);
 
   const currentRequestId = useRef(null);
 
@@ -520,28 +538,47 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           // ignore
         }
         if (error instanceof RedactionError) {
-          const userMessageId = messageIdCounter.current++;
-          const blockedMessageId = messageIdCounter.current++;
-          setMessages(prevMessages => [
-            ...prevMessages.slice(0, -1),
-            {
-              id: userMessageId,
-              text: error.redactedText,
-              redactedText: error.redactedText,
-              redactedItems: error.redactedItems,
-              sender: 'user',
-              error: true
-            },
-            {
-              id: blockedMessageId,
-              text: error.redactedText.includes('XXX')
-                ? safeT('homepage.chat.messages.privateContent')
-                : safeT('homepage.chat.messages.blockedContent'),
-              sender: 'system',
-              error: true,
-              ...(error.historySignature ? { historySignature: error.historySignature } : {})
-            }
-          ]);
+          if (error.redactedText.includes('XXX')) {
+            // Privacy (XXX): single combined system bubble — one bounding box for question + warning
+            const redactionMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages.slice(0, -1),
+              {
+                id: redactionMessageId,
+                redactedText: error.redactedText,
+                redactedItems: error.redactedItems,
+                text: safeT('homepage.chat.messages.privateContent'),
+                sender: 'system',
+                error: true,
+                isRedactionError: true,
+                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              }
+            ]);
+          } else {
+            // Blocked (###): keep user bubble so the user can see their original message, error box below
+            const userMessageId = messageIdCounter.current++;
+            const blockedMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages.slice(0, -1),
+              {
+                id: userMessageId,
+                text: error.redactedText,
+                redactedText: error.redactedText,
+                redactedItems: error.redactedItems,
+                sender: 'user',
+                error: true
+              },
+              {
+                id: blockedMessageId,
+                text: safeT('homepage.chat.messages.blockedContent'),
+                sender: 'system',
+                error: true,
+                isRedactionError: true,
+                isBlockedError: true,
+                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              }
+            ]);
+          }
           clearInput();
           setIsLoading(false);
           return;
@@ -930,6 +967,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
+        userLeftChatRef={userLeftChatRef}
       />
       {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div
@@ -940,6 +978,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       >
         {ariaLiveMessage}
       </div>
+      {errorAlert && (
+        <div role="alert" className="sr-only">
+          {errorAlert}
+        </div>
+      )}
     </>
   );
 };
