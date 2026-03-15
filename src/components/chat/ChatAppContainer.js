@@ -171,7 +171,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const chatEl = document.querySelector('.chat-container');
     if (!chatEl) return;
     const handleFocusOut = (e) => {
-      if (!chatEl.contains(e.relatedTarget)) {
+      if (e.relatedTarget && !chatEl.contains(e.relatedTarget)) {
         userLeftChatRef.current = true;
       }
     };
