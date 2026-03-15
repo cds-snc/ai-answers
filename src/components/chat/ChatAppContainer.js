@@ -108,6 +108,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const isTyping = useRef(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
   const [errorAlert, setErrorAlert] = useState('');
+  const userLeftChatRef = useRef(false);
   const hintTimerRef = useRef(null);
   const statusTimersRef = useRef([]);
 
@@ -162,6 +163,22 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     setTimeout(() => setAriaLiveMessage(text), 100);
   }, []);
 
+  // Track if user navigated outside the chat during loading.
+  // Resets when loading starts; set to true on focusout to outside the chat container.
+  useEffect(() => {
+    if (!isLoading) return;
+    userLeftChatRef.current = false;
+    const chatEl = document.querySelector('.chat-container');
+    if (!chatEl) return;
+    const handleFocusOut = (e) => {
+      if (!chatEl.contains(e.relatedTarget)) {
+        userLeftChatRef.current = true;
+      }
+    };
+    chatEl.addEventListener('focusout', handleFocusOut);
+    return () => chatEl.removeEventListener('focusout', handleFocusOut);
+  }, [isLoading]);
+
   // Timed loading announcements while in moderatingQuestion phase:
   // 1s  — hint text
   // 5s  — "Building context..."          (buildingContext)
@@ -210,9 +227,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     if (!lastMessage) return;
 
     if (lastMessage.sender === 'ai' && !lastMessage.error) {
-      const chatEl = document.querySelector('.chat-container');
-      if (!chatEl?.contains(document.activeElement)) {
-        // User has navigated away — announce politely so they know to come back.
+      if (userLeftChatRef.current) {
+        // User navigated away — announce politely so they know to come back.
         announceToLiveRegion(safeT('homepage.chat.messages.answerReady'));
       } else {
         // Focus management in ChatInterface moves focus to the new AI message,
@@ -222,9 +238,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     } else if (lastMessage.sender === 'user' && !lastMessage.error) {
       setAriaLiveMessage(lastMessage.text || '');
     } else if (lastMessage.error) {
-      // Only fire alert if focus has drifted outside the chat — focus management handles the in-situ case.
-      const chatEl = document.querySelector('.chat-container');
-      if (!chatEl?.contains(document.activeElement)) {
+      // Only fire alert if user navigated away — focus management handles the in-situ case.
+      if (userLeftChatRef.current) {
         const cue = safeT('homepage.chat.messages.chatIssue');
         setErrorAlert(cue);
         setTimeout(() => setErrorAlert(''), 1000);
@@ -952,6 +967,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
+        userLeftChatRef={userLeftChatRef}
       />
       {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div

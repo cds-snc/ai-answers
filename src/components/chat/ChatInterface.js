@@ -40,6 +40,7 @@ const ChatInterface = ({
   extractSentences,
   chatId,
   readOnly = false,
+  userLeftChatRef,
 }) => {
   // Add safeT helper function
   const safeT = useCallback(
@@ -85,7 +86,6 @@ const ChatInterface = ({
   const lastAIMessageRef = useRef(null);
   const lastErrorRef = useRef(null);
   const loadingContainerRef = useRef(null);
-
   const [charCount, setCharCount] = useState(0);
   const [charCountAlert, setCharCountAlert] = useState("");
   const textareaRef = useRef(null);
@@ -112,15 +112,14 @@ const ChatInterface = ({
   // stranded on the browser chrome:
   //   loading starts → focus the loading container (textarea is disabled, focus drops otherwise)
   //   loading ends   → focus the new AI message to read response in document order
+  //                    (skipped if user navigated away — ChatAppContainer handles notification)
   useEffect(() => {
     if (!prevIsLoadingRef.current && isLoading) {
       if (loadingContainerRef.current) {
         loadingContainerRef.current.focus();
       }
     } else if (prevIsLoadingRef.current && !isLoading) {
-      const chatEl = document.querySelector('.chat-container');
-      const focusIsInsideChat = chatEl?.contains(document.activeElement);
-      if (focusIsInsideChat) {
+      if (!userLeftChatRef.current) {
         if (lastErrorRef.current) {
           lastErrorRef.current.focus();
         } else if (lastAIMessageRef.current) {
