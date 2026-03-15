@@ -229,20 +229,10 @@ code {
   border: 1px solid var(--gcds-color-blue-100);
 }
 .privacy-preview {
-  /* background-color: #f7fafd; */
   color: #33465c;
   font-weight: 600;
   padding: .5rem 1rem;
-  
-  /* display: block;
-  padding: 0.75rem;
-  border-radius: 0 0 6px 6px; */
   font-size: 20px;
-  /* padding: 1.5em 1.5em 1.5em 1.5em;
-  text-align: center;
-  text-wrap: balance;
-  border: 1px solid var(--gcds-color-blue-100);
-  margin-top: -1px; */
 }
 .privacy-preview p {
   margin: 0;
