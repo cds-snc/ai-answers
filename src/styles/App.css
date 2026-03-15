@@ -474,21 +474,8 @@ code {
   font-weight: 600;
 }
 
-/* .error-message {
-  color: var(--gcds-color-red-900);
-  background-color: var(--gcds-color-red-100);
-  border: 1px solid var(--gcds-color-red-100);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 10px;
-} */
-
 .privacy-error-message, .error-message {
   padding: 0rem 1.5rem;
-}
-
-.redacted-error-message i {
-  margin-right: 6px;
 }
 
 .limit-reached-message {
