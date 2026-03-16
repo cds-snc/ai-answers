@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.112.1](https://github.com/cds-snc/ai-answers/compare/v1.112.0...v1.112.1) (2026-03-16)
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump yauzl from 3.2.0 to 3.2.1 ([e0d3fe5](https://github.com/cds-snc/ai-answers/commit/e0d3fe5ea79230a632bfa5a7f5b9430be894687f))
+* **deps:** bump flatted from 3.3.3 to 3.4.1 ([5be7634](https://github.com/cds-snc/ai-answers/commit/5be7634f36ba4ab584b23240d4ca77807bcf1ca6))
+* **deps:** bump undici from 7.18.2 to 7.24.3 ([520f75c](https://github.com/cds-snc/ai-answers/commit/520f75cdeb4af35982d631e089645b601d991798))
+
 ## [1.112.0](https://github.com/cds-snc/ai-answers/compare/v1.111.0...v1.112.0) (2026-03-15)
 
 
