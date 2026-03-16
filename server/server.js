@@ -19,6 +19,19 @@ import dbBatchPersistHandler from '../api/batch/batch-persist.js';
 import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
 import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
 import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
+import experimentalBatchCreateHandler from '../api/experimental/experimental-batch-create.js';
+import experimentalBatchListHandler from '../api/experimental/experimental-batch-list.js';
+import experimentalBatchProcessHandler from '../api/experimental/experimental-batch-process.js';
+import experimentalBatchStatusHandler from '../api/experimental/experimental-batch-status.js';
+import experimentalBatchExportHandler from '../api/experimental/experimental-batch-export.js';
+import experimentalBatchDeleteHandler from '../api/experimental/experimental-batch-delete.js';
+import experimentalAnalyzersListHandler from '../api/experimental/experimental-analyzers-list.js';
+import experimentalBatchCancelHandler from '../api/experimental/experimental-batch-cancel.js';
+import experimentalBatchProgressHandler from '../api/experimental/experimental-batch-progress.js';
+import experimentalDatasetUploadHandler from '../api/experimental/experimental-dataset-upload.js';
+import experimentalDatasetListHandler from '../api/experimental/experimental-dataset-list.js';
+import experimentalDatasetDeleteHandler from '../api/experimental/experimental-dataset-delete.js';
+import experimentalDatasetRowsHandler from '../api/experimental/experimental-dataset-rows.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
@@ -192,6 +205,21 @@ app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
 app.delete('/api/batch/batch-delete', dbBatchDeleteHandler);
 app.delete('/api/batch/batch-delete-all', batchesDeleteAllHandler);
 app.get('/api/batch/batch-stats', dbBatchStatsHandler);
+
+// Experimental Batch Endpoints
+app.post('/api/experimental/experimental-batch-create', experimentalBatchCreateHandler);
+app.get('/api/experimental/experimental-batch-list', experimentalBatchListHandler);
+app.post('/api/experimental/experimental-batch-process/:id', experimentalBatchProcessHandler);
+app.get('/api/experimental/experimental-batch-status/:id', experimentalBatchStatusHandler);
+app.get('/api/experimental/experimental-batch-export/:id', experimentalBatchExportHandler);
+app.delete('/api/experimental/experimental-batch-delete/:id', experimentalBatchDeleteHandler);
+app.get('/api/experimental/experimental-analyzers', experimentalAnalyzersListHandler);
+app.post('/api/experimental/experimental-batch-cancel/:id', experimentalBatchCancelHandler);
+app.get('/api/experimental/experimental-batch-progress/:id', experimentalBatchProgressHandler);
+app.post('/api/experimental/experimental-dataset-upload', experimentalDatasetUploadHandler);
+app.get('/api/experimental/experimental-dataset-list', experimentalDatasetListHandler);
+app.get('/api/experimental/experimental-dataset-rows', experimentalDatasetRowsHandler);
+app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
@@ -281,7 +309,6 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
-
 
 
 
