@@ -35,7 +35,16 @@ const ResetRequestPage = ({ lang = 'en' }) => {
       <form onSubmit={submit}>
         <div className={styles.form_group}>
           <label htmlFor="email">{t('login.email')}</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} />
+          <input
+            id="email"
+            type="email"
+            value={email}
+            title={t('login.email')}
+            onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
+            required
+            disabled={isLoading}
+          />
         </div>
         <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.request.send') || 'Send reset email'}</button>
       </form>

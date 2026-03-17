@@ -50,6 +50,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             type="email"
             id="email"
             value={email}
+            title={t('signup.email')}
             onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
             onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
             required
@@ -62,6 +63,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             type="password"
             id="password"
             value={password}
+            title={t('signup.password')}
             onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
             onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
             required
@@ -74,6 +76,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             type="password"
             id="confirmPassword"
             value={confirmPassword}
+            title={t('signup.confirmPassword')}
             onChange={(e) => { e.target.setCustomValidity(''); setConfirmPassword(e.target.value); }}
             onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
             required

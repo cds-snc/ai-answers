@@ -117,6 +117,7 @@ const LoginPage = ({ lang = 'en' }) => {
                 type="email"
                 id="email"
                 value={email}
+                title={t('login.email')}
                 onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
                 onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
                 required
@@ -129,6 +130,7 @@ const LoginPage = ({ lang = 'en' }) => {
                 type="password"
                 id="password"
                 value={password}
+                title={t('login.password')}
                 onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
                 onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
                 required
