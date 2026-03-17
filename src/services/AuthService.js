@@ -1,4 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
+import { ROUTE_SLUGS } from '../utils/routes.js';
 
 
 class AuthService {
@@ -249,15 +250,17 @@ class AuthService {
   }
 
   static isPublicRoute(pathname) {
-    const publicRoutes = [
-      '/', '/signin', '/se-connecter', '/register', '/s-inscrire',
-      '/about', '/a-propos', '/contact',
-      '/logout', '/deconnexion',
-      '/reset-request', '/reinitialisation',
-      '/reset-verify', '/verification-reinitialisation',
-      '/reset-complete', '/reinitialisation-reussie',
-    ];
-    return publicRoutes.some(route => pathname.startsWith(route));
+    const publicRouteNames = ['signin', 'about', 'signup', 'logout', 'reset-request', 'reset-verify', 'reset-complete'];
+    const publicPaths = ['/', '/contact'];
+    for (const name of publicRouteNames) {
+      const slugs = ROUTE_SLUGS[name];
+      if (slugs) {
+        for (const [lang, slug] of Object.entries(slugs)) {
+          publicPaths.push(`/${lang}/${slug}`);
+        }
+      }
+    }
+    return publicPaths.some(route => pathname.startsWith(route));
   }
 
   static async hasRole(requiredRoles = []) {

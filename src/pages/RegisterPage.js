@@ -31,7 +31,7 @@ const RegisterPage = ({ lang = 'en' }) => {
     setIsLoading(true);
     try {
       await AuthService.signup(email, password);
-      navigate(`/${lang}/admin`);
+      navigate(getPath('admin', lang));
     } catch (err) {
       setError(err.message || t('signup.errorOccurred'));
     } finally {
