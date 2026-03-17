@@ -248,13 +248,13 @@
       "title": "System Card documentation",
       "description": "For detailed information about how AI Answers works, our safety measures, evaluation methods, and technical architecture, see our complete",
       "onThisPageTitle": "Key sections:",
-      "currentStatus": "Current Status",
-      "purposeScope": "System Purpose and Scope",
-      "architecture": "Technical Architecture",
-      "riskAssessment": "Risk Assessment and Safety Measures",
-      "performance": "Performance and Evaluation",
-      "limitations": "Limitations and Constraints",
-      "responsibleAI": "Responsible AI Principles and Governance"
+      "currentStatus": "Current status",
+      "purposeScope": "System purpose and scope",
+      "architecture": "Technical architecture",
+      "riskAssessment": "Risk assessment and safety measures",
+      "performance": "Performance and evaluation",
+      "limitations": "Limitations and constraints",
+      "responsibleAI": "Responsible AI principles and governance"
     },
     "accessibilityUsability": {
       "title": "Accessibility and usability",
@@ -268,7 +268,7 @@
     "navigation": {
       "title": "On this page",
       "links": {
-        "newEvaluation": "New Batch",
+        "newEvaluation": "New batch",
         "runningBatches": "Incomplete batches",
         "processedBatches": "Processed batches",
         "onThisPage": "Links on this page"
