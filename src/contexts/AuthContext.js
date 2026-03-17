@@ -141,11 +141,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const getDefaultRouteForRole = (role, lang = 'en') => {
-    const prefix = lang === 'fr' ? '/fr' : '/en';
     if (role === 'admin' || role === 'partner') {
-      return `${prefix}/admin`;
+      return getPath('admin', lang);
     }
-    return prefix;
+    return `/${lang}`;
   };
 
   const value = {

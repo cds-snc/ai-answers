@@ -18,7 +18,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
 
   useEffect(() => {
     if (!code || !email) {
-      setMessage(t('reset.complete.invalid') || 'Invalid reset link');
+      setMessage(t('reset.complete.invalid'));
     }
   }, [code, email, t]);
 
@@ -26,21 +26,21 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     e && e.preventDefault();
     setMessage('');
     if (!password || password.length < 8) {
-      setMessage(t('reset.complete.passwordTooShort') || 'Password must be at least 8 characters');
+      setMessage(t('reset.complete.passwordTooShort'));
       return;
     }
     if (password !== confirm) {
-      setMessage(t('reset.complete.passwordMismatch') || 'Passwords do not match');
+      setMessage(t('reset.complete.passwordMismatch'));
       return;
     }
     setIsLoading(true);
     try {
       // TOTP-based password reset
       await AuthService.resetPassword({ email, code, password });
-      setMessage(t('reset.complete.success') || 'Password updated. Redirecting to sign in...');
+      setMessage(t('reset.complete.success'));
       setTimeout(() => navigate(getPath('signin', lang)), 2500);
     } catch (err) {
-      setMessage(err.message || t('reset.complete.error') || 'Failed to reset password');
+      setMessage(err.message || t('reset.complete.error'));
     } finally {
       setIsLoading(false);
     }
@@ -48,24 +48,24 @@ const ResetCompletePage = ({ lang = 'en' }) => {
 
   return (
     <div className={styles.login_container}>
-      <h1>{t('reset.complete.title') || 'Set a new password'}</h1>
+      <h1>{t('reset.complete.title')}</h1>
       {message && <div className={styles.info_message}>{message}</div>}
       <form onSubmit={submit}>
         {/* No code/OTP field — link verification is sufficient to set a new password */}
         <div className={styles.form_group}>
-          <label htmlFor="password">{t('reset.complete.password') || 'New password'}</label>
+          <label htmlFor="password">{t('reset.complete.password')}</label>
           <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
         </div>
 
         <div className={styles.form_group}>
-          <label htmlFor="confirm">{t('reset.complete.confirm') || 'Confirm new password'}</label>
+          <label htmlFor="confirm">{t('reset.complete.confirm')}</label>
           <input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={isLoading} />
         </div>
 
-        <button type="submit" className={styles.submit_button} disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.complete.submit') || 'Set password'}</button>
+        <button type="submit" className={styles.submit_button} disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') : t('reset.complete.submit')}</button>
       </form>
       <div className={styles['auth-links']}>
-        <Link to={getPath('signin', lang)}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
+        <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
       </div>
     </div>
   );

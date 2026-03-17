@@ -18,11 +18,11 @@ const ResetRequestPage = ({ lang = 'en' }) => {
     setMessage('');
     try {
       await AuthService.sendReset(email, lang);
-      setMessage(t('reset.request.sent') || 'If that account exists, we sent a reset email.');
+      setMessage(t('reset.request.sent'));
       // Optionally redirect to signin after a short delay
       setTimeout(() => navigate(getPath('signin', lang)), 3000);
     } catch (err) {
-      setMessage(t('reset.request.error') || 'Failed to request reset');
+      setMessage(t('reset.request.error'));
     } finally {
       setIsLoading(false);
     }
@@ -30,7 +30,7 @@ const ResetRequestPage = ({ lang = 'en' }) => {
 
   return (
     <div className={styles.login_container}>
-      <h1>{t('reset.request.title') || 'Reset your password'}</h1>
+      <h1>{t('reset.request.title')}</h1>
       {message && <div className={styles.info_message}>{message}</div>}
       <form onSubmit={submit}>
         <div className={styles.form_group}>
@@ -46,10 +46,10 @@ const ResetRequestPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.request.send') || 'Send reset email'}</button>
+        <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.request.sending') : t('reset.request.send')}</button>
       </form>
       <div className={styles['auth-links']}>
-        <Link to={getPath('signin', lang)}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
+        <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
       </div>
     </div>
   );

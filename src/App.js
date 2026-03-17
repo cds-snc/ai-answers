@@ -327,7 +327,7 @@ const AppLayout = () => {
           {/* Show AI Answers breadcrumb on About and 404 pages */}
           {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
             <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
-              {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
+              {t('notFound.breadcrumb')}
             </GcdsBreadcrumbsItem>
           )}
         </GcdsBreadcrumbs>

@@ -18,7 +18,7 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
   useEffect(() => {
     // Redirect directly to reset-complete with code and email
     if (!code || !email) {
-      setMessage(t('reset.verify.invalidLink') || 'Invalid or missing reset link');
+      setMessage(t('reset.verify.invalidLink'));
       setMode('invalid');
       return;
     }
@@ -31,19 +31,19 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
 
   return (
     <div className={styles.login_container}>
-      <h1>{t('reset.verify.title') || 'Verify reset'}</h1>
+      <h1>{t('reset.verify.title')}</h1>
       {message && <div className={styles.info_message}>{message}</div>}
-      {mode === 'invalid' && <div>{t('reset.verify.invalidLink') || 'Invalid link'}</div>}
+      {mode === 'invalid' && <div>{t('reset.verify.invalidLink')}</div>}
       {mode === 'ready' && (
         <>
-          <p>{t('reset.verify.instructionsNoOtp') || 'Click continue to set a new password.'}</p>
+          <p>{t('reset.verify.instructionsNoOtp')}</p>
 
           <div className={styles.twofa_actions}>
-            <button className={styles.submit_button} onClick={gotoSetPassword} disabled={isLoading}>{t('reset.verify.continue') || 'Continue'}</button>
+            <button className={styles.submit_button} onClick={gotoSetPassword} disabled={isLoading}>{t('reset.verify.continue')}</button>
           </div>
 
           <div className={styles['auth-links']}>
-            <Link to={getPath('signin', lang)}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
+            <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
           </div>
         </>
       )}

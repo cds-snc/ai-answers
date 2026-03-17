@@ -237,7 +237,7 @@
     }
   },
   "batch": {
-    "title": "Batchs",
+    "title": "Batches",
     "navigation": {
       "title": "On this page",
       "links": {
@@ -358,7 +358,7 @@
     "navigation": {
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
-      "partnerMenu": "Partner Menu",
+      "partnerMenu": "Partner menu",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -824,8 +824,9 @@
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm password",
-    "submit": "Submit",
+    "submit": "Create account",
     "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
     "errorOccurred": "An error occurred creating your account",
     "submitting": "Creating account...wait for approval"
   },

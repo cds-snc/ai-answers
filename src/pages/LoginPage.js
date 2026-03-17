@@ -142,7 +142,7 @@ const LoginPage = ({ lang = 'en' }) => {
             </button>
           </form>
           <div className={styles['auth-links']}>
-            <Link to={getPath('signup', lang)}>{t('login.form.signupLink')}</Link>
+            <Link to={getPath('register', lang)}>{t('login.form.signupLink')}</Link>
             &nbsp;|&nbsp;
             <Link to={getPath('reset-request', lang)}>{t('login.form.forgotPassword')}</Link>
           </div>
