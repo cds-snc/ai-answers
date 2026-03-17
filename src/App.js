@@ -7,7 +7,7 @@ import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
 import BatchPage from './pages/BatchPage.js';
 import ChatViewer from './pages/ChatViewer.js';
-import SignupPage from './pages/SignupPage.js';
+import RegisterPage from './pages/RegisterPage.js';
 import LoginPage from './pages/LoginPage.js';
 import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
@@ -30,6 +30,7 @@ import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
 import { useTranslations } from './hooks/useTranslations.js';
+import { translateSlug } from './utils/routes.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -66,7 +67,7 @@ const getAlternatePath = (currentPath, currentLang) => {
   newSegments.push(newLang);
 
   if (restSegments && restSegments.length) {
-    newSegments.push(...restSegments.filter(Boolean));
+    newSegments.push(...restSegments.filter(Boolean).map(seg => translateSlug(seg, currentLang, newLang)));
   }
 
   const result = newSegments.join('/') || `/${newLang}`;
@@ -342,54 +343,54 @@ export default function App() {
       { path: '/en', element: homeEn },
       { path: '/fr', element: homeFr },
       { path: '/en/about', element: <AboutPage lang="en" /> },
-      { path: '/fr/about', element: <AboutPage lang="fr" /> },
+      { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
-      { path: '/fr/signin', element: <LoginPage lang="fr" /> },
+      { path: '/fr/se-connecter', element: <LoginPage lang="fr" /> },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },
-      { path: '/fr/reset-request', element: <ResetRequestPage lang="fr" /> },
+      { path: '/fr/reinitialisation', element: <ResetRequestPage lang="fr" /> },
       { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" /> },
-      { path: '/fr/reset-verify', element: <ResetVerifyPage lang="fr" /> },
+      { path: '/fr/verification-reinitialisation', element: <ResetVerifyPage lang="fr" /> },
       { path: '/en/reset-complete', element: <ResetCompletePage lang="en" /> },
-      { path: '/fr/reset-complete', element: <ResetCompletePage lang="fr" /> },
-      { path: '/en/signup', element: <SignupPage lang="en" /> },
-      { path: '/fr/signup', element: <SignupPage lang="fr" /> },
+      { path: '/fr/reinitialisation-reussie', element: <ResetCompletePage lang="fr" /> },
+      { path: '/en/register', element: <RegisterPage lang="en" /> },
+      { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
-      { path: '/fr/logout', element: <LogoutPage lang="fr" /> }
+      { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> }
     ];
 
     const protectedRoutes = [
       { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/chat-dashboard', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/batch', element: <BatchPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin'] },
       { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/chat-viewer', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/visualiseur-de-clavardage', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/users', element: <UsersPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/utilisateurs', element: <UsersPage lang="fr" />, roles: ['admin'] },
       { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/eval', element: <EvalPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/evaluation', element: <EvalPage lang="fr" />, roles: ['admin'] },
       { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/eval-dashboard', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord-evaluation', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/tableau-de-bord-auto-evaluation', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'] },
       { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/metrics', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
       { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
       { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/scenario-overrides', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/remplacements-scenarios', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/parametres', element: <SettingsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
-      { path: '/fr/database', element: <DatabasePage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/base-de-donnees', element: <DatabasePage lang="fr" />, roles: ['admin'] },
       { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'] },
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/connectivity', element: <ConnectivityPage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

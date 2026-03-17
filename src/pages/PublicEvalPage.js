@@ -39,7 +39,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
       <h1 className="mb-400">{t('admin.publicEval.title', 'Public Evaluation')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
+          <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
       <DataTable

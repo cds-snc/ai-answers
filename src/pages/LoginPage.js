@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { getPath } from '../utils/routes.js';
 import styles from '../styles/auth.module.css';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -56,7 +57,7 @@ const LoginPage = ({ lang = 'en' }) => {
       let defaultRoute = data?.defaultRoute;
       // Otherwise compute from returned user role (or fallback to '/')
       if (!defaultRoute && data?.user?.role) {
-        defaultRoute = getDefaultRouteForRole(data.user.role);
+        defaultRoute = getDefaultRouteForRole(data.user.role, lang);
       }
       if (!defaultRoute) defaultRoute = '/';
       navigate(defaultRoute);
@@ -88,19 +89,19 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div className={styles.twofa_container}>
-          <h2>{t('login.2fa.title') || 'Two-factor authentication'}</h2>
-          <p className={styles.info_message}>{t('login.2fa.sentToEmail') || 'A verification code will be sent to your email.'}</p>
+          <h2>{t('login.2fa.title')}</h2>
+          <p className={styles.info_message}>{t('login.2fa.sentToEmail')}</p>
           {twoStepError && <div className={styles.error_message}>{twoStepError}</div>}
           <div className={styles.form_group}>
-            <label htmlFor="code">{t('login.2fa.code') || 'Verification code'}</label>
+            <label htmlFor="code">{t('login.2fa.code')}</label>
             <input id="code" value={code} onChange={(e) => setCode(e.target.value)} disabled={isLoading} />
           </div>
           <div className={styles.twofa_actions}>
             <button onClick={verifyTwoStep} disabled={isLoading} className={styles.submit_button}>
-              {t('login.2fa.verify') || 'Verify code'}
+              {t('login.2fa.verify')}
             </button>
             <button onClick={requestTwoStep} disabled={isLoading || !email} className={styles.secondary_button}>
-              {t('login.2fa.resend') || 'Resend code'}
+              {t('login.2fa.resend')}
             </button>
           </div>
         </div>
@@ -116,7 +117,8 @@ const LoginPage = ({ lang = 'en' }) => {
                 type="email"
                 id="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
+                onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
                 required
                 disabled={isLoading}
               />
@@ -127,7 +129,8 @@ const LoginPage = ({ lang = 'en' }) => {
                 type="password"
                 id="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
+                onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
                 required
                 disabled={isLoading}
               />
@@ -137,9 +140,9 @@ const LoginPage = ({ lang = 'en' }) => {
             </button>
           </form>
           <div className={styles['auth-links']}>
-            <Link to={`/${lang}/signup`}>{t('login.form.signupLink')}</Link>
+            <Link to={getPath('signup', lang)}>{t('login.form.signupLink')}</Link>
             &nbsp;|&nbsp;
-            <Link to={`/${lang}/reset-request`}>{t('login.form.forgotPassword') || 'Forgot password?'}</Link>
+            <Link to={getPath('reset-request', lang)}>{t('login.form.forgotPassword')}</Link>
           </div>
         </>
       )}

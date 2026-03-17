@@ -42,7 +42,7 @@ const ChatViewer = () => {
         data: logs, // Directly provide data during initialization
         columns: [
           {
-            title: 'Created At',
+            title: t('logging.createdAt'),
             data: 'createdAt',
             render: (data) => {
               const date = new Date(data);
@@ -50,17 +50,17 @@ const ChatViewer = () => {
             },
           },
           {
-            title: 'Level',
+            title: t('logging.level'),
             data: 'logLevel',
             render: (data) => data ?? '',
           },
           {
-            title: 'Message',
+            title: t('logging.message'),
             data: 'message',
             render: (data) => data ?? '',
           },
           {
-            title: 'Metadata',
+            title: t('logging.metadata'),
             data: 'metadata',
             className: 'metadata-column',
 
@@ -106,7 +106,7 @@ const ChatViewer = () => {
                     </div>
                     <div class="metadata-actions">
                       <button class="expand-button gcds-button gcds-button--secondary">
-                        Expand
+                        ${t('logging.expand')}
                       </button>
                     </div>
                   </div>`;
@@ -280,7 +280,7 @@ const ChatViewer = () => {
         <h1 className="mb-400">{t('logging.title')}</h1>
         <nav className="mb-400">
           <GcdsText>
-            <GcdsLink href={`/${language}/admin`}>Back to Admin</GcdsLink>
+            <GcdsLink href={`/${language}/admin`}>{t('logging.backToAdmin')}</GcdsLink>
           </GcdsText>
         </nav>
 
@@ -288,7 +288,7 @@ const ChatViewer = () => {
           <div className="mb-400">
             <div className="">
               <label htmlFor="chatIdInput" className="block mb-2">
-                Enter Chat ID:
+                {t('logging.enterChatId')}
               </label>
               <input
                 id="chatIdInput"
@@ -305,7 +305,7 @@ const ChatViewer = () => {
           <div className="space-y-6">
             <div className="flex gap-4 items-center">
               <div className="flex-shrink-0">
-                <label htmlFor="logLevelFilter" className="mr-2">Filter by Level:</label>
+                <label htmlFor="logLevelFilter" className="mr-2">{t('logging.filterByLevel')}</label>
                 <select
                   id="logLevelFilter"
                   value={logLevel}
@@ -313,11 +313,11 @@ const ChatViewer = () => {
                   className="form-control p-2 border rounded w-40"
                   style={{ minWidth: '120px' }}
                 >
-                  <option value="">All</option>
-                  <option value="info">Info</option>
-                  <option value="debug">Debug</option>
-                  <option value="warn">Warn</option>
-                  <option value="error">Error</option>
+                  <option value="">{t('logging.all')}</option>
+                  <option value="info">{t('logging.info')}</option>
+                  <option value="debug">{t('logging.debug')}</option>
+                  <option value="warn">{t('logging.warn')}</option>
+                  <option value="error">{t('logging.error')}</option>
                 </select>
               </div>
               <GcdsButton
@@ -347,7 +347,7 @@ const ChatViewer = () => {
                   </div>
                 ) : (
                   <div className="p-4">
-                    <p className="text-gray-500">No logs available</p>
+                    <p className="text-gray-500">{t('logging.noLogs')}</p>
                   </div>
                 )}
               </div>
@@ -378,13 +378,13 @@ const ChatViewer = () => {
             style={{ position: 'relative' }}
           >
             <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Metadata Details</h2>
+              <h2 className="text-xl font-semibold">{t('logging.metadataDetails')}</h2>
               <GcdsButton
                 type="button"
                 variant="secondary"
                 onClick={() => setExpandedMetadata(null)}
               >
-                Close
+                {t('logging.close')}
               </GcdsButton>
             </div>
             <div className="p-6 overflow-auto flex-grow">

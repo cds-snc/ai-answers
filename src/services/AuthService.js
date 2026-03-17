@@ -249,7 +249,14 @@ class AuthService {
   }
 
   static isPublicRoute(pathname) {
-    const publicRoutes = ['/', '/signin', '/signup', '/about', '/contact'];
+    const publicRoutes = [
+      '/', '/signin', '/se-connecter', '/register', '/s-inscrire',
+      '/about', '/a-propos', '/contact',
+      '/logout', '/deconnexion',
+      '/reset-request', '/reinitialisation',
+      '/reset-verify', '/verification-reinitialisation',
+      '/reset-complete', '/reinitialisation-reussie',
+    ];
     return publicRoutes.some(route => pathname.startsWith(route));
   }
 

@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { getPath } from '../utils/routes.js';
 import styles from '../styles/auth.module.css';
 
-const SignupPage = ({ lang = 'en' }) => {
+const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -49,7 +50,8 @@ const SignupPage = ({ lang = 'en' }) => {
             type="email"
             id="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
             required
             disabled={isLoading}
           />
@@ -60,7 +62,8 @@ const SignupPage = ({ lang = 'en' }) => {
             type="password"
             id="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
             required
             disabled={isLoading}
           />
@@ -71,7 +74,8 @@ const SignupPage = ({ lang = 'en' }) => {
             type="password"
             id="confirmPassword"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e) => { e.target.setCustomValidity(''); setConfirmPassword(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
             required
             disabled={isLoading}
           />
@@ -84,4 +88,4 @@ const SignupPage = ({ lang = 'en' }) => {
   );
 };
 
-export default SignupPage;
+export default RegisterPage;

@@ -23,6 +23,7 @@
     "about": {
       "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Bureau de l’expérience Canada.ca de Service Canada.",
+      "learnMore": "Lire plus sur Réponses IA",
       "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
       "contactTitle": "Contactez-nous",
       "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
@@ -396,7 +397,23 @@
   "logging": {
     "title": "Visualiseur de chat",
     "refresh": "Afficher les journaux par niveau",
-    "refreshPending": "Patientez..."
+    "refreshPending": "Patientez...",
+    "backToAdmin": "Retour à l'administration",
+    "createdAt": "Créé le",
+    "level": "Niveau",
+    "message": "Message",
+    "metadata": "Métadonnées",
+    "enterChatId": "Entrez l'identifiant du clavardage :",
+    "filterByLevel": "Filtrer par niveau :",
+    "all": "Tous",
+    "info": "Info",
+    "debug": "Débogage",
+    "warn": "Avertissement",
+    "error": "Erreur",
+    "noLogs": "Aucun journal disponible",
+    "metadataDetails": "Détails des métadonnées",
+    "expand": "Développer",
+    "close": "Fermer"
   },
   "admin": {
     "title": "Administration de Réponses IA",
@@ -707,7 +724,8 @@
           "incorrect": "incorrect"
         }
       },
-      "departmentMore": "+{count} de plus"
+      "departmentMore": "+{count} de plus",
+      "columnFilterPlaceholder": "Filtrer"
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
@@ -1100,7 +1118,46 @@
     "agentSelectedIndex": "Index sélectionné par l'agent",
     "agentSelectionExplanation": "Explication de la sélection de l'agent",
     "neverStale": "Toujours valide",
-    "downloadedPagesTitle": "Pages téléchargées"
+    "downloadedPagesTitle": "Pages téléchargées",
+    "noEvaluation": "Aucune évaluation disponible.",
+    "noMatchReason": "Raison de non-correspondance",
+    "createdAt": "Créé le",
+    "updatedAt": "Mis à jour le",
+    "stageTimeline": "Chronologie des étapes",
+    "rawTimeline": "Chronologie brute (JSON)",
+    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "matchedText": "Texte apparié",
+    "matchStatus": "Statut d'appariement",
+    "similarityScores": "Scores de similarité",
+    "sentenceMatchTrace": "Trace d'appariement de phrases",
+    "agentUsage": "Utilisation de l'agent",
+    "metric": "Métrique",
+    "sentenceCompareUsed": "Comparaison de phrases utilisée",
+    "fallbackCompareUsed": "Comparaison de repli utilisée",
+    "field": "Champ",
+    "value": "Valeur",
+    "fallbackCompareChecks": "Vérifications de la comparaison de repli",
+    "check": "Vérification",
+    "pass": "Réussite",
+    "details": "Détails",
+    "expertFeedbackId": "ID d'évaluation d'expert",
+    "fallbackSourceChatId": "ID de chat source pour le repli",
+    "matchedCitationInteractionId": "ID d'interaction de citation appariée",
+    "matchedCitationChatId": "ID de chat de citation appariée",
+    "agentCandidateChoices": "Choix de candidats de l'agent",
+    "candidateIndex": "Index du candidat",
+    "text": "Texte",
+    "numbers": "Nombres",
+    "dates_times": "Dates/heures",
+    "negation": "Négation",
+    "entities": "Entités",
+    "quantifiers": "Quantificateurs",
+    "conditionals": "Conditionnels",
+    "connectives": "Connectifs",
+    "modifiers": "Modificateurs",
+    "reEvaluate": "Réévaluer",
+    "deleteEvaluation": "Supprimer l'évaluation",
+    "runEvaluation": "Lancer l'évaluation"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
@@ -1190,7 +1247,17 @@
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
     "chatIdPlaceholder": "Entrez l'ID du chat",
     "getSimilarChats": "Obtenir les chats similaires",
-    "loadingSimilarChats": "Chargement des chats similaires..."
+    "loadingSimilarChats": "Chargement des chats similaires...",
+    "enterChatId": "Veuillez entrer un identifiant de clavardage",
+    "fetchError": "Impossible de récupérer les clavardages similaires",
+    "columns": {
+      "chatId": "ID du clavardage",
+      "similarity": "Similarité",
+      "aiProvider": "Fournisseur IA",
+      "searchProvider": "Fournisseur de recherche",
+      "pageLanguage": "Langue de la page",
+      "user": "Utilisateur"
+    }
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
@@ -1238,6 +1305,13 @@
     "warnings": "Avertissements",
     "notConfigured": "Non configuré",
     "lastRun": "Dernière exécution",
-    "serviceDetails": "Détails du service"
+    "serviceDetails": "Détails du service",
+    "latency": "Latence",
+    "details": "Détails",
+    "error": "Erreur"
+  },
+  "validation": {
+    "required": "Veuillez remplir ce champ.",
+    "emailInvalid": "Veuillez entrer une adresse courriel valide."
   }
 }

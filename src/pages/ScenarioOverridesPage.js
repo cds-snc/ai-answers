@@ -305,7 +305,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
         <h1 className="mb-400">{pageTitle}</h1>
         <nav className="mb-400">
           <GcdsLink href={`/${language}/admin`}>
-            {t('common.backToAdmin', 'Back to Admin')}
+            {t('common.backToAdmin')}
           </GcdsLink>
         </nav>
         <GcdsText className="mb-200">{description1}</GcdsText>

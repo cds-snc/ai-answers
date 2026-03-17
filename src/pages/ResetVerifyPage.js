@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { getPath } from '../utils/routes.js';
 
 import styles from '../styles/auth.module.css';
 
@@ -25,7 +26,7 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
   }, [code, email, t]);
   const gotoSetPassword = () => {
     // Navigate to set-password screen; pass code and email via query
-    navigate(`/${lang}/reset-complete?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
+    navigate(`${getPath('reset-complete', lang)}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
   };
 
   return (
@@ -42,7 +43,7 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
           </div>
 
           <div className={styles['auth-links']}>
-            <Link to={`/${lang}/signin`}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
+            <Link to={getPath('signin', lang)}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
           </div>
         </>
       )}

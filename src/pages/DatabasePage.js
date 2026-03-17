@@ -552,7 +552,7 @@ const DatabasePage = ({ lang }) => {
       <GcdsHeading tag="h1">Database Management</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
-          {t('common.backToAdmin', 'Back to Admin')}
+          {t('common.backToAdmin')}
         </GcdsLink>
       </nav>
       {/* Table counts display */}

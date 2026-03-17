@@ -3,6 +3,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import AuthService from '../services/AuthService.js';
 import styles from '../styles/auth.module.css';
 import { Link, useNavigate } from 'react-router-dom';
+import { getPath } from '../utils/routes.js';
 
 const ResetRequestPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -19,7 +20,7 @@ const ResetRequestPage = ({ lang = 'en' }) => {
       await AuthService.sendReset(email, lang);
       setMessage(t('reset.request.sent') || 'If that account exists, we sent a reset email.');
       // Optionally redirect to signin after a short delay
-      setTimeout(() => navigate(`/${lang}/signin`), 3000);
+      setTimeout(() => navigate(getPath('signin', lang)), 3000);
     } catch (err) {
       setMessage(t('reset.request.error') || 'Failed to request reset');
     } finally {
@@ -39,7 +40,7 @@ const ResetRequestPage = ({ lang = 'en' }) => {
         <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.request.send') || 'Send reset email'}</button>
       </form>
       <div className={styles['auth-links']}>
-        <Link to={`/${lang}/signin`}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
+        <Link to={getPath('signin', lang)}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
       </div>
     </div>
   );

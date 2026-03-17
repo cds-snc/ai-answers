@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import AuthService from '../services/AuthService.js';
+import { getPath } from '../utils/routes.js';
 import styles from '../styles/auth.module.css';
 
 const ResetCompletePage = ({ lang = 'en' }) => {
@@ -37,7 +38,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       // TOTP-based password reset
       await AuthService.resetPassword({ email, code, password });
       setMessage(t('reset.complete.success') || 'Password updated. Redirecting to sign in...');
-      setTimeout(() => navigate(`/${lang}/signin`), 2500);
+      setTimeout(() => navigate(getPath('signin', lang)), 2500);
     } catch (err) {
       setMessage(err.message || t('reset.complete.error') || 'Failed to reset password');
     } finally {
@@ -64,7 +65,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
         <button type="submit" className={styles.submit_button} disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') || 'Sending...' : t('reset.complete.submit') || 'Set password'}</button>
       </form>
       <div className={styles['auth-links']}>
-        <Link to={`/${lang}/signin`}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
+        <Link to={getPath('signin', lang)}>{t('login.form.signinLink') || 'Back to sign in'}</Link>
       </div>
     </div>
   );

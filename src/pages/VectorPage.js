@@ -109,7 +109,7 @@ const VectorPage = () => {
       <nav className="mb-400">
         <GcdsText>
           <GcdsLink href={`/${language}/admin`}>
-            {t('common.backToAdmin', 'Back to Admin')}
+            {t('common.backToAdmin')}
           </GcdsLink>
         </GcdsText>
       </nav>

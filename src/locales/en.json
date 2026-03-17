@@ -23,6 +23,7 @@
     "about": {
       "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by Service Canada’s Canada.ca Experience Office.",
+      "learnMore": "Learn more about AI Answers",
       "status": "The service began as an experiment in late 2024 by the Canada.ca design team. AI Answers is currently undergoing invitation-only trials on high-traffic Canada.ca pages. We analyze results after each trial to improve both product and processes with our partner institutions. An expanded rollout is planned for 2026.",
       "contactTitle": "Contact us",
       "contactFormLink": "Use the Canadian Digital Service contact form",
@@ -268,7 +269,7 @@
       "links": {
         "newEvaluation": "New Batch",
         "runningBatches": "Incomplete batches",
-        "processedBatches": "Processed Batches",
+        "processedBatches": "Processed batches",
         "onThisPage": "Links on this page"
       }
     },
@@ -277,10 +278,10 @@
         "title": "New Batch"
       },
       "running": {
-        "title": "Incomplete Batches"
+        "title": "Incomplete batches"
       },
       "processed": {
-        "title": "Processed Batches"
+        "title": "Processed batches"
       }
     },
     "upload": {
@@ -293,7 +294,7 @@
           "url": "URL / Referring URL — optional (headers: URL, REFERRINGURL; case‑insensitive)"
         }
       },
-      "adminCode": "Enter Admin Code to enable file upload:",
+      "adminCode": "Enter admin code to enable file upload:",
       "aiService": {
         "label": "AI Service:",
         "openai": "OpenAI",
@@ -302,7 +303,7 @@
         "azure-gpt51-chat": "Azure GPT-5.1 Chat"
       },
       "language": {
-        "label": "Evaluation Language:",
+        "label": "Evaluation language:",
         "english": "English",
         "french": "French"
       },
@@ -314,8 +315,8 @@
         "selected": "Selected file:"
       },
       "buttons": {
-        "upload": "Upload File",
-        "startProcessing": "Start Processing"
+        "upload": "Upload file",
+        "startProcessing": "Start processing"
       },
       "processing": "Processing file, please wait...",
       "status": {
@@ -329,16 +330,16 @@
         "entriesProcessed": "Entries processed:"
       },
       "searchService": {
-        "label": "Search Service",
+        "label": "Search service",
         "google": "Google",
-        "canadaca": "Canada.ca Search"
+        "canadaca": "Canada.ca search"
       }
     },
     "list": {
       "columns": {
         "batchId": "Batch ID",
         "totals": "Totals",
-        "createdDate": "Created Date",
+        "createdDate": "Created date",
         "provider": "Provider",
         "type": "Type",
         "workflow": "Workflow",
@@ -356,17 +357,33 @@
     }
   },
   "logging": {
-    "title": "Chat Viewer",
+    "title": "Chat viewer",
     "refresh": "Display logs for level",
-    "refreshPending": "Please wait..."
+    "refreshPending": "Please wait...",
+    "backToAdmin": "Back to admin",
+    "createdAt": "Created at",
+    "level": "Level",
+    "message": "Message",
+    "metadata": "Metadata",
+    "enterChatId": "Enter Chat ID:",
+    "filterByLevel": "Filter by level:",
+    "all": "All",
+    "info": "Info",
+    "debug": "Debug",
+    "warn": "Warning",
+    "error": "Error",
+    "noLogs": "No logs available",
+    "metadataDetails": "Metadata details",
+    "expand": "Expand",
+    "close": "Close"
   },
   "admin": {
     "title": "AI Answers Admin",
-    "partnerTitle": "AI Answers Partner Dashboard",
-    "backToAdmin": "Back to Admin",
+    "partnerTitle": "AI Answers Partner dashboard",
+    "backToAdmin": "Back to admin",
     "navigation": {
-      "ariaLabel": "Admin Navigation",
-      "title": "Admin Menu",
+      "ariaLabel": "Admin navigation",
+      "title": "Admin menu",
       "partnerMenu": "Partner Menu",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
@@ -382,18 +399,18 @@
       "logout": "Sign out",
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios",
-      "connectivity": "Service Connectivity",
-      "autoEvalDashboard": "Auto-Evaluation dashboard"
+      "connectivity": "Service connectivity",
+      "autoEvalDashboard": "Auto-evaluation dashboard"
     },
     "database": {
       "createIndexes": "Create/Rebuild Indexes",
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
-      "createIndexesButton": "Rebuild All Indexes",
+      "createIndexesButton": "Rebuild all indexes",
       "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
       "createIndexesError": "Create indexes failed: {error}"
     },
     "notifications": {
-      "title": "User Notifications",
+      "title": "User notifications",
       "ariaLabel": "User notifications",
       "newInactive": "new user(s) awaiting activation (last 7 days)",
       "totalInactive": "total inactive user(s)",
@@ -406,7 +423,7 @@
       "button": "View chat"
     },
     "evalPage": {
-      "similarityTitle": "Similarity-Based Expert Feedback Transfer",
+      "similarityTitle": "Similarity-based expert feedback transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
       "label": {
         "expertEvaluations": "Expert Evaluations in System:",
@@ -432,7 +449,7 @@
           }
         },
         "sentenceMatching": {
-          "title": "Sentence-Level Matching",
+          "title": "Sentence-level matching",
           "item": {
             "findMostSimilar": "For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)",
             "threshold": "Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors",
@@ -441,7 +458,7 @@
           }
         },
         "citationMatch": {
-          "title": "Citation Matching",
+          "title": "Citation matching",
           "item": {
             "compare": "Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match",
             "score": "Score and record a citation match (score, explanation, matched interaction/chat ids)",
@@ -449,7 +466,7 @@
           }
         },
         "qaFallback": {
-          "title": "QA High Score Fallback",
+          "title": "QA high score fallback",
           "item": {
             "checkTop": "If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores",
             "citationCheck": "For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source",
@@ -457,14 +474,14 @@
           }
         },
         "fallbackCompare": {
-          "title": "Fallback Compare Checks",
+          "title": "Fallback compare checks",
           "item": {
             "agent": "A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded",
             "record": "Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability"
           }
         },
         "creation": {
-          "title": "Evaluation Creation & Scoring",
+          "title": "Evaluation creation & scoring",
           "item": {
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
@@ -473,14 +490,14 @@
           }
         },
         "noMatch": {
-          "title": "No Match / Rejection Cases",
+          "title": "No match / rejection cases",
           "item": {
             "recordNoMatch": "If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes",
             "trace": "No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected"
           }
         },
         "timeline": {
-          "title": "Stage Timeline & Telemetry",
+          "title": "Stage timeline & telemetry",
           "item": {
             "record": "The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics",
             "telemetry": "Agent and VectorService telemetry (latency, tokens, model) are captured where applicable"
@@ -504,14 +521,14 @@
         "loading": "Loading metrics..."
       },
       "date": {
-        "startLabel": "Start Date",
-        "endLabel": "End Date"
+        "startLabel": "Start date",
+        "endLabel": "End date"
       },
       "button": {
         "processing": "Processing...",
-        "generate": "Generate Evaluations",
-        "deleteAll": "Delete Evaluations",
-        "deleteEmpty": "Delete Empty Evaluations"
+        "generate": "Generate evaluations",
+        "deleteAll": "Delete evaluations",
+        "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
         "processed": "Processed",
@@ -523,20 +540,20 @@
       }
     },
     "filters": {
-      "title": "Filters - select then Apply to view",
+      "title": "Filters - select then apply to view",
       "clearAll": "Clear",
       "apply": "Apply",
       "loading": "Loading...",
       "dateRange": "Date range (24-hour)",
       "days": "days",
       "allTime": "All time",
-      "allDates": "All Dates",
+      "allDates": "All dates",
       "today": "Today",
       "yesterday": "Yesterday",
-      "last7Days": "Last 7 Days",
-      "last30Days": "Last 30 Days",
-      "thisMonth": "This Month",
-      "lastMonth": "Last Month",
+      "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
       "referringUrl": "Referring URL",
       "referringUrlPlaceholder": "Enter referring URL...",
       "urlEn": "Referring URL (EN)",
@@ -549,12 +566,12 @@
       "publicUsers": "Public",
       "referredPublicUsers": "Public Referred",
       "adminUsers": "Admin",
-      "answerType": "Answer Type",
-      "allAnswerTypes": "All Answer Types",
-      "partnerEval": "Partner Evaluation",
+      "answerType": "Answer type",
+      "allAnswerTypes": "All answer types",
+      "partnerEval": "Partner evaluation",
       "allPartnerEvals": "All",
-      "noEvaluation": "No Evaluation",
-      "aiEval": "AI Evaluation",
+      "noEvaluation": "No evaluation",
+      "aiEval": "AI evaluation",
       "allAiEvals": "All",
       "activeFilters": "Active filters",
       "noActiveFilters": "No active filters",
@@ -637,10 +654,10 @@
         "createdAt": "Created",
         "referringUrl": "Referring URL",
         "date": "Date",
-        "userType": "User Type",
-        "answerType": "Answer Type",
-        "partnerEval": "Partner Eval",
-        "aiEval": "AI Eval"
+        "userType": "User type",
+        "answerType": "Answer type",
+        "partnerEval": "Partner eval",
+        "aiEval": "AI eval"
       },
       "labels": {
         "userType": {
@@ -699,7 +716,7 @@
       }
     },
     "autoEvalDashboard": {
-      "title": "Auto-Evaluation dashboard",
+      "title": "Auto-evaluation dashboard",
       "description": "Filter auto-evaluations and explore details in the table below.",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
@@ -743,7 +760,7 @@
       "chatId": "Chat ID",
       "interactions": "Interactions",
       "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)",
-      "exportView": "Export View",
+      "exportView": "Export view",
       "exportFormat": "Format",
       "export": "Export",
       "exporting": "Exporting...",
@@ -855,7 +872,7 @@
       "email": "Email",
       "role": "Role",
       "status": "Status",
-      "createdAt": "Created At",
+      "createdAt": "Created at",
       "actions": "Action"
     },
     "status": {
@@ -876,9 +893,9 @@
       "title": "General settings"
     },
     "liveGraph": {
-      "title": "Live Graph",
-      "description": "Edit the workflow values used by the Live Graph visualization.",
-      "save": "Save Live Graph"
+      "title": "Live graph",
+      "description": "Edit the workflow values used by the live graph visualization.",
+      "save": "Save live graph"
     },
     "defaultWorkflow": {
       "label": "Default workflow",
@@ -894,13 +911,13 @@
       "available": "Available",
       "unavailable": "Unavailable"
     },
-    "deploymentModeLabel": "Deployment Mode",
+    "deploymentModeLabel": "Deployment mode",
     "deploymentMode": {
       "cds": "CDS (Background worker)",
       "vercel": "Vercel (Wait for completion)",
       "serverless": "Serverless (Wait for completion)"
     },
-    "vectorServiceTypeLabel": "Vector Service Type",
+    "vectorServiceTypeLabel": "Vector service type",
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
@@ -918,14 +935,14 @@
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
     "notify": {
-      "resetTemplateLabel": "Reset Link Template ID"
+      "resetTemplateLabel": "Reset link template ID"
     },
     "site": {
       "baseUrl": "Base URL (frontend)"
     },
     "session": {
       "title": "Session settings",
-      "managementEnabled": "Enable Session Management",
+      "managementEnabled": "Enable session management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
@@ -957,14 +974,14 @@
       "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
     },
     "redaction": {
-      "title": "Redaction Settings",
+      "title": "Redaction settings",
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
       "manipulation": "Manipulation"
     },
     "metrics": {
-      "storeType": "Chat Metrics Store (memory | mongo)"
+      "storeType": "Chat metrics store (memory | mongo)"
     }
   },
   "outage": {
@@ -972,7 +989,7 @@
     "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
-    "backToAdmin": "Back to Admin",
+    "backToAdmin": "Back to admin",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
@@ -1069,7 +1086,7 @@
     "candidateIndex": "Candidate index",
     "text": "Text",
     "numbers": "Numbers",
-    "dates_times": "Dates/Times",
+    "dates_times": "Dates/times",
     "negation": "Negation",
     "entities": "Entities",
     "quantifiers": "Quantifiers",
@@ -1077,7 +1094,7 @@
     "connectives": "Connectives",
     "modifiers": "Modifiers",
     "reEvaluate": "Re-evaluate",
-    "deleteEvaluation": "Delete Evaluation",
+    "deleteEvaluation": "Delete evaluation",
     "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
     "fallbackType": "Fallback type",
@@ -1167,23 +1184,33 @@
     "title": "Vector administration",
     "indexManagement": "Vector index management",
     "manageDescription": "Manage vector indexes and view vector database statistics.",
-    "reinitializeIndex": "Reinitialize Index",
+    "reinitializeIndex": "Reinitialize index",
     "loading": "Loading...",
-    "fetchStats": "Fetch Vector Stats",
-    "createIndex": "Create Vector Index",
-    "embeddingManagement": "Embedding Management",
+    "fetchStats": "Fetch vector stats",
+    "createIndex": "Create vector index",
+    "embeddingManagement": "Embedding management",
     "embeddingDescription": "Process interactions to generate embeddings.",
-    "generateEmbeddings": "Generate Embeddings",
-    "regenerateEmbeddings": "Regenerate Embeddings",
+    "generateEmbeddings": "Generate embeddings",
+    "regenerateEmbeddings": "Regenerate embeddings",
     "regenerating": "Regenerating...",
     "processing": "Processing...",
     "remaining": "Remaining",
     "autoProcessingActive": "Auto-processing active",
-    "similarChats": "Find Similar Chats",
+    "similarChats": "Find similar chats",
     "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
     "chatIdPlaceholder": "Enter Chat ID",
-    "getSimilarChats": "Get Similar Chats",
-    "loadingSimilarChats": "Loading similar chats..."
+    "getSimilarChats": "Get similar chats",
+    "loadingSimilarChats": "Loading similar chats...",
+    "enterChatId": "Please enter a chat ID",
+    "fetchError": "Failed to fetch similar chats",
+    "columns": {
+      "chatId": "Chat ID",
+      "similarity": "Similarity",
+      "aiProvider": "AI provider",
+      "searchProvider": "Search provider",
+      "pageLanguage": "Page language",
+      "user": "User"
+    }
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
@@ -1222,15 +1249,22 @@
     }
   },
   "connectivity": {
-    "title": "Service Connectivity Dashboard",
+    "title": "Service connectivity dashboard",
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
-    "runTests": "Run Connectivity Tests",
+    "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
     "connected": "Connected",
     "errors": "Errors",
     "warnings": "Warnings",
-    "notConfigured": "Not Configured",
+    "notConfigured": "Not configured",
     "lastRun": "Last run",
-    "serviceDetails": "Service Details"
+    "serviceDetails": "Service details",
+    "latency": "Latency",
+    "details": "Details",
+    "error": "Error"
+  },
+  "validation": {
+    "required": "Please fill in this field.",
+    "emailInvalid": "Please enter a valid email address."
   }
 }
