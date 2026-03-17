@@ -81,7 +81,7 @@ const RegisterPage = ({ lang = 'en' }) => {
           />
         </div>
         <button type="submit" disabled={isLoading} className={styles.submit_button}>
-          {isLoading ? t('signup.form.submitting') : t('signup.submit')}
+          {isLoading ? t('signup.submitting') : t('signup.submit')}
         </button>
       </form>
     </div>

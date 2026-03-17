@@ -838,18 +838,7 @@
     "submit": "Soumettre",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "errorOccurred": "Une erreur est survenue lors de l'inscription",
-    "form": {
-      "username": "Nom d'utilisateur :",
-      "password": "Mot de passe :",
-      "submit": "Soumettre",
-      "submitting": "Création du compte...en attente d'approbation"
-    },
-    "messages": {
-      "success": "Succès ! Vous pouvez maintenant ",
-      "error": "Une erreur est survenue lors de l'inscription",
-      "failed": "L'inscription a échoué",
-      "loginLink": "vous connecter à l'administration de Réponses IA"
-    }
+    "submitting": "Création du compte...en attente d'approbation"
   },
   "login": {
     "title": "Se connecter à l'administration de Réponses IA",

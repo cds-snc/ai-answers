@@ -854,18 +854,7 @@
     "submit": "Submit",
     "passwordMismatch": "Passwords do not match",
     "errorOccurred": "An error occurred creating your account",
-    "form": {
-      "username": "Username:",
-      "password": "Password:",
-      "submit": "Submit",
-      "submitting": "Creating account...wait for approval"
-    },
-    "messages": {
-      "success": "Success! You can now ",
-      "error": "An error occurred creating your account",
-      "failed": "Signup failed",
-      "loginLink": "sign in to AI Answers Admin"
-    }
+    "submitting": "Creating account...wait for approval"
   },
   "users": {
     "title": "Manage user accounts",
