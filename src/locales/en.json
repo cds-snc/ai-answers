@@ -987,7 +987,10 @@
     "matchedCitationChatId": "Matched citation chatId",
     "modelData": "Model data",
     "createdAt": "Created at",
-    "updatedAt": "Updated at"
+    "updatedAt": "Updated at",
+    "totalScore": "Score",
+    "referringUrl": "Referring URL",
+    "interactionUpdatedAt": "Date of chat"
   },
   "reviewPanels": {
     "sentence": "Sentence",

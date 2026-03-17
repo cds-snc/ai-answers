@@ -310,7 +310,6 @@
       }
     },
     "list": {
-      "title": "title",
       "columns": {
         "batchName": "Nom",
         "totals": "Totaux",
@@ -576,15 +575,12 @@
       "date": "Date",
       "sessionsTitle": "Sessions actives",
       "sessions": {
-        "sessionId": "ID de session",
-        "creditsLeft": "Crédits restants",
         "chatId": "ID de chat",
         "lastSeen": "Dernière activité",
         "requests": "Requêtes",
         "errors": "Erreurs",
         "lastLatency": "Dernière latence (ms)",
         "avgLatency": "Latence moyenne (ms)",
-        "rpm": "Requêtes / minute",
         "errorLoading": "Échec du chargement des sessions : {status} {text}",
         "errorGeneric": "Erreur : {message}"
       }
@@ -989,9 +985,6 @@
     "fallbackSourceChatId": "ID de chat source pour le repli",
     "matchedCitationInteractionId": "ID d'interaction de citation appariée",
     "matchedCitationChatId": "ID de chat de citation appariée",
-    "stageTimeline": "Chronologie des étapes",
-    "rawTimeline": "Chronologie brute (JSON)",
-    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "modelData": "Données du modèle",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le",

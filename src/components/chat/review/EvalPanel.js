@@ -189,19 +189,19 @@ const EvalPanel = ({ message, t }) => {
                 {/* New fields: show above Processed */}
                 {evalObj.hasMatches && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' ? (
                   <tr>
-                    <td>{tr('eval.totalScore', 'Score')}:</td>
+                    <td>{tr('eval.totalScore')}:</td>
                     <td>{evalObj.expertFeedback.totalScore === null || typeof evalObj.expertFeedback.totalScore === 'undefined' ? '' : String(evalObj.expertFeedback.totalScore)}</td>
                   </tr>
                 ) : null}
                 {evalObj.hasMatches && evalObj.interactionUpdatedAt ? (
                   <tr>
-                    <td>{tr('eval.interactionUpdatedAt', 'Date of Chat')}:</td>
+                    <td>{tr('eval.interactionUpdatedAt')}:</td>
                     <td>{formatDate(evalObj.interactionUpdatedAt)}</td>
                   </tr>
                 ) : null}
                 {evalObj.referringUrl ? (
                   <tr>
-                    <td>{tr('eval.referringUrl', 'Referring URL')}:</td>
+                    <td>{tr('eval.referringUrl')}:</td>
                     <td><a href={evalObj.referringUrl} target="_blank" rel="noopener noreferrer">{evalObj.referringUrl}</a></td>
                   </tr>
                 ) : null}
