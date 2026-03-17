@@ -273,15 +273,6 @@
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
     }
   },
-  "aboutPage": {
-    "title": "À propos de Canada.ca Réponses IA",
-    "overview": {
-      "title": "Aperçu",
-      "descriptionPara1": "Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent qu'elles ne trouvent pas ce dont elles ont besoin sur Canada.ca. Réponses IA fournira des réponses brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations du gouvernement fédéral.",
-      "descriptionPara2": "Lors d'essais sur invitation sur les pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement. 82 % des commentaires de plus de 250 utilisateurs des essais étaient positifs, et soulignaient les économies de temps et d'efforts, ainsi que l'évitement des appels et des visites au bureau.",
-      "descriptionPara3": "Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts humains pour produire des évaluations IA automatisées et améliorer la qualité des réponses."
-    },
-  },
   "batch": {
     "title": "Lots",
     "navigation": {

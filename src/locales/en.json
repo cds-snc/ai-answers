@@ -236,15 +236,6 @@
       "intro": "Rate the sentences in the answer, or the citation, or both"
     }
   },
-  "aboutPage": {
-    "title": "About Canada.ca AI Answers",
-    "overview": {
-      "title": "Overview",
-      "descriptionPara1": "AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.",
-      "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
-      "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations to produce automated AI evaluations, and improve answer quality."
-    },
-  },
   "batch": {
     "title": "Batchs",
     "navigation": {
