@@ -22,23 +22,8 @@
       "title": "Scroll down"
     },
     "about": {
-      "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by Service Canada’s Canada.ca Experience Office.",
-      "learnMore": "Learn more about AI Answers",
-      "status": "The service began as an experiment in late 2024 by the Canada.ca design team. AI Answers is currently undergoing invitation-only trials on high-traffic Canada.ca pages. We analyze results after each trial to improve both product and processes with our partner institutions. An expanded rollout is planned for 2026.",
-      "contactTitle": "Contact us",
-      "contactFormLink": "Use the Canadian Digital Service contact form",
-      "aiServices": {
-        "claude": "AI service Claude: Anthropic Claude Sonnet 3.7, knowledge to February 2025",
-        "chatgpt": "AI service ChatGPT: OpenAI 4.1, knowledge to May 31 2025",
-        "chatgpt51": "AI service ChatGPT: OpenAI 5.1, knowledge to 2026",
-        "chatgpt51-chat": "AI service ChatGPT: OpenAI 5.1 Chat, knowledge to 2026",
-        "azure": "Current AI model: Microsoft Azure OpenAI"
-      },
-      "cdslink": "Canadian Digital Service",
-      "contact": "Contact us for more information",
-      "contactUrl": "https://blog.canada.ca/contact-us",
-      "logChatsToDatabaseLabel": "Log chats to database"
+      "learnMore": "Learn more about AI Answers"
     },
     "feedback": {
       "title": "",

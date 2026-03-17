@@ -22,23 +22,8 @@
       "title": "Faites défiler vers le bas"
     },
     "about": {
-      "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Bureau de l’expérience Canada.ca de Service Canada.",
-      "learnMore": "Lire plus sur Réponses IA",
-      "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
-      "contactTitle": "Contactez-nous",
-      "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
-      "aiServices": {
-        "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
-        "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
-        "chatgpt51": "Service d'IA ChatGPT : GPT-5.1 d'OpenAI, connaissances jusqu'en 2026",
-        "chatgpt51-chat": "Service d'IA ChatGPT : GPT-5.1 Chat d'OpenAI, connaissances jusqu'en 2026",
-        "azure": "Modèle d'IA actuel : Microsoft Azure OpenAI"
-      },
-      "cdslink": "Service numérique canadien",
-      "contact": "Contactez-nous pour plus d'informations",
-      "contactUrl": "https://blogue.canada.ca/contactez-nous.html",
-      "logChatsToDatabaseLabel": "Enregistrer les conversations dans la base de données"
+      "learnMore": "Lire plus sur Réponses IA"
     },
     "feedback": {
       "title": "",
