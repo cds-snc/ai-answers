@@ -1256,5 +1256,11 @@
   "validation": {
     "required": "Please fill in this field.",
     "emailInvalid": "Please enter a valid email address."
+  },
+  "notFound": {
+    "breadcrumb": "AI Answers",
+    "title": "Page not found",
+    "message": "We can't find the page you're looking for.",
+    "homeLink": "Return to AI Answers"
   }
 }

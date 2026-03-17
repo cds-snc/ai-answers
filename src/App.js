@@ -29,6 +29,7 @@ import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
+import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
 import { translateSlug } from './utils/routes.js';
 
@@ -164,6 +165,12 @@ const computeAlternateLangHref = (location) => {
   }
 
   return { alternateLangHref, currentLang };
+};
+
+const NotFoundRoute = () => {
+  const location = useLocation();
+  const { currentLang } = computeAlternateLangHref(location);
+  return <NotFoundPage lang={currentLang} />;
 };
 
 const AppLayout = () => {
@@ -355,7 +362,8 @@ export default function App() {
       { path: '/en/register', element: <RegisterPage lang="en" /> },
       { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
-      { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> }
+      { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> },
+      { path: '*', element: <NotFoundRoute /> }
     ];
 
     const protectedRoutes = [
