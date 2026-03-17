@@ -189,7 +189,7 @@
       "citation": {
         "confidence": "Confidence:",
         "ai": "AI:",
-        "fallbackText": "Unable to find a citation - use canada.ca search",
+        "fallbackText": "Unable to find a citation - use Canada.ca search",
         "heading": "Continue with this link:"
       },
       "review": {
@@ -213,7 +213,7 @@
         "needsImprovement": "Needs improvement",
         "incorrect": "Incorrect",
         "harmful": "Harmful",
-        "contentIssue": "Content Issue",
+        "contentIssue": "Content issue",
         "explanation": "Please explain your rating (optional):",
         "answerImprovement": "How could the answer be improved (optional)?",
         "betterCitation": "Better canada.ca or gc.ca citation URL (optional):",
