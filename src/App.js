@@ -308,14 +308,16 @@ const AppLayout = () => {
 
   return (
     <>
-      <section className="alpha-top">
-        <div className="container">
-          <small>
-            <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
-            {t('homepage.status.description')}
-          </small>
-        </div>
-      </section>
+      {!is404 && (
+        <section className="alpha-top">
+          <div className="container">
+            <small>
+              <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
+              {t('homepage.status.description')}
+            </small>
+          </div>
+        </section>
+      )}
       <GcdsHeader
         lang={currentLang}
         langHref={alternateLangHref}
