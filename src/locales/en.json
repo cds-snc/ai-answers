@@ -244,24 +244,6 @@
       "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
       "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations to produce automated AI evaluations, and improve answer quality."
     },
-    "systemCard": {
-      "title": "System Card documentation",
-      "description": "For detailed information about how AI Answers works, our safety measures, evaluation methods, and technical architecture, see our complete",
-      "onThisPageTitle": "Key sections:",
-      "currentStatus": "Current status",
-      "purposeScope": "System purpose and scope",
-      "architecture": "Technical architecture",
-      "riskAssessment": "Risk assessment and safety measures",
-      "performance": "Performance and evaluation",
-      "limitations": "Limitations and constraints",
-      "responsibleAI": "Responsible AI principles and governance"
-    },
-    "accessibilityUsability": {
-      "title": "Accessibility and usability",
-      "designRationale": "Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.",
-      "testing": "These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.",
-      "wcag": "The service meets WCAG 2.1 AA accessibility standards for web content accessibility."
-    }
   },
   "batch": {
     "title": "Batchs",
@@ -276,7 +258,7 @@
     },
     "sections": {
       "evaluator": {
-        "title": "New Batch"
+        "title": "New batch"
       },
       "running": {
         "title": "Incomplete batches"
