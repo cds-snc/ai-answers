@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
@@ -178,6 +178,8 @@ const AppLayout = () => {
 
   const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
   const { t } = useTranslations(currentLang);
+  const matches = useMatches();
+  const is404 = matches.some(m => m.handle?.is404);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
@@ -320,8 +322,8 @@ const AppLayout = () => {
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Show AI Answers breadcrumb on About page */}
-          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos')) && (
+          {/* Show AI Answers breadcrumb on About and 404 pages */}
+          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
             <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
               {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
             </GcdsBreadcrumbsItem>
@@ -332,7 +334,7 @@ const AppLayout = () => {
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
       </main>
-      <GcdsFooter display="compact" lang={currentLang} />
+      <GcdsFooter display={is404 ? 'full' : 'compact'} lang={currentLang} />
     </>
   );
 };
@@ -363,7 +365,7 @@ export default function App() {
       { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
       { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> },
-      { path: '*', element: <NotFoundRoute /> }
+      { path: '*', element: <NotFoundRoute />, handle: { is404: true } }
     ];
 
     const protectedRoutes = [
