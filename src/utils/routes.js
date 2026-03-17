@@ -19,7 +19,7 @@ export const ROUTE_SLUGS = {
   'public-eval':           { en: 'public-eval',                  fr: 'evaluation-publique' },
   metrics:                 { en: 'metrics',                      fr: 'metriques' },
   sessions:                { en: 'sessions',                     fr: 'sessions' },
-  'scenario-overrides':    { en: 'scenario-overrides',           fr: 'remplacements-scenarios' },
+  'scenario-overrides':    { en: 'scenario-overrides',           fr: 'derogation-scenarios' },
   settings:                { en: 'settings',                     fr: 'parametres' },
   database:                { en: 'database',                     fr: 'base-de-donnees' },
   vector:                  { en: 'vector',                       fr: 'vecteur' },

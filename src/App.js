@@ -382,7 +382,7 @@ export default function App() {
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
       { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
       { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/remplacements-scenarios', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/derogation-scenarios', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
       { path: '/fr/parametres', element: <SettingsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
