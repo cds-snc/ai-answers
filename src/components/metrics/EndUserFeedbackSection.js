@@ -171,7 +171,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           {/* Pie chart for YES (helpful) reasons */}
           <div style={{ flex: 1, minWidth: 300 }}>
           <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250 + Math.max(0, yesPieData.length - 3) * 20}>
+            <ResponsiveContainer width="100%" height={250 + Math.max(0, yesPieData.length - 3) * 35}>
               <PieChart>
                 <Pie
                   data={yesPieData.map(({ label, value }) => ({ name: label, value }))}
@@ -193,7 +193,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           {/* Pie chart for NO (unhelpful) reasons */}
           <div style={{ flex: 1, minWidth: 300 }}>
             <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250 + Math.max(0, noPieData.length - 3) * 20}>
+            <ResponsiveContainer width="100%" height={250 + Math.max(0, noPieData.length - 3) * 35}>
               <PieChart>
                 <Pie
                   data={noPieData.map(({ label, value }) => ({ name: label, value }))}
