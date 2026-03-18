@@ -26,7 +26,6 @@
       "learnMore": "Lire plus sur Réponses IA"
     },
     "feedback": {
-      "title": "",
       "question": "Cette réponse était-elle utile?",
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
@@ -73,11 +72,7 @@
         "message": "Actualisez la page pour réessayer.",
         "button": "Actualiser"
       },
-      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard.",
-      "statusUnknown": {
-        "title": "État du service inconnu",
-        "message": "L'état du service n'a pas pu être déterminé. Veuillez réessayer plus tard."
-      }
+      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard."
     },
     "chat": {
       "chatId": "ID de chat",
@@ -118,9 +113,7 @@
           "label": "IA :",
           "anthropic": "Anthropic",
           "openai": "OpenAI",
-          "azure": "Azure",
-          "azure-gpt51": "Azure GPT-5.1",
-          "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+          "azure": "Azure"
         },
         "searchSelection": {
           "label": "Recherche :",
@@ -172,8 +165,6 @@
         "answerReady": "Votre réponse est prête"
       },
       "citation": {
-        "confidence": "Niveau de confiance :",
-        "ai": "IA :",
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche Canada.ca",
         "heading": "Continuez avec ce lien\u00a0:"
       },
@@ -187,7 +178,6 @@
     },
     "expertRating": {
       "title": "Évaluation de la réponse",
-      "hint": "Évaluez chaque partie de la réponse",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
@@ -200,7 +190,6 @@
         "harmful": "Nuisible",
         "contentIssue": "Problème de contenu",
         "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
-        "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
         "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :",
         "harmfulDetails": {
           "summary": "Quand coder comme nuisible",
@@ -215,9 +204,6 @@
         }
       },
       "submit": "Soumettre l'évaluation",
-      "errors": {
-        "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
-      },
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
     }
   },

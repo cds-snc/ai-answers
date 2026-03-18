@@ -26,7 +26,6 @@
       "learnMore": "Learn more about AI Answers"
     },
     "feedback": {
-      "title": "",
       "question": "How was this answer?",
       "useful": "Good",
       "notUseful": "Needs improvement",
@@ -73,11 +72,7 @@
         "message": "Reload the page to try again.",
         "button": "Reload"
       },
-      "serviceUnavailable": "AI Answers is unavailable until tomorrow due to reaching daily usage limits. Please check back then.",
-      "statusUnknown": {
-        "title": "Service Status Unknown",
-        "message": "The service status could not be determined. Please try again later."
-      }
+      "serviceUnavailable": "AI Answers is unavailable until tomorrow due to reaching daily usage limits. Please check back then."
     },
     "chat": {
       "chatId": "Chat ID",
@@ -118,9 +113,7 @@
           "label": "AI:",
           "anthropic": "Anthropic",
           "openai": "OpenAI",
-          "azure": "Azure",
-          "azure-gpt51": "Azure GPT-5.1",
-          "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+          "azure": "Azure"
         },
         "searchSelection": {
           "label": "Search:",
@@ -172,8 +165,6 @@
         "answerReady": "Your answer is ready"
       },
       "citation": {
-        "confidence": "Confidence:",
-        "ai": "AI:",
         "fallbackText": "Unable to find a citation - use Canada.ca search",
         "heading": "Continue with this link:"
       },
@@ -187,7 +178,6 @@
     },
     "expertRating": {
       "title": "Answer rating",
-      "hint": "Rate each part of the answer",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -200,7 +190,6 @@
         "harmful": "Harmful",
         "contentIssue": "Content issue",
         "explanation": "Please explain your rating (optional):",
-        "answerImprovement": "How could the answer be improved (optional)?",
         "betterCitation": "Better canada.ca or gc.ca citation URL (optional):",
         "harmfulDetails": {
           "summary": "When to code as harmful",
@@ -215,9 +204,6 @@
         }
       },
       "submit": "Submit evaluation",
-      "errors": {
-        "invalidUrl": "Please enter a valid canada.ca or gc.ca URL"
-      },
       "intro": "Rate the sentences in the answer, or the citation, or both"
     }
   },
