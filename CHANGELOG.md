@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.113.1](https://github.com/cds-snc/ai-answers/compare/v1.113.0...v1.113.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* open chat views in same page - tested in preview. ([84338a2](https://github.com/cds-snc/ai-answers/commit/84338a2c4524f51c9a018140f4ad0c48b4ff7ef3))
+
 ## [1.113.0](https://github.com/cds-snc/ai-answers/compare/v1.112.1...v1.113.0) (2026-03-18)
 
 
