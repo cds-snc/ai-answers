@@ -239,21 +239,21 @@ const FilterPanel = ({
   const partnerEvalOptions = [
     { value: 'all', label: t('admin.filters.allPartnerEvals') },
     { value: 'noEval', label: t('admin.filters.noEvaluation') },
-    { value: 'correct', label: t('admin.chatDashboard.labels.evaluation.correct') },
-    { value: 'needsImprovement', label: t('admin.chatDashboard.labels.evaluation.needsImprovement') },
-    { value: 'hasError', label: t('admin.chatDashboard.labels.evaluation.hasError') },
-    { value: 'hasCitationError', label: t('admin.chatDashboard.labels.evaluation.hasCitationError') },
-    { value: 'harmful', label: t('admin.chatDashboard.labels.evaluation.harmful') }
+    { value: 'correct', label: t('admin.filters.evalCorrect') },
+    { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
+    { value: 'hasError', label: t('admin.filters.evalHasError') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') },
+    { value: 'harmful', label: t('admin.filters.evalHarmful') }
   ];
 
   // AI evaluation options
   const aiEvalOptions = [
     { value: 'all', label: t('admin.filters.allAiEvals') },
     { value: 'noEval', label: t('admin.filters.noEvaluation') },
-    { value: 'correct', label: t('admin.chatDashboard.labels.evaluation.correct') },
-    { value: 'needsImprovement', label: t('admin.chatDashboard.labels.evaluation.needsImprovement') },
-    { value: 'hasError', label: t('admin.chatDashboard.labels.evaluation.hasError') },
-    { value: 'hasCitationError', label: t('admin.chatDashboard.labels.evaluation.hasCitationError') }
+    { value: 'correct', label: t('admin.filters.evalCorrect') },
+    { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
+    { value: 'hasError', label: t('admin.filters.evalHasError') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') }
   ];
 
   const handleApply = () => {
