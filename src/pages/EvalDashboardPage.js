@@ -137,7 +137,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
+        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
       },
       searchable: false,
       orderable: true
