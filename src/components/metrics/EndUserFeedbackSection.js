@@ -108,6 +108,11 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
     };
   }).filter(row => row.total > 0);
 
+  const pieChartHeight = 250 + Math.max(0, Math.max(
+    Object.keys(yesReasons).filter(k => yesReasons[k].total > 0).length,
+    Object.keys(noReasons).filter(k => noReasons[k].total > 0).length
+  ) - 3) * 35;
+
   const yesPieData = Object.keys(yesReasons)
     .map(key => ({ label: getReasonLabel(key, t, true), value: yesReasons[key].total }))
     .filter(d => d.value > 0);
@@ -171,7 +176,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           {/* Pie chart for YES (helpful) reasons */}
           <div style={{ flex: 1, minWidth: 300 }}>
           <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250 + Math.max(0, yesPieData.length - 3) * 35}>
+            <ResponsiveContainer width="100%" height={pieChartHeight}>
               <PieChart>
                 <Pie
                   data={yesPieData.map(({ label, value }) => ({ name: label, value }))}
@@ -193,7 +198,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           {/* Pie chart for NO (unhelpful) reasons */}
           <div style={{ flex: 1, minWidth: 300 }}>
             <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250 + Math.max(0, noPieData.length - 3) * 35}>
+            <ResponsiveContainer width="100%" height={pieChartHeight}>
               <PieChart>
                 <Pie
                   data={noPieData.map(({ label, value }) => ({ name: label, value }))}
