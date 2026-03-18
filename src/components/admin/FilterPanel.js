@@ -228,32 +228,32 @@ const FilterPanel = ({
 
   // Answer type options
   const answerTypeOptions = [
-    { value: 'all', label: t('admin.filters.allAnswerTypes') || 'All Answer Types' },
-    { value: 'not-gc', label: 'Not GC' },
-    { value: 'clarifying-question', label: 'Clarifying Question' },
-    { value: 'pt-muni', label: 'PT/Muni' },
-    { value: 'normal', label: 'Normal' }
+    { value: 'all', label: t('admin.filters.allAnswerTypes') },
+    { value: 'not-gc', label: t('admin.filters.answerTypeNotGc') },
+    { value: 'clarifying-question', label: t('admin.filters.answerTypeClarifying') },
+    { value: 'pt-muni', label: t('admin.filters.answerTypePtMuni') },
+    { value: 'normal', label: t('admin.filters.answerTypeNormal') }
   ];
 
   // Partner evaluation options
   const partnerEvalOptions = [
-    { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
-    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
-    { value: 'correct', label: t('metrics.dashboard.expertScored.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('metrics.dashboard.expertScored.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('metrics.dashboard.expertScored.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('metrics.dashboard.expertScored.hasCitationError') || 'Has Citation Error' },
-    { value: 'harmful', label: t('metrics.dashboard.expertScored.harmful') || 'Harmful' }
+    { value: 'all', label: t('admin.filters.allPartnerEvals') },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') },
+    { value: 'correct', label: t('admin.chatDashboard.labels.evaluation.correct') },
+    { value: 'needsImprovement', label: t('admin.chatDashboard.labels.evaluation.needsImprovement') },
+    { value: 'hasError', label: t('admin.chatDashboard.labels.evaluation.hasError') },
+    { value: 'hasCitationError', label: t('admin.chatDashboard.labels.evaluation.hasCitationError') },
+    { value: 'harmful', label: t('admin.chatDashboard.labels.evaluation.harmful') }
   ];
 
   // AI evaluation options
   const aiEvalOptions = [
-    { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
-    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
-    { value: 'correct', label: t('metrics.dashboard.aiScored.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('metrics.dashboard.aiScored.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('metrics.dashboard.aiScored.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('metrics.dashboard.aiScored.hasCitationError') || 'Has Citation Error' }
+    { value: 'all', label: t('admin.filters.allAiEvals') },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') },
+    { value: 'correct', label: t('admin.chatDashboard.labels.evaluation.correct') },
+    { value: 'needsImprovement', label: t('admin.chatDashboard.labels.evaluation.needsImprovement') },
+    { value: 'hasError', label: t('admin.chatDashboard.labels.evaluation.hasError') },
+    { value: 'hasCitationError', label: t('admin.chatDashboard.labels.evaluation.hasCitationError') }
   ];
 
   const handleApply = () => {

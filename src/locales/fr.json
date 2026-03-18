@@ -352,8 +352,27 @@
       "createIndexes": "Créer/Reconstruire des index",
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
+      "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?",
       "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
-      "createIndexesError": "Échec de la création des index: {error}"
+      "createIndexesError": "Échec de la création des index: {error}",
+      "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer?",
+      "dropIndexesSuccess": "Indexes supprimés avec succès pour {count} collections",
+      "dropIndexesError": "Échec de la suppression des index: {error}",
+      "deleteSystemLogsConfirm": "Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = \"system\" ? Cette action est irréversible.",
+      "deleteSystemLogsSuccess": "Supprimé {count} journaux système.",
+      "deleteSystemLogsError": "Échec de la suppression des journaux système: {error}",
+      "deleteAllBatchesConfirm": "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?",
+      "deleteAllBatchesSuccess": "Lots supprimés : {batches}, batchItems supprimés : {batchItems}",
+      "deleteAllBatchesError": "Échec de la suppression des lots : {error}",
+      "repairTimestampsConfirm": "Cela ajoutera des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. Êtes-vous sûr de vouloir continuer?",
+      "repairTimestampsSuccess": "Horodatages des outils réparés avec succès. Outils: {updated}/{total}",
+      "repairTimestampsError": "Échec de la réparation des horodatages: {error}",
+      "repairExpertFeedbackConfirm": "Cela définira le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types \"public\" ou \"ai\" resteront inchangés. Êtes-vous sûr de vouloir continuer?",
+      "repairExpertFeedbackSuccess": "Types de commentaires d'experts réparés avec succès. Mis à jour: {updated}/{total} ({alreadyCorrect} déjà corrects)",
+      "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts: {error}",
+      "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?",
+      "migratePublicFeedbackSuccess": "Migration terminée. {migrated} commentaires migrés.",
+      "migratePublicFeedbackError": "Échec de la migration: {error}"
     },
     "notifications": {
       "title": "Notifications utilisateur",
@@ -514,6 +533,10 @@
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",
+      "answerTypeNotGc": "Non GC",
+      "answerTypeClarifying": "Question de clarification",
+      "answerTypePtMuni": "PT/Muni",
+      "answerTypeNormal": "Normal",
       "partnerEval": "Évaluation partenaire",
       "allPartnerEvals": "Tous",
       "noEvaluation": "Aucune évaluation",
@@ -914,7 +937,9 @@
       "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
       "profanity": "Gros mots",
       "threat": "Menaces",
-      "manipulation": "Manipulation"
+      "manipulation": "Manipulation",
+      "langEnglish": "English",
+      "langFrench": "Français"
     },
     "metrics": {
       "storeType": "Magasin de métriques de discussion (mémoire | mongo)"
@@ -962,7 +987,15 @@
     "updatedAt": "Mis à jour le",
     "totalScore": "Score",
     "referringUrl": "URL de référence",
-    "interactionUpdatedAt": "Date du chat"
+    "interactionUpdatedAt": "Date du chat",
+    "allEvalsGenerated": "Toutes les évaluations ont été générées ! Totaux finaux : {processed} réussies, {failed} échouées.",
+    "generateEvalsFailed": "Échec de la génération des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEvalsSuccess": "{deleted} évaluations et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
+    "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
+    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails."
   },
   "reviewPanels": {
     "sentence": "Phrase",
@@ -1149,7 +1182,11 @@
       "searchProvider": "Fournisseur de recherche",
       "pageLanguage": "Langue de la page",
       "user": "Utilisateur"
-    }
+    },
+    "allEmbeddingsGenerated": "Tous les incorporations ont été générées !",
+    "generateEmbeddingsFailed": "Échec de la génération des incorporations. Vérifiez la console pour plus de détails.",
+    "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !"
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",

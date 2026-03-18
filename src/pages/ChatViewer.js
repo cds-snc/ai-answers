@@ -337,10 +337,10 @@ const ChatViewer = ({ lang = 'en' }) => {
                     <table ref={tableRef} className="display">
                       <thead>
                         <tr>
-                          <th>Created At</th>
-                          <th>Level</th>
-                          <th>Message</th>
-                          <th>Metadata</th>
+                          <th>{t('logging.createdAt')}</th>
+                          <th>{t('logging.level')}</th>
+                          <th>{t('logging.message')}</th>
+                          <th>{t('logging.metadata')}</th>
                         </tr>
                       </thead>
                     </table>

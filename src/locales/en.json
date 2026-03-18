@@ -352,8 +352,27 @@
       "createIndexes": "Create/Rebuild Indexes",
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
       "createIndexesButton": "Rebuild all indexes",
+      "createIndexesConfirm": "This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?",
       "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
-      "createIndexesError": "Create indexes failed: {error}"
+      "createIndexesError": "Create indexes failed: {error}",
+      "dropIndexesConfirm": "This will drop all database indexes. Database operations may be slower until indexes are rebuilt automatically. Are you sure you want to continue?",
+      "dropIndexesSuccess": "Indexes dropped successfully for {count} collections",
+      "dropIndexesError": "Drop indexes failed: {error}",
+      "deleteSystemLogsConfirm": "Are you sure you want to delete all logs with chatId = \"system\"? This cannot be undone.",
+      "deleteSystemLogsSuccess": "Deleted {count} system logs.",
+      "deleteSystemLogsError": "Delete system logs failed: {error}",
+      "deleteAllBatchesConfirm": "This will delete ALL batches and batchItems. This cannot be undone. Are you sure you want to continue?",
+      "deleteAllBatchesSuccess": "Deleted batches: {batches}, deleted batchItems: {batchItems}",
+      "deleteAllBatchesError": "Delete all batches failed: {error}",
+      "repairTimestampsConfirm": "This will add updatedAt timestamps to existing tool records without them. Are you sure you want to continue?",
+      "repairTimestampsSuccess": "Tool timestamps repaired successfully. Tools: {updated}/{total}",
+      "repairTimestampsError": "Repair timestamps failed: {error}",
+      "repairExpertFeedbackConfirm": "This will set the \"type\" field to \"expert\" for expert feedback records that have missing or empty type fields. Records with \"public\" or \"ai\" types will be left unchanged. Are you sure you want to continue?",
+      "repairExpertFeedbackSuccess": "Expert feedback types repaired successfully. Updated: {updated}/{total} ({alreadyCorrect} already correct)",
+      "repairExpertFeedbackError": "Repair expert feedback failed: {error}",
+      "migratePublicFeedbackConfirm": "This will migrate all public feedback from expert feedback to the new public feedback collection. Are you sure you want to continue?",
+      "migratePublicFeedbackSuccess": "Migration completed. Migrated {migrated} feedback documents.",
+      "migratePublicFeedbackError": "Migration failed: {error}"
     },
     "notifications": {
       "title": "User notifications",
@@ -514,6 +533,10 @@
       "adminUsers": "Admin",
       "answerType": "Answer type",
       "allAnswerTypes": "All answer types",
+      "answerTypeNotGc": "Not GC",
+      "answerTypeClarifying": "Clarifying Question",
+      "answerTypePtMuni": "PT/Muni",
+      "answerTypeNormal": "Normal",
       "partnerEval": "Partner evaluation",
       "allPartnerEvals": "All",
       "noEvaluation": "No evaluation",
@@ -914,7 +937,9 @@
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
-      "manipulation": "Manipulation"
+      "manipulation": "Manipulation",
+      "langEnglish": "English",
+      "langFrench": "Français"
     },
     "metrics": {
       "storeType": "Chat metrics store (memory | mongo)"
@@ -962,7 +987,15 @@
     "updatedAt": "Updated at",
     "totalScore": "Score",
     "referringUrl": "Referring URL",
-    "interactionUpdatedAt": "Date of chat"
+    "interactionUpdatedAt": "Date of chat",
+    "allEvalsGenerated": "All evaluations have been generated! Final totals: {processed} successful, {failed} failed.",
+    "generateEvalsFailed": "Failed to generate evals. Check the console for details.",
+    "deleteEvalsConfirm": "This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
+    "deleteEvalsSuccess": "Deleted {deleted} evaluations and {expertFeedbackDeleted} expert feedback records.",
+    "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
+    "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
+    "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
+    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details."
   },
   "reviewPanels": {
     "sentence": "Sentence",
@@ -1149,7 +1182,11 @@
       "searchProvider": "Search provider",
       "pageLanguage": "Page language",
       "user": "User"
-    }
+    },
+    "allEmbeddingsGenerated": "All embeddings have been generated!",
+    "generateEmbeddingsFailed": "Failed to generate embeddings. Check the console for details.",
+    "regenerateConfirm": "This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?",
+    "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully!"
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",

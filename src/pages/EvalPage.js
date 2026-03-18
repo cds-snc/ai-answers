@@ -74,7 +74,7 @@ const EvalPage = ({ lang = 'en' }) => {
         } else {
           setIsAutoProcessingEvals(false);
           if (!isAutoProcess) {
-            alert(`All evaluations have been generated! Final totals: ${result.processed || 0} successful, ${result.failed || 0} failed.`);
+            alert(t('eval.allEvalsGenerated').replace('{processed}', result.processed || 0).replace('{failed}', result.failed || 0));
           }
         }
       } else {
@@ -85,7 +85,7 @@ const EvalPage = ({ lang = 'en' }) => {
     } catch (error) {
       console.error('Error generating evals:', error);
       if (!isAutoProcess) {
-        alert('Failed to generate evals. Check the console for details.');
+        alert(t('eval.generateEvalsFailed'));
       }
       setIsAutoProcessingEvals(false);
     } finally {
@@ -94,29 +94,25 @@ const EvalPage = ({ lang = 'en' }) => {
   };
 
   const handleDeleteEvals = async () => {
-    const confirmed = window.confirm(
-      'This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
-    );
+    const confirmed = window.confirm(t('eval.deleteEvalsConfirm'));
     if (!confirmed) return;
     try {
       const result = await EvaluationService.deleteEvals({ startTime: startTime || undefined, endTime: endTime || undefined });
-      alert(`Deleted ${result.deleted} evaluations and ${result.expertFeedbackDeleted} expert feedback records.`);
+      alert(t('eval.deleteEvalsSuccess').replace('{deleted}', result.deleted).replace('{expertFeedbackDeleted}', result.expertFeedbackDeleted));
     } catch (error) {
-      alert('Failed to delete evaluations. Check the console for details.');
+      alert(t('eval.deleteEvalsFailed'));
     }
   };
 
   // New handler for deleting only empty evals
   const handleDeleteEmptyEvals = async () => {
-    const confirmed = window.confirm(
-      'This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
-    );
+    const confirmed = window.confirm(t('eval.deleteEmptyEvalsConfirm'));
     if (!confirmed) return;
     try {
       const result = await EvaluationService.deleteEvals({ startTime: startTime || undefined, endTime: endTime || undefined, onlyEmpty: true });
-      alert(`Deleted ${result.deleted} empty evaluations and ${result.expertFeedbackDeleted} expert feedback records.`);
+      alert(t('eval.deleteEmptyEvalsSuccess').replace('{deleted}', result.deleted).replace('{expertFeedbackDeleted}', result.expertFeedbackDeleted));
     } catch (error) {
-      alert('Failed to delete empty evaluations. Check the console for details.');
+      alert(t('eval.deleteEmptyEvalsFailed'));
     }
   };
 
