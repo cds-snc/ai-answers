@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.113.0](https://github.com/cds-snc/ai-answers/compare/v1.112.1...v1.113.0) (2026-03-18)
+
+
+### Features
+
+* 404 ([7cad6c7](https://github.com/cds-snc/ai-answers/commit/7cad6c7c83a9a4ad36d0e65a31a845c409fecc9a))
+* 404 page ([2786f33](https://github.com/cds-snc/ai-answers/commit/2786f335da9166ad0165cbad5018c671ba3bdc58))
+* add dead/duplicate key detector ([5becae3](https://github.com/cds-snc/ai-answers/commit/5becae3f25c9697fe293d661f09933f689838a4b))
+* better translation for page name ([15d2847](https://github.com/cds-snc/ai-answers/commit/15d2847ccee76af1e5e82eb49468df6f023f593b))
+* cleanup ([15edeab](https://github.com/cds-snc/ai-answers/commit/15edeabbbb566f33f2574f48d27e0a4381dc77c6))
+* cleanup paths ([32aecb6](https://github.com/cds-snc/ai-answers/commit/32aecb6689c220b29f216d13b58c3d6f2e3d611d))
+* datepicker support ([aebf383](https://github.com/cds-snc/ai-answers/commit/aebf383ffa820bf2bd38885cfbbd6293358a1639))
+* dead locales ([61c5bcc](https://github.com/cds-snc/ai-answers/commit/61c5bcc46fdb3c0fc7c58053a35529f19776f6e2))
+* dead locales ([cd882b2](https://github.com/cds-snc/ai-answers/commit/cd882b213001c5cbac5f86446ccee74d67d515cd))
+* fix capitalization ([28a6db7](https://github.com/cds-snc/ai-answers/commit/28a6db7ba28dca398c0159cfed1e7a14e63315e7))
+* fix en defaulting in admin ([911afcd](https://github.com/cds-snc/ai-answers/commit/911afcd56324d99a71323dddf2cbfa378ed3397f))
+* fix EN tooltips lingering ([aeb576f](https://github.com/cds-snc/ai-answers/commit/aeb576f8a45effa983e24dc9c3cf99e28e36eeb2))
+* locales updated ([c760772](https://github.com/cds-snc/ai-answers/commit/c76077214794454fc9f119343f7d3f57b9ab7f43))
+* no beta banner on 404 ([958e82a](https://github.com/cds-snc/ai-answers/commit/958e82ae5e67ffdad3cd9479a7fed1847ae1909c))
+* qa ([2034fc2](https://github.com/cds-snc/ai-answers/commit/2034fc28a8363ae539a66cc4a2b8aa436e1f0783))
+* qa ([273474c](https://github.com/cds-snc/ai-answers/commit/273474cda0b825174c1d29170973193d95bc0c75))
+* rmv dead locales for about page ([6a72bd8](https://github.com/cds-snc/ai-answers/commit/6a72bd8a8ee79d44f6844daae30647a513f43575))
+* route slugs, locales review ([d04edee](https://github.com/cds-snc/ai-answers/commit/d04edee4f86e19afb5f3a40b42e43bcc7a58149c))
+* route slugs, locales, better language handling, 404 in both lags ([9610918](https://github.com/cds-snc/ai-answers/commit/9610918ef4f67686b172558d7a9c8fffe0f1d0d9))
+* sentence case ([2d179c0](https://github.com/cds-snc/ai-answers/commit/2d179c0b07b876bc52b3db6d327cb75f6ad7b6e3))
+* sentence case ([077c9b5](https://github.com/cds-snc/ai-answers/commit/077c9b5a370cbe794e1d98f68cad3b3bbe95f10a))
+* sentence case corrections ([fca8645](https://github.com/cds-snc/ai-answers/commit/fca8645accaad330250e9705b2e5d43d04b8b61b))
+* trailing comma ([419ed3e](https://github.com/cds-snc/ai-answers/commit/419ed3efb672813bb62f95733240033416021d22))
+* update claude md ([4b87ec2](https://github.com/cds-snc/ai-answers/commit/4b87ec2808940c615b097a90930bdae9875e6842))
+
 ## [1.112.1](https://github.com/cds-snc/ai-answers/compare/v1.112.0...v1.112.1) (2026-03-16)
 
 
