@@ -372,7 +372,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title', 'Settings')}</h1>
       <nav className="mb-400">
-        <a href={`/${language}/admin`}>{t('common.backToAdmin')}</a>
+        <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
       <GcdsDetails detailsTitle={t('settings.general.title', 'General settings')} className="mb-400" tabIndex="0">
         <div>

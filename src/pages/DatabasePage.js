@@ -549,7 +549,7 @@ const DatabasePage = ({ lang }) => {
 
   return (
     <GcdsContainer size="xl" centered>
-      <GcdsHeading tag="h1">Database Management</GcdsHeading>
+      <GcdsHeading tag="h1">{t('database.title')}</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
           {t('common.backToAdmin')}

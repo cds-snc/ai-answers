@@ -348,6 +348,7 @@
       "autoEvalDashboard": "Tableau de bord des évaluations automatiques"
     },
     "database": {
+      "title": "Gestion de la base de données",
       "createIndexes": "Créer/Reconstruire des index",
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",

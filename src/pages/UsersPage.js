@@ -246,7 +246,7 @@ const UsersPage = ({ lang }) => {
 
       <nav className="mb-400">
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin')}</GcdsLink>
+          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 

@@ -348,6 +348,7 @@
       "autoEvalDashboard": "Auto-evaluation dashboard"
     },
     "database": {
+      "title": "Database Management",
       "createIndexes": "Create/Rebuild Indexes",
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
       "createIndexesButton": "Rebuild all indexes",

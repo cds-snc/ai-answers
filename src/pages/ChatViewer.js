@@ -9,7 +9,7 @@ import 'prismjs/components/prism-json.js';
 import 'prismjs/components/prism-xml-doc.js';
 import DataStoreService from '../services/DataStoreService.js';
 
-const ChatViewer = () => {
+const ChatViewer = ({ lang = 'en' }) => {
   const { t } = useTranslations();
   const { language } = usePageContext();
   const [chatId, setChatId] = useState('');
@@ -280,7 +280,7 @@ const ChatViewer = () => {
         <h1 className="mb-400">{t('logging.title')}</h1>
         <nav className="mb-400">
           <GcdsText>
-            <GcdsLink href={`/${language}/admin`}>{t('logging.backToAdmin')}</GcdsLink>
+            <GcdsLink href={`/${lang}/admin`}>{t('logging.backToAdmin')}</GcdsLink>
           </GcdsText>
         </nav>
 

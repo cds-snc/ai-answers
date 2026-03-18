@@ -260,9 +260,11 @@ for (const [ns, keys] of Object.entries(grouped)) {
 }
 
 console.log('\n' + '='.repeat(70));
-console.log(`2) DUPLICATIVE KEYS — ${duplicates.length} value groups shared by 2+ keys (flagged for optimization)`);
-console.log('   Keys marked [dead] have no detected usage and can be removed.');
-console.log('   Keys marked [live] are in use — consolidation requires a code update.');
+console.log(`2) DUPLICATIVE KEYS — ${duplicates.length} cases where the same text appears under more than one key`);
+console.log('   These are opportunities to reduce redundancy. Each group shows all keys that share');
+console.log('   identical text. Ideally, one shared key replaces the duplicates.');
+console.log('   [dead] = not used in code, safe to delete');
+console.log('   [live] = actively used — removing requires updating the code that calls it');
 console.log('='.repeat(70));
 for (const d of duplicates) {
   console.log(`\n  value: "${d.value}"`);

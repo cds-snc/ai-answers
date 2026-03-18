@@ -6,7 +6,7 @@ import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 
-const VectorPage = () => {
+const VectorPage = ({ lang = 'en' }) => {
   const { t } = useTranslations();
   const { language } = usePageContext();
   const [vectorStats, setVectorStats] = useState(null);
@@ -108,7 +108,7 @@ const VectorPage = () => {
       <h1>{t('vector.title', 'Vector Administration')}</h1>
       <nav className="mb-400">
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>
+          <GcdsLink href={`/${lang}/admin`}>
             {t('common.backToAdmin')}
           </GcdsLink>
         </GcdsText>

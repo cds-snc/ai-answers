@@ -5,9 +5,9 @@ import { usePageContext } from '../hooks/usePageParam.js';
 // Removed unused imports
 import EvaluationService from '../services/EvaluationService.js';
 
-const EvalPage = () => {
+const EvalPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
-  const { t } = useTranslations(language);
+  const { t } = useTranslations(lang);
   const [evalProgress, setEvalProgress] = useState(null);
   const [isAutoProcessingEvals, setIsAutoProcessingEvals] = useState(false);
   const [isRegeneratingAll] = useState(false);
@@ -126,7 +126,7 @@ const EvalPage = () => {
       
       <nav className="mb-400">
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin')}</GcdsLink>
+          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 
