@@ -156,6 +156,8 @@ function buildTotalsPipeline(dateFilter, extraFilters, departmentFilter, answerT
 
 /**
  * Builds the "yes" reasons breakdown pipeline.
+ * Groups by publicFeedbackScore when present; falls back to publicFeedbackReason string
+ * for legacy records so the frontend can resolve them via reverse label lookup.
  */
 function buildYesReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
     const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
@@ -163,8 +165,16 @@ function buildYesReasonsPipeline(dateFilter, extraFilters, departmentFilter, ans
         { $match: { 'publicFeedback.feedback': 'yes' } },
         {
             $group: {
-                _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
-                count: { $sum: 1 }
+                _id: {
+                    $cond: {
+                        if: { $gt: ['$publicFeedback.publicFeedbackScore', null] },
+                        then: '$publicFeedback.publicFeedbackScore',
+                        else: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'unknown'] }
+                    }
+                },
+                enCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } },
+                frCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } },
+                total: { $sum: 1 }
             }
         }
     );
@@ -173,6 +183,8 @@ function buildYesReasonsPipeline(dateFilter, extraFilters, departmentFilter, ans
 
 /**
  * Builds the "no" reasons breakdown pipeline.
+ * Groups by publicFeedbackScore when present; falls back to publicFeedbackReason string
+ * for legacy records so the frontend can resolve them via reverse label lookup.
  */
 function buildNoReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
     const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
@@ -180,8 +192,16 @@ function buildNoReasonsPipeline(dateFilter, extraFilters, departmentFilter, answ
         { $match: { 'publicFeedback.feedback': 'no' } },
         {
             $group: {
-                _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
-                count: { $sum: 1 }
+                _id: {
+                    $cond: {
+                        if: { $gt: ['$publicFeedback.publicFeedbackScore', null] },
+                        then: '$publicFeedback.publicFeedbackScore',
+                        else: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'unknown'] }
+                    }
+                },
+                enCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } },
+                frCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } },
+                total: { $sum: 1 }
             }
         }
     );
@@ -202,14 +222,19 @@ async function getPublicFeedbackMetrics(req, res) {
 
         const pf = totalsResult[0] || {};
 
-        // Convert reason arrays to objects { reason: count }
+        // Convert reason arrays to objects.
+        // Keys are either numeric score strings (e.g. "1") for modern records,
+        // or the raw label string for legacy records — frontend resolves both to score via reverse lookup.
+        // Format: { "1": { en: N, fr: N, total: N }, "Avoided a call": { en: N, fr: N, total: N } }
         const yesReasons = {};
         yesReasonsResult.forEach(r => {
-            yesReasons[r._id] = r.count;
+            const key = r._id !== null && r._id !== undefined ? String(r._id) : 'unknown';
+            yesReasons[key] = { en: r.enCount, fr: r.frCount, total: r.total };
         });
         const noReasons = {};
         noReasonsResult.forEach(r => {
-            noReasons[r._id] = r.count;
+            const key = r._id !== null && r._id !== undefined ? String(r._id) : 'unknown';
+            noReasons[key] = { en: r.enCount, fr: r.frCount, total: r.total };
         });
 
         const metrics = {

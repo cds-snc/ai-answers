@@ -113,7 +113,12 @@ const EvalPanel = ({ message, t }) => {
   const sentenceTrace = Array.isArray(evalObj?.sentenceMatchTrace) ? evalObj.sentenceMatchTrace : [];
   const sim = evalObj?.similarityScores || {};
   const noMatch = evalObj?.hasMatches === false;
-  const noMatchReason = noMatch ? (evalObj.noMatchReasonMsg || 'No reason provided') : '';
+  const noMatchReasonType = evalObj?.noMatchReasonType || '';
+  const noMatchReason = noMatch
+    ? (noMatchReasonType
+        ? t(`eval.noMatchReasonTypes.${noMatchReasonType}`, noMatchReasonType)
+        : evalObj?.noMatchReasonMsg || t('eval.noMatchReasonTypes.unknown', 'Unknown'))
+    : '';
 
   const fmt = (v) => {
     if (v === null || typeof v === 'undefined' || v === '') return v;
@@ -237,7 +242,11 @@ const EvalPanel = ({ message, t }) => {
                 {evalObj.noMatchReasonType || evalObj.noMatchReasonMsg ? (
                   <tr>
                     <td>{t('eval.noMatchReason', 'No-match reason')}:</td>
-                    <td>{evalObj.noMatchReasonType || ''} {evalObj.noMatchReasonMsg ? `- ${evalObj.noMatchReasonMsg}` : ''}</td>
+                    <td>
+                      {evalObj.noMatchReasonType
+                        ? t(`eval.noMatchReasonTypes.${evalObj.noMatchReasonType}`, evalObj.noMatchReasonType)
+                        : evalObj.noMatchReasonMsg || ''}
+                    </td>
                   </tr>
                 ) : null}
                 {evalObj.fallbackSourceChatId ? (

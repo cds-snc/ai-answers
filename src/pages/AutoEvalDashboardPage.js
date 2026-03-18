@@ -136,7 +136,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', render: (v) => v ? t(`eval.noMatchReasonTypes.${v}`, v) : '', searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
   ]), [formatDate, t]);
 

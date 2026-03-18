@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
+import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
 
 const PublicFeedbackPanel = ({ message, t }) => {
     const [loading, setLoading] = useState(false);
@@ -36,7 +37,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
     let publicTitleSuffix = '';
     if (fetchedPublicFeedback && fetchedPublicFeedback.feedback) {
         // After fetch: show the actual feedback value (Yes/No)
-        publicTitleSuffix = ` \u2714 ${fetchedPublicFeedback.feedback}`;
+        publicTitleSuffix = ` \u2714 ${fetchedPublicFeedback.feedback === 'yes' ? t('common.yes', 'Yes') : fetchedPublicFeedback.feedback === 'no' ? t('common.no', 'No') : fetchedPublicFeedback.feedback}`;
     } else if (interaction.publicFeedback) {
         // Before fetch: publicFeedback is an ObjectId reference — just show checkmark
         publicTitleSuffix = ' \u2714';
@@ -60,8 +61,15 @@ const PublicFeedbackPanel = ({ message, t }) => {
                 {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
                 <div className="public-feedback-summary">
                     <div>{t('reviewPanels.score') || 'Score'}: {(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : (t('reviewPanels.notAvailable') || 'N/A')}</div>
-                    <div>{t('reviewPanels.reason') || 'Reason'}: {publicFeedback && (publicFeedback.publicFeedbackReason || '')}</div>
-                    <div>{t('reviewPanels.feedback') || 'Feedback'}: {publicFeedback && (publicFeedback.feedback || '')}</div>
+                    <div>{t('reviewPanels.reason') || 'Reason'}: {(() => {
+                        if (!publicFeedback) return '';
+                        const score = publicFeedback.publicFeedbackScore;
+                        const id = SCORE_TO_KEY[score];
+                        const feedbackType = publicFeedback.feedback === 'yes' ? 'yes' : 'no';
+                        if (id) return t(`homepage.publicFeedback.${feedbackType}.options.${id}`, publicFeedback.publicFeedbackReason || id);
+                        return publicFeedback.publicFeedbackReason || '';
+                    })()}</div>
+                    <div>{t('reviewPanels.feedback') || 'Feedback'}: {publicFeedback && (publicFeedback.feedback === 'yes' ? t('common.yes', 'Yes') : publicFeedback.feedback === 'no' ? t('common.no', 'No') : publicFeedback.feedback || '')}</div>
                 </div>
                 {/* Only show overall public feedback score and reason; sentence-level chart removed */}
             </div>

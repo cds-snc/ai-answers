@@ -257,7 +257,7 @@ const EvalPage = ({ lang = 'en' }) => {
                     <tbody>
                       {Object.entries(evalMetrics.noMatchByReason).map(([k, v]) => (
                         <tr key={`nm-${k}`}>
-                          <td style={{ border: '1px solid #ddd', padding: '8px' }}>{k || t('admin.evalPage.metrics.unknown', 'unknown')}</td>
+                          <td style={{ border: '1px solid #ddd', padding: '8px' }}>{k ? t(`eval.noMatchReasonTypes.${k}`, k) : t('admin.evalPage.metrics.unknown', 'unknown')}</td>
                           <td style={{ border: '1px solid #ddd', padding: '8px' }}>{v}</td>
                         </tr>
                       ))}

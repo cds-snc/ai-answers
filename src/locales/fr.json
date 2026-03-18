@@ -1000,7 +1000,15 @@
     "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
     "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
     "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
-    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails."
+    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails.",
+    "noMatchReasonTypes": {
+      "no_embeddings": "Aucune intégration trouvée",
+      "no_qa_match": "Aucune intégration similaire trouvée",
+      "forced_fallback_no_match": "Le repli forcé n'a trouvé aucun candidat acceptable",
+      "no_sentence_match": "Toutes les phrases n'ont pas correspondu",
+      "no_citation_match": "Aucune citation correspondante trouvée",
+      "unknown": "Inconnu"
+    }
   },
   "reviewPanels": {
     "sentence": "Phrase",
