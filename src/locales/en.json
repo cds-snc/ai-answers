@@ -1154,7 +1154,9 @@
         "unhelpful": "Issue (no)",
         "reasonBreakdown": "Reason breakdown",
         "reasonTableTitle": "Public feedback reasons breakdown",
-        "reason": "Reason"
+        "reason": "Reason",
+        "otherYes": "Other (yes)",
+        "otherNo": "Other (no)"
       },
       "byDepartment": {
         "title": "Department breakdown of expert evaluations",

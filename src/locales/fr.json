@@ -1154,7 +1154,9 @@
         "unhelpful": "Problème (non)",
         "reasonBreakdown": "Répartition des raisons",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
-        "reason": "Raison"
+        "reason": "Raison",
+        "otherYes": "Autre (oui)",
+        "otherNo": "Autre (non)"
       },
       "byDepartment": {
         "title": "Répartition par département des évaluations d'experts",

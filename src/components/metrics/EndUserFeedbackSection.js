@@ -39,6 +39,11 @@ const CHART_COLORS = [
 const getReasonLabel = (scoreKey, t, isPositive) => {
   const id = SCORE_TO_KEY[parseInt(scoreKey, 10)];
   if (!id) return scoreKey;
+  if (id === 'other') {
+    return isPositive
+      ? t('metrics.dashboard.userScored.otherYes', 'Other (yes)')
+      : t('metrics.dashboard.userScored.otherNo', 'Other (no)');
+  }
   const translationKey = isPositive
     ? `homepage.publicFeedback.yes.options.${id}`
     : `homepage.publicFeedback.no.options.${id}`;
@@ -164,9 +169,9 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
         />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
           {/* Pie chart for YES (helpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300, height: 300 }}>
+          <div style={{ flex: 1, minWidth: 300 }}>
           <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250 + Math.max(0, yesPieData.length - 3) * 20}>
               <PieChart>
                 <Pie
                   data={yesPieData.map(({ label, value }) => ({ name: label, value }))}
@@ -175,7 +180,6 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label
                 >
                   {yesPieData.map((entry, idx) => (
                     <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
@@ -187,9 +191,9 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
             </ResponsiveContainer>
           </div>
           {/* Pie chart for NO (unhelpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300, height: 300 }}>
+          <div style={{ flex: 1, minWidth: 300 }}>
             <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250 + Math.max(0, noPieData.length - 3) * 20}>
               <PieChart>
                 <Pie
                   data={noPieData.map(({ label, value }) => ({ name: label, value }))}
@@ -198,7 +202,6 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label
                 >
                   {noPieData.map((entry, idx) => (
                     <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
