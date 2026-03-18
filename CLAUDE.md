@@ -29,6 +29,23 @@ This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the
 ## Official languages
 **Never hardcode user-facing text in components or pages.** All UI strings must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new UI text (column headers, labels, buttons, messages, placeholders, etc.), always add the corresponding key to both locale files in the same PR — don't rely on the fallback string in `t('key', 'fallback')`.
 
+### Sentence case
+All UI strings use sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+
+### Locale key hygiene
+After adding, removing, or renaming locale keys, run the dead key detector:
+
+```bash
+node scripts/find-dead-locale-keys.cjs
+```
+
+This reports:
+1. **Dead keys** — keys in `en.json`/`fr.json` with no detected usage in `src/`
+2. **Duplicate keys** — different keys with identical values (consolidation candidates)
+3. **Parity gaps** — keys present in EN but missing from FR, or vice versa
+
+Parity gaps must be fixed before merging. Dead keys and duplicates are cleaned up incrementally — fix a few per PR rather than all at once.
+
 About page is different - text content is in .md files
  *   - English: public/content/about-en.md
  *   - French:  public/content/about-fr.md
