@@ -33,7 +33,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
     const publicFeedback = fetchedPublicFeedback || interaction.publicFeedback || message.publicFeedback || {};
 
     // Build title with indicator
-    const baseTitle = t('reviewPanels.publicFeedbackTitle') || 'Public feedback';
+    const baseTitle = t('reviewPanels.publicFeedbackTitle', 'Public feedback');
     let publicTitleSuffix = '';
     if (fetchedPublicFeedback && fetchedPublicFeedback.feedback) {
         // After fetch: show the actual feedback value (Yes/No)
@@ -57,11 +57,11 @@ const PublicFeedbackPanel = ({ message, t }) => {
             }
         }}>
             <div className="review-panel public-feedback-panel">
-                {loading && <div>{t('common.loading') || 'Loading...'}</div>}
-                {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
+                {loading && <div>{t('common.loading', 'Loading...')}</div>}
+                {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
                 <div className="public-feedback-summary">
-                    <div>{t('reviewPanels.score') || 'Score'}: {(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : (t('reviewPanels.notAvailable') || 'N/A')}</div>
-                    <div>{t('reviewPanels.reason') || 'Reason'}: {(() => {
+                    <div>{t('reviewPanels.score', 'Score')}: {(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : t('reviewPanels.notAvailable', 'N/A')}</div>
+                    <div>{t('reviewPanels.reason', 'Reason')}: {(() => {
                         if (!publicFeedback) return '';
                         const score = publicFeedback.publicFeedbackScore;
                         const id = SCORE_TO_KEY[score];
@@ -69,7 +69,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
                         if (id) return t(`homepage.publicFeedback.${feedbackType}.options.${id}`, publicFeedback.publicFeedbackReason || id);
                         return publicFeedback.publicFeedbackReason || '';
                     })()}</div>
-                    <div>{t('reviewPanels.feedback') || 'Feedback'}: {publicFeedback && (publicFeedback.feedback === 'yes' ? t('common.yes', 'Yes') : publicFeedback.feedback === 'no' ? t('common.no', 'No') : publicFeedback.feedback || '')}</div>
+                    <div>{t('reviewPanels.feedback', 'Feedback')}: {publicFeedback && (publicFeedback.feedback === 'yes' ? t('common.yes', 'Yes') : publicFeedback.feedback === 'no' ? t('common.no', 'No') : publicFeedback.feedback || '')}</div>
                 </div>
                 {/* Only show overall public feedback score and reason; sentence-level chart removed */}
             </div>

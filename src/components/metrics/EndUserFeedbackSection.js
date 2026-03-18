@@ -86,13 +86,13 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
     ...Object.keys(noReasons)
   ]));
 
-  // Table rows: one row per score key with yes EN/FR and no EN/FR counts
+  // Table rows: one row per score key with separate yes/no labels and EN/FR counts
   const tableData = allKeys.map((key) => {
     const yes = yesReasons[key] || { en: 0, fr: 0, total: 0 };
     const no = noReasons[key] || { en: 0, fr: 0, total: 0 };
-    const isYesMajority = yes.total >= no.total;
     return {
-      label: getReasonLabel(key, t, isYesMajority),
+      yesLabel: yes.total > 0 ? getReasonLabel(key, t, true) : '',
+      noLabel: no.total > 0 ? getReasonLabel(key, t, false) : '',
       yesEn: yes.en,
       yesFr: yes.fr,
       noEn: no.en,
@@ -101,12 +101,11 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
     };
   }).filter(row => row.total > 0);
 
-  // Pie data: combine EN+FR per score key, label in current language
-  const yesPieData = allKeys
-    .map(key => ({ label: getReasonLabel(key, t, true), value: (yesReasons[key]?.total || 0) }))
+  const yesPieData = Object.keys(yesReasons)
+    .map(key => ({ label: getReasonLabel(key, t, true), value: yesReasons[key].total }))
     .filter(d => d.value > 0);
-  const noPieData = allKeys
-    .map(key => ({ label: getReasonLabel(key, t, false), value: (noReasons[key]?.total || 0) }))
+  const noPieData = Object.keys(noReasons)
+    .map(key => ({ label: getReasonLabel(key, t, false), value: noReasons[key].total }))
     .filter(d => d.value > 0);
 
   return (
@@ -217,7 +216,8 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           <DataTable
             data={tableData}
             columns={[
-              { title: t('metrics.dashboard.userScored.reason'), data: 'label' },
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.userScored.reason')}`, data: 'yesLabel' },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.userScored.reason')}`, data: 'noLabel' },
               { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.enCount')}`, data: 'yesEn' },
               { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.frCount')}`, data: 'yesFr' },
               { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.enCount')}`, data: 'noEn' },
