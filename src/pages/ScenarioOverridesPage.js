@@ -304,8 +304,8 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
         {/* no overlay styles needed in simplified UI */}
         <h1 className="mb-400">{pageTitle}</h1>
         <nav className="mb-400">
-          <GcdsLink href={`/${language}/admin`}>
-            {t('common.backToAdmin', 'Back to Admin')}
+          <GcdsLink href={`/${lang}/admin`}>
+            {t('common.backToAdmin')}
           </GcdsLink>
         </nav>
         <GcdsText className="mb-200">{description1}</GcdsText>

@@ -6,7 +6,7 @@ import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 
-const VectorPage = () => {
+const VectorPage = ({ lang = 'en' }) => {
   const { t } = useTranslations();
   const { language } = usePageContext();
   const [vectorStats, setVectorStats] = useState(null);
@@ -59,7 +59,7 @@ const VectorPage = () => {
         } else {
           setIsAutoProcessingEmbeddings(false);
           if (!isAutoProcess) {
-            alert('All embeddings have been generated!');
+            alert(t('vector.allEmbeddingsGenerated'));
           }
         }
       } else {
@@ -70,7 +70,7 @@ const VectorPage = () => {
     } catch (error) {
       console.error('Error generating embeddings:', error);
       if (!isAutoProcess) {
-        alert('Failed to generate embeddings. Check the console for details.');
+        alert(t('vector.generateEmbeddingsFailed'));
       }
       setIsAutoProcessingEmbeddings(false);
     } finally {
@@ -79,9 +79,7 @@ const VectorPage = () => {
   };
 
   const handleRegenerateEmbeddings = () => {
-    const confirmed = window.confirm(
-      'This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?'
-    );
+    const confirmed = window.confirm(t('vector.regenerateConfirm'));
     if (confirmed) {
       setIsRegeneratingEmbeddings(true);
       handleGenerateEmbeddings(false, true, null);
@@ -95,7 +93,7 @@ const VectorPage = () => {
     setError(null);
     try {
       await VectorService.reinitialize();
-      alert('Vector index created and vector service reinitialized successfully!');
+      alert(t('vector.indexCreatedSuccess'));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -108,8 +106,8 @@ const VectorPage = () => {
       <h1>{t('vector.title', 'Vector Administration')}</h1>
       <nav className="mb-400">
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>
-            {t('common.backToAdmin', 'Back to Admin')}
+          <GcdsLink href={`/${lang}/admin`}>
+            {t('common.backToAdmin')}
           </GcdsLink>
         </GcdsText>
       </nav>

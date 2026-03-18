@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AuthService from '../services/AuthService.js';
 import { useNavigate } from 'react-router-dom';
+import { getPath } from '../utils/routes.js';
 
 const AuthContext = createContext();
 
@@ -38,16 +39,17 @@ export const AuthProvider = ({ children }) => {
         const path = window.location.pathname;
         if (path.startsWith('/fr')) prefix = '/fr';
       }
+      const signinPath = getPath('signin', prefix === '/fr' ? 'fr' : 'en');
       try {
         if (typeof window !== 'undefined') {
           // Use a full page navigation to the signin route so the app reloads
-          window.location.replace(`${prefix}/signin`);
+          window.location.replace(signinPath);
         } else {
-          navigate(`${prefix}/signin`);
+          navigate(signinPath);
         }
       } catch (e) {
         // Fallback to SPA navigation if redirect fails
-        try { navigate(`${prefix}/signin`); } catch (err) { /* ignore */ }
+        try { navigate(signinPath); } catch (err) { /* ignore */ }
       }
     });
 
@@ -59,6 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   // Update context when user logs in or out
   const login = async (email, password) => {
+    const lang = (typeof window !== 'undefined' && window.location.pathname.startsWith('/fr')) ? 'fr' : 'en';
     try {
       setLoading(true);
       const data = await AuthService.login(email, password);
@@ -67,7 +70,7 @@ export const AuthProvider = ({ children }) => {
         return {
           user: data.user,
           twoFA: true,
-          defaultRoute: getDefaultRouteForRole(data.user.role)
+          defaultRoute: getDefaultRouteForRole(data.user.role, lang)
         };
       }
 
@@ -75,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(data.user);
       return {
         user: data.user,
-        defaultRoute: getDefaultRouteForRole(data.user.role)
+        defaultRoute: getDefaultRouteForRole(data.user.role, lang)
       };
     } finally {
       setLoading(false);
@@ -107,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Use full page replace so the app starts fresh on signin
-      window.location.replace(`${prefix}/signin`);
+      window.location.replace(getPath('signin', prefix === '/fr' ? 'fr' : 'en'));
 
     } catch (e) {
       // ignore navigation errors
@@ -138,11 +141,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const getDefaultRouteForRole = (role, lang = 'en') => {
-    const prefix = lang === 'fr' ? '/fr' : '/en';
     if (role === 'admin' || role === 'partner') {
-      return `${prefix}/admin`;
+      return getPath('admin', lang);
     }
-    return prefix;
+    return `/${lang}`;
   };
 
   const value = {

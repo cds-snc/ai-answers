@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
+import { getPath } from '../utils/routes.js';
 
 const LogoutPage = ({ lang = 'en' }) => {
   const { logout } = useAuth();
@@ -10,7 +11,7 @@ const LogoutPage = ({ lang = 'en' }) => {
   }, [logout]);
 
   // Redirect to signin page after logout
-  return <Navigate to={`/${lang}/signin`} replace />;
+  return <Navigate to={getPath('signin', lang)} replace />;
 };
 
 export default LogoutPage;

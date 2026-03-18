@@ -372,7 +372,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title', 'Settings')}</h1>
       <nav className="mb-400">
-        <a href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</a>
+        <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
       <GcdsDetails detailsTitle={t('settings.general.title', 'General settings')} className="mb-400" tabIndex="0">
         <div>
@@ -606,7 +606,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h3 className="mb-200">English</h3>
+            <h3 className="mb-200">{t('settings.redaction.langEnglish')}</h3>
 
             <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity', 'Profanity')} (EN)
@@ -625,7 +625,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           </div>
 
           <div>
-            <h3 className="mb-200">Français</h3>
+            <h3 className="mb-200">{t('settings.redaction.langFrench')}</h3>
 
             <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity', 'Profanity')} (FR)

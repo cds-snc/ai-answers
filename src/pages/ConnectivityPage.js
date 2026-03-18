@@ -31,7 +31,7 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const ServiceCard = ({ service }) => {
+const ServiceCard = ({ service, t }) => {
     const { service: name, status, message, latencyMs, details } = service;
 
     return (
@@ -57,13 +57,13 @@ const ServiceCard = ({ service }) => {
 
             {latencyMs !== undefined && (
                 <p style={{ margin: '4px 0', fontSize: '0.875rem', color: '#888' }}>
-                    Latency: {latencyMs}ms
+                    {t('connectivity.latency')}: {latencyMs}ms
                 </p>
             )}
 
             {details && (
                 <details style={{ marginTop: '12px' }}>
-                    <summary style={{ cursor: 'pointer', color: '#0071bc' }}>Details</summary>
+                    <summary style={{ cursor: 'pointer', color: '#0071bc' }}>{t('connectivity.details')}</summary>
                     <pre style={{
                         backgroundColor: '#f5f5f5',
                         padding: '12px',
@@ -142,7 +142,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     color: '#721c24',
                     marginBottom: '20px'
                 }}>
-                    <strong>Error:</strong> {error}
+                    <strong>{t('connectivity.error')}:</strong> {error}
                 </div>
             )}
 
@@ -198,7 +198,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     <h2 className="mb-300">{t('connectivity.serviceDetails', 'Service Details')}</h2>
 
                     {results.services.map((service, index) => (
-                        <ServiceCard key={index} service={service} />
+                        <ServiceCard key={index} service={service} t={t} />
                     ))}
                 </>
             )}

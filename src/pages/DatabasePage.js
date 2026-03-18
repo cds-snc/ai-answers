@@ -331,11 +331,7 @@ const DatabasePage = ({ lang }) => {
   };
 
   const handleDropIndexes = async () => {
-    const confirmed = window.confirm(
-      lang === 'en'
-        ? 'This will drop all database indexes. Database operations may be slower until indexes are rebuilt automatically. Are you sure you want to continue?'
-        : 'Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu\'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer?'
-    );
+    const confirmed = window.confirm(t('database.dropIndexesConfirm'));
 
     if (!confirmed) return;
 
@@ -353,15 +349,9 @@ const DatabasePage = ({ lang }) => {
       }
 
       const result = await response.json();
-      setMessage(lang === 'en'
-        ? `Indexes dropped successfully for ${result.results.success.length} collections`
-        : `Indexes supprimés avec succès pour ${result.results.success.length} collections`
-      );
+      setMessage(t('database.dropIndexesSuccess').replace('{count}', result.results.success.length));
     } catch (error) {
-      setMessage(lang === 'en'
-        ? `Drop indexes failed: ${error.message}`
-        : `Échec de la suppression des index: ${error.message}`
-      );
+      setMessage(t('database.dropIndexesError').replace('{error}', error.message));
       console.error('Drop indexes error:', error);
     } finally {
       setIsDroppingIndexes(false);
@@ -369,11 +359,7 @@ const DatabasePage = ({ lang }) => {
   };
 
   const handleDeleteSystemLogs = async () => {
-    if (!window.confirm(
-      lang === 'en'
-        ? 'Are you sure you want to delete all logs with chatId = "system"? This cannot be undone.'
-        : 'Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = "system" ? Cette action est irréversible.'
-    )) return;
+    if (!window.confirm(t('database.deleteSystemLogsConfirm'))) return;
     setIsDeletingSystemLogs(true);
     setMessage('');
     try {
@@ -382,28 +368,16 @@ const DatabasePage = ({ lang }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Failed to delete system logs');
-      setMessage(
-        (lang === 'en'
-          ? `Deleted ${result.deletedCount} system logs.`
-          : `Supprimé ${result.deletedCount} journaux système.`)
-      );
+      setMessage(t('database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount));
     } catch (error) {
-      setMessage(
-        lang === 'en'
-          ? `Delete system logs failed: ${error.message}`
-          : `Échec de la suppression des journaux système: ${error.message}`
-      );
+      setMessage(t('database.deleteSystemLogsError').replace('{error}', error.message));
     } finally {
       setIsDeletingSystemLogs(false);
     }
   };
 
   const handleDeleteAllBatches = async () => {
-    if (!window.confirm(
-      lang === 'en'
-        ? 'This will delete ALL batches and batchItems. This cannot be undone. Are you sure you want to continue?'
-        : "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?"
-    )) return;
+    if (!window.confirm(t('database.deleteAllBatchesConfirm'))) return;
 
     setIsDeletingAllBatches(true);
     setMessage('');
@@ -412,17 +386,9 @@ const DatabasePage = ({ lang }) => {
       // Expecting { deletedBatches, deletedBatchItems } or similar
       const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
       const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
-      setMessage(
-        lang === 'en'
-          ? `Deleted batches: ${deletedBatches}, deleted batchItems: ${deletedBatchItems}`
-          : `Lots supprimés : ${deletedBatches}, batchItems supprimés : ${deletedBatchItems}`
-      );
+      setMessage(t('database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems));
     } catch (error) {
-      setMessage(
-        lang === 'en'
-          ? `Delete all batches failed: ${error.message}`
-          : `Échec de la suppression des lots : ${error.message}`
-      );
+      setMessage(t('database.deleteAllBatchesError').replace('{error}', error.message));
       console.error('Delete all batches error:', error);
     } finally {
       setIsDeletingAllBatches(false);
@@ -430,93 +396,53 @@ const DatabasePage = ({ lang }) => {
   };
 
   const handleRepairTimestamps = async () => {
-    if (!window.confirm(
-      lang === 'en'
-        ? 'This will add updatedAt timestamps to existing tool records without them. Are you sure you want to continue?'
-        : 'Cela ajoutera des horodatages updatedAt aux enregistrements d\'outils existants qui n\'en ont pas. Êtes-vous sûr de vouloir continuer?'
-    )) return;
+    if (!window.confirm(t('database.repairTimestampsConfirm'))) return;
 
     setIsRepairingTimestamps(true);
     setMessage('');
 
     try {
       const result = await DataStoreService.repairTimestamps();
-      setMessage(
-        lang === 'en'
-          ? `Tool timestamps repaired successfully. Tools: ${result.stats.tools.updated}/${result.stats.tools.total}`
-          : `Horodatages des outils réparés avec succès. Outils: ${result.stats.tools.updated}/${result.stats.tools.total}`
-      );
+      setMessage(t('database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total));
     } catch (error) {
-      setMessage(
-        lang === 'en'
-          ? `Repair timestamps failed: ${error.message}`
-          : `Échec de la réparation des horodatages: ${error.message}`
-      );
+      setMessage(t('database.repairTimestampsError').replace('{error}', error.message));
     } finally {
       setIsRepairingTimestamps(false);
     }
   };
 
   const handleRepairExpertFeedback = async () => {
-    if (!window.confirm(
-      lang === 'en'
-        ? 'This will set the "type" field to "expert" for expert feedback records that have missing or empty type fields. Records with "public" or "ai" types will be left unchanged. Are you sure you want to continue?'
-        : 'Cela définira le champ "type" sur "expert" pour les enregistrements de commentaires d\'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types "public" ou "ai" resteront inchangés. Êtes-vous sûr de vouloir continuer?'
-    )) return;
+    if (!window.confirm(t('database.repairExpertFeedbackConfirm'))) return;
 
     setIsRepairingExpertFeedback(true);
     setMessage('');
 
     try {
       const result = await DataStoreService.repairExpertFeedback();
-      setMessage(
-        lang === 'en'
-          ? `Expert feedback types repaired successfully. Updated: ${result.stats.expertFeedback.updated}/${result.stats.expertFeedback.total} (${result.stats.expertFeedback.alreadyCorrect} already correct)`
-          : `Types de commentaires d'experts réparés avec succès. Mis à jour: ${result.stats.expertFeedback.updated}/${result.stats.expertFeedback.total} (${result.stats.expertFeedback.alreadyCorrect} déjà corrects)`
-      );
+      setMessage(t('database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect));
     } catch (error) {
-      setMessage(
-        lang === 'en'
-          ? `Repair expert feedback failed: ${error.message}`
-          : `Échec de la réparation des commentaires d'experts: ${error.message}`
-      );
+      setMessage(t('database.repairExpertFeedbackError').replace('{error}', error.message));
     } finally {
       setIsRepairingExpertFeedback(false);
     }
   };
 
   const handleMigratePublicFeedback = async () => {
-    if (!window.confirm(
-      lang === 'en'
-        ? 'This will migrate all public feedback from expert feedback to the new public feedback collection. Are you sure you want to continue?'
-        : 'Cela migrera tous les commentaires publics des commentaires d\'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?'
-    )) return;
+    if (!window.confirm(t('database.migratePublicFeedbackConfirm'))) return;
     setIsMigratingPublicFeedback(true);
     setMessage('');
     try {
       const result = await DataStoreService.migratePublicFeedback();
-      setMessage(
-        lang === 'en'
-          ? `Migration completed. Migrated ${result.migrated || 0} feedback documents.`
-          : `Migration terminée. ${result.migrated || 0} commentaires migrés.`
-      );
+      setMessage(t('database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0));
     } catch (error) {
-      setMessage(
-        lang === 'en'
-          ? `Migration failed: ${error.message}`
-          : `Échec de la migration: ${error.message}`
-      );
+      setMessage(t('database.migratePublicFeedbackError').replace('{error}', error.message));
     } finally {
       setIsMigratingPublicFeedback(false);
     }
   };
 
   const handleCreateIndexes = async () => {
-    const confirmed = window.confirm(
-      lang === 'en'
-        ? 'This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?'
-        : 'Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?'
-    );
+    const confirmed = window.confirm(t('database.createIndexesConfirm'));
 
     if (!confirmed) return;
 
@@ -530,16 +456,10 @@ const DatabasePage = ({ lang }) => {
       const failCount = result.results.failed ? result.results.failed.length : 0;
 
       setCreationDetails(result.results);
-      setMessage(lang === 'en'
-        ? `Indexes created/rebuilt successfully. Success: ${successCount}, Failed: ${failCount}`
-        : `Index créés/reconstruits avec succès. Succès: ${successCount}, Échec: ${failCount}`
-      );
+      setMessage(t('database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount));
     } catch (error) {
       setCreationDetails(null);
-      setMessage(lang === 'en'
-        ? `Create indexes failed: ${error.message}`
-        : `Échec de la création des index: ${error.message}`
-      );
+      setMessage(t('database.createIndexesError').replace('{error}', error.message));
       console.error('Create indexes error:', error);
     } finally {
       setIsCreatingIndexes(false);
@@ -549,10 +469,10 @@ const DatabasePage = ({ lang }) => {
 
   return (
     <GcdsContainer size="xl" centered>
-      <GcdsHeading tag="h1">Database Management</GcdsHeading>
+      <GcdsHeading tag="h1">{t('database.title')}</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
-          {t('common.backToAdmin', 'Back to Admin')}
+          {t('common.backToAdmin')}
         </GcdsLink>
       </nav>
       {/* Table counts display */}

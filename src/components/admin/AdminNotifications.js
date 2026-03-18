@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { getPath } from '../../utils/routes.js';
 import UserService from '../../services/UserService.js';
 import './AdminNotifications.css';
 
@@ -63,7 +64,7 @@ const AdminNotifications = ({ lang = 'en' }) => {
                         </li>
                     )}
                 </ul>
-                <GcdsLink href={`/${lang}/users`} className="admin-notifications-action">
+                <GcdsLink href={getPath('users', lang)} className="admin-notifications-action">
                     {t('admin.notifications.viewUsers', 'View and manage users')}
                 </GcdsLink>
             </div>

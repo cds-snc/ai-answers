@@ -14,6 +14,7 @@ import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
+import { getPath } from "../utils/routes.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -255,9 +256,9 @@ const HomePage = ({ lang = "en" }) => {
           <GcdsText>
             {t("homepage.about.builtBy")}{" "}
             <GcdsLink
-              href={lang === "fr" ? "/fr/about" : "/en/about"}
+              href={getPath('about', lang)}
             >
-              {lang === "fr" ? "Lire plus sur Réponses IA" : "Learn more about AI Answers"}
+              {t("homepage.about.learnMore")}
             </GcdsLink>
           </GcdsText>
         </div>

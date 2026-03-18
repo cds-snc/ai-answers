@@ -1,4 +1,5 @@
 {
+  "locale": "fr",
   "homepage": {
     "title": "Réponses IA",
     "subtitle": {
@@ -21,25 +22,10 @@
       "title": "Faites défiler vers le bas"
     },
     "about": {
-      "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Bureau de l’expérience Canada.ca de Service Canada.",
-      "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
-      "contactTitle": "Contactez-nous",
-      "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
-      "aiServices": {
-        "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
-        "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
-        "chatgpt51": "Service d'IA ChatGPT : GPT-5.1 d'OpenAI, connaissances jusqu'en 2026",
-        "chatgpt51-chat": "Service d'IA ChatGPT : GPT-5.1 Chat d'OpenAI, connaissances jusqu'en 2026",
-        "azure": "Modèle d'IA actuel : Microsoft Azure OpenAI"
-      },
-      "cdslink": "Service numérique canadien",
-      "contact": "Contactez-nous pour plus d'informations",
-      "contactUrl": "https://blogue.canada.ca/contactez-nous.html",
-      "logChatsToDatabaseLabel": "Enregistrer les conversations dans la base de données"
+      "learnMore": "Lire plus sur Réponses IA"
     },
     "feedback": {
-      "title": "",
       "question": "Cette réponse était-elle utile?",
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
@@ -86,11 +72,7 @@
         "message": "Actualisez la page pour réessayer.",
         "button": "Actualiser"
       },
-      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard.",
-      "statusUnknown": {
-        "title": "État du service inconnu",
-        "message": "L'état du service n'a pas pu être déterminé. Veuillez réessayer plus tard."
-      }
+      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard."
     },
     "chat": {
       "chatId": "ID de chat",
@@ -131,9 +113,7 @@
           "label": "IA :",
           "anthropic": "Anthropic",
           "openai": "OpenAI",
-          "azure": "Azure",
-          "azure-gpt51": "Azure GPT-5.1",
-          "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+          "azure": "Azure"
         },
         "searchSelection": {
           "label": "Recherche :",
@@ -185,9 +165,7 @@
         "answerReady": "Votre réponse est prête"
       },
       "citation": {
-        "confidence": "Niveau de confiance :",
-        "ai": "IA :",
-        "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca",
+        "fallbackText": "Impossible de trouver une citation - utilisez la recherche Canada.ca",
         "heading": "Continuez avec ce lien\u00a0:"
       },
       "review": {
@@ -200,48 +178,10 @@
     },
     "expertRating": {
       "title": "Évaluation de la réponse",
-      "hint": "Évaluez chaque partie de la réponse",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
       "sentence4": "Phrase 4",
-      "noEvaluation": "Aucune évaluation disponible.",
-      "noMatchReason": "Raison de non-correspondance",
-      "createdAt": "Créé le",
-      "updatedAt": "Mis à jour le",
-      "matchedText": "Texte apparié",
-      "matchStatus": "Statut de correspondance",
-      "similarityScores": "Scores de similarité",
-      "sentenceMatchTrace": "Trace de correspondance des phrases",
-      "agentUsage": "Utilisation de l’agent",
-      "metric": "Métrique",
-      "sentenceCompareUsed": "Comparaison de phrases utilisée",
-      "fallbackCompareUsed": "Comparaison de repli utilisée",
-      "field": "Champ",
-      "value": "Valeur",
-      "fallbackCompareChecks": "Vérifications de la comparaison de repli",
-      "check": "Vérification",
-      "pass": "Réussite",
-      "details": "Détails",
-      "fallbackCompareRaw": "Données brutes de la comparaison de repli",
-      "expertFeedbackId": "ID de l'évaluation d'expert",
-      "fallbackSourceChatId": "ID de chat source pour le repli",
-      "matchedCitationInteractionId": "ID d'interaction de citation appariée",
-      "matchedCitationChatId": "ID de chat de citation appariée",
-      "agentCandidateChoices": "Choix candidats de l’agent",
-      "candidateIndex": "Index du candidat",
-      "text": "Texte",
-      "numbers": "Nombres",
-      "dates_times": "Dates/Heures",
-      "negation": "Négation",
-      "entities": "Entités",
-      "quantifiers": "Quantificateurs",
-      "conditionals": "Conditionnels",
-      "connectives": "Connecteurs",
-      "modifiers": "Modificateurs",
-      "reEvaluate": "Réévaluer",
-      "deleteEvaluation": "Supprimer l’évaluation",
-      "runEvaluation": "Lancer l’évaluation",
       "citation": "Citation",
       "options": {
         "good": "Bonne",
@@ -250,7 +190,6 @@
         "harmful": "Nuisible",
         "contentIssue": "Problème de contenu",
         "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
-        "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
         "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :",
         "harmfulDetails": {
           "summary": "Quand coder comme nuisible",
@@ -265,37 +204,7 @@
         }
       },
       "submit": "Soumettre l'évaluation",
-      "errors": {
-        "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
-      },
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
-    }
-  },
-  "aboutPage": {
-    "title": "À propos de Canada.ca Réponses IA",
-    "overview": {
-      "title": "Aperçu",
-      "descriptionPara1": "Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent qu'elles ne trouvent pas ce dont elles ont besoin sur Canada.ca. Réponses IA fournira des réponses brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations du gouvernement fédéral.",
-      "descriptionPara2": "Lors d'essais sur invitation sur les pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement. 82 % des commentaires de plus de 250 utilisateurs des essais étaient positifs, et soulignaient les économies de temps et d'efforts, ainsi que l'évitement des appels et des visites au bureau.",
-      "descriptionPara3": "Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts humains pour produire des évaluations IA automatisées et améliorer la qualité des réponses."
-    },
-    "systemCard": {
-      "title": "Documentation de la fiche système",
-      "description": "Pour des informations détaillées sur le fonctionnement de Réponses IA, nos mesures de sécurité, nos méthodes d'évaluation et notre architecture technique, voir notre",
-      "onThisPageTitle": "Sections clés :",
-      "currentStatus": "État actuel",
-      "purposeScope": "Objectif et portée du système",
-      "architecture": "Architecture technique",
-      "riskAssessment": "Évaluation des risques et mesures de sécurité",
-      "performance": "Performance et évaluation",
-      "limitations": "Limitations et contraintes",
-      "responsibleAI": "Principes d'IA responsable et gouvernance"
-    },
-    "accessibilityUsability": {
-      "title": "Accessibilité et convivialité",
-      "designRationale": "Les utilisateurs sont submergés par les longues pages contenant plusieurs instructions et ont de la difficulté à choisir entre les liens. Beaucoup visitent les sites Web gouvernementaux depuis des téléphones mobiles. Réponses IA produit un maximum de quatre phrases par réponse, soigneusement conçues pour être aussi claires que possible. Un seul lien de citation est fourni pour vous permettre de passer à l'étape suivante et de vérifier la réponse, réduisant la surcharge de choix. Des réponses plus courtes avec une seule citation augmentent également la précision.",
-      "testing": "Ces choix de conception sont basés sur des données provenant de plus de 50 tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.",
-      "wcag": "Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web."
     }
   },
   "batch": {
@@ -372,7 +281,6 @@
       }
     },
     "list": {
-      "title": "title",
       "columns": {
         "batchName": "Nom",
         "totals": "Totaux",
@@ -396,7 +304,23 @@
   "logging": {
     "title": "Visualiseur de chat",
     "refresh": "Afficher les journaux par niveau",
-    "refreshPending": "Patientez..."
+    "refreshPending": "Patientez...",
+    "backToAdmin": "Retour à l'administration",
+    "createdAt": "Créé le",
+    "level": "Niveau",
+    "message": "Message",
+    "metadata": "Métadonnées",
+    "enterChatId": "Entrez l'identifiant du clavardage :",
+    "filterByLevel": "Filtrer par niveau :",
+    "all": "Tous",
+    "info": "Info",
+    "debug": "Débogage",
+    "warn": "Avertissement",
+    "error": "Erreur",
+    "noLogs": "Aucun journal disponible",
+    "metadataDetails": "Détails des métadonnées",
+    "expand": "Développer",
+    "close": "Fermer"
   },
   "admin": {
     "title": "Administration de Réponses IA",
@@ -424,11 +348,31 @@
       "autoEvalDashboard": "Tableau de bord des évaluations automatiques"
     },
     "database": {
+      "title": "Gestion de la base de données",
       "createIndexes": "Créer/Reconstruire des index",
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
+      "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?",
       "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
-      "createIndexesError": "Échec de la création des index: {error}"
+      "createIndexesError": "Échec de la création des index: {error}",
+      "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer?",
+      "dropIndexesSuccess": "Indexes supprimés avec succès pour {count} collections",
+      "dropIndexesError": "Échec de la suppression des index: {error}",
+      "deleteSystemLogsConfirm": "Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = \"system\" ? Cette action est irréversible.",
+      "deleteSystemLogsSuccess": "Supprimé {count} journaux système.",
+      "deleteSystemLogsError": "Échec de la suppression des journaux système: {error}",
+      "deleteAllBatchesConfirm": "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?",
+      "deleteAllBatchesSuccess": "Lots supprimés : {batches}, batchItems supprimés : {batchItems}",
+      "deleteAllBatchesError": "Échec de la suppression des lots : {error}",
+      "repairTimestampsConfirm": "Cela ajoutera des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. Êtes-vous sûr de vouloir continuer?",
+      "repairTimestampsSuccess": "Horodatages des outils réparés avec succès. Outils: {updated}/{total}",
+      "repairTimestampsError": "Échec de la réparation des horodatages: {error}",
+      "repairExpertFeedbackConfirm": "Cela définira le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types \"public\" ou \"ai\" resteront inchangés. Êtes-vous sûr de vouloir continuer?",
+      "repairExpertFeedbackSuccess": "Types de commentaires d'experts réparés avec succès. Mis à jour: {updated}/{total} ({alreadyCorrect} déjà corrects)",
+      "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts: {error}",
+      "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?",
+      "migratePublicFeedbackSuccess": "Migration terminée. {migrated} commentaires migrés.",
+      "migratePublicFeedbackError": "Échec de la migration: {error}"
     },
     "notifications": {
       "title": "Notifications utilisateur",
@@ -589,11 +533,20 @@
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",
+      "answerTypeNotGc": "Non GC",
+      "answerTypeClarifying": "Question de clarification",
+      "answerTypePtMuni": "PT/Muni",
+      "answerTypeNormal": "Normal",
       "partnerEval": "Évaluation partenaire",
       "allPartnerEvals": "Tous",
       "noEvaluation": "Aucune évaluation",
       "aiEval": "Évaluation IA",
       "allAiEvals": "Tous",
+      "evalCorrect": "Correct",
+      "evalNeedsImprovement": "Nécessite amélioration",
+      "evalHasError": "Erreur",
+      "evalHasCitationError": "Erreur de citation",
+      "evalHarmful": "Nuisible",
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif",
       "showAdvanced": "Voir plus de filtres",
@@ -622,15 +575,12 @@
       "date": "Date",
       "sessionsTitle": "Sessions actives",
       "sessions": {
-        "sessionId": "ID de session",
-        "creditsLeft": "Crédits restants",
         "chatId": "ID de chat",
         "lastSeen": "Dernière activité",
         "requests": "Requêtes",
         "errors": "Erreurs",
         "lastLatency": "Dernière latence (ms)",
         "avgLatency": "Latence moyenne (ms)",
-        "rpm": "Requêtes / minute",
         "errorLoading": "Échec du chargement des sessions : {status} {text}",
         "errorGeneric": "Erreur : {message}"
       }
@@ -707,7 +657,8 @@
           "incorrect": "incorrect"
         }
       },
-      "departmentMore": "+{count} de plus"
+      "departmentMore": "+{count} de plus",
+      "columnFilterPlaceholder": "Filtrer"
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
@@ -816,21 +767,11 @@
     "email": "Courriel",
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
-    "submit": "Soumettre",
+    "submit": "Créer un compte",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
     "errorOccurred": "Une erreur est survenue lors de l'inscription",
-    "form": {
-      "username": "Nom d'utilisateur :",
-      "password": "Mot de passe :",
-      "submit": "Soumettre",
-      "submitting": "Création du compte...en attente d'approbation"
-    },
-    "messages": {
-      "success": "Succès ! Vous pouvez maintenant ",
-      "error": "Une erreur est survenue lors de l'inscription",
-      "failed": "L'inscription a échoué",
-      "loginLink": "vous connecter à l'administration de Réponses IA"
-    }
+    "submitting": "Création du compte...en attente d'approbation"
   },
   "login": {
     "title": "Se connecter à l'administration de Réponses IA",
@@ -1001,7 +942,9 @@
       "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
       "profanity": "Gros mots",
       "threat": "Menaces",
-      "manipulation": "Manipulation"
+      "manipulation": "Manipulation",
+      "langEnglish": "English",
+      "langFrench": "Français"
     },
     "metrics": {
       "storeType": "Magasin de métriques de discussion (mémoire | mongo)"
@@ -1044,15 +987,20 @@
     "fallbackSourceChatId": "ID de chat source pour le repli",
     "matchedCitationInteractionId": "ID d'interaction de citation appariée",
     "matchedCitationChatId": "ID de chat de citation appariée",
-    "stageTimeline": "Chronologie des étapes",
-    "rawTimeline": "Chronologie brute (JSON)",
-    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "modelData": "Données du modèle",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le",
     "totalScore": "Score",
     "referringUrl": "URL de référence",
-    "interactionUpdatedAt": "Date du chat"
+    "interactionUpdatedAt": "Date du chat",
+    "allEvalsGenerated": "Toutes les évaluations ont été générées ! Totaux finaux : {processed} réussies, {failed} échouées.",
+    "generateEvalsFailed": "Échec de la génération des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEvalsSuccess": "{deleted} évaluations et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
+    "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
+    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails."
   },
   "reviewPanels": {
     "sentence": "Phrase",
@@ -1100,7 +1048,46 @@
     "agentSelectedIndex": "Index sélectionné par l'agent",
     "agentSelectionExplanation": "Explication de la sélection de l'agent",
     "neverStale": "Toujours valide",
-    "downloadedPagesTitle": "Pages téléchargées"
+    "downloadedPagesTitle": "Pages téléchargées",
+    "noEvaluation": "Aucune évaluation disponible.",
+    "noMatchReason": "Raison de non-correspondance",
+    "createdAt": "Créé le",
+    "updatedAt": "Mis à jour le",
+    "stageTimeline": "Chronologie des étapes",
+    "rawTimeline": "Chronologie brute (JSON)",
+    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "matchedText": "Texte apparié",
+    "matchStatus": "Statut d'appariement",
+    "similarityScores": "Scores de similarité",
+    "sentenceMatchTrace": "Trace d'appariement de phrases",
+    "agentUsage": "Utilisation de l'agent",
+    "metric": "Métrique",
+    "sentenceCompareUsed": "Comparaison de phrases utilisée",
+    "fallbackCompareUsed": "Comparaison de repli utilisée",
+    "field": "Champ",
+    "value": "Valeur",
+    "fallbackCompareChecks": "Vérifications de la comparaison de repli",
+    "check": "Vérification",
+    "pass": "Réussite",
+    "details": "Détails",
+    "expertFeedbackId": "ID d'évaluation d'expert",
+    "fallbackSourceChatId": "ID de chat source pour le repli",
+    "matchedCitationInteractionId": "ID d'interaction de citation appariée",
+    "matchedCitationChatId": "ID de chat de citation appariée",
+    "agentCandidateChoices": "Choix de candidats de l'agent",
+    "candidateIndex": "Index du candidat",
+    "text": "Texte",
+    "numbers": "Nombres",
+    "dates_times": "Dates/heures",
+    "negation": "Négation",
+    "entities": "Entités",
+    "quantifiers": "Quantificateurs",
+    "conditionals": "Conditionnels",
+    "connectives": "Connectifs",
+    "modifiers": "Modificateurs",
+    "reEvaluate": "Réévaluer",
+    "deleteEvaluation": "Supprimer l'évaluation",
+    "runEvaluation": "Lancer l'évaluation"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
@@ -1190,7 +1177,21 @@
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
     "chatIdPlaceholder": "Entrez l'ID du chat",
     "getSimilarChats": "Obtenir les chats similaires",
-    "loadingSimilarChats": "Chargement des chats similaires..."
+    "loadingSimilarChats": "Chargement des chats similaires...",
+    "enterChatId": "Veuillez entrer un identifiant de clavardage",
+    "fetchError": "Impossible de récupérer les clavardages similaires",
+    "columns": {
+      "chatId": "ID du clavardage",
+      "similarity": "Similarité",
+      "aiProvider": "Fournisseur IA",
+      "searchProvider": "Fournisseur de recherche",
+      "pageLanguage": "Langue de la page",
+      "user": "Utilisateur"
+    },
+    "allEmbeddingsGenerated": "Tous les incorporations ont été générées !",
+    "generateEmbeddingsFailed": "Échec de la génération des incorporations. Vérifiez la console pour plus de détails.",
+    "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !"
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
@@ -1238,6 +1239,19 @@
     "warnings": "Avertissements",
     "notConfigured": "Non configuré",
     "lastRun": "Dernière exécution",
-    "serviceDetails": "Détails du service"
+    "serviceDetails": "Détails du service",
+    "latency": "Latence",
+    "details": "Détails",
+    "error": "Erreur"
+  },
+  "validation": {
+    "required": "Veuillez remplir ce champ.",
+    "emailInvalid": "Veuillez entrer une adresse courriel valide."
+  },
+  "notFound": {
+    "breadcrumb": "Réponses IA",
+    "title": "Page introuvable",
+    "message": "Nous ne trouvons pas la page que vous cherchez.",
+    "homeLink": "Retourner à Réponses IA"
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { getPath } from '../utils/routes.js';
 import { GcdsContainer, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
@@ -21,8 +22,7 @@ const AdminPage = ({ lang = 'en' }) => {
     // Force a full page reload to the signin page so the app's
     // fingerprint initialization runs again and a new session is created.
     try {
-      const prefix = lang === 'fr' ? '/fr' : '/en';
-      window.location.href = `${prefix}/signin`;
+      window.location.href = getPath('signin', lang);
     } catch (e) {
       // Fallback: reload the current page
       try { window.location.reload(); } catch (err) { /* ignore */ }
@@ -59,27 +59,27 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/eval-dashboard`}>
+              <GcdsLink href={getPath('eval-dashboard', lang)}>
                 {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/chat-dashboard`}>
+              <GcdsLink href={getPath('chat-dashboard', lang)}>
                 {t('admin.navigation.chatDashboard', 'Chat dashboard')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/metrics`}>
+              <GcdsLink href={getPath('metrics', lang)}>
                 {t('admin.navigation.metrics', 'View performance metrics')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/scenario-overrides`}>
+              <GcdsLink href={getPath('scenario-overrides', lang)}>
                 {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={`/${lang}/chat-viewer`}>
+              <GcdsLink href={getPath('chat-viewer', lang)}>
                 {t('admin.navigation.chatViewer')}
               </GcdsLink>
             </li>
@@ -94,48 +94,47 @@ const AdminPage = ({ lang = 'en' }) => {
             </h2>
             <ul className="list-none p-0">
               <li>
-                <GcdsLink href={`/${lang}/batch`}>
+                <GcdsLink href={getPath('batch', lang)}>
                   {t('admin.navigation.batches', 'View and Manage Batches')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/users`}>
+                <GcdsLink href={getPath('users', lang)}>
                   {t('admin.navigation.users', 'Manage User Accounts')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/database`}>
+                <GcdsLink href={getPath('database', lang)}>
                   {t('admin.navigation.database', 'Manage the database')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/eval`}>
+                <GcdsLink href={getPath('eval', lang)}>
                   {t('admin.navigation.eval', 'Evaluation Administration')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/auto-eval-dashboard`}>
+                <GcdsLink href={getPath('auto-eval-dashboard', lang)}>
                   {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
                 </GcdsLink>
               </li>
-
               <li>
-                <GcdsLink href={`/${lang}/vector`}>
+                <GcdsLink href={getPath('vector', lang)}>
                   {t('admin.navigation.vector', 'Vector Administration')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/settings`}>
+                <GcdsLink href={getPath('settings', lang)}>
                   {t('settings.title', 'Settings')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/sessions`}>
+                <GcdsLink href={getPath('sessions', lang)}>
                   {t('admin.navigation.sessions', 'Active Sessions')}
                 </GcdsLink>
               </li>
               <li>
-                <GcdsLink href={`/${lang}/connectivity`}>
+                <GcdsLink href={getPath('connectivity', lang)}>
                   {t('admin.navigation.connectivity', 'Service Connectivity')}
                 </GcdsLink>
               </li>
