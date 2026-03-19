@@ -1000,7 +1000,15 @@
     "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
     "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details."
+    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details.",
+    "noMatchReasonTypes": {
+      "no_embeddings": "No embeddings found",
+      "no_qa_match": "No similar embeddings found",
+      "forced_fallback_no_match": "Forced fallback did not find a passing candidate",
+      "no_sentence_match": "Not all sentences matched",
+      "no_citation_match": "No matching citation found",
+      "unknown": "Unknown"
+    }
   },
   "reviewPanels": {
     "sentence": "Sentence",
@@ -1144,9 +1152,11 @@
         "total": "Total questions with feedback",
         "helpful": "Helpful (yes)",
         "unhelpful": "Issue (no)",
-        "reasonBreakdown": "Reason Breakdown",
+        "reasonBreakdown": "Reason breakdown",
         "reasonTableTitle": "Public feedback reasons breakdown",
-        "reason": "Reason"
+        "reason": "Reason",
+        "otherYes": "Other (yes)",
+        "otherNo": "Other (no)"
       },
       "byDepartment": {
         "title": "Department breakdown of expert evaluations",
