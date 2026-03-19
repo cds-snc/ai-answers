@@ -761,7 +761,7 @@
       "exporting": "Exporting...",
       "exportingMessage": "Please wait while your file is being generated.",
       "exportDescription": "Select export options, configure filters below, then click Export to download.",
-      "exportError": "Export failed. Please try again.",
+      "exportError": "Export failed: {error}",
       "views": {
         "default": "Default",
         "tools": "Tools",

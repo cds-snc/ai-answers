@@ -94,7 +94,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Export error:', error);
-      alert(t('admin.chatLogs.exportError'));
+      alert(t('admin.chatLogs.exportError').replace('{error}', error.message));
     }
     setExporting(false);
   };
