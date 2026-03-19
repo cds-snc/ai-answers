@@ -1088,6 +1088,8 @@
     "sentenceMatchTrace": "Trace d'appariement de phrases",
     "agentUsage": "Utilisation de l'agent",
     "metric": "Métrique",
+    "sentenceCompare": "Comparaison de phrases",
+    "fallbackCompare": "Comparaison de repli",
     "sentenceCompareUsed": "Comparaison de phrases utilisée",
     "fallbackCompareUsed": "Comparaison de repli utilisée",
     "field": "Champ",
