@@ -1,7 +1,6 @@
 import React from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
-import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
@@ -20,18 +19,6 @@ const LABEL_TO_SCORE = (() => {
   });
   return map;
 })();
-
-
-// Accessible color palette for pie charts (WCAG AA compliant)
-const CHART_COLORS = [
-  "#1976D2", // Medium blue
-  "#AD1457", // Magenta
-  "#26A699", // Medium teal
-  "#E65100", // Dark orange
-  "#7B1FA2", // Dark purple
-  "#D18305", // Dark amber
-  "#388E3C"  // Green
-];
 
 
 // Translate a score key to the current language label.
@@ -108,18 +95,6 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
     };
   }).filter(row => row.total > 0);
 
-  const pieChartHeight = 250 + Math.max(0, Math.max(
-    Object.keys(yesReasons).filter(k => yesReasons[k].total > 0).length,
-    Object.keys(noReasons).filter(k => noReasons[k].total > 0).length
-  ) - 3) * 35;
-
-  const yesPieData = Object.keys(yesReasons)
-    .map(key => ({ label: getReasonLabel(key, t, true), value: yesReasons[key].total }))
-    .filter(d => d.value > 0);
-  const noPieData = Object.keys(noReasons)
-    .map(key => ({ label: getReasonLabel(key, t, false), value: noReasons[key].total }))
-    .filter(d => d.value > 0);
-
   return (
     <div className="mb-600">
       <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
@@ -172,54 +147,6 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
             info: false
           }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
-          {/* Pie chart for YES (helpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300 }}>
-          <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={pieChartHeight}>
-              <PieChart>
-                <Pie
-                  data={yesPieData.map(({ label, value }) => ({ name: label, value }))}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                >
-                  {yesPieData.map((entry, idx) => (
-                    <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Pie chart for NO (unhelpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={pieChartHeight}>
-              <PieChart>
-                <Pie
-                  data={noPieData.map(({ label, value }) => ({ name: label, value }))}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                >
-                  {noPieData.map((entry, idx) => (
-                    <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        {/* Add margin below pie charts to separate from the next section */}
-        <div style={{ height: '2rem' }} />
         {/* Table for public feedback reasons breakdown by language */}
         <div style={{ marginTop: '2rem' }}>
           <h4>{t('metrics.dashboard.userScored.reasonTableTitle')}</h4>
