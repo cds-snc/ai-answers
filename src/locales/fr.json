@@ -209,15 +209,6 @@
   },
   "batch": {
     "title": "Lots",
-    "navigation": {
-      "title": "Sur cette page",
-      "links": {
-        "onThisPage": "Links on this page",
-        "newEvaluation": "Nouveau lot",
-        "runningBatches": "Lots incomplets",
-        "processedBatches": "Lots traités"
-      }
-    },
     "sections": {
       "evaluator": {
         "title": "Nouveau lot"
@@ -239,7 +230,6 @@
           "url": "URL / URL de référence — optionnel (en-têtes : URL, REFERRINGURL; insensible à la casse)"
         }
       },
-      "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
       "aiService": {
         "label": "Service d'IA :",
         "openai": "OpenAI",
@@ -265,19 +255,14 @@
         "canadaca": "Recherche Canada.ca"
       },
       "buttons": {
-        "upload": "Télécharger le fichier",
-        "startProcessing": "Démarrer le traitement"
+        "upload": "Télécharger le fichier"
       },
       "processing": "Traitement du fichier, veuillez patienter...",
-      "status": {
-        "preparing": "Création du lot...",
-        "started": "Lot démarré...",
-        "openaiWait": "Cela peut prendre jusqu'à une minute pour démarrer..."
-      },
-      "results": {
-        "title": "Traitement terminé",
-        "file": "Fichier :",
-        "entriesProcessed": "Entrées traitées :"
+      "error": {
+        "noFile": "Veuillez sélectionner un fichier d'abord.",
+        "nameRequired": "Veuillez entrer un nom de lot.",
+        "readFailed": "Impossible de lire le fichier. Veuillez réessayer de le télécharger.",
+        "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer."
       }
     },
     "list": {
@@ -372,7 +357,87 @@
       "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts: {error}",
       "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?",
       "migratePublicFeedbackSuccess": "Migration terminée. {migrated} commentaires migrés.",
-      "migratePublicFeedbackError": "Échec de la migration: {error}"
+      "migratePublicFeedbackError": "Échec de la migration: {error}",
+      "collections": {
+        "all": "Tout",
+        "allButLogs": "Tout sauf les journaux"
+      },
+      "tableRecordCounts": "Nombre d'enregistrements par table",
+      "tableColumn": "Table",
+      "countColumn": "Nombre",
+      "tableLabel": "Table :",
+      "startDate": "Date de début :",
+      "endDate": "Date de fin :",
+      "limitLabel": "Limite :",
+      "exporting": "Exportation...",
+      "exportButton": "Exporter la base de données",
+      "dropIndexesTitle": "Supprimer tous les index",
+      "dropIndexesDescription": "Supprimer tous les index de la base de données. Cela peut être utile pour résoudre les problèmes de performance. Les index seront reconstruits automatiquement selon les besoins.",
+      "dropIndexesButton": "Supprimer tous les index",
+      "droppingLabel": "Suppression des index...",
+      "indexStatusTitle": "Vérifier l'état des index",
+      "indexStatusDescription": "Vérifier l'état actuel de tous les index de base de données pour toutes les collections.",
+      "checkIndexStatusButton": "Vérifier l'état des index",
+      "checkingLabel": "Vérification...",
+      "indexStatusError": "Échec de la vérification de l'état des index : {error}",
+      "indexCreationFailed": "La création d'index a échoué pour les collections suivantes :",
+      "collectionColumn": "Collection",
+      "currentColumn": "Actuel",
+      "expectedColumn": "Attendu",
+      "statusColumn": "Statut",
+      "inProgressLabel": "En cours",
+      "missingLabel": "Manquant :",
+      "deleteSystemLogsTitle": "Supprimer les journaux système",
+      "deleteSystemLogsDescription": "Supprimer tous les journaux où chatId = \"system\". Cette action est irréversible.",
+      "deleteSystemLogsButton": "Supprimer les journaux système",
+      "repairTimestampsTitle": "Réparer les horodatages des outils",
+      "repairTimestampsDescription": "Ajouter des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. La date createdAt sera utilisée si disponible, sinon la date actuelle.",
+      "repairTimestampsButton": "Réparer les horodatages des outils",
+      "repairingLabel": "Réparation...",
+      "deleteAllBatchesTitle": "Supprimer tous les lots",
+      "deleteAllBatchesDescription": "Supprimer tous les enregistrements de lots et leurs batchItems associés. Cette action est destructive et irréversible.",
+      "deleteAllBatchesButton": "Supprimer tous les lots",
+      "deletingLabel": "Suppression...",
+      "repairExpertFeedbackTitle": "Réparer les types de commentaires d'experts",
+      "repairExpertFeedbackDescription": "Définir le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts ayant des champs de type manquants ou vides. Les enregistrements de types \"public\" ou \"ai\" ne seront pas modifiés.",
+      "repairExpertFeedbackButton": "Réparer les types de commentaires d'experts",
+      "migratePublicFeedbackTitle": "Migrer les commentaires publics",
+      "migratePublicFeedbackDescription": "Déplacer tous les commentaires publics de la collection des commentaires d'experts vers la nouvelle collection des commentaires publics.",
+      "migratePublicFeedbackButton": "Migrer les commentaires publics",
+      "migratingLabel": "Migration...",
+      "importTitle": "Importer la base de données",
+      "importDescription": "Restaurer la base de données à partir d'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.",
+      "chunkSizeLabel": "Taille du bloc (Mo) :",
+      "throttleLabel": "Limitation (ms) :",
+      "tableSelectLabel": "Table (maintenir Ctrl/Cmd pour la sélection multiple) :",
+      "importingLabel": "Importation...",
+      "importButton": "Importer la base de données",
+      "integrityTitle": "Vérifications d'intégrité",
+      "integrityDescription": "Exécuter des vérifications en lecture seule pour trouver les documents orphelins et les enregistrements parents référençant des enfants manquants.",
+      "coreChecksLabel": "Vérifications principales des orphelins et des références parentes",
+      "runningLabel": "En cours...",
+      "runCheckButton": "Lancer la vérification",
+      "countLabel": "Nombre :",
+      "noResultsLabel": "Aucun résultat",
+      "removeDuplicatesConfirm": "Cela supprimera les anciens enregistrements en double, ne gardant que les plus récents. Êtes-vous sûr ?",
+      "removeDuplicatesSuccess": "Supprimé {count} enregistrements en double.",
+      "removeDuplicatesError": "Échec de la suppression des doublons : {error}",
+      "removingLabel": "Suppression...",
+      "removeDuplicatesButton": "Supprimer les doublons",
+      "checks": {
+        "orphanCitations": "Citations orphelines (non référencées par une réponse)",
+        "orphanTools": "Outils orphelins (non référencés par une réponse)",
+        "orphanAnswers": "Réponses orphelines (non référencées par une interaction ou un embedding)",
+        "orphanQuestions": "Questions orphelines (non référencées par une interaction ou un embedding)",
+        "orphanInteractions": "Interactions orphelines (non référencées par un chat)",
+        "interactionMissingChildren": "Interactions référençant des enfants manquants (question/réponse/rétroaction/contexte/éval)",
+        "embeddingsMissingRefs": "Embeddings avec des refs chat/interaction/question/réponse manquantes",
+        "sentenceEmbeddingOrphans": "Embeddings de phrases avec embedding parent manquant",
+        "chatInvalidInteractions": "Chats avec des références d'interactions invalides",
+        "answerInvalidTools": "Réponses avec des références d'outils invalides",
+        "evalInvalidInteraction": "Évals référençant des interactions manquantes",
+        "duplicateKeys": "Clés en double (violations d'index)"
+      }
     },
     "notifications": {
       "title": "Notifications utilisateur",
@@ -510,17 +575,6 @@
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
-      "days": "jours",
-      "allTime": "Tout le temps",
-      "allDates": "Toutes les dates",
-      "today": "Aujourd'hui",
-      "yesterday": "Hier",
-      "last7Days": "7 derniers jours",
-      "last30Days": "30 derniers jours",
-      "thisMonth": "Ce mois-ci",
-      "lastMonth": "Le mois dernier",
-      "referringUrl": "URL de référence",
-      "referringUrlPlaceholder": "Entrez l'URL de référence...",
       "urlEn": "URL de référence (EN)",
       "urlFr": "URL de référence (FR)",
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
@@ -547,26 +601,7 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
-      "activeFilters": "Filtres actifs",
-      "noActiveFilters": "Aucun filtre actif",
-      "showAdvanced": "Voir plus de filtres",
-      "hideAdvanced": "Voir moins de filtres"
-    },
-    "dateRange": {
-      "title": "Sélectionner la période",
-      "filterType": "Type de filtre de date",
-      "presetRanges": "Plages prédéfinies",
-      "customRange": "Plage personnalisée",
-      "chooseRange": "Choisir une plage",
-      "startDateTime": "Date et heure de début",
-      "endDateTime": "Date et heure de fin",
-      "today": "Aujourd'hui",
-      "yesterday": "Hier",
-      "thisWeek": "Cette semaine",
-      "currentSelection": "Sélection actuelle",
-      "period": "Période:",
-      "from": "De:",
-      "to": "À:"
+      "showAdvanced": "Voir plus de filtres"
     },
     "publicEval": {
       "title": "Évaluation publique",
@@ -735,31 +770,24 @@
     },
     "chatLogs": {
       "title": "Télécharger les journaux de chat",
-      "timeRange": "Plage de temps",
-      "last1Day": "Dernier jour",
-      "last7Days": "7 derniers jours",
-      "last30Days": "30 derniers jours",
-      "last60Days": "60 derniers jours",
-      "last90Days": "90 derniers jours",
-      "allLogs": "Tous les journaux",
       "getLogs": "Obtenir les journaux",
-      "loading": "Chargement...",
-      "loadingLogs": "Chargement des journaux...",
-      "downloadJson": "Télécharger JSON",
-      "downloadCsv": "Télécharger CSV",
-      "downloadExcel": "Télécharger Excel",
-      "found": "Trouvé",
-      "interactionsFound": "chats. Sélectionnez une vue et un format, puis exportez.",
-      "date": "Date",
-      "chatId": "ID de chat",
-      "interactions": "Interactions",
-      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)",
       "exportView": "Vue d'exportation",
       "exportFormat": "Format",
       "export": "Exporter",
       "exporting": "Exportation en cours...",
       "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
-      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger."
+      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger.",
+      "exportError": "L'exportation a échoué. Veuillez réessayer.",
+      "views": {
+        "default": "Par défaut",
+        "tools": "Outils",
+        "autoEvalDebug": "Débogage auto-éval"
+      },
+      "formats": {
+        "xlsx": "Excel (.xlsx)",
+        "csv": "CSV (.csv)",
+        "json": "JSON (.json)"
+      }
     }
   },
   "signup": {
@@ -839,16 +867,18 @@
       "createdAt": "Créé le",
       "actions": "Action"
     },
+    "roles": {
+      "admin": "Administrateur",
+      "partner": "Partenaire"
+    },
     "status": {
       "active": "Actif",
       "inactive": "Inactif"
     },
     "actions": {
-      "activate": "Activer",
-      "deactivate": "Désactiver",
-      "save": "Enregistrer",
       "delete": "Supprimer",
-      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+      "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs."
     }
   },
   "settings": {
@@ -856,19 +886,8 @@
     "general": {
       "title": "Paramètres généraux"
     },
-    "liveGraph": {
-      "title": "Live Graph",
-      "description": "Modifiez les valeurs de workflow utilisées par la visualisation Live Graph.",
-      "save": "Enregistrer Live Graph"
-    },
     "defaultWorkflow": {
-      "label": "Workflow par défaut",
-      "options": {
-        "Default": "Par défaut",
-        "DefaultAlwaysContext": "Par défaut (toujours inclure le contexte)",
-        "DefaultWithVector": "Par défaut avec vecteur",
-        "DefaultWithVectorGraph": "Par défaut avec graphe vectoriel"
-      }
+      "label": "Workflow par défaut"
     },
     "statusLabel": "Statut du service",
     "statuses": {
@@ -878,7 +897,6 @@
     "deploymentModeLabel": "Mode de déploiement",
     "deploymentMode": {
       "cds": "CDS (travailleur en arrière-plan)",
-      "vercel": "Vercel (attendre la fin de l'évaluation)",
       "serverless": "Serverless (attendre la fin de l'évaluation)"
     },
     "vectorServiceTypeLabel": "Type de service de vecteurs",
@@ -891,7 +909,6 @@
       "openai": "OpenAI",
       "azure": "Azure OpenAI"
     },
-    "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données",
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
@@ -901,15 +918,11 @@
     "notify": {
       "resetTemplateLabel": "ID du modèle pour le lien de réinitialisation"
     },
-    "site": {
-      "baseUrl": "URL de base (frontend)"
-    },
     "session": {
       "title": "Paramètres de session",
       "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
-      "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
       "storeType": "Stockage de session (mémoire | mongo)",
       "store": {
@@ -920,7 +933,6 @@
         }
       },
       "persistence": {
-        "label": "Persistance des sessions",
         "options": {
           "memory": "Mémoire (en processus)",
           "mongo": "DocumentDB (persistant/cache)"
@@ -961,7 +973,8 @@
     "processing": "Traitement...",
     "error": "Erreur",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "na": "S.O."
   },
   "eval": {
     "metric": "Métrique",

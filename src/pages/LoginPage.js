@@ -62,7 +62,7 @@ const LoginPage = ({ lang = 'en' }) => {
       if (!defaultRoute) defaultRoute = '/';
       navigate(defaultRoute);
     } catch (err) {
-      setTwoStepError(t('login.2fa.invalidCode') || 'Invalid verification code');
+      setTwoStepError(t('login.2fa.invalidCode'));
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +78,7 @@ const LoginPage = ({ lang = 'en' }) => {
       await AuthService.send2FA(email);
       setShowTwoStep(true);
     } catch (err) {
-      setError(t('login.2fa.sendError') || 'Failed to send verification code');
+      setError(t('login.2fa.sendError'));
     } finally {
       setIsLoading(false);
     }
