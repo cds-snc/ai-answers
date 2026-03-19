@@ -155,41 +155,14 @@ function buildTotalsPipeline(dateFilter, extraFilters, departmentFilter, answerT
 }
 
 /**
- * Builds the "yes" reasons breakdown pipeline.
+ * Builds the reasons breakdown pipeline for a given feedback direction ('yes' or 'no').
  * Groups by publicFeedbackScore when present; falls back to publicFeedbackReason string
  * for legacy records so the frontend can resolve them via reverse label lookup.
  */
-function buildYesReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
+function buildReasonsPipeline(feedbackType, dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
     const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
     stages.push(
-        { $match: { 'publicFeedback.feedback': 'yes' } },
-        {
-            $group: {
-                _id: {
-                    $cond: {
-                        if: { $gt: ['$publicFeedback.publicFeedbackScore', null] },
-                        then: '$publicFeedback.publicFeedbackScore',
-                        else: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'unknown'] }
-                    }
-                },
-                enCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } },
-                frCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } },
-                total: { $sum: 1 }
-            }
-        }
-    );
-    return stages;
-}
-
-/**
- * Builds the "no" reasons breakdown pipeline.
- * Groups by publicFeedbackScore when present; falls back to publicFeedbackReason string
- * for legacy records so the frontend can resolve them via reverse label lookup.
- */
-function buildNoReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
-    const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
-    stages.push(
-        { $match: { 'publicFeedback.feedback': 'no' } },
+        { $match: { 'publicFeedback.feedback': feedbackType } },
         {
             $group: {
                 _id: {
@@ -217,8 +190,8 @@ async function getPublicFeedbackMetrics(req, res) {
 
         // Run queries sequentially to reduce peak memory usage on DocumentDB (with retry)
         const totalsResult = await executeWithRetry(() => Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
-        const yesReasonsResult = await executeWithRetry(() => Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
-        const noReasonsResult = await executeWithRetry(() => Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
+        const yesReasonsResult = await executeWithRetry(() => Chat.aggregate(buildReasonsPipeline('yes', dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
+        const noReasonsResult = await executeWithRetry(() => Chat.aggregate(buildReasonsPipeline('no', dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
 
         const pf = totalsResult[0] || {};
 

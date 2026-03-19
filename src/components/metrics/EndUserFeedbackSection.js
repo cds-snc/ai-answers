@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
@@ -66,34 +66,35 @@ const groupByScore = (reasons, otherScore) => {
   return grouped;
 };
 
+const YES_OTHER_SCORE = FEEDBACK_OPTIONS.YES.find(o => o.id === 'other').score;
+const NO_OTHER_SCORE = FEEDBACK_OPTIONS.NO.find(o => o.id === 'other').score;
+
 const EndUserFeedbackSection = ({ t, metrics }) => {
   const rawYesReasons = metrics.publicFeedbackReasons?.yes || {};
   const rawNoReasons = metrics.publicFeedbackReasons?.no || {};
 
-  const yesReasons = groupByScore(rawYesReasons, 4);
-  const noReasons = groupByScore(rawNoReasons, 6);
-
-  const allKeys = Array.from(new Set([
-    ...Object.keys(yesReasons),
-    ...Object.keys(noReasons)
-  ]));
+  const yesReasons = useMemo(() => groupByScore(rawYesReasons, YES_OTHER_SCORE), [rawYesReasons]);
+  const noReasons = useMemo(() => groupByScore(rawNoReasons, NO_OTHER_SCORE), [rawNoReasons]);
 
   // Table rows: one row per score key with yes EN/FR and no EN/FR counts.
   // YES scores (1–4) and NO scores (5–10) are non-overlapping, so a key
   // only ever appears in one direction — isPositive is unambiguous.
-  const tableData = allKeys.map((key) => {
-    const yes = yesReasons[key] || { en: 0, fr: 0, total: 0 };
-    const no = noReasons[key] || { en: 0, fr: 0, total: 0 };
-    const isPositive = yes.total > 0;
-    return {
-      label: getReasonLabel(key, t, isPositive),
-      yesEn: yes.en,
-      yesFr: yes.fr,
-      noEn: no.en,
-      noFr: no.fr,
-      total: yes.total + no.total,
-    };
-  }).filter(row => row.total > 0);
+  const tableData = useMemo(() => {
+    const allKeys = Array.from(new Set([...Object.keys(yesReasons), ...Object.keys(noReasons)]));
+    return allKeys.map((key) => {
+      const yes = yesReasons[key] || { en: 0, fr: 0, total: 0 };
+      const no = noReasons[key] || { en: 0, fr: 0, total: 0 };
+      const isPositive = yes.total > 0;
+      return {
+        label: getReasonLabel(key, t, isPositive),
+        yesEn: yes.en,
+        yesFr: yes.fr,
+        noEn: no.en,
+        noFr: no.fr,
+        total: yes.total + no.total,
+      };
+    }).filter(row => row.total > 0);
+  }, [yesReasons, noReasons, t]);
 
   return (
     <div className="mb-600">
