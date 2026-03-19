@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.114.0](https://github.com/cds-snc/ai-answers/compare/v1.113.1...v1.114.0) (2026-03-19)
+
+
+### Features
+
+* align sizing ([1ff4a81](https://github.com/cds-snc/ai-answers/commit/1ff4a816ddae43d63a135b2db1df599944ef77b2))
+* fix column ([2b4a2c8](https://github.com/cds-snc/ai-answers/commit/2b4a2c872ea93a11e7c310fa5ae81e73f97ecddd))
+* flex space for charts ([a30b11d](https://github.com/cds-snc/ai-answers/commit/a30b11d953033979214173f5fe7bcf5907d30f9d))
+* front end to use locales ([f27432e](https://github.com/cds-snc/ai-answers/commit/f27432e25627371df5f2365270b081d2d0922783))
+* front end to use locales ([e7660d2](https://github.com/cds-snc/ai-answers/commit/e7660d2125dfd40b77f982d9d7ceaf3a31663261))
+* qa ([024c585](https://github.com/cds-snc/ai-answers/commit/024c585c04dd5ee06e650e9911bfa360a3b2638d))
+* remove charts ([01190c4](https://github.com/cds-snc/ai-answers/commit/01190c419d95b8fbcb57bce3217f88a5071bcea0))
+* simplify function ([76d6f7f](https://github.com/cds-snc/ai-answers/commit/76d6f7fab1795f0d26c088938cfe0ac20a54f375))
+* sizing adjustment ([cd3fb7c](https://github.com/cds-snc/ai-answers/commit/cd3fb7c71c26894f9c17fef0952c2f95ab508feb))
+
 ## [1.113.1](https://github.com/cds-snc/ai-answers/compare/v1.113.0...v1.113.1) (2026-03-18)
 
 
