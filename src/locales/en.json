@@ -333,8 +333,8 @@
       "autoEvalDashboard": "Auto-evaluation dashboard"
     },
     "database": {
-      "title": "Database Management",
-      "createIndexes": "Create/Rebuild Indexes",
+      "title": "Database management",
+      "createIndexes": "Create/rebuild indexes",
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
       "createIndexesButton": "Rebuild all indexes",
       "createIndexesConfirm": "This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?",
@@ -394,6 +394,7 @@
       "repairTimestampsDescription": "Add updatedAt timestamps to existing tool records without them. This will use the createdAt date if available, or the current date as fallback.",
       "repairTimestampsButton": "Repair tool timestamps",
       "repairingLabel": "Repairing...",
+      "creatingIndexesLabel": "Creating indexes...",
       "deleteAllBatchesTitle": "Delete all batches",
       "deleteAllBatchesDescription": "Delete all batch records and their associated batchItems. This is destructive and cannot be undone.",
       "deleteAllBatchesButton": "Delete all batches",
@@ -419,6 +420,9 @@
       "runCheckButton": "Run check",
       "countLabel": "Count:",
       "noResultsLabel": "No results",
+      "breakdownMissing": "Missing — Chat: {chat}, Interaction: {interaction}, Question: {question}, Answer: {answer}",
+      "breakdownSamples": "Samples: {samples}",
+      "indexCodeLabel": "Code {code}",
       "removeDuplicatesConfirm": "This will delete older duplicate records, keeping only the newest. Are you sure?",
       "removeDuplicatesSuccess": "Removed {count} duplicate records.",
       "removeDuplicatesError": "Remove duplicates failed: {error}",
@@ -897,6 +901,7 @@
     "deploymentModeLabel": "Deployment mode",
     "deploymentMode": {
       "cds": "CDS (Background worker)",
+      "vercel": "Vercel (Wait for completion)",
       "serverless": "Serverless (Wait for completion)"
     },
     "vectorServiceTypeLabel": "Vector service type",

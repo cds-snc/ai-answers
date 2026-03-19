@@ -589,10 +589,10 @@ const DatabasePage = ({ lang }) => {
                       {t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong>
                       {checksResults[check.id].breakdown ? (
                         <div style={{ marginTop: 6, textAlign: 'right' }}>
-                          <div style={{ fontSize: 12 }}>Missing — Chat: <strong>{checksResults[check.id].breakdown.missingChat}</strong>, Interaction: <strong>{checksResults[check.id].breakdown.missingInteraction}</strong>, Question: <strong>{checksResults[check.id].breakdown.missingQuestion}</strong>, Answer: <strong>{checksResults[check.id].breakdown.missingAnswer}</strong></div>
+                          <div style={{ fontSize: 12 }}>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
                           {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
                             <div style={{ marginTop: 6 }}>
-                              Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
+                              {t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}
                             </div>
                           ) : null}
                         </div>
@@ -723,7 +723,7 @@ const DatabasePage = ({ lang }) => {
           variant="secondary"
           className="mb-200"
         >
-          {isCreatingIndexes ? t('admin.database.repairingLabel') : t('admin.database.createIndexesButton')}
+          {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
         {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
           <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
@@ -734,7 +734,7 @@ const DatabasePage = ({ lang }) => {
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>(Code {f.code})</span>}
+                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}
             </ul>

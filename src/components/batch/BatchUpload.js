@@ -139,7 +139,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           setFileUploaded(false);
         } catch (persistErr) {
           console.error('Failed to persist batch:', persistErr);
-          setError(t('batch.upload.error.saveFailed'));
+          setError(persistErr?.message || t('batch.upload.error.saveFailed'));
           // Re-show the upload button so the user can retry
           setFileUploaded(false);
           setProcessing(false);

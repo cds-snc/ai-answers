@@ -394,6 +394,7 @@
       "repairTimestampsDescription": "Ajouter des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. La date createdAt sera utilisée si disponible, sinon la date actuelle.",
       "repairTimestampsButton": "Réparer les horodatages des outils",
       "repairingLabel": "Réparation...",
+      "creatingIndexesLabel": "Création des index...",
       "deleteAllBatchesTitle": "Supprimer tous les lots",
       "deleteAllBatchesDescription": "Supprimer tous les enregistrements de lots et leurs batchItems associés. Cette action est destructive et irréversible.",
       "deleteAllBatchesButton": "Supprimer tous les lots",
@@ -419,6 +420,9 @@
       "runCheckButton": "Lancer la vérification",
       "countLabel": "Nombre :",
       "noResultsLabel": "Aucun résultat",
+      "breakdownMissing": "Manquant — Clavardage : {chat}, Interaction : {interaction}, Question : {question}, Réponse : {answer}",
+      "breakdownSamples": "Exemples : {samples}",
+      "indexCodeLabel": "Code {code}",
       "removeDuplicatesConfirm": "Cela supprimera les anciens enregistrements en double, ne gardant que les plus récents. Êtes-vous sûr ?",
       "removeDuplicatesSuccess": "Supprimé {count} enregistrements en double.",
       "removeDuplicatesError": "Échec de la suppression des doublons : {error}",
@@ -897,6 +901,7 @@
     "deploymentModeLabel": "Mode de déploiement",
     "deploymentMode": {
       "cds": "CDS (travailleur en arrière-plan)",
+      "vercel": "Vercel (attendre la fin de l'évaluation)",
       "serverless": "Serverless (attendre la fin de l'évaluation)"
     },
     "vectorServiceTypeLabel": "Type de service de vecteurs",
