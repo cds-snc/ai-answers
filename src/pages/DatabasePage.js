@@ -490,7 +490,7 @@ const DatabasePage = ({ lang }) => {
             <tbody>
               {Object.entries(tableCounts).map(([table, count]) => (
                 <tr key={table}>
-                  <td style={{ paddingRight: 16 }}>{table}</td>
+                  <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table}`) || table}</td>
                   <td style={{ textAlign: 'right' }}>{count}</td>
                 </tr>
               ))}
