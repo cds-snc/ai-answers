@@ -174,7 +174,7 @@ const VectorPage = ({ lang = 'en' }) => {
           {t('vector.similarChatsDescription')}
         </GcdsText>
        
-        <SimilarChatsDashboard lang={language} />
+        <SimilarChatsDashboard lang={lang || language} />
         
       </div>
     </GcdsContainer>
