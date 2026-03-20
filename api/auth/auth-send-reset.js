@@ -16,7 +16,7 @@ const sendResetHandler = async (req, res) => {
 
     await dbConnect();
 
-    // Find user and ensure they have a resetPasswordSecret
+    // Find user — generic response regardless to prevent enumeration
     let user = await User.findOne({ email: String(email).toLowerCase().trim() });
 
     if (!user) {
@@ -25,17 +25,12 @@ const sendResetHandler = async (req, res) => {
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
-    // Generate or use existing resetPasswordSecret
-    if (!user.resetPasswordSecret) {
-      const secret = speakeasy.generateSecret({ length: 32 });
-      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-
-      user.resetPasswordSecret = secret.base32;
-      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-      await user.save();
-    } else {
-      console.debug(`[auth-send-reset][${os.hostname()}] Using existing resetPasswordSecret for user`);
-    }
+    // Always generate a fresh secret on each reset request (invalidates prior codes)
+    const secret = speakeasy.generateSecret({ length: 32 });
+    console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
+    user.resetPasswordSecret = secret.base32;
+    user.resetPasswordAttempts = 0;
+    await user.save();
 
     // Generate TOTP code from the secret (in-memory, no DB read!)
     const code = speakeasy.totp({

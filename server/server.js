@@ -75,6 +75,7 @@ import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
+import { resetPasswordRateLimit, sendResetRateLimit, initializeAuthRateLimiter } from '../middleware/auth-rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
@@ -203,8 +204,8 @@ app.post('/api/auth/auth-logout', logoutHandler);
 app.get('/api/auth/auth-me', meHandler);
 app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
 app.post('/api/auth/auth-send-2fa', userSend2FAHandler);
-app.post('/api/auth/auth-send-reset', sendResetHandler);
-app.post('/api/auth/auth-reset-password', resetPasswordHandler);
+app.post('/api/auth/auth-send-reset', sendResetRateLimit, sendResetHandler);
+app.post('/api/auth/auth-reset-password', resetPasswordRateLimit, resetPasswordHandler);
 app.all('/api/user/user-users', dbUsersHandler);
 app.get('/api/user/user-stats', userStatsHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
@@ -250,6 +251,7 @@ const PORT = process.env.PORT || 3001;
     // The middleware registered above will wait for this promise to resolve.
     try {
       await initializeRateLimiter();
+      await initializeAuthRateLimiter();
       console.log('Rate limiter middleware initialized');
     } catch (rlErr) {
       console.error('Failed to initialize rate limiter middleware:', rlErr);

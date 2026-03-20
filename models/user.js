@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  // Track failed reset attempts to invalidate secret after too many
+  resetPasswordAttempts: {
+    type: Number,
+    default: 0,
+  },
 
 }, {
   timestamps: true,
