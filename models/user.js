@@ -43,10 +43,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  // Track failed reset attempts to invalidate secret after too many
+  // Track failed reset code attempts
   resetPasswordAttempts: {
     type: Number,
     default: 0,
+  },
+  // Lockout timestamp after too many failed reset attempts
+  resetPasswordLockedUntil: {
+    type: Date,
+    default: null,
   },
 
 }, {

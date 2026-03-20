@@ -12,7 +12,7 @@ const sendResetHandler = async (req, res) => {
       return res.status(400).json({ success: false, message: 'email required' });
     }
 
-    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request for: ${email}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request`);
 
     await dbConnect();
 
@@ -21,7 +21,7 @@ const sendResetHandler = async (req, res) => {
 
     if (!user) {
       // Generic response for security - don't reveal if user exists
-      console.warn(`[auth-send-reset][${os.hostname()}] No user found with email: ${email}`);
+      console.warn(`[auth-send-reset][${os.hostname()}] Reset requested for unknown account`);
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
@@ -47,7 +47,7 @@ const sendResetHandler = async (req, res) => {
     const lang = req.body.lang || (req.headers['accept-language']?.includes('fr') ? 'fr' : 'en');
     const resetLink = `${frontendUrl}/${lang}/reset-complete?email=${encodeURIComponent(email)}&code=${code}`;
 
-    console.debug(`[auth-send-reset][${os.hostname()}] Final Reset Link: ${resetLink}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Reset link generated`);
 
     // Send email via GC Notify
     const templateId = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID;

@@ -4,6 +4,7 @@ import os from 'os';
 import speakeasy from 'speakeasy';
 
 const MAX_RESET_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 30;
 
 const resetPasswordHandler = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ const resetPasswordHandler = async (req, res) => {
 
     // Reject literal string "undefined" or "null" from client
     if (code === 'undefined' || code === 'null') {
-      console.warn(`[auth-reset-password][${os.hostname()}] Received invalid code string: ${code}`);
+      console.warn(`[auth-reset-password][${os.hostname()}] Received invalid code string`);
       return res.status(400).json({ success: false, message: 'invalid code' });
     }
 
@@ -29,25 +30,32 @@ const resetPasswordHandler = async (req, res) => {
 
     // Generic error for user-not-found and no-secret to prevent enumeration
     if (!user || !user.resetPasswordSecret) {
-      if (!user) {
-        console.warn(`[auth-reset-password][${os.hostname()}] User not found for email:`, email);
-      } else {
-        console.warn(`[auth-reset-password][${os.hostname()}] User has no resetPasswordSecret`);
-      }
-      return res.status(401).json({ success: false, message: 'invalid or expired code' });
+      console.warn(`[auth-reset-password][${os.hostname()}] Reset rejected: user not found or no secret configured`);
+      return res.status(401).json({ success: false, code: 'RESET_INVALID_CODE', message: 'invalid or expired code' });
     }
 
-    // Check if too many failed attempts — invalidate secret atomically
-    if ((user.resetPasswordAttempts || 0) >= MAX_RESET_ATTEMPTS) {
-      console.warn(`[auth-reset-password][${os.hostname()}] Too many failed attempts, secret invalidated for: ${email}`);
+    // Check timed lockout
+    const now = new Date();
+    if (user.resetPasswordLockedUntil && user.resetPasswordLockedUntil > now) {
+      console.warn(`[auth-reset-password][${os.hostname()}] Reset rejected: account temporarily locked`);
+      return res.status(429).json({
+        success: false,
+        code: 'RESET_LOCKED_OUT',
+        message: 'too many failed attempts, please try again later',
+      });
+    }
+
+    // If lockout has expired, clear the stale lockout state
+    if (user.resetPasswordLockedUntil) {
       await User.updateOne(
         { _id: user._id },
-        { $set: { resetPasswordSecret: null, resetPasswordAttempts: 0 } }
+        { $set: { resetPasswordAttempts: 0, resetPasswordLockedUntil: null } }
       );
-      return res.status(401).json({ success: false, message: 'invalid or expired code' });
+      user.resetPasswordAttempts = 0;
+      user.resetPasswordLockedUntil = null;
     }
 
-    console.debug(`[auth-reset-password][${os.hostname()}] Validating TOTP code for: ${email}`);
+    console.debug(`[auth-reset-password][${os.hostname()}] Validating TOTP code`);
 
     // Validate TOTP code
     const isValid = speakeasy.totp.verify({
@@ -65,19 +73,24 @@ const resetPasswordHandler = async (req, res) => {
         { $inc: { resetPasswordAttempts: 1 } },
         { new: true }
       );
-      const attempts = updated?.resetPasswordAttempts || '?';
-      console.warn(`[auth-reset-password][${os.hostname()}] Invalid or expired TOTP code (attempt ${attempts}/${MAX_RESET_ATTEMPTS})`);
+      console.warn(`[auth-reset-password][${os.hostname()}] Invalid or expired TOTP code`);
 
-      // If this increment just hit the limit, invalidate the secret now
+      // If attempts just hit the limit, set a timed lockout
       if (updated && updated.resetPasswordAttempts >= MAX_RESET_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000);
         await User.updateOne(
           { _id: user._id },
-          { $set: { resetPasswordSecret: null, resetPasswordAttempts: 0 } }
+          { $set: { resetPasswordLockedUntil: lockedUntil } }
         );
-        console.warn(`[auth-reset-password][${os.hostname()}] Max attempts reached, secret invalidated for: ${email}`);
+        console.warn(`[auth-reset-password][${os.hostname()}] Account locked out after max failed attempts`);
+        return res.status(429).json({
+          success: false,
+          code: 'RESET_LOCKED_OUT',
+          message: 'too many failed attempts, please try again later',
+        });
       }
 
-      return res.status(401).json({ success: false, message: 'invalid or expired code' });
+      return res.status(401).json({ success: false, code: 'RESET_INVALID_CODE', message: 'invalid or expired code' });
     }
 
     console.debug(`[auth-reset-password][${os.hostname()}] TOTP code validated successfully`);
@@ -86,9 +99,10 @@ const resetPasswordHandler = async (req, res) => {
     user.password = newPassword;
     user.resetPasswordSecret = null;
     user.resetPasswordAttempts = 0;
+    user.resetPasswordLockedUntil = null;
     await user.save();
 
-    console.info(`[auth-reset-password][${os.hostname()}] Password updated successfully for: ${email}`);
+    console.info(`[auth-reset-password][${os.hostname()}] Password reset completed successfully`);
 
     return res.status(200).json({ success: true, message: 'password reset successfully' });
   } catch (err) {

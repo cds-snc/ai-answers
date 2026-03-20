@@ -64,11 +64,64 @@ describe('Auth Reset Password Handler', () => {
     );
   });
 
+  it('returns 429 with user-facing message when locked out', async () => {
+    const lockedUntil = new Date(Date.now() + 20 * 60000); // 20 min from now
+    const user = {
+      _id: 'user-123',
+      resetPasswordSecret: 'secret',
+      resetPasswordAttempts: 5,
+      resetPasswordLockedUntil: lockedUntil,
+      save: vi.fn(),
+    };
+    User.findOne.mockResolvedValue(user);
+
+    const res = makeRes();
+    await resetPasswordHandler({
+      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass' }
+    }, res);
+
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'RESET_LOCKED_OUT',
+      })
+    );
+    // Should NOT have tried to verify the code
+    expect(speakeasy.totp.verify).not.toHaveBeenCalled();
+  });
+
+  it('clears expired lockout and allows verification', async () => {
+    const expiredLock = new Date(Date.now() - 1000); // 1 second ago
+    const user = {
+      _id: 'user-123',
+      resetPasswordSecret: 'secret',
+      resetPasswordAttempts: 5,
+      resetPasswordLockedUntil: expiredLock,
+      save: vi.fn().mockResolvedValue(true),
+    };
+    User.findOne.mockResolvedValue(user);
+    speakeasy.totp.verify.mockReturnValue(true);
+
+    const res = makeRes();
+    await resetPasswordHandler({
+      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass123' }
+    }, res);
+
+    // Should have cleared the lockout
+    expect(User.updateOne).toHaveBeenCalledWith(
+      { _id: 'user-123' },
+      { $set: { resetPasswordAttempts: 0, resetPasswordLockedUntil: null } }
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(user.password).toBe('newpass123');
+  });
+
   it('atomically increments resetPasswordAttempts on invalid code', async () => {
     const user = {
       _id: 'user-123',
       resetPasswordSecret: 'secret',
       resetPasswordAttempts: 2,
+      resetPasswordLockedUntil: null,
       save: vi.fn().mockResolvedValue(true),
     };
     User.findOne.mockResolvedValue(user);
@@ -88,16 +141,16 @@ describe('Auth Reset Password Handler', () => {
     );
   });
 
-  it('invalidates secret when attempts reach MAX after atomic increment', async () => {
+  it('sets timed lockout when attempts reach MAX', async () => {
     const user = {
       _id: 'user-123',
       resetPasswordSecret: 'secret',
       resetPasswordAttempts: 4,
+      resetPasswordLockedUntil: null,
       save: vi.fn().mockResolvedValue(true),
     };
     User.findOne.mockResolvedValue(user);
     speakeasy.totp.verify.mockReturnValue(false);
-    // After $inc, attempts becomes 5 (the max)
     User.findOneAndUpdate.mockResolvedValue({ resetPasswordAttempts: 5 });
 
     const res = makeRes();
@@ -105,43 +158,26 @@ describe('Auth Reset Password Handler', () => {
       body: { email: 'a@b.com', code: '999999', newPassword: 'newpass' }
     }, res);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    // Should have called updateOne to nullify the secret
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'RESET_LOCKED_OUT',
+      })
+    );
+    // Should set lockout via updateOne
     expect(User.updateOne).toHaveBeenCalledWith(
       { _id: 'user-123' },
-      { $set: { resetPasswordSecret: null, resetPasswordAttempts: 0 } }
+      { $set: { resetPasswordLockedUntil: expect.any(Date) } }
     );
   });
 
-  it('invalidates secret when attempts already at MAX on entry', async () => {
-    const user = {
-      _id: 'user-123',
-      resetPasswordSecret: 'secret',
-      resetPasswordAttempts: 5,
-      save: vi.fn().mockResolvedValue(true),
-    };
-    User.findOne.mockResolvedValue(user);
-
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass' }
-    }, res);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(User.updateOne).toHaveBeenCalledWith(
-      { _id: 'user-123' },
-      { $set: { resetPasswordSecret: null, resetPasswordAttempts: 0 } }
-    );
-    // Should NOT have called speakeasy.totp.verify
-    expect(speakeasy.totp.verify).not.toHaveBeenCalled();
-  });
-
-  it('resets password and clears secret on valid code', async () => {
+  it('resets password and clears all reset state on valid code', async () => {
     const save = vi.fn().mockResolvedValue(true);
     const user = {
       _id: 'user-123',
       resetPasswordSecret: 'secret',
       resetPasswordAttempts: 1,
+      resetPasswordLockedUntil: null,
       save,
     };
     User.findOne.mockResolvedValue(user);
@@ -156,6 +192,7 @@ describe('Auth Reset Password Handler', () => {
     expect(user.password).toBe('newpass123');
     expect(user.resetPasswordSecret).toBeNull();
     expect(user.resetPasswordAttempts).toBe(0);
+    expect(user.resetPasswordLockedUntil).toBeNull();
     expect(save).toHaveBeenCalled();
   });
 });
