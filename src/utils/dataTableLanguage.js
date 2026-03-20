@@ -27,12 +27,18 @@ export function dataTableLanguage(lang) {
       search: 'Rechercher\u00a0:',
       zeroRecords: 'Aucun enregistrement correspondant trouvé',
       paginate: {
-        first: 'Premier',
-        last: 'Dernier',
-        next: 'Suivant',
-        previous: 'Précédent',
+        first: '«',
+        previous: '‹',
+        next: '›',
+        last: '»',
       },
       aria: {
+        paginate: {
+          first: 'Premier',
+          previous: 'Précédent',
+          next: 'Suivant',
+          last: 'Dernier',
+        },
         sortAscending: '\u00a0: activer pour trier la colonne par ordre croissant',
         sortDescending: '\u00a0: activer pour trier la colonne par ordre décroissant',
       },
