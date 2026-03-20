@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
@@ -69,7 +70,7 @@ const groupByScore = (reasons, otherScore) => {
 const YES_OTHER_SCORE = FEEDBACK_OPTIONS.YES.find(o => o.id === 'other').score;
 const NO_OTHER_SCORE = FEEDBACK_OPTIONS.NO.find(o => o.id === 'other').score;
 
-const EndUserFeedbackSection = ({ t, metrics }) => {
+const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
   const rawYesReasons = metrics.publicFeedbackReasons?.yes || {};
   const rawNoReasons = metrics.publicFeedbackReasons?.no || {};
 
@@ -145,7 +146,8 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
             paging: false,
             searching: false,
             ordering: false,
-            info: false
+            info: false,
+            language: dataTableLanguage(lang)
           }}
         />
         {/* Table for public feedback reasons breakdown by language */}

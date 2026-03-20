@@ -4,6 +4,7 @@ import '../../styles/App.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import VectorService from '../../services/VectorService.js';
 
 DataTable.use(DT);
@@ -76,6 +77,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               searching: true,
               pageLength: 10,
               order: [[1, 'desc']],
+              language: dataTableLanguage(lang),
             }}
           />
         </div>

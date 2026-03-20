@@ -5,6 +5,7 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton, GcdsLink, GcdsText } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -259,6 +260,7 @@ const UsersPage = ({ lang }) => {
           searching: true,
           ordering: true,
           order: [[3, 'desc']],
+          language: dataTableLanguage(lang),
           createdRow: (row, data) => {
             // Attach select change handlers
             row.querySelectorAll('select').forEach(select => {

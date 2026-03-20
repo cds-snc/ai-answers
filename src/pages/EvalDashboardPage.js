@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 
@@ -208,6 +209,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 order: [[11, 'desc']],
                 stateSave: true,
                 language: {
+                  ...dataTableLanguage(lang),
                   search: t('admin.evalDashboard.searchLabel', 'Search'),
                   searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter search term...')
                 },

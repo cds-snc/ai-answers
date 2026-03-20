@@ -5,6 +5,7 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import BatchService from '../../services/BatchService.js';
 
 DataTable.use(DT);
@@ -132,6 +133,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
           searching: true,
           ordering: true,
           order: [[2, 'desc']], // Order by Created Date (createdAt column) descending
+          language: dataTableLanguage(lang),
           createdRow: (row, data) => {
             const { _id, status: rawStatus, aiProvider } = data;
             const status = normalizeStatus(rawStatus);

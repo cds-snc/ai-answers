@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import $ from 'jquery';
 import Prism from 'prismjs';
@@ -120,6 +121,7 @@ const ChatViewer = ({ lang = 'en' }) => {
         order: [[0, 'desc']],
         scrollX: true, // Enable horizontal scrolling for the whole table
         pageLength: 50, // Set number of items per page to 50
+        language: dataTableLanguage(lang),
         // Add styling options for the table
         drawCallback: function () {
           Prism.highlightAll();
