@@ -32,8 +32,7 @@ This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the
 **Never hardcode user-facing text in components or pages.** All text visible to users must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new text (column headers, labels, buttons, messages, placeholders, error messages, status messages, option labels, etc.), always add the corresponding key to both locale files in the same PR — don't rely on the fallback string in `t('key', 'fallback')` or `t('key') || 'fallback'`.
 
 ### Exceptions
-- **User chat logs**: chat message content stays in the user's language of choice — do not translate it.
-- **Backend/console output**: `console.log`, `console.error`, server-side log strings, and developer-facing CLI output are exempt.
+- **Backend/console/database output**: `console.log`, `console.error`, server-side log strings, developer-facing CLI output, and dynamic content retrieved from the database are exempt.
 - **Internal technical identifiers used as option values**: e.g. workflow names like `DefaultGraph` where the value and label are the same internal enum — these are not user-facing text.
 
 ### Sentence case
