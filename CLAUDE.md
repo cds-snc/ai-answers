@@ -37,7 +37,7 @@ This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the
 - **Internal technical identifiers used as option values**: e.g. workflow names like `DefaultGraph` where the value and label are the same internal enum — these are not human-readable UI text.
 
 ### Sentence case
-All UI strings use sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
 
 ### Locale key hygiene
 After adding, removing, or renaming locale keys, run the dead key detector:
@@ -52,6 +52,19 @@ This reports:
 3. **Parity gaps** — keys present in EN but missing from FR, or vice versa
 
 Parity gaps must be fixed before merging. Dead keys and duplicates are cleaned up incrementally — fix a few per PR rather than all at once.
+
+### PR review checklist — official languages
+Every PR that touches UI components, pages, or locale files must be verified against these before merging.
+
+**Must fix before merging:**
+- [ ] No hardcoded user-facing strings in components or pages (no `'English text'` literals, no `|| 'fallback'` patterns, no `lang === 'en' ? '...' : '...'` inline conditionals)
+- [ ] All translation calls use `t()` or `safeT()` — not raw string literals (`safeT` is a wrapper around `t()` used in chat components that unwraps object results to a plain string; same locale key rules apply)
+- [ ] Every new `t('key')` call has a matching entry in **both** `en.json` and `fr.json`
+- [ ] `node scripts/find-dead-locale-keys.cjs` reports **0 parity gaps**
+- [ ] French translations are real translations — not copied English text or placeholders
+
+**Flag but don't block:**
+- Sentence case is generally preferred for all text visible to users — note inconsistencies (e.g. mid-sentence capitals, ALL-CAPS emphasis) in review and fix opportunistically
 
 About page is different - text content is in .md files
  *   - English: public/content/about-en.md
