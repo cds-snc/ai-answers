@@ -15,7 +15,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   const [searchText] = useState('');
   // refreshKey forces the DataTable to remount when batches or language change
   const [refreshKey, setRefreshKey] = useState(0);
-  const { t } = useTranslations(lang); // TODO: Pass actual language from props/context
+  const { t } = useTranslations(lang);
 
   // Fetch all statuses
   const fetchStatuses = useCallback(async (batches) => {
