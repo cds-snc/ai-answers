@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.114.1](https://github.com/cds-snc/ai-answers/compare/v1.114.0...v1.114.1) (2026-03-20)
+
+
+### Miscellaneous Chores
+
+* **deps:** bump flatted from 3.4.1 to 3.4.2 ([b915297](https://github.com/cds-snc/ai-answers/commit/b91529786db87c5a181a6241dae6d7761f899777))
+
 ## [1.114.0](https://github.com/cds-snc/ai-answers/compare/v1.113.1...v1.114.0) (2026-03-19)
 
 
