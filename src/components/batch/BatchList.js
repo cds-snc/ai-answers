@@ -102,14 +102,16 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, [lang, fetchStatuses]); // Add lang as a dependency
 
-  // Whenever batches, language, or local processing markers change, bump the
+  // Whenever batches or local processing markers change, bump the
   // refresh key so DataTable remounts. This ensures the action buttons that
   // are rendered into table cells (via createRoot) see the latest
   // `processingBatches` value and update immediately when the user clicks
   // Process instead of waiting for the next polling cycle.
+  // Note: lang is intentionally excluded — language switches always trigger
+  // full page navigation so the component remounts naturally with the correct lang.
   useEffect(() => {
     setRefreshKey((r) => r + 1);
-  }, [batches, lang, processingBatches]);
+  }, [batches, processingBatches]);
 
   // Handle button actions mapped to explicit handlers
   const handleExport = (batchId, type) => onExport && onExport(batchId, type);
@@ -339,7 +341,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
         }}
         // Key forces a full remount when language or batches change so rows (and actions)
         // re-render with the latest statuses returned from the backend.
-        key={`${lang}-${refreshKey}`}
+        key={refreshKey}
       />
     </div>
   );
