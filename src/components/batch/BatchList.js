@@ -13,7 +13,7 @@ DataTable.use(DT);
 const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang, processingBatches = [] }) => {
   const [batches, setBatches] = useState([]);
   const [searchText] = useState('');
-  // refreshKey forces the DataTable to remount when batches or language change
+  // refreshKey forces the DataTable to remount when batches change
   const [refreshKey, setRefreshKey] = useState(0);
   const { t } = useTranslations(lang);
 
@@ -60,7 +60,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       },
       { title: t('batch.list.columns.createdDate'), data: 'createdAt' },
   { title: t('batch.list.columns.provider'), data: 'aiProvider' },
-  { title: t('batch.list.columns.workflow') || 'Workflow', data: 'workflow' },
+  { title: t('batch.list.columns.workflow'), data: 'workflow' },
   {
     title: t('batch.list.columns.type'),
     data: 'type',
@@ -74,7 +74,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       return t(`batch.list.statuses.${normalized}`) || normalized;
     },
   },
-      { title: t('batch.list.columns.totals') || 'Totals', data: null },
+      { title: t('batch.list.columns.totals'), data: null },
       {
         title: t('batch.list.columns.action'),
         data: null,
@@ -100,7 +100,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
     const intervalId = setInterval(fetchBatches, 10000); // Poll every 10 seconds
     return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [lang, fetchStatuses]); // Add lang as a dependency
+  }, [lang, fetchStatuses]);
 
   // Whenever batches or local processing markers change, bump the
   // refresh key so DataTable remounts. This ensures the action buttons that
@@ -242,7 +242,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -274,7 +274,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -302,7 +302,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -330,7 +330,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -339,7 +339,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             }
           },
         }}
-        // Key forces a full remount when language or batches change so rows (and actions)
+        // Key forces a full remount when batches change so rows (and actions)
         // re-render with the latest statuses returned from the backend.
         key={refreshKey}
       />
