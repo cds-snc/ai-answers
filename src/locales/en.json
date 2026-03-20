@@ -283,7 +283,22 @@
         "process": "Process",
         "delete": "Delete",
         "cancel": "Cancel"
-      }
+      },
+      "types": {
+        "client": "Client"
+      },
+      "statuses": {
+        "in_progress": "In progress",
+        "processed": "Processed",
+        "completed": "Completed",
+        "finalizing": "Finalizing",
+        "validating": "Validating",
+        "failed": "Failed",
+        "expired": "Expired",
+        "canceled": "Cancelled",
+        "unknown": "Unknown"
+      },
+      "totalsLabel": "{finished}/{total} completed"
     }
   },
   "logging": {

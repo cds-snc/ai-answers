@@ -61,8 +61,19 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       { title: t('batch.list.columns.createdDate'), data: 'createdAt' },
   { title: t('batch.list.columns.provider'), data: 'aiProvider' },
   { title: t('batch.list.columns.workflow') || 'Workflow', data: 'workflow' },
-  { title: t('batch.list.columns.type'), data: 'type' },
-      { title: t('batch.list.columns.status'), data: 'status' },
+  {
+    title: t('batch.list.columns.type'),
+    data: 'type',
+    render: (data) => t(`batch.list.types.${data}`) || data,
+  },
+  {
+    title: t('batch.list.columns.status'),
+    data: 'status',
+    render: (data) => {
+      const normalized = normalizeStatus(data);
+      return t(`batch.list.statuses.${normalized}`) || normalized;
+    },
+  },
       { title: t('batch.list.columns.totals') || 'Totals', data: null },
       {
         title: t('batch.list.columns.action'),
@@ -150,7 +161,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               const failed = Number(stats.failed || 0);
               const finished = Number(stats.finished ?? processed + failed);
               if (totalsCell) {
-                totalsCell.innerText = `${finished}/${total} completed`;
+                totalsCell.innerText = t('batch.list.totalsLabel').replace('{finished}', finished).replace('{total}', total);
               }
             } catch (e) {
               // ignore totals rendering errors

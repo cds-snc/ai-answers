@@ -7,8 +7,8 @@ import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 
 const VectorPage = ({ lang = 'en' }) => {
-  const { t } = useTranslations();
   const { language } = usePageContext();
+  const { t } = useTranslations(lang || language);
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -103,7 +103,7 @@ const VectorPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer size="xl" centered>
-      <h1>{t('vector.title', 'Vector Administration')}</h1>
+      <h1>{t('vector.title')}</h1>
       <nav className="mb-400">
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>
@@ -112,16 +112,16 @@ const VectorPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
       <div className="mb-400">
-        <h2>{t('vector.indexManagement', 'Vector Index Management')}</h2>
+        <h2>{t('vector.indexManagement')}</h2>
         <GcdsText>
-          {t('vector.manageDescription', 'Manage vector indexes and view vector database statistics.')}
+          {t('vector.manageDescription')}
         </GcdsText>
         <div className="button-group">
           <GcdsButton onClick={fetchVectorStats} disabled={loading} className="mb-200 mr-200">
-            {loading ? t('vector.loading', 'Loading...') : t('vector.fetchStats', 'Fetch Vector Stats')}
+            {loading ? t('vector.loading') : t('vector.fetchStats')}
           </GcdsButton>
           <GcdsButton onClick={handleCreateVectorIndex} disabled={loading} variant="primary" className="mb-200 mr-200">
-            {t('vector.reinitializeIndex', 'Reinitialize Index')}
+            {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
         {error && <div style={{ color: 'red' }}>{error}</div>}
@@ -131,9 +131,9 @@ const VectorPage = ({ lang = 'en' }) => {
           </div>
         )}
         <hr className="mb-400" />
-        <h2>{t('vector.embeddingManagement', 'Embedding Management')}</h2>
+        <h2>{t('vector.embeddingManagement')}</h2>
         <GcdsText>
-          {t('vector.embeddingDescription', 'Process interactions to generate embeddings.')}
+          {t('vector.embeddingDescription')}
         </GcdsText>
         <div className="button-group">
           <select value={provider} onChange={e => setProvider(e.target.value)} style={{ marginRight: "1rem" }}>
@@ -145,7 +145,7 @@ const VectorPage = ({ lang = 'en' }) => {
             disabled={embeddingProgress?.loading || isAutoProcessingEmbeddings}
             className="mb-200 mr-200"
           >
-            {embeddingProgress?.loading && !isAutoProcessingEmbeddings ? t('vector.processing', 'Processing...') : t('vector.generateEmbeddings', 'Generate Embeddings')}
+            {embeddingProgress?.loading && !isAutoProcessingEmbeddings ? t('vector.processing') : t('vector.generateEmbeddings')}
           </GcdsButton>
           <GcdsButton 
             onClick={handleRegenerateEmbeddings}
@@ -153,17 +153,17 @@ const VectorPage = ({ lang = 'en' }) => {
             variant="danger"
             className="mb-200 mr-200"
           >
-            {isRegeneratingEmbeddings ? t('vector.regenerating', 'Regenerating...') : t('vector.regenerateEmbeddings', 'Regenerate Embeddings')}
+            {isRegeneratingEmbeddings ? t('vector.regenerating') : t('vector.regenerateEmbeddings')}
           </GcdsButton>
         </div>
         {embeddingProgress && (
           <div className="mb-200">
             <p>
               {embeddingProgress.remaining !== undefined && (
-                <span> • {t('vector.remaining', 'Remaining')}: {embeddingProgress.remaining}</span>
+                <span> • {t('vector.remaining')}: {embeddingProgress.remaining}</span>
               )}
               {isAutoProcessingEmbeddings && (
-                <span> • <strong>{t('vector.autoProcessingActive', 'Auto-processing active')}</strong></span>
+                <span> • <strong>{t('vector.autoProcessingActive')}</strong></span>
               )}
             </p>
           </div>

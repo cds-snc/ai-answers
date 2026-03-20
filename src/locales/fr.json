@@ -283,7 +283,22 @@
         "process": "Traiter",
         "delete": "Supprimer",
         "cancel": "Annuler"
-      }
+      },
+      "types": {
+        "client": "Client"
+      },
+      "statuses": {
+        "in_progress": "En cours",
+        "processed": "Traité",
+        "completed": "Terminé",
+        "finalizing": "Finalisation",
+        "validating": "Validation",
+        "failed": "Échoué",
+        "expired": "Expiré",
+        "canceled": "Annulé",
+        "unknown": "Inconnu"
+      },
+      "totalsLabel": "{finished}/{total} terminé"
     }
   },
   "logging": {
