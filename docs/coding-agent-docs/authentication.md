@@ -22,9 +22,10 @@ Roles are checked by middleware in `middleware/auth.js`:
 3. Password is hashed via bcrypt (`models/user.js` pre-save hook).
 4. TOTP secrets for 2FA and password reset are generated at signup.
 5. First user → admin + active. All others → partner + inactive.
-6. User is logged in via Passport immediately after creation.
+6. First user (admin) is logged in via Passport immediately after creation.
+7. All other users receive a success message but cannot access any protected routes until an admin activates their account (`passport.deserializeUser` rejects inactive users).
 
-**Note:** Inactive users can sign up and are logged in for that session, but `passport.deserializeUser` checks `user.active` — so on subsequent requests an inactive user's session is rejected.
+**Note:** `auth-signup.js` calls `req.login()` for all users including inactive ones. This has no practical effect (the session is rejected on the next request), but the call is unnecessary for inactive users and could be guarded with an `if (user.active)` check.
 
 ## Sign in
 
