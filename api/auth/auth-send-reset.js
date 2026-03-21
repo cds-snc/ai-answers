@@ -1,3 +1,20 @@
+/**
+ * Password reset flow — Step 1 of 2 (this file)
+ *
+ * 1. User enters their email on ResetRequestPage and submits.
+ * 2. This handler (auth-send-reset) generates a per-user TOTP secret,
+ *    derives a 6-digit code from it, and emails a reset link via GC Notify:
+ *    /{lang}/reset-complete?email={email}&code={code}
+ * 3. User clicks the link, landing on ResetCompletePage with email and
+ *    code pre-filled from the URL query params.
+ * 4. User enters a new password and submits → handled by
+ *    auth-reset-password.js (Step 2).
+ *
+ * Security controls:
+ * - Rate limited: 3 requests per 15 min per IP+email (auth-rate-limiter.js)
+ * - Fresh TOTP secret generated on each request (invalidates prior codes)
+ * - Generic response regardless of whether the email exists
+ */
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import GCNotifyService from '../../services/GCNotifyService.js';

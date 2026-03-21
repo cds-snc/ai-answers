@@ -1,3 +1,21 @@
+/**
+ * Password reset flow — Step 2 of 2 (this file)
+ *
+ * 1. User clicked the reset link from their email, landing on
+ *    ResetCompletePage with email and TOTP code from the URL.
+ * 2. User enters a new password and submits.
+ * 3. This handler verifies the TOTP code against the user's stored
+ *    secret, then updates the password if valid.
+ *
+ * See auth-send-reset.js for Step 1 (code generation and email delivery).
+ *
+ * Security controls:
+ * - Rate limited: 5 requests per 15 min per IP+email (auth-rate-limiter.js)
+ * - 30-minute lockout after 5 failed code attempts
+ * - Atomic $inc on attempt counter to prevent race conditions
+ * - Generic error responses to prevent user enumeration
+ * - Secret cleared on successful reset (link becomes single-use)
+ */
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import os from 'os';
@@ -15,10 +33,11 @@ const resetPasswordHandler = async (req, res) => {
       return res.status(400).json({ success: false, message: 'email, code, and newPassword required' });
     }
 
-    // Reject literal string "undefined" or "null" from client
+    // Reject literal string "undefined" or "null" for the TOTP reset code
+    // (e.g. missing ?code= query param on the reset link)
     if (code === 'undefined' || code === 'null') {
-      console.warn(`[auth-reset-password][${os.hostname()}] Received invalid code string`);
-      return res.status(400).json({ success: false, message: 'invalid code' });
+      console.warn(`[auth-reset-password][${os.hostname()}] Received invalid request`);
+      return res.status(400).json({ success: false, code: 'RESET_INVALID_CODE', message: 'invalid or expired code' });
     }
 
     await dbConnect();
