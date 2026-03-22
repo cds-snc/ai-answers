@@ -156,7 +156,8 @@ app.use((req, res, next) => {
 });
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);
+  const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
 });
 
 app.get(/.*/, (req, res, next) => {

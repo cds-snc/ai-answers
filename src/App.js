@@ -349,10 +349,14 @@ export default function App() {
     const hostPrefixMatch = runtimeHostname.match(/^(ai-answers|reponses-ia)(?:\.|$)/);
     const defaultLang = hostPrefixMatch && hostPrefixMatch[1] === 'reponses-ia' ? 'fr' : 'en';
     const homeDefault = defaultLang === 'fr' ? homeFr : homeEn;
+    const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
+
     const publicRoutes = [
-      { path: '/', element: homeDefault },
-      { path: '/en', element: homeEn },
-      { path: '/fr', element: homeFr },
+      ...(requireAuthForChat ? [] : [
+        { path: '/', element: homeDefault },
+        { path: '/en', element: homeEn },
+        { path: '/fr', element: homeFr },
+      ]),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
@@ -371,6 +375,11 @@ export default function App() {
     ];
 
     const protectedRoutes = [
+      ...(requireAuthForChat ? [
+        { path: '/', element: homeDefault, roles: ['admin', 'partner'] },
+        { path: '/en', element: homeEn, roles: ['admin', 'partner'] },
+        { path: '/fr', element: homeFr, roles: ['admin', 'partner'] },
+      ] : []),
       { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
@@ -419,7 +428,7 @@ export default function App() {
           ...protectedRoutes.map(route => ({
             path: route.path,
             element: (
-              <RoleProtectedRoute roles={route.roles} lang={route.path.includes('/fr/') ? 'fr' : 'en'}>
+              <RoleProtectedRoute roles={route.roles} lang={route.path === '/fr' || route.path.startsWith('/fr/') ? 'fr' : 'en'}>
                 {route.element}
               </RoleProtectedRoute>
             )
