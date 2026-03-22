@@ -509,10 +509,10 @@ const DatabasePage = ({ lang }) => {
             style={{ minWidth: 120 }}
             disabled={isExporting || collections.length === 0}
           >
-            <option value="All">All</option>
-            <option value="AllButLogs">All but logs</option>
+            <option value="All">{t('admin.database.collections.all')}</option>
+            <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
             {collections.map((col) => (
-              <option key={col} value={col}>{col}</option>
+              <option key={col} value={col}>{t(`admin.database.collections.${col}`) || col}</option>
             ))}
           </select>
         </label>
@@ -690,7 +690,7 @@ const DatabasePage = ({ lang }) => {
                 <option value="All">{t('admin.database.collections.all')}</option>
                 <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
                 {collections.map((col) => (
-                  <option key={col} value={col}>{col}</option>
+                  <option key={col} value={col}>{t(`admin.database.collections.${col}`) || col}</option>
                 ))}
               </select>
             </label>
