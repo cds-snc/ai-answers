@@ -1102,7 +1102,6 @@
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
-      "loading": "Chargement des métriques...",
       "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
       "inputTokens": "Jetons d'entrée",
@@ -1152,7 +1151,6 @@
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
         "unhelpful": "Problème (non)",
-        "reasonBreakdown": "Répartition des raisons",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
         "reason": "Raison",
         "otherYes": "Autre (oui)",
@@ -1160,10 +1158,7 @@
       },
       "byDepartment": {
         "title": "Répartition par département des évaluations d'experts",
-        "department": "Département",
-        "totalQuestions": "Total des évaluations d'experts",
-        "totalSessions": "Sessions totales",
-        "expertTotal": "Évaluations d'experts"
+        "department": "Département"
       }
     }
   },

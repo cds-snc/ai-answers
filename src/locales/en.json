@@ -1102,7 +1102,6 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
-      "loading": "Loading metrics...",
       "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
       "inputTokens": "Input tokens",
@@ -1152,7 +1151,6 @@
         "total": "Total questions with feedback",
         "helpful": "Helpful (yes)",
         "unhelpful": "Issue (no)",
-        "reasonBreakdown": "Reason breakdown",
         "reasonTableTitle": "Public feedback reasons breakdown",
         "reason": "Reason",
         "otherYes": "Other (yes)",
@@ -1160,10 +1158,7 @@
       },
       "byDepartment": {
         "title": "Department breakdown of expert evaluations",
-        "department": "Department",
-        "totalQuestions": "Total expert evaluations",
-        "totalSessions": "Total sessions",
-        "expertTotal": "Expert evaluations"
+        "department": "Department"
       }
     }
   },
