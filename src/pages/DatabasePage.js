@@ -490,7 +490,7 @@ const DatabasePage = ({ lang }) => {
             <tbody>
               {Object.entries(tableCounts).map(([table, count]) => (
                 <tr key={table}>
-                  <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table}`) || table}</td>
+                  <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</td>
                   <td style={{ textAlign: 'right' }}>{count}</td>
                 </tr>
               ))}
@@ -512,7 +512,7 @@ const DatabasePage = ({ lang }) => {
             <option value="All">{t('admin.database.collections.all')}</option>
             <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
             {collections.map((col) => (
-              <option key={col} value={col}>{t(`admin.database.collections.${col}`) || col}</option>
+              <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
             ))}
           </select>
         </label>
@@ -690,7 +690,7 @@ const DatabasePage = ({ lang }) => {
                 <option value="All">{t('admin.database.collections.all')}</option>
                 <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
                 {collections.map((col) => (
-                  <option key={col} value={col}>{t(`admin.database.collections.${col}`) || col}</option>
+                  <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
                 ))}
               </select>
             </label>
