@@ -331,7 +331,7 @@ const DatabasePage = ({ lang }) => {
   };
 
   const handleDropIndexes = async () => {
-    const confirmed = window.confirm(t('database.dropIndexesConfirm'));
+    const confirmed = window.confirm(t('admin.database.dropIndexesConfirm'));
 
     if (!confirmed) return;
 
@@ -349,9 +349,9 @@ const DatabasePage = ({ lang }) => {
       }
 
       const result = await response.json();
-      setMessage(t('database.dropIndexesSuccess').replace('{count}', result.results.success.length));
+      setMessage(t('admin.database.dropIndexesSuccess').replace('{count}', result.results.success.length));
     } catch (error) {
-      setMessage(t('database.dropIndexesError').replace('{error}', error.message));
+      setMessage(t('admin.database.dropIndexesError').replace('{error}', error.message));
       console.error('Drop indexes error:', error);
     } finally {
       setIsDroppingIndexes(false);
@@ -359,7 +359,7 @@ const DatabasePage = ({ lang }) => {
   };
 
   const handleDeleteSystemLogs = async () => {
-    if (!window.confirm(t('database.deleteSystemLogsConfirm'))) return;
+    if (!window.confirm(t('admin.database.deleteSystemLogsConfirm'))) return;
     setIsDeletingSystemLogs(true);
     setMessage('');
     try {
@@ -368,16 +368,16 @@ const DatabasePage = ({ lang }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Failed to delete system logs');
-      setMessage(t('database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount));
+      setMessage(t('admin.database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount));
     } catch (error) {
-      setMessage(t('database.deleteSystemLogsError').replace('{error}', error.message));
+      setMessage(t('admin.database.deleteSystemLogsError').replace('{error}', error.message));
     } finally {
       setIsDeletingSystemLogs(false);
     }
   };
 
   const handleDeleteAllBatches = async () => {
-    if (!window.confirm(t('database.deleteAllBatchesConfirm'))) return;
+    if (!window.confirm(t('admin.database.deleteAllBatchesConfirm'))) return;
 
     setIsDeletingAllBatches(true);
     setMessage('');
@@ -386,9 +386,9 @@ const DatabasePage = ({ lang }) => {
       // Expecting { deletedBatches, deletedBatchItems } or similar
       const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
       const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
-      setMessage(t('database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems));
+      setMessage(t('admin.database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems));
     } catch (error) {
-      setMessage(t('database.deleteAllBatchesError').replace('{error}', error.message));
+      setMessage(t('admin.database.deleteAllBatchesError').replace('{error}', error.message));
       console.error('Delete all batches error:', error);
     } finally {
       setIsDeletingAllBatches(false);
@@ -396,53 +396,53 @@ const DatabasePage = ({ lang }) => {
   };
 
   const handleRepairTimestamps = async () => {
-    if (!window.confirm(t('database.repairTimestampsConfirm'))) return;
+    if (!window.confirm(t('admin.database.repairTimestampsConfirm'))) return;
 
     setIsRepairingTimestamps(true);
     setMessage('');
 
     try {
       const result = await DataStoreService.repairTimestamps();
-      setMessage(t('database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total));
+      setMessage(t('admin.database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total));
     } catch (error) {
-      setMessage(t('database.repairTimestampsError').replace('{error}', error.message));
+      setMessage(t('admin.database.repairTimestampsError').replace('{error}', error.message));
     } finally {
       setIsRepairingTimestamps(false);
     }
   };
 
   const handleRepairExpertFeedback = async () => {
-    if (!window.confirm(t('database.repairExpertFeedbackConfirm'))) return;
+    if (!window.confirm(t('admin.database.repairExpertFeedbackConfirm'))) return;
 
     setIsRepairingExpertFeedback(true);
     setMessage('');
 
     try {
       const result = await DataStoreService.repairExpertFeedback();
-      setMessage(t('database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect));
+      setMessage(t('admin.database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect));
     } catch (error) {
-      setMessage(t('database.repairExpertFeedbackError').replace('{error}', error.message));
+      setMessage(t('admin.database.repairExpertFeedbackError').replace('{error}', error.message));
     } finally {
       setIsRepairingExpertFeedback(false);
     }
   };
 
   const handleMigratePublicFeedback = async () => {
-    if (!window.confirm(t('database.migratePublicFeedbackConfirm'))) return;
+    if (!window.confirm(t('admin.database.migratePublicFeedbackConfirm'))) return;
     setIsMigratingPublicFeedback(true);
     setMessage('');
     try {
       const result = await DataStoreService.migratePublicFeedback();
-      setMessage(t('database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0));
+      setMessage(t('admin.database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0));
     } catch (error) {
-      setMessage(t('database.migratePublicFeedbackError').replace('{error}', error.message));
+      setMessage(t('admin.database.migratePublicFeedbackError').replace('{error}', error.message));
     } finally {
       setIsMigratingPublicFeedback(false);
     }
   };
 
   const handleCreateIndexes = async () => {
-    const confirmed = window.confirm(t('database.createIndexesConfirm'));
+    const confirmed = window.confirm(t('admin.database.createIndexesConfirm'));
 
     if (!confirmed) return;
 
@@ -456,10 +456,10 @@ const DatabasePage = ({ lang }) => {
       const failCount = result.results.failed ? result.results.failed.length : 0;
 
       setCreationDetails(result.results);
-      setMessage(t('database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount));
+      setMessage(t('admin.database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount));
     } catch (error) {
       setCreationDetails(null);
-      setMessage(t('database.createIndexesError').replace('{error}', error.message));
+      setMessage(t('admin.database.createIndexesError').replace('{error}', error.message));
       console.error('Create indexes error:', error);
     } finally {
       setIsCreatingIndexes(false);
@@ -469,7 +469,7 @@ const DatabasePage = ({ lang }) => {
 
   return (
     <GcdsContainer size="xl" centered>
-      <GcdsHeading tag="h1">{t('database.title')}</GcdsHeading>
+      <GcdsHeading tag="h1">{t('admin.database.title')}</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
           {t('common.backToAdmin')}
@@ -477,52 +477,52 @@ const DatabasePage = ({ lang }) => {
       </nav>
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Table Record Counts' : 'Nombre d\'enregistrements par table'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
         {countsError && <div style={{ color: 'red' }}>{countsError}</div>}
         {tableCounts ? (
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', paddingRight: 16 }}>{lang === 'en' ? 'Table' : 'Table'}</th>
-                <th style={{ textAlign: 'right' }}>{lang === 'en' ? 'Count' : 'Nombre'}</th>
+                <th style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.tableColumn')}</th>
+                <th style={{ textAlign: 'right' }}>{t('admin.database.countColumn')}</th>
               </tr>
             </thead>
             <tbody>
               {Object.entries(tableCounts).map(([table, count]) => (
                 <tr key={table}>
-                  <td style={{ paddingRight: 16 }}>{table}</td>
+                  <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</td>
                   <td style={{ textAlign: 'right' }}>{count}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          !countsError && <div>{lang === 'en' ? 'Loading table counts...' : 'Chargement...'}</div>
+          !countsError && <div>{t('common.loading')}</div>
         )}
       </div>
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
         <label>
-          Table:&nbsp;
+          {t('admin.database.tableLabel')}&nbsp;
           <select
             value={selectedCollection}
             onChange={e => setSelectedCollection(e.target.value)}
             style={{ minWidth: 120 }}
             disabled={isExporting || collections.length === 0}
           >
-            <option value="All">All</option>
-            <option value="AllButLogs">All but logs</option>
+            <option value="All">{t('admin.database.collections.all')}</option>
+            <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
             {collections.map((col) => (
-              <option key={col} value={col}>{col}</option>
+              <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
             ))}
           </select>
         </label>
-        <label>Start date:&nbsp;
+        <label>{t('admin.database.startDate')}&nbsp;
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
         </label>
-        <label>End date:&nbsp;
+        <label>{t('admin.database.endDate')}&nbsp;
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </label>
-        <label>Limit:&nbsp;
+        <label>{t('admin.database.limitLabel')}&nbsp;
           <input
             type="number"
             min="1"
@@ -533,34 +533,34 @@ const DatabasePage = ({ lang }) => {
           />
         </label>
         <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
-          {isExporting ? 'Exporting...' : 'Export Database'}
+          {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
         </GcdsButton>
       </div>
       {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
-        <GcdsHeading tag="h2">Integrity Checks</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.integrityTitle')}</GcdsHeading>
         <GcdsText>
-          Run read-only checks to find orphaned documents and parent records that reference missing children.
+          {t('admin.database.integrityDescription')}
         </GcdsText>
         <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
-          <summary style={{ cursor: 'pointer', fontWeight: '600' }}>Core orphan & parent-reference checks</summary>
+          <summary style={{ cursor: 'pointer', fontWeight: '600' }}>{t('admin.database.coreChecksLabel')}</summary>
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { id: 'orphanCitations', label: 'Orphaned Citations (not referenced by any Answer)' },
-              { id: 'orphanTools', label: 'Orphaned Tools (not referenced by any Answer)' },
-              { id: 'orphanAnswers', label: 'Orphaned Answers (not referenced by any Interaction or Embedding)' },
-              { id: 'orphanQuestions', label: 'Orphaned Questions (not referenced by any Interaction or Embedding)' },
-              { id: 'orphanInteractions', label: 'Orphaned Interactions (not referenced by any Chat)' },
-              { id: 'interactionMissingChildren', label: 'Interactions referencing missing children (question/answer/feedback/context/eval)' },
-              { id: 'embeddingsMissingRefs', label: 'Embeddings with missing Chat/Interaction/Question/Answer refs' },
-              { id: 'sentenceEmbeddingOrphans', label: 'Sentence embeddings with missing parent Embedding' },
-              { id: 'chatInvalidInteractions', label: 'Chats with invalid interaction references' },
-              { id: 'answerInvalidTools', label: 'Answers with invalid tool references' },
-              { id: 'evalInvalidInteraction', label: 'Evals referencing missing Interactions' },
-              { id: 'duplicateKeys', label: 'Duplicate Keys (Index Violations)' }
+              { id: 'orphanCitations', labelKey: 'checks.orphanCitations' },
+              { id: 'orphanTools', labelKey: 'checks.orphanTools' },
+              { id: 'orphanAnswers', labelKey: 'checks.orphanAnswers' },
+              { id: 'orphanQuestions', labelKey: 'checks.orphanQuestions' },
+              { id: 'orphanInteractions', labelKey: 'checks.orphanInteractions' },
+              { id: 'interactionMissingChildren', labelKey: 'checks.interactionMissingChildren' },
+              { id: 'embeddingsMissingRefs', labelKey: 'checks.embeddingsMissingRefs' },
+              { id: 'sentenceEmbeddingOrphans', labelKey: 'checks.sentenceEmbeddingOrphans' },
+              { id: 'chatInvalidInteractions', labelKey: 'checks.chatInvalidInteractions' },
+              { id: 'answerInvalidTools', labelKey: 'checks.answerInvalidTools' },
+              { id: 'evalInvalidInteraction', labelKey: 'checks.evalInvalidInteraction' },
+              { id: 'duplicateKeys', labelKey: 'checks.duplicateKeys' }
             ].map(check => (
               <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1 }}>{check.label}</div>
+                <div style={{ flex: 1 }}>{t(`admin.database.${check.labelKey}`)}</div>
                 <GcdsButton
                   onClick={async () => {
                     try {
@@ -581,18 +581,18 @@ const DatabasePage = ({ lang }) => {
                   disabled={!!checksRunning[check.id]}
                   variant="secondary"
                 >
-                  {checksRunning[check.id] ? 'Running...' : 'Run check'}
+                  {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
                 </GcdsButton>
                 <div style={{ minWidth: 220, textAlign: 'right' }}>
                   {checksResults[check.id] ? (
                     <div style={{ fontSize: 13 }}>
-                      Count: <strong>{checksResults[check.id].count}</strong>
+                      {t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong>
                       {checksResults[check.id].breakdown ? (
                         <div style={{ marginTop: 6, textAlign: 'right' }}>
-                          <div style={{ fontSize: 12 }}>Missing — Chat: <strong>{checksResults[check.id].breakdown.missingChat}</strong>, Interaction: <strong>{checksResults[check.id].breakdown.missingInteraction}</strong>, Question: <strong>{checksResults[check.id].breakdown.missingQuestion}</strong>, Answer: <strong>{checksResults[check.id].breakdown.missingAnswer}</strong></div>
+                          <div style={{ fontSize: 12 }}>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
                           {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
                             <div style={{ marginTop: 6 }}>
-                              Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
+                              {t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}
                             </div>
                           ) : null}
                         </div>
@@ -602,17 +602,13 @@ const DatabasePage = ({ lang }) => {
                         </div>
                       ) : null}
                     </div>
-                  ) : <div style={{ fontSize: 13, color: '#666' }}>No results</div>}
+                  ) : <div style={{ fontSize: 13, color: '#666' }}>{t('admin.database.noResultsLabel')}</div>}
                 </div>
                 {/* Add Remove Duplicates button only for duplicateKeys check */}
                 {check.id === 'duplicateKeys' && (
                   <GcdsButton
                     onClick={async () => {
-                      if (!window.confirm(
-                        lang === 'en'
-                          ? 'This will delete older duplicate records, keeping only the newest. Are you sure?'
-                          : 'Cela supprimera les anciens enregistrements en double, ne gardant que les plus récents. Êtes-vous sûr?'
-                      )) return;
+                      if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
                       try {
                         setIsRemovingDuplicates(true);
                         setMessage('');
@@ -621,13 +617,11 @@ const DatabasePage = ({ lang }) => {
                         });
                         const json = await res.json();
                         if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
-                        setMessage(lang === 'en'
-                          ? `Removed ${json.deletedCount} duplicate records`
-                          : `Supprimé ${json.deletedCount} enregistrements en double`);
+                        setMessage(t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount));
                         // Refresh the check results
                         setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
                       } catch (err) {
-                        setMessage(`Remove duplicates failed: ${err.message}`);
+                        setMessage(t('admin.database.removeDuplicatesError').replace('{error}', err.message));
                       } finally {
                         setIsRemovingDuplicates(false);
                       }
@@ -635,9 +629,7 @@ const DatabasePage = ({ lang }) => {
                     disabled={isRemovingDuplicates}
                     variant="danger"
                   >
-                    {isRemovingDuplicates
-                      ? (lang === 'en' ? 'Removing...' : 'Suppression...')
-                      : (lang === 'en' ? 'Remove Duplicates' : 'Supprimer les doublons')}
+                    {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
                   </GcdsButton>
                 )}
               </div>
@@ -647,11 +639,9 @@ const DatabasePage = ({ lang }) => {
       </div >
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Import Database' : 'Importer la base de données'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.importTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Restore the database from a backup file. Warning: This will replace all existing data.'
-            : 'Restaurer la base de données à partir d\'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.'}
+          {t('admin.database.importDescription')}
         </GcdsText>
         {/* Show import progress message above the import button */}
         {isImporting && message && (
@@ -660,7 +650,7 @@ const DatabasePage = ({ lang }) => {
         <form onSubmit={handleImport} className="mb-200">
           <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
             <label>
-              Chunk size (MB):&nbsp;
+              {t('admin.database.chunkSizeLabel')}&nbsp;
               <input
                 type="number"
                 min="0.0625"
@@ -672,7 +662,7 @@ const DatabasePage = ({ lang }) => {
               />
             </label>
             <label>
-              Throttle (ms):&nbsp;
+              {t('admin.database.throttleLabel')}&nbsp;
               <input
                 type="number"
                 min="0"
@@ -684,7 +674,7 @@ const DatabasePage = ({ lang }) => {
               />
             </label>
             <label>
-              Table (hold Ctrl/Cmd to multi-select):&nbsp;
+              {t('admin.database.tableSelectLabel')}&nbsp;
               <select
                 value={importSelectedCollections}
                 onChange={e => {
@@ -697,10 +687,10 @@ const DatabasePage = ({ lang }) => {
                 multiple
                 disabled={isImporting || collections.length === 0}
               >
-                <option value="All">All</option>
-                <option value="AllButLogs">All but logs</option>
+                <option value="All">{t('admin.database.collections.all')}</option>
+                <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
                 {collections.map((col) => (
-                  <option key={col} value={col}>{col}</option>
+                  <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
                 ))}
               </select>
             </label>
@@ -717,19 +707,15 @@ const DatabasePage = ({ lang }) => {
             disabled={isImporting}
             variant="secondary"
           >
-            {isImporting
-              ? (lang === 'en' ? 'Importing...' : 'Importation...')
-              : (lang === 'en' ? 'Import Database' : 'Importer la base de données')}
+            {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
           </GcdsButton>
         </form>
       </div>
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Create/Rebuild Indexes' : 'Créer/Reconstruire des index'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.createIndexes')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.'
-            : 'Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.'}
+          {t('admin.database.createIndexesDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleCreateIndexes}
@@ -737,20 +723,18 @@ const DatabasePage = ({ lang }) => {
           variant="secondary"
           className="mb-200"
         >
-          {isCreatingIndexes
-            ? (lang === 'en' ? 'Creating Indexes...' : 'Création des index...')
-            : (lang === 'en' ? 'Rebuild All Indexes' : 'Reconstruire tous les index')}
+          {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
         {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
           <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
             <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
-              {lang === 'en' ? 'Index creation failed for the following collections:' : 'La création d\'index a échoué pour les collections suivantes :'}
+              {t('admin.database.indexCreationFailed')}
             </div>
             <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>(Code {f.code})</span>}
+                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}
             </ul>
@@ -760,11 +744,9 @@ const DatabasePage = ({ lang }) => {
 
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.dropIndexesTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Remove all database indexes. This can be useful to fix database performance issues. Indexes will be automatically rebuilt by the database as needed.'
-            : 'Supprimer tous les index de la base de données. Cela peut être utile pour résoudre les problèmes de performance de la base de données. Les index seront reconstruits automatiquement par la base de données selon les besoins.'}
+          {t('admin.database.dropIndexesDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleDropIndexes}
@@ -772,18 +754,14 @@ const DatabasePage = ({ lang }) => {
           variant="danger"
           className="mb-200"
         >
-          {isDroppingIndexes
-            ? (lang === 'en' ? 'Dropping Indexes...' : 'Suppression des index...')
-            : (lang === 'en' ? 'Drop All Indexes' : 'Supprimer tous les index')}
+          {isDroppingIndexes ? t('admin.database.droppingLabel') : t('admin.database.dropIndexesButton')}
         </GcdsButton>
       </div>
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Check Index Status' : 'Vérifier l\'état des index'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.indexStatusTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Check the current status of all database indexes across all collections.'
-            : 'Vérifier l\'état actuel de tous les index de base de données pour toutes les collections.'}
+          {t('admin.database.indexStatusDescription')}
         </GcdsText>
         <GcdsButton
           onClick={async () => {
@@ -798,9 +776,7 @@ const DatabasePage = ({ lang }) => {
               if (!res.ok) throw new Error(json.message || 'Check failed');
               setIndexStatus(json);
             } catch (err) {
-              setMessage(lang === 'en'
-                ? `Index status check failed: ${err.message}`
-                : `Échec de la vérification de l'état des index: ${err.message}`);
+              setMessage(t('admin.database.indexStatusError').replace('{error}', err.message));
             } finally {
               setIsCheckingIndexStatus(false);
             }
@@ -809,9 +785,7 @@ const DatabasePage = ({ lang }) => {
           variant="secondary"
           className="mb-200"
         >
-          {isCheckingIndexStatus
-            ? (lang === 'en' ? 'Checking...' : 'Vérification...')
-            : (lang === 'en' ? 'Check Index Status' : 'Vérifier l\'état des index')}
+          {isCheckingIndexStatus ? t('admin.database.checkingLabel') : t('admin.database.checkIndexStatusButton')}
         </GcdsButton>
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
@@ -821,10 +795,10 @@ const DatabasePage = ({ lang }) => {
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', paddingRight: 16 }}>Collection</th>
-                  <th style={{ textAlign: 'right', paddingRight: 16 }}>Current</th>
-                  <th style={{ textAlign: 'right', paddingRight: 16 }}>Expected</th>
-                  <th style={{ textAlign: 'left' }}>Status</th>
+                  <th style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
+                  <th style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.currentColumn')}</th>
+                  <th style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.expectedColumn')}</th>
+                  <th style={{ textAlign: 'left' }}>{t('admin.database.statusColumn')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -837,12 +811,12 @@ const DatabasePage = ({ lang }) => {
                       {col.status}
                       {col.status === 'building' && col.building?.length > 0 && (
                         <span style={{ marginLeft: 8, fontSize: 11 }}>
-                          ({col.building.map(b => b.progress != null ? `${b.progress}%` : 'in progress').join(', ')})
+                          ({col.building.map(b => b.progress != null ? `${b.progress}%` : t('admin.database.inProgressLabel')).join(', ')})
                         </span>
                       )}
                       {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
                         <span style={{ marginLeft: 8, fontSize: 11, fontStyle: 'italic' }}>
-                          Missing: {col.missingIndexes.join('; ')}
+                          {t('admin.database.missingLabel')} {col.missingIndexes.join('; ')}
                         </span>
                       )}
                       {col.error ? `: ${col.error}` : ''}
@@ -856,11 +830,9 @@ const DatabasePage = ({ lang }) => {
       </div>
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Delete System Logs' : 'Supprimer les journaux système'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.deleteSystemLogsTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Delete all logs where chatId = "system". This action cannot be undone.'
-            : 'Supprimez tous les journaux où chatId = "system". Cette action est irréversible.'}
+          {t('admin.database.deleteSystemLogsDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleDeleteSystemLogs}
@@ -868,34 +840,29 @@ const DatabasePage = ({ lang }) => {
           variant="danger"
           className="mb-200"
         >
-          {isDeletingSystemLogs
-            ? (lang === 'en' ? 'Deleting...' : 'Suppression...')
-            : (lang === 'en' ? 'Delete System Logs' : 'Supprimer les journaux système')}        </GcdsButton>
+          {isDeletingSystemLogs ? t('admin.database.deletingLabel') : t('admin.database.deleteSystemLogsButton')}
+        </GcdsButton>
       </div>
 
-      <div className="mb-400">        <GcdsHeading tag="h2">{lang === 'en' ? 'Repair Tool Timestamps' : 'Réparer les horodatages des outils'}</GcdsHeading>
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{t('admin.database.repairTimestampsTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Add updatedAt timestamps to existing tool records without them. This will use the createdAt date if available, or the current date as fallback.'
-            : 'Ajouter des horodatages updatedAt aux enregistrements d\'outils existants qui n\'en ont pas. Cela utilisera la date createdAt si disponible, ou la date actuelle comme solution de rechange.'}
+          {t('admin.database.repairTimestampsDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleRepairTimestamps}
           disabled={isRepairingTimestamps}
           variant="secondary"
           className="mb-200"
-        >          {isRepairingTimestamps
-          ? (lang === 'en' ? 'Repairing...' : 'Réparation...')
-          : (lang === 'en' ? 'Repair Tool Timestamps' : 'Réparer les horodatages des outils')}
+        >
+          {isRepairingTimestamps ? t('admin.database.repairingLabel') : t('admin.database.repairTimestampsButton')}
         </GcdsButton>
       </div>
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Delete All Batches' : 'Supprimer tous les lots'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.deleteAllBatchesTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Delete all batch records and their associated batchItems. This is destructive and cannot be undone.'
-            : 'Supprimer tous les enregistrements de lots et leurs batchItems associés. Cette action est destructive et irréversible.'}
+          {t('admin.database.deleteAllBatchesDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleDeleteAllBatches}
@@ -903,18 +870,14 @@ const DatabasePage = ({ lang }) => {
           variant="danger"
           className="mb-200"
         >
-          {isDeletingAllBatches
-            ? (lang === 'en' ? 'Deleting...' : 'Suppression...')
-            : (lang === 'en' ? 'Delete All Batches' : 'Supprimer tous les lots')}
+          {isDeletingAllBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllBatchesButton')}
         </GcdsButton>
       </div>
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Repair Expert Feedback Types' : 'Réparer les types de commentaires d\'experts'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.repairExpertFeedbackTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Set the "type" field to "expert" for expert feedback records that have missing or empty type fields. Records with "public" or "ai" types will be left unchanged.'
-            : 'Définir le champ "type" sur "expert" pour les enregistrements de commentaires d\'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types "public" ou "ai" resteront inchangés.'}
+          {t('admin.database.repairExpertFeedbackDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleRepairExpertFeedback}
@@ -922,18 +885,14 @@ const DatabasePage = ({ lang }) => {
           variant="secondary"
           className="mb-200"
         >
-          {isRepairingExpertFeedback
-            ? (lang === 'en' ? 'Repairing...' : 'Réparation...')
-            : (lang === 'en' ? 'Repair Expert Feedback Types' : 'Réparer les types de commentaires d\'experts')}
+          {isRepairingExpertFeedback ? t('admin.database.repairingLabel') : t('admin.database.repairExpertFeedbackButton')}
         </GcdsButton>
       </div>
 
       <div className="mb-400">
-        <GcdsHeading tag="h2">{lang === 'en' ? 'Migrate Public Feedback' : 'Migrer les commentaires publics'}</GcdsHeading>
+        <GcdsHeading tag="h2">{t('admin.database.migratePublicFeedbackTitle')}</GcdsHeading>
         <GcdsText>
-          {lang === 'en'
-            ? 'Move all public feedback from the expert feedback collection to the new public feedback collection.'
-            : 'Déplacer tous les commentaires publics de la collection des commentaires d\'experts vers la nouvelle collection des commentaires publics.'}
+          {t('admin.database.migratePublicFeedbackDescription')}
         </GcdsText>
         <GcdsButton
           onClick={handleMigratePublicFeedback}
@@ -941,9 +900,7 @@ const DatabasePage = ({ lang }) => {
           variant="secondary"
           className="mb-200"
         >
-          {isMigratingPublicFeedback
-            ? (lang === 'en' ? 'Migrating...' : 'Migration...')
-            : (lang === 'en' ? 'Migrate Public Feedback' : 'Migrer les commentaires publics')}
+          {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
         </GcdsButton>
       </div>
 

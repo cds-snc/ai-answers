@@ -115,7 +115,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
-      <h1 className="mb-400">{t('batch.title', 'Batches')}</h1>
+      <h1 className="mb-400">{t('batch.title')}</h1>
 
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>

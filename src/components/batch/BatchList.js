@@ -5,6 +5,7 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import BatchService from '../../services/BatchService.js';
 
 DataTable.use(DT);
@@ -12,9 +13,9 @@ DataTable.use(DT);
 const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang, processingBatches = [] }) => {
   const [batches, setBatches] = useState([]);
   const [searchText] = useState('');
-  // refreshKey forces the DataTable to remount when batches or language change
+  // refreshKey forces the DataTable to remount when batches change
   const [refreshKey, setRefreshKey] = useState(0);
-  const { t } = useTranslations(lang); // TODO: Pass actual language from props/context
+  const { t } = useTranslations(lang);
 
   // Fetch all statuses
   const fetchStatuses = useCallback(async (batches) => {
@@ -59,10 +60,21 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       },
       { title: t('batch.list.columns.createdDate'), data: 'createdAt' },
   { title: t('batch.list.columns.provider'), data: 'aiProvider' },
-  { title: t('batch.list.columns.workflow') || 'Workflow', data: 'workflow' },
-  { title: t('batch.list.columns.type'), data: 'type' },
-      { title: t('batch.list.columns.status'), data: 'status' },
-      { title: t('batch.list.columns.totals') || 'Totals', data: null },
+  { title: t('batch.list.columns.workflow'), data: 'workflow' },
+  {
+    title: t('batch.list.columns.type'),
+    data: 'type',
+    render: (data) => t(`batch.list.types.${data}`) || data,
+  },
+  {
+    title: t('batch.list.columns.status'),
+    data: 'status',
+    render: (data) => {
+      const normalized = normalizeStatus(data);
+      return t(`batch.list.statuses.${normalized}`) || normalized;
+    },
+  },
+      { title: t('batch.list.columns.totals'), data: null },
       {
         title: t('batch.list.columns.action'),
         data: null,
@@ -88,16 +100,18 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
     const intervalId = setInterval(fetchBatches, 10000); // Poll every 10 seconds
     return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [lang, fetchStatuses]); // Add lang as a dependency
+  }, [lang, fetchStatuses]);
 
-  // Whenever batches, language, or local processing markers change, bump the
+  // Whenever batches or local processing markers change, bump the
   // refresh key so DataTable remounts. This ensures the action buttons that
   // are rendered into table cells (via createRoot) see the latest
   // `processingBatches` value and update immediately when the user clicks
   // Process instead of waiting for the next polling cycle.
+  // Note: lang is intentionally excluded — language switches always trigger
+  // full page navigation so the component remounts naturally with the correct lang.
   useEffect(() => {
     setRefreshKey((r) => r + 1);
-  }, [batches, lang, processingBatches]);
+  }, [batches, processingBatches]);
 
   // Handle button actions mapped to explicit handlers
   const handleExport = (batchId, type) => onExport && onExport(batchId, type);
@@ -132,6 +146,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
           searching: true,
           ordering: true,
           order: [[2, 'desc']], // Order by Created Date (createdAt column) descending
+          language: dataTableLanguage(lang),
           createdRow: (row, data) => {
             const { _id, status: rawStatus, aiProvider } = data;
             const status = normalizeStatus(rawStatus);
@@ -148,7 +163,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               const failed = Number(stats.failed || 0);
               const finished = Number(stats.finished ?? processed + failed);
               if (totalsCell) {
-                totalsCell.innerText = `${finished}/${total} completed`;
+                totalsCell.innerText = t('batch.list.totalsLabel').replace('{finished}', finished).replace('{total}', total);
               }
             } catch (e) {
               // ignore totals rendering errors
@@ -227,7 +242,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -259,7 +274,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -287,7 +302,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -315,7 +330,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         setClicked(true);
                       }}
                     >
-                      {t('batch.list.actions.delete') || 'Delete'}
+                      {t('batch.list.actions.delete')}
                     </GcdsButton>
                   </div>
                 );
@@ -324,9 +339,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             }
           },
         }}
-        // Key forces a full remount when language or batches change so rows (and actions)
+        // Key forces a full remount when batches change so rows (and actions)
         // re-render with the latest statuses returned from the backend.
-        key={`${lang}-${refreshKey}`}
+        key={refreshKey}
       />
     </div>
   );

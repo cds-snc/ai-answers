@@ -64,12 +64,12 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     e.preventDefault();
     if (!processing) {
       if (!file) {
-        setError('Please select a file first');
+        setError(t('batch.upload.error.noFile'));
         return;
       }
 
       if (!batchName.trim()) {
-        setError(t('batch.upload.error.nameRequired') || 'Please enter a batch name');
+        setError(t('batch.upload.error.nameRequired'));
         return;
       }
 
@@ -139,13 +139,13 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           setFileUploaded(false);
         } catch (persistErr) {
           console.error('Failed to persist batch:', persistErr);
-          setError(persistErr?.message || 'Failed to save batch to server');
+          setError(persistErr?.message || t('batch.upload.error.saveFailed'));
           // Re-show the upload button so the user can retry
           setFileUploaded(false);
           setProcessing(false);
         }
       } catch (err) {
-        setError('Failed to read the file. Please try uploading again.');
+        setError(t('batch.upload.error.readFailed'));
         console.error('Error reading file:', err);
         setProcessing(false);
       }
@@ -338,7 +338,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             <div className="workflow-select mrgn-bttm-20">
               <div className="mrgn-bttm-10">
                 <label htmlFor="workflow" className="mrgn-bttm-10 display-block">
-                  {t('batch.upload.workflow.label') || 'Workflow'}
+                  {t('batch.upload.workflow.label')}
                 </label>
                 <select
                   id="workflow"
@@ -412,7 +412,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
             {processing && (
               <div className="processing-message mrgn-bttm-10">
-                {t('batch.upload.processing') || 'Processing file, please wait...'}
+                {t('batch.upload.processing')}
               </div>
             )}
 
