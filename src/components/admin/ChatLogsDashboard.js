@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -11,17 +11,17 @@ import { getApiUrl } from '../../utils/apiToUrl.js';
 const ChatLogsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
 
-  const VIEW_OPTIONS = [
+  const VIEW_OPTIONS = useMemo(() => [
     { value: 'default', label: t('admin.chatLogs.views.default') },
     { value: 'tools', label: t('admin.chatLogs.views.tools') },
-    { value: 'auto-eval-debug', label: t('admin.chatLogs.views.autoEvalDebug') }
-  ];
+    { value: 'auto-eval-debug', label: t('admin.chatLogs.views.autoEvalDebug') },
+  ], [t]);
 
-  const FORMAT_OPTIONS = [
+  const FORMAT_OPTIONS = useMemo(() => [
     { value: 'xlsx', label: t('admin.chatLogs.formats.xlsx') },
     { value: 'csv', label: t('admin.chatLogs.formats.csv') },
-    { value: 'json', label: t('admin.chatLogs.formats.json') }
-  ];
+    { value: 'json', label: t('admin.chatLogs.formats.json') },
+  ], [t]);
   const [exporting, setExporting] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
 

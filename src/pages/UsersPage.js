@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
@@ -39,10 +39,10 @@ const toBooleanish = (value) => {
 const UsersPage = ({ lang }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
-  const roleOptions = [
+  const roleOptions = useMemo(() => [
     { value: 'admin', label: t('users.roles.admin'), sortIndex: 0 },
     { value: 'partner', label: t('users.roles.partner'), sortIndex: 1 },
-  ];
+  ], [t]);
   const naLabel = t('common.na');
   const [users, setUsers] = useState([]);
   // Use a ref to store edit states persistently between DataTable renders
