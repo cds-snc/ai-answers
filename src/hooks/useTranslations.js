@@ -17,11 +17,12 @@ export const useTranslations = (lang) => {
           value = value[k];
         } else {
           console.warn(`Translation missing for key: ${key}`);
-          return key;
+          return undefined;
         }
       }
 
-      return value || key;
+      if (value === undefined) console.warn(`Translation missing for key: ${key}`);
+      return value;
     },
     [translations]
   );
