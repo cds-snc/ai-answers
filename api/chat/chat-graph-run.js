@@ -79,6 +79,11 @@ async function handler(req, res) {
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
 
+  // When REQUIRE_AUTH_FOR_CHAT is enabled (sandbox), block unauthenticated users
+  if (process.env.REQUIRE_AUTH_FOR_CHAT === 'true' && !req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
   const { graph: clientGraph, input } = req.body || {};
 
   if (typeof input !== 'object' || input === null) {
