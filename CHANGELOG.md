@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.115.0](https://github.com/cds-snc/ai-answers/compare/v1.114.1...v1.115.0) (2026-03-23)
+
+
+### Features
+
+* assign locales to text for OL ([ce75239](https://github.com/cds-snc/ai-answers/commit/ce7523906579d4318c0e98cb4d36f41ea0e5635d))
+* build keys for dropdown dynamically ([041738c](https://github.com/cds-snc/ai-answers/commit/041738ca74b81b40e811b65527da7bae0e567286))
+* dead locales for metrics page ([6feb548](https://github.com/cds-snc/ai-answers/commit/6feb548ab80c87e6eb80889ac94e32c6fffdb6a1))
+* dead locales for metrics page ([30a5827](https://github.com/cds-snc/ai-answers/commit/30a58271a18722f938a9430f24b588949a7c622b))
+* fix locales to match API ([2db2953](https://github.com/cds-snc/ai-answers/commit/2db2953f0acdbd0299001b79bdfd85d7cbfbfda4))
+* fix way keys are called so they'll work in dropdown database ([4c08032](https://github.com/cds-snc/ai-answers/commit/4c080320d10bcaef30bc9b40d250d1ae6f12a3db))
+* lowecase ([ddc0469](https://github.com/cds-snc/ai-answers/commit/ddc046947f3afc59cca1bbe1d61ba7b5f0222a41))
+* revert, change wasn't necessary ([4e7e890](https://github.com/cds-snc/ai-answers/commit/4e7e890c084b1dbae09a8b0956ca9ba9293f5a0c))
+* useMemo ([96b44f2](https://github.com/cds-snc/ai-answers/commit/96b44f2e6c88cd74cbf8a211fe1706b6224b5802))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder ([3f062fd](https://github.com/cds-snc/ai-answers/commit/3f062fdf62948f729ea906f5169ca922387b8807))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder ([69b185b](https://github.com/cds-snc/ai-answers/commit/69b185bd903cdc6083a8163783c3a6b94644a761))
+
 ## [1.114.1](https://github.com/cds-snc/ai-answers/compare/v1.114.0...v1.114.1) (2026-03-20)
 
 
