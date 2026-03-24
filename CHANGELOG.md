@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.115.1](https://github.com/cds-snc/ai-answers/compare/v1.115.0...v1.115.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* more reasoning model fixes ([407d572](https://github.com/cds-snc/ai-answers/commit/407d5729753da5069596e9e566213e5028351f95))
+* more reasoning model fixes ([e4c332e](https://github.com/cds-snc/ai-answers/commit/e4c332e50d3a834d90c3a3d155ceef8a9a67c3ce))
+* remove ERI groups from tbs ([04e28ed](https://github.com/cds-snc/ai-answers/commit/04e28ed2b4adffef2c591a5dbb14c9b14060ae59))
+
 ## [1.115.0](https://github.com/cds-snc/ai-answers/compare/v1.114.1...v1.115.0) (2026-03-23)
 
 
