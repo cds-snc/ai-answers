@@ -338,6 +338,7 @@
       "eval": "Administration des évaluations",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
+      "execDashboard": "Tableau de bord exécutif",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
@@ -1150,6 +1151,34 @@
     "reEvaluate": "Réévaluer",
     "deleteEvaluation": "Supprimer l'évaluation",
     "runEvaluation": "Lancer l'évaluation"
+  },
+  "execDashboard": {
+    "title": "Tableau de bord exécutif",
+    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
+    "filter": {
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "apply": "Appliquer",
+      "loading": "Chargement..."
+    },
+    "kpi": {
+      "questionsAsked": "Questions posées",
+      "questionsSub": "EN : {en} · FR : {fr}",
+      "conversations": "Conversations",
+      "evaluated": "Évaluées par des experts",
+      "evaluatedSub": "{pct}% des questions",
+      "feedbackReceived": "Rétroactions reçues"
+    },
+    "charts": {
+      "accuracyTitle": "Qualité des réponses (évaluation experte)",
+      "accuracyCentre": "sur {total} évaluées",
+      "satisfactionTitle": "Satisfaction des utilisateurs",
+      "satisfactionCentre": "sur {total} réponses",
+      "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",
+      "departmentsTitle": "Principaux ministères par volume de questions",
+      "noData": "Aucune donnée"
+    }
   },
   "metrics": {
     "title": "Tableau de bord des métriques",

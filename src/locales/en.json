@@ -338,6 +338,7 @@
       "eval": "Evaluation administration",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
+      "execDashboard": "Executive dashboard",
       "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
@@ -1150,6 +1151,34 @@
     "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages"
+  },
+  "execDashboard": {
+    "title": "Executive dashboard",
+    "error": "Failed to load data. Please try again.",
+    "noData": "No data found for the selected date range.",
+    "filter": {
+      "startDate": "Start date",
+      "endDate": "End date",
+      "apply": "Apply",
+      "loading": "Loading..."
+    },
+    "kpi": {
+      "questionsAsked": "Questions asked",
+      "questionsSub": "EN: {en} · FR: {fr}",
+      "conversations": "Conversations",
+      "evaluated": "Expert evaluated",
+      "evaluatedSub": "{pct}% of questions",
+      "feedbackReceived": "Feedback received"
+    },
+    "charts": {
+      "accuracyTitle": "Answer quality (expert evaluation)",
+      "accuracyCentre": "of {total} evaluated",
+      "satisfactionTitle": "User satisfaction",
+      "satisfactionCentre": "of {total} responses",
+      "yesReasonsTitle": "Why users found it helpful",
+      "departmentsTitle": "Top departments by question volume",
+      "noData": "No data"
+    }
   },
   "metrics": {
     "title": "Metrics dashboard",
