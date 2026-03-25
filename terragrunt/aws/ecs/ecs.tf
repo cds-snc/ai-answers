@@ -86,16 +86,24 @@ module "ai_answers" {
   container_port      = 3001
   container_host_port = 3001
   container_secrets   = local.container_secrets
-  container_environment = [
-    {
-      name  = "REDIS_URL"
-      value = var.redis_url
-    },
-    {
-      name  = "S3_BUCKET_NAME"
-      value = var.s3_bucket_name
-    }
-  ]
+  container_environment = concat(
+    [
+      {
+        name  = "REDIS_URL"
+        value = var.redis_url
+      },
+      {
+        name  = "S3_BUCKET_NAME"
+        value = var.s3_bucket_name
+      }
+    ],
+    var.env == "staging" ? [
+      {
+        name  = "REQUIRE_AUTH_FOR_CHAT"
+        value = "true"
+      }
+    ] : []
+  )
 
   container_linux_parameters = {}
   container_ulimits = [
