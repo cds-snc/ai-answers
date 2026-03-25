@@ -296,6 +296,7 @@
         "failed": "Failed",
         "expired": "Expired",
         "canceled": "Cancelled",
+        "uploaded": "Uploaded",
         "unknown": "Unknown"
       },
       "totalsLabel": "{finished}/{total} completed"
