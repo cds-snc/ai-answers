@@ -207,41 +207,31 @@ class BatchService {
     }
   }
 
-  // Given an array of batches, fetch their latest statuses from server (mirrors DataStoreService logic)
+  // Given an array of batches (already containing inline stats from batch-list),
+  // derive status from the embedded stats without making additional API calls.
   async getBatchStatuses(batches) {
     try {
-
-      const statusPromises = batches.map(async (batch) => {
-        try {
-          // Always fetch the latest server-side stats for this batch. Use
-          // the document _id which the server expects for `batch-stats`.
-          const statusResult = await this.getBatchStatus(batch._id, batch.aiProvider);
-          return statusResult;
-        } catch (err) {
-          // Preserve the client-side values as a fallback so a single failing
-          // batch doesn't break the whole list rendering.
-          const fallbackStats = batch.stats || {};
-          const fallbackProcessed = Number(fallbackStats?.processed || 0);
-          const fallbackFailed = Number(fallbackStats?.failed || 0);
-          const fallbackFinished = Number(fallbackStats?.finished ?? fallbackProcessed + fallbackFailed);
-          return { batchId: String(batch._id), status: batch.status || 'unknown', stats: { ...fallbackStats, finished: fallbackFinished } };
-        }
-      });
-      const statusResults = await Promise.all(statusPromises);
       return batches.map((batch) => {
-        const statusResult = statusResults.find((status) => status && status.batchId === String(batch._id));
-        const sourceStats = statusResult ? statusResult.stats || {} : batch.stats || {};
-        const processed = Number(sourceStats?.processed || 0);
-        const failed = Number(sourceStats?.failed || 0);
-        const finished = Number(sourceStats?.finished ?? processed + failed);
+        const stats = batch.stats || {};
+        const total = Number(stats.total || 0);
+        const processed = Number(stats.processed || 0);
+        const failed = Number(stats.failed || 0);
+        const finished = Number(stats.finished ?? processed + failed);
+
+        let status = 'unknown';
+        if (total === 0) status = 'unknown';
+        else if (finished === 0) status = 'uploaded';
+        else if (finished >= total) status = 'processed';
+        else status = 'processing';
+
         return {
           ...batch,
-          status: statusResult ? statusResult.status : (batch.status || 'Unknown'),
-          stats: { ...sourceStats, finished },
+          status,
+          stats: { ...stats, finished },
         };
       });
     } catch (error) {
-      console.error('Error fetching statuses:', error);
+      console.error('Error deriving statuses:', error);
       return batches || [];
     }
   }
