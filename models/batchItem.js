@@ -20,11 +20,17 @@ const BatchItemSchema = new mongoose.Schema({
   // Per-item error note (if processing failed)
   error: { type: String, required: false, default: '' },
 
+  // Mark rows skipped due to short-query validation.
+  shortQuery: { type: Boolean, required: false, default: false },
+
   
 }, {
   timestamps: true,
   versionKey: false,
   id: false,
 });
+
+// Batch stats and retrieval always scope by `batch`, so index it explicitly.
+BatchItemSchema.index({ batch: 1 });
 
 export const BatchItem = mongoose.models.BatchItem || mongoose.model('BatchItem', BatchItemSchema);
