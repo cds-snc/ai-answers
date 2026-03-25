@@ -4,6 +4,8 @@ import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
+const COUNT_MAX_TIME_MS = 20000;
+
 async function batchStatsHandler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ message: 'Method Not Allowed' });
 
@@ -22,59 +24,31 @@ async function batchStatsHandler(req, res) {
     
     if (!batch) return res.status(404).json({ message: 'Batch not found' });
 
-    // Coerce batch._id to ObjectId when possible to avoid type mismatches
-    let batchObjectId = batch._id;
-    try {
-      if (!mongoose.Types.ObjectId.isValid(batchObjectId)) {
-        batchObjectId = mongoose.Types.ObjectId(String(batchObjectId));
-      }
-    } catch (e) {
-      // leave as-is if coercion fails
-    }
-
-    // Use aggregation to compute totals in a single DB roundtrip.
-    // Match using stringified comparison so the pipeline is robust to ObjectId vs string storage.
+    // Query by both ObjectId and string batch IDs to stay compatible with any
+    // legacy rows, but keep the predicate index-friendly.
     const batchIdString = String(batch._id);
-    const agg = await BatchItem.aggregate([
-      { $match: { $expr: { $eq: [ { $toString: '$batch' }, batchIdString ] } } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          processed: {
-            $sum: {
-              $cond: [
-                { $and: [ { $ne: [ { $ifNull: ['$chat', null] }, null ] }, { $ne: [ { $ifNull: ['$chat', ''] }, '' ] } ] },
-                1,
-                0,
-              ],
-            },
-          },
-          failed: {
-            $sum: {
-              $cond: [
-                { $and: [ { $ne: [ { $ifNull: ['$error', null] }, null ] }, { $ne: [ { $ifNull: ['$error', ''] }, '' ] } ] },
-                1,
-                0,
-              ],
-            },
-          },
-          skipped: { $sum: { $cond: [ { $eq: ['$shortQuery', true] }, 1, 0 ] } },
-        },
-      },
+    const batchFilter = { batch: { $in: [batch._id, batchIdString] } };
+    const countOptions = { maxTimeMS: COUNT_MAX_TIME_MS };
+    const collection = BatchItem.collection;
+
+    const [total, processed, failed, skipped] = await Promise.all([
+      collection.countDocuments(batchFilter, countOptions),
+      collection.countDocuments({ ...batchFilter, chat: { $nin: [null, ''] } }, countOptions),
+      collection.countDocuments({ ...batchFilter, error: { $nin: [null, ''] } }, countOptions),
+      collection.countDocuments({ ...batchFilter, shortQuery: true }, countOptions),
     ]);
 
-    const counts = (agg && agg[0]) ? agg[0] : { total: 0, processed: 0, failed: 0, skipped: 0 };
-    const total = counts.total || 0;
-    const processed = counts.processed || 0;
-    const failed = counts.failed || 0;
-    const skipped = counts.skipped || 0;
     const finished = Math.min(total, processed + failed);
 
-    console.log(`[batch-stats] Counts(agg): total=${total} processed=${processed} failed=${failed} skipped=${skipped} finished=${finished}`);
+    console.log(`[batch-stats] Counts: total=${total} processed=${processed} failed=${failed} skipped=${skipped} finished=${finished}`);
 
   return res.status(200).json({ batchId: String(batch._id), workflow: batch.workflow || 'Default', total, processed, failed, skipped, finished });
   } catch (err) {
+    const isTimeout = err?.codeName === 'MaxTimeMSExpired' || err?.code === 50;
+    if (isTimeout) {
+      console.error(`[batch-stats] Query timed out for batchId=${batchId}`);
+      return res.status(503).json({ message: 'Stats query timed out, please retry' });
+    }
     console.error('Error computing batch stats:', err);
     return res.status(500).json({ message: 'Failed to compute stats', error: err.message });
   }
