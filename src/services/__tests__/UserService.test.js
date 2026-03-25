@@ -78,9 +78,8 @@ describe('UserService', () => {
 
             const result = await UserService.delete(userId);
 
-            expect(AuthService.fetch).toHaveBeenCalledWith('/api/user/user-users', {
-                method: 'DELETE',
-                body: JSON.stringify({ userId })
+            expect(AuthService.fetch).toHaveBeenCalledWith('/api/user/user-users?userId=123', {
+                method: 'DELETE'
             });
             expect(result).toEqual({ message: 'User deleted' });
         });
