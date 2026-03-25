@@ -47,7 +47,7 @@ async function usersHandler(req, res) {
 
         case 'DELETE':
             try {
-                const { userId } = req.body;
+                const userId = req.query.userId;
                 if (!userId || typeof userId !== 'string') {
                     return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
