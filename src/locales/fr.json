@@ -894,7 +894,9 @@
       "error": "Échec de la réinitialisation du mot de passe",
       "invalid": "Lien de réinitialisation invalide",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-      "passwordMismatch": "Les mots de passe ne correspondent pas"
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "lockedOut": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
+      "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
   },
   "users": {

@@ -1,3 +1,20 @@
+/**
+ * Password reset flow — Step 1 of 2 (this file)
+ *
+ * 1. User enters their email on ResetRequestPage and submits.
+ * 2. This handler (auth-send-reset) generates a per-user TOTP secret,
+ *    derives a 6-digit code from it, and emails a reset link via GC Notify:
+ *    /{lang}/reset-complete?email={email}&code={code}
+ * 3. User clicks the link, landing on ResetCompletePage with email and
+ *    code pre-filled from the URL query params.
+ * 4. User enters a new password and submits → handled by
+ *    auth-reset-password.js (Step 2).
+ *
+ * Security controls:
+ * - Rate limited: 3 requests per 15 min per IP+email (auth-rate-limiter.js)
+ * - Fresh TOTP secret generated on each request (invalidates prior codes)
+ * - Generic response regardless of whether the email exists
+ */
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import GCNotifyService from '../../services/GCNotifyService.js';
@@ -12,30 +29,25 @@ const sendResetHandler = async (req, res) => {
       return res.status(400).json({ success: false, message: 'email required' });
     }
 
-    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request for: ${email}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request`);
 
     await dbConnect();
 
-    // Find user and ensure they have a resetPasswordSecret
+    // Find user — generic response regardless to prevent enumeration
     let user = await User.findOne({ email: String(email).toLowerCase().trim() });
 
     if (!user) {
       // Generic response for security - don't reveal if user exists
-      console.warn(`[auth-send-reset][${os.hostname()}] No user found with email: ${email}`);
+      console.warn(`[auth-send-reset][${os.hostname()}] Reset requested for unknown account`);
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
-    // Generate or use existing resetPasswordSecret
-    if (!user.resetPasswordSecret) {
-      const secret = speakeasy.generateSecret({ length: 32 });
-      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-
-      user.resetPasswordSecret = secret.base32;
-      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-      await user.save();
-    } else {
-      console.debug(`[auth-send-reset][${os.hostname()}] Using existing resetPasswordSecret for user`);
-    }
+    // Always generate a fresh secret on each reset request (invalidates prior codes)
+    const secret = speakeasy.generateSecret({ length: 32 });
+    console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
+    user.resetPasswordSecret = secret.base32;
+    user.resetPasswordAttempts = 0;
+    await user.save();
 
     // Generate TOTP code from the secret (in-memory, no DB read!)
     const code = speakeasy.totp({
@@ -52,7 +64,7 @@ const sendResetHandler = async (req, res) => {
     const lang = req.body.lang || (req.headers['accept-language']?.includes('fr') ? 'fr' : 'en');
     const resetLink = `${frontendUrl}/${lang}/reset-complete?email=${encodeURIComponent(email)}&code=${code}`;
 
-    console.debug(`[auth-send-reset][${os.hostname()}] Final Reset Link: ${resetLink}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Reset link generated`);
 
     // Send email via GC Notify
     const templateId = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID;
