@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.116.1](https://github.com/cds-snc/ai-answers/compare/v1.116.0...v1.116.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* update to require auth ([4b37e06](https://github.com/cds-snc/ai-answers/commit/4b37e067034a97ef114da83621dcf823b8eba55b))
+
+
+### Performance Improvements
+
+* optimize batch-stats endpoint with indexed queries and timeout … ([cc5528f](https://github.com/cds-snc/ai-answers/commit/cc5528f1370cb695945331b07f7e56ff0cf6033e))
+* optimize batch-stats endpoint with indexed queries and timeout guards ([7bb4e79](https://github.com/cds-snc/ai-answers/commit/7bb4e79bbbf6bd0f97703936e31f094830acced9))
+
 ## [1.116.0](https://github.com/cds-snc/ai-answers/compare/v1.115.1...v1.116.0) (2026-03-25)
 
 
