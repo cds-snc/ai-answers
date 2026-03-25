@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.116.0](https://github.com/cds-snc/ai-answers/compare/v1.115.1...v1.116.0) (2026-03-25)
+
+
+### Features
+
+* missing locale ([45d896b](https://github.com/cds-snc/ai-answers/commit/45d896bcc2cc1a7542f6ae5988b92fcc865f83b8))
+* missing locale ([15dc16d](https://github.com/cds-snc/ai-answers/commit/15dc16dbc8a0451a7eaeb3f4b20e8c24724b309d))
+
+
+### Bug Fixes
+
+* pass userId as query param on DELETE user to fix Akamai 400s ([06c052c](https://github.com/cds-snc/ai-answers/commit/06c052c07e3a40024bf7ad7df42c9397ee248d70))
+* pass userId as query param on DELETE user to fix Akamai 400s ([fe7c7cd](https://github.com/cds-snc/ai-answers/commit/fe7c7cdbe86c7bb5754e6fc6a7d114e955b851ce))
+
 ## [1.115.1](https://github.com/cds-snc/ai-answers/compare/v1.115.0...v1.115.1) (2026-03-24)
 
 
