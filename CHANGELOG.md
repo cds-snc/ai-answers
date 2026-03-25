@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.116.2](https://github.com/cds-snc/ai-answers/compare/v1.116.1...v1.116.2) (2026-03-25)
+
+
+### Bug Fixes
+
+* scope batch-list to logged-in user and inline stats to eliminate N+1 requests ([79d0f0c](https://github.com/cds-snc/ai-answers/commit/79d0f0c8603cab16f400ff1ebbf8246be7975ea6))
+* scope batch-list to logged-in user and inline stats to eliminate… ([8778c6d](https://github.com/cds-snc/ai-answers/commit/8778c6d09b0c8d1a3525d2ee98e71b70b61855b0))
+
 ## [1.116.1](https://github.com/cds-snc/ai-answers/compare/v1.116.0...v1.116.1) (2026-03-25)
 
 
