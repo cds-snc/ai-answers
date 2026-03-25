@@ -9,7 +9,6 @@ import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../constants/UserFeedbackOpti
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
-// Colours
 const COLOURS = {
   correct: '#2e7d32',
   needsImprovement: '#f9a825',
@@ -18,18 +17,12 @@ const COLOURS = {
   harmful: '#b71c1c',
   yes: '#1565c0',
   no: '#b0bec5',
-  bar: '#1565c0',
 };
 
 const QUALITY_COLOURS = [
-  COLOURS.correct,
-  COLOURS.needsImprovement,
-  COLOURS.hasError,
-  COLOURS.hasCitationError,
-  COLOURS.harmful,
+  '#2e7d32', '#f9a825', '#e65100', '#bf360c', '#b71c1c',
 ];
 
-// Reverse map: known label string → score (for legacy records)
 const LABEL_TO_SCORE = (() => {
   const map = {};
   ['YES', 'NO'].forEach(type => {
@@ -71,14 +64,13 @@ const groupByScore = (reasons, otherScore) => {
 const today = () => new Date().toISOString().split('T')[0];
 
 // Update trial dates here when confirmed
-const DATE_PERIODS = [
-  { id: 'allTime',  startDate: '2024-01-01',   endDate: today() },
-  { id: 'trial1',   startDate: '2024-01-01',   endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'trial2',   startDate: '2024-01-01',   endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'trial3',   startDate: '2024-01-01',   endDate: '2024-01-01' }, // TODO: update dates
+const TRIAL_PERIODS = [
+  { id: 'trial1', startDate: '2024-01-01', endDate: '2024-01-01' }, // TODO: update dates
+  { id: 'trial2', startDate: '2024-01-01', endDate: '2024-01-01' }, // TODO: update dates
+  { id: 'trial3', startDate: '2024-01-01', endDate: '2024-01-01' }, // TODO: update dates
+  { id: 'custom', startDate: null, endDate: null },
 ];
 
-// KPI stat card
 const StatCard = ({ label, value, sub }) => (
   <div style={{
     background: '#fff',
@@ -89,14 +81,13 @@ const StatCard = ({ label, value, sub }) => (
     minWidth: 160,
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   }}>
-    <div style={{ fontSize: 13, color: '#666', marginBottom: 6, letterSpacing: '0.02em' }}>{label}</div>
+    <div style={{ fontSize: 13, color: '#666', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
     <div style={{ fontSize: 42, fontWeight: 700, color: '#1565c0', lineHeight: 1 }}>{value}</div>
     {sub && <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>{sub}</div>}
   </div>
 );
 
-// Donut chart with a big label in the centre
-const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, footer, height = 260 }) => (
+const DonutCard = ({ title, data, colours, centreValue, centreLabel, height = 260 }) => (
   <div style={{
     background: '#fff',
     border: '1px solid #e0e0e0',
@@ -106,20 +97,11 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, f
     minWidth: 280,
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   }}>
-    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: subtitle ? 4 : 12, color: '#333' }}>{title}</div>
-    {subtitle && <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>{subtitle}</div>}
+    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: '#333' }}>{title}</div>
     <div style={{ position: 'relative' }}>
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={70}
-            outerRadius={100}
-            dataKey="value"
-            paddingAngle={2}
-          >
+          <Pie data={data} cx="50%" cy="50%" innerRadius={70} outerRadius={100} dataKey="value" paddingAngle={2}>
             {data.map((entry, i) => (
               <Cell key={entry.name} fill={colours[i % colours.length]} />
             ))}
@@ -129,27 +111,17 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, f
         </PieChart>
       </ResponsiveContainer>
       <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -68%)',
-        textAlign: 'center',
-        pointerEvents: 'none',
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -68%)', textAlign: 'center', pointerEvents: 'none',
       }}>
         <div style={{ fontSize: 28, fontWeight: 700, color: '#1565c0', lineHeight: 1 }}>{centreValue}</div>
         <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{centreLabel}</div>
       </div>
     </div>
-    {footer && (
-      <div style={{ textAlign: 'center', fontSize: 13, color: '#666', marginTop: 4, borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
-        {footer}
-      </div>
-    )}
   </div>
 );
 
-// Horizontal bar chart card
-const HBarCard = ({ title, data, height, colour = COLOURS.bar }) => (
+const HBarCard = ({ title, data, colour = '#1565c0' }) => (
   <div style={{
     background: '#fff',
     border: '1px solid #e0e0e0',
@@ -158,7 +130,7 @@ const HBarCard = ({ title, data, height, colour = COLOURS.bar }) => (
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   }}>
     <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 16, color: '#333' }}>{title}</div>
-    <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * 40)}>
+    <ResponsiveContainer width="100%" height={Math.max(200, data.length * 40)}>
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" tick={{ fontSize: 12 }} />
@@ -174,81 +146,81 @@ const initialState = {
   totalQuestions: 0,
   totalQuestionsEn: 0,
   totalQuestionsFr: 0,
-  totalConversations: 0,
-  sessionsByQuestionCount: {
-    singleQuestion: { total: 0 },
-    twoQuestions: { total: 0 },
-    threeQuestions: { total: 0 },
-  },
   expertScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 } },
   publicFeedbackTotals: { totalQuestionsWithFeedback: 0, yes: 0, no: 0 },
   publicFeedbackReasons: { yes: {}, no: {} },
-  byDepartment: {},
 };
 
-const ExecDashboard = ({ lang = 'en' }) => {
+const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [periodId, setPeriodId] = useState('allTime');
+  const [periodId, setPeriodId] = useState('trial1');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState(today());
+  const [department, setDepartment] = useState('');
+  const [departments, setDepartments] = useState([]);
   const [metrics, setMetrics] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
-  const fetchAll = useCallback(async (start, end) => {
+  // Fetch department list on mount using a wide range
+  useEffect(() => {
+    MetricsService.getDepartmentMetrics({ startDate: '2024-01-01', endDate: today() })
+      .then(data => {
+        const depts = Object.keys(data?.byDepartment || {})
+          .filter(d => d)
+          .sort();
+        setDepartments(depts);
+        if (depts.length > 0) setDepartment(depts[0]);
+      })
+      .catch(() => {});
+  }, []);
+
+  const getDateRange = useCallback((pid) => {
+    if (pid === 'custom') return { startDate: customStart, endDate: customEnd };
+    const period = TRIAL_PERIODS.find(p => p.id === pid);
+    return { startDate: period.startDate, endDate: period.endDate };
+  }, [customStart, customEnd]);
+
+  const fetchAll = useCallback(async (pid, dept) => {
+    const { startDate, endDate } = getDateRange(pid);
+    if (!startDate || !endDate || !dept) return;
+
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
 
     setLoading(true);
     setError(null);
-    const filters = { startDate: start, endDate: end };
+    const filters = { startDate, endDate, department: dept };
 
     try {
-      const [usage, session, expert, publicFb, dept] = await Promise.all([
+      const [usage, session, expert, publicFb] = await Promise.all([
         MetricsService.getUsageMetrics(filters, signal),
         MetricsService.getSessionMetrics(filters, signal),
         MetricsService.getExpertMetrics(filters, signal),
         MetricsService.getPublicFeedbackMetrics(filters, signal),
-        MetricsService.getDepartmentMetrics(filters, signal),
       ]);
       if (!signal.aborted) {
-        setMetrics({ ...initialState, ...usage, ...session, ...expert, ...publicFb, ...dept });
+        setMetrics({ ...initialState, ...usage, ...session, ...expert, ...publicFb });
       }
     } catch (err) {
-      if (!signal.aborted) {
-        setError(err.message || t('execDashboard.error'));
-      }
+      if (!signal.aborted) setError(err.message || t('partnerDashboard.error'));
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [t]);
+  }, [getDateRange, t]);
 
   useEffect(() => {
-    const period = DATE_PERIODS.find(p => p.id === periodId) || DATE_PERIODS[0];
-    fetchAll(period.startDate, period.endDate);
+    if (department) fetchAll(periodId, department);
     return () => { if (abortRef.current) abortRef.current.abort(); };
-  }, [periodId, fetchAll]);
+  }, [periodId, department, fetchAll]);
 
-  const handlePeriodChange = (e) => setPeriodId(e.target.value);
+  const handleApplyCustom = () => {
+    if (customStart && customEnd) fetchAll('custom', department);
+  };
 
   // --- Derived data ---
-
-  // Session engagement derived data
-  const totalConversations = metrics.totalConversations || 0;
-  const totalQuestions = metrics.totalQuestions || 0;
-  const avgPerConversation = totalConversations > 0
-    ? (totalQuestions / totalConversations).toFixed(1)
-    : null;
-  const sq = metrics.sessionsByQuestionCount || {};
-  const sessionDepthData = totalConversations > 0 ? [
-    { name: t('execDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
-    { name: t('execDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
-    { name: t('execDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
-  ].filter(d => d.value > 0) : [];
-
-  // Partner count — departments with at least 1 expert evaluation
-  const partnerCount = Object.values(metrics.byDepartment || {})
-    .filter(d => (d.expertScored?.total || 0) > 0).length;
 
   const expertTotal = metrics.expertScored?.total?.total || 0;
   const expertCorrect = metrics.expertScored?.correct?.total || 0;
@@ -272,51 +244,114 @@ const ExecDashboard = ({ lang = 'en' }) => {
     { name: t('metrics.dashboard.userScored.unhelpful'), value: pfNo },
   ] : [];
 
-  const yesReasons = useMemo(() => {
-    const raw = metrics.publicFeedbackReasons?.yes || {};
-    return groupByScore(raw, YES_OTHER_SCORE);
-  }, [metrics.publicFeedbackReasons]);
+  const yesReasons = useMemo(() => groupByScore(metrics.publicFeedbackReasons?.yes || {}, YES_OTHER_SCORE), [metrics.publicFeedbackReasons]);
 
   const yesReasonsData = useMemo(() => {
     const localeFile = lang === 'fr' ? frLocale : enLocale;
     return Object.entries(yesReasons)
       .map(([scoreKey, counts]) => {
         const id = SCORE_TO_KEY[parseInt(scoreKey, 10)];
-        const label = id
-          ? (localeFile.homepage?.publicFeedback?.yes?.options?.[id] || id)
-          : scoreKey;
+        const label = id ? (localeFile.homepage?.publicFeedback?.yes?.options?.[id] || id) : scoreKey;
         return { name: label, value: counts.total };
       })
       .filter(d => d.value > 0)
       .sort((a, b) => b.value - a.value);
   }, [yesReasons, lang]);
 
-  const departmentData = useMemo(() => {
-    return Object.entries(metrics.byDepartment || {})
-      .map(([dept, data]) => ({ name: dept, value: data.total || 0 }))
-      .filter(d => d.value > 0 && d.name)
-      .sort((a, b) => b.value - a.value);
-  }, [metrics.byDepartment]);
+  const isCustom = periodId === 'custom';
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
-      {/* Period selector */}
-      <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label htmlFor="exec-period" style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-          {t('execDashboard.filter.period')}
-        </label>
-        <select
-          id="exec-period"
-          value={periodId}
-          onChange={handlePeriodChange}
-          disabled={loading}
-          style={{ padding: '7px 12px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14, minWidth: 200 }}
-        >
-          {DATE_PERIODS.map(p => (
-            <option key={p.id} value={p.id}>{t(`execDashboard.filter.periods.${p.id}`)}</option>
-          ))}
-        </select>
-        {loading && <span style={{ fontSize: 13, color: '#888' }}>{t('execDashboard.filter.loading')}</span>}
+      {/* Filters */}
+      <div style={{
+        background: '#f5f7fa',
+        border: '1px solid #e0e0e0',
+        borderRadius: 8,
+        padding: '16px 20px',
+        marginBottom: 28,
+        display: 'flex',
+        alignItems: 'flex-end',
+        gap: 20,
+        flexWrap: 'wrap',
+      }}>
+        {/* Department */}
+        <div>
+          <label htmlFor="partner-dept" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+            {t('partnerDashboard.filter.department')}
+          </label>
+          <select
+            id="partner-dept"
+            value={department}
+            onChange={e => setDepartment(e.target.value)}
+            disabled={loading}
+            style={{ padding: '7px 12px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14, minWidth: 180 }}
+          >
+            {departments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+
+        {/* Period */}
+        <div>
+          <label htmlFor="partner-period" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+            {t('partnerDashboard.filter.period')}
+          </label>
+          <select
+            id="partner-period"
+            value={periodId}
+            onChange={e => setPeriodId(e.target.value)}
+            disabled={loading}
+            style={{ padding: '7px 12px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14, minWidth: 160 }}
+          >
+            {TRIAL_PERIODS.map(p => (
+              <option key={p.id} value={p.id}>{t(`partnerDashboard.filter.periods.${p.id}`)}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Custom date inputs */}
+        {isCustom && (
+          <>
+            <div>
+              <label htmlFor="partner-start" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                {t('partnerDashboard.filter.startDate')}
+              </label>
+              <input
+                id="partner-start"
+                type="date"
+                value={customStart}
+                max={customEnd}
+                onChange={e => setCustomStart(e.target.value)}
+                style={{ padding: '6px 10px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14 }}
+              />
+            </div>
+            <div>
+              <label htmlFor="partner-end" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                {t('partnerDashboard.filter.endDate')}
+              </label>
+              <input
+                id="partner-end"
+                type="date"
+                value={customEnd}
+                min={customStart}
+                onChange={e => setCustomEnd(e.target.value)}
+                style={{ padding: '6px 10px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14 }}
+              />
+            </div>
+            <button
+              onClick={handleApplyCustom}
+              disabled={loading || !customStart || !customEnd}
+              style={{
+                padding: '7px 20px', background: '#1565c0', color: '#fff',
+                border: 'none', borderRadius: 4, fontSize: 14, fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {t('partnerDashboard.filter.apply')}
+            </button>
+          </>
+        )}
+
+        {loading && <span style={{ fontSize: 13, color: '#888', alignSelf: 'center' }}>{t('partnerDashboard.filter.loading')}</span>}
       </div>
 
       {error && (
@@ -325,106 +360,60 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Row 1: Engagement donut + partner count */}
+      {/* KPI cards */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        {/* Engagement donut */}
-        <div style={{ flex: 2, minWidth: 280 }}>
-          <DonutCard
-            title={t('execDashboard.charts.engagementTitle')}
-            subtitle={t('execDashboard.charts.engagementSubtitle')}
-            data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-            colours={sessionDepthData.length > 0 ? ['#b0bec5', '#1565c0', '#0d47a1'] : ['#e0e0e0']}
-            centreValue={avgPerConversation !== null ? `${avgPerConversation}×` : '—'}
-            centreLabel={t('execDashboard.charts.engagementCentre')}
-            footer={`${totalQuestions.toLocaleString()} ${t('execDashboard.charts.questions')} · ${totalConversations.toLocaleString()} ${t('execDashboard.charts.conversations')}`}
-          />
-        </div>
-
-        {/* Partner count card */}
-        <div style={{
-          flex: 1,
-          minWidth: 180,
-          background: '#fff',
-          border: '1px solid #e0e0e0',
-          borderRadius: 8,
-          padding: '28px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}>
-          <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-            {t('execDashboard.kpi.partnerCount')}
-          </div>
-          <div style={{ fontSize: 56, fontWeight: 700, color: '#1565c0', lineHeight: 1 }}>
-            {partnerCount}
-          </div>
-          <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
-            {t('execDashboard.kpi.partnerCountSub')}
-          </div>
-        </div>
-
-        {/* Evaluated + feedback stat cards */}
-        <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <StatCard
-            label={t('execDashboard.kpi.evaluated')}
-            value={expertTotal.toLocaleString()}
-            sub={t('execDashboard.kpi.evaluatedSub', { pct: expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0 })}
-          />
-          <StatCard
-            label={t('execDashboard.kpi.feedbackReceived')}
-            value={pfTotal.toLocaleString()}
-          />
-        </div>
+        <StatCard
+          label={t('partnerDashboard.kpi.questionsAsked')}
+          value={metrics.totalQuestions.toLocaleString()}
+          sub={t('partnerDashboard.kpi.questionsSub', { en: metrics.totalQuestionsEn?.toLocaleString() || 0, fr: metrics.totalQuestionsFr?.toLocaleString() || 0 })}
+        />
+        <StatCard
+          label={t('partnerDashboard.kpi.evaluated')}
+          value={expertTotal.toLocaleString()}
+          sub={t('partnerDashboard.kpi.evaluatedSub', { pct: expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0 })}
+        />
+        <StatCard
+          label={t('partnerDashboard.kpi.feedbackReceived')}
+          value={pfTotal.toLocaleString()}
+        />
       </div>
 
-      {/* Row 2: Quality donut + Satisfaction donut */}
+      {/* Donuts */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <DonutCard
-          title={t('execDashboard.charts.accuracyTitle')}
-          data={qualityData.length > 0 ? qualityData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+          title={t('partnerDashboard.charts.accuracyTitle')}
+          data={qualityData.length > 0 ? qualityData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
           colours={qualityData.length > 0 ? QUALITY_COLOURS : ['#e0e0e0']}
           centreValue={accuracyPct !== null ? `${accuracyPct}%` : '—'}
-          centreLabel={t('execDashboard.charts.accuracyCentre', { total: expertTotal.toLocaleString() })}
+          centreLabel={t('partnerDashboard.charts.accuracyCentre', { total: expertTotal.toLocaleString() })}
         />
         <DonutCard
-          title={t('execDashboard.charts.satisfactionTitle')}
-          data={satisfactionData.length > 0 ? satisfactionData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+          title={t('partnerDashboard.charts.satisfactionTitle')}
+          data={satisfactionData.length > 0 ? satisfactionData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
           colours={satisfactionData.length > 0 ? [COLOURS.yes, COLOURS.no] : ['#e0e0e0']}
           centreValue={satisfactionPct !== null ? `${satisfactionPct}%` : '—'}
-          centreLabel={t('execDashboard.charts.satisfactionCentre', { total: pfTotal.toLocaleString() })}
+          centreLabel={t('partnerDashboard.charts.satisfactionCentre', { total: pfTotal.toLocaleString() })}
         />
       </div>
 
-      {/* Row 3: Yes reasons horizontal bar */}
+      {/* Yes reasons */}
       {yesReasonsData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <HBarCard
-            title={t('execDashboard.charts.yesReasonsTitle')}
+            title={t('partnerDashboard.charts.yesReasonsTitle')}
             data={yesReasonsData}
             colour='#2e7d32'
           />
         </div>
       )}
 
-      {/* Row 4: Top departments horizontal bar */}
-      {departmentData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <HBarCard
-            title={t('execDashboard.charts.departmentsTitle')}
-            data={departmentData}
-            colour={COLOURS.bar}
-          />
-        </div>
-      )}
-
       {!loading && metrics.totalQuestions === 0 && !error && (
         <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
-          {t('execDashboard.noData')}
+          {t('partnerDashboard.noData')}
         </p>
       )}
     </div>
   );
 };
 
-export default ExecDashboard;
+export default PartnerDashboard;

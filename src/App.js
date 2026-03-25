@@ -26,6 +26,7 @@ import { AuthProvider } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import ExecDashboardPage from './pages/ExecDashboardPage.js';
+import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
 import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
@@ -401,8 +402,10 @@ export default function App() {
       { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/exec-dashboard', element: <ExecDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/tableau-de-bord-executif', element: <ExecDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/exec-dashboard', element: <ExecDashboardPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/tableau-de-bord-executif', element: <ExecDashboardPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
       { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
       { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },

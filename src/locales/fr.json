@@ -339,6 +339,7 @@
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "execDashboard": "Tableau de bord exécutif",
+      "partnerDashboard": "Tableau de bord partenaire",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
@@ -1157,15 +1158,61 @@
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
     "filter": {
+      "period": "Période",
+      "loading": "Chargement...",
+      "periods": {
+        "allTime": "Tout (2024 – présent)",
+        "trial1": "Essai 1",
+        "trial2": "Essai 2",
+        "trial3": "Essai 3"
+      }
+    },
+    "kpi": {
+      "evaluated": "Évaluées par des experts",
+      "evaluatedSub": "{pct}% des questions",
+      "feedbackReceived": "Rétroactions reçues",
+      "partnerCount": "Partenaires ministériels",
+      "partnerCountSub": "ministères collaborant avec des évaluations expertes"
+    },
+    "charts": {
+      "engagementTitle": "Engagement de session",
+      "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "engagementCentre": "moy. par session",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3 questions et plus",
+      "accuracyTitle": "Qualité des réponses (évaluation experte)",
+      "accuracyCentre": "sur {total} évaluées",
+      "satisfactionTitle": "Satisfaction des utilisateurs",
+      "satisfactionCentre": "sur {total} réponses",
+      "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",
+      "departmentsTitle": "Principaux ministères par volume de questions",
+      "noData": "Aucune donnée"
+    }
+  },
+  "partnerDashboard": {
+    "title": "Tableau de bord partenaire",
+    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "noData": "Aucune donnée trouvée pour les filtres sélectionnés.",
+    "filter": {
+      "department": "Ministère",
+      "period": "Période",
       "startDate": "Date de début",
       "endDate": "Date de fin",
       "apply": "Appliquer",
-      "loading": "Chargement..."
+      "loading": "Chargement...",
+      "periods": {
+        "trial1": "Essai 1",
+        "trial2": "Essai 2",
+        "trial3": "Essai 3",
+        "custom": "Plage personnalisée"
+      }
     },
     "kpi": {
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
-      "conversations": "Conversations",
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct}% des questions",
       "feedbackReceived": "Rétroactions reçues"
@@ -1176,7 +1223,6 @@
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",
-      "departmentsTitle": "Principaux ministères par volume de questions",
       "noData": "Aucune donnée"
     }
   },
