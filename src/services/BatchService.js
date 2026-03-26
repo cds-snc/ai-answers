@@ -13,7 +13,7 @@ import SessionService from './SessionService.js';
  */
 
 const DEFAULT_RETRIES = 2;
-const DEFAULT_CONCURRENCY = 8; // default sequential to avoid provider rate limits
+const DEFAULT_CONCURRENCY = 3; // keep low to avoid Akamai connection timeouts on long-lived SSE streams
 
 class BatchService {
   constructor() {
