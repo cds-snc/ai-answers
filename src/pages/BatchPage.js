@@ -76,7 +76,6 @@ const BatchPage = ({ lang = 'en' }) => {
         // Prefer the workflow explicitly provided by the caller (restart), fall back to the persisted value
         workflow: workflowParam || persisted?.workflow || 'Default',
         batchId,
-        concurrency: 8, 
       }).then(async ({ summary }) => {
         try {
           // Preserve batch metadata when updating final status, exclude items and _id
