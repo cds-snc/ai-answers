@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.116.3](https://github.com/cds-snc/ai-answers/compare/v1.116.2...v1.116.3) (2026-03-26)
+
+
+### Miscellaneous Chores
+
+* **deps:** bump picomatch from 2.3.1 to 2.3.2 ([1131fda](https://github.com/cds-snc/ai-answers/commit/1131fdaad39cde0571dfd00e8d0d27cae8fc45e1))
+* **deps:** bump picomatch from 2.3.1 to 2.3.2 ([6160480](https://github.com/cds-snc/ai-answers/commit/6160480d45597dbddb16885f49bd52f7f76dd70f))
+
 ## [1.116.2](https://github.com/cds-snc/ai-answers/compare/v1.116.1...v1.116.2) (2026-03-25)
 
 
