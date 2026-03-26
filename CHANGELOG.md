@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.116.4](https://github.com/cds-snc/ai-answers/compare/v1.116.3...v1.116.4) (2026-03-26)
+
+
+### Bug Fixes
+
+* update cra scenario ([6e3c142](https://github.com/cds-snc/ai-answers/commit/6e3c14297b17d3b72181be0daab13bdbbc5dd76d))
+* update cra scenario ([65a648b](https://github.com/cds-snc/ai-answers/commit/65a648be8aa129b008987c993f5dbdc6f3e6c4a5))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump convict from 6.2.4 to 6.2.5 in /server ([f10d6bb](https://github.com/cds-snc/ai-answers/commit/f10d6bbfc540a910ab14ee65952ed16d6b650f61))
+* **deps:** bump convict from 6.2.4 to 6.2.5 in /server ([33fe8e9](https://github.com/cds-snc/ai-answers/commit/33fe8e90a475c947bb0da3b9ba4ca4c5ac57336c))
+
 ## [1.116.3](https://github.com/cds-snc/ai-answers/compare/v1.116.2...v1.116.3) (2026-03-26)
 
 
