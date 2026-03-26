@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.116.5](https://github.com/cds-snc/ai-answers/compare/v1.116.4...v1.116.5) (2026-03-26)
+
+
+### Bug Fixes
+
+* add VDP ([67989e3](https://github.com/cds-snc/ai-answers/commit/67989e3d43cb16fc91d963aaddef4f083adc725c))
+* add VDP ([044b1a5](https://github.com/cds-snc/ai-answers/commit/044b1a51eaf0044b5b55cc54f064bd9f7d6d5780))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump convict from 6.2.4 to 6.2.5 ([03a8de5](https://github.com/cds-snc/ai-answers/commit/03a8de58b47be12906a7632553afac5580c71ac9))
+
 ## [1.116.4](https://github.com/cds-snc/ai-answers/compare/v1.116.3...v1.116.4) (2026-03-26)
 
 
