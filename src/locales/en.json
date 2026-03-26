@@ -339,6 +339,8 @@
       "eval": "Evaluation administration",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
+      "execDashboard": "Executive dashboard",
+      "partnerDashboard": "Partner dashboard",
       "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
@@ -1151,6 +1153,79 @@
     "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages"
+  },
+  "execDashboard": {
+    "title": "Executive dashboard",
+    "error": "Failed to load data. Please try again.",
+    "noData": "No data found for the selected date range.",
+    "filter": {
+      "period": "Time period",
+      "loading": "Loading...",
+      "periods": {
+        "allTime": "All time (2024 – present)",
+        "trial1": "Trial 1",
+        "trial2": "Trial 2",
+        "trial3": "Trial 3"
+      }
+    },
+    "kpi": {
+      "evaluated": "Expert evaluated",
+      "evaluatedSub": "{pct}% of questions",
+      "feedbackReceived": "Feedback received",
+      "partnerCount": "Departmental partners",
+      "partnerCountSub": "departments collaborating with expert evaluations"
+    },
+    "charts": {
+      "engagementTitle": "Session engagement",
+      "engagementSubtitle": "How many questions users ask per conversation",
+      "engagementCentre": "avg per session",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3+ questions",
+      "accuracyTitle": "Answer quality (expert evaluation)",
+      "accuracyCentre": "of {total} evaluated",
+      "satisfactionTitle": "User satisfaction",
+      "satisfactionCentre": "of {total} responses",
+      "yesReasonsTitle": "Why users found it helpful",
+      "departmentsTitle": "Top departments by question volume",
+      "noData": "No data"
+    }
+  },
+  "partnerDashboard": {
+    "title": "Partner dashboard",
+    "error": "Failed to load data. Please try again.",
+    "noData": "No data found for the selected filters.",
+    "filter": {
+      "department": "Department",
+      "period": "Time period",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "apply": "Apply",
+      "loading": "Loading...",
+      "periods": {
+        "trial1": "Trial 1",
+        "trial2": "Trial 2",
+        "trial3": "Trial 3",
+        "custom": "Custom range"
+      }
+    },
+    "kpi": {
+      "questionsAsked": "Questions asked",
+      "questionsSub": "EN: {en} · FR: {fr}",
+      "evaluated": "Expert evaluated",
+      "evaluatedSub": "{pct}% of questions",
+      "feedbackReceived": "Feedback received"
+    },
+    "charts": {
+      "accuracyTitle": "Answer quality (expert evaluation)",
+      "accuracyCentre": "of {total} evaluated",
+      "satisfactionTitle": "User satisfaction",
+      "satisfactionCentre": "of {total} responses",
+      "yesReasonsTitle": "Why users found it helpful",
+      "noData": "No data"
+    }
   },
   "metrics": {
     "title": "Metrics dashboard",
