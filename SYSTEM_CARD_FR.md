@@ -82,7 +82,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 **Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### Détails des modèles IA
-- **Modèles de production** : Famille Azure OpenAI GPT-4.1 (configurable par étape de pipeline et variante de graphe)
+- **Modèles de production** : Famille Azure OpenAI GPT-5.1 (configurable par étape de pipeline et variante de graphe) ; les agents d'évaluation utilisent GPT-4.1-mini
 - **Température** : 0 (réponses déterministes)
 - **Ingénierie d'invite** : Invites de chaîne de pensée avec sortie structurée, invite de département tirée au besoin
 - **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs IA, testé avec GPT et Claude
