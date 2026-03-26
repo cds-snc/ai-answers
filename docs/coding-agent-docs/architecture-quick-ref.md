@@ -84,7 +84,7 @@ const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenar
 
 Key exports: `getModelConfig(provider, modelName)`, `getEmbeddingModelConfig(provider, modelName)`
 
-Providers: Azure OpenAI (GPT-4.1, GPT-5-mini), OpenAI, Anthropic Claude. Defaults: temperature 0.0, maxTokens 1024, timeout 60s.
+Providers: Azure OpenAI (GPT-5.1, GPT-5-mini). Initial configuration only (no graph workflow): Anthropic Claude via Bedrock, Cohere via Bedrock. Defaults: temperature 0.0, maxTokens 1024, timeout 60s.
 
 ## Data Models (`models/`)
 

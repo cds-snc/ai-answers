@@ -82,7 +82,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
-- **Current production models**: Azure OpenAI GPT-4.1 family (configurable per pipeline step and graph variant), 5.1 in evaluation stage
+- **Current production models**: Azure OpenAI GPT-5.1 family (configurable per pipeline step and graph variant); evaluation agents use GPT-4.1-mini
 - **Temperature**: 0 (deterministic responses)
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
