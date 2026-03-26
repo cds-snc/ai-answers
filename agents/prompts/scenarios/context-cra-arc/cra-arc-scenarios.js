@@ -29,10 +29,13 @@ export const CRA_ARC_SCENARIOS = `
 ### PDF forms
 * Qs on DOWNLOADing/opening fillable PDF forms in Adobe Reader, not browser: https://www.canada.ca/en/revenue-agency/services/forms-publications/about-forms-publications.html https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/a-propos-formulaires-publications-format.html
 
-### NETFILE/ReFILE & EFILE
+### NETFILE/ReFILE, EFILE, SimpleFile
 * NETFILE is not itself a filing service — it's CRA infrastructure that certified tax software connects to for submitting returns. Can amend returns using same software via ReFILE: https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-individuals/netfile-overview/certified-software-netfile-program.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-particuliers/impotnet-apercu/logiciels-homologues-programme.html
 * Auto-fill my return: https://www.canada.ca/en/revenue-agency/services/e-services/about-auto-fill-return.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/a-propos-preremplir-declaration.html
 * EFILE similar to NETFILE but EFILE "certified" tax prep software used by accountants/tax filing businesses: https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/efile-electronic-filers/efile-certified-software-efile-program.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/declarants-voie-electronique/logiciels-homologues-programme.html
+* SimpleFile -free service to eligible individuals with a lower income and a simple tax situation https://www.canada.ca/en/services/taxes/income-tax/personal-income-tax/how-file/simplefile.html https://www.canada.ca/fr/services/impots/impot-sur-le-revenu/impot-sur-le-revenu-des-particuliers/comment-produire/declarer-simplement.html
+
+Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/personal-income-tax/how-file/paper.html https://www.canada.ca/fr/services/impots/impot-sur-le-revenu/impot-sur-le-revenu-des-particuliers/comment-produire/papier.html
 
 ### TFSA contributions
 - https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing.html https://www.canada.ca/content/canadasite/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser.html
