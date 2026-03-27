@@ -1,7 +1,7 @@
 import React from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
-import { WORKFLOWS } from '../../../config/workflows.js';
+import { WORKFLOWS } from '../../config/workflows.js';
 
 const ChatOptions = ({
   safeT,

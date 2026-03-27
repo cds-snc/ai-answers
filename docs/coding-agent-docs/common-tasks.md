@@ -47,7 +47,7 @@ Model selection is decoupled from workflow logic. Workflows (DefaultGraph, Defau
 
 1. Add the model config to `config/ai-models.js` under the appropriate provider (azure/openai)
 2. Add a `case` for the new model's `selectedAI` string in the relevant `AgentFactory.js` agent creation functions
-3. Add the model to `AVAILABLE_MODELS` in `config/workflows.js` — this automatically makes it available in the Settings, batch, and chat dropdowns
+3. Add the model to `AVAILABLE_MODELS` in `src/config/workflows.js` — this automatically makes it available in the Settings, batch, and chat dropdowns
 4. Add locale keys for the model label in both `src/locales/en.json` and `src/locales/fr.json` (under `models.*`)
 5. Update documentation:
    - `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md` — production model references

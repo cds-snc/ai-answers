@@ -3,7 +3,7 @@ import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);

@@ -5,7 +5,7 @@ import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
-import { WORKFLOWS } from '../../../config/workflows.js';
+import { WORKFLOWS } from '../../config/workflows.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);

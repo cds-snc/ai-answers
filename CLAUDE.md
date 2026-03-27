@@ -2,6 +2,7 @@
 
 ## Environment notes
 - `gh` CLI is not installed — use `WebFetch` for GitHub PR/issue details instead.
+- **React build restriction**: Files imported by frontend code (`src/`) must live inside `src/`. Never place shared config intended for UI components in `config/` (root) — use `src/config/` instead. Server-side code (`api/`, `agents/`, `services/`) can import from anywhere.
 
 ## How to work well in this codebase
 
