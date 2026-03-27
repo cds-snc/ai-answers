@@ -123,6 +123,9 @@
         "workflow": {
           "label": "Workflow:"
         },
+        "model": {
+          "label": "Model:"
+        },
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)"
         }
@@ -237,6 +240,9 @@
       },
       "workflow": {
         "label": "Workflow"
+      },
+      "model": {
+        "label": "Model"
       },
       "file": {
         "label": "Select feedback CSV file:",

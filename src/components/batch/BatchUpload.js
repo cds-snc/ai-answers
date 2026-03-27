@@ -5,7 +5,7 @@ import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
-import { WORKFLOWS } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -20,6 +20,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [batchName, setBatchName] = useState('');
   const [selectedSearch, setSelectedSearch] = useState('google');
   const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
+  const [selectedModel, setSelectedModel] = useState('openai-gpt51');
 
   const handleFileChange = (event) => {
     setError(null);
@@ -96,9 +97,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Persist an initial batch record so it shows up in the processing list (server will create BatchItems)
         const payload = {
           name: batchName || `client-batch-${Date.now()}`,
-          // AI provider is hardcoded — graph workflows override this value anyway.
-          // If a future workflow respects this field, update accordingly.
-          aiProvider: 'azure',
+          aiProvider: selectedModel,
           pageLanguage: selectedLanguage,
           searchProvider: selectedSearch,
           workflow: selectedWorkflow,
@@ -289,6 +288,26 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                 >
                   {WORKFLOWS.map(w => (
                     <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="workflow-select mrgn-bttm-20">
+              <div className="mrgn-bttm-10">
+                <label htmlFor="model" className="mrgn-bttm-10 display-block">
+                  {t('batch.upload.model.label')}
+                </label>
+                <select
+                  id="model"
+                  name="model"
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="chat-border"
+                  style={{ width: 'auto', display: 'inline-block' }}
+                >
+                  {AVAILABLE_MODELS.map(m => (
+                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
                   ))}
                 </select>
               </div>
