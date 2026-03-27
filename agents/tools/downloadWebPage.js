@@ -1,6 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import axios from "axios";
 import { Agent } from "https";
+import { validateUrlForSsrf } from './urlSafety.js';
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
@@ -54,10 +55,11 @@ function htmlToLeanMarkdown(html, baseUrl) {
 }
 
 async function downloadWebPage(url) {
+  await validateUrlForSsrf(url);
   const httpsAgent = new Agent({ rejectUnauthorized: false });
   const config = {
     httpsAgent,
-    maxRedirects: 10,
+    maxRedirects: 5,
     timeout: 5000,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
   };

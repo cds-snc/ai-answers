@@ -1,14 +1,16 @@
 import { tool } from "@langchain/core/tools";
 import axios from 'axios';
 import { Agent } from 'https';
+import { validateUrlForSsrf } from './urlSafety.js';
 
 const checkUrlStatus = async (url, chatId = 'system') => {
+    await validateUrlForSsrf(url);
     const httpsAgent = new Agent({ rejectUnauthorized: false });
 
     try {
         const response = await axios.get(url, { 
             httpsAgent, 
-            maxRedirects: 10,
+            maxRedirects: 5,
             timeout: 5000,
             headers: {
                 'User-Agent': process.env.USER_AGENT
