@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -23,6 +24,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
   const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
+
+  // Default model setting — decoupled from workflow so model upgrades are a Settings change
+  const [defaultModel, setDefaultModel] = useState('openai-gpt51');
+  const [savingDefaultModel, setSavingDefaultModel] = useState(false);
 
 
 
@@ -79,8 +84,11 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
       // Validate default workflow against known options
-      const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5OneDefaultGraph'];
+      const allowedWorkflows = WORKFLOW_VALUES;
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
+      // Load default model setting
+      const defaultModelSetting = await DataStoreService.getSetting('model.default', 'openai-gpt51');
+      setDefaultModel(defaultModelSetting || 'openai-gpt51');
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
@@ -452,7 +460,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5OneDefaultGraph'];
+                const allowedWorkflows = WORKFLOW_VALUES;
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
               } finally {
@@ -461,10 +469,33 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingDefaultWorkflow}
           >
-            <option value="DefaultGraph">DefaultGraph</option>
-            <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-            <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-            <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
+            {WORKFLOWS.map(w => (
+              <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
+            ))}
+          </select>
+
+          <label htmlFor="default-model" className="mb-200 display-block mt-400">
+            {t('settings.defaultModel.label')}
+          </label>
+          <select
+            id="default-model"
+            value={defaultModel}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setDefaultModel(v);
+              setSavingDefaultModel(true);
+              try {
+                const current = await saveAndVerify('model.default', v);
+                setDefaultModel(current || 'openai-gpt51');
+              } finally {
+                setSavingDefaultModel(false);
+              }
+            }}
+            disabled={savingDefaultModel}
+          >
+            {AVAILABLE_MODELS.map(m => (
+              <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+            ))}
           </select>
 
         </div>

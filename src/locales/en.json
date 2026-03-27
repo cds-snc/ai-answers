@@ -913,6 +913,17 @@
       "adminOnly": "Only administrators can delete users."
     }
   },
+  "workflows": {
+    "default": "Default",
+    "defaultWithVector": "Default with vector",
+    "instantAndQA": "Instant and QA"
+  },
+  "models": {
+    "gpt51": "GPT-5.1",
+    "gpt51chat": "GPT-5.1 Chat",
+    "gpt5mini": "GPT-5 Mini",
+    "azure41": "Azure GPT-4.1 (legacy)"
+  },
   "settings": {
     "title": "Settings",
     "general": {
@@ -920,6 +931,9 @@
     },
     "defaultWorkflow": {
       "label": "Default workflow"
+    },
+    "defaultModel": {
+      "label": "Default model"
     },
     "statusLabel": "Service status",
     "statuses": {

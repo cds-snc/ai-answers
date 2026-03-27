@@ -1,6 +1,7 @@
 import React from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
+import { WORKFLOWS } from '../../../config/workflows.js';
 
 const ChatOptions = ({
   safeT,
@@ -81,10 +82,9 @@ const ChatOptions = ({
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >
-                <option value="DefaultGraph">DefaultGraph</option>
-                <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-                <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
+                {WORKFLOWS.map(w => (
+                  <option key={w.value} value={w.value}>{safeT(w.labelKey)}</option>
+                ))}
               </select>
             </div>
           </div>

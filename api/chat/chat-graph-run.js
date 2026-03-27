@@ -108,16 +108,34 @@ async function handler(req, res) {
     graphName = defaultWorkflow;
   }
 
-  // Map the configuration name (e.g. 'DefaultGraph') to the internal registry name if needed
-  // (The registry uses keys like 'GenericWorkflowGraph', 'InstantAndQAGraph', etc. matching the setting values)
-  // We need to ensure the setting value maps correctly to registry keys.
-  // The SettingsService returns values like 'DefaultGraph', 'InstantAndQAGraph'.
-  // The registry expects:
-  // 'DefaultGraph' -> 'GenericWorkflowGraph' (special mapping from ChatWorkflowService legacy)
-  // 'InstantAndQAGraph' -> 'InstantAndQAGraph'
-  // 'GPT5MiniDefaultGraph' -> 'GPT5MiniDefaultGraph'
-  // 'DefaultWithVectorGraph' -> 'DefaultWithVectorGraph'
+  // Server-side Model Resolution
+  // The model.default setting decouples model choice from workflow choice.
+  // Workflows no longer need to hardcode a model — the server injects it here.
+  const defaultModel = SettingsService.get('model.default') || null;
+  if (defaultModel) {
+    if (!req.user) {
+      // Unauthenticated users: forced to use the system default model
+      input.selectedAI = defaultModel;
+    } else if (!input.selectedAI) {
+      // Authenticated users: use default model when client didn't explicitly set one
+      input.selectedAI = defaultModel;
+    }
+  }
 
+  // Legacy graph name mapping — GPT5* graphs were copies of DefaultGraph with a hardcoded model.
+  // They've been removed; map old names (from DB, localStorage, in-progress batches) to DefaultGraph
+  // and extract the implied model so behaviour is unchanged.
+  const LEGACY_MODEL_MAP = {
+    'GPT5MiniDefaultGraph': 'openai-gpt5-mini',
+    'GPT5OneDefaultGraph': 'openai-gpt51',
+    'GPT5OneChatGraph': 'openai-gpt51-chat',
+  };
+  if (LEGACY_MODEL_MAP[graphName]) {
+    input.selectedAI = input.selectedAI || LEGACY_MODEL_MAP[graphName];
+    graphName = 'DefaultGraph';
+  }
+
+  // Map configuration names to internal registry keys
   let registryName = graphName;
   if (graphName === 'DefaultGraph') {
     registryName = 'GenericWorkflowGraph';

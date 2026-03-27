@@ -913,6 +913,17 @@
       "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs."
     }
   },
+  "workflows": {
+    "default": "Par défaut",
+    "defaultWithVector": "Par défaut avec vecteur",
+    "instantAndQA": "Instantané et QR"
+  },
+  "models": {
+    "gpt51": "GPT-5.1",
+    "gpt51chat": "GPT-5.1 Chat",
+    "gpt5mini": "GPT-5 Mini",
+    "azure41": "Azure GPT-4.1 (ancien)"
+  },
   "settings": {
     "title": "Paramètres",
     "general": {
@@ -920,6 +931,9 @@
     },
     "defaultWorkflow": {
       "label": "Workflow par défaut"
+    },
+    "defaultModel": {
+      "label": "Modèle par défaut"
     },
     "statusLabel": "Statut du service",
     "statuses": {
