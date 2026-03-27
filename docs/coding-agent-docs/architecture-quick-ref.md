@@ -48,8 +48,9 @@ START → init → validate → redact → translate → contextNode → answerN
 | `DefaultGraph.js` | Primary graph |
 | `DefaultWithVectorGraph.js` | Adds vector similarity short-circuit before full run |
 | `InstantAndQAGraph.js` | Optimised for quick QA lookups via QuestionAnswerService |
-| `GPT5MiniDefaultGraph.js` | Forces `azure-gpt5-mini` (reasoning model) |
 | `registry.js` | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
+
+Model selection is decoupled from workflow — the `model.default` setting (in Settings) controls which LLM is used. The server injects the model into the graph input at request time (`chat-graph-run.js`).
 
 ## Prompt Assembly (`agents/prompts/systemPrompt.js`)
 

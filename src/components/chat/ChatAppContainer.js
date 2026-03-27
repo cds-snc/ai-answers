@@ -326,18 +326,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const loadProvider = async () => {
       if (selectedAI === null) {
         try {
-          // Use the public setting endpoint so unauthenticated clients can read the provider
-          const provider = await DataStoreService.getPublicSetting('provider', 'azure');
-          if (mounted && provider) {
-            setSelectedAI(provider);
+          // Load the default model so the chat UI reflects the system default.
+          // Falls back to the legacy provider setting if model.default isn't set yet.
+          const model = await DataStoreService.getPublicSetting('model.default', null);
+          const resolved = model || await DataStoreService.getPublicSetting('provider', 'azure');
+          if (mounted && resolved) {
+            setSelectedAI(resolved);
             try {
-              localStorage.setItem(storageKey('selectedAI'), provider);
+              localStorage.setItem(storageKey('selectedAI'), resolved);
             } catch (e) {
               // ignore storage errors
             }
           }
         } catch (err) {
-          // fallback to openai if datastore call fails
+          // fallback if datastore call fails
           if (mounted) setSelectedAI('azure');
         }
       }
