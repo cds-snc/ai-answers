@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { validateUrlForSsrf } from '../urlSafety.js';
+import { validateUrlForSsrf, isPrivateIp, ssrfBeforeRedirect } from '../urlSafety.js';
 
 // Mock dns/promises to control resolved IPs
 vi.mock('dns/promises', () => ({
@@ -10,7 +10,7 @@ import { lookup } from 'dns/promises';
 beforeEach(() => {
   lookup.mockReset();
   // Default: resolve to a safe public IP
-  lookup.mockResolvedValue({ address: '93.184.216.34' });
+  lookup.mockResolvedValue([{ address: '93.184.216.34' }]);
 });
 
 describe('validateUrlForSsrf', () => {
@@ -77,21 +77,76 @@ describe('validateUrlForSsrf', () => {
 
   describe('blocks DNS rebinding (hostname resolving to private IP)', () => {
     it('blocks hostname resolving to 127.0.0.1', async () => {
-      lookup.mockResolvedValue({ address: '127.0.0.1' });
+      lookup.mockResolvedValue([{ address: '127.0.0.1' }]);
       await expect(validateUrlForSsrf('http://evil.example.com/'))
         .rejects.toThrow('private/reserved IP');
     });
 
     it('blocks hostname resolving to metadata IP', async () => {
-      lookup.mockResolvedValue({ address: '169.254.169.254' });
+      lookup.mockResolvedValue([{ address: '169.254.169.254' }]);
       await expect(validateUrlForSsrf('http://evil.example.com/'))
         .rejects.toThrow('private/reserved IP');
     });
 
     it('blocks hostname resolving to 10.x', async () => {
-      lookup.mockResolvedValue({ address: '10.0.0.5' });
+      lookup.mockResolvedValue([{ address: '10.0.0.5' }]);
       await expect(validateUrlForSsrf('http://internal.example.com/'))
         .rejects.toThrow('private/reserved IP');
+    });
+
+    it('blocks if any DNS record is private (multi-record)', async () => {
+      lookup.mockResolvedValue([
+        { address: '93.184.216.34' },
+        { address: '10.0.0.1' },
+      ]);
+      await expect(validateUrlForSsrf('http://mixed.example.com/'))
+        .rejects.toThrow('private/reserved IP');
+    });
+  });
+
+  describe('blocks IPv4-mapped IPv6 addresses', () => {
+    it('rejects ::ffff:127.0.0.1 via isPrivateIp', () => {
+      expect(isPrivateIp('::ffff:127.0.0.1')).toBe(true);
+    });
+
+    it('rejects ::ffff:169.254.169.254 via isPrivateIp', () => {
+      expect(isPrivateIp('::ffff:169.254.169.254')).toBe(true);
+    });
+
+    it('rejects ::ffff:10.0.0.1 via isPrivateIp', () => {
+      expect(isPrivateIp('::ffff:10.0.0.1')).toBe(true);
+    });
+
+    it('allows ::ffff:93.184.216.34 via isPrivateIp', () => {
+      expect(isPrivateIp('::ffff:93.184.216.34')).toBe(false);
+    });
+
+    it('blocks hostname resolving to IPv4-mapped IPv6', async () => {
+      lookup.mockResolvedValue([{ address: '::ffff:127.0.0.1' }]);
+      await expect(validateUrlForSsrf('http://evil.example.com/'))
+        .rejects.toThrow('private/reserved IP');
+    });
+  });
+
+  describe('ssrfBeforeRedirect hook', () => {
+    it('blocks redirect to private IP', () => {
+      expect(() => ssrfBeforeRedirect({ href: 'http://169.254.169.254/latest/' }))
+        .toThrow('Blocked redirect to private/reserved IP');
+    });
+
+    it('blocks redirect to localhost', () => {
+      expect(() => ssrfBeforeRedirect({ href: 'http://localhost:8080/admin' }))
+        .toThrow('Blocked redirect to localhost');
+    });
+
+    it('blocks redirect to non-HTTP protocol', () => {
+      expect(() => ssrfBeforeRedirect({ href: 'file:///etc/passwd' }))
+        .toThrow('Blocked redirect to non-HTTP protocol');
+    });
+
+    it('allows redirect to public URL', () => {
+      expect(() => ssrfBeforeRedirect({ href: 'https://www.canada.ca/en.html' }))
+        .not.toThrow();
     });
   });
 

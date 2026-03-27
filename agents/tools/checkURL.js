@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import axios from 'axios';
 import { Agent } from 'https';
-import { validateUrlForSsrf } from './urlSafety.js';
+import { validateUrlForSsrf, ssrfBeforeRedirect } from './urlSafety.js';
 
 const checkUrlStatus = async (url, chatId = 'system') => {
     await validateUrlForSsrf(url);
@@ -14,7 +14,8 @@ const checkUrlStatus = async (url, chatId = 'system') => {
             timeout: 5000,
             headers: {
                 'User-Agent': process.env.USER_AGENT
-            }
+            },
+            beforeRedirect: ssrfBeforeRedirect,
         });
         const isLive = response.status === 200;
         if (!isLive) {
