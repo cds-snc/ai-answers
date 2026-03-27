@@ -230,13 +230,6 @@
           "url": "URL / Referring URL — optional (headers: URL, REFERRINGURL; case‑insensitive)"
         }
       },
-      "aiService": {
-        "label": "AI Service:",
-        "openai": "OpenAI",
-        "azure": "Azure OpenAI",
-        "azure-gpt51": "Azure GPT-5.1",
-        "azure-gpt51-chat": "Azure GPT-5.1 Chat"
-      },
       "language": {
         "label": "Evaluation language:",
         "english": "English",

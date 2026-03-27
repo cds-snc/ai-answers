@@ -12,7 +12,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [processing, setProcessing] = useState(false);
   // Removed unused results state
   const [error, setError] = useState(null);
-  const [selectedAI, setSelectedAI] = useState('azure');
   const [fileUploaded, setFileUploaded] = useState(false);
   const [batchId, setBatchId] = useState(null);
   const [batchStatus, setBatchStatus] = useState(null);
@@ -38,10 +37,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
     setFile(uploadedFile);
     setFileUploaded(false);
-  };
-
-  const handleAIToggle = (e) => {
-    setSelectedAI(e.target.value);
   };
 
   const handleSearchToggle = (e) => {
@@ -100,7 +95,9 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Persist an initial batch record so it shows up in the processing list (server will create BatchItems)
         const payload = {
           name: batchName || `client-batch-${Date.now()}`,
-          aiProvider: selectedAI,
+          // AI provider is hardcoded — graph workflows override this value anyway.
+          // If a future workflow respects this field, update accordingly.
+          aiProvider: 'azure',
           pageLanguage: selectedLanguage,
           searchProvider: selectedSearch,
           workflow: selectedWorkflow,
@@ -237,65 +234,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                 required
                 aria-required="true"
               />
-            </div>
-
-            <div className="ai-toggle">
-              <fieldset className="ai-toggle_fieldset">
-                <div className="ai-toggle_container">
-                  <legend className="ai-toggle_legend">{t('batch.upload.aiService.label')}</legend>
-
-                  <div className="flex-center">
-                    <input
-                      type="radio"
-                      id="chatgpt"
-                      name="ai-selection"
-                      value="openai"
-                      checked={selectedAI === 'openai'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label className="mrgn-rght-15" htmlFor="chatgpt">
-                      {t('batch.upload.aiService.openai')}
-                    </label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure"
-                      name="ai-selection"
-                      value="azure"
-                      checked={selectedAI === 'azure'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure">{t('batch.upload.aiService.azure')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure-gpt51"
-                      name="ai-selection"
-                      value="openai-gpt51"
-                      checked={selectedAI === 'openai-gpt51'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure-gpt51">{t('batch.upload.aiService.azure-gpt51')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure-gpt51-chat"
-                      name="ai-selection"
-                      value="openai-gpt51-chat"
-                      checked={selectedAI === 'openai-gpt51-chat'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure-gpt51-chat">{t('batch.upload.aiService.azure-gpt51-chat')}</label>
-                  </div>
-                </div>
-              </fieldset>
             </div>
 
             <div className="search-toggle">
