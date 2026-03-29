@@ -921,12 +921,11 @@
   },
   "workflows": {
     "default": "Par défaut",
-    "defaultWithVector": "Par défaut avec vecteur",
-    "instantAndQA": "Instantané et QR"
+    "defaultWithVector": "Réponse instantanée ACTIVÉE",
+    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
   },
   "models": {
     "gpt51": "GPT-5.1",
-    "gpt51chat": "GPT-5.1 Chat",
     "gpt5mini": "GPT-5 Mini",
     "azure41": "Azure GPT-4.1 (ancien)"
   },

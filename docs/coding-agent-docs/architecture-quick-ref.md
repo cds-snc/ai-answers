@@ -43,12 +43,12 @@ START → init → validate → redact → translate → contextNode → answerN
 
 ### Graph Variants (in `agents/graphs/`)
 
-| File | Difference from DefaultGraph |
-|------|------------------------------|
-| `DefaultGraph.js` | Primary graph |
-| `DefaultWithVectorGraph.js` | Adds vector similarity short-circuit before full run |
-| `InstantAndQAGraph.js` | Optimised for quick QA lookups via QuestionAnswerService |
-| `registry.js` | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
+| File | UI label | How it works |
+|------|----------|-------------|
+| `DefaultGraph.js` | Default | Full pipeline: redact → translate → context → answer → verify → persist. No short-circuit. |
+| `DefaultWithVectorGraph.js` | Instant answer ON | Same as Default, but after translation checks `SimilarAnswerService.findSimilarAnswer()` for a vector-similarity match against previously answered questions. If a high-confidence match is found, **reuses the previous answer verbatim** and skips the full context → answer pipeline. Falls through to the full pipeline if no match. |
+| `InstantAndQAGraph.js` | Instant answer with context ON | Same short-circuit check, but uses `QuestionAnswerService.getSimilarQuestionsContext()` which returns **rich context** from expert-reviewed interactions: the matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer rather than replacing it. |
+| `registry.js` | — | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
 
 Model selection is decoupled from workflow — the `model.default` setting (in Settings) controls which LLM is used. The server injects the model into the graph input at request time (`chat-graph-run.js`).
 
