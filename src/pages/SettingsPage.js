@@ -86,9 +86,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Validate default workflow against known options
       const allowedWorkflows = WORKFLOW_VALUES;
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
-      // Load default model setting
-      const defaultModelSetting = await DataStoreService.getSetting('model.default', 'openai-gpt51');
-      setDefaultModel(defaultModelSetting || 'openai-gpt51');
+      // Load default model setting (seeded server-side on startup if missing)
+      const defaultModelSetting = await DataStoreService.getSetting('model.default', AVAILABLE_MODELS[0].value);
+      setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));

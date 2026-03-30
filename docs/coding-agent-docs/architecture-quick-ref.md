@@ -50,7 +50,7 @@ START → init → validate → redact → translate → contextNode → answerN
 | `InstantAndQAGraph.js` | Instant answer with context ON | Same short-circuit check, but uses `QuestionAnswerService.getSimilarQuestionsContext()` which returns **rich context** from expert-reviewed interactions: the matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer rather than replacing it. |
 | `registry.js` | — | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
 
-Model selection is decoupled from workflow — the `model.default` setting (in Settings) controls which model family is used. The server injects the model into the graph input at request time (`chat-graph-run.js`). See [Model family routing](#model-family-routing-agentfactoryjs) for how each pipeline step maps to a specific model within the family.
+Model selection is decoupled from workflow — the `model.default` setting controls which model family is used. `SettingsService` (`services/SettingsService.js`) is the single source of truth: it loads all settings from the database on startup and seeds required defaults (defined in `SETTING_DEFAULTS`) if missing. The server injects the model into the graph input at request time (`chat-graph-run.js`). All UI pages fetch the default from the Settings API — never hardcode model defaults in components. See [Model family routing](#model-family-routing-agentfactoryjs) for how each pipeline step maps to a specific model within the family.
 
 ## Prompt Assembly (`agents/prompts/systemPrompt.js`)
 

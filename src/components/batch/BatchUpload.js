@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
+import DataStoreService from '../../services/DataStoreService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
@@ -20,7 +21,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [batchName, setBatchName] = useState('');
   const [selectedSearch, setSelectedSearch] = useState('google');
   const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
-  const [selectedModel, setSelectedModel] = useState('openai-gpt51');
+  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
+
+  // Load the configured default model from Settings so batch matches the system default
+  useEffect(() => {
+    DataStoreService.getSetting('model.default', null).then(model => {
+      if (model) setSelectedModel(model);
+    }).catch(() => {});
+  }, []);
 
   const handleFileChange = (event) => {
     setError(null);

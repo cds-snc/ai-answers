@@ -69,6 +69,8 @@ Model selection is decoupled from workflow logic. Workflows (DefaultGraph, Defau
 
 ### Architecture notes
 
+- **`SettingsService` is the single source of truth for the default model.** It loads all settings from the database on server startup (`loadAll()`), and seeds required defaults (like `model.default`) if they are missing. Every consumer — the public settings API, the authenticated settings API, and `chat-graph-run.js` — reads from this cache. The frontend (Chat, Batch, Settings pages) fetches from these APIs. Never hardcode model defaults in UI components; always read from Settings.
+- **When adding a new required setting**, add it to `SETTING_DEFAULTS` in `services/SettingsService.js`. This ensures it exists in the database from the first server startup, before any admin visits the Settings page.
 - The server resolves the model in `api/chat/chat-graph-run.js` and injects it into the graph input
 - Unauthenticated users always get the Settings default model
 - Authenticated admins can override via the chat Options dropdown (for testing)

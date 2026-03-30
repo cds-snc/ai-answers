@@ -9,6 +9,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../..
 import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
+import { AVAILABLE_MODELS } from '../../config/workflows.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -316,22 +317,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [selectedAI]);
 
-  // If there's no localStorage value for selectedAI, load provider from DataStoreService
+  // Fetch the configured default model family from Settings on mount.
+  // AVAILABLE_MODELS[0] is the canonical fallback when model.default has never
+  // been saved (e.g. first deploy with the new setting).
   useEffect(() => {
     let mounted = true;
     const loadProvider = async () => {
       if (selectedAI === null) {
         try {
-          // Load the default model so the chat UI reflects the system default.
-          // Falls back to the legacy provider setting if model.default isn't set yet.
           const model = await DataStoreService.getPublicSetting('model.default', null);
-          const resolved = model || await DataStoreService.getPublicSetting('provider', 'azure');
-          if (mounted && resolved) {
-            setSelectedAI(resolved);
+          if (mounted) {
+            setSelectedAI(model || AVAILABLE_MODELS[0].value);
           }
         } catch (err) {
-          // fallback if datastore call fails
-          if (mounted) setSelectedAI('azure');
+          if (mounted) setSelectedAI(AVAILABLE_MODELS[0].value);
         }
       }
     };

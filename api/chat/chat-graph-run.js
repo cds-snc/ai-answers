@@ -111,15 +111,15 @@ async function handler(req, res) {
   // Server-side Model Resolution
   // The model.default setting decouples model choice from workflow choice.
   // Workflows no longer need to hardcode a model — the server injects it here.
-  const defaultModel = SettingsService.get('model.default') || null;
-  if (defaultModel) {
-    if (!req.user) {
-      // Unauthenticated users: forced to use the system default model
-      input.selectedAI = defaultModel;
-    } else if (!input.selectedAI) {
-      // Authenticated users: use default model when client didn't explicitly set one
-      input.selectedAI = defaultModel;
-    }
+  // Falls back to 'openai-gpt51' when model.default hasn't been saved yet
+  // (e.g. first deploy before an admin visits Settings).
+  const defaultModel = SettingsService.get('model.default') || 'openai-gpt51';
+  if (!req.user) {
+    // Unauthenticated users: forced to use the system default model
+    input.selectedAI = defaultModel;
+  } else if (!input.selectedAI) {
+    // Authenticated users: use default model when client didn't explicitly set one
+    input.selectedAI = defaultModel;
   }
 
   // Legacy graph name mapping — GPT5* graphs were copies of DefaultGraph with a hardcoded model.
