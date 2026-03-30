@@ -12,32 +12,30 @@ const graphLoaders = {
     const mod = await import('./DefaultGraph.js');
     return mod.defaultGraphApp;
   },
-  GPT5MiniDefaultGraph: async () => {
-    const mod = await import('./GPT5MiniDefaultGraph.js');
-    return mod.gpt5MiniDefaultGraphApp;
-  },
-  GPT5OneDefaultGraph: async () => {
-    const mod = await import('./GPT5OneDefaultGraph.js');
-    return mod.gpt5OneDefaultGraphApp;
-  },
-  GPT5OneChatGraph: async () => {
-    const mod = await import('./GPT5OneChatGraph.js');
-    return mod.gpt5OneChatGraphApp;
-  },
+};
+
+// Legacy GPT5* graphs were copies of DefaultGraph with a hardcoded model.
+// They've been removed — old references resolve to GenericWorkflowGraph.
+// The model is now injected server-side via the model.default setting.
+const LEGACY_GRAPH_ALIASES = {
+  GPT5MiniDefaultGraph: 'GenericWorkflowGraph',
+  GPT5OneDefaultGraph: 'GenericWorkflowGraph',
+  GPT5OneChatGraph: 'GenericWorkflowGraph',
 };
 
 const graphCache = new Map();
 
 export async function getGraphApp(name) {
-  const loader = graphLoaders[name];
+  const resolvedName = LEGACY_GRAPH_ALIASES[name] || name;
+  const loader = graphLoaders[resolvedName];
   if (!loader) {
     return null;
   }
-  if (!graphCache.has(name)) {
+  if (!graphCache.has(resolvedName)) {
     const app = await loader();
-    graphCache.set(name, app);
+    graphCache.set(resolvedName, app);
   }
-  return graphCache.get(name);
+  return graphCache.get(resolvedName);
 }
 
 export function listGraphs() {

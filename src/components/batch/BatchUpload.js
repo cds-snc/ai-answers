@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
+import DataStoreService from '../../services/DataStoreService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
+import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -12,7 +14,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [processing, setProcessing] = useState(false);
   // Removed unused results state
   const [error, setError] = useState(null);
-  const [selectedAI, setSelectedAI] = useState('azure');
   const [fileUploaded, setFileUploaded] = useState(false);
   const [batchId, setBatchId] = useState(null);
   const [batchStatus, setBatchStatus] = useState(null);
@@ -20,6 +21,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [batchName, setBatchName] = useState('');
   const [selectedSearch, setSelectedSearch] = useState('google');
   const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
+  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
+
+  // Load the configured default model from Settings so batch matches the system default
+  useEffect(() => {
+    DataStoreService.getSetting('model.default', null).then(model => {
+      if (model) setSelectedModel(model);
+    }).catch(() => {});
+  }, []);
 
   const handleFileChange = (event) => {
     setError(null);
@@ -38,10 +47,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
     setFile(uploadedFile);
     setFileUploaded(false);
-  };
-
-  const handleAIToggle = (e) => {
-    setSelectedAI(e.target.value);
   };
 
   const handleSearchToggle = (e) => {
@@ -100,7 +105,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Persist an initial batch record so it shows up in the processing list (server will create BatchItems)
         const payload = {
           name: batchName || `client-batch-${Date.now()}`,
-          aiProvider: selectedAI,
+          aiProvider: selectedModel,
           pageLanguage: selectedLanguage,
           searchProvider: selectedSearch,
           workflow: selectedWorkflow,
@@ -239,65 +244,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               />
             </div>
 
-            <div className="ai-toggle">
-              <fieldset className="ai-toggle_fieldset">
-                <div className="ai-toggle_container">
-                  <legend className="ai-toggle_legend">{t('batch.upload.aiService.label')}</legend>
-
-                  <div className="flex-center">
-                    <input
-                      type="radio"
-                      id="chatgpt"
-                      name="ai-selection"
-                      value="openai"
-                      checked={selectedAI === 'openai'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label className="mrgn-rght-15" htmlFor="chatgpt">
-                      {t('batch.upload.aiService.openai')}
-                    </label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure"
-                      name="ai-selection"
-                      value="azure"
-                      checked={selectedAI === 'azure'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure">{t('batch.upload.aiService.azure')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure-gpt51"
-                      name="ai-selection"
-                      value="openai-gpt51"
-                      checked={selectedAI === 'openai-gpt51'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure-gpt51">{t('batch.upload.aiService.azure-gpt51')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure-gpt51-chat"
-                      name="ai-selection"
-                      value="openai-gpt51-chat"
-                      checked={selectedAI === 'openai-gpt51-chat'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure-gpt51-chat">{t('batch.upload.aiService.azure-gpt51-chat')}</label>
-                  </div>
-                </div>
-              </fieldset>
-            </div>
-
             <div className="search-toggle">
               <fieldset className="ai-toggle_fieldset">
                 <div className="ai-toggle_container">
@@ -348,10 +294,29 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   className="chat-border"
                   style={{ width: 'auto', display: 'inline-block' }}
                 >
-                  <option value="DefaultGraph">DefaultGraph</option>
-                  <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-                  <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                  <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
+                  {WORKFLOWS.map(w => (
+                    <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="workflow-select mrgn-bttm-20">
+              <div className="mrgn-bttm-10">
+                <label htmlFor="model" className="mrgn-bttm-10 display-block">
+                  {t('batch.upload.model.label')}
+                </label>
+                <select
+                  id="model"
+                  name="model"
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="chat-border"
+                  style={{ width: 'auto', display: 'inline-block' }}
+                >
+                  {AVAILABLE_MODELS.map(m => (
+                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                  ))}
                 </select>
               </div>
             </div>

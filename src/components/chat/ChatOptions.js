@@ -1,10 +1,11 @@
 import React from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
+import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 
 const ChatOptions = ({
   safeT,
-  // selectedAI,
+  selectedAI,
   handleAIToggle,
   // selectedSearch,
   handleSearchToggle,
@@ -19,58 +20,6 @@ const ChatOptions = ({
       <GcdsDetails className="hr" detailsTitle={safeT('homepage.chat.options.title')} tabIndex="0">
         {/* Admin-only controls */}
         <RoleBasedContent roles={['admin']}>
-          {/* Provider selection is hidden for now; Azure is forced as provider
-              We keep radio inputs in the DOM (visually hidden) so the selection
-              can be re-enabled easily in the future. */}
-          <div className="ai-toggle" aria-hidden="true">
-            <fieldset className="ai-toggle_fieldset">
-              {/* visually hide the options but keep them in DOM for future re-enable */}
-              <div className="ai-toggle_container" style={{ display: 'none' }}>
-                <legend className="ai-toggle_legend">
-                  {safeT('homepage.chat.options.aiSelection.label')}
-                </legend>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="anthropic"
-                    name="ai-selection"
-                    value="anthropic"
-                    checked={false}
-                    onChange={handleAIToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="anthropic">
-                    {safeT('homepage.chat.options.aiSelection.anthropic')}
-                  </label>
-                </div>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="openai"
-                    name="ai-selection"
-                    value="openai"
-                    checked={false}
-                    onChange={handleAIToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="openai">{safeT('homepage.chat.options.aiSelection.openai')}</label>
-                </div>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="azure"
-                    name="ai-selection"
-                    value="azure"
-                    checked={true}
-                    onChange={handleAIToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="azure">{safeT('homepage.chat.options.aiSelection.azure')}</label>
-                </div>
-              </div>
-            </fieldset>
-          </div>
-
           <div className="workflow-select">
             <div className="mrgn-bttm-10">
               <label htmlFor="workflow">{safeT('homepage.chat.options.workflow.label')}</label>
@@ -81,10 +30,26 @@ const ChatOptions = ({
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >
-                <option value="DefaultGraph">DefaultGraph</option>
-                <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-                <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
+                {WORKFLOWS.map(w => (
+                  <option key={w.value} value={w.value}>{safeT(w.labelKey)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="workflow-select">
+            <div className="mrgn-bttm-10">
+              <label htmlFor="model">{safeT('homepage.chat.options.model.label')}</label>
+              <select
+                id="model"
+                name="model"
+                value={selectedAI || ''}
+                onChange={handleAIToggle}
+                className="chat-border"
+              >
+                {AVAILABLE_MODELS.map(m => (
+                  <option key={m.value} value={m.value}>{safeT(m.labelKey)}</option>
+                ))}
               </select>
             </div>
           </div>

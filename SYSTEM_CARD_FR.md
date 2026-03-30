@@ -82,9 +82,10 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 **Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### Détails des modèles IA
-- **Modèles de production** : Famille Azure OpenAI GPT-5.1 (configurable par étape de pipeline et variante de graphe) ; les agents d'évaluation utilisent GPT-4.1-mini
+- **Modèles de production** : Famille Azure OpenAI GPT-5.1 ; les agents d'évaluation utilisent GPT-4.1-mini
+- **Routage par famille de modèles** : Le choix d'une famille de modèles (p. ex. GPT-5.1) n'utilise pas un seul modèle pour chaque étape. Le système achemine automatiquement chaque étape du pipeline vers le modèle approprié au sein de cette famille — les étapes de support (rédaction des renseignements personnels, traduction, réécriture de requête) utilisent la variante mini (p. ex. GPT-5-mini) pour le coût et la rapidité, tandis que la génération de contexte et la génération de réponse utilisent le modèle complet (p. ex. GPT-5.1). Ce routage est géré en interne par AgentFactory et n'est pas configurable par étape par les administrateurs.
 - **Température** : 0 (réponses déterministes)
-- **Ingénierie d'invite** : Invites de chaîne de pensée avec sortie structurée, invite de département tirée au besoin
+- **Ingénierie de contexte** : Des agents séparés dans LangGraph effectuent les étapes du pipeline, l'agent de contexte sélectionne l'invite de département et les fichiers de contexte à tirer au besoin
 - **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs IA, testé avec GPT et Claude
 
 ### Capacités agentiques

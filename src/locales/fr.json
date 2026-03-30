@@ -123,6 +123,9 @@
         "workflow": {
           "label": "Flux de travail :"
         },
+        "model": {
+          "label": "Famille de modèles :"
+        },
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
         }
@@ -230,13 +233,6 @@
           "url": "URL / URL de référence — optionnel (en-têtes : URL, REFERRINGURL; insensible à la casse)"
         }
       },
-      "aiService": {
-        "label": "Service d'IA :",
-        "openai": "OpenAI",
-        "azure": "Azure OpenAI",
-        "azure-gpt51": "Azure GPT-5.1",
-        "azure-gpt51-chat": "Azure GPT-5.1 Chat"
-      },
       "language": {
         "label": "Langue d'évaluation :",
         "english": "Anglais",
@@ -244,6 +240,9 @@
       },
       "workflow": {
         "label": "Flux de travail"
+      },
+      "model": {
+        "label": "Famille de modèles"
       },
       "file": {
         "label": "Sélectionner le fichier CSV de rétroaction :",
@@ -920,6 +919,15 @@
       "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs."
     }
   },
+  "workflows": {
+    "default": "Par défaut",
+    "defaultWithVector": "Réponse instantanée ACTIVÉE",
+    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
+  },
+  "models": {
+    "gpt51": "Azure GPT-5.1",
+    "azure41": "Azure GPT-4.1 (ancien)"
+  },
   "settings": {
     "title": "Paramètres",
     "general": {
@@ -927,6 +935,9 @@
     },
     "defaultWorkflow": {
       "label": "Workflow par défaut"
+    },
+    "defaultModel": {
+      "label": "Famille de modèles par défaut"
     },
     "statusLabel": "Statut du service",
     "statuses": {
