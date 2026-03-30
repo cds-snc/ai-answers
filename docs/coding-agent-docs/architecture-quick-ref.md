@@ -50,7 +50,7 @@ START → init → validate → redact → translate → contextNode → answerN
 | `InstantAndQAGraph.js` | Instant answer with context ON | Same short-circuit check, but uses `QuestionAnswerService.getSimilarQuestionsContext()` which returns **rich context** from expert-reviewed interactions: the matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer rather than replacing it. |
 | `registry.js` | — | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
 
-Model selection is decoupled from workflow — the `model.default` setting (in Settings) controls which LLM is used. The server injects the model into the graph input at request time (`chat-graph-run.js`).
+Model selection is decoupled from workflow — the `model.default` setting (in Settings) controls which model family is used. The server injects the model into the graph input at request time (`chat-graph-run.js`). See [Model family routing](#model-family-routing-agentfactoryjs) for how each pipeline step maps to a specific model within the family.
 
 ## Prompt Assembly (`agents/prompts/systemPrompt.js`)
 
@@ -86,6 +86,21 @@ const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenar
 Key exports: `getModelConfig(provider, modelName)`, `getEmbeddingModelConfig(provider, modelName)`
 
 Providers: Azure OpenAI (GPT-5.1, GPT-5-mini). Initial configuration only (no graph workflow): Anthropic Claude via Bedrock, Cohere via Bedrock. Defaults: temperature 0.0, maxTokens 1024, timeout 60s.
+
+### Model family routing (`AgentFactory.js`)
+
+The "Default model family" setting selects a model **family**, not a single model. `AgentFactory` automatically routes each pipeline step to the appropriate model within that family:
+
+| Pipeline step | Model used |
+|---------------|-----------|
+| PII redaction | Mini (e.g. GPT-5-mini) |
+| Translation | Mini |
+| Query rewrite | Mini |
+| Context / search | Full model (e.g. GPT-5.1) |
+| Answer generation | Full model |
+| Evaluation | Separate — `gpt-4.1-mini`, not affected by the model family setting |
+
+This means selecting "Azure GPT-5.1" uses GPT-5.1 for context and answer generation, while supporting steps automatically use GPT-5-mini for cost and speed. The admin does not need to configure this — it is handled internally by `AgentFactory`.
 
 ## Data Models (`models/`)
 

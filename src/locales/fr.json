@@ -124,7 +124,7 @@
           "label": "Flux de travail :"
         },
         "model": {
-          "label": "Modèle :"
+          "label": "Famille de modèles :"
         },
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
@@ -242,7 +242,7 @@
         "label": "Flux de travail"
       },
       "model": {
-        "label": "Modèle"
+        "label": "Famille de modèles"
       },
       "file": {
         "label": "Sélectionner le fichier CSV de rétroaction :",
@@ -925,8 +925,7 @@
     "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
   },
   "models": {
-    "gpt51": "GPT-5.1",
-    "gpt5mini": "GPT-5 Mini",
+    "gpt51": "Azure GPT-5.1",
     "azure41": "Azure GPT-4.1 (ancien)"
   },
   "settings": {
@@ -938,7 +937,7 @@
       "label": "Workflow par défaut"
     },
     "defaultModel": {
-      "label": "Modèle par défaut"
+      "label": "Famille de modèles par défaut"
     },
     "statusLabel": "Statut du service",
     "statuses": {

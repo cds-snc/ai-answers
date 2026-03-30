@@ -55,24 +55,25 @@ Model selection is decoupled from workflow logic. Workflows (DefaultGraph, Defau
 
 ### Switching the default model (Settings change — no deploy)
 
-1. Go to **Settings > General settings > Default model**
+1. Go to **Settings > General settings > Default model family**
 2. Select the new model from the dropdown
 3. The change takes effect immediately for all new chat requests
 
 ### Recommended rollout process
 
-1. **Staging first**: In the staging/sandbox environment Settings, change "Default model" to the new model
+1. **Staging first**: In the staging/sandbox environment Settings, change "Default model family" to the new model
 2. **Test for 1-2 weeks**: Run batches, monitor eval scores, check logs for errors
-3. **Flip production**: In the production Settings, change "Default model" to the new model
+3. **Flip production**: In the production Settings, change "Default model family" to the new model
 4. **Monitor**: Watch eval dashboards — each interaction records the model used, so you can compare quality
-5. **Rollback if needed**: Change "Default model" back to the previous model in Settings — instant, no deploy
+5. **Rollback if needed**: Change "Default model family" back to the previous model in Settings — instant, no deploy
 
 ### Architecture notes
 
 - The server resolves the model in `api/chat/chat-graph-run.js` and injects it into the graph input
 - Unauthenticated users always get the Settings default model
 - Authenticated admins can override via the chat Options dropdown (for testing)
-- The evaluation pipeline uses its own model (`gpt-4.1-mini`) configured separately in `AgentFactory.js` — it is not affected by the default model setting
+- **The setting selects a model family, not a single model.** `AgentFactory.js` automatically routes each pipeline step to the right model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini), while context and answer generation use the full model (e.g. GPT-5.1). Admins do not configure this; it is handled internally.
+- The evaluation pipeline uses its own model (`gpt-4.1-mini`) configured separately in `AgentFactory.js` — it is not affected by the default model family setting
 - Legacy graph names (e.g. `GPT5OneDefaultGraph`) in old DB records or localStorage are mapped automatically to DefaultGraph + the implied model
 
 ## Modifying the Pipeline

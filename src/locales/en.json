@@ -124,7 +124,7 @@
           "label": "Workflow:"
         },
         "model": {
-          "label": "Model:"
+          "label": "Model family:"
         },
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)"
@@ -242,7 +242,7 @@
         "label": "Workflow"
       },
       "model": {
-        "label": "Model"
+        "label": "Model family"
       },
       "file": {
         "label": "Select feedback CSV file:",
@@ -925,8 +925,7 @@
     "instantAndQA": "Instant answer with context ON"
   },
   "models": {
-    "gpt51": "GPT-5.1",
-    "gpt5mini": "GPT-5 Mini",
+    "gpt51": "Azure GPT-5.1",
     "azure41": "Azure GPT-4.1 (legacy)"
   },
   "settings": {
@@ -938,7 +937,7 @@
       "label": "Default workflow"
     },
     "defaultModel": {
-      "label": "Default model"
+      "label": "Default model family"
     },
     "statusLabel": "Service status",
     "statuses": {

@@ -82,7 +82,8 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
-- **Current production models**: Azure OpenAI GPT-5.1 family (configurable per pipeline step and graph variant); evaluation agents use GPT-4.1-mini
+- **Current production models**: Azure OpenAI GPT-5.1 family; evaluation agents use GPT-4.1-mini
+- **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step to the appropriate model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini) for cost and speed, while context generation and answer generation use the full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
 - **Temperature**: 0 (deterministic responses)
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
