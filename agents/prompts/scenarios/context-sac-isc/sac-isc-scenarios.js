@@ -3,10 +3,10 @@ export const SAC_ISC_SCENARIOS = `
 ### French URL tip for sac-isc.gc.ca:
 * French pages same as English URLs except /fra/ vs /eng/. Example: https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 → https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
 
-### CONTACTS: ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md**
-- When user asks for: phone, address, email, fax, office hours/location, status card in-person appointments, status card application status/updates 
-- Page has ALL contact types: Status card regional offices, NIHB regional offices (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services, public enquiries contact centre
-- Why: Contact details change frequently; sac-isc-contacts file supersedes ALL training data
+### CONTACTS: important to always ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md this file has ALL contact info collected from many pages spread across ISC site, organized by page and topic.
+- Use contacts file for all questions  phone, address, email, fax, office hours/location, status card in-person appointments, registration contacts, status card application status/updates 
+- Page has ALL contact types: Status card regional offices, NIHB regional office mailing and phone (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services, public enquiries contact centre
+- Why download: Contact details change frequently; this sac-isc-contacts file supersedes ALL training data
 
 ### TREATY ANNUITY: ⚠️DOWNLOAD https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
 - When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments
@@ -22,15 +22,14 @@ export const SAC_ISC_SCENARIOS = `
 * Organizations can check customer/client card valid by phone/email ⚠️DOWNLOAD https://www.sac-isc.gc.ca/eng/1100100032405/1572461328003
 * Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 
 
-### Status cards - no online apps/renewal
-* Registered persons: download form, submit by mail or in-person only with photo and all documents, no email or online.
-* In-person appointment and mailing address: see ⚠️DOWNLOAD for contacts.
-* Mail-in: send to National SCIS Processing Unit. See Where to submit: https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 
+### Status card apply/renew - no online apps/renewal
+* Registered persons: download form, submit by mail or in-person at regional office only with photo and all documents (no email or online submission)
+* Submitting in-person or by mail: see contact ⚠️DOWNLOAD for status card regional offices & National SCIS Processing Unit address 
 * Renewal: apply up to 1 year advance. Simplified renewal eligibility: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 
 * Expired cards cannot use simplified renewal.
 
 ### Indian status vs status card expiry
-* Q on "renewing Indian status" → ask to clarify: reg or status card?
+* Q on "renewing Indian status" → ask to clarify: registration or status card?
 * Indian status never expires; status card does. Renewal: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 
 
 ### Acceptable photos for status card

@@ -1,6 +1,7 @@
 # ISC Contact Directory
 -Created: 13 Dec 2025
--File holds all contact info for ISC collected from contact page sources into ai-readable format
+-This holds all contact info for ISC collected from contact page sources into ai-readable format, broken down by page and topic
+- if question just asks for an or the 'office' assume it's status card regional office, provide details, don't just direct to go find the office themselves
 * Tip: URLS for French pages on sac-isc.gc.ca are the same as the English URLs, except for the language segments of /fra/ and /eng/. 
 
 ## National Services
@@ -17,7 +18,7 @@ Source: https://www.sac-isc.gc.ca/eng/1291132820288/1603310905799
 ## NIHB (Non-Insured Health Benefits)
 Source: https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 
-### National
+### National NIHB
 - **Dental predeterminations** | 1-855-618-6291 | Fx:1-855-618-6290
 - **Orthodontic predeterminations** | 1-866-227-0943 | Fx:1-866-227-0957
 - **Pharmacy prior approval** | 1-800-580-0950 | Fx:1-877-789-4379 | TTY:1-800-465-7735
@@ -73,18 +74,6 @@ Source: https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
 - **Transport, Eye exams, Mental Health** | 1-800-661-0833 | Nunavut Health Insurance Programs, Bag 3, Rankin Inlet NU X0C 0G0 (territorial govt)
 - **Eyewear & Supplies** | 1-888-332-9222 | Fx:1-800-949-2718 | 1455-10 Wellington St, Gatineau QC K1A 0H4
 
-## FNIHB Regional Executives
-Source: https://www.sac-isc.gc.ca/eng/1585423776975/1585423796964
-
-- **ATL** | 613-818-8459 | 1-800-567-9604 | 1816-1505 Barrington St, Halifax NS B3J 3Y6
-- **QC** | 1-800-567-9604 | 202-200 René-Lévesque Blvd W, Montreal QC H2Z 1X4
-- **ON** | 343-597-6828 | 1-800-567-9604 | Sir Charles Tupper Bldg, 2720 Riverside Dr, Ottawa ON K1A 0M2
-- **MB** | 1-800-567-9604 | 300-391 York Ave, Winnipeg MB R3C 4W1
-- **SK** | 306-780-6486 | Alvin Hamilton Bldg, 1783 Hamilton St, Regina SK S4P 2B6
-- **AB** | sac.ab_fnihb_reo.isc@sac-isc.gc.ca | 630-9700 Jasper Ave, Edmonton AB T5J 4C3
-- **BC (FNHA)** | 1-866-913-0033 | Info@fnha.ca | 501-100 Park Royal South, West Vancouver BC V7T 1A2 | M-F 8-4:30 PT
-- **North** | 1-866-509-1769 | 1455-10 Wellington, Gatineau QC K1A 0H4
-
 ## Jordan's Principle / Inuit Child First
 Source: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387
 
@@ -110,21 +99,18 @@ Note: North—contact community/tribal council for local coordinators. After-hou
 * Always advise people to phone to make an appointment or to find out if walk-ins are available. If they need to cancel or reschedule, call as soon as possible.
 * Email submission not available - submit in-person or by mail with all accompanying documents and photos
 
-### NATIONAL mail submission
-* Submit status card applications by mail: National SCIS Processing Unit, Indigenous Services Canada, 10 rue Wellington, Gatineau QC K1A 0H4 OR for persons affected by known sex-based inequities in the Indian Act, mail: Application Processing Unit, Indigenous Services Canada, Box 6700 Winnipeg MB R3C 5R5
+### NATIONAL status card mail submission
+* Submit applications by mail: National SCIS Processing Unit, Indigenous Services Canada, 10 rue Wellington, Gatineau QC K1A 0H4 OR for persons affected by known sex-based inequities in the Indian Act, mail: Application Processing Unit, Indigenous Services Canada, Box 6700 Winnipeg MB R3C 5R5 https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 
 
-### Regional Offices (Make an appointment for in-person service)
-
+### Regional Offices (Make an appointment for in-person status card/registration submission and service)
 * ATLANTIC (NB, PEI, NS, NFL)
 Source: https://www.sac-isc.gc.ca/eng/1100100016942/1617145511064
 - **Amherst** | 902-661-6209 | Fx:902-661-6237 | PO Box 160, 40 Havelock St, Amherst NS B4H 3Z3 | M-F 10-3 AT
-
 * QC
 Source: https://www.sac-isc.gc.ca/eng/1100100019255/1582306532791
 - **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available)| Mail: 10 rue Wellington, Gatineau, QC K1A 0H4
 - **Quebec City** | 1-800-263-5592 | Fx:418-648-2266 | 400-320 St. Joseph St E, Québec QC G1K 9J2 | M-F 9-12, 1-3:30 ET
 - **Kahnawake** Registration and status card services are no longer available at the Kahnawake service point. No appointments can be made there.
-
 * ON
 Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 - **Toronto** | 416-973-5282 | Fx:416-954-9974 | Toronto ON M5G 2K4 | M-F 9-3 ET
@@ -132,45 +118,40 @@ Source: https://www.sac-isc.gc.ca/eng/1603370021929/1603370103408
 - **Fort William FN-Thunder Bay district** | 807-623-3534 | Fx:807-623-3536 | 101-100 Anemki Place, Fort William FN ON P7J 1A5 | M-F 9-3 ET
 - **Sudbury** | 705-522-6774 | Fx:705-677-7976 | Unit M-760 Notre Dame Ave, Sudbury ON P3A 2T4 | M-F 9-3 ET
  **National Capital Region**  | 819-664-2962 | Fx:819-953-9395 | In-person service: 1 Promenade du Portage, Central Building, Terrasses de la Chaudière, Gatineau, QC K1A 0H4| M-F 8-3:30 ET (Book an appointment online available) | Mail: 10 rue Wellington, Gatineau, QC K1A 0H4
-
 * MB
 Source: https://www.sac-isc.gc.ca/eng/1100100020394/1616069948423
 - **Winnipeg** | 1-833-983-5910 | Fx:1-204-983-2936 | 361 Hargrave St, Winnipeg MB R3B 2J9 | Mail: 200-365 Hargrave St, Winnipeg MB  R3B 3A3 | M-F 9-11:30 walk-in, 1-3 appt CT
-
 * SK
 Source: https://www.sac-isc.gc.ca/eng/1601918257851/1601918278258
 - **Regina** | 306-780-5392 | Fx:306-790-4634 | Rm 098, 1783 Hamilton St, Regina SK S4P 2B6 | M-F 9-12, 1-4 CT
 - **Prince Albert** | 306-953-8600 | Fx:306-953-8648 | 110-3601 5th Ave E, Prince Albert SK S6W 0A2 | M-F 9-12, 1-4 CT
-
 * AB
 Source: https://www.sac-isc.gc.ca/eng/1100100020655/1614278941889
 * Use online booking tool to schedule registration or status card appointment
 * If no appointments are available online, or you need help with other services, call for support, cancellations, or rescheduling. Walk-ins may be accepted but are not guaranteed.
 - **Edmonton** | 780-495-2773 | Fx:780-495-4088 | Rm 140, 9700 Jasper Ave, Edmonton AB T5J 4G2 | M-F 9-3 MT
-
 * BC
 Source: https://www.sac-isc.gc.ca/eng/1100100021003/1612465942223
 - **Vancouver** | 236-330-9961 | 1-800-665-9320 | Fx:604-775-7149 | 501-1138 Melville St, Vancouver BC V6E 4S3 | M-F 9-4:30 PT
-
 * NWT
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100022857/1617205117407
 - 867-669-2622 | Fx:867-669-2711 | M-F 10-12, 1-3 MT
-
 * YT
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100028326/1615402391203
 - **Whitehorse** | 867-667-3399 | 1-800-661-0451 | Fx:867-667-3384 | ytservicesclientele-clientservicesyt@rcaanc-cirnac.gc.ca | 122-300 Main St, Whitehorse YT Y1A 2B5 | M-F 8:30-4:30 MT
-
 * NU
 Source: https://www.rcaanc-cirnac.gc.ca/eng/1100100027774/1613925314659
 - **Iqaluit** | 867-975-4500 | 1-800-567-9604 | Fx:867-975-4560 | aadnc.informernu-informnu.aandc@canada.ca | PO Box 2200, Iqaluit NU X0A 0H0
 
-## FNIHB Regional Health Programs
+## First Nations and Inuit Health Branch mail and phone contacts
 Source: https://www.sac-isc.gc.ca/eng/1579274812116/1579708265237
-ISC First Nations and Inuit Health Branch regional offices providing community health programs.
+Regional Executives source: https://www.sac-isc.gc.ca/eng/1585423776975/1585423796964
+ISC FNIHB offices by region providing community health programs.
 * Services: ADI=Aboriginal Diabetes Initiative, AHSOR=Aboriginal Head Start on Reserve, IRS RHSP=Indian Residential Schools Resolution Health Support Program, MMIWG=Supports for Missing and Murdered Indigenous Women and Girls, IDS=Supports for Federal Indian Day School, FNCFS/JP=First Nations Child and Family Services and Jordan's Principle Settlement Trauma-Informed Health and Cultural Support Services
 
 ### ATL
-Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
+Mail: Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
+- **Regional Executive** | 613-818-8459 | 1-800-567-9604
 - **ADI** | 506-851-7104 | Fx:506-851-7369
 - **AHSOR** | 902-407-7699 | Fx:902-426-8675
 - **Accreditation** | 902-426-0807 | Fx:902-426-8675
@@ -180,7 +161,8 @@ Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
 - **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-866-414-8111
 
 ### QC
-2nd Fl Guy Favreau Complex East Tower, 200 René-Lévesque Blvd W, Montreal QC H2Z 1X4
+Mail: 2nd Fl Guy Favreau Complex East Tower, 200 René-Lévesque Blvd W, Montreal QC H2Z 1X4
+- **Regional Executive** | 1-800-567-9604
 - **ADI** | 514-283-9520
 - **AHSOR** | 514-283-0618 | Fx:514-283-8067
 - **Accreditation** | 514-496-3267 | Fx:514-283-7392
@@ -191,7 +173,8 @@ Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
 - **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-877-583-2965
 
 ### ON
-10 Wellington Suite 1455, Gatineau QC K1A 0H4 / Sir Charles Tupper Bldg Floor 4C
+Mail:10 Wellington Suite 1455, Gatineau QC K1A 0H4 / Sir Charles Tupper Bldg Floor 4C
+- **Regional Executive** | 343-597-6828 | 1-800-567-9604
 - **ADI** | 613-866-9679 | Fx:613-946-4203
 - **AHSOR** | 613-797-5692 | Fx:613-952-7733
 - **Accreditation** | 613-862-3559 | 705-465-3246 | Fx:613-954-3883
@@ -202,7 +185,8 @@ Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
 - **MMIWG, IDS, FNCFS/JP** | 1-888-301-6426
 
 ### MB
-391 York Ave Suite 300, Winnipeg MB R3C 4W1
+Mail:391 York Ave Suite 300, Winnipeg MB R3C 4W1
+- **Regional Executive** | 1-800-567-9604
 - **Accreditation** | 204-984-7245 | Fx:204-984-0471
 - **Community Programs (Mental Wellness, Chronic Disease, Children & Youth), Nursing & Health Funding** | 204-983-3172
 - **eHealth Solutions** | 204-984-7903 | Fx:204-983-0519
@@ -211,7 +195,8 @@ Maritime Centre 18th Fl, 1505 Barrington St, Halifax NS B3J 3Y6
 - **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-866-818-3505
 
 ### SK
-Alvin Hamilton Bldg Rm 098, 1783 Hamilton St, Regina SK S4P 2B6
+Mail:Alvin Hamilton Bldg Rm 098, 1783 Hamilton St, Regina SK S4P 2B6
+- **Regional Executive** | 306-780-6486
 - **ADI, AHSOR, Health Promotion & Disease Prevention** | 306-412-0007 | Fx:306-780-5965
 - **Accreditation** | 306-536-2925
 - **eHealth Solutions** | 1-877-772-7715
@@ -219,7 +204,8 @@ Alvin Hamilton Bldg Rm 098, 1783 Hamilton St, Regina SK S4P 2B6
 - **IRS RHSP, MMIWG, IDS, FNCFS/JP** | 1-866-250-1529
 
 ### AB
-Canada Place Suite 630, 9700 Jasper Ave, Edmonton AB T5J 4G2
+Mail:Canada Place Suite 630, 9700 Jasper Ave, Edmonton AB T5J 4G2
+- **Regional Executive** | sac.ab_fnihb_reo.isc@sac-isc.gc.ca
 - **ADI** | 780-495-4114
 - **AHSOR** | 780-495-0552 | Fx:780-495-7338
 - **Accreditation** | 780-495-4646 | Fx:780-495-2687
@@ -231,11 +217,13 @@ Canada Place Suite 630, 9700 Jasper Ave, Edmonton AB T5J 4G2
 
 ### BC
 Health programming transferred to First Nations Health Authority (FNHA) on 1 Oct 2013.
+- **Regional Executive (FNHA)** | 1-866-913-0033 | Info@fnha.ca | mail: 501-100 Park Royal South, West Vancouver BC V7T 1A2 | M-F 8-4:30 PT
 - **FNHA (all health services)** | 1-800-317-7878
 - **FNCFS/JP** | 1-800-317-7878
 
 ### North (YT, NWT, NU)
-ISC Regional Delivery Sector - North | 1455-10 Wellington AL 6604C, Gatineau QC K1A 0H4
+Mail:ISC Regional Delivery Sector - North | 1455-10 Wellington AL 6604C, Gatineau QC K1A 0H4
+- **Regional Executive** | 1-866-509-1769
 - **Community-based health funding** | rdsnorth-prsnord@sac-isc.gc.ca
 
 ## Substance Use Treatment Centres
