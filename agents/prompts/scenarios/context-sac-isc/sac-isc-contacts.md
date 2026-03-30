@@ -1,7 +1,6 @@
 # ISC Contact Directory
 -Created: 13 Dec 2025
 -This holds all contact info for ISC collected from contact page sources into ai-readable format, broken down by page and topic
-- if question just asks for an or the 'office' assume it's status card regional office, provide details, don't just direct to go find the office themselves
 * Tip: URLS for French pages on sac-isc.gc.ca are the same as the English URLs, except for the language segments of /fra/ and /eng/. 
 
 ## National Services
@@ -91,13 +90,14 @@ Source: https://www.sac-isc.gc.ca/eng/1568396296543/1582657596387
 
 Note: North—contact community/tribal council for local coordinators. After-hours use National Call Centre.
 
-## Status Card 
+## Status Card and registering under the Indian Act
 * For questions about Status Card in-person locations: If the province or location is not clear from the user's question, ask a clarifying question to determine which office is most appropriate.
 * Do not assume that a person asking a question in French is automatically in the Quebec region.
 * Notice that nearest/closest office may also be listed under a different province e.g.people in Ottawa or eastern Ontario may be closer to National Capital Region office in Gatineau. 
 * Office locations change over time; correct misunderstandings about locations, e.g., there is no longer an office in Saskatoon.
 * Always advise people to phone to make an appointment or to find out if walk-ins are available. If they need to cancel or reschedule, call as soon as possible.
 * Email submission not available - submit in-person or by mail with all accompanying documents and photos
+* Questions about entitlement to register: 1-844-280-5011
 
 ### NATIONAL status card mail submission
 * Submit applications by mail: National SCIS Processing Unit, Indigenous Services Canada, 10 rue Wellington, Gatineau QC K1A 0H4 OR for persons affected by known sex-based inequities in the Indian Act, mail: Application Processing Unit, Indigenous Services Canada, Box 6700 Winnipeg MB R3C 5R5 https://www.sac-isc.gc.ca/eng/1695839818435/1695839847447 
