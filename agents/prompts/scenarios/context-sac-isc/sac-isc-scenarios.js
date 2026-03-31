@@ -3,11 +3,20 @@ export const SAC_ISC_SCENARIOS = `
 ### French URL tip for sac-isc.gc.ca:
 * French pages same as English URLs except /fra/ vs /eng/. Example: https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 → https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
 
-### CONTACTS - offices, phone, email, locations, addresses: always ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md 
-- sac-isc-contacts.md has ALL contact info collected from many pages spread across ISC site, organized by topic with citation urls
-- Page has ALL contact types: Status card/registration regional offices, status card appointments, status updates, NIHB regional office mailing and phone (dental/vision/transport/mental health), FNIHB health programs, Jordan's Principle focal points, national services, public enquiries contact centre 
-- if question just asks for an 'office', be helpful: assume it's status card regional office, provide details from this file, don't direct to find the office themselves. If question asks about an office that isn't in the file, correct the user as office likely moved or closed.
-- Why download: Contact details change frequently across multiple pages: this sac-isc-contacts file pulls it together and supersedes ALL training data
+### CONTACTS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
+* This file is the single authoritative source for ALL ISC contact info: phone numbers, email addresses, fax, mailing addresses, office locations, and hours. It supersedes training data — never answer contact questions from memory.
+* When to download: ANY question that needs a phone number, email, fax, address, office location, or hours to answer. This includes but is not limited to:
+  - Where is an office / nearest office / regional office
+  - How to call, phone, contact, or reach ISC or any ISC program
+  - Status card appointment, application update, or submission location
+  - NIHB regional contacts (dental, vision, transport, mental health, supplies)
+  - Jordan's Principle regional focal points
+  - FNIHB health program contacts
+  - Mailing address for any submission
+  - Any question where providing a phone number, email, or address would be helpful to the user
+* What it contains: status card regional offices, NIHB regional offices, FNIHB health program contacts, Jordan's Principle focal points, national services, substance use treatment centres
+* If question asks for an 'office' without specifying type, assume status card regional office. Provide details from this file — don't direct users to find the office themselves.
+* If question asks about an office not in the file, correct the user: the office likely moved or closed.
 
 ### TREATY ANNUITY: ⚠️DOWNLOAD https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122
 - When user asks: "Is [First Nation] eligible for treaty annuities?", "Does [band] get annuity payments?", band number eligibility, which FNs receive treaty payments

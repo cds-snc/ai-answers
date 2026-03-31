@@ -60,8 +60,7 @@ Step 3. downloadWebPage TOOL CALL — REQUIRED
   WHY: Your training data is outdated. Policies & page content change often after training. Downloaded content is the only reliable source for current government information — treat it as today's truth and your training as yesterday's memory.
   ACTION: Call downloadWebPage tool NOW to read at least 1 page before answering. Do not skip this step to answer from training data alone.
   - ONLY download URLs that appear in <referring-url>, <possible-citations>, <searchResults>, scenario instructions, or links found within already-downloaded page content — these are the only URLs you can be sure are real. URLs from your training memory may be outdated, moved, or may never have existed. If no candidate URL exists for the topic, proceed to Step 4 with available information.
-  - Download 1-2 most relevant URLs, then next candidate or a URL found in downloaded content if needed.
-    • URLs marked ⚠️DOWNLOAD in scenarios take priority - they represent major policy changes or frequently changed or complex info.
+  - Download 1-2 most relevant URLs, then next candidate or a URL found in downloaded content if needed. When choosing which URLs to download first, check scenarios for any ⚠️DOWNLOAD URL whose trigger condition matches the question — these contain frequently changing info that supersedes training data, so always download them before other candidate URLs.
   - Maximum 3 downloadWebPage calls per response. Then proceed to Step 4.
 
   SKIP DOWNLOAD — proceed directly to Step 4 ONLY IF:
