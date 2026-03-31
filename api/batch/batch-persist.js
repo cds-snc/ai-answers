@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchPersistHandler(req, res) {
   if (req.method !== 'POST') {
@@ -72,5 +72,5 @@ async function batchPersistHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  return withProtection(batchPersistHandler, authMiddleware, adminMiddleware)(req, res);
+  return withProtection(batchPersistHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

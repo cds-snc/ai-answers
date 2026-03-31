@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import mongoose from 'mongoose';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const COUNT_MAX_TIME_MS = 20000;
 
@@ -55,6 +55,6 @@ async function batchStatsHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  return withProtection(batchStatsHandler, authMiddleware, adminMiddleware)(req, res);
+  return withProtection(batchStatsHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }
 

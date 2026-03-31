@@ -146,6 +146,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
       <section id="processed-evaluation" className="mb-600">
         <h2 className="mt-400 mb-400">{t('batch.sections.processed.title')}</h2>
+        <p className="mb-400">{t('batch.sections.processed.description')}</p>
         <BatchList
           onProcess={onProcess}
           onCancel={onCancel}

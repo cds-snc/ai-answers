@@ -1,7 +1,7 @@
 // src/components/batch/BatchUpload.js
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
 import '../../styles/App.css';
@@ -19,7 +19,8 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [batchStatus, setBatchStatus] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
-  const [selectedSearch, setSelectedSearch] = useState('google');
+  // Hardcoded to 'google' until Canada.ca search is available
+  const selectedSearch = 'google';
   const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
 
@@ -49,9 +50,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     setFileUploaded(false);
   };
 
-  const handleSearchToggle = (e) => {
-    setSelectedSearch(e.target.value);
-  };
+  // handleSearchToggle removed — uncomment when Canada.ca search is re-enabled
 
   const handleWorkflowChange = (e) => {
     setSelectedWorkflow(e.target.value);
@@ -221,12 +220,24 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     <GcdsContainer className="mb-600">
       <div className="steps-container">
         <div className="step">
-          <GcdsText>{t('batch.upload.intro')}</GcdsText>
-          <GcdsText>{t('batch.upload.csvRequirements.title')}</GcdsText>
-          <ul>
-            <li>{t('batch.upload.csvRequirements.items.problemDetails')}</li>
-            <li>{t('batch.upload.csvRequirements.items.url')}</li>
-          </ul>
+          <h3>{t('batch.upload.instructions.title')}</h3>
+          <ol>
+            <li>
+              <strong>{t('batch.upload.instructions.step1')}</strong>
+              <ul>
+                <li>{t('batch.upload.instructions.step1a')}</li>
+                <li>{t('batch.upload.instructions.step1b')}</li>
+                <li>{t('batch.upload.instructions.step1c')}</li>
+                <li>{t('batch.upload.instructions.step1d')}</li>
+              </ul>
+            </li>
+            <li>{t('batch.upload.instructions.step2')}</li>
+            <li>{t('batch.upload.instructions.step3')}</li>
+            <li>{t('batch.upload.instructions.step4')}</li>
+            <li>{t('batch.upload.instructions.step5')}</li>
+            <li>{t('batch.upload.instructions.step6')}</li>
+            <li>{t('batch.upload.instructions.step7')}</li>
+          </ol>
 
           <form onSubmit={handleUpload} className="mt-400">
             <div className="mrgn-bttm-20">
@@ -244,6 +255,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               />
             </div>
 
+            {/* Search service toggle – commented out until Canada.ca search is available
             <div className="search-toggle">
               <fieldset className="ai-toggle_fieldset">
                 <div className="ai-toggle_container">
@@ -280,6 +292,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                 </div>
               </fieldset>
             </div>
+            */}
 
             <div className="workflow-select mrgn-bttm-20">
               <div className="mrgn-bttm-10">
