@@ -221,10 +221,10 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       <div className="steps-container">
         <div className="step">
           <h3>{t('batch.upload.instructions.title')}</h3>
-          <ol>
+          <ol style={{ paddingLeft: '1.5em', listStyleType: 'decimal' }}>
             <li>
               <strong>{t('batch.upload.instructions.step1')}</strong>
-              <ul>
+              <ul style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
                 <li>{t('batch.upload.instructions.step1a')}</li>
                 <li>{t('batch.upload.instructions.step1b')}</li>
                 <li>{t('batch.upload.instructions.step1c')}</li>
