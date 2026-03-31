@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.117.1](https://github.com/cds-snc/ai-answers/compare/v1.117.0...v1.117.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* update tbs scenario prior to batch ([e2964db](https://github.com/cds-snc/ai-answers/commit/e2964db9007a0a2f41124e456424426cf0ce8711))
+* update tbs scenario prior to batch ([59bc58d](https://github.com/cds-snc/ai-answers/commit/59bc58de5c1479e550e43cf3e115839c94ae3a3b))
+
 ## [1.117.0](https://github.com/cds-snc/ai-answers/compare/v1.116.5...v1.117.0) (2026-03-31)
 
 
