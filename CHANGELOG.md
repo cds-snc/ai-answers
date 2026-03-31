@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.117.0](https://github.com/cds-snc/ai-answers/compare/v1.116.5...v1.117.0) (2026-03-31)
+
+
+### Features
+
+* add AGENTS.md file ([67e48e3](https://github.com/cds-snc/ai-answers/commit/67e48e32c3b30ef4530683e99620f456c8dd1f9d))
+* model upgrade process refactor ([e33cde4](https://github.com/cds-snc/ai-answers/commit/e33cde4ee33010def132236fb3c6acca4a54b8f1))
+
+
+### Bug Fixes
+
+* add model selection in batch and chat ([b864d37](https://github.com/cds-snc/ai-answers/commit/b864d3746baea42109e788f79eef1238c0bb55e6))
+* fix default on chat change labels ([e0ed2c5](https://github.com/cds-snc/ai-answers/commit/e0ed2c542f96b0126d3740425520ca463d5538a6))
+* ISC contact scenario - emphasize FR citations ([6c962eb](https://github.com/cds-snc/ai-answers/commit/6c962eb984673bb74836c953682d7a8f59639710))
+* ISC contact scenario - emphasize FR citations ([acf019a](https://github.com/cds-snc/ai-answers/commit/acf019a46ddda1cf771ab95073fff61827aae31e))
+* more language ([5eb6e0f](https://github.com/cds-snc/ai-answers/commit/5eb6e0fc1acf8af4f605b708b1811e6219748785))
+* prioritize contacts file ([1830f90](https://github.com/cds-snc/ai-answers/commit/1830f90f12cd455f650fec1602c05d1f96292f01))
+* relabel and remove mini as an option in models ([dbdcc3c](https://github.com/cds-snc/ai-answers/commit/dbdcc3c305d2b9d6b3223a7f455fa26360db5b64))
+* remove dead ai service options from batch page ([2b7b783](https://github.com/cds-snc/ai-answers/commit/2b7b783a3f55102cc5b554b78e2d1698428d74e8))
+* settingService as master ([0333c90](https://github.com/cds-snc/ai-answers/commit/0333c90e09c7108704e98d36b1d69708cc2494ff))
+* try again re offices ([e5de01f](https://github.com/cds-snc/ai-answers/commit/e5de01f276c6979d5c2d8c05c4f82cc4acea1950))
+* where files are ([6322c82](https://github.com/cds-snc/ai-answers/commit/6322c829ee0fbd30b0a08168eae66f01390e4e0c))
+
 ## [1.116.5](https://github.com/cds-snc/ai-answers/compare/v1.116.4...v1.116.5) (2026-03-26)
 
 
