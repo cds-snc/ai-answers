@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.118.0](https://github.com/cds-snc/ai-answers/compare/v1.117.1...v1.118.0) (2026-03-31)
+
+
+### Features
+
+* upgrade and enable batch to partners ([8401248](https://github.com/cds-snc/ai-answers/commit/8401248b4457af9812e311cb4908a11af35a69ed))
+* upgrade and enable batch to partners ([55bc571](https://github.com/cds-snc/ai-answers/commit/55bc571080ef0605fa27fefbdb31fa82df5af3bf))
+
+
+### Bug Fixes
+
+* add formatting for instructions ([1b43e06](https://github.com/cds-snc/ai-answers/commit/1b43e065bce1120a6a3fc01f44cdd7af53041587))
+
 ## [1.117.1](https://github.com/cds-snc/ai-answers/compare/v1.117.0...v1.117.1) (2026-03-31)
 
 
