@@ -83,6 +83,11 @@ const AdminPage = ({ lang = 'en' }) => {
                 {t('admin.navigation.chatViewer')}
               </GcdsLink>
             </li>
+            <li>
+              <GcdsLink href={getPath('batch', lang)}>
+                {t('admin.navigation.batches', 'View and manage batches')}
+              </GcdsLink>
+            </li>
           </ul>
         </section>
 
@@ -93,11 +98,6 @@ const AdminPage = ({ lang = 'en' }) => {
               {t('admin.navigation.title', 'Admin Menu')}
             </h2>
             <ul className="list-none p-0">
-              <li>
-                <GcdsLink href={getPath('batch', lang)}>
-                  {t('admin.navigation.batches', 'View and Manage Batches')}
-                </GcdsLink>
-              </li>
               <li>
                 <GcdsLink href={getPath('users', lang)}>
                   {t('admin.navigation.users', 'Manage User Accounts')}

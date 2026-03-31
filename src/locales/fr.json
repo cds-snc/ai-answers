@@ -214,27 +214,34 @@
     "title": "Lots",
     "sections": {
       "evaluator": {
-        "title": "Nouveau lot"
+        "title": "Exécuter un lot"
       },
       "running": {
         "title": "Lots incomplets"
       },
       "processed": {
-        "title": "Lots traités"
+        "title": "Lots terminés",
+        "description": "Des questions manquantes? Seules les questions qui passent les mesures de protection en matière de confidentialité, de menaces et de manipulation reçoivent une réponse, sont stockées dans la base de données et exportées dans le fichier de sortie."
       }
     },
     "upload": {
       "batchName": "Nom",
-      "intro": "Sélectionnez le service d'IA, la langue et votre fichier CSV. Utilisez un fichier que vous avez téléchargé et nettoyé depuis le visualiseur de rétroaction.",
-      "csvRequirements": {
-        "title": "Le CSV doit contenir :",
-        "items": {
-          "problemDetails": "Détails du problème / Question — requis (en-têtes : REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; insensible à la casse)",
-          "url": "URL / URL de référence — optionnel (en-têtes : URL, REFERRINGURL; insensible à la casse)"
-        }
+      "instructions": {
+        "title": "Comment exécuter un lot :",
+        "step1": "Créez un fichier CSV",
+        "step1a": "Au minimum, une colonne avec vos questions intitulée QUESTION et une avec votre URL de référence intitulée URL.",
+        "step1b": "Les questions peuvent être numérotées avec un espace avant le texte — p. ex. 001.  Comment faire une demande d'AE",
+        "step1c": "Votre fichier CSV peut contenir d'autres colonnes (p. ex. avec des réponses précédentes) — les numéros de questions vous aident à les associer par la suite.",
+        "step1d": "Vous aurez besoin de fichiers séparés pour les questions en anglais à poser/répondre comme si elles étaient sur une page anglaise, et les questions en français à poser/répondre sur la page française de Réponses IA.",
+        "step2": "Attribuez un nom, choisissez le flux de travail (habituellement Défaut) et la famille de modèles (habituellement déjà sélectionnée).",
+        "step3": "Sélectionnez la langue du fichier de lot (c.-à-d. la langue de la page que le lot simule).",
+        "step4": "Choisissez votre fichier CSV et cliquez sur le bouton Télécharger qui apparaît.",
+        "step5": "Cliquez sur le bouton Traiter une fois que le fichier apparaît dans la section Lots incomplets.",
+        "step6": "Lorsque c'est terminé (si le traitement est interrompu et n'est pas terminé, cliquez à nouveau sur le bouton Traiter), il sera déplacé vers la section Lots terminés. Vous pouvez télécharger le fichier à partir de là.",
+        "step7": "Tous les clavardages exécutés dans le lot seront disponibles pour évaluation dans le Tableau de bord d'évaluation et le Visualiseur de clavardage avec l'adresse courriel de la personne qui a soumis le lot."
       },
       "language": {
-        "label": "Langue d'évaluation :",
+        "label": "Langue de la page :",
         "english": "Anglais",
         "french": "Français"
       },
@@ -245,7 +252,7 @@
         "label": "Famille de modèles"
       },
       "file": {
-        "label": "Sélectionner le fichier CSV de rétroaction :",
+        "label": "Ajouter un fichier CSV :",
         "selected": "Fichier sélectionné :"
       },
       "searchService": {

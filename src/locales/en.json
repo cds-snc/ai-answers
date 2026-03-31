@@ -214,27 +214,34 @@
     "title": "Batches",
     "sections": {
       "evaluator": {
-        "title": "New batch"
+        "title": "Run a batch"
       },
       "running": {
         "title": "Incomplete batches"
       },
       "processed": {
-        "title": "Processed batches"
+        "title": "Completed batches",
+        "description": "Missing questions? Only questions that pass the privacy/threat/manipulation guardrails are answered, stored in the database and exported into the output file."
       }
     },
     "upload": {
       "batchName": "Name",
-      "intro": "Select the AI service, language, and your CSV file. Use one you've downloaded and cleaned from the Feedback viewer.",
-      "csvRequirements": {
-        "title": "CSV must contain:",
-        "items": {
-          "problemDetails": "Problem Details / Question — required (headers: REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; case‑insensitive)",
-          "url": "URL / Referring URL — optional (headers: URL, REFERRINGURL; case‑insensitive)"
-        }
+      "instructions": {
+        "title": "How to run a batch:",
+        "step1": "Create a CSV file",
+        "step1a": "At minimum, a column with your questions labelled QUESTION and one with your referring URL labelled URL.",
+        "step1b": "The questions can be numbered with a space before the question text — e.g. 001.  How apply for EI",
+        "step1c": "Your CSV file can contain other columns (e.g. with previous answers) — the question numbers help you match them up later.",
+        "step1d": "You'll need separate files for English questions to be asked/answered as if on an English page, and French questions to be asked/answered on the French AI Answers page.",
+        "step2": "Assign a name, choose workflow (usually Default) and model family (usually already selected).",
+        "step3": "Select the language of the batch file (i.e. the language of the page the batch is simulating).",
+        "step4": "Choose your CSV file and click the Upload button that appears.",
+        "step5": "Click the Process button once the file shows up in the Incomplete batches section.",
+        "step6": "When it's done (if it gets interrupted and didn't finish, click the Process button again), it will move to the Completed batches section. You can download the file from there.",
+        "step7": "All of the chats run in the batch will be available to evaluate in the Evaluation dashboard and Chat viewer with the email address of the person who submitted the batch."
       },
       "language": {
-        "label": "Evaluation language:",
+        "label": "Page language:",
         "english": "English",
         "french": "French"
       },
@@ -245,7 +252,7 @@
         "label": "Model family"
       },
       "file": {
-        "label": "Select feedback CSV file:",
+        "label": "Add CSV file:",
         "selected": "Selected file:"
       },
       "buttons": {
