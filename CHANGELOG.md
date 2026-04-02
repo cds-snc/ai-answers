@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.118.1](https://github.com/cds-snc/ai-answers/compare/v1.118.0...v1.118.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* remove duplicates, fix keys ([3edf273](https://github.com/cds-snc/ai-answers/commit/3edf273830f0645768ce79acfbceae8c8de18081))
+* remove duplicates, fix keys ([2f3f209](https://github.com/cds-snc/ai-answers/commit/2f3f2098ce009421ef5db918c3182b803da0ba54))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump brace-expansion from 1.1.12 to 1.1.13 ([e75dd62](https://github.com/cds-snc/ai-answers/commit/e75dd62ee3ec673e1afb0d4fe8bfcfac49acacb1))
+* **deps:** bump node-forge from 1.3.3 to 1.4.0 ([a98cca6](https://github.com/cds-snc/ai-answers/commit/a98cca6937a0c455cb6447886fefa1935874c683))
+* **deps:** bump path-to-regexp from 0.1.12 to 0.1.13 ([0e73a61](https://github.com/cds-snc/ai-answers/commit/0e73a616050afb99c62abcc06514e7c5876b314d))
+* **deps:** bump path-to-regexp from 8.3.0 to 8.4.0 in /server ([8b02ea4](https://github.com/cds-snc/ai-answers/commit/8b02ea43c0c55c5f157e678571815e4d9b1ecaa9))
+
 ## [1.118.0](https://github.com/cds-snc/ai-answers/compare/v1.117.1...v1.118.0) (2026-03-31)
 
 
