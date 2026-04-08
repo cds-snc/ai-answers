@@ -125,7 +125,7 @@ const resetPasswordHandler = async (req, res) => {
     return res.status(200).json({ success: true, message: 'password reset successfully' });
   } catch (err) {
     console.error(`[auth-reset-password][${os.hostname()}] Error:`, err);
-    return res.status(500).json({ success: false, error: 'failed to reset password' });
+    return res.status(500).json({ success: false, message: 'failed to reset password' });
   }
 };
 

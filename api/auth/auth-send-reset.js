@@ -25,7 +25,7 @@ const sendResetHandler = async (req, res) => {
     }
 
     // Always generate a fresh secret on each reset request to invalidate prior codes.
-    // Reset attempt count for the new secret, but preserve any active lockout until it expires.
+    // Do not reset attempt count — preserves lockout across requests to prevent cycling attacks.
     const secret = speakeasy.generateSecret({ length: 32 });
     console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
     user.resetPasswordSecret = secret.base32;
