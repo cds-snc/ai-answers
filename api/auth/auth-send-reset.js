@@ -24,13 +24,11 @@ const sendResetHandler = async (req, res) => {
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
-    // Always generate a fresh secret on each reset request (invalidates prior codes).
-    // Also clear any existing lockout so the user can attempt the new code immediately.
+    // Always generate a fresh secret on each reset request to invalidate prior codes.
+    // Reset attempt count for the new secret, but preserve any active lockout until it expires.
     const secret = speakeasy.generateSecret({ length: 32 });
     console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
     user.resetPasswordSecret = secret.base32;
-    user.resetPasswordAttempts = 0;
-    // Do NOT clear resetPasswordLockedUntil — lockout must be waited out
     await user.save();
 
     // Generate TOTP code from the secret (in-memory, no DB read!)

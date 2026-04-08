@@ -84,9 +84,9 @@ const resetPasswordHandler = async (req, res) => {
     });
 
     if (!isValid) {
-      // Atomically increment failed attempts to prevent race conditions
+      // Atomically increment failed attempts for the specific secret being verified
       const updated = await User.findOneAndUpdate(
-        { _id: user._id, resetPasswordSecret: { $ne: null } },
+        { _id: user._id, resetPasswordSecret: user.resetPasswordSecret },
         { $inc: { resetPasswordAttempts: 1 } },
         { new: true }
       );

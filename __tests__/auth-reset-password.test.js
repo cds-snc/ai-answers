@@ -136,7 +136,7 @@ describe('Auth Reset Password Handler', () => {
       expect.objectContaining({ code: 'RESET_INVALID_CODE' })
     );
     expect(User.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: 'user-123', resetPasswordSecret: { $ne: null } },
+      { _id: 'user-123', resetPasswordSecret: 'secret' },
       { $inc: { resetPasswordAttempts: 1 } },
       { new: true }
     );
