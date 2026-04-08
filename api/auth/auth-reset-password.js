@@ -12,7 +12,8 @@
  * Security controls:
  * - 30-minute account lockout after 5 failed code attempts
  * - Atomic $inc on attempt counter to prevent race conditions
- * - Generic error responses to prevent user enumeration
+ * - Generic invalid-code/error responses where possible; lockout may return
+ *   a distinct response to enforce reset throttling
  * - Secret cleared on successful reset (link becomes single-use)
  */
 import dbConnect from '../db/db-connect.js';
