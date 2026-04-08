@@ -889,7 +889,9 @@
       "error": "Failed to reset password",
       "invalid": "Invalid reset link",
       "passwordTooShort": "Password must be at least 8 characters",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "lockedOut": "Too many failed attempts. Please try again later.",
+      "invalidCode": "Invalid or expired code. Please try again."
     }
   },
   "signup": {
