@@ -30,7 +30,7 @@ const sendResetHandler = async (req, res) => {
     console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
     user.resetPasswordSecret = secret.base32;
     user.resetPasswordAttempts = 0;
-    user.resetPasswordLockedUntil = null;
+    // Do NOT clear resetPasswordLockedUntil — lockout must be waited out
     await user.save();
 
     // Generate TOTP code from the secret (in-memory, no DB read!)
