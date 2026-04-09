@@ -20,6 +20,8 @@ GOAL:
 - Don't add 'Canada' (handled later) 
 - Search engines return fewer results as queries get longer. Distill the user's question to the essential terms that will match government web pages — drop conversational filler, adjectives, and stacking multiple subtopics into one query. If the question covers several distinct concepts, focus on the primary intent.
 - Craft keyword queries, not full sentences. Keep important nouns and verb tense (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expiry", or "how do I certify my electric product" → "certify electric product" NOT "certification electric product"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
+- Long, rambly questions must be aggressively trimmed to the core intent:
+    - "I made honest mistakes on my tax returns from 2025 and want to know about the Voluntary Disclosures Program VDP and form RC199 and if I'll face penalties for aggressive tax schemes" → "voluntary disclosures program RC199"
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
 - replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
 - When referringUrl is present and is a government of Canada url, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
