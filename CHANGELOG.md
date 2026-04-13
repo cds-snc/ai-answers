@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.119.0](https://github.com/cds-snc/ai-answers/compare/v1.118.1...v1.119.0) (2026-04-13)
+
+
+### Features
+
+* cohere plan ([ce3398b](https://github.com/cds-snc/ai-answers/commit/ce3398ba46340a74507810519cc5ba6533d13ed7))
+* run search query again if failed ([b3f4065](https://github.com/cds-snc/ai-answers/commit/b3f4065fac69e4409dfe4b6bd5593e5a2d8befdf))
+* run search query again if failed ([e7b3d0b](https://github.com/cds-snc/ai-answers/commit/e7b3d0b5f7074bb40c4d49dcef571b2d15f743bb))
+
+
+### Bug Fixes
+
+* account lockout, secret rotation, enumeration prevention on password reset ([84ad7ac](https://github.com/cds-snc/ai-answers/commit/84ad7ac93b9fd81ca15f93e16e89a725c62f339b))
+* add groceries and one-time to cra ([b5251eb](https://github.com/cds-snc/ai-answers/commit/b5251eb350bff40d18e5ba952123b0862ea29bd0))
+* add groceries and one-time to cra ([7de16d1](https://github.com/cds-snc/ai-answers/commit/7de16d11bdc608d6e288919264bc7dec296de657))
+* address Copilot review — persistent lockout, secret-specific counter, comment fix ([b809020](https://github.com/cds-snc/ai-answers/commit/b809020c90627f402baf80078c0c28e0485ca0a1))
+* better example of shortening long rambly question ([0312a95](https://github.com/cds-snc/ai-answers/commit/0312a95be73d5aba1821e6ed38e41001a797010f))
+* consistent 500 error shape and accurate comment in reset flow ([43fd49c](https://github.com/cds-snc/ai-answers/commit/43fd49c69bb408112f974dbbb63e619166ea90ea))
+* refine prompt ([9f2e9b7](https://github.com/cds-snc/ai-answers/commit/9f2e9b7675084269874753833adf5385fc413ebd))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump axios from 1.13.5 to 1.15.0 ([55c54cb](https://github.com/cds-snc/ai-answers/commit/55c54cbf4581d2c9926dc1aa4b1f7b0990f23cc8))
+* **deps:** bump axios from 1.13.5 to 1.15.0 ([6a0c237](https://github.com/cds-snc/ai-answers/commit/6a0c2374614360d6aed6c918b9ebadfb59d2d259))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder in /server ([37b6f31](https://github.com/cds-snc/ai-answers/commit/37b6f31667ba6d656cd692f35ee2aae43de7c8b4))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder in /server ([cceb1af](https://github.com/cds-snc/ai-answers/commit/cceb1af523190993759fc76414b9c8614f6afaf6))
+* **deps:** bump langsmith from 0.4.12 to 0.5.18 ([c333d38](https://github.com/cds-snc/ai-answers/commit/c333d38f5f163d8f9dc86947631b329911ed74d2))
+* **deps:** bump langsmith from 0.4.12 to 0.5.18 ([c4407f6](https://github.com/cds-snc/ai-answers/commit/c4407f6e35625ca86d432b3245e929ccd9444181))
+* **deps:** bump lodash from 4.17.21 to 4.18.1 ([1d64261](https://github.com/cds-snc/ai-answers/commit/1d64261438e2bbea39dddb8d52819687388570cd))
+* **deps:** bump lodash from 4.17.21 to 4.18.1 ([79663e8](https://github.com/cds-snc/ai-answers/commit/79663e83488332b342ed17e21d7c9f80a5a45e9e))
+* **deps:** bump vite from 7.3.1 to 7.3.2 ([171049d](https://github.com/cds-snc/ai-answers/commit/171049d879e77aebbf65a60e2f564bf0484d8208))
+* **deps:** bump vite from 7.3.1 to 7.3.2 ([91abb0b](https://github.com/cds-snc/ai-answers/commit/91abb0b32f0a9af282069b3861cee7e87d4f46c7))
+* remove hackerone pilot security.txt listener rule ([b4015c0](https://github.com/cds-snc/ai-answers/commit/b4015c0409d0b621f3897f33a02859a6783fcec8))
+* remove hackerone pilot security.txt listener rule ([94f5fc2](https://github.com/cds-snc/ai-answers/commit/94f5fc299ca3e790f461d8bdca7a61a54e50199b))
+
 ## [1.118.1](https://github.com/cds-snc/ai-answers/compare/v1.118.0...v1.118.1) (2026-04-01)
 
 
