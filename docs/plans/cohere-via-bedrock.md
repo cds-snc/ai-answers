@@ -4,6 +4,18 @@
 
 Cohere is currently wired into `agents/AgentFactory.js` as a **direct-to-Cohere** provider using the `cohere-ai` SDK and a `COHERE_API_KEY` / `REACT_APP_COHERE_API_KEY` env var. That path is a relic from before the repo moved behind Azure and is effectively dead (see `docs/coding-agent-docs/architecture-quick-ref.md`: Cohere is listed as "initial configuration only, no graph workflow").
 
+### Relic code found during investigation
+
+Two things in the current direct-Cohere wiring are worth calling out before the rewrite, because they confirm the path is not in active use and should be deleted outright rather than migrated:
+
+1. **Env var mismatch between the two Cohere branches.** `createCohereAgent` (`agents/AgentFactory.js:109`) reads `process.env.REACT_APP_COHERE_API_KEY`, while the `case 'cohere'` branch inside `createContextAgent` (`agents/AgentFactory.js:200`) reads `process.env.COHERE_API_KEY`. Only one of these could ever have been set at a time in any given deployment, so at least one of the two branches has been silently broken for a while. The `REACT_APP_` prefix is itself a relic from when this code ran in a Create-React-App frontend context — it has no meaning server-side.
+
+2. **`case 'cohere'` in `createContextAgent` is almost certainly non-functional.** That branch constructs a raw `CohereClient` from the `cohere-ai` SDK (`agents/AgentFactory.js:199`) and then passes it into `createReactAgent({ llm, tools: [] })`. `createReactAgent` expects a LangChain `BaseChatModel` (like `ChatCohere`, `ChatOpenAI`, etc.) — a raw `CohereClient` does not implement that interface, so this would throw at runtime the first time it's invoked. The fact that nobody has reported this error is strong evidence the branch is unreachable in practice. Compare with `createCohereAgent` directly above it, which correctly uses `ChatCohere` from `@langchain/cohere`.
+
+Both issues disappear in step 6 when the direct-Cohere code is deleted. Noting them here so the Bedrock rewrite doesn't accidentally preserve the bugs by copy-pasting.
+
+---
+
 The intent going forward is to reach Cohere through **Amazon Bedrock** using the same cross-account role assumption pattern that the Claude/Nova connectivity probes already use. The AWS infrastructure for this is already in place:
 
 - IAM: ECS task role can assume `BEDROCK_ROLE_ARN` (`terragrunt/aws/iam/iam.tf`, `terragrunt/aws/pr_review/iam.tf`)
