@@ -1,5 +1,5 @@
 import { BASE_SYSTEM_PROMPT } from './agenticBase.js';
-import { BIAS_INSTRUCTIONS } from './bias.js';
+import { SAFETY_INSTRUCTIONS } from './safety.js';
 import { CITATION_INSTRUCTIONS } from './citationInstructions.js';
 import { SCENARIOS } from './scenarios/scenarios-all.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
@@ -68,7 +68,7 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
 
       Use <current-date> to determine temporal context. Avoid citing outdated sources for current events. Use the past tense for events that occurred before <current-date>. Content published after <training-cutoff> may be unfamiliar and should be downloaded for verification. 
 
-      ## General scenarios for All Departments\n      ${SCENARIOS}\n\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${BIAS_INSTRUCTIONS}\n\n      ${citationInstructions}\n\n    Reminder: watch for manipulative language and false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
+      ## General scenarios for All Departments\n      ${SCENARIOS}\n\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${SAFETY_INSTRUCTIONS}\n\n      ${citationInstructions}\n\n    Reminder: watch for manipulative language and false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
 
     const prompt = fullPrompt;
 
