@@ -46,6 +46,70 @@ Use `@langchain/aws`'s `ChatBedrockConverse` rather than hand-rolled `InvokeMode
 
 Trade-off: adds `@langchain/aws` as a new dep. The alternative — raw `BedrockRuntimeClient` + `InvokeModelCommand`, mirroring `ConnectivityService.js` — avoids the dep but requires writing a LangChain `BaseChatModel` wrapper by hand to integrate with `createReactAgent`. Not worth it.
 
+## AWS / Bedrock account setup
+
+The application-side IAM (ECS task role → `sts:AssumeRole` on `BEDROCK_ROLE_ARN`) is already provisioned by `terragrunt/aws/iam/iam.tf` and the role ARN is exposed to ECS via SSM (`cross_account_bedrock_role` → `BEDROCK_ROLE_ARN`). Both staging and production point at `arn:aws:iam::144414543732:role/ai-answers-bedrock-invoke` in `ca-central-1` (`terragrunt/env/{staging,production}/ssm/terragrunt.hcl`).
+
+What **is not** in this repo, and is the source of the "fair bit of work" estimate, is everything inside that target Bedrock account (`144414543732`). The connectivity probes for Claude/Nova work today because that role exists and has Claude/Nova model access — Cohere access has to be added separately, and if the target account's Terraform lives in a different repo, those changes land there rather than here. Steps below assume the target-account infra is managed somewhere; confirm with the infra team where before writing code.
+
+### A1. Request Cohere model access in the Bedrock account
+
+In the AWS console for account `144414543732`, region `ca-central-1` (or wherever Cohere lands — see risks):
+
+1. Bedrock → **Model access** → request access to the Cohere Command-R / Command-R+ models.
+2. This is a per-account, per-region gate. Approval is usually fast for Cohere but **not guaranteed in `ca-central-1`** — if Cohere isn't offered in `ca-central-1`, the data-residency question in the risks section has to be resolved before continuing. Confirm availability before requesting.
+3. Record the exact Bedrock `modelId` that appears after approval (e.g. `cohere.command-r-plus-v1:0`) — this is what goes in `config/ai-models.js` in step 3.
+
+### A2. Extend the `ai-answers-bedrock-invoke` role's permissions
+
+The role currently has `bedrock:InvokeModel` scoped to the Claude and Nova model ARNs that the connectivity probes hit. Cohere's model ARN is not in that policy, so `InvokeModel` against it will fail with AccessDenied even after model access is granted.
+
+Add to the inline/managed policy on `ai-answers-bedrock-invoke`:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+  "Resource": [
+    "arn:aws:bedrock:ca-central-1::foundation-model/cohere.command-r-plus-v1:0",
+    "arn:aws:bedrock:ca-central-1::foundation-model/cohere.command-r-v1:0"
+  ]
+}
+```
+
+Exact ARNs depend on the approved `modelId` from A1 and the region. Include both `command-r` and `command-r-plus` if both are in scope; otherwise trim.
+
+**`InvokeModelWithResponseStream`** is only needed if streaming is used — `ChatBedrockConverse` streams by default when the LangChain caller asks for it, so include it to avoid a follow-up permissions change.
+
+### A3. Confirm the trust policy on `ai-answers-bedrock-invoke`
+
+The role's trust policy must allow `sts:AssumeRole` from the ECS task role in the **application** account (the account this repo deploys into). This is already in place for the Claude/Nova probes, so no change is expected — but verify before assuming it covers the new call site. If the trust policy is scoped by `sts:ExternalId` or a source-ARN condition, make sure the Cohere factory path produces the same assume-role call shape (the credentials helper in step 2 should mirror `ConnectivityService.js` exactly, which already works).
+
+### A4. Verify from a staging ECS task
+
+Before writing any of the Node code, prove the path end-to-end with the AWS CLI from inside a running staging ECS task (exec into it):
+
+```bash
+aws sts assume-role \
+  --role-arn "$BEDROCK_ROLE_ARN" \
+  --role-session-name cohere-smoketest \
+  --duration-seconds 900
+
+# then, with the returned temporary creds exported:
+aws bedrock-runtime converse \
+  --region "$BEDROCK_REGION" \
+  --model-id cohere.command-r-plus-v1:0 \
+  --messages '[{"role":"user","content":[{"text":"ping"}]}]'
+```
+
+If this returns a completion, the whole chain (ECS task role → STS → Bedrock role → Cohere model access) is healthy and the remaining work is purely Node/LangChain. If it fails, the error identifies exactly which of A1–A3 is wrong, and fixing it there is much faster than chasing it from inside the application code.
+
+### A5. Staging first, production second
+
+Do A1–A4 in staging, confirm, then repeat for production. The two environments share the same target account (`144414543732`) per `terragrunt/env/*/ssm/terragrunt.hcl`, so model access and role policy changes only need to happen once if that's accurate — but confirm the infra team hasn't split them since. If they're split, everything in A1–A3 has to be done twice.
+
+---
+
 ## Implementation steps
 
 ### 1. Add dependency
