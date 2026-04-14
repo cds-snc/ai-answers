@@ -429,11 +429,11 @@ Page Language: en
 - `context-hc-sc/` - Health Canada (HC-SC) and Public Health Agency (PHAC-ASPC)
 - `context-ircc/` - Immigration, Refugees and Citizenship Canada (IRCC)
 - `context-ised-isde/` - Innovation, Science and Economic Development Canada (ISED-ISDE)
-- `context-jus/` - JUS
+- `context-jus/` - Department of Justice Canada (JUS)
 - `context-nrcan-rncan/` - Natural Resources Canada (NRCAN-RNCAN)
 - `context-pspc-spac/` - Public Services and Procurement Canada (PSPC-SPAC)
 - `context-sac-isc/` - Indigenous Services Canada (SAC-ISC) and Crown-Indigenous Relations (RCAANC-CIRNAC)
-- `context-statcan/` - STATCAN
+- `context-statcan/` - Statistics Canada (STATCAN)
 - `context-tbs-sct/` - Treasury Board Secretariat (TBS-SCT)
 
 **Note:** This is a growing list as new departments become partners and their scenario files are added to the system. The example below uses **EDSC-ESDC** as the department, so you'll see the EDSC-ESDC-specific scenarios included in the prompt. If a different department had been matched (or no scenario file existed for that department), that section would be different or omitted entirely.

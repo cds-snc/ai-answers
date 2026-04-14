@@ -74,6 +74,8 @@ function getDepartmentDisplayName(contextCode) {
     'ECCC': 'Environment and Climate Change Canada (ECCC)',
     'ISED-ISDE': 'Innovation, Science and Economic Development Canada (ISED-ISDE)',
     'NRCAN-RNCAN': 'Natural Resources Canada (NRCAN-RNCAN)',
+    'STATCAN': 'Statistics Canada (STATCAN)',
+    'JUS': 'Department of Justice Canada (JUS)',
   };
   return nameMap[contextCode] || contextCode;
 }
