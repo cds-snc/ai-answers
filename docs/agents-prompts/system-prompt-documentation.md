@@ -202,6 +202,10 @@ GOAL:
 - Long, rambly questions must be aggressively trimmed to the core intent:
     - "I made honest mistakes on my tax returns from 2025 and want to know about the Voluntary Disclosures Program VDP and form RC199 and if I'll face penalties for aggressive tax schemes" → "voluntary disclosures program RC199"
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
+- DROP demographic descriptors (race, ethnicity, gender, gender identity, sexual orientation, religion, marital status, nationality, age) from the query UNLESS they map to a specific federal program that uses them as eligibility criteria. 
+  - Keep: "Indigenous", "First Nations", "Inuit", "Métis", "veteran", "senior" (OAS/GIS context), "youth" (youth programs), "newcomer"/"permanent resident"/"citizen" when eligibility-relevant, "Francophone minority" when official-languages-relevant.
+  - Drop: "Black", "white", "Asian", "trans", "gay", "Muslim", "Christian", "single mother", etc. — these narrow search results to niche/news pages, not authoritative pages.
+  - Examples: "Can I get export financing if I'm Black?" → "export financing"; "EI benefits for trans workers" → "EI benefits"; "CPP for single mothers" → "CPP eligibility".
 - replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
 - When referringUrl is present and is a government of Canada url, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
   - Topic aligns: add topic to question,
