@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.120.0](https://github.com/cds-snc/ai-answers/compare/v1.119.0...v1.120.0) (2026-04-15)
+
+
+### Features
+
+* break manipulation out ([025ac2f](https://github.com/cds-snc/ai-answers/commit/025ac2f82ef179def279f19fc9eb8bd2e9155b23))
+* break manipulation out - extensive testing ([7ed5f7e](https://github.com/cds-snc/ai-answers/commit/7ed5f7ec48633198432535f72eeb9670d6ee035e))
+* fix focus handling ([f967ff4](https://github.com/cds-snc/ai-answers/commit/f967ff4c0bba73c0e6899d3725f8f60ca66515bb))
+* fix icon focus ([fbb1f7f](https://github.com/cds-snc/ai-answers/commit/fbb1f7f38b38af473a5b86ca473939f3974f9852))
+
+
+### Bug Fixes
+
+* add another example ([a434574](https://github.com/cds-snc/ai-answers/commit/a434574fe2d8ba6e2acfbc2b4988535079c8fbc0))
+* add AWS deploy side steps to plan ([3a2a241](https://github.com/cds-snc/ai-answers/commit/3a2a24134ec48873fd8556d6fcd9b588221364c9))
+* add AWS deploy side steps to plan ([ed4c997](https://github.com/cds-snc/ai-answers/commit/ed4c99736470912b6cb547767bb82a65f94b524e))
+* add to system prompt doc ([7d63bf9](https://github.com/cds-snc/ai-answers/commit/7d63bf9740b01e9f166c0febe309e2d1cc4c8765))
+* final tweaks to get rid of "not x" problem ([b2c039a](https://github.com/cds-snc/ai-answers/commit/b2c039adc1aea5fd94c5eb51e9166d030ec5ea75))
+* hardcoded abbreviation - expand ([90b7fe6](https://github.com/cds-snc/ai-answers/commit/90b7fe643eb7d66c89e984b08c2a04feb3572b40))
+* rename, add ([2a7dc70](https://github.com/cds-snc/ai-answers/commit/2a7dc70b9d9b154155fb1385b56b6b2cc9028727))
+* tweak answer, revise search ([90f0eaa](https://github.com/cds-snc/ai-answers/commit/90f0eaa2d2cc52136be6d8b6c5f06dbe27fa4041))
+* update system prompt doc ([641e4a7](https://github.com/cds-snc/ai-answers/commit/641e4a74a8692811c5d882490b44140d03af25b2))
+
 ## [1.119.0](https://github.com/cds-snc/ai-answers/compare/v1.118.1...v1.119.0) (2026-04-13)
 
 
