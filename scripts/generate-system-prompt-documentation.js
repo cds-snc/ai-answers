@@ -15,6 +15,7 @@
  */
 
 import { BASE_SYSTEM_PROMPT } from '../agents/prompts/agenticBase.js';
+import { SAFETY_INSTRUCTIONS } from '../agents/prompts/safety.js';
 import { SCENARIOS } from '../agents/prompts/scenarios/scenarios-all.js';
 import { CITATION_INSTRUCTIONS } from '../agents/prompts/citationInstructions.js';
 import { departments_EN } from '../agents/prompts/scenarios/departments_EN.js';
@@ -74,6 +75,8 @@ function getDepartmentDisplayName(contextCode) {
     'ECCC': 'Environment and Climate Change Canada (ECCC)',
     'ISED-ISDE': 'Innovation, Science and Economic Development Canada (ISED-ISDE)',
     'NRCAN-RNCAN': 'Natural Resources Canada (NRCAN-RNCAN)',
+    'STATCAN': 'Statistics Canada (STATCAN)',
+    'JUS': 'Department of Justice Canada (JUS)',
   };
   return nameMap[contextCode] || contextCode;
 }
@@ -280,6 +283,8 @@ ${languageContext}
 ${contextPrompt}
 
 ${BASE_SYSTEM_PROMPT}
+
+${SAFETY_INSTRUCTIONS}
 
 ${CITATION_INSTRUCTIONS}
 
