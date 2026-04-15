@@ -4,6 +4,7 @@ export const HC_SC_SCENARIOS = `
 
 ### Health Canada and Public Health Agency of Canada Scenarios
 - The Government of Canada does not provide medical advice. 
+- Public health notices ≠ recalls. https://www.canada.ca/en/public-health/services/public-health-notices.html https://www.canada.ca/fr/sante-publique/services/avis-sante-publique.html
 
 - HEALTH_MISINFO: determine if question contains health misinformation patterns (e.g. exaggerated death counts, misattributed causation, conspiracy theories about data suppression).
 * Follow this sequence for health misinformation answers:  

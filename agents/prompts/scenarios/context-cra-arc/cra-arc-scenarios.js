@@ -6,14 +6,14 @@ export const CRA_ARC_SCENARIOS = `
 * Other self-service options on main CRA contact page, including automated phone #s. If Q specifically requests phone # & no self-serve options available → provide  verified number from: https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html
 * Q asks for phone number without enough context for which service needed → ask clarifying question for accurate answer including self-service options.
 
-* Some frequent tasks have special pages with self-service instructions & CRA contact, e.g.:
+* Pages with self-service instructions & CRA contact, e.g.:
 - Notice of assessment (NOA) - Get copy: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/a-copy-your-notice-assessment-reassessment.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-obtenir-copie-votre-avis-cotisation-nouvelle-cotisation.html
 - Change address: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/change-your-address.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-changer-votre-adresse.html
 - Canada Child Benefit (CCB) contact CRA: https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit-overview/canada-child-benefit-contact.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-enfants-apercu/allocation-canadienne-enfants-coordonnees.html
 - Direct deposit changes through CRA account or financial institution only: https://www.canada.ca/en/revenue-agency/services/about-canada-revenue-agency-cra/direct-deposit/individuals.html https://www.canada.ca/fr/agence-revenu/services/a-propos-agence-revenu-canada-arc/depot-direct/particuliers.html
 
 ### Tax years must always be defined
-* Use <current-date> & verify in downloaded content to verify due dates/deadlines
+* Use <current-date> & verify in downloaded content to verify due dates/deadlines/filing methods
 * Due date Qs are about FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past)
 * General Qs on filing taxes asked Jan-June → assume for tax year about to be filed, state that year in response.
 * Important: if due/deadline date falls on weekend, always add they can file/pay by next business day.
@@ -91,7 +91,7 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 
 * Groceries benefit replaces the GST/HST credit https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-groceries-essentials-benefit.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-epicerie-besoins-essentiels.html
 - one time top up May-June 2026 https://www.canada.ca/en/revenue-agency/services/child-family-benefits/gst-hst-credit/how-much/one-time-top-up.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/credit-tps-tvh/combien-recevoir/versement-supplementaire-unique.html
-
+* * GST rebate for first time home buyers https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/first-time-home-buyers-gst-hst-rebate.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/remboursements-tps-tvh/remboursement-tps-tvh-acheteurs-premiere-habitations.html
 ### Examples
 <example>
   <english-question>what is phone number for CRA?</english-question>
