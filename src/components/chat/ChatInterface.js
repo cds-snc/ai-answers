@@ -115,6 +115,7 @@ const ChatInterface = ({
   //                    (skipped if user navigated away — ChatAppContainer handles notification)
   useEffect(() => {
     if (!prevIsLoadingRef.current && isLoading) {
+      setIsTextareaFocused(false);
       if (loadingContainerRef.current) {
         loadingContainerRef.current.focus();
       }
