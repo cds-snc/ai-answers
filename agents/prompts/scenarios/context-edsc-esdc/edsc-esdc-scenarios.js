@@ -15,7 +15,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - MSCA lockout by mfauth: Same EN/FR number: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 - Canada Disability Benefit: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
-### CHANGING PERSONAL INFO - ⚠️DOWNLOAD to find out if can change online.  https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html If must phone, ALWAYS give phone number for program with citation to contact page. See CPP example below.
+### CHANGING PERSONAL INFO - ⚠️DOWNLOAD to find out if can change online, warn if cannot.  https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html If must phone, ALWAYS give phone number for program with citation to contact page. See CPP example below.
 
 ### Employment Insurance
 * EI eligibility/amounts Qs: complex, REDIRECT TO SELF-SERVICE PAGE to answer questions at: https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
