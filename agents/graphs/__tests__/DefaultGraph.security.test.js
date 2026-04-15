@@ -21,6 +21,7 @@ vi.mock('../workflows/GraphWorkflowHelper.js', () => {
                 translatedText: '[TRANSLATED]',
                 originalLanguage: 'en'
             }),
+            postTranslateGuard: vi.fn().mockResolvedValue(),
             getContextForFlow: vi.fn().mockResolvedValue({
                 context: { searchQuery: 'query' },
                 usedExistingContext: false
