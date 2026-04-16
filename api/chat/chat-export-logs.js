@@ -161,14 +161,40 @@ const TOOLS_HEADER_ORDER = (() => {
 const TOOL_COLUMN_COUNT = 4;
 const TOOL_FIELDS_TO_STRIP = ['output', 'createdAt', 'updatedAt', '__v', '_id'];
 
+// chatId lives on the chat row already; drop it from the tool's input payload
+const stripChatIdFromInput = (input) => {
+    if (input === null || input === undefined) return input;
+    if (typeof input === 'string') {
+        try {
+            const parsed = JSON.parse(input);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                delete parsed.chatId;
+                return JSON.stringify(parsed);
+            }
+        } catch (_) {
+            // not JSON — leave it alone
+        }
+        return input;
+    }
+    if (typeof input === 'object' && !Array.isArray(input)) {
+        const { chatId: _drop, ...rest } = input;
+        return rest;
+    }
+    return input;
+};
+
 const serializeToolForExport = (tool, extraStrip = []) => {
     if (!tool || typeof tool !== 'object') return '';
     const stripSet = new Set([...TOOL_FIELDS_TO_STRIP, ...extraStrip]);
+    // Put 'tool' first so the leading {"tool": prefix strip below is stable
     const clean = {};
+    if (tool.tool !== undefined) clean.tool = tool.tool;
     for (const key of Object.keys(tool)) {
-        if (!stripSet.has(key)) clean[key] = tool[key];
+        if (key === 'tool' || stripSet.has(key)) continue;
+        clean[key] = key === 'input' ? stripChatIdFromInput(tool[key]) : tool[key];
     }
-    return JSON.stringify(clean);
+    // Strip the wrapping {"tool": ... } so the cell starts with the tool name value
+    return JSON.stringify(clean).replace(/^\{"tool":/, '').replace(/\}$/, '');
 };
 
 const buildToolColumns = (tools) => {
