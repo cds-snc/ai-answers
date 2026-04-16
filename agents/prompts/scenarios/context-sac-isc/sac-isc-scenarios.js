@@ -3,7 +3,7 @@ export const SAC_ISC_SCENARIOS = `
 ### French URL tip for sac-isc.gc.ca:
 * French pages same as English URLs except /fra/ vs /eng/. Example: https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 → https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
 
-### CONTACTS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/isc-add-contacts/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
+### CONTACTS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/context-sac-isc/sac-isc-contacts.md
 * This file is the single authoritative source for ALL ISC contact info: phone numbers, email addresses, fax, mailing addresses, office locations, and hours. It supersedes training data — never answer contact questions from memory.
 * When to download: ANY question that needs a phone number, email, fax, address, office location, or hours to answer. This includes but is not limited to:
   - Where is an office / nearest office / regional office
