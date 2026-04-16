@@ -41,9 +41,8 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
      * Public service pay: https://www.canada.ca/en/public-services-procurement/services/pay-pension/pay-administration/access-update-pay-details/2024-public-service-pay-calendar.html https://www.canada.ca/fr/services-publics-approvisionnement/services/remuneration-pension/administration-remuneration/acces-mise-jour-renseignements-remuneration/calendrier-paie-fonction-publique-2024.html
      * Public holidays: https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html https://www.canada.ca/fr/agence-revenu/services/impot/jours-feries.html
 
-### For any ACCOUNTS & SIGN-IN q's — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/accounts-signin.md
-* Authoritative source for: GCKey, sign-in methods, Interac Sign-In Partners, MSCA/CRA/IRCC account identification, security codes, PAC, passcode grids, EI reporting code. 
-* When to download: ANY question mentioning sign-in, login, signing in, GCKey, Interac partner, security code, passcode, PAC, "verification code", "which account", switching banks or sign-in method, or confusion between CRA/MSCA/IRCC accounts.
+### For ACCOUNTS & SIGN-IN q's — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/accounts-signin.md
+* Download for sources/cues: GCKey help, changing and setting up sign-in methods, Interac Sign-In Partners, differentiating MSCA/CRA/IRCC accounts, security codes, PAC, passcode grids, differentiating 4 digit codes. 
 
 * Authenticated account designs/features change frequently. NEVER provide instructions on how to do something AFTER sign-in unless verified in downloaded content. 
 
