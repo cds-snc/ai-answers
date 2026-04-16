@@ -17,6 +17,7 @@ export const EDSC_ESDC_SCENARIOS = `
 
 ### Change direct deposit, address, phone - ⚠️DOWNLOAD to find out if can change online (as of April 2026, can only change for Canada Dental Care in MSCA ) warn if cannot: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html 
 -If must phone, ALWAYS give phone number for program. See CPP example below.
+- Remind that changes aren't shared, will need to change with other programs/depts like CRA 
 
 ### Employment Insurance
 * EI eligibility/amounts Qs: complex, REDIRECT TO SELF-SERVICE PAGE to answer questions at: https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
