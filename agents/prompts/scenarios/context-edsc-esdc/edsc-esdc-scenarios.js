@@ -15,7 +15,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - MSCA lockout by mfauth: Same EN/FR number: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 - Canada Disability Benefit: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
-### Change direct deposit, address, phone - ⚠️DOWNLOAD to find out if can change online (as of April 2026, can only change for Canada Dental Care in MSCA ) warn if cannot: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html 
+### Change direct deposit, address, phone for ESDC programs - ⚠️DOWNLOAD to find out if can change online (as of April 2026, can only change for Canada Dental Care in MSCA ) warn if cannot: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
 -If must phone, ALWAYS give phone number for program. See CPP example below.
 - Remind that changes aren't shared, will need to change with other programs/depts like CRA 
 
