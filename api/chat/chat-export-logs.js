@@ -138,8 +138,34 @@ const DEFAULT_HEADER_ORDER = [
     'context.searchQuery',
     'context.searchResults',
     'context.translatedQuestion',
-    'autoEval.expertFeedback.totalScore'
+    'autoEval.expertFeedback.totalScore',
+    'answer.tools.count',
+    'answer.tools.0',
+    'answer.tools.1',
+    'answer.tools.2',
+    'answer.tools.3'
 ];
+
+const TOOL_COLUMN_COUNT = 4;
+const TOOL_FIELDS_TO_STRIP = ['output', 'createdAt', 'updatedAt', '__v', '_id'];
+
+const serializeToolForExport = (tool) => {
+    if (!tool || typeof tool !== 'object') return '';
+    const clean = {};
+    for (const key of Object.keys(tool)) {
+        if (!TOOL_FIELDS_TO_STRIP.includes(key)) clean[key] = tool[key];
+    }
+    return JSON.stringify(clean);
+};
+
+const buildToolColumns = (tools) => {
+    const arr = Array.isArray(tools) ? tools : [];
+    const cols = { 'answer.tools.count': arr.length };
+    for (let i = 0; i < TOOL_COLUMN_COUNT; i++) {
+        cols[`answer.tools.${i}`] = arr[i] ? serializeToolForExport(arr[i]) : '';
+    }
+    return cols;
+};
 
 function getPopulateOptions(view) {
     // Base population for all views
@@ -157,7 +183,7 @@ function getPopulateOptions(view) {
         }
     ];
 
-    if (view === 'tools') {
+    if (view === 'tools' || view === 'default') {
         // Add tools population
         basePopulate.find(p => p.path === 'answer').populate.push({ path: 'tools', select: '-_id' });
     }
@@ -220,16 +246,14 @@ function flattenInteraction(chat, interaction, view) {
     const sentence3 = sentences[2] || '';
     const sentence4 = sentences[3] || '';
 
+    const toolColumns = buildToolColumns(get(interaction, 'answer.tools', []));
+
     // Explicit Default View Construction
     if (viewDef.mode === 'explicit') {
         return {
             uniqueID,
             chatId: chat.chatId || '',
             userEmail: get(chat, 'user.email'),
-            createdAt: chat.createdAt ? new Date(chat.createdAt).toISOString() : '', // Assuming chat creation time, or interaction?? User list has createdAt.
-            // Using chat.createdAt for the interaction row might be misleading if multiple interactions, but it's what was requested in context of "chat schema".
-            // If interaction has createdAt, use it? Interaction schema usually has timestamps.
-            // Let's prefer interaction.createdAt if available
             createdAt: interaction.createdAt ? new Date(interaction.createdAt).toISOString() : (chat.createdAt ? new Date(chat.createdAt).toISOString() : ''),
 
             pageLanguage: get(interaction, 'context.pageLanguage') || chat.pageLanguage || '',
@@ -290,7 +314,9 @@ function flattenInteraction(chat, interaction, view) {
             'context.searchResults': JSON.stringify(get(interaction, 'context.searchResults', '')),
             'context.translatedQuestion': get(interaction, 'context.translatedQuestion'),
 
-            'autoEval.expertFeedback.totalScore': get(interaction, 'autoEval.expertFeedback.totalScore')
+            'autoEval.expertFeedback.totalScore': get(interaction, 'autoEval.expertFeedback.totalScore'),
+
+            ...toolColumns
         };
     }
 
@@ -316,6 +342,13 @@ function flattenInteraction(chat, interaction, view) {
     flatInteraction.sentence4 = sentence4;
 
     const merged = { ...base, ...flatInteraction };
+
+    // For the tools view, replace the bundled answer.tools array with per-index columns.
+    // Leave auto-eval-debug alone since its tools aren't populated.
+    if (view === 'tools') {
+        delete merged['answer.tools'];
+        Object.assign(merged, toolColumns);
+    }
 
     // Filter exclusions
     if (excludePatterns.length > 0) {
@@ -479,7 +512,7 @@ async function chatExportHandler(req, res) {
             pipeline.push({ $addFields: { 'interactions.answer.citation': { $arrayElemAt: ['$interactions.answer.citation_doc', 0] } } });
 
             // Answer: Tools (CONDITIONAL)
-            if (view === 'tools') {
+            if (view === 'tools' || view === 'default') {
                 pipeline.push({ $lookup: { from: 'tools', localField: 'interactions.answer.tools', foreignField: '_id', as: 'interactions.answer.tools' } });
             }
 
