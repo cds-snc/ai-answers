@@ -96,7 +96,7 @@ const DEFAULT_HEADER_ORDER = [
     'questionLanguage',
     'redactedQuestion',
     'aiService',
-    'searchService',
+    'context.department',
     'citationUrl',
     'englishAnswer',
     'answer',
@@ -134,26 +134,39 @@ const DEFAULT_HEADER_ORDER = [
     'expertFeedback.neverStale',
     'expertFeedback.createdAt',
     'expertFeedback.updatedAt',
-    'context.department',
+    'searchService',
     'context.searchQuery',
     'context.searchResults',
     'context.translatedQuestion',
     'autoEval.expertFeedback.totalScore',
     'answer.tools.count',
     'answer.tools.0',
+    'answer.tools.0.status',
     'answer.tools.1',
+    'answer.tools.1.status',
     'answer.tools.2',
-    'answer.tools.3'
+    'answer.tools.2.status',
+    'answer.tools.3',
+    'answer.tools.3.status'
 ];
+
+// Tools view order: same as default, but context.translatedQuestion sits right before aiService
+const TOOLS_HEADER_ORDER = (() => {
+    const arr = DEFAULT_HEADER_ORDER.filter(k => k !== 'context.translatedQuestion');
+    const aiIdx = arr.indexOf('aiService');
+    arr.splice(aiIdx, 0, 'context.translatedQuestion');
+    return arr;
+})();
 
 const TOOL_COLUMN_COUNT = 4;
 const TOOL_FIELDS_TO_STRIP = ['output', 'createdAt', 'updatedAt', '__v', '_id'];
 
-const serializeToolForExport = (tool) => {
+const serializeToolForExport = (tool, extraStrip = []) => {
     if (!tool || typeof tool !== 'object') return '';
+    const stripSet = new Set([...TOOL_FIELDS_TO_STRIP, ...extraStrip]);
     const clean = {};
     for (const key of Object.keys(tool)) {
-        if (!TOOL_FIELDS_TO_STRIP.includes(key)) clean[key] = tool[key];
+        if (!stripSet.has(key)) clean[key] = tool[key];
     }
     return JSON.stringify(clean);
 };
@@ -162,7 +175,9 @@ const buildToolColumns = (tools) => {
     const arr = Array.isArray(tools) ? tools : [];
     const cols = { 'answer.tools.count': arr.length };
     for (let i = 0; i < TOOL_COLUMN_COUNT; i++) {
-        cols[`answer.tools.${i}`] = arr[i] ? serializeToolForExport(arr[i]) : '';
+        const tool = arr[i];
+        cols[`answer.tools.${i}`] = tool ? serializeToolForExport(tool, ['status']) : '';
+        cols[`answer.tools.${i}.status`] = tool?.status || '';
     }
     return cols;
 };
@@ -632,7 +647,7 @@ async function chatExportHandler(req, res) {
             finalHeaders = DEFAULT_HEADER_ORDER;
         } else {
             // Dynamic headers for other views
-            const ordered = DEFAULT_HEADER_ORDER;
+            const ordered = view === 'tools' ? TOOLS_HEADER_ORDER : DEFAULT_HEADER_ORDER;
             const extra = [...dynamicKeys].filter(k => !ordered.includes(k)).sort();
             finalHeaders = [...ordered.filter(k => dynamicKeys.has(k)), ...extra];
         }
