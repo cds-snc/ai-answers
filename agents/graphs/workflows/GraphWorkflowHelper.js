@@ -62,6 +62,51 @@ export class GraphWorkflowHelper {
     return resp;
   }
 
+  // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on
+  // the translated English text so manipulation/threats/PII written in languages
+  // other than EN/FR are still caught. AI PII check only runs when the source
+  // language is not EN/FR (cost gate); it fails open on errors so a flaky PII
+  // agent can't take down the pipeline — stage 1 already ran on the original.
+  async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
+    const translatedText = translationData?.translatedText;
+    if (!translatedText) return;
+
+    const previousLang = redactionService.currentLang;
+    try {
+      await redactionService.ensureInitialized('en');
+      const { redactedItems } = redactionService.redactText(translatedText, 'en');
+      const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
+      if (redactedItems.some(item => blockingTypes.includes(item.type))) {
+        throw new RedactionError('Blocked content detected after translation', '#############', redactedItems);
+      }
+    } finally {
+      if (previousLang && previousLang !== 'en') {
+        await redactionService.ensureInitialized(previousLang);
+      }
+    }
+
+    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
+    const isEnOrFr = ['en', 'eng', 'fr', 'fra'].includes(sourceLang);
+    if (isEnOrFr) return;
+
+    let piiResult;
+    try {
+      piiResult = await checkPII({ chatId, message: translatedText, agentType: selectedAI });
+    } catch (error) {
+      await ServerLoggingService.warn('postTranslateGuard checkPII failed - failing open', chatId, {
+        error: error?.message || String(error),
+      });
+      return;
+    }
+
+    if (piiResult?.blocked) {
+      throw new RedactionError('Blocked content detected after translation', '#############', null);
+    }
+    if (typeof piiResult?.pii === 'string' && piiResult.pii.length > 0) {
+      throw new RedactionError('PII detected in user message', piiResult.pii, null);
+    }
+  }
+
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent
   buildTranslationContext(conversationHistory = []) {
     if (!Array.isArray(conversationHistory)) return [];

@@ -117,6 +117,7 @@ graph.addNode('translate', async (state) => {
   });
 
   const translationData = await workflow.translateQuestion(state.redactedText, "en", state.selectedAI, translationContext);
+  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
   const out = { translationData };
   // Emit output log for translate node
