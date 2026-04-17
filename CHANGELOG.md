@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.120.1](https://github.com/cds-snc/ai-answers/compare/v1.120.0...v1.120.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* add FR link ([e100fd7](https://github.com/cds-snc/ai-answers/commit/e100fd7fcaeeeb2b59c0c5cbe68cc28bb189c881))
+* add tools to default export ([07723bf](https://github.com/cds-snc/ai-answers/commit/07723bf951f1475a7d2ab464fad9d0b9fe566fce))
+* add warning ([dc72566](https://github.com/cds-snc/ai-answers/commit/dc725663ddbc00f3c616103e28f6e1ff34e66b92))
+* address change redirect to main ([08d84d7](https://github.com/cds-snc/ai-answers/commit/08d84d7bf3a855245ffcaf36188ba2019357743a))
+* clean up scenarios ([992eebf](https://github.com/cds-snc/ai-answers/commit/992eebff895890465539794b6d4044a6adbbc06a))
+* failed at dental care question ([e26ae24](https://github.com/cds-snc/ai-answers/commit/e26ae243b7d276652bde37a6efd716436d60e487))
+* improve sign-in download ([1489e78](https://github.com/cds-snc/ai-answers/commit/1489e7809df707fad4205668f2d51d0f540f51b0))
+* move columns break out status ([d4f965c](https://github.com/cds-snc/ai-answers/commit/d4f965c15ce3060b9b8b9dd7a03ee64b0606d5cc))
+* remove accounts file, wasn't using it ([dfa9293](https://github.com/cds-snc/ai-answers/commit/dfa92932ecec04f23023fa3d6ab4e419983127b2))
+* try again on clarifying question ([c6b7fca](https://github.com/cds-snc/ai-answers/commit/c6b7fca31f565569452903ce980cbab077ad3ed4))
+* tweak answer tools content ([c69c763](https://github.com/cds-snc/ai-answers/commit/c69c763112b6fb3b5fe8c6a88e6b199738581386))
+
 ## [1.120.0](https://github.com/cds-snc/ai-answers/compare/v1.119.0...v1.120.0) (2026-04-15)
 
 
