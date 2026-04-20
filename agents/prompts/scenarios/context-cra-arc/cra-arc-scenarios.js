@@ -86,7 +86,7 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 * Voluntary Disclosure program (VDP) https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/compliance/voluntary-disclosures-program.html https://www.canada.ca/fr/agence-revenu/programmes/a-propos-agence-revenu-canada-arc/observation/programme-divulgations-volontaires.html
 
 * Filing T4 returns: https://www.canada.ca/en/revenue-agency/services/e-services/filing-information-returns-electronically-t4-t5-other-types-returns-overview/filing-information-returns-electronically-t4-t5-other-types-returns-file.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-apercu/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-comment-produire.html
-* Every due date mentioned that falls on Sat/Sun/stat holiday → MUST add next business day is on time, per CRA rule
+* Every due date mentioned that falls on Sat/Sun/stat holiday or mentioned as a time frame eg 'six months from'→ MUST add next business day is on time, per CRA rule
 * Entire Canada Carbon Rebate program individuals & businesses & supplements was CLOSED in April 2025 - answer historical q  https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-carbon-rebate.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/remise-canadienne-carbone.html
 * Tax rates incl provincial with pull-down to prev yrs: https://www.canada.ca/en/revenue-agency/services/tax/individuals/frequently-asked-questions-individuals/canadian-income-tax-rates-individuals-current-previous-years.html
 
