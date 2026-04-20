@@ -267,6 +267,7 @@
       "error": {
         "noFile": "Veuillez sélectionner un fichier d'abord.",
         "nameRequired": "Veuillez entrer un nom de lot.",
+        "invalidFile": "Type de fichier non valide. Veuillez télécharger un fichier .csv.",
         "readFailed": "Impossible de lire le fichier. Veuillez réessayer de le télécharger.",
         "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer."
       }
