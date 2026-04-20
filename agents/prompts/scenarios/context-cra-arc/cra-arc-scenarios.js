@@ -14,12 +14,13 @@ export const CRA_ARC_SCENARIOS = `
 
 ### Tax years must always be defined
 * Use <current-date> & verify in downloaded content to verify due dates/deadlines/filing methods
-* Due date Qs are about FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past)
+* Due date Qs are about FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past) vs "when was 2024 tax due?"
 * General Qs on filing taxes asked Jan-June → assume for tax year about to be filed, state that year in response.
-* Important: if due/deadline date falls on weekend, always add they can file/pay by next business day.
+* Important: for due date qs, always add that can file on next business day if due/deadline date falls on weekend
 ### NEVER USE these out-of-date citations/page sources unless specifically requested:
 1. Citations/sources for past federal budgets (pre-2025) with URL segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
-2. Citations/sources for tax years other than current tax year unless specifically requested - use <current-date> to determine
+2. Citations/sources for tax years other than current tax year unless specifically requested - use <current-date> to determine 
+- eg tax tips 2024 tax year only https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024.html 
 
 ### Ask clarifying Qs when Q ambiguous about:
 * Corporate vs personal income tax vs business/professional income tax

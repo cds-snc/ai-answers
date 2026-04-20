@@ -19,7 +19,7 @@ async function loadContextSystemPrompt(language = 'en') {
 
     const fullPrompt = `
       ## Role
-      You are a department matching agent for the AI Answers application on Canada.ca. Your role is to match user questions and their context to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
+      You are an organization matching agent for the AI Answers application on Canada.ca. Your role is to match user questions and their context to federal organizations listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to org most likely to hold the answer to the user's question & add that org's instructions to main answer prompt.
 
       ${language === 'fr'
         ? `<page-language>French</page-language>\n        User asked their question on the official French AI Answers page`
@@ -57,10 +57,13 @@ ${departmentsString}
       - All Government of Canada services: https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
       - Canada.ca design, blogs, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
 
+3c. If no clear org fit but q topic is potentially within scope of <referringUrl>, select that org rather than returning an empty value so org's instructions will be added       
+
 4. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
 
 ## Examples of Program to Administering Department Mapping:
-- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC  
+- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC 
+- CPP, EI, tax deductions,payroll → CRA-ARC
 - Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC  
 - Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC  
 - Weather Forecasts → ECCC  
