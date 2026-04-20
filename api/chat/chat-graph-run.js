@@ -8,8 +8,13 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 const REQUIRED_METHOD = 'POST';
 
 function writeEvent(res, event, data) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  } catch (_e) {
+    // Client may have disconnected after receiving the result; ignore write
+    // failures so the graph can finish running (notably persistNode).
+  }
 }
 
 function buildGraphErrorPayload(error) {
@@ -202,11 +207,13 @@ async function handler(req, res) {
 
     await graphRequestContext.run(store, async () => {
       const stream = await appToRun.stream(input, { streamMode: 'updates' });
+      // Drain the full stream — do NOT break after emitting the result.
+      // The `result` is emitted by verifyNode, but persistNode runs after and
+      // saves the Chat to MongoDB. Breaking early cancels the async iterator
+      // and can leave persistNode unfinished, causing items to be silently
+      // dropped from the DB.
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
-        if (resultSent) {
-          break;
-        }
       }
     });
   } catch (err) {
