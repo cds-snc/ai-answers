@@ -23,7 +23,7 @@
 
 ## Executive Summary
 
-AI Answers is a specialized AI chat agent designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
+AI Answers is a specialized AI chat agent platform designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
 
 ![AI Answers System Architecture Diagram](docs/images/system_diagram_v2_EN.jpg)
 
@@ -44,6 +44,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ## Current Status
 - **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in January 2026.
+- **Trial report**: [blog post](https://digital.canada.ca/2025/12/17/ai-answers-enterprise-scale-trial-for-canada.ca/)
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Evaluation**: Ongoing expert evaluation and response scoring generating AI automated evals & answers
 - **Platform**: Federal institution partners can add scenario prompts and files to meet specific needs, [view prompts and partner institution prompt example](docs/agents-prompts/system-prompt-documentation.md)
@@ -54,6 +55,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - Assist users with questions about Government of Canada issues
 - Provide accurate information about Government of Canada programs, benefits, and services
 - Direct users to appropriate government resources and next steps
+- Models a conversation with a call centre agent - [brief answers for better service](docs/pdf/short-ai-answers-en.pdf)
 
 ### Target Users
 - Anyone visiting Canada.ca or federal websites
@@ -217,7 +219,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 ### Evaluation Methods
 - **Innovative Expert Evaluation System**: 
-  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, experiencing the same user experience
+  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation processs with screenshots](docs/pdf/ai-answers-expert-evals-integration.pdf)
   - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
   - **Sentence-Level Scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
   - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)

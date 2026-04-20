@@ -44,6 +44,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 
 ## État actuel
 - **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en janvier 2026.
+- **[Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)**
 - **Production** : https://reponses-ia.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Évaluation** : Collection continue de commentaires d'experts et notation de réponses alimentant les évaluations IA et réponses
 - **Plateforme** : Les institutions fédérales partenaires peuvent ajouter des scénarios d'invite et des fichiers pour répondre aux besoins spécifiques, [voir les invites et un exemple d'invite d'institution partenaire](docs/agents-prompts/system-prompt-documentation.md)
@@ -54,6 +55,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 - Aider les utilisateurs avec des questions sur les enjeux du gouvernement du Canada
 - Fournir des informations précises sur les programmes, prestations et services du gouvernement du Canada
 - Diriger les utilisateurs vers les ressources gouvernementales appropriées et les prochaines étapes
+- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](docs/pdf/short-ai-answers-fr.pdf)
 
 ### Utilisateurs cibles
 - Toute personne visitant Canada.ca ou des sites Web fédéraux
@@ -216,7 +218,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 ### Méthodes d'évaluation
 - **Système innovant d'évaluation par des experts** :
-  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, vivant la même expérience utilisateur
+  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue
   - **Évaluation flexible** : Les experts peuvent entrer leurs propres questions ou utiliser les identifiants de discussion existants pour évaluer les conversations utilisateur
   - **Notation au niveau des phrases** : Chaque phrase dans les réponses IA est notée individuellement (100/80/0 points) avec des explications détaillées
   - **Notation de citation** : Notation séparée pour la précision et la pertinence de la citation (25/20/0 points)
