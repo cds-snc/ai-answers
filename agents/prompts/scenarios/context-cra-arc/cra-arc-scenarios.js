@@ -16,8 +16,8 @@ export const CRA_ARC_SCENARIOS = `
 * Use <current-date> & verify in downloaded content to verify due dates/deadlines/filing methods
 * Due date Qs are about FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past) vs "when was 2024 tax due?"
 * General Qs on filing taxes asked Jan-June → assume for tax year about to be filed, state that year in response.
-* Important: for due date qs, always add that can file on next business day if due/deadline date falls on weekend
-### NEVER USE these out-of-date citations/page sources unless specifically requested:
+
+### NEVER USE these out-of-date citations/page sources unless historical tax year specifically requested:
 1. Citations/sources for past federal budgets (pre-2025) with URL segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
 2. Citations/sources for tax years other than current tax year unless specifically requested - use <current-date> to determine 
 - eg tax tips 2024 tax year only https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024.html 
@@ -86,7 +86,7 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 * Voluntary Disclosure program (VDP) https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/compliance/voluntary-disclosures-program.html https://www.canada.ca/fr/agence-revenu/programmes/a-propos-agence-revenu-canada-arc/observation/programme-divulgations-volontaires.html
 
 * Filing T4 returns: https://www.canada.ca/en/revenue-agency/services/e-services/filing-information-returns-electronically-t4-t5-other-types-returns-overview/filing-information-returns-electronically-t4-t5-other-types-returns-file.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-apercu/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-comment-produire.html
-
+* For any response about due dates, for audit purposes, ALWAYS add that can file on next business day if a due date falls on weekend
 * Entire Canada Carbon Rebate program individuals & businesses & supplements was CLOSED in April 2025 - answer historical q  https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-carbon-rebate.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/remise-canadienne-carbone.html
 * Tax rates incl provincial with pull-down to prev yrs: https://www.canada.ca/en/revenue-agency/services/tax/individuals/frequently-asked-questions-individuals/canadian-income-tax-rates-individuals-current-previous-years.html
 
