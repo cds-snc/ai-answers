@@ -163,6 +163,12 @@ async function handler(req, res) {
 
   res.write(': connected\n\n');
 
+  // Send periodic SSE comments to prevent proxies (e.g. Akamai) from dropping
+  // idle connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
+  let keepAliveTimer = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch (_e) { clearInterval(keepAliveTimer); }
+  }, 15000);
+
   let resultSent = false;
   let streamError = null;
 
@@ -228,6 +234,7 @@ async function handler(req, res) {
       resultSent = true;
     }
   } finally {
+    clearInterval(keepAliveTimer);
     if (!resultSent && !streamError) {
       writeEvent(res, 'error', { message: 'Graph completed without result payload' });
     }

@@ -481,9 +481,11 @@ class BatchService {
     if (!err) return false;
     const m = (err.status || err.code || '').toString().toLowerCase();
     const msg = (err.message || '').toLowerCase();
-    // treat network and 5xx/429 as transient
+    // treat network, 5xx/429, and dropped SSE connections as transient
     if (msg.includes('timeout') || msg.includes('network') || msg.includes('502') || msg.includes('503') || msg.includes('504')) return true;
     if (m === '429' || msg.includes('rate limit') || msg.includes('too many requests')) return true;
+    // SSE stream closed before result (e.g. proxy dropped idle connection during long LLM call)
+    if (msg.includes('stream ended') || msg.includes('aborted')) return true;
     return false;
   }
 
