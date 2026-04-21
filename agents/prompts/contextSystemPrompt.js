@@ -63,7 +63,7 @@ ${departmentsString}
 
 ## Examples of Program to Administering Department Mapping:
 - Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC 
-- CPP, EI, tax deductions,payroll → CRA-ARC
+- payroll deductions for tax,CPP,EI → CRA-ARC
 - Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC  
 - Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC  
 - Weather Forecasts → ECCC  
