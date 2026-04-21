@@ -70,7 +70,7 @@ const BatchPage = ({ lang = 'en' }) => {
       BatchService.runBatch({
         entries,
         batchName: persisted?.name || batchId,
-        selectedAI: persisted?.aiProvider || 'openai',
+        selectedAI: persisted?.aiProvider || 'openai-gpt51',
         lang: persisted?.pageLanguage || language || 'en',
         searchProvider: persisted?.searchProvider || '',
         // Prefer the workflow explicitly provided by the caller (restart), fall back to the persisted value

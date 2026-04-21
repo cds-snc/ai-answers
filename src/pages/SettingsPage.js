@@ -17,10 +17,6 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
-  // New state for provider (openai | azure)
-  const [provider, setProvider] = useState('openai');
-  const [savingProvider, setSavingProvider] = useState(false);
-
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
   const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
@@ -78,9 +74,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       setVectorServiceType(type);
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
-      // Load provider setting
-      const providerSetting = await DataStoreService.getSetting('provider', 'openai');
-      setProvider(providerSetting);
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
       // Validate default workflow against known options
@@ -295,19 +288,6 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  // Handler for provider setting
-  const handleProviderChange = async (e) => {
-    const newValue = e.target.value;
-    setProvider(newValue);
-    setSavingProvider(true);
-    try {
-      const current = await saveAndVerify('provider', newValue);
-      setProvider(current);
-    } finally {
-      setSavingProvider(false);
-    }
-  };
-
   const handleDeploymentModeChange = async (e) => {
     const newMode = e.target.value;
     setDeploymentMode(newMode);
@@ -434,19 +414,6 @@ const SettingsPage = ({ lang = 'en' }) => {
           >
             <option value="imvectordb">{t('settings.vectorServiceType.imvectordb')}</option>
             <option value="documentdb">{t('settings.vectorServiceType.documentdb')}</option>
-          </select>
-
-          <label htmlFor="provider" className="mb-200 display-block mt-400">
-            {t('settings.providerLabel')}
-          </label>
-          <select
-            id="provider"
-            value={provider}
-            onChange={handleProviderChange}
-            disabled={savingProvider}
-          >
-            <option value="openai">{t('settings.provider.openai')}</option>
-            <option value="azure">{t('settings.provider.azure')}</option>
           </select>
 
           <label htmlFor="default-workflow" className="mb-200 display-block mt-400">

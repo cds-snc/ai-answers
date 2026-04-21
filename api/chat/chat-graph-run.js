@@ -4,6 +4,7 @@ import ConversationIntegrityService from '../../services/ConversationIntegritySe
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
+import { MODEL_VALUES } from '../../src/config/workflows.js';
 
 const REQUIRED_METHOD = 'POST';
 
@@ -111,9 +112,9 @@ async function handler(req, res) {
   // Server-side Model Resolution
   // The model.default setting decouples model choice from workflow choice.
   // Workflows no longer need to hardcode a model — the server injects it here.
-  // Falls back to 'openai-gpt51' when model.default hasn't been saved yet
-  // (e.g. first deploy before an admin visits Settings).
-  const defaultModel = SettingsService.get('model.default') || 'openai-gpt51';
+  // Falls back to the first MODEL_VALUES entry when model.default hasn't been
+  // saved yet (e.g. first deploy before an admin visits Settings).
+  const defaultModel = SettingsService.get('model.default') || MODEL_VALUES[0];
   if (!req.user) {
     // Unauthenticated users: forced to use the system default model
     input.selectedAI = defaultModel;
@@ -126,7 +127,7 @@ async function handler(req, res) {
   // They've been removed; map old names (from DB, localStorage, in-progress batches) to DefaultGraph
   // and extract the implied model so behaviour is unchanged.
   const LEGACY_MODEL_MAP = {
-    'GPT5MiniDefaultGraph': 'openai-gpt5-mini',
+    'GPT5MiniDefaultGraph': 'openai-gpt51',
     'GPT5OneDefaultGraph': 'openai-gpt51',
     'GPT5OneChatGraph': 'openai-gpt51-chat',
   };
