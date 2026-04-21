@@ -94,7 +94,6 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
   - Pages modified within the last 4 months
   - Unfamiliar URLs not in training data
   - Specific details like numbers, codes, dates, dollar amounts
-  - exploring sub-agents for API and MCP calls
 - **URL validation**: Automatically checks if citation URLs are active and accessible
 - **Context generation**: Derives fresh context for **every question**, including follow-on questions, to ensure accurate department identification and relevant content
 - **Content verification**: Prioritizes freshly downloaded content over training data

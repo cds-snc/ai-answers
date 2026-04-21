@@ -125,7 +125,8 @@ async function handler(req, res) {
 
   // Legacy graph name mapping — GPT5* graphs were copies of DefaultGraph with a hardcoded model.
   // They've been removed; map old names (from DB, localStorage, in-progress batches) to DefaultGraph
-  // and extract the implied model so behaviour is unchanged.
+  // and coerce the implied model. GPT5MiniDefaultGraph originally implied openai-gpt5-mini, but
+  // gpt-5-mini is no longer a selectable provider, so legacy records fall back to openai-gpt51.
   const LEGACY_MODEL_MAP = {
     'GPT5MiniDefaultGraph': 'openai-gpt51',
     'GPT5OneDefaultGraph': 'openai-gpt51',

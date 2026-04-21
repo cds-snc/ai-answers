@@ -188,6 +188,11 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
     case 'openai-gpt51-chat': {
       // PII detection must stay in-region (Canada East). gpt-5-mini routes to
       // global inference, so force gpt-4o regardless of the caller's model choice.
+      // TODO: this branch uses the short-form Azure constructor options
+      // (azureApiKey/azureEndpoint/apiVersion) to match the sibling 'azure' case,
+      // while every other factory function's gpt51 branch uses the long form
+      // (azureOpenAIApiKey/azureOpenAIEndpoint/azureOpenAIApiVersion).
+      // Pick one style and apply consistently across this file.
       const azureConfig = getModelConfig('azure', 'gpt-4o');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
