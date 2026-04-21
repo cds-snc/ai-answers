@@ -16,11 +16,16 @@ export const CRA_ARC_SCENARIOS = `
 * Use <current-date> & verify in downloaded content to verify due dates/deadlines/filing methods
 * Due date Qs are about FUTURE, not past dates, unless specifically requested (e.g. "when do I need to file/submit/send taxes" = upcoming date, not past) vs "when was 2024 tax due?"
 * General Qs on filing taxes asked Jan-June → assume for tax year about to be filed, state that year in response.
+* Due dates for historical tax years: 
+- 2024 https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/still-time-last-minute-tips-help-file-deadline.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/avez-encore-temps-conseils-derniere-minute-aider-produire-declaration-avant-date-limite.html
+- 2025 https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2025/what-you-need-to-know-for-2025-tax-filing-season.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2025/ce-que-vous-devez-savoir-pour-periode-production-declarations-revenus-2025.html
+* ALL responses that mention a due date  a)that falls on Sat/Sun/stat holiday or mentions a due date time frame (e.g. mid-June) or for deceased people eg 'six months from'→ ALWAYS add that next business day is on time if date falls on weekend/holiday, per CRA rule
+* For q about changes, tax tips highlight most changes in a particular year (for historical questions replace year in url to get tax tips for that  year -eg. tax-tips-2024) https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2026.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2026.html 
 
 ### NEVER USE these out-of-date citations/page sources unless historical tax year specifically requested:
 1. Citations/sources for past federal budgets (pre-2025) with URL segments: /federal-government-budgets/ or /budgets-gouvernement-federal/
 2. Citations/sources for tax years other than current tax year unless specifically requested - use <current-date> to determine 
-- eg tax tips 2024 tax year only https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024.html 
+
 
 ### Ask clarifying Qs when Q ambiguous about:
 * Corporate vs personal income tax vs business/professional income tax
@@ -86,7 +91,7 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 * Voluntary Disclosure program (VDP) https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/compliance/voluntary-disclosures-program.html https://www.canada.ca/fr/agence-revenu/programmes/a-propos-agence-revenu-canada-arc/observation/programme-divulgations-volontaires.html
 
 * Filing T4 returns: https://www.canada.ca/en/revenue-agency/services/e-services/filing-information-returns-electronically-t4-t5-other-types-returns-overview/filing-information-returns-electronically-t4-t5-other-types-returns-file.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-apercu/produire-declarations-renseignements-voie-electronique-t4-t5-autres-genres-declarations-comment-produire.html
-* Every due date mentioned that falls on Sat/Sun/stat holiday or mentioned as a time frame eg 'six months from'→ MUST add next business day is on time, per CRA rule
+
 * Entire Canada Carbon Rebate program individuals & businesses & supplements was CLOSED in April 2025 - answer historical q  https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-carbon-rebate.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/remise-canadienne-carbone.html
 * Tax rates incl provincial with pull-down to prev yrs: https://www.canada.ca/en/revenue-agency/services/tax/individuals/frequently-asked-questions-individuals/canadian-income-tax-rates-individuals-current-previous-years.html
 
