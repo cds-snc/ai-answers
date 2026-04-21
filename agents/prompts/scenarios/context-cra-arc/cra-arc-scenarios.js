@@ -19,7 +19,8 @@ export const CRA_ARC_SCENARIOS = `
 * Due dates for historical tax years: 
 - 2024 https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/still-time-last-minute-tips-help-file-deadline.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/avez-encore-temps-conseils-derniere-minute-aider-produire-declaration-avant-date-limite.html
 - 2025 https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2025/what-you-need-to-know-for-2025-tax-filing-season.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2025/ce-que-vous-devez-savoir-pour-periode-production-declarations-revenus-2025.html
-* ALL responses that mention a due date  a)that falls on Sat/Sun/stat holiday or mentions a due date time frame (e.g. mid-June) or for deceased people eg 'six months from'→ ALWAYS add that next business day is on time if date falls on weekend/holiday, per CRA rule
+* CRA due date rule MUST be added in ALL responses about ANY due date, including six months for deceased persons or a specific due date → ALWAYS add that next business day is considered on time if date falls on weekend/stat 
+  - exception: if specific due date in response does not fit rule e.g. April 30,2026 is a Thursday, not a weekend
 * For q about changes, tax tips highlight most changes in a particular year (for historical questions replace year in url to get tax tips for that  year -eg. tax-tips-2024) https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2026.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2026.html 
 
 ### NEVER USE these out-of-date citations/page sources unless historical tax year specifically requested:
