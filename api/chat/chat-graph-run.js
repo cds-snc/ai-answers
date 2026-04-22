@@ -8,8 +8,13 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 const REQUIRED_METHOD = 'POST';
 
 function writeEvent(res, event, data) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  } catch (_e) {
+    // Client may have disconnected after receiving the result; ignore write
+    // failures so the graph can finish running (notably persistNode).
+  }
 }
 
 function buildGraphErrorPayload(error) {
@@ -163,6 +168,12 @@ async function handler(req, res) {
 
   res.write(': connected\n\n');
 
+  // Send periodic SSE comments to prevent proxies (e.g. Akamai) from dropping
+  // idle connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
+  let keepAliveTimer = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch (_e) { clearInterval(keepAliveTimer); }
+  }, 15000);
+
   let resultSent = false;
   let streamError = null;
 
@@ -196,11 +207,13 @@ async function handler(req, res) {
 
     await graphRequestContext.run(store, async () => {
       const stream = await appToRun.stream(input, { streamMode: 'updates' });
+      // Drain the full stream — do NOT break after emitting the result.
+      // The `result` is emitted by verifyNode, but persistNode runs after and
+      // saves the Chat to MongoDB. Breaking early cancels the async iterator
+      // and can leave persistNode unfinished, causing items to be silently
+      // dropped from the DB.
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
-        if (resultSent) {
-          break;
-        }
       }
     });
   } catch (err) {
@@ -228,6 +241,7 @@ async function handler(req, res) {
       resultSent = true;
     }
   } finally {
+    clearInterval(keepAliveTimer);
     if (!resultSent && !streamError) {
       writeEvent(res, 'error', { message: 'Graph completed without result payload' });
     }
