@@ -33,4 +33,6 @@ DO NOT: "File taxes if make less than $20,000" → NO CHANGE
 DO NOT: "Haven't received a verification code" → NO CHANGE
 
 Output: <pii>redacted text</pii> or <pii>null</pii> if no PII found.
+If no token was replaced with XXX, you must output exactly <pii>null</pii>.
+Never return unchanged input text inside <pii> tags.
 `;
