@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.120.2](https://github.com/cds-snc/ai-answers/compare/v1.120.1...v1.120.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* add 3c back in ([8e60f0b](https://github.com/cds-snc/ai-answers/commit/8e60f0b2e3da944bc3492e548365de8eb7b08e79))
+* add error message for csv read failure ([684085b](https://github.com/cds-snc/ai-answers/commit/684085bed8f749b76bebf4e8dbc79e31085e296f))
+* add example ([936f79a](https://github.com/cds-snc/ai-answers/commit/936f79aa088bd7307cc453834101f7bd9ce7df66))
+* add historical urls ([7948296](https://github.com/cds-snc/ai-answers/commit/7948296aa0ce935b52863c826e67d5959a57c157))
+* add payroll deduction back in ([1a16b9b](https://github.com/cds-snc/ai-answers/commit/1a16b9b13a88dda1e5cce2e13ebc716c6448589a))
+* batch bug ([e7e41cd](https://github.com/cds-snc/ai-answers/commit/e7e41cdbc4c0ad7cf66ecf674554975c23bff42c))
+* context issue ([94dcaca](https://github.com/cds-snc/ai-answers/commit/94dcaca4716586b01de67932e6ca1474c254575e))
+* docs ([69023ab](https://github.com/cds-snc/ai-answers/commit/69023abe3675564f0e19094a946153057598f872))
+* move due date comment ([301d06d](https://github.com/cds-snc/ai-answers/commit/301d06d4a0f5f42e3343f4eee67caabb0fc66617))
+* not computing the date so need to expand ([7329425](https://github.com/cds-snc/ai-answers/commit/73294258379653e19388524fb3ec62511be198c1))
+* payroll line ([fa54baf](https://github.com/cds-snc/ai-answers/commit/fa54baf40c6d3c20efac3b10f81a01306df9c0c5))
+* prompt tweaks ([7becf21](https://github.com/cds-snc/ai-answers/commit/7becf21de14c03b8a75ae1de821d91790a3724fc))
+* revert context prompt ([e54b39c](https://github.com/cds-snc/ai-answers/commit/e54b39cd38c1a9f723f5bd341dc83be132e9e934))
+* try again ([a548e6d](https://github.com/cds-snc/ai-answers/commit/a548e6dcbf445b429db44dace583709941d5dcdd))
+* try different approach ([12b2df7](https://github.com/cds-snc/ai-answers/commit/12b2df7180a609eba774889ebc18d3a3323ea994))
+* update prompt to not put full text in PII tags, also guard again… ([a10ed26](https://github.com/cds-snc/ai-answers/commit/a10ed26bbe95425cea2cdbb9c4ce61cff59e94df))
+* update prompt to not put full text in PII tags, also guard against this in code ([fbd8a5e](https://github.com/cds-snc/ai-answers/commit/fbd8a5e57be5d0b17c0315e81151776578c95cf3))
+* writeEvent was still failing ([e2703f6](https://github.com/cds-snc/ai-answers/commit/e2703f6ab22052319f383340721f1854ebac07a9))
+
 ## [1.120.1](https://github.com/cds-snc/ai-answers/compare/v1.120.0...v1.120.1) (2026-04-17)
 
 
