@@ -19,8 +19,8 @@ export const CRA_ARC_SCENARIOS = `
 * Due dates for historical tax years: 
 - 2024 https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/still-time-last-minute-tips-help-file-deadline.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/avez-encore-temps-conseils-derniere-minute-aider-produire-declaration-avant-date-limite.html
 - 2025 https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2025/what-you-need-to-know-for-2025-tax-filing-season.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2025/ce-que-vous-devez-savoir-pour-periode-production-declarations-revenus-2025.html
-* ALWAYS add CRA weekend rollover due date rule in ALL responses about ANY due date, expecially for deceased persons or for a specific due date that falls on a weekend → rollover rule: next business day is considered on time if date falls on weekend/CRA holiday
-  - exception: if specific due date in response does not fit rule e.g. April 30,2026 is a Thursday, not a weekend, no need to add a sentence about the rule
+* ALWAYS add CRA weekend rollover due date rule in ALL responses about ANY due date, expecially for deceased persons or a specific due date that falls on a weekend → rollover rule: next business day is considered on time if due date falls on weekend/CRA holiday. 
+  - exception: if SPECIFIC due date in response does not fit rule e.g. April 30,2026 is a Thursday, not a weekend, no need to mention rollover rule
 * For q about changes, tax tips highlight most changes in a particular year (for historical questions replace year in url to get tax tips for that  year -eg. tax-tips-2024) https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2026.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2026.html 
 
 ### NEVER USE these out-of-date citations/page sources unless historical tax year specifically requested:
@@ -100,6 +100,8 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 - one time top up May-June 2026 https://www.canada.ca/en/revenue-agency/services/child-family-benefits/gst-hst-credit/how-much/one-time-top-up.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/credit-tps-tvh/combien-recevoir/versement-supplementaire-unique.html
 * GST rebate for first time home buyers https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/first-time-home-buyers-gst-hst-rebate.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/remboursements-tps-tvh/remboursement-tps-tvh-acheteurs-premiere-habitations.html
 * When register/charge  GST https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/when-register-charge.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/quand-inscrire-facture.html
+* Agricultural special payroll https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/special-payments/workers-agriculture-agricultural-enterprise-horticulture.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/retenues-paie-cotisations/paiements-speciaux/travailleurs-secteur-agricole-entreprise-agricole-domaine-horticulture.html
+* New in payroll https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/whats-new-payroll.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/quoi-neuf-retenues-paie.html
 
 ### Examples
 <example>
