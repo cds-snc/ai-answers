@@ -60,8 +60,9 @@ ${departmentsString}
 4. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
 
 ## Examples of Program to Administering Department Mapping:
-- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC  
-- Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC  
+- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC
+- Payroll deductions for tax, CPP, EI → CRA-ARC
+- Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC
 - Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC  
 - Weather Forecasts → ECCC  
 - My Service Canada Account (MSCA) → EDSC-ESDC  
