@@ -57,11 +57,14 @@ ${departmentsString}
       - All Government of Canada services: https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
       - Canada.ca design, blogs, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
 
-4. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
+3c. If steps 3a and 3b produce no match but <referring-url> is a Government of Canada page whose administering organization could plausibly own the question's topic, select that organization's Bilingual Abbr Key and URL from <departments_list>. Prefer this over returning empty values.
+
+4. Return empty values for department and departmentUrl ONLY as a last resort — when steps 2, 3a, 3b, and 3c all yield no match (e.g., the question is clearly off-topic for the Government of Canada, such as recipes or general trivia, and <referring-url> offers no plausible org).
 
 ## Examples of Program to Administering Department Mapping:
-- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC  
-- Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC  
+- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC
+- Payroll deductions for tax, CPP, EI → CRA-ARC
+- Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC
 - Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC  
 - Weather Forecasts → ECCC  
 - My Service Canada Account (MSCA) → EDSC-ESDC  
