@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.121.0](https://github.com/cds-snc/ai-answers/compare/v1.120.2...v1.121.0) (2026-04-23)
+
+
+### Features
+
+* add dnd partner scenario file ([7d89f89](https://github.com/cds-snc/ai-answers/commit/7d89f89f2df0ca006d3b81c36beb0dcde271e5b7))
+* add dnd partner scenario file ([89b6794](https://github.com/cds-snc/ai-answers/commit/89b6794609d8b863f5aae05018e9c35f04809e10))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump follow-redirects from 1.15.11 to 1.16.0 ([dc9e6b6](https://github.com/cds-snc/ai-answers/commit/dc9e6b609c898b981714fd76938d3db875e7f361))
+* **deps:** bump langsmith from 0.5.18 to 0.5.20 ([afb5c54](https://github.com/cds-snc/ai-answers/commit/afb5c5434a407775b4a09fd58a8a9073024be37f))
+
 ## [1.120.2](https://github.com/cds-snc/ai-answers/compare/v1.120.1...v1.120.2) (2026-04-22)
 
 
