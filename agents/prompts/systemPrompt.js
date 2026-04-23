@@ -2,6 +2,7 @@ import { BASE_SYSTEM_PROMPT } from './agenticBase.js';
 import { SAFETY_INSTRUCTIONS } from './safety.js';
 import { CITATION_INSTRUCTIONS } from './citationInstructions.js';
 import { SCENARIOS } from './scenarios/scenarios-all.js';
+import { resolveScenarioKey } from './scenarios/scenario-aliases.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
@@ -32,22 +33,13 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
       await ServerLoggingService.info('systemPrompt.build', '', { note: 'scenario-override-used', department });
     } else if (department) {
       try {
-        const deptKey = String(department || '');
+        const deptKey = resolveScenarioKey(String(department || ''));
         const deptLower = deptKey.toLowerCase();
         const deptDashed = deptLower.replace(/\s+/g, '-');
         const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
         content.scenarios = Object.values(mod).find(v => typeof v === 'string') || '';
       } catch (err) {
-        // fallback: if dept contains a hyphen, try the part before the hyphen
-        try {
-          if (String(department).includes('-')) {
-            const englishFallback = String(department).split('-')[0].toLowerCase();
-            const mod2 = await import(`./scenarios/context-${englishFallback}/${englishFallback}-scenarios.js`);
-            content.scenarios = Object.values(mod2).find(v => typeof v === 'string') || '';
-          }
-        } catch (err2) {
-          await ServerLoggingService.debug('systemPrompt.build', '', { note: 'no-department-scenarios', department });
-        }
+        await ServerLoggingService.debug('systemPrompt.build', '', { note: 'no-department-scenarios', department });
       }
     }
 

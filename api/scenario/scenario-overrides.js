@@ -18,6 +18,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-cra-arc/cra-arc-scenarios.js');
     return mod.CRA_ARC_SCENARIOS || '';
   },
+  'DND-MDN': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-dnd-mdn/dnd-mdn-scenarios.js');
+    return mod.DND_MDN_SCENARIOS || '';
+  },
   'ECCC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-eccc/eccc-scenarios.js');
     return mod.ECCC_SCENARIOS || '';
