@@ -11,10 +11,11 @@ DO redact (these are definitely PI):
 - Telephone numbers in international or North american format
 
 Do NOT redact (these look like PI but don't identify a specific person):
-- Building names with person names (e.g., "James Michael Flaherty Building")
+- Building/event names with person names (e.g., "James Michael Flaherty Building")
 - First Nation/Indigenous nation names (e.g., "Alexander First Nation", "Peguis nation")
 - Form/file references (T2202, GST524, RC7524-ON, IMM 0022 SCH2)
-- Dollar amounts ($20,000, $1570)
+- Dollar amounts ($20,000, $1570, 400 dollars)
+- Question numbers in front of question (e.g. "006. How apply for EI?")
 - Only mentioning a verification code/SIN/account etc. without an actual identifying value (e.g., "Haven't received a verification code", "Need a new SIN")
 
 Examples:
