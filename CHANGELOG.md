@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.121.1](https://github.com/cds-snc/ai-answers/compare/v1.121.0...v1.121.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* add historical pm names ([b7f7792](https://github.com/cds-snc/ai-answers/commit/b7f77924f596198b8d9bf1c6345151f2ab524716))
+* blocked current pm name ([56490cc](https://github.com/cds-snc/ai-answers/commit/56490ccc75953c3ff9889a9c4051b3f2880df61d))
+* PII prompt to not block question numbers ([1773949](https://github.com/cds-snc/ai-answers/commit/177394943fa7d2ecececb0d5f278d42fc69838b4))
+* refine/clarify for mini model ([8e29a98](https://github.com/cds-snc/ai-answers/commit/8e29a98716e156619119dd0b620a83efe346a6ac))
+* search query issue ([8f26993](https://github.com/cds-snc/ai-answers/commit/8f26993ce9f9a4b3b1fcf1484bb49cdf71b5390c))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump uuid from 11.1.0 to 14.0.0 ([cddb6de](https://github.com/cds-snc/ai-answers/commit/cddb6de4be0fca1eb5b3692788d1890ab536522e))
+
 ## [1.121.0](https://github.com/cds-snc/ai-answers/compare/v1.120.2...v1.121.0) (2026-04-23)
 
 
