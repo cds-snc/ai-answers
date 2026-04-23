@@ -23,7 +23,7 @@ function countSearchResults(resultsString) {
 }
 
 export const SearchContextService = {
-    async search({ chatId = 'system', searchService = 'canadaca', agentType = 'openai', referringUrl = '', translationData = null, pageLanguage = '' }) {
+    async search({ chatId = 'system', searchService = 'canadaca', agentType = 'openai-gpt51', referringUrl = '', translationData = null, pageLanguage = '' }) {
         ServerLoggingService.info('Received request to search.', chatId, { searchService, referringUrl });
 
         const pageLang = (pageLanguage || '').toLowerCase();

@@ -108,7 +108,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
 3. **Two-Stage Question Blocking**:
    - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI (word lists configurable by admins via Settings page)
-   - **Stage 2** (AI - configurable model): AI detects personal information that slipped through; question is then blocked
+   - **Stage 2** (AI - Azure OpenAI GPT-4o, Canada East region): AI detects personal information that slipped through; question is then blocked
 4. **Translation** (AI - configurable mini model): Detects language and translates to English for processing
 5. **Query Rewrite & Search** (AI - mini model): Rewrite the translated question into an optimized search query and run it against Canada.ca or Google. If the first search returns zero or one result, automatically rewrite again with a simplified query and retry; the better result set is kept.
 6. **Context Derivation** (AI - full model): Department matching and context generation from search results; optionally loads department-specific scenarios

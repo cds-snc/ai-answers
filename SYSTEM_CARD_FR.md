@@ -107,7 +107,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
 3. **Rédaction en deux étapes** :
    - **Étape 1** (Programmatique) : Filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants (listes de mots configurables par les administrateurs via la page Paramètres)
-   - **Étape 2** (IA - modèle configurable) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
+   - **Étape 2** (IA - GPT-4o Azure OpenAI, région Canada Est) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
 4. **Traduction** (IA - mini modèle configurable) : Détecte la langue et traduit en anglais pour le traitement
 5. **Réécriture de requête et recherche** (IA - mini modèle) : Réécrit la question traduite en une requête de recherche optimisée et l'exécute sur Canada.ca ou Google. Si la première recherche ne retourne aucun résultat ou un seul résultat, une nouvelle réécriture simplifiée est effectuée automatiquement et la recherche est relancée; le meilleur ensemble de résultats est conservé.
 6. **Dérivation de contexte** (IA - modèle complet) : Correspondance de département et génération de contexte à partir des résultats de recherche; charge optionnellement les scénarios spécifiques au département

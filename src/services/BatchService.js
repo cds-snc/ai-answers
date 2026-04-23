@@ -52,7 +52,7 @@ class BatchService {
    * Start a batch: decide whether to derive context or send batch messages.
    * Returns whatever the underlying service returns (usually an object with batchId).
    */
-  async startBatch({ entries = [], selectedAI = 'openai', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
+  async startBatch({ entries = [], selectedAI = 'openai-gpt51', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
     if (!entries || !entries.length) throw new Error('No entries provided to startBatch');
     if (!batchId) throw new Error('startBatch requires a server-persisted batchId; call persistBatch first');
 
@@ -244,7 +244,7 @@ class BatchService {
   async runBatch({
     entries = [],
     // batchName = `client-batch-${Date.now()}`,
-    selectedAI = 'openai',
+    selectedAI = 'openai-gpt51',
     lang = 'en',
     searchProvider = '',
     workflow = 'Default',

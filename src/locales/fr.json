@@ -965,11 +965,6 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
-    "providerLabel": "Fournisseur",
-    "provider": {
-      "openai": "OpenAI",
-      "azure": "Azure OpenAI"
-    },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
