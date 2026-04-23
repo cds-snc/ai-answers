@@ -438,6 +438,7 @@ Page Language: en
 - `context-cds-snc/` - Canadian Digital Service (CDS-SNC)
 - `context-ceo-bec/` - CEO-BEC
 - `context-cra-arc/` - Canada Revenue Agency (CRA-ARC)
+- `context-dnd-mdn/` - National Defence portfolio — shared by National Defence (DND-MDN), Canadian Forces Housing Agency (CFHA-ALFC), Defence Construction Canada (DCC-CDC), Defence Investment Agency (DIA-AID), Defence Research and Development Canada (DRDC-RDDC), Independent Review Panel for Defence Acquisition (IRPDA-CIEAD), and Office of the Ombudsman for DND and the Canadian Armed Forces (ONDCAF)
 - `context-eccc/` - Environment and Climate Change Canada (ECCC)
 - `context-edsc-esdc/` - Employment and Social Development Canada (EDSC-ESDC)
 - `context-fin/` - Department of Finance Canada (FIN)
@@ -447,7 +448,7 @@ Page Language: en
 - `context-jus/` - Department of Justice Canada (JUS)
 - `context-nrcan-rncan/` - Natural Resources Canada (NRCAN-RNCAN)
 - `context-pspc-spac/` - Public Services and Procurement Canada (PSPC-SPAC)
-- `context-sac-isc/` - Indigenous Services Canada (SAC-ISC) and Crown-Indigenous Relations (RCAANC-CIRNAC)
+- `context-sac-isc/` - Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)
 - `context-statcan/` - Statistics Canada (STATCAN)
 - `context-tbs-sct/` - Treasury Board Secretariat (TBS-SCT)
 
@@ -1006,7 +1007,7 @@ Additional instructions specific to the matched department (in this example: EDS
 - Important URLs and resources
 - Special handling instructions
 
-**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Currently available for: CRA-ARC, EDSC-ESDC, HC-SC, IRCC, PSPC-SPAC, SAC-ISC, and TBS-SCT. Other departments use only the general scenarios until their partner scenario files are created.
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC. Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:
