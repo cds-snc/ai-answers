@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.122.0](https://github.com/cds-snc/ai-answers/compare/v1.121.1...v1.122.0) (2026-04-24)
+
+
+### Features
+
+* add WAFv2 IP allowlist for staging ALB ([b57e09c](https://github.com/cds-snc/ai-answers/commit/b57e09c4b754295c15a6ef9449a0b7b43c433533))
+
+
+### Bug Fixes
+
+* mark waf_allowed_cidrs as sensitive to prevent IP leak in logs ([f838ad0](https://github.com/cds-snc/ai-answers/commit/f838ad0f94bd66567116e6fb7b6ae98626720067))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([d0f2ddf](https://github.com/cds-snc/ai-answers/commit/d0f2ddfa730a790d913662dab3db3a3b7f73c32c))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([fcc864a](https://github.com/cds-snc/ai-answers/commit/fcc864a6bec0f338d172b118899521f8fddd6a2f))
+* validate CIDR format at plan time to prevent bare IPs reaching A… ([3ccdfff](https://github.com/cds-snc/ai-answers/commit/3ccdffff4f49ad907e0e74f1391aeea9f9e3f766))
+* validate CIDR format at plan time to prevent bare IPs reaching AWS API ([4ded198](https://github.com/cds-snc/ai-answers/commit/4ded198d093414baab61e51e51f48d51c092120d))
+
 ## [1.121.1](https://github.com/cds-snc/ai-answers/compare/v1.121.0...v1.121.1) (2026-04-23)
 
 
