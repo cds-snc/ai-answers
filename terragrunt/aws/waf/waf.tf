@@ -4,7 +4,7 @@
 
 resource "aws_wafv2_ip_set" "allowed" {
   name               = "${var.product_name}-${var.env}-allowed-ips"
-  description        = "IP addresses and CIDRs allowed to access ${var.product_name} (${var.env})"
+  description        = "IP addresses and CIDRs allowed to access ${var.product_name} - ${var.env}"
   scope              = "REGIONAL"
   ip_address_version = "IPV4"
   addresses          = var.waf_allowed_cidrs
@@ -16,7 +16,7 @@ resource "aws_wafv2_ip_set" "allowed" {
 
 resource "aws_wafv2_web_acl" "main" {
   name        = "${var.product_name}-${var.env}-web-acl"
-  description = "Block all traffic except allowed IPs for ${var.product_name} (${var.env})"
+  description = "Block all traffic except allowed IPs for ${var.product_name} - ${var.env}"
   scope       = "REGIONAL"
 
   default_action {
