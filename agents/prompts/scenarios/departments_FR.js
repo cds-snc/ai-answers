@@ -1029,6 +1029,11 @@ export const departments_FR = [
     "url": "https://www.statcan.gc.ca/fra/debut",
     "abbrKey": "StatCan"
   },
+     {
+    "name": "Rechercher des tarifs Canada",
+    "url": "https://www.tariffinder.ca/fr/getStarted",
+    "abbrKey": "TARIFF-TARIF"
+  },
   {
     "name": "Téléfilm Canada",
     "url": "https://www.telefilm.ca/fr/?q=fr",
