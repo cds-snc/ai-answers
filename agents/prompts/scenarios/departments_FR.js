@@ -262,7 +262,7 @@ export const departments_FR = [
   {
     "name": "Centre national des arts",
     "url": "https://nac-cna.ca/fr/",
-    "abbrKey": "NSC-CNA"
+    "abbrKey": "NAC-CNA"
   },
   {
     "name": "Chaires de recherche du Canada",
@@ -347,7 +347,7 @@ export const departments_FR = [
   {
     "name": "Commission canadienne des grains",
     "url": "https://www.grainscanada.gc.ca/fr/",
-    "abbrKey": "MAB-CCG"
+    "abbrKey": "CGC-CCG"
   },
   {
     "name": "Commission canadienne du lait",
@@ -502,12 +502,12 @@ export const departments_FR = [
   {
     "name": "Conseil national des aînés",
     "url": "https://www.canada.ca/fr/conseil-national-aines.html",
-    "abbrKey": "NSC-CNA"
+    "abbrKey": "NSC-CNSA"
   },
   {
     "name": "Construction de Défense Canada",
     "url": "https://www.cdc-dcc.gc.ca/",
-    "abbrKey": "LCC-CDC"
+    "abbrKey": "DCC-CDC"
   },
   {
     "name": "CORCAN",
@@ -627,7 +627,7 @@ export const departments_FR = [
   {
     "name": "Forces armées canadiennes emplois",
     "url": "https://forces.ca/fr/",
-    "abbrKey": "FCC-FAC"
+    "abbrKey": "CAF-FAC"
   },
   {
     "name": "Garde côtière canadienne",
@@ -658,11 +658,6 @@ export const departments_FR = [
     "name": "Impact Canada",
     "url": "https://impact.canada.ca/fr",
     "abbrKey": "IC"
-  },
-  {
-    "name": "Innovation Canada Outil de recherche d'aide aux entreprises",
-    "url": "https://innovation.ised-isde.canada.ca/s/?language=fr_CA",
-    "abbrKey": "INNOVATION"
   },
   {
     "name": "Logement, Infrastructures et Collectivités Canada",
@@ -817,7 +812,7 @@ export const departments_FR = [
   {
     "name": "Normes d'accessibilité Canada",
     "url": "https://accessibilite.canada.ca/",
-    "abbrKey": "NAC-CNA"
+    "abbrKey": "ASC-NCA"
   },
   {
     "name": "Office d'investissement du régime de pensions du Canada",
@@ -875,11 +870,6 @@ export const departments_FR = [
     "abbrKey": "PGIC-IOGC"
   },
   {
-    "name": "Programme de passeport",
-    "url": "https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens.html",
-    "abbrKey": "PASSPORT"
-  },
-  {
     "name": "Pont Blue Water Canada",
     "url": "https://pontbluewater.ca/",
     "abbrKey": "BWB-PBW"
@@ -915,11 +905,6 @@ export const departments_FR = [
     "abbrKey": "RCAANC-CIRNAC"
   },
   {
-    "name": "Régime de pensions du Canada",
-    "url": "https://www.canada.ca/fr/services/prestations/pensionspubliques.html",
-    "abbrKey": "CPP-RPC"
-  },
-  {
     "name": "Réseau canadien d'information sur le patrimoine",
     "url": "https://www.canada.ca/fr/reseau-information-patrimoine.html",
     "abbrKey": "CHIN-RCIP"
@@ -943,11 +928,6 @@ export const departments_FR = [
     "name": "Chambre des communes du Canada",
     "url": "https://www.noscommunes.ca/fr",
     "abbrKey": "HOC-CDC"
-  },
-  {
-    "name": "Commission des lieux et monuments historiques du Canada",
-    "url": "https://parcs.canada.ca/culture/designation",
-    "abbrKey": "HSMBC-CLMHC"
   },
   {
     "name": "Savoir polaire Canada",
@@ -974,11 +954,6 @@ export const departments_FR = [
     "url": "https://www.securitepublique.gc.ca/index-fr.aspx",
     "abbrKey": "PS-SP"
   },
-    {
-    "name": "Service Canada",
-    "url": "https://www.canada.ca/fr/emploi-developpement-social/ministere/portefeuille/service-canada.html",
-    "abbrKey": "EDSC-ESDC"
-  },
   {
     "name": "Service canadien d'appui aux tribunaux administratifs",
     "url": "https://www.canada.ca/fr/service-canadien-appui-tribunaux-administratifs.html",
@@ -1002,7 +977,7 @@ export const departments_FR = [
   {
     "name": "Service correctionnel Canada",
     "url": "https://www.canada.ca/fr/service-correctionnel.html",
-    "abbrKey": "SCC-CSC"
+    "abbrKey": "CSC-SCC"
   },
   {
     "name": "Service des délégués commerciaux du Canada",

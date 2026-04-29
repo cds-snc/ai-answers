@@ -35,7 +35,6 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         },
         {
             $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] },
                 department: { $arrayElemAt: ['$ctx.department', 0] },
                 expertFeedback: { $arrayElemAt: ['$ef', 0] }
             }

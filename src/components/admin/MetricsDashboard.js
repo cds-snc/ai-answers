@@ -4,6 +4,7 @@ import '../../styles/App.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
 import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';
@@ -203,6 +204,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   return (
     <GcdsContainer size="xl" className="space-y-6">
       <FilterPanel
+        lang={lang}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}
@@ -343,7 +345,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display'
+                    className: 'display',
+                    language: dataTableLanguage(lang)
                   }}
                 />
               </div>
@@ -425,7 +428,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display'
+                    className: 'display',
+                    language: dataTableLanguage(lang)
                   }}
                 />
               </div>
@@ -498,7 +502,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display'
+                    className: 'display',
+                    language: dataTableLanguage(lang)
                   }}
                 />
               </div>
@@ -506,7 +511,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
 
             <SectionWrapper isLoading={loadingState.publicFb} title={null} error={errorState.publicFb}>
-              <EndUserFeedbackSection t={t} metrics={metrics} />
+              <EndUserFeedbackSection t={t} metrics={metrics} lang={lang} />
             </SectionWrapper>
 
             <SectionWrapper isLoading={loadingState.dept} title={null} error={errorState.dept}>
@@ -538,7 +543,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     info: true,
                     pageLength: 20,
                     stripe: true,
-                    className: 'display'
+                    className: 'display',
+                    language: dataTableLanguage(lang)
                   }}
                 />
               </div>

@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { Chat } from '../../models/chat.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchItemsUpsertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -118,5 +118,5 @@ async function batchItemsUpsertHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  return withProtection(batchItemsUpsertHandler, authMiddleware, adminMiddleware)(req, res);
+  return withProtection(batchItemsUpsertHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

@@ -7,6 +7,7 @@ import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 
 const FilterPanel = ({
+  lang,
   onApplyFilters,
   onClearFilters,
   isVisible = false,
@@ -14,7 +15,7 @@ const FilterPanel = ({
   applyButtonText = null,
   applyDisabled = false
 }) => {
-  const { t } = useTranslations();
+  const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
 
@@ -201,14 +202,21 @@ const FilterPanel = ({
     { value: 'CEO-BEC', label: 'CEO-BEC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
+    { value: 'CFHA-ALFC', label: 'CFHA-ALFC' },
+    { value: 'DCC-CDC', label: 'DCC-CDC' },
+    { value: 'DIA-AID', label: 'DIA-AID' },
+    { value: 'DND-MDN', label: 'DND-MDN' },
+    { value: 'DRDC-RDDC', label: 'DRDC-RDDC' },
     { value: 'ECCC', label: 'ECCC' },
     { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
     { value: 'FIN', label: 'FIN' },
     { value: 'HC-SC', label: 'HC-SC' },
     { value: 'IRCC', label: 'IRCC' },
+    { value: 'IRPDA-CIEAD', label: 'IRPDA-CIEAD' },
     { value: 'ISED-ISDE', label: 'ISED-ISDE' },
     { value: 'JUS', label: 'JUS' },
     { value: 'NRCan-RNCan', label: 'NRCan-RNCan' },
+    { value: 'ONDCAF', label: 'ONDCAF' },
     { value: 'PHAC-ASPC', label: 'PHAC-ASPC' },
     { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
     { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
@@ -221,37 +229,38 @@ const FilterPanel = ({
   const userTypeOptions = [
     { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
     { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
+    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') || 'Public Referred' },
     { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
   ];
 
   // Answer type options
   const answerTypeOptions = [
-    { value: 'all', label: t('admin.filters.allAnswerTypes') || 'All Answer Types' },
-    { value: 'not-gc', label: 'Not GC' },
-    { value: 'clarifying-question', label: 'Clarifying Question' },
-    { value: 'pt-muni', label: 'PT/Muni' },
-    { value: 'normal', label: 'Normal' }
+    { value: 'all', label: t('admin.filters.allAnswerTypes') },
+    { value: 'not-gc', label: t('admin.filters.answerTypeNotGc') },
+    { value: 'clarifying-question', label: t('admin.filters.answerTypeClarifying') },
+    { value: 'pt-muni', label: t('admin.filters.answerTypePtMuni') },
+    { value: 'normal', label: t('admin.filters.answerTypeNormal') }
   ];
 
   // Partner evaluation options
   const partnerEvalOptions = [
-    { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
-    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
-    { value: 'correct', label: t('metrics.dashboard.expertScored.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('metrics.dashboard.expertScored.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('metrics.dashboard.expertScored.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('metrics.dashboard.expertScored.hasCitationError') || 'Has Citation Error' },
-    { value: 'harmful', label: t('metrics.dashboard.expertScored.harmful') || 'Harmful' }
+    { value: 'all', label: t('admin.filters.allPartnerEvals') },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') },
+    { value: 'correct', label: t('admin.filters.evalCorrect') },
+    { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
+    { value: 'hasError', label: t('admin.filters.evalHasError') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') },
+    { value: 'harmful', label: t('admin.filters.evalHarmful') }
   ];
 
   // AI evaluation options
   const aiEvalOptions = [
-    { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
-    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
-    { value: 'correct', label: t('metrics.dashboard.aiScored.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('metrics.dashboard.aiScored.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('metrics.dashboard.aiScored.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('metrics.dashboard.aiScored.hasCitationError') || 'Has Citation Error' }
+    { value: 'all', label: t('admin.filters.allAiEvals') },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') },
+    { value: 'correct', label: t('admin.filters.evalCorrect') },
+    { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
+    { value: 'hasError', label: t('admin.filters.evalHasError') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') }
   ];
 
   const handleApply = () => {

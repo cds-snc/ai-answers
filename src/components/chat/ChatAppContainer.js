@@ -9,6 +9,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../..
 import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
+import { AVAILABLE_MODELS } from '../../config/workflows.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -58,15 +59,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
-  // selectedAI: prefer localStorage override; if absent, we'll load the persisted provider
-  const [selectedAI, setSelectedAI] = useState(() => {
-    try {
-      const val = localStorage.getItem(storageKey('selectedAI'));
-      return val !== null ? val : null;
-    } catch (e) {
-      return null;
-    }
-  }); // comment to cause change
+  // selectedAI: always start null so we fetch the current model.default from Settings.
+  // Only persist to localStorage when the admin explicitly picks a model in the UI.
+  const [selectedAI, setSelectedAI] = useState(null);
+  const userSetModel = useRef(false);
   const [selectedSearch, setSelectedSearch] = useState(() => {
     try {
       return localStorage.getItem(storageKey('selectedSearch')) || 'google';
@@ -107,8 +103,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Add a ref to track if we're currently typing
   const isTyping = useRef(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
-  // Add this new state to prevent multiple loading announcements
-  const [loadingAnnounced, setLoadingAnnounced] = useState(false);
+  const [errorAlert, setErrorAlert] = useState('');
+  const userLeftChatRef = useRef(false);
+  const hintTimerRef = useRef(null);
+  const statusTimersRef = useRef([]);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -155,57 +153,95 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  // This effect monitors displayStatus changes to update screen reader announcements
+  // Announce via live region using clear → set for reliable AT re-read (avoids JAWS duplicate suppression)
+  const announceToLiveRegion = useCallback((text) => {
+    setAriaLiveMessage('');
+    setTimeout(() => setAriaLiveMessage(text), 100);
+  }, []);
+
+  // Track if user navigated outside the chat during loading.
+  // Resets when loading starts; set to true on focusout to outside the chat container.
   useEffect(() => {
-    if (isLoading) {
-      // Update aria-live message whenever displayStatus changes to key statuses
-      if (displayStatus === 'moderatingQuestion') {
-        setAriaLiveMessage(safeT('homepage.chat.messages.moderatingQuestion'));
-        setLoadingAnnounced(true);
-      } else if (displayStatus === 'generatingAnswer') {
-        setAriaLiveMessage(safeT('homepage.chat.messages.generatingAnswer'));
-        setLoadingAnnounced(true);
+    if (!isLoading) return;
+    userLeftChatRef.current = false;
+    const chatEl = document.querySelector('.chat-container');
+    if (!chatEl) return;
+    const handleFocusOut = (e) => {
+      if (e.relatedTarget && !chatEl.contains(e.relatedTarget)) {
+        userLeftChatRef.current = true;
       }
-    } else {
-      // Reset the flag when loading completes
-      setLoadingAnnounced(false);
+    };
+    chatEl.addEventListener('focusout', handleFocusOut);
+    return () => chatEl.removeEventListener('focusout', handleFocusOut);
+  }, [isLoading]);
 
-      const lastMessage = messages[messages.length - 1];
+  // Timed loading announcements while in moderatingQuestion phase:
+  // 1s  — hint text
+  // 5s  — "Building context..."          (buildingContext)
+  // 8s  — "Generating answer..."         (generatingAnswer)
+  // 12s — "Still generating answer..."   (thinkingMore)
+  // All timers are cancelled if status advances or loading ends.
+  useEffect(() => {
+    const clearAll = () => {
+      statusTimersRef.current.forEach(id => clearTimeout(id));
+      statusTimersRef.current = [];
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+        hintTimerRef.current = null;
+      }
+    };
 
-      if (lastMessage) {
-        if (lastMessage.sender === 'ai' && !lastMessage.error) {
-          // AI response
-          const paragraphs = lastMessage.interaction?.answer?.paragraphs || [];
-          const sentences = paragraphs.flatMap(paragraph => extractSentences(paragraph));
-          const plainText = sentences.join(' ');
-          const citation = lastMessage.interaction?.answer?.citationHead || '';
-          const displayUrl = lastMessage.interaction?.citationUrl || '';
-          setAriaLiveMessage(`${safeT('homepage.chat.messages.yourAnswerIs')} ${plainText} ${citation} ${displayUrl}`.trim());
-        } else if (lastMessage.sender === 'user' && lastMessage.redactedText) {
-          // Redacted user message - announce the redacted text first
-          setAriaLiveMessage(lastMessage.text || '');
-          // Don't set a timeout here - let ChatInterface handle the warning announcement
-        } else if (lastMessage.sender === 'user' && !lastMessage.redactedText && !lastMessage.error) {
-          // Regular user message
-          setAriaLiveMessage(lastMessage.text || '');
-        } else if (lastMessage.error && lastMessage.sender === 'system') {
-          // System error messages (including character limit, general errors, etc.)
-          if (lastMessage.text) {
-            // Handle React elements by extracting text content
-            if (React.isValidElement(lastMessage.text)) {
-              // For system messages with dangerouslySetInnerHTML, we need the actual text
-              // This is a fallback - ideally the error message should be stored as plain text
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = lastMessage.text.props.dangerouslySetInnerHTML.__html;
-              setAriaLiveMessage(tempDiv.textContent || tempDiv.innerText || '');
-            } else {
-              setAriaLiveMessage(lastMessage.text);
-            }
-          }
-        }
+    if (!isLoading || displayStatus !== 'moderatingQuestion') {
+      clearAll();
+      return;
+    }
+
+    hintTimerRef.current = setTimeout(() => {
+      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
+    }, 1000);
+
+    statusTimersRef.current = [
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.buildingContext')), 5000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 12000),
+      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 17000),
+    ];
+
+    return clearAll;
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+
+  // Announce other status changes immediately when they occur.
+  useEffect(() => {
+    if (!isLoading || displayStatus === 'moderatingQuestion') return;
+    announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+
+  // Announce outcomes once loading ends.
+  useEffect(() => {
+    if (isLoading) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage) return;
+
+    if (lastMessage.sender === 'ai' && !lastMessage.error) {
+      if (userLeftChatRef.current) {
+        // User navigated away — announce politely so they know to come back.
+        announceToLiveRegion(safeT('homepage.chat.messages.answerReady'));
+      } else {
+        // Focus management in ChatInterface moves focus to the new AI message,
+        // so the screen reader reads it naturally. Clear the live region to avoid double-announcing.
+        setAriaLiveMessage('');
+      }
+    } else if (lastMessage.sender === 'user' && !lastMessage.error) {
+      setAriaLiveMessage(lastMessage.text || '');
+    } else if (lastMessage.error) {
+      // Only fire alert if user navigated away — focus management handles the in-situ case.
+      if (userLeftChatRef.current) {
+        const cue = safeT('homepage.chat.messages.chatIssue');
+        setErrorAlert(cue);
+        setTimeout(() => setErrorAlert(''), 1000);
       }
     }
-  }, [isLoading, displayStatus, messages, t, selectedDepartment, safeT, loadingAnnounced]);
+  }, [isLoading, messages, safeT]);
 
   const currentRequestId = useRef(null);
 
@@ -259,8 +295,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   };
 
   const handleAIToggle = (e) => {
+    userSetModel.current = true;
     setSelectedAI(e.target.value);
-    console.log('AI toggled to:', e.target.value); // Add this line for debugging
+    console.log('AI toggled to:', e.target.value);
   };
 
   const handleSearchToggle = (e) => {
@@ -271,8 +308,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Persist selection changes to localStorage
   useEffect(() => {
     try {
-      // Only persist when we have a concrete value (avoid storing null)
-      if (selectedAI !== null && selectedAI !== undefined) {
+      // Only persist when the admin explicitly changed the model in the UI
+      if (userSetModel.current && selectedAI !== null && selectedAI !== undefined) {
         localStorage.setItem(storageKey('selectedAI'), selectedAI);
       }
     } catch (e) {
@@ -280,25 +317,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [selectedAI]);
 
-  // If there's no localStorage value for selectedAI, load provider from DataStoreService
+  // Fetch the configured default model family from Settings on mount.
+  // AVAILABLE_MODELS[0] is the canonical fallback when model.default has never
+  // been saved (e.g. first deploy with the new setting).
   useEffect(() => {
     let mounted = true;
     const loadProvider = async () => {
       if (selectedAI === null) {
         try {
-          // Use the public setting endpoint so unauthenticated clients can read the provider
-          const provider = await DataStoreService.getPublicSetting('provider', 'azure');
-          if (mounted && provider) {
-            setSelectedAI(provider);
-            try {
-              localStorage.setItem(storageKey('selectedAI'), provider);
-            } catch (e) {
-              // ignore storage errors
-            }
+          const model = await DataStoreService.getPublicSetting('model.default', null);
+          if (mounted) {
+            setSelectedAI(model || AVAILABLE_MODELS[0].value);
           }
         } catch (err) {
-          // fallback to openai if datastore call fails
-          if (mounted) setSelectedAI('azure');
+          if (mounted) setSelectedAI(AVAILABLE_MODELS[0].value);
         }
       }
     };
@@ -390,12 +422,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     if (inputText.trim() !== '' && !isLoading) {
       setIsLoading(true);
 
-      // Clear any pending status updates from previous requests
+      // Clear any pending status updates from previous requests and reset display
       if (statusTimeoutRef.current) {
         clearTimeout(statusTimeoutRef.current);
         statusTimeoutRef.current = null;
       }
       statusQueueRef.current = [];
+      setDisplayStatus('moderatingQuestion');
 
       // Initial validation checks
       if (inputText.length > MAX_CHAR_LIMIT) {
@@ -497,28 +530,47 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           // ignore
         }
         if (error instanceof RedactionError) {
-          const userMessageId = messageIdCounter.current++;
-          const blockedMessageId = messageIdCounter.current++;
-          setMessages(prevMessages => [
-            ...prevMessages.slice(0, -1),
-            {
-              id: userMessageId,
-              text: error.redactedText,
-              redactedText: error.redactedText,
-              redactedItems: error.redactedItems,
-              sender: 'user',
-              error: true
-            },
-            {
-              id: blockedMessageId,
-              text: error.redactedText.includes('XXX')
-                ? safeT('homepage.chat.messages.privateContent')
-                : safeT('homepage.chat.messages.blockedContent'),
-              sender: 'system',
-              error: true,
-              ...(error.historySignature ? { historySignature: error.historySignature } : {})
-            }
-          ]);
+          if (error.redactedText.includes('XXX')) {
+            // Privacy (XXX): single combined system bubble — one bounding box for question + warning
+            const redactionMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages.slice(0, -1),
+              {
+                id: redactionMessageId,
+                redactedText: error.redactedText,
+                redactedItems: error.redactedItems,
+                text: safeT('homepage.chat.messages.privateContent'),
+                sender: 'system',
+                error: true,
+                isRedactionError: true,
+                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              }
+            ]);
+          } else {
+            // Blocked (###): keep user bubble so the user can see their original message, error box below
+            const userMessageId = messageIdCounter.current++;
+            const blockedMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages.slice(0, -1),
+              {
+                id: userMessageId,
+                text: error.redactedText,
+                redactedText: error.redactedText,
+                redactedItems: error.redactedItems,
+                sender: 'user',
+                error: true
+              },
+              {
+                id: blockedMessageId,
+                text: safeT('homepage.chat.messages.blockedContent'),
+                sender: 'system',
+                error: true,
+                isRedactionError: true,
+                isBlockedError: true,
+                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              }
+            ]);
+          }
           clearInput();
           setIsLoading(false);
           return;
@@ -531,6 +583,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               id: shortQueryMessageId,
               text: safeT('homepage.chat.messages.shortQueryMessage'),
               searchUrl: error.searchUrl,
+              searchQuery: error.userMessage,
               sender: 'system',
               error: true,
               ...(error.historySignature ? { historySignature: error.historySignature } : {})
@@ -653,7 +706,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     // Updated citation logic
     const answer = message.interaction?.answer || {};
     const citation = answer.citation || {};
-    const citationHead = answer.citationHead || citation.citationHead || '';
     // displayUrl is the citation URL to show and use for analytics
     const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
     // interactionId is the message id (client-side userMessageId)
@@ -671,19 +723,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </p>
           ));
         })}
-        {answer.answerType === 'normal' && (citationHead || displayUrl) && (
+        {displayUrl && (
           <>
-            <hr className="citation-divider" />
+            <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              {citationHead && <p key={`${messageId}-head`} className="citation-head font-size-text-small">{citationHead}</p>}
-              {displayUrl && (
-                <ul key={`${messageId}-link`} className="citation-link list-disc">
+              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+              <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
                       href={displayUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      tabIndex="0"
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
@@ -850,7 +900,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                     </a>
                   </li>
                 </ul>
-              )}
             </div>
           </>
         )}
@@ -893,7 +942,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        privacyMessage={safeT('homepage.chat.messages.privacy')}
         getLabelForInput={() =>
           turnCount === 0
             ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
@@ -911,6 +959,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
+        userLeftChatRef={userLeftChatRef}
       />
       {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div
@@ -921,6 +970,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       >
         {ariaLiveMessage}
       </div>
+      {errorAlert && (
+        <div role="alert" className="sr-only">
+          {errorAlert}
+        </div>
+      )}
     </>
   );
 };

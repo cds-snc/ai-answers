@@ -4,6 +4,7 @@ import '../../styles/App.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import VectorService from '../../services/VectorService.js';
 
 DataTable.use(DT);
@@ -16,7 +17,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
   const fetchSimilarChats = async () => {
-    if (!chatId) return alert('Please enter a chatId');
+    if (!chatId) return alert(t('vector.enterChatId'));
     setLoading(true);
     try {
       const data = await VectorService.getSimilarChats(chatId);
@@ -24,10 +25,10 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         setChats(data.chats || []);
         setHasLoadedData(true);
       } else {
-        alert(data.message || 'Failed to fetch similar chats');
+        alert(data.message || t('vector.fetchError'));
       }
     } catch (error) {
-      alert('Error fetching similar chats: ' + error.message);
+      alert(t('vector.fetchError') + ': ' + error.message);
     }
     setLoading(false);
   };
@@ -56,24 +57,27 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
             data={chats}
             columns={[
               {
-                title: 'Chat ID',
+                title: t('vector.columns.chatId'),
                 data: 'chatId',
                 render: function(data) {
                   const url = `/${lang}?chat=${data}&review=1`;
-                  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${data}</a>`;
+                  // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
+                  // Admin users prefer target="_blank" — restore once VPN issue is resolved.
+                  return `<a href="${url}">${data}</a>`;
                 }
               },
-              { title: 'Similarity', data: 'similarity' },
-              { title: 'AI Provider', data: 'aiProvider' },
-              { title: 'Search Provider', data: 'searchProvider' },
-              { title: 'Page Language', data: 'pageLanguage' },
-              { title: 'User', data: 'user' },
+              { title: t('vector.columns.similarity'), data: 'similarity' },
+              { title: t('vector.columns.aiProvider'), data: 'aiProvider' },
+              { title: t('vector.columns.searchProvider'), data: 'searchProvider' },
+              { title: t('vector.columns.pageLanguage'), data: 'pageLanguage' },
+              { title: t('vector.columns.user'), data: 'user' },
             ]}
             options={{
               paging: true,
               searching: true,
               pageLength: 10,
               order: [[1, 'desc']],
+              language: dataTableLanguage(lang),
             }}
           />
         </div>

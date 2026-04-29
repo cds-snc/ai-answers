@@ -1,6 +1,12 @@
 import dbConnect from '../api/db/db-connect.js';
 import { Setting } from '../models/setting.js';
 
+// Default values for settings that must always exist.
+// Seeded on startup if missing from the database.
+const SETTING_DEFAULTS = {
+  'model.default': 'openai-gpt51',
+};
+
 class SettingsServiceClass {
   constructor() {
     this.cache = {};
@@ -12,6 +18,15 @@ class SettingsServiceClass {
     settings.forEach(s => {
       this.cache[s.key] = s.value;
     });
+
+    // Seed any required defaults that aren't in the DB yet
+    for (const [key, value] of Object.entries(SETTING_DEFAULTS)) {
+      if (!this.cache.hasOwnProperty(key)) {
+        await this.set(key, value);
+        console.log(`[SettingsService] Seeded missing setting: ${key} = ${value}`);
+      }
+    }
+
     console.log(`[SettingsService] Loaded ${settings.length} settings into cache.`);
   }
 

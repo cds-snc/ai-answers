@@ -31,6 +31,7 @@ env:
   TF_VAR_adobe_analytics_url: ${{ secrets.ADOBE_ANALYTICS_URL}}
   TF_VAR_session_secret: ${{ secrets.SESSION_SECRET}}
   TF_VAR_conversation_integrity_secret: ${{ secrets.CONVERSATION_INTEGRITY_SECRET}}
+  TF_VAR_waf_allowed_cidrs: ${{ secrets.WAF_ALLOWED_CIDRS }}
 
 permissions:
   id-token: write
@@ -92,6 +93,10 @@ jobs:
 
       - name: Apply load balancer
         working-directory: terragrunt/env/staging/load_balancer
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply waf
+        working-directory: terragrunt/env/staging/waf
         run: terragrunt apply --terragrunt-non-interactive -auto-approve
 
       - name: Apply ecs

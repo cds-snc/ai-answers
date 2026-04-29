@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -8,22 +8,20 @@ import { getApiUrl } from '../../utils/apiToUrl.js';
 
 
 
-// View options for export
-const VIEW_OPTIONS = [
-  { value: 'default', label: 'Default' },
-  { value: 'tools', label: 'Tools' },
-  { value: 'auto-eval-debug', label: 'Auto-eval Debug' }
-];
-
-// Format options for export
-const FORMAT_OPTIONS = [
-  { value: 'xlsx', label: 'Excel (.xlsx)' },
-  { value: 'csv', label: 'CSV (.csv)' },
-  { value: 'json', label: 'JSON (.json)' }
-];
-
 const ChatLogsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+
+  const VIEW_OPTIONS = useMemo(() => [
+    { value: 'default', label: t('admin.chatLogs.views.default') },
+    { value: 'tools', label: t('admin.chatLogs.views.tools') },
+    { value: 'auto-eval-debug', label: t('admin.chatLogs.views.autoEvalDebug') },
+  ], [t]);
+
+  const FORMAT_OPTIONS = useMemo(() => [
+    { value: 'xlsx', label: t('admin.chatLogs.formats.xlsx') },
+    { value: 'csv', label: t('admin.chatLogs.formats.csv') },
+    { value: 'json', label: t('admin.chatLogs.formats.json') },
+  ], [t]);
   const [exporting, setExporting] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
 
@@ -96,7 +94,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Export error:', error);
-      alert(`Export failed: ${error.message}`);
+      alert(t('admin.chatLogs.exportError').replace('{error}', error.message));
     }
     setExporting(false);
   };
@@ -111,7 +109,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         <div className="loading-overlay" role="status" aria-live="polite">
           <div className="loading-overlay-content">
             <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.chatLogs.exporting', 'Exporting...')} {t('admin.chatLogs.exportingMessage', 'Please wait while your file is being generated.')}</span>
+            <span>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</span>
           </div>
         </div>
       )}
@@ -132,13 +130,13 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         <>
           {/* Export Options - Above Filter Panel */}
           <div className="export-controls bg-white shadow rounded-lg p-4 mb-600">
-            <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription') || 'Select export options, configure filters, then click Apply to download.'}</p>
+            <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription')}</p>
 
             <div className="flex items-center gap-4 flex-wrap">
               {/* View Dropdown */}
               <div className="export-control-group">
                 <label htmlFor="export-view" className="filter-label">
-                  {t('admin.chatLogs.exportView') || 'Export View'}
+                  {t('admin.chatLogs.exportView')}
                 </label>
                 <select
                   id="export-view"
@@ -158,7 +156,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
               {/* Format Dropdown */}
               <div className="export-control-group">
                 <label htmlFor="export-format" className="filter-label">
-                  {t('admin.chatLogs.exportFormat') || 'Format'}
+                  {t('admin.chatLogs.exportFormat')}
                 </label>
                 <select
                   id="export-format"
@@ -179,10 +177,11 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
           {/* Filter Panel - Apply triggers export */}
           <FilterPanel
+            lang={lang}
             onApplyFilters={handleApplyFilters}
             onClearFilters={handleClearFilters}
             isVisible={true}
-            applyButtonText={exporting ? (t('admin.chatLogs.exporting') || 'Exporting...') : (t('admin.chatLogs.export') || 'Export')}
+            applyButtonText={exporting ? t('admin.chatLogs.exporting') : t('admin.chatLogs.export')}
             applyDisabled={exporting}
             autoApply={false}
           />

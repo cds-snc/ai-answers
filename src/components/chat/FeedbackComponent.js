@@ -93,7 +93,7 @@ const FeedbackComponent = ({
           className="gcds-icon fa fa-solid fa-exclamation-circle"
           style={{ color: "red" }}
         ></span>
-        Error submitting feedback, contact admin.
+        {t('homepage.feedback.error')}
       </p>
     );
   }

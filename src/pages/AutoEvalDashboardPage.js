@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 
@@ -116,7 +117,9 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         const interactionId = row.interactionId || row._id || '';
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
+        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
       },
       searchable: true,
       orderable: true
@@ -134,7 +137,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', render: (v) => v ? t(`eval.noMatchReasonTypes.${v}`, v) : '', searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
   ]), [formatDate, t]);
 
@@ -144,13 +147,13 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
+          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 
       <p className="mb-0 small-text">{t('admin.autoEvalDashboard.description', 'Filter auto-evaluations and explore details in the table below.')}</p>
 
-      <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+      <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -182,6 +185,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 order: [[8, 'desc']],
                 stateSave: true,
                 language: {
+                  ...dataTableLanguage(lang),
                   search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
                   searchPlaceholder: t('admin.autoEvalDashboard.searchPlaceholder', 'Enter search term...')
                 },

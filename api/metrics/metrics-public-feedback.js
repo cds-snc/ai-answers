@@ -39,7 +39,6 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
         },
         {
             $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] },
                 department: { $arrayElemAt: ['$ctx.department', 0] },
                 publicFeedback: { $arrayElemAt: ['$pf', 0] }
             }
@@ -156,33 +155,26 @@ function buildTotalsPipeline(dateFilter, extraFilters, departmentFilter, answerT
 }
 
 /**
- * Builds the "yes" reasons breakdown pipeline.
+ * Builds the reasons breakdown pipeline for a given feedback direction ('yes' or 'no').
+ * Groups by publicFeedbackScore when present; falls back to publicFeedbackReason string
+ * for legacy records so the frontend can resolve them via reverse label lookup.
  */
-function buildYesReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
+function buildReasonsPipeline(feedbackType, dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
     const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
     stages.push(
-        { $match: { 'publicFeedback.feedback': 'yes' } },
+        { $match: { 'publicFeedback.feedback': feedbackType } },
         {
             $group: {
-                _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
-                count: { $sum: 1 }
-            }
-        }
-    );
-    return stages;
-}
-
-/**
- * Builds the "no" reasons breakdown pipeline.
- */
-function buildNoReasonsPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
-    const stages = buildBasePipeline(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
-    stages.push(
-        { $match: { 'publicFeedback.feedback': 'no' } },
-        {
-            $group: {
-                _id: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'other'] },
-                count: { $sum: 1 }
+                _id: {
+                    $cond: {
+                        if: { $gt: ['$publicFeedback.publicFeedbackScore', null] },
+                        then: '$publicFeedback.publicFeedbackScore',
+                        else: { $ifNull: ['$publicFeedback.publicFeedbackReason', 'unknown'] }
+                    }
+                },
+                enCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } },
+                frCount: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } },
+                total: { $sum: 1 }
             }
         }
     );
@@ -198,19 +190,24 @@ async function getPublicFeedbackMetrics(req, res) {
 
         // Run queries sequentially to reduce peak memory usage on DocumentDB (with retry)
         const totalsResult = await executeWithRetry(() => Chat.aggregate(buildTotalsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
-        const yesReasonsResult = await executeWithRetry(() => Chat.aggregate(buildYesReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
-        const noReasonsResult = await executeWithRetry(() => Chat.aggregate(buildNoReasonsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
+        const yesReasonsResult = await executeWithRetry(() => Chat.aggregate(buildReasonsPipeline('yes', dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
+        const noReasonsResult = await executeWithRetry(() => Chat.aggregate(buildReasonsPipeline('no', dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
 
         const pf = totalsResult[0] || {};
 
-        // Convert reason arrays to objects { reason: count }
+        // Convert reason arrays to objects.
+        // Keys are either numeric score strings (e.g. "1") for modern records,
+        // or the raw label string for legacy records — frontend resolves both to score via reverse lookup.
+        // Format: { "1": { en: N, fr: N, total: N }, "Avoided a call": { en: N, fr: N, total: N } }
         const yesReasons = {};
         yesReasonsResult.forEach(r => {
-            yesReasons[r._id] = r.count;
+            const key = r._id !== null && r._id !== undefined ? String(r._id) : 'unknown';
+            yesReasons[key] = { en: r.enCount, fr: r.frCount, total: r.total };
         });
         const noReasons = {};
         noReasonsResult.forEach(r => {
-            noReasons[r._id] = r.count;
+            const key = r._id !== null && r._id !== undefined ? String(r._id) : 'unknown';
+            noReasons[key] = { en: r.enCount, fr: r.frCount, total: r.total };
         });
 
         const metrics = {

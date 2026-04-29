@@ -130,11 +130,6 @@ export const departments_EN = [
     "abbrKey": "CMHC-SCHL"
   },
   {
-    "name": "Canada Pension Plan",
-    "url": "https://www.canada.ca/en/services/benefits/publicpensions.html",
-    "abbrKey": "CPP-RPC"
-  },
-  {
     "name": "Canada Pension Plan Investment Board",
     "url": "https://www.cppinvestments.com/",
     "abbrKey": "CPPIB-OIRPC"
@@ -162,7 +157,7 @@ export const departments_EN = [
   {
     "name": "Accessibility Standards Canada",
     "url": "https://accessible.canada.ca/",
-    "abbrKey": "ASC-CSA"
+    "abbrKey": "ASC-NCA"
   },
   {
     "name": "Canadian Air Transport Security Authority",
@@ -172,7 +167,7 @@ export const departments_EN = [
   {
     "name": "Canadian Armed Forces Jobs",
     "url": "https://forces.ca/en/",
-    "abbrKey": "FCA-CAF"
+    "abbrKey": "CAF-FAC"
   },
   {
     "name": "Canadian Army",
@@ -187,7 +182,7 @@ export const departments_EN = [
   {
     "name": "Canadian Coast Guard",
     "url": "https://www.ccg-gcc.gc.ca/index-eng.html",
-    "abbrKey": "MAB-CCG"
+    "abbrKey": "CCG-GCC"
   },
   {
     "name": "Canadian Commercial Corporation",
@@ -197,7 +192,7 @@ export const departments_EN = [
   {
     "name": "Canadian Conservation Institute",
     "url": "https://www.canada.ca/en/conservation-institute.html",
-    "abbrKey": "TCC-CCI"
+    "abbrKey": "CCI-ICC"
   },
   {
     "name": "Canadian Cultural Property Export Review Board",
@@ -207,7 +202,7 @@ export const departments_EN = [
   {
     "name": "Canadian Dairy Commission",
     "url": "https://cdc-ccl.ca/en/node/672",
-    "abbrKey": "LCC-CDC"
+    "abbrKey": "CDC-CCL"
   },
   {
     "name": "Canadian Digital Service",
@@ -442,7 +437,7 @@ export const departments_EN = [
   {
     "name": "Correctional Service Canada",
     "url": "https://www.canada.ca/en/correctional-service.html",
-    "abbrKey": "SCC-CSC"
+    "abbrKey": "CSC-SCC"
   },
   {
     "name": "Courts Administration Service",
@@ -670,11 +665,6 @@ export const departments_EN = [
     "abbrKey": "OIC-CI"
   },
   {
-    "name": "Innovation Canada business support grants advice benefits finder",
-    "url": "https://innovation.ised-isde.canada.ca/s/?language=en_CA",
-    "abbrKey": "INNOVATION"
-  },
-  {
     "name": "Housing, Infrastructure and Communities Canada",
     "url": "https://housing-infrastructure.canada.ca/index-eng.html",
     "abbrKey": "HICC-LICC"
@@ -817,7 +807,7 @@ export const departments_EN = [
   {
     "name": "National Seniors Council",
     "url": "https://www.canada.ca/en/national-seniors-council.html",
-    "abbrKey": "NSC-CNA"
+    "abbrKey": "NSC-CNSA"
   },
   {
     "name": "Natural Sciences and Engineering Research Canada",
@@ -863,11 +853,6 @@ export const departments_EN = [
     "name": "Parliament of Canada",
     "url": "https://www.parl.ca/?Language=E",
     "abbrKey": "PARL"
-  },
-  {
-    "name": "Passport Program",
-    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports.html",
-    "abbrKey": "PASSPORT"
   },
   {
     "name": "Patented Medicine Prices Review Board Canada",
@@ -988,11 +973,6 @@ export const departments_EN = [
     "name": "Secretariat of the National Security and Intelligence Committee of Parliamentarians",
     "url": "https://www.canada.ca/en/secretariat-national-security-intelligence-committee-parliamentarians.html",
     "abbrKey": "NSICOP-CPSNR"
-  },
-  {
-    "name": "Service Canada",
-    "url": "https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada.html",
-    "abbrKey": "EDSC-ESDC"
   },
   {
     "name": "Shared Services Canada",

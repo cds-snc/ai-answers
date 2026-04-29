@@ -96,7 +96,7 @@ const DEFAULT_HEADER_ORDER = [
     'questionLanguage',
     'redactedQuestion',
     'aiService',
-    'searchService',
+    'context.department',
     'citationUrl',
     'englishAnswer',
     'answer',
@@ -134,12 +134,79 @@ const DEFAULT_HEADER_ORDER = [
     'expertFeedback.neverStale',
     'expertFeedback.createdAt',
     'expertFeedback.updatedAt',
-    'context.department',
+    'searchService',
     'context.searchQuery',
     'context.searchResults',
     'context.translatedQuestion',
-    'autoEval.expertFeedback.totalScore'
+    'autoEval.expertFeedback.totalScore',
+    'answer.tools.count',
+    'answer.tools.0',
+    'answer.tools.0.status',
+    'answer.tools.1',
+    'answer.tools.1.status',
+    'answer.tools.2',
+    'answer.tools.2.status',
+    'answer.tools.3',
+    'answer.tools.3.status'
 ];
+
+// Tools view order: same as default, but context.translatedQuestion sits right before aiService
+const TOOLS_HEADER_ORDER = (() => {
+    const arr = DEFAULT_HEADER_ORDER.filter(k => k !== 'context.translatedQuestion');
+    const aiIdx = arr.indexOf('aiService');
+    arr.splice(aiIdx, 0, 'context.translatedQuestion');
+    return arr;
+})();
+
+const TOOL_COLUMN_COUNT = 4;
+const TOOL_FIELDS_TO_STRIP = ['output', 'createdAt', 'updatedAt', '__v', '_id'];
+
+// chatId lives on the chat row already; drop it from the tool's input payload
+const stripChatIdFromInput = (input) => {
+    if (input === null || input === undefined) return input;
+    if (typeof input === 'string') {
+        try {
+            const parsed = JSON.parse(input);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                delete parsed.chatId;
+                return JSON.stringify(parsed);
+            }
+        } catch (_) {
+            // not JSON — leave it alone
+        }
+        return input;
+    }
+    if (typeof input === 'object' && !Array.isArray(input)) {
+        const { chatId: _drop, ...rest } = input;
+        return rest;
+    }
+    return input;
+};
+
+const serializeToolForExport = (tool, extraStrip = []) => {
+    if (!tool || typeof tool !== 'object') return '';
+    const stripSet = new Set([...TOOL_FIELDS_TO_STRIP, ...extraStrip]);
+    // Put 'tool' first so the leading {"tool": prefix strip below is stable
+    const clean = {};
+    if (tool.tool !== undefined) clean.tool = tool.tool;
+    for (const key of Object.keys(tool)) {
+        if (key === 'tool' || stripSet.has(key)) continue;
+        clean[key] = key === 'input' ? stripChatIdFromInput(tool[key]) : tool[key];
+    }
+    // Strip the wrapping {"tool": ... } so the cell starts with the tool name value
+    return JSON.stringify(clean).replace(/^\{"tool":/, '').replace(/\}$/, '');
+};
+
+const buildToolColumns = (tools) => {
+    const arr = Array.isArray(tools) ? tools : [];
+    const cols = { 'answer.tools.count': arr.length };
+    for (let i = 0; i < TOOL_COLUMN_COUNT; i++) {
+        const tool = arr[i];
+        cols[`answer.tools.${i}`] = tool ? serializeToolForExport(tool, ['status']) : '';
+        cols[`answer.tools.${i}.status`] = tool?.status || '';
+    }
+    return cols;
+};
 
 function getPopulateOptions(view) {
     // Base population for all views
@@ -157,7 +224,7 @@ function getPopulateOptions(view) {
         }
     ];
 
-    if (view === 'tools') {
+    if (view === 'tools' || view === 'default') {
         // Add tools population
         basePopulate.find(p => p.path === 'answer').populate.push({ path: 'tools', select: '-_id' });
     }
@@ -220,16 +287,14 @@ function flattenInteraction(chat, interaction, view) {
     const sentence3 = sentences[2] || '';
     const sentence4 = sentences[3] || '';
 
+    const toolColumns = buildToolColumns(get(interaction, 'answer.tools', []));
+
     // Explicit Default View Construction
     if (viewDef.mode === 'explicit') {
         return {
             uniqueID,
             chatId: chat.chatId || '',
             userEmail: get(chat, 'user.email'),
-            createdAt: chat.createdAt ? new Date(chat.createdAt).toISOString() : '', // Assuming chat creation time, or interaction?? User list has createdAt.
-            // Using chat.createdAt for the interaction row might be misleading if multiple interactions, but it's what was requested in context of "chat schema".
-            // If interaction has createdAt, use it? Interaction schema usually has timestamps.
-            // Let's prefer interaction.createdAt if available
             createdAt: interaction.createdAt ? new Date(interaction.createdAt).toISOString() : (chat.createdAt ? new Date(chat.createdAt).toISOString() : ''),
 
             pageLanguage: get(interaction, 'context.pageLanguage') || chat.pageLanguage || '',
@@ -290,7 +355,9 @@ function flattenInteraction(chat, interaction, view) {
             'context.searchResults': JSON.stringify(get(interaction, 'context.searchResults', '')),
             'context.translatedQuestion': get(interaction, 'context.translatedQuestion'),
 
-            'autoEval.expertFeedback.totalScore': get(interaction, 'autoEval.expertFeedback.totalScore')
+            'autoEval.expertFeedback.totalScore': get(interaction, 'autoEval.expertFeedback.totalScore'),
+
+            ...toolColumns
         };
     }
 
@@ -316,6 +383,13 @@ function flattenInteraction(chat, interaction, view) {
     flatInteraction.sentence4 = sentence4;
 
     const merged = { ...base, ...flatInteraction };
+
+    // For the tools view, replace the bundled answer.tools array with per-index columns.
+    // Leave auto-eval-debug alone since its tools aren't populated.
+    if (view === 'tools') {
+        delete merged['answer.tools'];
+        Object.assign(merged, toolColumns);
+    }
 
     // Filter exclusions
     if (excludePatterns.length > 0) {
@@ -403,7 +477,7 @@ async function chatExportHandler(req, res) {
             dateFilter.createdAt = { $gte: start, $lte: now };
         }
 
-        if (userType === 'public') dateFilter.user = { $exists: false };
+        if (userType === 'public' || userType === 'referredPublic') dateFilter.user = { $exists: false };
         else if (userType === 'admin') dateFilter.user = { $exists: true };
 
         const chatPopulate = getPopulateOptions(view);
@@ -432,7 +506,8 @@ async function chatExportHandler(req, res) {
         //    For aggregate, we already define lookups.
         //    I will need to ADD conditional lookups to the pipeline based on `view`.
 
-        const isAggregate = department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval;
+        const isAggregate = department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval
+            || userType === 'referredPublic';
 
         if (isAggregate) {
             const pipeline = [];
@@ -478,7 +553,7 @@ async function chatExportHandler(req, res) {
             pipeline.push({ $addFields: { 'interactions.answer.citation': { $arrayElemAt: ['$interactions.answer.citation_doc', 0] } } });
 
             // Answer: Tools (CONDITIONAL)
-            if (view === 'tools') {
+            if (view === 'tools' || view === 'default') {
                 pipeline.push({ $lookup: { from: 'tools', localField: 'interactions.answer.tools', foreignField: '_id', as: 'interactions.answer.tools' } });
             }
 
@@ -540,7 +615,7 @@ async function chatExportHandler(req, res) {
             });
 
             // Filtering Logic - now includes all conditions including partnerEval and aiEval
-            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval });
+            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval }, { skipUserCondition: true });
             if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });
 
             // Reconstruct Chat Object Structure
@@ -598,7 +673,7 @@ async function chatExportHandler(req, res) {
             finalHeaders = DEFAULT_HEADER_ORDER;
         } else {
             // Dynamic headers for other views
-            const ordered = DEFAULT_HEADER_ORDER;
+            const ordered = view === 'tools' ? TOOLS_HEADER_ORDER : DEFAULT_HEADER_ORDER;
             const extra = [...dynamicKeys].filter(k => !ordered.includes(k)).sort();
             finalHeaders = [...ordered.filter(k => dynamicKeys.has(k)), ...extra];
         }

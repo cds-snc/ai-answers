@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
+import { getPath } from '../utils/routes.js';
 
 // Basic authentication protection
 export const ProtectedRoute = ({ children, lang = 'en' }) => {
@@ -14,7 +15,7 @@ export const ProtectedRoute = ({ children, lang = 'en' }) => {
   // Check if user is authenticated
   if (!currentUser) {
     // Redirect to signin page with return url
-    return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
+    return <Navigate to={getPath('signin', lang)} state={{ from: location }} replace />;
   }
 
   return children;
@@ -37,7 +38,7 @@ export const RoleProtectedRoute = ({
 
   // Check if user is authenticated
   if (!currentUser) {
-    return <Navigate to={`/${lang}/signin`} state={{ from: location }} replace />;
+    return <Navigate to={getPath('signin', lang)} state={{ from: location }} replace />;
   }
   // If roles are specified, check if user has one of them
   if (roles.length > 0 && !roles.includes(currentUser.role)) {

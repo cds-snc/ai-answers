@@ -113,7 +113,12 @@ const EvalPanel = ({ message, t }) => {
   const sentenceTrace = Array.isArray(evalObj?.sentenceMatchTrace) ? evalObj.sentenceMatchTrace : [];
   const sim = evalObj?.similarityScores || {};
   const noMatch = evalObj?.hasMatches === false;
-  const noMatchReason = noMatch ? (evalObj.noMatchReasonMsg || 'No reason provided') : '';
+  const noMatchReasonType = evalObj?.noMatchReasonType || '';
+  const noMatchReason = noMatch
+    ? (noMatchReasonType
+        ? t(`eval.noMatchReasonTypes.${noMatchReasonType}`, noMatchReasonType)
+        : evalObj?.noMatchReasonMsg || t('eval.noMatchReasonTypes.unknown', 'Unknown'))
+    : '';
 
   const fmt = (v) => {
     if (v === null || typeof v === 'undefined' || v === '') return v;
@@ -139,9 +144,17 @@ const EvalPanel = ({ message, t }) => {
     }
   };
 
+  // Build title with score indicator
+  const baseEvalTitle = t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation', 'Automated evaluation');
+  let evalTitleSuffix = '';
+  if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
+    evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
+  }
+  const evalTitle = baseEvalTitle + evalTitleSuffix;
+
   return (
     <GcdsDetails
-      detailsTitle={t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Automated evaluation'}
+      detailsTitle={evalTitle}
       className="review-details"
       tabIndex="0"
       onGcdsClick={handleToggle}
@@ -152,11 +165,11 @@ const EvalPanel = ({ message, t }) => {
             {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
           </GcdsButton>
           <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated" style={{ marginLeft: '0.5rem' }}>
-            {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteEvaluation') || 'Delete Evaluation')}
+            {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
           </GcdsButton>
         </div>
-        {loading && <div>{t('common.loading') || 'Loading...'}</div>}
-        {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
+        {loading && <div>{t('common.loading', 'Loading...')}</div>}
+        {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
 
         {evalObj ? (
           <>
@@ -181,34 +194,34 @@ const EvalPanel = ({ message, t }) => {
                 {/* New fields: show above Processed */}
                 {evalObj.hasMatches && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' ? (
                   <tr>
-                    <td>{tr('eval.totalScore', 'Score')}:</td>
+                    <td>{tr('eval.totalScore')}:</td>
                     <td>{evalObj.expertFeedback.totalScore === null || typeof evalObj.expertFeedback.totalScore === 'undefined' ? '' : String(evalObj.expertFeedback.totalScore)}</td>
                   </tr>
                 ) : null}
                 {evalObj.hasMatches && evalObj.interactionUpdatedAt ? (
                   <tr>
-                    <td>{tr('eval.interactionUpdatedAt', 'Date of Chat')}:</td>
+                    <td>{tr('eval.interactionUpdatedAt')}:</td>
                     <td>{formatDate(evalObj.interactionUpdatedAt)}</td>
                   </tr>
                 ) : null}
                 {evalObj.referringUrl ? (
                   <tr>
-                    <td>{tr('eval.referringUrl', 'Referring URL')}:</td>
+                    <td>{tr('eval.referringUrl')}:</td>
                     <td><a href={evalObj.referringUrl} target="_blank" rel="noopener noreferrer">{evalObj.referringUrl}</a></td>
                   </tr>
                 ) : null}
 
                 <tr>
                   <td>{t('eval.processed', 'Processed')}:</td>
-                  <td>{evalObj.processed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</td>
+                  <td>{evalObj.processed ? t('common.yes', 'yes') : t('common.no', 'no')}</td>
                 </tr>
                 <tr>
                   <td>{t('eval.hasMatches', 'Has matches')}:</td>
-                  <td>{evalObj.hasMatches ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</td>
+                  <td>{evalObj.hasMatches ? t('common.yes', 'yes') : t('common.no', 'no')}</td>
                 </tr>
                 <tr>
                   <td>{t('eval.fallback', 'Fallback')}:</td>
-                  <td>{evalObj.fallbackType || (t('reviewPanels.none') || 'none')}</td>
+                  <td>{evalObj.fallbackType || t('reviewPanels.none', 'none')}</td>
                 </tr>
                 {evalObj.expertFeedback ? (
                   <tr>
@@ -220,16 +233,20 @@ const EvalPanel = ({ message, t }) => {
                   <tr>
                     <td>{tr('eval.modelData', 'Model data')}:</td>
                     <td>
-                      {evalObj._modelMeta.sentenceCompareModel ? `${t('reviewPanels.sentenceCompare') || 'Sentence-compare'}: ${evalObj._modelMeta.sentenceCompareModel}` : null}
+                      {evalObj._modelMeta.sentenceCompareModel ? `${t('reviewPanels.sentenceCompare', 'Sentence-compare')}: ${evalObj._modelMeta.sentenceCompareModel}` : null}
                       {evalObj._modelMeta.sentenceCompareModel && evalObj._modelMeta.fallbackCompareModel ? ' • ' : ''}
-                      {evalObj._modelMeta.fallbackCompareModel ? `${t('reviewPanels.fallbackCompare') || 'Fallback-compare'}: ${evalObj._modelMeta.fallbackCompareModel}` : null}
+                      {evalObj._modelMeta.fallbackCompareModel ? `${t('reviewPanels.fallbackCompare', 'Fallback-compare')}: ${evalObj._modelMeta.fallbackCompareModel}` : null}
                     </td>
                   </tr>
                 ) : null}
                 {evalObj.noMatchReasonType || evalObj.noMatchReasonMsg ? (
                   <tr>
                     <td>{t('eval.noMatchReason', 'No-match reason')}:</td>
-                    <td>{evalObj.noMatchReasonType || ''} {evalObj.noMatchReasonMsg ? `- ${evalObj.noMatchReasonMsg}` : ''}</td>
+                    <td>
+                      {evalObj.noMatchReasonType
+                        ? t(`eval.noMatchReasonTypes.${evalObj.noMatchReasonType}`, evalObj.noMatchReasonType)
+                        : evalObj.noMatchReasonMsg || ''}
+                    </td>
                   </tr>
                 ) : null}
                 {evalObj.fallbackSourceChatId ? (
@@ -264,18 +281,18 @@ const EvalPanel = ({ message, t }) => {
         )}
       </div>
       {/* Stage timeline - collapsible */}
-      <GcdsDetails detailsTitle={t('reviewPanels.stageTimeline') || 'Stage timeline'} className="mt-200">
+      <GcdsDetails detailsTitle={t('reviewPanels.stageTimeline', 'Stage timeline')} className="mt-200">
         {Array.isArray(evalObj?.stageTimeline) && evalObj.stageTimeline.length > 0 ? (
           <div>
             <table className="review-table">
               <thead>
                 <tr>
-                  <th>{t('reviewPanels.timestamp') || 'Timestamp'}</th>
-                  <th>{t('reviewPanels.stage') || 'Stage'}</th>
-                  <th>{t('reviewPanels.status') || 'Status'}</th>
-                  <th>{t('reviewPanels.code') || 'Code'}</th>
-                  <th>{t('reviewPanels.message') || 'Message'}</th>
-                  <th>{t('reviewPanels.details') || 'Details'}</th>
+                  <th>{t('reviewPanels.timestamp', 'Timestamp')}</th>
+                  <th>{t('reviewPanels.stage', 'Stage')}</th>
+                  <th>{t('reviewPanels.status', 'Status')}</th>
+                  <th>{t('reviewPanels.code', 'Code')}</th>
+                  <th>{t('reviewPanels.message', 'Message')}</th>
+                  <th>{t('reviewPanels.details', 'Details')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -294,12 +311,12 @@ const EvalPanel = ({ message, t }) => {
               </tbody>
             </table>
             <div className="mt-100">
-              <strong>{t('reviewPanels.rawTimeline') || 'Raw timeline (JSON)'}:</strong>
+              <strong>{t('reviewPanels.rawTimeline', 'Raw timeline (JSON)')}:</strong>
               <pre style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
             </div>
           </div>
         ) : (
-          <div>{t('reviewPanels.noStageTimeline') || 'No stage timeline available.'}</div>
+          <div>{t('reviewPanels.noStageTimeline', 'No stage timeline available.')}</div>
         )}
       </GcdsDetails>
       <div className="eval-details">
@@ -318,19 +335,19 @@ const EvalPanel = ({ message, t }) => {
       
 
             {/* Sentence match trace - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.sentenceMatchTrace') || 'Sentence match trace'} className="mt-200">
+            <GcdsDetails detailsTitle={t('reviewPanels.sentenceMatchTrace', 'Sentence match trace')} className="mt-200">
               {sentenceTrace.length > 0 ? (
                 <table className="review-table">
                   <thead>
                     <tr>
-                      <th>{t('reviewPanels.sourceSentenceIndex') || 'Source sentence index'}</th>
-                      <th>{t('reviewPanels.sourceText') || 'Source text'}</th>
-                      <th>{t('reviewPanels.matchedChatId') || 'Matched chatId'}</th>
-                      <th>{t('reviewPanels.matchedSentenceIndex') || 'Matched sentence index'}</th>
-                      <th>{t('reviewPanels.matchedText') || 'Matched text'}</th>
-                      <th>{t('reviewPanels.similarity') || 'Similarity'}</th>
-                      <th>{t('reviewPanels.matchedScore') || 'Matched score'}</th>
-                      <th>{t('reviewPanels.matchStatus') || 'Match status'}</th>
+                      <th>{t('reviewPanels.sourceSentenceIndex', 'Source sentence index')}</th>
+                      <th>{t('reviewPanels.sourceText', 'Source text')}</th>
+                      <th>{t('reviewPanels.matchedChatId', 'Matched chatId')}</th>
+                      <th>{t('reviewPanels.matchedSentenceIndex', 'Matched sentence index')}</th>
+                      <th>{t('reviewPanels.matchedText', 'Matched text')}</th>
+                      <th>{t('reviewPanels.similarity', 'Similarity')}</th>
+                      <th>{t('reviewPanels.matchedScore', 'Matched score')}</th>
+                      <th>{t('reviewPanels.matchStatus', 'Match status')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -349,36 +366,36 @@ const EvalPanel = ({ message, t }) => {
                   </tbody>
                 </table>
               ) : (
-                <div>{t('reviewPanels.noSentenceTraces') || 'No sentence match traces available.'}</div>
+                <div>{t('reviewPanels.noSentenceTraces', 'No sentence match traces available.')}</div>
               )}
             </GcdsDetails>
 
             {/* Fallback details section */}
-            <GcdsDetails detailsTitle={t('reviewPanels.fallbackDetails') || 'Fallback details'} className="mt-200">
+            <GcdsDetails detailsTitle={t('reviewPanels.fallbackDetails', 'Fallback details')} className="mt-200">
               <div>
-                <div><strong>{t('reviewPanels.fallbackType') || 'Fallback type'}:</strong> {evalObj.fallbackType || ''}</div>
-                <div><strong>{t('reviewPanels.fallbackSourceChatId') || 'Fallback source chatId'}:</strong> {renderChatLink(evalObj.fallbackSourceChatId) || ''}</div>
-                <div><strong>{t('reviewPanels.fallbackCompareUsed') || 'Fallback compare used'}:</strong> {evalObj.fallbackCompareUsed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</div>
+                <div><strong>{t('reviewPanels.fallbackType', 'Fallback type')}:</strong> {evalObj.fallbackType || ''}</div>
+                <div><strong>{t('reviewPanels.fallbackSourceChatId', 'Fallback source chatId')}:</strong> {renderChatLink(evalObj.fallbackSourceChatId) || ''}</div>
+                <div><strong>{t('reviewPanels.fallbackCompareUsed', 'Fallback compare used')}:</strong> {evalObj.fallbackCompareUsed ? t('common.yes', 'yes') : t('common.no', 'no')}</div>
 
                 {/* Show fallback answer text and citation first (if present) */}
                 {evalObj.fallbackCandidateAnswerText ? (
                   <div className="mt-100">
-                    <h5>{t('reviewPanels.fallbackCandidateAnswer') || 'Fallback candidate answer'}</h5>
+                    <h5>{t('reviewPanels.fallbackCandidateAnswer', 'Fallback candidate answer')}</h5>
                     <div style={{ whiteSpace: 'pre-wrap' }}>{evalObj.fallbackCandidateAnswerText}</div>
                     {evalObj.fallbackCandidateCitation ? (
-                      <div><strong>{t('reviewPanels.fallbackCandidateCitation') || 'Candidate citation'}:</strong> {evalObj.fallbackCandidateCitation}</div>
+                      <div><strong>{t('reviewPanels.fallbackCandidateCitation', 'Candidate citation')}:</strong> {evalObj.fallbackCandidateCitation}</div>
                     ) : null}
                   </div>
                 ) : null}
 
                 {evalObj.fallbackCompareMeta ? (
                   <div className="mt-100">
-                    <h5>{t('reviewPanels.fallbackCompareMeta') || 'Fallback compare meta'}</h5>
+                    <h5>{t('reviewPanels.fallbackCompareMeta', 'Fallback compare meta')}</h5>
                     <table className="review-table">
                       <thead>
                         <tr>
-                          <th>{t('reviewPanels.field') || 'Field'}</th>
-                          <th>{t('reviewPanels.value') || 'Value'}</th>
+                          <th>{t('reviewPanels.field', 'Field')}</th>
+                          <th>{t('reviewPanels.value', 'Value')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -395,13 +412,13 @@ const EvalPanel = ({ message, t }) => {
 
                 {evalObj.fallbackCompareChecks ? (
                   <div className="mt-200">
-                    <h5>{t('reviewPanels.fallbackCompareChecks') || 'Fallback compare checks'}</h5>
+                    <h5>{t('reviewPanels.fallbackCompareChecks', 'Fallback compare checks')}</h5>
                     <table className="review-table">
                       <thead>
                         <tr>
-                          <th>{t('reviewPanels.check') || 'Check'}</th>
-                          <th>{t('reviewPanels.pass') || 'Pass'}</th>
-                          <th>{t('reviewPanels.details') || 'Details'}</th>
+                          <th>{t('reviewPanels.check', 'Check')}</th>
+                          <th>{t('reviewPanels.pass', 'Pass')}</th>
+                          <th>{t('reviewPanels.details', 'Details')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -423,24 +440,24 @@ const EvalPanel = ({ message, t }) => {
 
             {/* Agent candidate choices per source sentence (if available) */}
             {sentenceTrace.some(s => Array.isArray(s.candidateChoices) && s.candidateChoices.length) ? (
-              <GcdsDetails detailsTitle={t('reviewPanels.agentCandidateChoices') || 'Agent candidate choices'} className="mt-200">
+              <GcdsDetails detailsTitle={t('reviewPanels.agentCandidateChoices', 'Agent candidate choices')} className="mt-200">
                 <table className="review-table">
                   <thead>
                     <tr>
-                      <th>{t('reviewPanels.sourceSentenceIndex') || 'Source sentence index'}</th>
-                      <th>{t('reviewPanels.candidateIndex') || 'Candidate index'}</th>
-                      <th>{t('reviewPanels.matchedChatId') || 'Matched chatId'}</th>
-                      <th>{t('reviewPanels.text') || 'Text'}</th>
-                      <th>{t('reviewPanels.matchedSentenceIndex') || 'Matched sentence index'}</th>
-                      <th>{t('reviewPanels.similarity') || 'Similarity'}</th>
-                      <th>{t('reviewPanels.numbers') || 'numbers'}</th>
-                      <th>{t('reviewPanels.dates_times') || 'dates_times'}</th>
-                      <th>{t('reviewPanels.negation') || 'negation'}</th>
-                      <th>{t('reviewPanels.entities') || 'entities'}</th>
-                      <th>{t('reviewPanels.quantifiers') || 'quantifiers'}</th>
-                      <th>{t('reviewPanels.conditionals') || 'conditionals'}</th>
-                      <th>{t('reviewPanels.connectives') || 'connectives'}</th>
-                      <th>{t('reviewPanels.modifiers') || 'modifiers'}</th>
+                      <th>{t('reviewPanels.sourceSentenceIndex', 'Source sentence index')}</th>
+                      <th>{t('reviewPanels.candidateIndex', 'Candidate index')}</th>
+                      <th>{t('reviewPanels.matchedChatId', 'Matched chatId')}</th>
+                      <th>{t('reviewPanels.text', 'Text')}</th>
+                      <th>{t('reviewPanels.matchedSentenceIndex', 'Matched sentence index')}</th>
+                      <th>{t('reviewPanels.similarity', 'Similarity')}</th>
+                      <th>{t('reviewPanels.numbers', 'numbers')}</th>
+                      <th>{t('reviewPanels.dates_times', 'dates_times')}</th>
+                      <th>{t('reviewPanels.negation', 'negation')}</th>
+                      <th>{t('reviewPanels.entities', 'entities')}</th>
+                      <th>{t('reviewPanels.quantifiers', 'quantifiers')}</th>
+                      <th>{t('reviewPanels.conditionals', 'conditionals')}</th>
+                      <th>{t('reviewPanels.connectives', 'connectives')}</th>
+                      <th>{t('reviewPanels.modifiers', 'modifiers')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -480,41 +497,41 @@ const EvalPanel = ({ message, t }) => {
             ) : null}
 
             {/* Similarity scores - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.similarityScores') || 'Similarity scores'} className="mt-200">
+            <GcdsDetails detailsTitle={t('reviewPanels.similarityScores', 'Similarity scores')} className="mt-200">
               <table className="review-table">
                 <thead>
                   <tr>
-                    <th>{t('reviewPanels.metric') || 'Metric'}</th>
-                    <th>{t('reviewPanels.value') || 'Value'}</th>
+                    <th>{t('reviewPanels.metric', 'Metric')}</th>
+                    <th>{t('reviewPanels.value', 'Value')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Array.isArray(sim.sentences) && sim.sentences.length > 0 && sim.sentences.map((val, idx) => (
                     <tr key={`sim-s-${idx}`}>
-                      <td>{(t('reviewPanels.sentence') || 'Sentence')} {idx + 1}</td>
+                      <td>{t('reviewPanels.sentence', 'Sentence')} {idx + 1}</td>
                       <td>{fmt(val)}</td>
                     </tr>
                   ))}
                   <tr>
-                    <td>{t('reviewPanels.citation') || 'Citation'}</td>
-                    <td>{typeof sim.citation !== 'undefined' ? fmt(sim.citation) : (t('reviewPanels.notAvailable') || 'N/A')}</td>
+                    <td>{t('reviewPanels.citation', 'Citation')}</td>
+                    <td>{typeof sim.citation !== 'undefined' ? fmt(sim.citation) : t('reviewPanels.notAvailable', 'N/A')}</td>
                   </tr>
                 </tbody>
               </table>
             </GcdsDetails>
 
             {/* Agent usage - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.agentUsage') || 'Agent usage'} className="mt-200">
-              <h4>{t('reviewPanels.agentUsage') || 'Agent usage'}</h4>
+            <GcdsDetails detailsTitle={t('reviewPanels.agentUsage', 'Agent usage')} className="mt-200">
+              <h4>{t('reviewPanels.agentUsage', 'Agent usage')}</h4>
               <div>
-                <strong>{t('reviewPanels.sentenceCompareUsed') || 'Sentence compare used'}:</strong> {evalObj.sentenceCompareUsed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}
+                <strong>{t('reviewPanels.sentenceCompareUsed', 'Sentence compare used')}:</strong> {evalObj.sentenceCompareUsed ? t('common.yes', 'yes') : t('common.no', 'no')}
               </div>
               {evalObj.sentenceCompareMeta ? (
                 <table className="review-table mt-100">
                   <thead>
                     <tr>
-                      <th>{t('reviewPanels.field') || 'Field'}</th>
-                      <th>{t('reviewPanels.value') || 'Value'}</th>
+                      <th>{t('reviewPanels.field', 'Field')}</th>
+                      <th>{t('reviewPanels.value', 'Value')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -529,14 +546,14 @@ const EvalPanel = ({ message, t }) => {
               ) : null}
 
               <div className="mt-200">
-                <strong>{t('reviewPanels.fallbackCompareUsed') || 'Fallback compare used'}:</strong> {evalObj.fallbackCompareUsed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}
+                <strong>{t('reviewPanels.fallbackCompareUsed', 'Fallback compare used')}:</strong> {evalObj.fallbackCompareUsed ? t('common.yes', 'yes') : t('common.no', 'no')}
               </div>
               {evalObj.fallbackCompareMeta ? (
                 <table className="review-table mt-100">
                   <thead>
                     <tr>
-                      <th>{t('reviewPanels.field') || 'Field'}</th>
-                      <th>{t('reviewPanels.value') || 'Value'}</th>
+                      <th>{t('reviewPanels.field', 'Field')}</th>
+                      <th>{t('reviewPanels.value', 'Value')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -552,13 +569,13 @@ const EvalPanel = ({ message, t }) => {
 
               {evalObj.fallbackCompareChecks ? (
                 <div className="mt-200">
-                  <h5>{t('reviewPanels.fallbackCompareChecks') || 'Fallback compare checks'}</h5>
+                  <h5>{t('reviewPanels.fallbackCompareChecks', 'Fallback compare checks')}</h5>
                   <table className="review-table">
                     <thead>
                       <tr>
-                        <th>{t('reviewPanels.check') || 'Check'}</th>
-                        <th>{t('reviewPanels.pass') || 'Pass'}</th>
-                        <th>{t('reviewPanels.details') || 'Details'}</th>
+                        <th>{t('reviewPanels.check', 'Check')}</th>
+                        <th>{t('reviewPanels.pass', 'Pass')}</th>
+                        <th>{t('reviewPanels.details', 'Details')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -581,10 +598,10 @@ const EvalPanel = ({ message, t }) => {
           <>
             {!loading && (
               <div>
-                {t('reviewPanels.noEvaluation') || 'No evaluation available.'}
+                {t('reviewPanels.noEvaluation', 'No evaluation available.')}
                 <div className="mt-200">
                   <GcdsButton onClick={handleReRun} disabled={reRunning} className="hydrated">
-                    {reRunning ? (t('common.processing') || 'Processing...') : (t('reviewPanels.runEvaluation') || 'Run evaluation')}
+                    {reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation')}
                   </GcdsButton>
                 </div>
               </div>

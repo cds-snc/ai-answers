@@ -27,7 +27,7 @@ const AI_MODELS = {
         model: "gpt-5-mini",
         maxTokens: 10024,
         temperature: 0.0,
-        timeoutMs: 60000,
+        timeoutMs: 120000,
         reasoning: {
           effort: "low"
         }
@@ -44,7 +44,7 @@ const AI_MODELS = {
         model: "gpt-5.1",
         maxTokens: 10024,
         temperature: 0.0,
-        timeoutMs: 60000,
+        timeoutMs: 180000,
         reasoning: {
           effort: "low"
         }
@@ -53,7 +53,7 @@ const AI_MODELS = {
         model: "gpt-5.1",
         maxTokens: 10024,
         temperature: 0.0,
-        timeoutMs: 60000,
+        timeoutMs: 180000,
         reasoning: {
           effort: "low"
         }

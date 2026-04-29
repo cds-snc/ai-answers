@@ -12,3 +12,8 @@ output "ai_answers_load_balancer_sg" {
   description = "Security group of the Load balancer"
   value       = aws_security_group.ai_answers_load_balancer_sg.id
 }
+
+output "alb_arn" {
+  description = "ARN of the Application Load Balancer"
+  value       = aws_lb.ai_answers.arn
+}

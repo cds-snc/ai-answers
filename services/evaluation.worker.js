@@ -134,7 +134,7 @@ function formatCompareInput(questionFlow, answerText) {
     return sections.join('\n\n');
 }
 
-async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction, sourceQuestionFlow = null, fallbackQuestionFlow = null, aiProvider = 'openai' }) {
+async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction, sourceQuestionFlow = null, fallbackQuestionFlow = null, aiProvider = 'openai-gpt51' }) {
     try {
         const sourceText = extractAnswerText(sourceInteraction);
         const candidateText = extractAnswerText(fallbackInteraction);
@@ -162,7 +162,7 @@ async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction,
         const started = Date.now();
         const agentResult = await AgentOrchestratorService.invokeWithStrategy({
             chatId: 'fallback-compare',
-            agentType: aiProvider || 'openai',
+            agentType: aiProvider || 'openai-gpt51',
             request,
             createAgentFn,
             strategy: fallbackCompareStrategy
@@ -172,7 +172,7 @@ async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction,
             checks: agentResult?.parsed ?? null,
             raw: agentResult?.raw ?? null,
             meta: {
-                provider: aiProvider || 'openai',
+                provider: aiProvider || 'openai-gpt51',
                 model: agentResult?.model || '',
                 inputTokens: agentResult?.inputTokens ?? null,
                 outputTokens: agentResult?.outputTokens ?? null,
@@ -189,7 +189,7 @@ async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction,
 }
 
 
-async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, failedSentenceTraces = [], aiProvider = 'openai', stageRecorder = null, stageTimeline = []) {
+async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, failedSentenceTraces = [], aiProvider = 'openai-gpt51', stageRecorder = null, stageTimeline = []) {
     const timeline = stageRecorder?.timeline || stageTimeline || [];
     try {
         stageRecorder?.(EvaluationStages.FALLBACK_QA_HIGH, 'started', 'fallback_started', 'QA high score fallback started', {
@@ -595,7 +595,7 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
 }
 
 
-async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider = 'openai') {
+async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider = 'openai-gpt51') {
     // Get the set of allowed interaction IDs from topMatches
     const allowedInteractionIds = new Set(topMatches.map(m => m.embedding.interactionId._id.toString()));
     let bestSentenceMatches = [];
@@ -686,7 +686,7 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider =
                     const createAgentFn = async (agentType, localChatId) => await createSentenceCompareAgent(agentType, localChatId, 5000);
                     const request = { source: sourceSentenceText || '', candidates: candidateStrings };
                     const t0 = Date.now();
-                    const compareResult = await AgentOrchestratorService.invokeWithStrategy({ chatId: 'sentence-compare', agentType: aiProvider || 'openai', request, createAgentFn, strategy: sentenceCompareStrategy });
+                    const compareResult = await AgentOrchestratorService.invokeWithStrategy({ chatId: 'sentence-compare', agentType: aiProvider || 'openai-gpt51', request, createAgentFn, strategy: sentenceCompareStrategy });
                     const latencyMs = Date.now() - t0;
                     // parse winner
                         const winner = compareResult?.parsed?.winner;
@@ -733,7 +733,7 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider =
                         });
                         // Attach light telemetry on the object for later Eval persistence (top-level)
                         bestSentenceMatches.__agentTelemetry = {
-                            provider: aiProvider || 'openai',
+                            provider: aiProvider || 'openai-gpt51',
                             model: compareResult?.model || '',
                             inputTokens: compareResult?.inputTokens ?? null,
                             outputTokens: compareResult?.outputTokens ?? null,
@@ -1140,7 +1140,7 @@ async function createNoMatchEvaluation(interaction, chatId, reason, stageTimelin
 
 
 export { runFallbackCompareCheck };
-export default async function ({ interactionId, chatId, aiProvider = 'openai', forceFallbackEval = false }) {
+export default async function ({ interactionId, chatId, aiProvider = 'openai-gpt51', forceFallbackEval = false }) {
     await dbConnect();
     const stageTimeline = [];
     const recordStage = createStageRecorder(stageTimeline);

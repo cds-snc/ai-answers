@@ -59,4 +59,12 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     expect(InteractionModel.Interaction.aggregate).toHaveBeenCalled();
     expect(pipelineIncludes(aiEval)).toBe(true);
   });
+
+  it('pipeline includes hasDownload computation from tools lookup', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalled();
+    expect(pipelineIncludes('downloadWebPage')).toBe(true);
+    expect(pipelineIncludes('hasDownload')).toBe(true);
+    expect(pipelineIncludes('firstToolId')).toBe(true);
+  });
 });

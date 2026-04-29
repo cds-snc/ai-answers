@@ -16,7 +16,7 @@ Beta-testing in collaboration with partner organizations began in November 2025 
 
 Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation, metrics, user management, and settings. The innovative evaluation system leverages subject-matter expert(SME) evaluations of questions and answers.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
 
-## Accessibility and Usability
+## Accessibility and usability
 
 Users can be overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.
 
@@ -48,13 +48,13 @@ Your use of this system and any information generated is also subject to the [Ca
 For detailed information about how AI Answers works, our safety measures, evaluation methods, and technical architecture, see our complete [System Card](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md).
 
 ### Key sections:
-- [Current Status](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#current-status)
-- [System Purpose and Scope](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#system-purpose-and-scope)
-- [Technical Architecture](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#technical-architecture)
-- [Risk Assessment and Safety Measures](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#risk-assessment-and-safety-measures)
-- [Performance and Evaluation](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#performance-and-evaluation)
-- [Limitations and Constraints](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#limitations-and-constraints)
-- [Responsible AI Principles and Governance](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#responsible-ai-principles-and-governance)
+- [Current status](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#current-status)
+- [System purpose and scope](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#system-purpose-and-scope)
+- [Technical architecture](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#technical-architecture)
+- [Risk assessment and safety measures](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#risk-assessment-and-safety-measures)
+- [Performance and evaluation](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#performance-and-evaluation)
+- [Limitations and constraints](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#limitations-and-constraints)
+- [Responsible AI principles and governance](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#responsible-ai-principles-and-governance)
 
 ## Contact us
 

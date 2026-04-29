@@ -6,6 +6,7 @@ export const WorkflowStatus = {
   SEARCHING: 'searching',
   GETTING_CONTEXT: 'gettingContext',
   BUILDING_CONTEXT: 'buildingContext',
+  READING_WEB_PAGES: 'readingWebPages',
   GENERATING_ANSWER: 'generatingAnswer',
   COMPLETE: 'complete',
   VERIFYING_CITATION: 'verifyingCitation',
@@ -22,6 +23,7 @@ const sendStatusUpdate = (onStatusUpdate, status) => {
     WorkflowStatus.MODERATING_QUESTION,
     WorkflowStatus.SEARCHING,
     WorkflowStatus.BUILDING_CONTEXT,
+    WorkflowStatus.READING_WEB_PAGES,
     WorkflowStatus.GENERATING_ANSWER,
     WorkflowStatus.VERIFYING_CITATION,
     WorkflowStatus.MODERATING_ANSWER,
@@ -66,17 +68,11 @@ export const ChatWorkflowService = {
       graphName = 'GenericWorkflowGraph';
     } else if (resolvedWorkflow === 'InstantAndQAGraph') {
       graphName = 'InstantAndQAGraph';
-    } else if (resolvedWorkflow === 'GPT5MiniDefaultGraph') {
-      graphName = 'GPT5MiniDefaultGraph';
-    } else if (resolvedWorkflow === 'GPT5OneDefaultGraph') {
-      graphName = 'GPT5OneDefaultGraph';
-    } else if (resolvedWorkflow === 'GPT5OneChatGraph') {
-      graphName = 'GPT5OneChatGraph';
     } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
       graphName = 'DefaultWithVectorGraph';
     } else {
-      // Fallback for any other legacy string values
-      graphName = 'DefaultGraph';
+      // Legacy GPT5* names and any other unknown values → server-side legacy mapping handles them
+      graphName = resolvedWorkflow;
     }
 
     const implInstance = new GraphClient(graphName);

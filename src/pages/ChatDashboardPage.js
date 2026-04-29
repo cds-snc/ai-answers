@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
 import '../styles/App.css';
@@ -180,7 +181,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
+        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
+        return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
       }
     },
     {
@@ -232,6 +235,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.question', 'Question 1'),
       data: 'redactedQuestion',
+      searchable: true,
       orderable: false,
       render: (value) => {
         if (!value) return '';
@@ -287,7 +291,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>
-            {t('common.backToAdmin', 'Back to Admin')}
+            {t('common.backToAdmin')}
           </GcdsLink>
         </GcdsText>
       </nav>
@@ -297,6 +301,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       </p>
 
       <FilterPanel
+        lang={lang}
         onApplyFilters={(filters) => { handleApplyFilters(filters); }}
         onClearFilters={handleClearFilters}
         isVisible={true}
@@ -345,6 +350,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   scrollX: true,
                   stateSave: true,
                   language: {
+                    ...dataTableLanguage(lang),
                     search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
                     searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
                   },

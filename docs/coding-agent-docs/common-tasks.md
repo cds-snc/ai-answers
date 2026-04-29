@@ -39,13 +39,52 @@ This regenerates `docs/agents-prompts/system-prompt-documentation.md`.
 - `public/content/about-en.md`
 - `public/content/about-fr.md`
 
+## Upgrading the AI Model
+
+Model selection is decoupled from workflow logic. Workflows (DefaultGraph, DefaultWithVectorGraph, InstantAndQAGraph) define the pipeline structure. The model (which LLM to call) is set independently via Settings.
+
+### Adding a new model (code change — deploy required)
+
+1. Add the model config to `config/ai-models.js` under the appropriate provider (azure/openai)
+2. Add a `case` for the new model's `selectedAI` string in the relevant `AgentFactory.js` agent creation functions
+3. Add the model to `AVAILABLE_MODELS` in `src/config/workflows.js` — this automatically makes it available in the Settings, batch, and chat dropdowns
+4. Add locale keys for the model label in both `src/locales/en.json` and `src/locales/fr.json` (under `models.*`)
+5. Update documentation:
+   - `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md` — production model references
+   - `docs/coding-agent-docs/architecture-quick-ref.md` — model list in AI Model Config section
+
+### Switching the default model (Settings change — no deploy)
+
+1. Go to **Settings > General settings > Default model family**
+2. Select the new model from the dropdown
+3. The change takes effect immediately for all new chat requests
+
+### Recommended rollout process
+
+1. **Staging first**: In the staging/sandbox environment Settings, change "Default model family" to the new model
+2. **Test for 1-2 weeks**: Run batches, monitor eval scores, check logs for errors
+3. **Flip production**: In the production Settings, change "Default model family" to the new model
+4. **Monitor**: Watch eval dashboards — each interaction records the model used, so you can compare quality
+5. **Rollback if needed**: Change "Default model family" back to the previous model in Settings — instant, no deploy
+
+### Architecture notes
+
+- **`SettingsService` is the single source of truth for the default model.** It loads all settings from the database on server startup (`loadAll()`), and seeds required defaults (like `model.default`) if they are missing. Every consumer — the public settings API, the authenticated settings API, and `chat-graph-run.js` — reads from this cache. The frontend (Chat, Batch, Settings pages) fetches from these APIs. Never hardcode model defaults in UI components; always read from Settings.
+- **When adding a new required setting**, add it to `SETTING_DEFAULTS` in `services/SettingsService.js`. This ensures it exists in the database from the first server startup, before any admin visits the Settings page.
+- The server resolves the model in `api/chat/chat-graph-run.js` and injects it into the graph input
+- Unauthenticated users always get the Settings default model
+- Authenticated admins can override via the chat Options dropdown (for testing)
+- **The setting selects a model family, not a single model.** `AgentFactory.js` automatically routes each pipeline step to the right model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini), while context and answer generation use the full model (e.g. GPT-5.1). Admins do not configure this; it is handled internally.
+- The evaluation pipeline uses its own model (`gpt-4.1-mini`) configured separately in `AgentFactory.js` — it is not affected by the default model family setting
+- Legacy graph names (e.g. `GPT5OneDefaultGraph`) in old DB records or localStorage are mapped automatically to DefaultGraph + the implied model
+
 ## Modifying the Pipeline
 
 1. Understand the node flow: `init → validate → redact → translate → context → answer → verify → persist`
 2. Graph definitions are in `agents/graphs/` — each file defines nodes, edges, and state annotations using LangChain's `StateGraph`
 3. Shared node logic lives in `agents/graphs/workflows/GraphWorkflowHelper.js`
 4. State is passed between nodes via annotations — check existing state fields before adding new ones
-5. There are 4 graph variants (see [architecture doc](architecture-quick-ref.md#graph-variants-in-agentsgraphs)) — changes to shared logic should consider all variants
+5. There are 3 graph variants (see [architecture doc](architecture-quick-ref.md#graph-variants-in-agentsgraphs)) — changes to shared logic should consider all variants
 6. The graph registry (`agents/graphs/registry.js`) lazy-loads graphs by name via `getGraphApp(name)`
 
 ## Adding an API Route

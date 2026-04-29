@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
-import checkUrlHandler from '../api/util/util-check-url.js';
+
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
 import cors from 'cors';
@@ -156,7 +156,8 @@ app.use((req, res, next) => {
 });
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')}};`);
+  const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
 });
 
 app.get(/.*/, (req, res, next) => {
@@ -167,7 +168,7 @@ app.get(/.*/, (req, res, next) => {
   res.sendFile(path.join(__dirname, "../build", "index.html"));
 });
 
-app.get('/api/util/util-check-url', checkUrlHandler);
+
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);

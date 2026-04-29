@@ -23,7 +23,7 @@
 
 ## Executive Summary
 
-AI Answers is a specialized AI chat agent designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
+AI Answers is a specialized AI chat agent platform designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
 
 ![AI Answers System Architecture Diagram](docs/images/system_diagram_v2_EN.jpg)
 
@@ -43,10 +43,11 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 </details>
 
 ## Current Status
-- **Environment**: Beta-testing on Canada.ca 
+- **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in January 2026.
+- **Trial report**: [blog post](https://digital.canada.ca/2025/12/17/ai-answers-enterprise-scale-trial-for-canada.ca/)
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Evaluation**: Ongoing expert evaluation and response scoring generating AI automated evals & answers
-- **Platform**: Departments can add scenario prompts and files to meet specific needs
+- **Platform**: Federal institution partners can add scenario prompts and files to meet specific needs, [view prompts and partner institution prompt example](docs/agents-prompts/system-prompt-documentation.md)
 
 ## System Purpose and Scope
 
@@ -54,6 +55,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - Assist users with questions about Government of Canada issues
 - Provide accurate information about Government of Canada programs, benefits, and services
 - Direct users to appropriate government resources and next steps
+- Models a conversation with a call centre agent - [brief answers for better service](docs/pdf/short-ai-answers-en.pdf)
 
 ### Target Users
 - Anyone visiting Canada.ca or federal websites
@@ -64,12 +66,10 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - **Sources**: Only Canada.ca, gc.ca, and federal organization domains
 
 ### Language Support
-- Full bilingual support (English/French pages)
-- Official language compliance
+- Full bilingual support (English/French pages, including Admin) for Official language compliance
 - On the English page: Users can ask questions in any language and receive answers in the same language they asked
 - On the French page: Users receive answers in French regardless of the language in which the question was asked
 - Citation matches the page language
-- Responds in other languages as needed (translates into English first for accuracy and logging)
 
 ## Technical Architecture
 
@@ -82,10 +82,11 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
-- **Current production models**: Azure OpenAI GPT-4.1 family (configurable per pipeline step and graph variant), 5.1 in evaluation stage
-- **Temperature**: 0 (deterministic responses)
+- **Current production models**: Azure OpenAI GPT-5.1 family (cutover March 18,2026 from GPT 4.1); evaluation agents use GPT-4.1-mini
+- **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step to the appropriate model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini) for cost and speed, while context generation and answer generation use the full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
+- **Temperature**: 0 (deterministic responses), reasoning low
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
-- **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
+- **Model independence**: System designed to work with different AI providers, tested with GPT & Claude, plans in place to deploy more models, including Cohere, via AWS Bedrock
 
 ### Agentic Capabilities
 - **Tool usage**: AI can autonomously use specialized tools to enhance responses during answer generation
@@ -107,17 +108,14 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
 3. **Two-Stage Question Blocking**:
    - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI (word lists configurable by admins via Settings page)
-   - **Stage 2** (AI - configurable model): AI detects personal information that slipped through; question is then blocked
+   - **Stage 2** (AI - Azure OpenAI GPT-4o, Canada East region): AI detects personal information that slipped through; question is then blocked
 4. **Translation** (AI - configurable mini model): Detects language and translates to English for processing
-5. **Context Derivation** (AI - mini model for query rewrite; full model for context generation):
-   - Query rewrite for optimized search
-   - Search execution (Canada.ca or Google)
-   - Department matching and context generation
-   - Optional: Load department-specific scenarios
-6. **Short-Circuit Check** (AI): Vector similarity search to find previously answered similar questions. Only present in certain graph variants, not the default pipeline
-7. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
-8. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
-9. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
+5. **Query Rewrite & Search** (AI - mini model): Rewrite the translated question into an optimized search query and run it against Canada.ca or Google. If the first search returns zero or one result, automatically rewrite again with a simplified query and retry; the better result set is kept.
+6. **Context Derivation** (AI - full model): Department matching and context generation from search results; optionally loads department-specific scenarios
+7. **Short-Circuit Check** (AI): Vector similarity search to find previously answered similar questions. Only present in certain graph variants, not the default pipeline
+8. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
+9. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
+10. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -135,7 +133,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Real-time content verification**: downloadWebPage tool downloads and reads current web pages to verify information accuracy
 - **Citation requirements**: Every answer must include a single verified government source link
 - **URL validation**: Automatic checking of citation URLs for validity and accessibility
-- **Expert evaluation system**: Continuous human expert evaluation of response accuracy
+- **Expert evaluation system**: Continuous human expert evaluation of response accuracy — a sample of 2,500 questions was evaluated across the public trials, producing an accuracy rate of 96%
 - **Content freshness monitoring**: Prioritizes freshly downloaded content over potentially outdated training data
 - **Department-specific scenarios**: Tailored prompts for different government departments to improve accuracy
 
@@ -221,7 +219,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 ### Evaluation Methods
 - **Innovative Expert Evaluation System**: 
-  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, experiencing the same user experience
+  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation processs with screenshots](docs/pdf/ai-answers-expert-evals-integration.pdf)
   - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
   - **Sentence-Level Scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
   - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
@@ -281,7 +279,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 ### User Roles and Access Control
 - **Admin Users**: Full system access including user management, database operations, and system configuration
-- **Partner Users**: Access to evaluation tools, batch processing, and performance metrics
+- **Partner Users**: Access to suite of evaluation tools to score sentences and citation for chat responses, batch processing, and performance metrics
 - **Role-Based UI**: Different interfaces and capabilities based on user permissions
 - **Authentication**: Secure login system with role-based route protection
 
@@ -340,8 +338,6 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Separate Feedback Systems**: Expert evaluation (sentence-level) vs public feedback (helpful/not helpful)
 
 ### Partner-Specific Features
-- **AI Service Selection**: Choose between OpenAI and Anthropic for testing
-- **Search Service Toggle**: Switch between Google and Canada.ca search services
 - **Expert Feedback Tools**: Access to detailed evaluation interfaces
 - **Batch Processing**: Create and manage evaluation batches
 - **Performance Metrics**: View system performance and user feedback analytics

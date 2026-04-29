@@ -1,92 +1,102 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
-import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import enLocale from '../../locales/en.json';
+import frLocale from '../../locales/fr.json';
+
+// Reverse map: known label string (EN or FR) → score
+const LABEL_TO_SCORE = (() => {
+  const map = {};
+  ['YES', 'NO'].forEach(type => {
+    const feedbackType = type.toLowerCase();
+    FEEDBACK_OPTIONS[type].forEach(opt => {
+      const enLabel = enLocale.homepage?.publicFeedback?.[feedbackType]?.options?.[opt.id];
+      const frLabel = frLocale.homepage?.publicFeedback?.[feedbackType]?.options?.[opt.id];
+      if (enLabel) map[enLabel] = opt.score;
+      if (frLabel) map[frLabel] = opt.score;
+    });
+  });
+  return map;
+})();
 
 
-// Accessible color palette for pie charts (WCAG AA compliant)
-const CHART_COLORS = [
-  "#1976D2", // Medium blue
-  "#AD1457", // Magenta
-  "#26A699", // Medium teal
-  "#E65100", // Dark orange
-  "#7B1FA2", // Dark purple
-  "#D18305", // Dark amber
-  "#388E3C"  // Green
-];
-
-
-// Helper to get translation label for a reason key in the current language
-const getReasonLabel = (reasonKey, t, isPositive) => {
-  const translationKey = isPositive 
-    ? `homepage.publicFeedback.yes.options.${reasonKey}`
-    : `homepage.publicFeedback.no.options.${reasonKey}`;
-  
+// Translate a score key to the current language label.
+// scoreKey is a numeric string (e.g. "1") or "legacy".
+const getReasonLabel = (scoreKey, t, isPositive) => {
+  const id = SCORE_TO_KEY[parseInt(scoreKey, 10)];
+  if (!id) return scoreKey;
+  if (id === 'other') {
+    return isPositive
+      ? t('metrics.dashboard.userScored.otherYes', 'Other (yes)')
+      : t('metrics.dashboard.userScored.otherNo', 'Other (no)');
+  }
+  const translationKey = isPositive
+    ? `homepage.publicFeedback.yes.options.${id}`
+    : `homepage.publicFeedback.no.options.${id}`;
   const translation = t(translationKey);
-  
-  // Return translation if successful, otherwise return original key
-  return translation !== translationKey ? translation : reasonKey;
+  return translation !== translationKey ? translation : id;
 };
 
-const EndUserFeedbackSection = ({ t, metrics }) => {
-  // --- First table (en/fr counts) remains unchanged ---
-
-
-  // Pie charts and lower table use already-combined counts and translations
-  const yesReasons = metrics.publicFeedbackReasons?.yes || {};
-  const noReasons = metrics.publicFeedbackReasons?.no || {};
-
-
-    // Helper to group counts by key (handles scores from backend)
-  const groupByKey = (reasons) => {
-    const grouped = {};
-    
-    Object.entries(reasons).forEach(([reason, count]) => {
-      // Convert score to key
-      const score = parseInt(reason, 10);
-      const key = SCORE_TO_KEY[score] || reason;
-      
-      if (!grouped[key]) grouped[key] = 0;
-      grouped[key] += count;
-    });
-    
-    return grouped;
-  };
-
-  // Grouped counts for table and pie charts (by translation key)
-  const yesGrouped = groupByKey(yesReasons);
-  const noGrouped = groupByKey(noReasons);
-
-  // Prepare data for pie charts (grouped by translation key, label in current language)
-  const yesPieData = Object.entries(yesGrouped).map(([key, count]) => ({
-    label: getReasonLabel(key, t, true),
-    count,
-  }));
-  const noPieData = Object.entries(noGrouped).map(([key, count]) => ({
-    label: getReasonLabel(key, t, false),
-    count,
-  }));
-
-  // For the lower table, get all unique keys from both yes and no
-  const allKeys = Array.from(new Set([
-    ...Object.keys(yesGrouped),
-    ...Object.keys(noGrouped)
-  ]));
-
-  // Table data: show label (in current language) and combined counts for yes/no
-  const tableData = allKeys.map((key) => {
-    const yesCount = yesGrouped[key] || 0;
-    const noCount = noGrouped[key] || 0;
-    return {
-      label: getReasonLabel(key, t, yesCount >= noCount),
-      helpful: yesCount,
-      unhelpful: noCount,
-      total: yesCount + noCount,
-    };
+// Merge raw backend reasons (score strings or legacy label strings) into score-keyed buckets.
+// otherScore: the score for "Other" in this feedback direction (4 for yes, 6 for no).
+const groupByScore = (reasons, otherScore) => {
+  const grouped = {};
+  Object.entries(reasons).forEach(([key, counts]) => {
+    const numericScore = parseInt(key, 10);
+    let scoreKey;
+    if (!isNaN(numericScore) && SCORE_TO_KEY[numericScore]) {
+      // Modern record: key is already a numeric score string
+      scoreKey = String(numericScore);
+    } else if (/^(other|autre)\b/i.test(key)) {
+      // "Other" / "Autre" / "Other - [typed text]" — checked before LABEL_TO_SCORE because
+      // both YES and NO have an "Other" option with different scores; context (otherScore) wins
+      scoreKey = String(otherScore);
+    } else if (LABEL_TO_SCORE[key]) {
+      // Legacy record: exact label match for all other options
+      scoreKey = String(LABEL_TO_SCORE[key]);
+    } else {
+      scoreKey = 'unknown';
+    }
+    if (!grouped[scoreKey]) grouped[scoreKey] = { en: 0, fr: 0, total: 0 };
+    grouped[scoreKey].en += counts.en;
+    grouped[scoreKey].fr += counts.fr;
+    grouped[scoreKey].total += counts.total;
   });
+  return grouped;
+};
 
- 
+const YES_OTHER_SCORE = FEEDBACK_OPTIONS.YES.find(o => o.id === 'other').score;
+const NO_OTHER_SCORE = FEEDBACK_OPTIONS.NO.find(o => o.id === 'other').score;
+
+const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
+  const rawYesReasons = metrics.publicFeedbackReasons?.yes || {};
+  const rawNoReasons = metrics.publicFeedbackReasons?.no || {};
+
+  const yesReasons = useMemo(() => groupByScore(rawYesReasons, YES_OTHER_SCORE), [rawYesReasons]);
+  const noReasons = useMemo(() => groupByScore(rawNoReasons, NO_OTHER_SCORE), [rawNoReasons]);
+
+  // Table rows: one row per score key with yes EN/FR and no EN/FR counts.
+  // YES scores (1–4) and NO scores (5–10) are non-overlapping, so a key
+  // only ever appears in one direction — isPositive is unambiguous.
+  const tableData = useMemo(() => {
+    const allKeys = Array.from(new Set([...Object.keys(yesReasons), ...Object.keys(noReasons)]));
+    return allKeys.map((key) => {
+      const yes = yesReasons[key] || { en: 0, fr: 0, total: 0 };
+      const no = noReasons[key] || { en: 0, fr: 0, total: 0 };
+      const isPositive = yes.total > 0;
+      return {
+        label: getReasonLabel(key, t, isPositive),
+        yesEn: yes.en,
+        yesFr: yes.fr,
+        noEn: no.en,
+        noFr: no.fr,
+        total: yes.total + no.total,
+      };
+    }).filter(row => row.total > 0);
+  }, [yesReasons, noReasons, t]);
+
   return (
     <div className="mb-600">
       <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
@@ -136,68 +146,21 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
             paging: false,
             searching: false,
             ordering: false,
-            info: false
+            info: false,
+            language: dataTableLanguage(lang)
           }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginTop: '2rem' }}>
-          {/* Pie chart for YES (helpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-          <h4>{t('metrics.dashboard.userScored.helpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={yesPieData.map(({ label, count }) => ({ name: label, value: count }))}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {yesPieData.map((entry, idx) => (
-                    <Cell key={`cell-yes-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Pie chart for NO (unhelpful) reasons */}
-          <div style={{ flex: 1, minWidth: 300, height: 300 }}>
-            <h4>{t('metrics.dashboard.userScored.unhelpful')} - {t('metrics.dashboard.userScored.reasonBreakdown')}</h4>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={noPieData.map(({ label, count }) => ({ name: label, value: count }))}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {noPieData.map((entry, idx) => (
-                    <Cell key={`cell-no-${idx}`} fill={CHART_COLORS[(idx + 3) % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        {/* Add margin below pie charts to separate from the next section */}
-        <div style={{ height: '2rem' }} />
         {/* Table for public feedback reasons breakdown by language */}
         <div style={{ marginTop: '2rem' }}>
-          <h4>{t('metrics.dashboard.userScored.reasonTableTitle') || 'Public Feedback Reasons Breakdown'}</h4>
+          <h4>{t('metrics.dashboard.userScored.reasonTableTitle')}</h4>
           <DataTable
-            data={tableData.filter(row => row.total > 0)}
+            data={tableData}
             columns={[
               { title: t('metrics.dashboard.userScored.reason'), data: 'label' },
-              { title: t('metrics.dashboard.userScored.helpful'), data: 'helpful' },
-              { title: t('metrics.dashboard.userScored.unhelpful'), data: 'unhelpful' },
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.enCount')}`, data: 'yesEn' },
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.frCount')}`, data: 'yesFr' },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.enCount')}`, data: 'noEn' },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.frCount')}`, data: 'noFr' },
               { title: t('metrics.dashboard.count'), data: 'total' }
             ]}
             options={{

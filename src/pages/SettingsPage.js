@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -16,13 +17,13 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
-  // New state for provider (openai | azure)
-  const [provider, setProvider] = useState('openai');
-  const [savingProvider, setSavingProvider] = useState(false);
-
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
   const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
+
+  // Default model setting — decoupled from workflow so model upgrades are a Settings change
+  const [defaultModel, setDefaultModel] = useState('openai-gpt51');
+  const [savingDefaultModel, setSavingDefaultModel] = useState(false);
 
 
 
@@ -73,14 +74,14 @@ const SettingsPage = ({ lang = 'en' }) => {
       setVectorServiceType(type);
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
-      // Load provider setting
-      const providerSetting = await DataStoreService.getSetting('provider', 'openai');
-      setProvider(providerSetting);
       // Load default workflow setting
       const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
       // Validate default workflow against known options
-      const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
+      const allowedWorkflows = WORKFLOW_VALUES;
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
+      // Load default model setting (seeded server-side on startup if missing)
+      const defaultModelSetting = await DataStoreService.getSetting('model.default', AVAILABLE_MODELS[0].value);
+      setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
@@ -287,19 +288,6 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  // Handler for provider setting
-  const handleProviderChange = async (e) => {
-    const newValue = e.target.value;
-    setProvider(newValue);
-    setSavingProvider(true);
-    try {
-      const current = await saveAndVerify('provider', newValue);
-      setProvider(current);
-    } finally {
-      setSavingProvider(false);
-    }
-  };
-
   const handleDeploymentModeChange = async (e) => {
     const newMode = e.target.value;
     setDeploymentMode(newMode);
@@ -370,22 +358,22 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
-      <h1 className="mb-400">{t('settings.title', 'Settings')}</h1>
+      <h1 className="mb-400">{t('settings.title')}</h1>
       <nav className="mb-400">
-        <a href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</a>
+        <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
-      <GcdsDetails detailsTitle={t('settings.general.title', 'General settings')} className="mb-400" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400" tabIndex="0">
         <div>
           <label htmlFor="site-status" className="mb-200 display-block">
-            {t('settings.statusLabel', 'Service status')}
+            {t('settings.statusLabel')}
           </label>
           <select id="site-status" value={status} onChange={handleChange} disabled={saving}>
-            <option value="available">{t('settings.statuses.available', 'Available')}</option>
-            <option value="unavailable">{t('settings.statuses.unavailable', 'Unavailable')}</option>
+            <option value="available">{t('settings.statuses.available')}</option>
+            <option value="unavailable">{t('settings.statuses.unavailable')}</option>
           </select>
 
           <label htmlFor="base-url" className="mb-200 display-block mt-400">
-            {t('settings.baseUrlLabel', 'Base URL (e.g. https://example.com)')}
+            {t('settings.baseUrlLabel')}
           </label>
           <input
             id="base-url"
@@ -398,15 +386,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           />
 
           <label htmlFor="deployment-mode" className="mb-200 display-block mt-400">
-            {t('settings.deploymentModeLabel', 'Deployment Mode')}
+            {t('settings.deploymentModeLabel')}
           </label>
           <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
-            <option value="CDS">{t('settings.deploymentMode.cds', 'CDS (Background worker)')}</option>
-            <option value="Vercel">{t('settings.deploymentMode.serverless', 'Serverless (Wait for completion)')}</option>
+            <option value="CDS">{t('settings.deploymentMode.cds')}</option>
+            <option value="Vercel">{t('settings.deploymentMode.serverless')}</option>
           </select>
 
           <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
-            {t('settings.vectorServiceTypeLabel', 'Vector Service Type')}
+            {t('settings.vectorServiceTypeLabel')}
           </label>
           <select
             id="vector-service-type"
@@ -424,25 +412,12 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingVectorType}
           >
-            <option value="imvectordb">{t('settings.vectorServiceType.imvectordb', 'IMVectorDB (local)')}</option>
-            <option value="documentdb">{t('settings.vectorServiceType.documentdb', 'DocumentDB (AWS)')}</option>
-          </select>
-
-          <label htmlFor="provider" className="mb-200 display-block mt-400">
-            {t('settings.providerLabel', 'Provider')}
-          </label>
-          <select
-            id="provider"
-            value={provider}
-            onChange={handleProviderChange}
-            disabled={savingProvider}
-          >
-            <option value="openai">{t('settings.provider.openai', 'OpenAI')}</option>
-            <option value="azure">{t('settings.provider.azure', 'Azure')}</option>
+            <option value="imvectordb">{t('settings.vectorServiceType.imvectordb')}</option>
+            <option value="documentdb">{t('settings.vectorServiceType.documentdb')}</option>
           </select>
 
           <label htmlFor="default-workflow" className="mb-200 display-block mt-400">
-            {t('settings.defaultWorkflow.label', 'Default workflow')}
+            {t('settings.defaultWorkflow.label')}
           </label>
           <select
             id="default-workflow"
@@ -452,7 +427,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5MiniDefaultGraph'];
+                const allowedWorkflows = WORKFLOW_VALUES;
                 const current = await saveAndVerify('workflow.default', v);
                 setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
               } finally {
@@ -461,10 +436,33 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingDefaultWorkflow}
           >
-            <option value="DefaultGraph">DefaultGraph</option>
-            <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-            <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-            <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
+            {WORKFLOWS.map(w => (
+              <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
+            ))}
+          </select>
+
+          <label htmlFor="default-model" className="mb-200 display-block mt-400">
+            {t('settings.defaultModel.label')}
+          </label>
+          <select
+            id="default-model"
+            value={defaultModel}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setDefaultModel(v);
+              setSavingDefaultModel(true);
+              try {
+                const current = await saveAndVerify('model.default', v);
+                setDefaultModel(current || 'openai-gpt51');
+              } finally {
+                setSavingDefaultModel(false);
+              }
+            }}
+            disabled={savingDefaultModel}
+          >
+            {AVAILABLE_MODELS.map(m => (
+              <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+            ))}
           </select>
 
         </div>
@@ -472,9 +470,9 @@ const SettingsPage = ({ lang = 'en' }) => {
 
 
 
-      <GcdsDetails detailsTitle={t('settings.twoFA.title', 'Two-factor authentication')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.twoFA.title')} className="mt-600 mb-200" tabIndex="0">
         <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
-          {t('settings.twoFA.enabledLabel', 'Require two-factor authentication for login')}
+          {t('settings.twoFA.enabledLabel')}
         </label>
         <select
           id="twofa-enabled"
@@ -482,12 +480,12 @@ const SettingsPage = ({ lang = 'en' }) => {
           onChange={handleTwoFAEnabledChange}
           disabled={savingTwoFAEnabled}
         >
-          <option value="true">{t('common.yes', 'Yes')}</option>
-          <option value="false">{t('common.no', 'No')}</option>
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
         </select>
 
         <label htmlFor="twofa-template" className="mb-200 display-block mt-400">
-          {t('settings.twoFA.templateLabel', 'GC Notify template ID for 2FA emails')}
+          {t('settings.twoFA.templateLabel')}
         </label>
         <input
           id="twofa-template"
@@ -499,7 +497,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         />
 
         <label htmlFor="reset-template" className="mb-200 display-block mt-400">
-          {t('settings.notify.resetTemplateLabel', 'Reset Link Template ID')}
+          {t('settings.notify.resetTemplateLabel')}
         </label>
         <input
           id="reset-template"
@@ -511,9 +509,9 @@ const SettingsPage = ({ lang = 'en' }) => {
         />
       </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.session.title', 'Session settings')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.session.title')} className="mt-600 mb-200" tabIndex="0">
         <label htmlFor="session-management-enabled" className="mb-200 display-block mt-200">
-          {t('settings.session.managementEnabled', 'Enable Session Management')}
+          {t('settings.session.managementEnabled')}
         </label>
         <select
           id="session-management-enabled"
@@ -521,12 +519,12 @@ const SettingsPage = ({ lang = 'en' }) => {
           onChange={handleSessionManagementEnabledChange}
           disabled={savingSessionManagementEnabled}
         >
-          <option value="true">{t('common.yes', 'Yes')}</option>
-          <option value="false">{t('common.no', 'No')}</option>
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
         </select>
 
         <label htmlFor="session-store-type" className="mb-200 display-block mt-200">
-          {t('settings.session.storeType', 'Express Session Store (memory | mongo)')}
+          {t('settings.session.storeType')}
         </label>
         <select
           id="session-store-type"
@@ -534,13 +532,13 @@ const SettingsPage = ({ lang = 'en' }) => {
           onChange={handleSessionStoreTypeChange}
           disabled={savingSessionStoreType}
         >
-          <option value="memory">{t('settings.session.store.options.memory', 'Memory (in-process)')}</option>
-          <option value="mongo">{t('settings.session.store.options.mongo', 'MongoDB (persistent)')}</option>
-          <option value="redis">{t('settings.session.store.options.redis', 'Redis (persistent)')}</option>
+          <option value="memory">{t('settings.session.store.options.memory')}</option>
+          <option value="mongo">{t('settings.session.store.options.mongo')}</option>
+          <option value="redis">{t('settings.session.store.options.redis')}</option>
         </select>
 
         <label htmlFor="metrics-store-type" className="mb-200 display-block mt-200">
-          {t('settings.metrics.storeType', 'Chat Metrics Store (memory | mongo)')}
+          {t('settings.metrics.storeType')}
         </label>
         <select
           id="metrics-store-type"
@@ -548,99 +546,99 @@ const SettingsPage = ({ lang = 'en' }) => {
           onChange={handleMetricsStoreTypeChange}
           disabled={savingMetricsStoreType}
         >
-          <option value="memory">{t('settings.session.store.options.memory', 'Memory (in-process)')}</option>
-          <option value="mongo">{t('settings.session.store.options.mongo', 'MongoDB (persistent)')}</option>
+          <option value="memory">{t('settings.session.store.options.memory')}</option>
+          <option value="mongo">{t('settings.session.store.options.mongo')}</option>
         </select>
 
         <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
-          {t('settings.session.ttlMinutes', 'Default session TTL (minutes — e.g. 60 = 1 hour)')}
+          {t('settings.session.ttlMinutes')}
         </label>
         <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
 
         <label htmlFor="session-auth-ttl" className="mb-200 display-block mt-200">
-          {t('settings.session.authTtlMinutes', 'Authenticated session TTL (minutes — e.g. 60 = 1 hour)')}
+          {t('settings.session.authTtlMinutes')}
         </label>
         <input id="session-auth-ttl" type="number" min="1" value={sessionAuthTTL} onChange={handleSessionAuthTTLChange} disabled={savingSessionAuthTTL} />
 
         {/* Rate limiting moved to its own section for clarity (localized below) */}
 
         <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
-          {t('settings.session.maxActiveSessions', 'Max active sessions (count — empty = unlimited)')}
+          {t('settings.session.maxActiveSessions')}
         </label>
         <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
 
         {/* session.persistence moved to rate-limiting section (stored as session.rateLimitPersistence) */}
       </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.rateLimiting.title', 'Rate limiting')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.rateLimiting.title')} className="mt-600 mb-200" tabIndex="0">
         <label htmlFor="session-rate-persistence" className="mb-200 display-block mt-200">
-          {t('settings.rateLimiting.persistence.label', 'Rate-limiter persistence (memory | mongo)')}
+          {t('settings.rateLimiting.persistence.label')}
         </label>
         <select id="session-rate-persistence" value={rateLimitPersistence} onChange={handleRateLimitPersistenceChange} disabled={savingRateLimitPersistence}>
-          <option value="memory">{t('settings.session.persistence.options.memory', 'Memory (in-process)')}</option>
-          <option value="mongo">{t('settings.session.persistence.options.mongo', 'Mongo (persistent)')}</option>
+          <option value="memory">{t('settings.session.persistence.options.memory')}</option>
+          <option value="mongo">{t('settings.session.persistence.options.mongo')}</option>
         </select>
 
         <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">
-          {t('settings.rateLimiting.rateLimitCapacity', 'Rate limit capacity (tokens)')}
+          {t('settings.rateLimiting.rateLimitCapacity')}
         </label>
         <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
 
         <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
-          {t('settings.rateLimiting.authenticatedRateLimitCapacity', 'Authenticated rate limit capacity (tokens)')}
+          {t('settings.rateLimiting.authenticatedRateLimitCapacity')}
         </label>
         <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
 
         <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
-          {t('settings.rateLimiting.rateLimitRefill', 'Rate limit refill (tokens/min)')}
+          {t('settings.rateLimiting.rateLimitRefill')}
         </label>
         <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
 
         <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
-          {t('settings.rateLimiting.authenticatedRateLimitRefill', 'Authenticated rate limit refill (tokens/min)')}
+          {t('settings.rateLimiting.authenticatedRateLimitRefill')}
         </label>
         <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
       </GcdsDetails>
-      <GcdsDetails detailsTitle={t('settings.redaction.title', 'Redaction Settings')} className="mt-600 mb-200" tabIndex="0">
-        <p className="mb-400">{t('settings.redaction.description', 'Manage bad words, threats, and manipulation phrases. Enter words separated by commas.')}</p>
+      <GcdsDetails detailsTitle={t('settings.redaction.title')} className="mt-600 mb-200" tabIndex="0">
+        <p className="mb-400">{t('settings.redaction.description')}</p>
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h3 className="mb-200">English</h3>
+            <h3 className="mb-200">{t('settings.redaction.langEnglish')}</h3>
 
             <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
-              {t('settings.redaction.profanity', 'Profanity')} (EN)
+              {t('settings.redaction.profanity')} (EN)
             </label>
-            <SettingsTextArea settingKey="redaction.profanity.en" saveAndVerify={saveAndVerify} />
+            <SettingsTextArea settingKey="redaction.profanity.en" saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="threat-en" className="mb-200 display-block mt-400">
-              {t('settings.redaction.threat', 'Threats')} (EN)
+              {t('settings.redaction.threat')} (EN)
             </label>
-            <SettingsTextArea settingKey="redaction.threat.en" saveAndVerify={saveAndVerify} />
+            <SettingsTextArea settingKey="redaction.threat.en" saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="manipulation-en" className="mb-200 display-block mt-400">
-              {t('settings.redaction.manipulation', 'Manipulation')} (EN)
+              {t('settings.redaction.manipulation')} (EN)
             </label>
-            <SettingsTextArea settingKey="redaction.manipulation.en" saveAndVerify={saveAndVerify} />
+            <SettingsTextArea settingKey="redaction.manipulation.en" saveAndVerify={saveAndVerify} lang={lang} />
           </div>
 
           <div>
-            <h3 className="mb-200">Français</h3>
+            <h3 className="mb-200">{t('settings.redaction.langFrench')}</h3>
 
             <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
-              {t('settings.redaction.profanity', 'Profanity')} (FR)
+              {t('settings.redaction.profanity')} (FR)
             </label>
-            <SettingsTextArea settingKey="redaction.profanity.fr" saveAndVerify={saveAndVerify} />
+            <SettingsTextArea settingKey="redaction.profanity.fr" saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="threat-fr" className="mb-200 display-block mt-400">
-              {t('settings.redaction.threat', 'Threats')} (FR)
+              {t('settings.redaction.threat')} (FR)
             </label>
-            <SettingsTextArea settingKey="redaction.threat.fr" saveAndVerify={saveAndVerify} />
+            <SettingsTextArea settingKey="redaction.threat.fr" saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="manipulation-fr" className="mb-200 display-block mt-400">
-              {t('settings.redaction.manipulation', 'Manipulation')} (FR)
+              {t('settings.redaction.manipulation')} (FR)
             </label>
-            <SettingsTextArea settingKey="redaction.manipulation.fr" saveAndVerify={saveAndVerify} />
+            <SettingsTextArea settingKey="redaction.manipulation.fr" saveAndVerify={saveAndVerify} lang={lang} />
           </div>
         </div>
       </GcdsDetails>
@@ -650,7 +648,8 @@ const SettingsPage = ({ lang = 'en' }) => {
 };
 
 // Helper component for text areas to manage their own state and saving
-const SettingsTextArea = ({ settingKey, saveAndVerify }) => {
+const SettingsTextArea = ({ settingKey, saveAndVerify, lang = 'en' }) => {
+  const { t } = useTranslations(lang);
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -672,7 +671,7 @@ const SettingsTextArea = ({ settingKey, saveAndVerify }) => {
     }
   };
 
-  if (loading) return <div className="mb-200">Loading...</div>;
+  if (loading) return <div className="mb-200">{t('common.loading')}</div>;
 
   return (
     <textarea

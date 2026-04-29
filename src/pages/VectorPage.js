@@ -6,9 +6,9 @@ import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 
-const VectorPage = () => {
-  const { t } = useTranslations();
+const VectorPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
+  const { t } = useTranslations(lang || language);
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -59,7 +59,7 @@ const VectorPage = () => {
         } else {
           setIsAutoProcessingEmbeddings(false);
           if (!isAutoProcess) {
-            alert('All embeddings have been generated!');
+            alert(t('vector.allEmbeddingsGenerated'));
           }
         }
       } else {
@@ -70,7 +70,7 @@ const VectorPage = () => {
     } catch (error) {
       console.error('Error generating embeddings:', error);
       if (!isAutoProcess) {
-        alert('Failed to generate embeddings. Check the console for details.');
+        alert(t('vector.generateEmbeddingsFailed'));
       }
       setIsAutoProcessingEmbeddings(false);
     } finally {
@@ -79,9 +79,7 @@ const VectorPage = () => {
   };
 
   const handleRegenerateEmbeddings = () => {
-    const confirmed = window.confirm(
-      'This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?'
-    );
+    const confirmed = window.confirm(t('vector.regenerateConfirm'));
     if (confirmed) {
       setIsRegeneratingEmbeddings(true);
       handleGenerateEmbeddings(false, true, null);
@@ -95,7 +93,7 @@ const VectorPage = () => {
     setError(null);
     try {
       await VectorService.reinitialize();
-      alert('Vector index created and vector service reinitialized successfully!');
+      alert(t('vector.indexCreatedSuccess'));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -105,25 +103,25 @@ const VectorPage = () => {
 
   return (
     <GcdsContainer size="xl" centered>
-      <h1>{t('vector.title', 'Vector Administration')}</h1>
+      <h1>{t('vector.title')}</h1>
       <nav className="mb-400">
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>
-            {t('common.backToAdmin', 'Back to Admin')}
+          <GcdsLink href={`/${lang}/admin`}>
+            {t('common.backToAdmin')}
           </GcdsLink>
         </GcdsText>
       </nav>
       <div className="mb-400">
-        <h2>{t('vector.indexManagement', 'Vector Index Management')}</h2>
+        <h2>{t('vector.indexManagement')}</h2>
         <GcdsText>
-          {t('vector.manageDescription', 'Manage vector indexes and view vector database statistics.')}
+          {t('vector.manageDescription')}
         </GcdsText>
         <div className="button-group">
           <GcdsButton onClick={fetchVectorStats} disabled={loading} className="mb-200 mr-200">
-            {loading ? t('vector.loading', 'Loading...') : t('vector.fetchStats', 'Fetch Vector Stats')}
+            {loading ? t('vector.loading') : t('vector.fetchStats')}
           </GcdsButton>
           <GcdsButton onClick={handleCreateVectorIndex} disabled={loading} variant="primary" className="mb-200 mr-200">
-            {t('vector.reinitializeIndex', 'Reinitialize Index')}
+            {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
         {error && <div style={{ color: 'red' }}>{error}</div>}
@@ -133,9 +131,9 @@ const VectorPage = () => {
           </div>
         )}
         <hr className="mb-400" />
-        <h2>{t('vector.embeddingManagement', 'Embedding Management')}</h2>
+        <h2>{t('vector.embeddingManagement')}</h2>
         <GcdsText>
-          {t('vector.embeddingDescription', 'Process interactions to generate embeddings.')}
+          {t('vector.embeddingDescription')}
         </GcdsText>
         <div className="button-group">
           <select value={provider} onChange={e => setProvider(e.target.value)} style={{ marginRight: "1rem" }}>
@@ -147,7 +145,7 @@ const VectorPage = () => {
             disabled={embeddingProgress?.loading || isAutoProcessingEmbeddings}
             className="mb-200 mr-200"
           >
-            {embeddingProgress?.loading && !isAutoProcessingEmbeddings ? t('vector.processing', 'Processing...') : t('vector.generateEmbeddings', 'Generate Embeddings')}
+            {embeddingProgress?.loading && !isAutoProcessingEmbeddings ? t('vector.processing') : t('vector.generateEmbeddings')}
           </GcdsButton>
           <GcdsButton 
             onClick={handleRegenerateEmbeddings}
@@ -155,17 +153,17 @@ const VectorPage = () => {
             variant="danger"
             className="mb-200 mr-200"
           >
-            {isRegeneratingEmbeddings ? t('vector.regenerating', 'Regenerating...') : t('vector.regenerateEmbeddings', 'Regenerate Embeddings')}
+            {isRegeneratingEmbeddings ? t('vector.regenerating') : t('vector.regenerateEmbeddings')}
           </GcdsButton>
         </div>
         {embeddingProgress && (
           <div className="mb-200">
             <p>
               {embeddingProgress.remaining !== undefined && (
-                <span> • {t('vector.remaining', 'Remaining')}: {embeddingProgress.remaining}</span>
+                <span> • {t('vector.remaining')}: {embeddingProgress.remaining}</span>
               )}
               {isAutoProcessingEmbeddings && (
-                <span> • <strong>{t('vector.autoProcessingActive', 'Auto-processing active')}</strong></span>
+                <span> • <strong>{t('vector.autoProcessingActive')}</strong></span>
               )}
             </p>
           </div>
@@ -176,7 +174,7 @@ const VectorPage = () => {
           {t('vector.similarChatsDescription')}
         </GcdsText>
        
-        <SimilarChatsDashboard lang={language} />
+        <SimilarChatsDashboard lang={lang || language} />
         
       </div>
     </GcdsContainer>

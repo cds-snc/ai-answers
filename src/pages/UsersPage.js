@@ -1,25 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton, GcdsLink, GcdsText } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 
 DataTable.use(DT);
 
-const roleOptions = [
-  { value: 'admin', label: 'Admin', sortIndex: 0 },
-  { value: 'partner', label: 'Partner', sortIndex: 1 },
-];
 const statusOptions = [
-  { value: true, label: 'Active', sortIndex: 0 },
-  { value: false, label: 'Inactive', sortIndex: 1 },
+  { value: true, sortIndex: 0 },
+  { value: false, sortIndex: 1 },
 ];
-const NA_LABEL = 'N/A';
 
 // Helper to normalize role values (handles bad data like uppercase 'User' or 'ADMIN')
 const normalizeRole = (role) => {
@@ -43,6 +39,11 @@ const toBooleanish = (value) => {
 const UsersPage = ({ lang }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
+  const roleOptions = useMemo(() => [
+    { value: 'admin', label: t('users.roles.admin'), sortIndex: 0 },
+    { value: 'partner', label: t('users.roles.partner'), sortIndex: 1 },
+  ], [t]);
+  const naLabel = t('common.na');
   const [users, setUsers] = useState([]);
   // Use a ref to store edit states persistently between DataTable renders
   const editStatesRef = useRef({});
@@ -120,7 +121,7 @@ const UsersPage = ({ lang }) => {
   const handleDelete = async (userId) => {
     // Check if user has admin role
     if (currentUser?.role !== 'admin') {
-      alert(t('users.actions.adminOnly', 'Only administrators can delete users'));
+      alert(t('users.actions.adminOnly'));
       return;
     }
 
@@ -179,7 +180,7 @@ const UsersPage = ({ lang }) => {
 
         const option = roleOptions.find(opt => opt.value === value);
         // If role isn't a known option (including legacy 'user'), show N/A
-        const label = option ? option.label : NA_LABEL;
+        const label = option ? option.label : naLabel;
 
         // For sorting/filtering, return a consistent sortable value
         if (type === 'sort' || type === 'type') {
@@ -193,7 +194,7 @@ const UsersPage = ({ lang }) => {
           const optionsHtml = roleOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${opt.label}</option>`).join('');
           const isKnownKey = roleOptions.some(opt => opt.value === value);
           // For unknown roles (including 'user'), show N/A placeholder with empty value
-          const extraOption = !isKnownKey ? `<option value="" selected>${NA_LABEL}</option>` : '';
+          const extraOption = !isKnownKey ? `<option value="" selected>${naLabel}</option>` : '';
 
           return `<select data-userid="${userId}" data-field="role" style="width: 100%">${extraOption}${optionsHtml}</select>`;
         }
@@ -210,7 +211,7 @@ const UsersPage = ({ lang }) => {
         const option = statusOptions.find(opt => opt.value === value);
         const label = option
           ? t('users.status.' + (value ? 'active' : 'inactive'))
-          : (rawValue !== undefined && rawValue !== null ? String(rawValue) : NA_LABEL);
+          : (rawValue !== undefined && rawValue !== null ? String(rawValue) : naLabel);
 
         // For sorting, return a consistent sortable value (Active=0, Inactive=1)
         if (type === 'sort' || type === 'type') {
@@ -222,7 +223,7 @@ const UsersPage = ({ lang }) => {
 
         if (type === 'display') {
           // Only show N/A placeholder when status is unknown; otherwise show the two known options
-          const placeholder = option ? '' : `<option value="" selected>${NA_LABEL}</option>`;
+          const placeholder = option ? '' : `<option value="" selected>${naLabel}</option>`;
           const optionsHtml = statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('');
           return `<select data-userid="${userId}" data-field="active" style="width: 100%">${placeholder}${optionsHtml}</select>`;
         }
@@ -246,7 +247,7 @@ const UsersPage = ({ lang }) => {
 
       <nav className="mb-400">
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
+          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 
@@ -259,6 +260,7 @@ const UsersPage = ({ lang }) => {
           searching: true,
           ordering: true,
           order: [[3, 'desc']],
+          language: dataTableLanguage(lang),
           createdRow: (row, data) => {
             // Attach select change handlers
             row.querySelectorAll('select').forEach(select => {

@@ -1,5 +1,40 @@
 /* Add Font Awesome CSS import at the top */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
+/* Suppress focus ring on programmatically focused elements (tabindex="-1").
+   These are never reachable via keyboard tab so removing the outline is safe. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+.redacted-preview, .privacy-message {
+    max-width: 100% !important;
+  }
+
+.blocked-error-box {
+  color: var(--gcds-color-red-900);
+  background-color: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-100);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.error-box {
+  color: var(--gcds-color-red-900);
+  background-color: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-100);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding-top: 20px;
+}
+.privacy-error-box {
+  color: #33465c;
+  background-color: #f7fafd;
+  border: 1px solid var(--gcds-color-blue-100);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
 /* temp fix spacing shenangians */
 .user-message-box p,
 .chat-id p {
@@ -174,9 +209,9 @@ code {
 .redacted-preview {
   background-color: var(--gcds-color-red-900);
   color: white;
-  display: block;
-  padding: 0.75rem;
-  border-radius: 0 0 6px 6px;
+  font-weight: 600;
+  border-radius: 6px 6px 0 0;
+  padding: 1rem 2rem;
 }
 .redacted-preview p {
   margin: 0;
@@ -187,24 +222,17 @@ code {
   padding: 0;
 }
 .privacy-message {
-  color: #333;
-  padding: 1rem;
-  /* border-radius: 6px 6px 0 0;
-    border: 1px solid #853C00; */
+  color: #33465c;
+  background-color: var(--gcds-color-blue-100);
+  padding: 1rem 2rem;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid var(--gcds-color-blue-100);
 }
 .privacy-preview {
-  background-color: #f7fafd;
   color: #33465c;
   font-weight: 600;
-  display: block;
-  padding: 0.75rem;
-  border-radius: 0 0 6px 6px;
-  font-size: 18px;
-  padding: 1.5em 1.5em 1.5em 1.5em;
-  text-align: center;
-  text-wrap: balance;
-  border: 1px solid var(--gcds-color-blue-100);
-  margin-top: -1px;
+  padding: .5rem 1rem;
+  font-size: 20px;
 }
 .privacy-preview p {
   margin: 0;
@@ -446,27 +474,8 @@ code {
   font-weight: 600;
 }
 
-.error-message {
-  color: var(--gcds-color-red-900);
-  background-color: var(--gcds-color-red-100);
-  border: 1px solid var(--gcds-color-red-100);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 10px;
-}
-
-.privacy-error-message {
-  color: #33465c;
-  background-color: #f7fafd;
-  border: 1px solid var(--gcds-color-blue-100);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-
-.redacted-error-message i {
-  margin-right: 6px;
+.privacy-error-message, .error-message {
+  padding: 0rem 1.5rem;
 }
 
 .limit-reached-message {

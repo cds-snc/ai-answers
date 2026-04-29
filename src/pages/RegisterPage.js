@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { getPath } from '../utils/routes.js';
 import styles from '../styles/auth.module.css';
 
-const SignupPage = ({ lang = 'en' }) => {
+const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ const SignupPage = ({ lang = 'en' }) => {
     setIsLoading(true);
     try {
       await AuthService.signup(email, password);
-      navigate(`/${lang}/admin`);
+      navigate(getPath('admin', lang));
     } catch (err) {
       setError(err.message || t('signup.errorOccurred'));
     } finally {
@@ -49,7 +50,9 @@ const SignupPage = ({ lang = 'en' }) => {
             type="email"
             id="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            title={t('signup.email')}
+            onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
             required
             disabled={isLoading}
           />
@@ -60,7 +63,9 @@ const SignupPage = ({ lang = 'en' }) => {
             type="password"
             id="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            title={t('signup.password')}
+            onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
             required
             disabled={isLoading}
           />
@@ -71,17 +76,19 @@ const SignupPage = ({ lang = 'en' }) => {
             type="password"
             id="confirmPassword"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            title={t('signup.confirmPassword')}
+            onChange={(e) => { e.target.setCustomValidity(''); setConfirmPassword(e.target.value); }}
+            onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
             required
             disabled={isLoading}
           />
         </div>
         <button type="submit" disabled={isLoading} className={styles.submit_button}>
-          {isLoading ? t('signup.form.submitting') : t('signup.submit')}
+          {isLoading ? t('signup.submitting') : t('signup.submit')}
         </button>
       </form>
     </div>
   );
 };
 
-export default SignupPage;
+export default RegisterPage;

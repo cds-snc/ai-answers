@@ -38,8 +38,8 @@ function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter =
             $project: {
                 chatId: 1,
                 searchProvider: 1,
-                pageLanguage: '$interactions.context.pageLanguage',
-                department: '$interactions.context.department',
+                pageLanguage: 1,
+                department: { $arrayElemAt: ['$ctx.department', 0] },
                 contextInputTokens: { $convert: { input: '$interactions.context.inputTokens', to: 'int', onError: 0, onNull: 0 } },
                 contextOutputTokens: { $convert: { input: '$interactions.context.outputTokens', to: 'int', onError: 0, onNull: 0 } },
                 // We need answer lookup for tokens and answerType
