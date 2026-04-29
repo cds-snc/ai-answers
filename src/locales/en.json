@@ -1174,7 +1174,6 @@
     "dashboard": {
       "title": "Results",
       "totalSessions": "Total sessions",
-      "googleSearches": "Google searches",
       "totalQuestions": "Total questions",
       "answerTypes": {
         "normal": "GC answers",
@@ -1195,10 +1194,11 @@
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error",
-        "hasCitationError": "Has citation error",
-        "hasErrorPercent": "Has error (%)",
-        "harmful": "Coded as harmful"
+        "hasError": "Has answer error",
+        "hasCitationError": "Citation issue",
+        "hasErrorPercent": "Has answer error (%)",
+        "harmful": "Coded as harmful",
+        "hasContentIssue": "Content issue flagged"
       },
       "aiScored": {
         "title": "AI evaluations",
@@ -1206,8 +1206,8 @@
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error",
-        "hasCitationError": "Has citation error"
+        "hasError": "Has answer error",
+        "hasCitationError": "Citation issue"
       },
       "userScored": {
         "title": "End-user feedback (public)",
@@ -1231,11 +1231,12 @@
       },
       "accuracy": {
         "title": "Accuracy summary",
-        "allEvaluations": "All evaluations",
+        "allEvaluations": "Total evaluations",
+        "note": "If a question has both an expert and AI evaluation, only the expert evaluation is used.",
         "expertEvaluations": "Expert evaluations",
         "aiEvaluations": "AI evaluations",
         "totalEvaluated": "Total evaluated",
-        "correct": "Correct",
+        "hasAnswerError": "Has answer error",
         "accuracyPct": "Accuracy %"
       },
       "questionTypes": {
@@ -1248,11 +1249,13 @@
         "answerInput": "Answer input tokens",
         "totalOutput": "Total output tokens",
         "contextOutput": "Context output tokens",
-        "answerOutput": "Answer output tokens"
+        "answerOutput": "Answer output tokens",
+        "googleSearches": "Google search queries"
       },
       "byDepartment": {
         "title": "Department breakdown of expert evaluations",
-        "department": "Department"
+        "department": "Department",
+        "noContextDept": "No context dept"
       }
     }
   },

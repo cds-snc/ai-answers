@@ -63,7 +63,8 @@ const initialMetricsState = {
     needsImprovement: { total: 0, en: 0, fr: 0 },
     hasError: { total: 0, en: 0, fr: 0 },
     hasCitationError: { total: 0, en: 0, fr: 0 },
-    harmful: { total: 0, en: 0, fr: 0 }
+    harmful: { total: 0, en: 0, fr: 0 },
+    hasContentIssue: { total: 0, en: 0, fr: 0 }
   },
   aiScored: {
     total: { total: 0, en: 0, fr: 0 },
@@ -247,15 +248,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       frCount: metrics.totalConversationsFr,
                       frPercentage: metrics.totalConversations ? Math.round((metrics.totalConversationsFr / metrics.totalConversations) * 100) + '%' : '0%'
                     },
-                    {
-                      metric: t('metrics.dashboard.googleSearches'),
-                      count: metrics.totalGoogleSearches,
-                      percentage: metrics.totalConversations ? Math.round((metrics.totalGoogleSearches / metrics.totalConversations) * 100) + '%' : '0%',
-                      enCount: '-',
-                      enPercentage: '-',
-                      frCount: '-',
-                      frPercentage: '-'
-                    }
                   ]}
                   columns={[
                     { title: t('metrics.dashboard.metric'), data: 'metric' },
@@ -329,38 +321,39 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* Table 3: Accuracy summary */}
             <SectionWrapper isLoading={loadingState.expert || loadingState.ai} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai}>
+              <GcdsText className="mb-300">{t('metrics.dashboard.accuracy.note')}</GcdsText>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <DataTable
                   data={[
                     {
                       metric: t('metrics.dashboard.accuracy.allEvaluations'),
                       totalEvaluated: metrics.expertScored.total.total + metrics.aiScored.total.total,
-                      correct: metrics.expertScored.correct.total + metrics.aiScored.correct.total,
+                      hasAnswerError: metrics.expertScored.hasError.total + metrics.aiScored.hasError.total,
                       accuracyPct: (metrics.expertScored.total.total + metrics.aiScored.total.total)
-                        ? Math.round(((metrics.expertScored.correct.total + metrics.aiScored.correct.total) / (metrics.expertScored.total.total + metrics.aiScored.total.total)) * 100) + '%'
+                        ? (100 - Math.round(((metrics.expertScored.hasError.total + metrics.aiScored.hasError.total) / (metrics.expertScored.total.total + metrics.aiScored.total.total)) * 100)) + '%'
                         : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.accuracy.expertEvaluations'),
                       totalEvaluated: metrics.expertScored.total.total,
-                      correct: metrics.expertScored.correct.total,
+                      hasAnswerError: metrics.expertScored.hasError.total,
                       accuracyPct: metrics.expertScored.total.total
-                        ? Math.round((metrics.expertScored.correct.total / metrics.expertScored.total.total) * 100) + '%'
+                        ? (100 - Math.round((metrics.expertScored.hasError.total / metrics.expertScored.total.total) * 100)) + '%'
                         : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.accuracy.aiEvaluations'),
                       totalEvaluated: metrics.aiScored.total.total,
-                      correct: metrics.aiScored.correct.total,
+                      hasAnswerError: metrics.aiScored.hasError.total,
                       accuracyPct: metrics.aiScored.total.total
-                        ? Math.round((metrics.aiScored.correct.total / metrics.aiScored.total.total) * 100) + '%'
+                        ? (100 - Math.round((metrics.aiScored.hasError.total / metrics.aiScored.total.total) * 100)) + '%'
                         : '0%'
                     }
                   ]}
                   columns={[
                     { title: t('metrics.dashboard.metric'), data: 'metric' },
                     { title: t('metrics.dashboard.accuracy.totalEvaluated'), data: 'totalEvaluated' },
-                    { title: t('metrics.dashboard.accuracy.correct'), data: 'correct' },
+                    { title: t('metrics.dashboard.accuracy.hasAnswerError'), data: 'hasAnswerError' },
                     { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'accuracyPct' }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
@@ -482,6 +475,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       enPercentage: metrics.totalOutputTokensEn ? Math.round((metrics.totalAnswerOutputTokensEn / metrics.totalOutputTokensEn) * 100) + '%' : '0%',
                       frCount: metrics.totalAnswerOutputTokensFr,
                       frPercentage: metrics.totalOutputTokensFr ? Math.round((metrics.totalAnswerOutputTokensFr / metrics.totalOutputTokensFr) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.tokens.googleSearches'),
+                      count: metrics.totalGoogleSearches,
+                      percentage: metrics.totalQuestions ? Math.round((metrics.totalGoogleSearches / metrics.totalQuestions) * 100) + '%' : '0%',
+                      enCount: '-',
+                      enPercentage: '-',
+                      frCount: '-',
+                      frPercentage: '-'
                     }
                   ]}
                   columns={[
@@ -557,6 +559,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.harmful.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
                       frCount: metrics.expertScored.harmful.fr,
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.harmful.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.expertScored.hasContentIssue'),
+                      count: metrics.expertScored.hasContentIssue.total,
+                      percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.hasContentIssue.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
+                      enCount: metrics.expertScored.hasContentIssue.en,
+                      enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.hasContentIssue.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
+                      frCount: metrics.expertScored.hasContentIssue.fr,
+                      frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.hasContentIssue.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     }
                   ]}
                   columns={[
@@ -665,22 +676,18 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                 <h3 className="mb-300">{t('metrics.dashboard.byDepartment.title')}</h3>
                 <DataTable
                   data={Object.entries(metrics.byDepartment).map(([department, data]) => ({
-                    department,
+                    department: department || t('metrics.dashboard.byDepartment.noContextDept'),
                     totalQuestions: data.total,
                     expertScoredTotal: data.expertScored.total,
-                    expertScoredCorrect: data.expertScored.correct,
-                    expertScoredNeedsImprovement: data.expertScored.needsImprovement,
                     expertScoredHasError: data.expertScored.hasError,
-                    expertScoredHasErrorPercent: data.expertScored.total ? Math.round((data.expertScored.hasError / data.expertScored.total) * 100) : 0
+                    expertScoredAccuracyPct: data.expertScored.total ? (100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100)) + '%' : '-'
                   }))}
                   columns={[
                     { title: t('metrics.dashboard.byDepartment.department'), data: 'department' },
                     { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions' },
                     { title: t('metrics.dashboard.expertScored.total'), data: 'expertScoredTotal' },
-                    { title: t('metrics.dashboard.expertScored.correct'), data: 'expertScoredCorrect' },
-                    { title: t('metrics.dashboard.expertScored.needsImprovement'), data: 'expertScoredNeedsImprovement' },
                     { title: t('metrics.dashboard.expertScored.hasError'), data: 'expertScoredHasError' },
-                    { title: t('metrics.dashboard.expertScored.hasErrorPercent'), data: 'expertScoredHasErrorPercent' }
+                    { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'expertScoredAccuracyPct' }
                   ]}
                   options={{
                     paging: true,

@@ -1174,7 +1174,6 @@
     "dashboard": {
       "title": "Résultats",
       "totalSessions": "Total des sessions",
-      "googleSearches": "Recherches Google",
       "totalQuestions": "Total des questions",
       "answerTypes": {
         "normal": "Réponses GC",
@@ -1195,10 +1194,11 @@
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation",
-        "hasErrorPercent": "Contient une erreur (%)",
-        "harmful": "Codé comme nuisible"
+        "hasError": "Contient une erreur de réponse",
+        "hasCitationError": "Problème de citation",
+        "hasErrorPercent": "Contient une erreur de réponse (%)",
+        "harmful": "Codé comme nuisible",
+        "hasContentIssue": "Problème de contenu signalé"
       },
       "aiScored": {
         "title": "Évaluations IA",
@@ -1206,8 +1206,8 @@
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation"
+        "hasError": "Contient une erreur de réponse",
+        "hasCitationError": "Problème de citation"
       },
       "userScored": {
         "title": "Rétroaction des utilisateurs (publique)",
@@ -1231,11 +1231,12 @@
       },
       "accuracy": {
         "title": "Résumé de l'exactitude",
-        "allEvaluations": "Toutes les évaluations",
+        "allEvaluations": "Total des évaluations",
+        "note": "Si une question a à la fois une évaluation d'expert et une évaluation IA, seule l'évaluation d'expert est utilisée.",
         "expertEvaluations": "Évaluations des experts",
         "aiEvaluations": "Évaluations IA",
         "totalEvaluated": "Total évalué",
-        "correct": "Correct",
+        "hasAnswerError": "Contient une erreur de réponse",
         "accuracyPct": "% d'exactitude"
       },
       "questionTypes": {
@@ -1248,11 +1249,13 @@
         "answerInput": "Jetons d'entrée de la réponse",
         "totalOutput": "Total des jetons de sortie",
         "contextOutput": "Jetons de sortie du contexte",
-        "answerOutput": "Jetons de sortie de la réponse"
+        "answerOutput": "Jetons de sortie de la réponse",
+        "googleSearches": "Requêtes de recherche Google"
       },
       "byDepartment": {
         "title": "Répartition par département des évaluations d'experts",
-        "department": "Département"
+        "department": "Département",
+        "noContextDept": "Aucun dépt de contexte"
       }
     }
   },
