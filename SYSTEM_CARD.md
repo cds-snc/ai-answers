@@ -1,7 +1,7 @@
 # AI Answers System Card
 
 **Version**: 1.1
-**Date**: February 2026
+**Date**: April 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
 

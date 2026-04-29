@@ -30,7 +30,7 @@ The pipeline consists of 9 steps total, combining both programmatic validation/f
 
 ## Step 3: AI PI Agent System Prompt
 
-**Purpose:** This prompt detects personal information (PI) that slipped through Stage 1 pattern-based blocking. When PI is detected, it is marked with XXX to show the user what was found, and the question is blocked. This is the second layer of privacy protection.
+**Purpose:** This prompt detects personal information (PI) that slipped through Stage 1 pattern-based blocking. When PI is detected, it is marked with XXX to show the user what was found, and the question is blocked. This is the second layer of privacy protection. For questions in languages other than EN/FR, this AI PI check runs a second time after Step 4 (Translation), on the translated English text.
 
 **Service:** PIIAgentService / ChatWorkflowService.processRedaction()
 **File:** agents/prompts/piiAgentPrompt.js

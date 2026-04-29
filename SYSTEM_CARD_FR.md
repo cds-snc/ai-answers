@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
 **Version** : 1.1
-**Date** : Février 2026
+**Date** : Avril 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
