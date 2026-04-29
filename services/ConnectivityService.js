@@ -551,6 +551,7 @@ async function testAllConnections() {
         testS3(),
         testAzureOpenAI(),
         testBedrockWithRole(),
+        testQuoraModel()
         testBedrockClaudeCanada(),
         testBedrockNova(),
         testQuoraModel()
@@ -576,6 +577,7 @@ export {
     testAzureOpenAI,
     testBedrock,
     testBedrockWithRole,
+    testQuoraModel,
     testBedrockClaudeCanada,
     testBedrockNova,
     testQuoraModel,
