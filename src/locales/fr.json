@@ -1173,16 +1173,9 @@
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
-      "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
-      "inputTokens": "Jetons d'entrée",
-      "outputTokens": "Jetons de sortie",
+      "googleSearches": "Recherches Google",
       "totalQuestions": "Total des questions",
-      "sessionsByQuestionCount": {
-        "singleQuestion": "Sessions à une question",
-        "twoQuestions": "Sessions à deux questions",
-        "threeQuestions": "Sessions à trois questions"
-      },
       "answerTypes": {
         "normal": "Réponses GC",
         "clarifyingQuestion": "Questions de clarification",
@@ -1209,7 +1202,7 @@
       },
       "aiScored": {
         "title": "Évaluations IA",
-        "description": "Évaluations automatisées par IA basées sur les évaluations d'experts de questions similaires",
+        "description": "Évaluations automatisées par IA pour les questions sans évaluation partenaire",
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
@@ -1226,6 +1219,36 @@
         "reason": "Raison",
         "otherYes": "Autre (oui)",
         "otherNo": "Autre (non)"
+      },
+      "sessions": {
+        "title": "Sessions"
+      },
+      "questions": {
+        "title": "Questions",
+        "firstQuestion": "1ère question",
+        "secondQuestion": "2e question",
+        "thirdOrMore": "3e question ou plus"
+      },
+      "accuracy": {
+        "title": "Résumé de l'exactitude",
+        "allEvaluations": "Toutes les évaluations",
+        "expertEvaluations": "Évaluations des experts",
+        "aiEvaluations": "Évaluations IA",
+        "totalEvaluated": "Total évalué",
+        "correct": "Correct",
+        "accuracyPct": "% d'exactitude"
+      },
+      "questionTypes": {
+        "title": "Types de questions"
+      },
+      "tokens": {
+        "title": "Jetons",
+        "totalInput": "Total des jetons d'entrée",
+        "contextInput": "Jetons d'entrée du contexte",
+        "answerInput": "Jetons d'entrée de la réponse",
+        "totalOutput": "Total des jetons de sortie",
+        "contextOutput": "Jetons de sortie du contexte",
+        "answerOutput": "Jetons de sortie de la réponse"
       },
       "byDepartment": {
         "title": "Répartition par département des évaluations d'experts",

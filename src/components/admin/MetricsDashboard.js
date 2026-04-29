@@ -38,6 +38,18 @@ const initialMetricsState = {
   totalOutputTokens: 0,
   totalOutputTokensEn: 0,
   totalOutputTokensFr: 0,
+  totalContextInputTokens: 0,
+  totalContextInputTokensEn: 0,
+  totalContextInputTokensFr: 0,
+  totalAnswerInputTokens: 0,
+  totalAnswerInputTokensEn: 0,
+  totalAnswerInputTokensFr: 0,
+  totalContextOutputTokens: 0,
+  totalContextOutputTokensEn: 0,
+  totalContextOutputTokensFr: 0,
+  totalAnswerOutputTokens: 0,
+  totalAnswerOutputTokensEn: 0,
+  totalAnswerOutputTokensFr: 0,
   totalGoogleSearches: 0,
   answerTypes: {
     normal: { total: 0, en: 0, fr: 0 },
@@ -175,6 +187,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
 
 
+  // 2nd question = sessions with 2+ questions; 3rd = sessions with 3+
+  const secondQuestionTotal = metrics.sessionsByQuestionCount.twoQuestions.total + metrics.sessionsByQuestionCount.threeQuestions.total;
+  const secondQuestionEn = metrics.sessionsByQuestionCount.twoQuestions.en + metrics.sessionsByQuestionCount.threeQuestions.en;
+  const secondQuestionFr = metrics.sessionsByQuestionCount.twoQuestions.fr + metrics.sessionsByQuestionCount.threeQuestions.fr;
+
   // Helper for Section Wrapper to handle relative positioning for overlay
   const SectionWrapper = ({ children, isLoading, title, error }) => (
     <div className="mb-600 relative">
@@ -216,8 +233,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           <div className="p-4">
             <h2 className="mt-400 mb-400">{t('metrics.dashboard.title')}</h2>
 
-            {/* Usage Metrics Section */}
-            <SectionWrapper isLoading={loadingState.usage} title={t('metrics.dashboard.usageMetrics')} error={errorState.usage}>
+            {/* Table 1: Sessions */}
+            <SectionWrapper isLoading={loadingState.session} title={t('metrics.dashboard.sessions.title')} error={errorState.session}>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <DataTable
                   data={[
@@ -231,41 +248,131 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       frPercentage: metrics.totalConversations ? Math.round((metrics.totalConversationsFr / metrics.totalConversations) * 100) + '%' : '0%'
                     },
                     {
-                      metric: t('metrics.dashboard.sessionsByQuestionCount.singleQuestion'),
-                      count: metrics.sessionsByQuestionCount.singleQuestion.total,
-                      percentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.singleQuestion.total / metrics.totalConversations) * 100) + '%' : '0%',
-                      enCount: metrics.sessionsByQuestionCount.singleQuestion.en,
-                      enPercentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.singleQuestion.en / metrics.totalConversations) * 100) + '%' : '0%',
-                      frCount: metrics.sessionsByQuestionCount.singleQuestion.fr,
-                      frPercentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.singleQuestion.fr / metrics.totalConversations) * 100) + '%' : '0%'
-                    },
-                    {
-                      metric: t('metrics.dashboard.sessionsByQuestionCount.twoQuestions'),
-                      count: metrics.sessionsByQuestionCount.twoQuestions.total,
-                      percentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.twoQuestions.total / metrics.totalConversations) * 100) + '%' : '0%',
-                      enCount: metrics.sessionsByQuestionCount.twoQuestions.en,
-                      enPercentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.twoQuestions.en / metrics.totalConversations) * 100) + '%' : '0%',
-                      frCount: metrics.sessionsByQuestionCount.twoQuestions.fr,
-                      frPercentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.twoQuestions.fr / metrics.totalConversations) * 100) + '%' : '0%'
-                    },
-                    {
-                      metric: t('metrics.dashboard.sessionsByQuestionCount.threeQuestions'),
-                      count: metrics.sessionsByQuestionCount.threeQuestions.total,
-                      percentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.total / metrics.totalConversations) * 100) + '%' : '0%',
-                      enCount: metrics.sessionsByQuestionCount.threeQuestions.en,
-                      enPercentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.en / metrics.totalConversations) * 100) + '%' : '0%',
-                      frCount: metrics.sessionsByQuestionCount.threeQuestions.fr,
-                      frPercentage: metrics.totalConversations ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.fr / metrics.totalConversations) * 100) + '%' : '0%'
-                    },
+                      metric: t('metrics.dashboard.googleSearches'),
+                      count: metrics.totalGoogleSearches,
+                      percentage: metrics.totalConversations ? Math.round((metrics.totalGoogleSearches / metrics.totalConversations) * 100) + '%' : '0%',
+                      enCount: '-',
+                      enPercentage: '-',
+                      frCount: '-',
+                      frPercentage: '-'
+                    }
+                  ]}
+                  columns={[
+                    { title: t('metrics.dashboard.metric'), data: 'metric' },
+                    { title: t('metrics.dashboard.count'), data: 'count' },
+                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
+                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
+                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
+                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
+                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
+                  ]}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                />
+              </div>
+            </SectionWrapper>
+
+            {/* Table 2: Questions by position */}
+            <SectionWrapper isLoading={loadingState.usage || loadingState.session} title={t('metrics.dashboard.questions.title')} error={errorState.usage || errorState.session}>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <DataTable
+                  data={[
                     {
                       metric: t('metrics.dashboard.totalQuestions'),
                       count: metrics.totalQuestions,
-                      percentage: metrics.totalConversations ? Math.round((metrics.totalQuestions / metrics.totalConversations) * 100) + '%' : '0%',
+                      percentage: '100%',
                       enCount: metrics.totalQuestionsEn,
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.totalQuestionsEn / metrics.totalQuestions) * 100) + '%' : '0%',
                       frCount: metrics.totalQuestionsFr,
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.totalQuestionsFr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
+                    {
+                      metric: t('metrics.dashboard.questions.firstQuestion'),
+                      count: metrics.totalConversations,
+                      percentage: metrics.totalQuestions ? Math.round((metrics.totalConversations / metrics.totalQuestions) * 100) + '%' : '0%',
+                      enCount: metrics.totalConversationsEn,
+                      enPercentage: metrics.totalQuestions ? Math.round((metrics.totalConversationsEn / metrics.totalQuestions) * 100) + '%' : '0%',
+                      frCount: metrics.totalConversationsFr,
+                      frPercentage: metrics.totalQuestions ? Math.round((metrics.totalConversationsFr / metrics.totalQuestions) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.questions.secondQuestion'),
+                      count: secondQuestionTotal,
+                      percentage: metrics.totalQuestions ? Math.round((secondQuestionTotal / metrics.totalQuestions) * 100) + '%' : '0%',
+                      enCount: secondQuestionEn,
+                      enPercentage: metrics.totalQuestions ? Math.round((secondQuestionEn / metrics.totalQuestions) * 100) + '%' : '0%',
+                      frCount: secondQuestionFr,
+                      frPercentage: metrics.totalQuestions ? Math.round((secondQuestionFr / metrics.totalQuestions) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.questions.thirdOrMore'),
+                      count: metrics.sessionsByQuestionCount.threeQuestions.total,
+                      percentage: metrics.totalQuestions ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.total / metrics.totalQuestions) * 100) + '%' : '0%',
+                      enCount: metrics.sessionsByQuestionCount.threeQuestions.en,
+                      enPercentage: metrics.totalQuestions ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.en / metrics.totalQuestions) * 100) + '%' : '0%',
+                      frCount: metrics.sessionsByQuestionCount.threeQuestions.fr,
+                      frPercentage: metrics.totalQuestions ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.fr / metrics.totalQuestions) * 100) + '%' : '0%'
+                    }
+                  ]}
+                  columns={[
+                    { title: t('metrics.dashboard.metric'), data: 'metric' },
+                    { title: t('metrics.dashboard.count'), data: 'count' },
+                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
+                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
+                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
+                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
+                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
+                  ]}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                />
+              </div>
+            </SectionWrapper>
+
+            {/* Table 3: Accuracy summary */}
+            <SectionWrapper isLoading={loadingState.expert || loadingState.ai} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai}>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <DataTable
+                  data={[
+                    {
+                      metric: t('metrics.dashboard.accuracy.allEvaluations'),
+                      totalEvaluated: metrics.expertScored.total.total + metrics.aiScored.total.total,
+                      correct: metrics.expertScored.correct.total + metrics.aiScored.correct.total,
+                      accuracyPct: (metrics.expertScored.total.total + metrics.aiScored.total.total)
+                        ? Math.round(((metrics.expertScored.correct.total + metrics.aiScored.correct.total) / (metrics.expertScored.total.total + metrics.aiScored.total.total)) * 100) + '%'
+                        : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.accuracy.expertEvaluations'),
+                      totalEvaluated: metrics.expertScored.total.total,
+                      correct: metrics.expertScored.correct.total,
+                      accuracyPct: metrics.expertScored.total.total
+                        ? Math.round((metrics.expertScored.correct.total / metrics.expertScored.total.total) * 100) + '%'
+                        : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.accuracy.aiEvaluations'),
+                      totalEvaluated: metrics.aiScored.total.total,
+                      correct: metrics.aiScored.correct.total,
+                      accuracyPct: metrics.aiScored.total.total
+                        ? Math.round((metrics.aiScored.correct.total / metrics.aiScored.total.total) * 100) + '%'
+                        : '0%'
+                    }
+                  ]}
+                  columns={[
+                    { title: t('metrics.dashboard.metric'), data: 'metric' },
+                    { title: t('metrics.dashboard.accuracy.totalEvaluated'), data: 'totalEvaluated' },
+                    { title: t('metrics.dashboard.accuracy.correct'), data: 'correct' },
+                    { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'accuracyPct' }
+                  ]}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                />
+              </div>
+            </SectionWrapper>
+
+            {/* Table 4: Question types */}
+            <SectionWrapper isLoading={loadingState.usage} title={t('metrics.dashboard.questionTypes.title')} error={errorState.usage}>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <DataTable
+                  data={[
                     {
                       metric: t('metrics.dashboard.answerTypes.normal'),
                       count: metrics.answerTypes.normal.total,
@@ -301,33 +408,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['not-gc'].en / metrics.totalQuestions) * 100) + '%' : '0%',
                       frCount: metrics.answerTypes['not-gc'].fr,
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['not-gc'].fr / metrics.totalQuestions) * 100) + '%' : '0%'
-                    },
-                    {
-                      metric: 'Google searches',
-                      count: metrics.totalGoogleSearches,
-                      percentage: metrics.totalConversations ? Math.round((metrics.totalGoogleSearches / metrics.totalConversations) * 100) + '%' : '0%',
-                      enCount: '-',
-                      enPercentage: '-',
-                      frCount: '-',
-                      frPercentage: '-'
-                    },
-                    {
-                      metric: t('metrics.dashboard.inputTokens'),
-                      count: metrics.totalInputTokens,
-                      percentage: '100%',
-                      enCount: metrics.totalInputTokensEn,
-                      enPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensEn / metrics.totalInputTokens) * 100) + '%' : '0%',
-                      frCount: metrics.totalInputTokensFr,
-                      frPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensFr / metrics.totalInputTokens) * 100) + '%' : '0%'
-                    },
-                    {
-                      metric: t('metrics.dashboard.outputTokens'),
-                      count: metrics.totalOutputTokens,
-                      percentage: '100%',
-                      enCount: metrics.totalOutputTokensEn,
-                      enPercentage: metrics.totalOutputTokens ? Math.round((metrics.totalOutputTokensEn / metrics.totalOutputTokens) * 100) + '%' : '0%',
-                      frCount: metrics.totalOutputTokensFr,
-                      frPercentage: metrics.totalOutputTokens ? Math.round((metrics.totalOutputTokensFr / metrics.totalOutputTokens) * 100) + '%' : '0%'
                     }
                   ]}
                   columns={[
@@ -339,15 +419,81 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.frCount'), data: 'frCount' },
                     { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
                   ]}
-                  options={{
-                    paging: false,
-                    searching: false,
-                    ordering: false,
-                    info: false,
-                    stripe: true,
-                    className: 'display',
-                    language: dataTableLanguage(lang)
-                  }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                />
+              </div>
+            </SectionWrapper>
+
+            {/* Table 5: Tokens */}
+            <SectionWrapper isLoading={loadingState.usage} title={t('metrics.dashboard.tokens.title')} error={errorState.usage}>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <DataTable
+                  data={[
+                    {
+                      metric: t('metrics.dashboard.tokens.totalInput'),
+                      count: metrics.totalInputTokens,
+                      percentage: '100%',
+                      enCount: metrics.totalInputTokensEn,
+                      enPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensEn / metrics.totalInputTokens) * 100) + '%' : '0%',
+                      frCount: metrics.totalInputTokensFr,
+                      frPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensFr / metrics.totalInputTokens) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.tokens.contextInput'),
+                      count: metrics.totalContextInputTokens,
+                      percentage: metrics.totalInputTokens ? Math.round((metrics.totalContextInputTokens / metrics.totalInputTokens) * 100) + '%' : '0%',
+                      enCount: metrics.totalContextInputTokensEn,
+                      enPercentage: metrics.totalInputTokensEn ? Math.round((metrics.totalContextInputTokensEn / metrics.totalInputTokensEn) * 100) + '%' : '0%',
+                      frCount: metrics.totalContextInputTokensFr,
+                      frPercentage: metrics.totalInputTokensFr ? Math.round((metrics.totalContextInputTokensFr / metrics.totalInputTokensFr) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.tokens.answerInput'),
+                      count: metrics.totalAnswerInputTokens,
+                      percentage: metrics.totalInputTokens ? Math.round((metrics.totalAnswerInputTokens / metrics.totalInputTokens) * 100) + '%' : '0%',
+                      enCount: metrics.totalAnswerInputTokensEn,
+                      enPercentage: metrics.totalInputTokensEn ? Math.round((metrics.totalAnswerInputTokensEn / metrics.totalInputTokensEn) * 100) + '%' : '0%',
+                      frCount: metrics.totalAnswerInputTokensFr,
+                      frPercentage: metrics.totalInputTokensFr ? Math.round((metrics.totalAnswerInputTokensFr / metrics.totalInputTokensFr) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.tokens.totalOutput'),
+                      count: metrics.totalOutputTokens,
+                      percentage: '100%',
+                      enCount: metrics.totalOutputTokensEn,
+                      enPercentage: metrics.totalOutputTokens ? Math.round((metrics.totalOutputTokensEn / metrics.totalOutputTokens) * 100) + '%' : '0%',
+                      frCount: metrics.totalOutputTokensFr,
+                      frPercentage: metrics.totalOutputTokens ? Math.round((metrics.totalOutputTokensFr / metrics.totalOutputTokens) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.tokens.contextOutput'),
+                      count: metrics.totalContextOutputTokens,
+                      percentage: metrics.totalOutputTokens ? Math.round((metrics.totalContextOutputTokens / metrics.totalOutputTokens) * 100) + '%' : '0%',
+                      enCount: metrics.totalContextOutputTokensEn,
+                      enPercentage: metrics.totalOutputTokensEn ? Math.round((metrics.totalContextOutputTokensEn / metrics.totalOutputTokensEn) * 100) + '%' : '0%',
+                      frCount: metrics.totalContextOutputTokensFr,
+                      frPercentage: metrics.totalOutputTokensFr ? Math.round((metrics.totalContextOutputTokensFr / metrics.totalOutputTokensFr) * 100) + '%' : '0%'
+                    },
+                    {
+                      metric: t('metrics.dashboard.tokens.answerOutput'),
+                      count: metrics.totalAnswerOutputTokens,
+                      percentage: metrics.totalOutputTokens ? Math.round((metrics.totalAnswerOutputTokens / metrics.totalOutputTokens) * 100) + '%' : '0%',
+                      enCount: metrics.totalAnswerOutputTokensEn,
+                      enPercentage: metrics.totalOutputTokensEn ? Math.round((metrics.totalAnswerOutputTokensEn / metrics.totalOutputTokensEn) * 100) + '%' : '0%',
+                      frCount: metrics.totalAnswerOutputTokensFr,
+                      frPercentage: metrics.totalOutputTokensFr ? Math.round((metrics.totalAnswerOutputTokensFr / metrics.totalOutputTokensFr) * 100) + '%' : '0%'
+                    }
+                  ]}
+                  columns={[
+                    { title: t('metrics.dashboard.metric'), data: 'metric' },
+                    { title: t('metrics.dashboard.count'), data: 'count' },
+                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
+                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
+                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
+                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
+                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
+                  ]}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
                 />
               </div>
             </SectionWrapper>

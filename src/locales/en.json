@@ -1173,16 +1173,9 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
-      "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
-      "inputTokens": "Input tokens",
-      "outputTokens": "Output tokens",
+      "googleSearches": "Google searches",
       "totalQuestions": "Total questions",
-      "sessionsByQuestionCount": {
-        "singleQuestion": "Single question sessions",
-        "twoQuestions": "Two question sessions",
-        "threeQuestions": "Three question sessions"
-      },
       "answerTypes": {
         "normal": "GC answers",
         "clarifyingQuestion": "Clarifying questions",
@@ -1209,7 +1202,7 @@
       },
       "aiScored": {
         "title": "AI evaluations",
-        "description": "Automated AI evaluations based on expert evaluations of similar questions",
+        "description": "Automated AI evaluations for questions without a partner evaluation",
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
@@ -1226,6 +1219,36 @@
         "reason": "Reason",
         "otherYes": "Other (yes)",
         "otherNo": "Other (no)"
+      },
+      "sessions": {
+        "title": "Sessions"
+      },
+      "questions": {
+        "title": "Questions",
+        "firstQuestion": "1st question",
+        "secondQuestion": "2nd question",
+        "thirdOrMore": "3rd question or more"
+      },
+      "accuracy": {
+        "title": "Accuracy summary",
+        "allEvaluations": "All evaluations",
+        "expertEvaluations": "Expert evaluations",
+        "aiEvaluations": "AI evaluations",
+        "totalEvaluated": "Total evaluated",
+        "correct": "Correct",
+        "accuracyPct": "Accuracy %"
+      },
+      "questionTypes": {
+        "title": "Question types"
+      },
+      "tokens": {
+        "title": "Tokens",
+        "totalInput": "Total input tokens",
+        "contextInput": "Context input tokens",
+        "answerInput": "Answer input tokens",
+        "totalOutput": "Total output tokens",
+        "contextOutput": "Context output tokens",
+        "answerOutput": "Answer output tokens"
       },
       "byDepartment": {
         "title": "Department breakdown of expert evaluations",
