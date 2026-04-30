@@ -22,7 +22,7 @@ vi.mock('../../../services/InteractionPersistenceService.js', () => ({
     InteractionPersistenceService: { persistInteraction: vi.fn() }
 }));
 vi.mock('../../../services/UrlValidationService.js', () => ({
-    UrlValidationService: { validateUrl: vi.fn() }
+    UrlValidationService: { validateUrl: vi.fn(), validateUrlFormatting: vi.fn() }
 }));
 
 vi.mock('../GraphEventLogger.js', () => ({
@@ -98,6 +98,7 @@ describe('DefaultWithVectorGraph Workflow', () => {
         InteractionPersistenceService.persistInteraction.mockResolvedValue({ success: true });
 
         UrlValidationService.validateUrl.mockResolvedValue({ isValid: true, url: 'https://example.com', confidenceRating: 1 });
+        UrlValidationService.validateUrlFormatting.mockResolvedValue({ isValid: true, url: 'https://example.com' });
     });
 
     it('runs full flow (no short circuit)', async () => {
@@ -139,5 +140,41 @@ describe('DefaultWithVectorGraph Workflow', () => {
         expect(callNames).toContain('node:translate output');
         expect(callNames).toContain('node:context input');
         expect(callNames).toContain('node:context output');
+    });
+
+    it('short-circuits on a strong similar answer and skips normal answer generation', async () => {
+        SimilarAnswerService.findSimilarAnswer.mockResolvedValue({
+            answer: 'Cached answer text',
+            englishAnswer: 'Cached answer text',
+            citation: {
+                providedCitationUrl: 'https://example.com',
+                aiCitationUrl: 'https://example.com',
+                citationHead: 'Cached citation',
+            },
+            historySignature: 'sc-sig',
+            chatId: 'chat-sc',
+            interactionId: 'interaction-sc',
+        });
+
+        const input = {
+            chatId: 'chat-sc',
+            userMessage: 'A question that matches an older answer',
+            userMessageId: 'msg-sc',
+            conversationHistory: [],
+            lang: 'en',
+            department: 'dept',
+            selectedAI: 'openai',
+        };
+
+        const resultState = await defaultWithVectorGraphApp.invoke(input);
+
+        expect(resultState.status).toBe('complete');
+        expect(resultState.result.historySignature).toBe('sc-sig');
+        expect(resultState.result.answer.content).toBe('Cached answer text');
+
+        expect(SimilarAnswerService.findSimilarAnswer).toHaveBeenCalled();
+        expect(SearchContextService.search).not.toHaveBeenCalled();
+        expect(AnswerGenerationService.generateAnswer).not.toHaveBeenCalled();
+        expect(InteractionPersistenceService.persistInteraction).toHaveBeenCalledTimes(1);
     });
 });
