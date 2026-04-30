@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import QuestionAnswerService from '../QuestionAnswerService.js';
 
 // Helpers to build chainable query mocks
 function createChainableQuery(resolvedValue) {
@@ -10,25 +11,31 @@ function createChainableQuery(resolvedValue) {
   return api;
 }
 
+// Hoisting mocks so they're initialized before VectorServiceFactory and InteractionPersistenceService accesses them
+// initVectorService is hoisted to fix flakiness with vi.clearAllMocks() wiping the mock implementation during tests and being undefined
+const { mockMatchQuestions, mockInteractionFind, mockChatFindOne, mockInitVectorService } = vi.hoisted(() => ({
+    mockMatchQuestions: vi.fn(),
+    mockInteractionFind: vi.fn(),
+    mockChatFindOne: vi.fn(),
+    mockInitVectorService: vi.fn(),
+}));
+
 // Mocks
 vi.mock('../../api/db/db-connect.js', () => ({
   default: vi.fn().mockResolvedValue(),
 }));
 
-const mockMatchQuestions = vi.fn();
 vi.mock('../VectorServiceFactory.js', () => ({
-  initVectorService: vi.fn().mockResolvedValue({ matchQuestions: mockMatchQuestions }),
+    initVectorService: mockInitVectorService // value applied in beforeEach, clearAllMocks wipes it
 }));
 
 // Model mocks (Interaction, Answer, ExpertFeedback, Question, Chat)
-const mockInteractionFind = vi.fn();
 vi.mock('../../models/interaction.js', () => ({
   Interaction: { find: mockInteractionFind },
 }));
 vi.mock('../../models/answer.js', () => ({ Answer: {} }));
 vi.mock('../../models/expertFeedback.js', () => ({ ExpertFeedback: {} }));
 vi.mock('../../models/question.js', () => ({ Question: {} }));
-const mockChatFindOne = vi.fn();
 vi.mock('../../models/chat.js', () => ({
   Chat: { findOne: mockChatFindOne },
 }));
@@ -44,6 +51,7 @@ describe('QuestionAnswerService', () => {
     mockMatchQuestions.mockReset();
     mockInteractionFind.mockReset();
     mockChatFindOne.mockReset();
+    mockInitVectorService.mockResolvedValue({ matchQuestions: mockMatchQuestions }); // Re-apply after clearAllMocks wipes it
   });
 
   afterEach(() => {
@@ -86,8 +94,6 @@ describe('QuestionAnswerService', () => {
       }),
     });
 
-    const { default: QuestionAnswerService } = await import('../QuestionAnswerService.js');
-
     // Act
     const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', { k: 3, includeQuestionFlow: true });
 
@@ -105,8 +111,6 @@ describe('QuestionAnswerService', () => {
     mockMatchQuestions.mockResolvedValue([[]]);
     mockInteractionFind.mockReturnValue(createChainableQuery([]));
     mockChatFindOne.mockReturnValue({ populate: () => ({ lean: async () => null }) });
-
-    const { default: QuestionAnswerService } = await import('../QuestionAnswerService.js');
 
     const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits');
     expect(result).toBe('');
