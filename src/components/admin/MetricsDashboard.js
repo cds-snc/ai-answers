@@ -182,8 +182,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     fetchMetrics(filters);
   };
 
-  const handleClearFilters = () => {
-    fetchMetrics(getDefaultDateRange());
+  const handleClearFilters = (defaultFilters) => {
+    fetchMetrics(defaultFilters || { ...getDefaultDateRange(), userType: 'public' });
   };
 
 
@@ -229,6 +229,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isVisible={true}
+        defaultUserType="public"
       />
 
       {hasStartedLoading && (
@@ -682,6 +683,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     department: (!department || department === 'Unknown') ? t('metrics.dashboard.byDepartment.noContextDept') : department,
                     totalQuestions: data.total,
                     expertScoredTotal: data.expertScored.total,
+                    expertScoredPct: data.total ? Math.round((data.expertScored.total / data.total) * 100) + '%' : '0%',
                     expertScoredHasError: data.expertScored.hasError,
                     expertScoredAccuracyPct: data.expertScored.total ? (100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100)) + '%' : '-'
                   }))}
@@ -689,6 +691,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.byDepartment.department'), data: 'department' },
                     { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions' },
                     { title: t('metrics.dashboard.expertScored.total'), data: 'expertScoredTotal' },
+                    { title: t('metrics.dashboard.byDepartment.pctEvaluated'), data: 'expertScoredPct' },
                     { title: t('metrics.dashboard.expertScored.hasError'), data: 'expertScoredHasError' },
                     { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'expertScoredAccuracyPct' }
                   ]}

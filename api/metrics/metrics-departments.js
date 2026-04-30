@@ -43,8 +43,12 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
         {
             $addFields: {
-                hasExpertFeedback: { $cond: [{ $ne: ['$expertFeedback', null] }, 1, 0] },
                 category: getPartnerEvalAggregationExpression('$expertFeedback')
+            }
+        },
+        {
+            $addFields: {
+                hasExpertFeedback: { $cond: [{ $ne: ['$category', null] }, 1, 0] }
             }
         },
         // Project only fields needed for aggregation (optimization)

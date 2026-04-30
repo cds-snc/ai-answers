@@ -624,8 +624,8 @@
       "urlEn": "URL de référence (EN)",
       "urlFr": "URL de référence (FR)",
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
-      "department": "Département",
-      "allDepartments": "Tous les départements",
+      "department": "Institution partenaire",
+      "allDepartments": "Toutes les institutions",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -647,7 +647,7 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
-      "showAdvanced": "Voir plus de filtres"
+      "showAdvanced": "Plus d'options de filtre"
     },
     "publicEval": {
       "title": "Évaluation publique",
@@ -1255,7 +1255,8 @@
       "byDepartment": {
         "title": "Répartition par département des évaluations d'experts",
         "department": "Département",
-        "noContextDept": "Aucun dépt de contexte"
+        "noContextDept": "Aucun dépt de contexte",
+        "pctEvaluated": "% évalué"
       }
     }
   },

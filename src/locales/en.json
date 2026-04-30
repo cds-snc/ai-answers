@@ -624,8 +624,8 @@
       "urlEn": "Referring URL (EN)",
       "urlFr": "Referring URL (FR)",
       "urlPlaceholder": "Filter by full or partial URL",
-      "department": "Department",
-      "allDepartments": "All departments",
+      "department": "Partner institution",
+      "allDepartments": "All institutions",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -647,7 +647,7 @@
       "evalHasError": "Error",
       "evalHasCitationError": "Citation error",
       "evalHarmful": "Harmful",
-      "showAdvanced": "See more filters"
+      "showAdvanced": "More filter options"
     },
     "publicEval": {
       "title": "Public evaluation",
@@ -1255,7 +1255,8 @@
       "byDepartment": {
         "title": "Department breakdown of expert evaluations",
         "department": "Department",
-        "noContextDept": "No context dept"
+        "noContextDept": "No context dept",
+        "pctEvaluated": "% evaluated"
       }
     }
   },

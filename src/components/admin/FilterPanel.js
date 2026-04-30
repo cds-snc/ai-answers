@@ -13,7 +13,8 @@ const FilterPanel = ({
   isVisible = false,
   autoApply = false,
   applyButtonText = null,
-  applyDisabled = false
+  applyDisabled = false,
+  defaultUserType = 'all'
 }) => {
   const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
@@ -65,7 +66,7 @@ const FilterPanel = ({
   const [department, setDepartment] = useState('');
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
-  const [userType, setUserType] = useState('all');
+  const [userType, setUserType] = useState(defaultUserType);
   const [answerType, setAnswerType] = useState([]);
   const [partnerEval, setPartnerEval] = useState([]);
   const [aiEval, setAiEval] = useState([]);
@@ -82,7 +83,7 @@ const FilterPanel = ({
         department: '',
         urlEn: '',
         urlFr: '',
-        userType: 'all',
+        userType: defaultUserType,
         answerType: 'all',
         partnerEval: 'all',
         aiEval: 'all'
@@ -289,7 +290,7 @@ const FilterPanel = ({
     setDepartment('');
     setUrlEn('');
     setUrlFr('');
-    setUserType('all');
+    setUserType(defaultUserType);
     setAnswerType([]);
     setPartnerEval([]);
     setAiEval([]);
@@ -335,7 +336,7 @@ const FilterPanel = ({
       </summary>
       <div className="filter-panel-content">
         <div className="filter-grid">
-          {/* Left column - Date Range and URL Filters */}
+          {/* Left column - Date Range */}
           <div className="filter-column">
             <div className="filter-row">
               <label htmlFor="dateRangePicker" className="filter-label">
@@ -348,34 +349,6 @@ const FilterPanel = ({
                 className="filter-input"
                 readOnly
                 style={{ backgroundColor: 'white', cursor: 'pointer' }}
-              />
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="url-en" className="filter-label">
-                {t('admin.filters.urlEn') || 'URL (EN)'}
-              </label>
-              <input
-                type="text"
-                id="url-en"
-                value={urlEn}
-                onChange={(e) => setUrlEn(e.target.value)}
-                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                className="filter-input"
-              />
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="url-fr" className="filter-label">
-                {t('admin.filters.urlFr') || 'URL (FR)'}
-              </label>
-              <input
-                type="text"
-                id="url-fr"
-                value={urlFr}
-                onChange={(e) => setUrlFr(e.target.value)}
-                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                className="filter-input"
               />
             </div>
           </div>
@@ -428,6 +401,32 @@ const FilterPanel = ({
                 {t('admin.filters.showAdvanced')}
               </summary>
               <div className="filter-advanced-section mt-100">
+                <div className="filter-row">
+                  <label htmlFor="url-en" className="filter-label">
+                    {t('admin.filters.urlEn') || 'URL (EN)'}
+                  </label>
+                  <input
+                    type="text"
+                    id="url-en"
+                    value={urlEn}
+                    onChange={(e) => setUrlEn(e.target.value)}
+                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                    className="filter-input"
+                  />
+                </div>
+                <div className="filter-row">
+                  <label htmlFor="url-fr" className="filter-label">
+                    {t('admin.filters.urlFr') || 'URL (FR)'}
+                  </label>
+                  <input
+                    type="text"
+                    id="url-fr"
+                    value={urlFr}
+                    onChange={(e) => setUrlFr(e.target.value)}
+                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                    className="filter-input"
+                  />
+                </div>
                 <div className="filter-row">
                   <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
                     <summary className="filter-label">
