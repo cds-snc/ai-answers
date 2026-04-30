@@ -392,6 +392,7 @@ const FilterPanel = ({
             </div>
 
             {/* Advanced Filters - Collapsible (Closed by default) */}
+            <div className="filter-label">{t('admin.filters.filterOptions')}</div>
             <details
               className="filter-advanced-details"
               open={showAdvancedFilters}

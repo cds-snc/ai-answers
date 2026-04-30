@@ -647,6 +647,7 @@
       "evalHasError": "Error",
       "evalHasCitationError": "Citation error",
       "evalHarmful": "Harmful",
+      "filterOptions": "Filter options",
       "showAdvanced": "More filter options"
     },
     "publicEval": {

@@ -647,6 +647,7 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
+      "filterOptions": "Options de filtre",
       "showAdvanced": "Plus d'options de filtre"
     },
     "publicEval": {

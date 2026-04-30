@@ -296,7 +296,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* Table 2: Accuracy summary */}
             <SectionWrapper isLoading={loadingState.expert || loadingState.ai || loadingState.usage} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai || errorState.usage}>
-              <GcdsText className="mb-300">{t('metrics.dashboard.accuracy.note')}</GcdsText>
+              <p className="font-size-text-small mb-300">{t('metrics.dashboard.accuracy.note')}</p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <DataTable
                   data={[
