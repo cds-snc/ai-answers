@@ -189,6 +189,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
 
   // 2nd question = sessions with 2+ questions; 3rd = sessions with 3+
+  const fmtNum = (n) => (n ?? 0).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA');
+  const fmtTokens = (n) => fmtNum(Math.round((n ?? 0) / 1000)) + 'K';
+
   const secondQuestionTotal = metrics.sessionsByQuestionCount.twoQuestions.total + metrics.sessionsByQuestionCount.threeQuestions.total;
   const secondQuestionEn = metrics.sessionsByQuestionCount.twoQuestions.en + metrics.sessionsByQuestionCount.threeQuestions.en;
   const secondQuestionFr = metrics.sessionsByQuestionCount.twoQuestions.fr + metrics.sessionsByQuestionCount.threeQuestions.fr;
@@ -424,61 +427,61 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.tokens.totalInput'),
-                      count: metrics.totalInputTokens,
+                      count: fmtTokens(metrics.totalInputTokens),
                       percentage: '100%',
-                      enCount: metrics.totalInputTokensEn,
+                      enCount: fmtTokens(metrics.totalInputTokensEn),
                       enPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensEn / metrics.totalInputTokens) * 100) + '%' : '0%',
-                      frCount: metrics.totalInputTokensFr,
+                      frCount: fmtTokens(metrics.totalInputTokensFr),
                       frPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensFr / metrics.totalInputTokens) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.tokens.contextInput'),
-                      count: metrics.totalContextInputTokens,
+                      count: fmtTokens(metrics.totalContextInputTokens),
                       percentage: metrics.totalInputTokens ? Math.round((metrics.totalContextInputTokens / metrics.totalInputTokens) * 100) + '%' : '0%',
-                      enCount: metrics.totalContextInputTokensEn,
+                      enCount: fmtTokens(metrics.totalContextInputTokensEn),
                       enPercentage: metrics.totalInputTokensEn ? Math.round((metrics.totalContextInputTokensEn / metrics.totalInputTokensEn) * 100) + '%' : '0%',
-                      frCount: metrics.totalContextInputTokensFr,
+                      frCount: fmtTokens(metrics.totalContextInputTokensFr),
                       frPercentage: metrics.totalInputTokensFr ? Math.round((metrics.totalContextInputTokensFr / metrics.totalInputTokensFr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.tokens.answerInput'),
-                      count: metrics.totalAnswerInputTokens,
+                      count: fmtTokens(metrics.totalAnswerInputTokens),
                       percentage: metrics.totalInputTokens ? Math.round((metrics.totalAnswerInputTokens / metrics.totalInputTokens) * 100) + '%' : '0%',
-                      enCount: metrics.totalAnswerInputTokensEn,
+                      enCount: fmtTokens(metrics.totalAnswerInputTokensEn),
                       enPercentage: metrics.totalInputTokensEn ? Math.round((metrics.totalAnswerInputTokensEn / metrics.totalInputTokensEn) * 100) + '%' : '0%',
-                      frCount: metrics.totalAnswerInputTokensFr,
+                      frCount: fmtTokens(metrics.totalAnswerInputTokensFr),
                       frPercentage: metrics.totalInputTokensFr ? Math.round((metrics.totalAnswerInputTokensFr / metrics.totalInputTokensFr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.tokens.totalOutput'),
-                      count: metrics.totalOutputTokens,
+                      count: fmtTokens(metrics.totalOutputTokens),
                       percentage: '100%',
-                      enCount: metrics.totalOutputTokensEn,
+                      enCount: fmtTokens(metrics.totalOutputTokensEn),
                       enPercentage: metrics.totalOutputTokens ? Math.round((metrics.totalOutputTokensEn / metrics.totalOutputTokens) * 100) + '%' : '0%',
-                      frCount: metrics.totalOutputTokensFr,
+                      frCount: fmtTokens(metrics.totalOutputTokensFr),
                       frPercentage: metrics.totalOutputTokens ? Math.round((metrics.totalOutputTokensFr / metrics.totalOutputTokens) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.tokens.contextOutput'),
-                      count: metrics.totalContextOutputTokens,
+                      count: fmtTokens(metrics.totalContextOutputTokens),
                       percentage: metrics.totalOutputTokens ? Math.round((metrics.totalContextOutputTokens / metrics.totalOutputTokens) * 100) + '%' : '0%',
-                      enCount: metrics.totalContextOutputTokensEn,
+                      enCount: fmtTokens(metrics.totalContextOutputTokensEn),
                       enPercentage: metrics.totalOutputTokensEn ? Math.round((metrics.totalContextOutputTokensEn / metrics.totalOutputTokensEn) * 100) + '%' : '0%',
-                      frCount: metrics.totalContextOutputTokensFr,
+                      frCount: fmtTokens(metrics.totalContextOutputTokensFr),
                       frPercentage: metrics.totalOutputTokensFr ? Math.round((metrics.totalContextOutputTokensFr / metrics.totalOutputTokensFr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.tokens.answerOutput'),
-                      count: metrics.totalAnswerOutputTokens,
+                      count: fmtTokens(metrics.totalAnswerOutputTokens),
                       percentage: metrics.totalOutputTokens ? Math.round((metrics.totalAnswerOutputTokens / metrics.totalOutputTokens) * 100) + '%' : '0%',
-                      enCount: metrics.totalAnswerOutputTokensEn,
+                      enCount: fmtTokens(metrics.totalAnswerOutputTokensEn),
                       enPercentage: metrics.totalOutputTokensEn ? Math.round((metrics.totalAnswerOutputTokensEn / metrics.totalOutputTokensEn) * 100) + '%' : '0%',
-                      frCount: metrics.totalAnswerOutputTokensFr,
+                      frCount: fmtTokens(metrics.totalAnswerOutputTokensFr),
                       frPercentage: metrics.totalOutputTokensFr ? Math.round((metrics.totalAnswerOutputTokensFr / metrics.totalOutputTokensFr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.tokens.googleSearches'),
-                      count: metrics.totalGoogleSearches,
+                      count: fmtNum(metrics.totalGoogleSearches),
                       percentage: metrics.totalQuestions ? Math.round((metrics.totalGoogleSearches / metrics.totalQuestions) * 100) + '%' : '0%',
                       enCount: '-',
                       enPercentage: '-',
@@ -488,11 +491,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   ]}
                   columns={[
                     { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.count'), data: 'count' },
+                    { title: t('metrics.dashboard.count') + ' (K)', data: 'count' },
                     { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
+                    { title: t('metrics.dashboard.enCount') + ' (K)', data: 'enCount' },
                     { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
+                    { title: t('metrics.dashboard.frCount') + ' (K)', data: 'frCount' },
                     { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
