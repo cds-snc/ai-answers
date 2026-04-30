@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.122.0](https://github.com/cds-snc/ai-answers/compare/v1.121.1...v1.122.0) (2026-04-30)
+
+
+### Features
+
+* add WAFv2 IP allowlist for staging ALB ([b57e09c](https://github.com/cds-snc/ai-answers/commit/b57e09c4b754295c15a6ef9449a0b7b43c433533))
+
+
+### Bug Fixes
+
+* add tariff ([d8905ec](https://github.com/cds-snc/ai-answers/commit/d8905ec2c37431b5ff8b660a669ffdeb07f22f40))
+* bug in label normalization ([88e2e79](https://github.com/cds-snc/ai-answers/commit/88e2e7943d1c3ba85c9db85e49031d29ad661c8d))
+* bug in label normalization ([39fecaf](https://github.com/cds-snc/ai-answers/commit/39fecaff137d0b5e2c7c7f0f151e5430f5712147))
+* change order of rows ([472d7bd](https://github.com/cds-snc/ai-answers/commit/472d7bd68e4a3c6529ccc1ddab84ea19ea244d5e))
+* doc ([aa7f7a1](https://github.com/cds-snc/ai-answers/commit/aa7f7a148dd416fa48ffc57df779cec37270a0d2))
+* docs ([25b98aa](https://github.com/cds-snc/ai-answers/commit/25b98aae8b92d6665fad066755be7ba3657eb58d))
+* filter panel changes ([fe98e6f](https://github.com/cds-snc/ai-answers/commit/fe98e6f6a68bdb8d69af35ca221cbd1aea5431e9))
+* finesse ([9a4eb73](https://github.com/cds-snc/ai-answers/commit/9a4eb73013e8b065d10d1ae8e2aeffc4bbe76cfb))
+* format the token counts ([c397e83](https://github.com/cds-snc/ai-answers/commit/c397e83c385c673d3b9e03e48f47b36307fee91c))
+* label names add rows ([4157655](https://github.com/cds-snc/ai-answers/commit/41576559887c6052453f5c62f8c3ae5df4ab2d40))
+* mark waf_allowed_cidrs as sensitive to prevent IP leak in logs ([f838ad0](https://github.com/cds-snc/ai-answers/commit/f838ad0f94bd66567116e6fb7b6ae98626720067))
+* redesign of tables ([2efee51](https://github.com/cds-snc/ai-answers/commit/2efee51bb511bd53df421cc6c0d9b5c1f29ee375))
+* remove extra dnd depts from filter panel ([34691ea](https://github.com/cds-snc/ai-answers/commit/34691ea1661e1db308c75bfbbf565665ae6c1032))
+* remove extra dnd depts from filter panel ([d58eb56](https://github.com/cds-snc/ai-answers/commit/d58eb560f373d2192c2ce826b32359565cef4d37))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([d0f2ddf](https://github.com/cds-snc/ai-answers/commit/d0f2ddfa730a790d913662dab3db3a3b7f73c32c))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([fcc864a](https://github.com/cds-snc/ai-answers/commit/fcc864a6bec0f338d172b118899521f8fddd6a2f))
+* size tweaks ([9c61059](https://github.com/cds-snc/ai-answers/commit/9c61059d2ef532e38c1eaff9dd4f03765edcb145))
+* validate CIDR format at plan time to prevent bare IPs reaching A… ([3ccdfff](https://github.com/cds-snc/ai-answers/commit/3ccdffff4f49ad907e0e74f1391aeea9f9e3f766))
+* validate CIDR format at plan time to prevent bare IPs reaching AWS API ([4ded198](https://github.com/cds-snc/ai-answers/commit/4ded198d093414baab61e51e51f48d51c092120d))
+
 ## [1.121.1](https://github.com/cds-snc/ai-answers/compare/v1.121.0...v1.121.1) (2026-04-23)
 
 
