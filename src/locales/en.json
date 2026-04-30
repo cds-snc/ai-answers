@@ -1190,7 +1190,7 @@
       "frPercentage": "FR %",
       "expertScored": {
         "title": "Partner evaluations",
-        "description": "Evaluations by signed-in departmental partners",
+        "description": "Evaluations by signed-in partner institution users",
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
@@ -1236,6 +1236,7 @@
         "expertEvaluations": "Expert evaluations",
         "aiEvaluations": "AI evaluations",
         "totalEvaluated": "Total evaluated",
+        "pctOfQuestions": "% of questions",
         "hasAnswerError": "Has answer error",
         "accuracyPct": "Accuracy %"
       },
@@ -1253,9 +1254,9 @@
         "googleSearches": "Google search queries"
       },
       "byDepartment": {
-        "title": "Department breakdown of expert evaluations",
-        "department": "Department",
-        "noContextDept": "No context dept",
+        "title": "Institution breakdown of expert evaluations",
+        "department": "Institution",
+        "noContextDept": "No institution context",
         "pctEvaluated": "% evaluated"
       }
     }

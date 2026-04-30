@@ -1190,7 +1190,7 @@
       "frPercentage": "% FR",
       "expertScored": {
         "title": "Évaluations des partenaires",
-        "description": "Évaluations par des partenaires ministériels connectés",
+        "description": "Évaluations par des utilisateurs connectés des institutions partenaires",
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
@@ -1236,6 +1236,7 @@
         "expertEvaluations": "Évaluations des experts",
         "aiEvaluations": "Évaluations IA",
         "totalEvaluated": "Total évalué",
+        "pctOfQuestions": "% des questions",
         "hasAnswerError": "Contient une erreur de réponse",
         "accuracyPct": "% d'exactitude"
       },
@@ -1253,9 +1254,9 @@
         "googleSearches": "Requêtes de recherche Google"
       },
       "byDepartment": {
-        "title": "Répartition par département des évaluations d'experts",
-        "department": "Département",
-        "noContextDept": "Aucun dépt de contexte",
+        "title": "Répartition par institution des évaluations d'experts",
+        "department": "Institution",
+        "noContextDept": "Aucun contexte d'institution",
         "pctEvaluated": "% évalué"
       }
     }

@@ -295,7 +295,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             {/* Table 2: Accuracy summary */}
-            <SectionWrapper isLoading={loadingState.expert || loadingState.ai} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai}>
+            <SectionWrapper isLoading={loadingState.expert || loadingState.ai || loadingState.usage} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai || errorState.usage}>
               <GcdsText className="mb-300">{t('metrics.dashboard.accuracy.note')}</GcdsText>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <DataTable
@@ -303,6 +303,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     {
                       metric: t('metrics.dashboard.accuracy.allEvaluations'),
                       totalEvaluated: metrics.expertScored.total.total + metrics.aiScored.total.total,
+                      pctOfQuestions: metrics.totalQuestions ? Math.round(((metrics.expertScored.total.total + metrics.aiScored.total.total) / metrics.totalQuestions) * 100) + '%' : '-',
                       hasAnswerError: metrics.expertScored.hasError.total + metrics.aiScored.hasError.total,
                       accuracyPct: (metrics.expertScored.total.total + metrics.aiScored.total.total)
                         ? (100 - Math.round(((metrics.expertScored.hasError.total + metrics.aiScored.hasError.total) / (metrics.expertScored.total.total + metrics.aiScored.total.total)) * 100)) + '%'
@@ -311,6 +312,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     {
                       metric: t('metrics.dashboard.accuracy.expertEvaluations'),
                       totalEvaluated: metrics.expertScored.total.total,
+                      pctOfQuestions: metrics.totalQuestions ? Math.round((metrics.expertScored.total.total / metrics.totalQuestions) * 100) + '%' : '-',
                       hasAnswerError: metrics.expertScored.hasError.total,
                       accuracyPct: metrics.expertScored.total.total
                         ? (100 - Math.round((metrics.expertScored.hasError.total / metrics.expertScored.total.total) * 100)) + '%'
@@ -319,6 +321,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     {
                       metric: t('metrics.dashboard.accuracy.aiEvaluations'),
                       totalEvaluated: metrics.aiScored.total.total,
+                      pctOfQuestions: metrics.totalQuestions ? Math.round((metrics.aiScored.total.total / metrics.totalQuestions) * 100) + '%' : '-',
                       hasAnswerError: metrics.aiScored.hasError.total,
                       accuracyPct: metrics.aiScored.total.total
                         ? (100 - Math.round((metrics.aiScored.hasError.total / metrics.aiScored.total.total) * 100)) + '%'
@@ -328,6 +331,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   columns={[
                     { title: t('metrics.dashboard.metric'), data: 'metric' },
                     { title: t('metrics.dashboard.accuracy.totalEvaluated'), data: 'totalEvaluated' },
+                    { title: t('metrics.dashboard.accuracy.pctOfQuestions'), data: 'pctOfQuestions' },
                     { title: t('metrics.dashboard.accuracy.hasAnswerError'), data: 'hasAnswerError' },
                     { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'accuracyPct' }
                   ]}

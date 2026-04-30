@@ -336,7 +336,7 @@ const FilterPanel = ({
       </summary>
       <div className="filter-panel-content">
         <div className="filter-grid">
-          {/* Left column - Date Range */}
+          {/* Left column - Date Range and Users */}
           <div className="filter-column">
             <div className="filter-row">
               <label htmlFor="dateRangePicker" className="filter-label">
@@ -350,6 +350,24 @@ const FilterPanel = ({
                 readOnly
                 style={{ backgroundColor: 'white', cursor: 'pointer' }}
               />
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="user-type" className="filter-label">
+                {t('admin.filters.users') || 'User Type'}
+              </label>
+              <select
+                id="user-type"
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                className="filter-select"
+              >
+                {userTypeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -366,24 +384,6 @@ const FilterPanel = ({
                 className="filter-select"
               >
                 {departmentOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="user-type" className="filter-label">
-                {t('admin.filters.users') || 'User Type'}
-              </label>
-              <select
-                id="user-type"
-                value={userType}
-                onChange={(e) => setUserType(e.target.value)}
-                className="filter-select"
-              >
-                {userTypeOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
