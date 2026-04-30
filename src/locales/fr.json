@@ -625,8 +625,8 @@
       "urlEn": "URL de référence (EN)",
       "urlFr": "URL de référence (FR)",
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
-      "department": "Département",
-      "allDepartments": "Tous les départements",
+      "department": "Institution partenaire",
+      "allDepartments": "Toutes les institutions",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -648,7 +648,8 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
-      "showAdvanced": "Voir plus de filtres"
+      "filterOptions": "Options de filtre",
+      "showAdvanced": "Plus d'options de filtre"
     },
     "publicEval": {
       "title": "Évaluation publique",
@@ -1174,16 +1175,8 @@
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
-      "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
-      "inputTokens": "Jetons d'entrée",
-      "outputTokens": "Jetons de sortie",
       "totalQuestions": "Total des questions",
-      "sessionsByQuestionCount": {
-        "singleQuestion": "Sessions à une question",
-        "twoQuestions": "Sessions à deux questions",
-        "threeQuestions": "Sessions à trois questions"
-      },
       "answerTypes": {
         "normal": "Réponses GC",
         "clarifyingQuestion": "Questions de clarification",
@@ -1199,23 +1192,24 @@
       "frPercentage": "% FR",
       "expertScored": {
         "title": "Évaluations des partenaires",
-        "description": "Évaluations par des partenaires ministériels connectés",
+        "description": "Évaluations par des utilisateurs connectés des institutions partenaires",
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation",
-        "hasErrorPercent": "Contient une erreur (%)",
-        "harmful": "Codé comme nuisible"
+        "hasError": "Contient une erreur de réponse",
+        "hasCitationError": "Problème de citation",
+        "hasErrorPercent": "Contient une erreur de réponse (%)",
+        "harmful": "Codé comme nuisible",
+        "hasContentIssue": "Problème de contenu signalé"
       },
       "aiScored": {
         "title": "Évaluations IA",
-        "description": "Évaluations automatisées par IA basées sur les évaluations d'experts de questions similaires",
+        "description": "Évaluations automatisées par IA pour les questions sans évaluation partenaire",
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation"
+        "hasError": "Contient une erreur de réponse",
+        "hasCitationError": "Problème de citation"
       },
       "userScored": {
         "title": "Rétroaction des utilisateurs (publique)",
@@ -1228,9 +1222,44 @@
         "otherYes": "Autre (oui)",
         "otherNo": "Autre (non)"
       },
+      "sessions": {
+        "title": "Sessions"
+      },
+      "questions": {
+        "title": "Questions",
+        "firstQuestion": "1ère question",
+        "secondQuestion": "2e question",
+        "thirdOrMore": "3e question ou plus"
+      },
+      "accuracy": {
+        "title": "Résumé de l'exactitude",
+        "allEvaluations": "Total des évaluations",
+        "note": "Si une question a à la fois une évaluation d'expert et une évaluation IA, seule l'évaluation d'expert est utilisée.",
+        "expertEvaluations": "Évaluations des experts",
+        "aiEvaluations": "Évaluations IA",
+        "totalEvaluated": "Total évalué",
+        "pctOfQuestions": "% des questions",
+        "hasAnswerError": "Contient une erreur de réponse",
+        "accuracyPct": "% d'exactitude"
+      },
+      "questionTypes": {
+        "title": "Types de questions"
+      },
+      "tokens": {
+        "title": "Jetons",
+        "totalInput": "Total des jetons d'entrée",
+        "contextInput": "Jetons d'entrée du contexte",
+        "answerInput": "Jetons d'entrée de la réponse",
+        "totalOutput": "Total des jetons de sortie",
+        "contextOutput": "Jetons de sortie du contexte",
+        "answerOutput": "Jetons de sortie de la réponse",
+        "googleSearches": "Requêtes de recherche Google"
+      },
       "byDepartment": {
-        "title": "Répartition par département des évaluations d'experts",
-        "department": "Département"
+        "title": "Répartition par institution des évaluations d'experts",
+        "department": "Institution",
+        "noContextDept": "Aucun contexte d'institution",
+        "pctEvaluated": "% évalué"
       }
     }
   },

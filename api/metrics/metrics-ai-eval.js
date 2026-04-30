@@ -74,6 +74,8 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
                 category: getAiEvalAggregationExpression('$autoEval.expertFeedback')
             }
         },
+        // Exclude questions that have a human expert eval — expert takes precedence
+        { $match: { 'interactions.expertFeedback': { $eq: null } } },
         // Project only fields needed for aggregation (optimization)
         {
             $project: {
