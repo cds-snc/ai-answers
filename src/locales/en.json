@@ -268,6 +268,7 @@
         "noFile": "Please select a file first.",
         "nameRequired": "Please enter a batch name.",
         "invalidFile": "Invalid file type. Please upload a .csv file.",
+        "noValidRows": "No valid rows found in the CSV. Check that the question column header is one of: Problem Details, Question, Redacted Question.",
         "readFailed": "Failed to read the file. Please try uploading again.",
         "saveFailed": "Failed to save batch to server. Please try again."
       }

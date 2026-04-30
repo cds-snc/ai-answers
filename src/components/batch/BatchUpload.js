@@ -89,8 +89,12 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Parse CSV to entries and prepare items for server-side BatchItem creation
         const entries = processCSV(text);
 
+        if (!entries.length) {
+          throw new Error(t('batch.upload.error.noValidRows'));
+        }
+
         // Only keep fields needed: question variants and URLs
-        const questionKeys = ['REDACTEDQUESTION', 'QUESTION', 'PROBLEMDETAILS', 'REDACTED QUESTION'];
+        const questionKeys = ['REDACTEDQUESTION'];
         const items = entries.map((e, idx) => {
           const original = {};
           questionKeys.forEach((key) => {
@@ -191,7 +195,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         .map((row) => {
           const entry = {};
           headers.forEach((header, index) => {
-            const key = (header === 'PROBLEM DETAILS' || header === 'PROBLEMDETAILS' || header === 'REDACTED QUESTION')
+            const key = (header === 'PROBLEM DETAILS' || header === 'PROBLEMDETAILS' || header === 'REDACTED QUESTION' || header === 'QUESTION')
               ? 'REDACTEDQUESTION'
               : header;
             entry[key] = String(row[index] ?? '').trim();
