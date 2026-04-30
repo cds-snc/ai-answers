@@ -272,6 +272,7 @@ export class GraphWorkflowHelper {
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
         englishAnswer: englishAnswerText,
+        historySignature: similarShortCircuit.historySignature || similarShortCircuit.answer?.historySignature || null,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -279,6 +280,7 @@ export class GraphWorkflowHelper {
         citationUrl: aiCitationUrl,
       },
       finalCitationUrl: providedCitationUrl,
+      historySignature: similarShortCircuit.historySignature || null,
       context: scContext,
       chatId,
       pageLanguage: lang,
@@ -331,6 +333,7 @@ export class GraphWorkflowHelper {
           paragraphs: [answerText],
           sentences: [answerText],
           englishAnswer: englishAnswerText,
+          historySignature: similarJson.historySignature || similarJson.answer?.historySignature || null,
           instantAnswerChatId: instantAnswerChatId,
           instantAnswerInteractionId: instantAnswerInteractionId,
           similarity: similarJson.similarity || null,
@@ -340,6 +343,7 @@ export class GraphWorkflowHelper {
         question: userMessage,
         citationUrl: similarJson.citation?.providedCitationUrl || similarJson.citation?.aiCitationUrl || null,
         sourceCitation: similarJson.citation || null,
+        historySignature: similarJson.historySignature || null,
       };
     }
 
