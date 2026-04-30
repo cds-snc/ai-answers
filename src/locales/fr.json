@@ -268,6 +268,7 @@
         "noFile": "Veuillez sélectionner un fichier d'abord.",
         "nameRequired": "Veuillez entrer un nom de lot.",
         "invalidFile": "Type de fichier non valide. Veuillez télécharger un fichier .csv.",
+        "noValidRows": "Aucune ligne valide trouvée dans le fichier CSV. Vérifiez que l'en-tête de la colonne de questions est l'un des suivants : Problem Details, Question, Redacted Question.",
         "readFailed": "Impossible de lire le fichier. Veuillez réessayer de le télécharger.",
         "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer."
       }
