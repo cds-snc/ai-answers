@@ -1,7 +1,7 @@
 # AI Answers System Card
 
 **Version**: 1.1
-**Date**: February 2026
+**Date**: April 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
 
@@ -116,6 +116,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 8. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
 9. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
 10. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
+11. **Auto-Evaluation**: Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 

@@ -249,6 +249,15 @@ The graph maintains state across all nodes with these key fields:
 
 **File:** [`agents/graphs/services/translationService.js`](../../agents/graphs/services/translationService.js)
 
+#### Post-translation guardrail (non-EN/FR only)
+
+After translation, `GraphWorkflowHelper.postTranslateGuard()` runs a second-stage check on the translated English text:
+
+- **All languages:** word-list/regex redaction re-runs on the translated text to catch manipulation, threats, or profanity that the EN/FR word lists couldn't catch in the original
+- **Non-EN/FR source languages only:** AI PI detection runs again on the translated text — threats or personal information written in another language may only be recognizable once rendered in English
+
+This is a second-stage guardrail, not a replacement for the `redact` node. The `redact` node always runs first (on the original text, in the original language); `postTranslateGuard` adds an extra pass for languages where the first-pass word lists have limited coverage.
+
 ---
 
 ### 5. Short-Circuit Check (`shortCircuit` node)

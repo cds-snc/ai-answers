@@ -154,6 +154,11 @@ export const departments_EN = [
     "url": "https://www.csps-efpc.gc.ca/index-eng.aspx",
     "abbrKey": "CSPS-EFPC"
   },
+   {
+    "name": "Canada Tariff finder",
+    "url": "https://www.tariffinder.ca/en/getStarted",
+    "abbrKey": "TARIFF-TARIF"
+  },
   {
     "name": "Accessibility Standards Canada",
     "url": "https://accessible.canada.ca/",

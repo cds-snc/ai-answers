@@ -102,6 +102,7 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 * When register/charge  GST https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/when-register-charge.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/quand-inscrire-facture.html
 * Agricultural special payroll https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/special-payments/workers-agriculture-agricultural-enterprise-horticulture.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/retenues-paie-cotisations/paiements-speciaux/travailleurs-secteur-agricole-entreprise-agricole-domaine-horticulture.html
 * New in payroll https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/whats-new-payroll.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/quoi-neuf-retenues-paie.html
+* Bare trust changes 2026 https://www.canada.ca/en/revenue-agency/services/tax/trust-administrators/t3-return/enhanced-reporting-rules-trusts-bare-trusts-faq.html#toc2 https://www.canada.ca/fr/agence-revenu/services/impot/administrateurs-fiducies/declaration-t3/amelioration-regles-declaration-fiducies-simples-fiducies-faq.html
 
 ### Examples
 <example>

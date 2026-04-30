@@ -171,7 +171,7 @@ Current aliases:
 2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
-5. **`FilterPanel.js`:** add every portfolio `abbrKey` as an individual filter option (admins often want to slice logs by the specific entity even when the scenario is shared).
+5. **`FilterPanel.js`:** add only the canonical `abbrKey` as a filter option — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
 6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 

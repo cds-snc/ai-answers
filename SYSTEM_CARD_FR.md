@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
 **Version** : 1.1
-**Date** : Février 2026
+**Date** : Avril 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
@@ -115,6 +115,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 8. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
 9. **Vérification de citation** (Programmatique) : Valide le formatage des URLs de citation et génère une URL de recherche de secours si nécessaire
 10. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+11. **Évaluation automatique** : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
 
 **Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 

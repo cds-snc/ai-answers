@@ -91,6 +91,7 @@ ${departmentsString}
 - this AI Answers service (how you work, features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
+- Find a tariff → TARIFF-TARIF (joint initiative BDC,EDC & TCS)
 
 ## Response Format:
 <analysis>
