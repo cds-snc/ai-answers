@@ -31,16 +31,18 @@ async function loadContextSystemPrompt(language = 'en') {
 This list contains ALL valid options. You MUST select ONLY from the Bilingual Abbr Key and URL values shown below.
 Format: Bilingual Abbr Key | Organization Name | URL
 - Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
-- URL: The corresponding URL (must match the selected organization)
+- URL: The corresponding unilingual URL in the list for the selected Abbr Key - that means the matching FR url for a question from French page
 
 ${departmentsString}
 </departments_list> 
 
 ## Matching Algorithm:
+Note: Questions have been translated to English before this step — you will always receive an English question. The departments list is in the language of the page (French names for French pages, English names for English pages). Use the English instructions and examples below to identify the right department, then find and return the matching abbrKey and URL from the departments list provided. When the question contains a department abbreviation (e.g. IRCC), treat it as a direct match to that abbrKey.
+
 1. Extract key topics and entities from the user's question and context
-- <searchResults> contains Title/Link/Summary entries from a search query run before your turn. Use them as supporting signal.
+- <searchResults> contains Title/Link/Summary entries from a search query run before your turn. Use them as supporting signal. For question on FR page, search results will be in French. 
 - Prioritize your analysis of the question and <referring-url>  (the page the user was on when they launched AI Answers) over <searchResults>
-- <referring-url> often helps identify the department or topic. It occasionally may betray a misunderstanding. For example, the user was on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through the CRA account. 
+- <referring-url> often helps identify the department or topic. It occasionally may betray a misunderstanding. For example, the user was on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through the CRA account.
 
 2. Compare and select an organization from <departments_list> or from the list of CEO-BEC cross-department canada.ca pages below
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
@@ -64,29 +66,32 @@ ${departmentsString}
 ## Examples of Program to Administering Department Mapping:
 - Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC
 - Payroll deductions for tax, CPP, EI → CRA-ARC
-- Canada Child Benefit, Groceries and Essentials Benefit→ CRA-ARC
-- Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC  
-- Weather Forecasts → ECCC  
-- My Service Canada Account (MSCA) → EDSC-ESDC  
-- Visa, ETA, entry/visit Canada, work/study permits,immigrate, refugees, citizenship → IRCC  
-- Canadian passports → IRCC  
-- Ontario Trillium Benefit → CRA-ARC  
-- Canadian Armed Forces Pensions → PSPC-SPAC  
-- Veterans benefits → VAC-ACC  
-- Public service group insurance health,dental and disability benefit plans → TBS-SCT  
-- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT  
-- Public service pay system → PSPC-SPAC  
-- Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
-- International students study permits and visas → IRCC  
+- Canada Child Benefit, Groceries and Essentials Benefit → CRA-ARC
+- GST/HST → CRA-ARC
+- Job Bank, Apprenticeships, Student Loans → EDSC-ESDC
+- Weather Forecasts → ECCC
+- My Service Canada Account (MSCA) → EDSC-ESDC
+- Visa, ETA, entry/visit Canada, work/study permits, immigrate, refugees, citizenship → IRCC
+- Canadian passports → IRCC
+- Ontario Trillium Benefit → CRA-ARC
+- Canadian Armed Forces Pensions → PSPC-SPAC
+- Veterans benefits → VAC-ACC
+- Public service group insurance health, dental and disability benefit plans → TBS-SCT
+- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT
+- Public service pay system → PSPC-SPAC
+- Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP
+- International students study permits and visas → IRCC
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
 - Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
-- Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
-- Find a member of Parliament →  HOC-CDC  
+- Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC
+- Find a member of Parliament → HOC-CDC
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
-- Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT  
-- Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
+- Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT
+- Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca → TBS-SCT (administering department for open.canada.ca)
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
-- EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
+- EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC
+- NAICS (industry codes) → STATCAN
+- NOC (occupation codes) → EDSC-ESDC
 - "GC Sign in" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - this AI Answers service (how you work, features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
