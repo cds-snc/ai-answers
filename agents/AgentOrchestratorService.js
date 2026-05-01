@@ -3,7 +3,7 @@ import ServerLoggingService from '../services/ServerLoggingService.js';
 class AgentOrchestratorServiceClass {
   async invokeWithStrategy({
     chatId = 'system',
-    agentType = 'openai',
+    agentType = 'openai-gpt51',
     request = {},
     createAgentFn, // (agentType, chatId) => agent
     strategy,

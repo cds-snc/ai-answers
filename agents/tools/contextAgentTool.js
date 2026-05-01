@@ -9,7 +9,7 @@ import { contextSearch as canadaSearch } from "./canadaCaContextSearch.js";
  * performs a search based on the question and returns the generated context
  * string from the context agent.
  */
-const createContextAgentTool = (agentType = 'openai') =>
+const createContextAgentTool = (agentType = 'openai-gpt51') =>
   tool(
     async ({ question, lang = 'en', searchProvider = 'google', chatId = 'system' }) => {
       const systemPrompt = await loadContextSystemPrompt(lang);

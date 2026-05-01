@@ -6,7 +6,7 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export function categorizeExpertFeedback(expertFeedback) {
   if (!expertFeedback) return null;
 
-  const hasCitationError = expertFeedback.citationScore === 0;
+  const hasCitationError = expertFeedback.citationScore === 0 || expertFeedback.citationScore === 20;
   const totalScore = expertFeedback.totalScore;
 
   const feedbackFields = [
@@ -106,7 +106,7 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                   ]
                 },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
-                hasCitationError: { $eq: ['$$ef.citationScore', 0] },
+                hasCitationError: { $in: ['$$ef.citationScore', [0, 20]] },
                 hasHarmful: {
                   $or: [
                     { $eq: ['$$ef.sentence1Harmful', true] },
@@ -130,7 +130,6 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] },
                     { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
@@ -187,7 +186,7 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                   ]
                 },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
-                hasCitationError: { $eq: ['$$ef.citationScore', 0] },
+                hasCitationError: { $in: ['$$ef.citationScore', [0, 20]] },
                 hasHarmful: {
                   $or: [
                     { $eq: ['$$ef.sentence1Harmful', true] },
@@ -211,7 +210,6 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] },
                     { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }

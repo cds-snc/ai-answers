@@ -1,7 +1,7 @@
 # AI Answers System Card
 
 **Version**: 1.1
-**Date**: February 2026
+**Date**: April 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
 
@@ -23,7 +23,7 @@
 
 ## Executive Summary
 
-AI Answers is a specialized AI chat agent designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
+AI Answers is a specialized AI chat agent platform designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings.
 
 ![AI Answers System Architecture Diagram](docs/images/system_diagram_v2_EN.jpg)
 
@@ -44,6 +44,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ## Current Status
 - **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in January 2026.
+- **Trial report**: [blog post](https://digital.canada.ca/2025/12/17/ai-answers-enterprise-scale-trial-for-canada.ca/)
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Evaluation**: Ongoing expert evaluation and response scoring generating AI automated evals & answers
 - **Platform**: Federal institution partners can add scenario prompts and files to meet specific needs, [view prompts and partner institution prompt example](docs/agents-prompts/system-prompt-documentation.md)
@@ -54,6 +55,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - Assist users with questions about Government of Canada issues
 - Provide accurate information about Government of Canada programs, benefits, and services
 - Direct users to appropriate government resources and next steps
+- Models a conversation with a call centre agent - [brief answers for better service](docs/pdf/short-ai-answers-en.pdf)
 
 ### Target Users
 - Anyone visiting Canada.ca or federal websites
@@ -80,11 +82,11 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### AI Model Details
-- **Current production models**: Azure OpenAI GPT-5.1 family; evaluation agents use GPT-4.1-mini
+- **Current production models**: Azure OpenAI GPT-5.1 family (cutover March 18,2026 from GPT 4.1); evaluation agents use GPT-4.1-mini
 - **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step to the appropriate model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini) for cost and speed, while context generation and answer generation use the full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
-- **Temperature**: 0 (deterministic responses)
+- **Temperature**: 0 (deterministic responses), reasoning low
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
-- **Model independence**: System designed to work with different AI providers, tested with GPT & Claude, plans in place to deploy more models via AWS Bedrock
+- **Model independence**: System designed to work with different AI providers, tested with GPT & Claude, plans in place to deploy more models, including Cohere, via AWS Bedrock
 
 ### Agentic Capabilities
 - **Tool usage**: AI can autonomously use specialized tools to enhance responses during answer generation
@@ -106,7 +108,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
 3. **Two-Stage Question Blocking**:
    - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI (word lists configurable by admins via Settings page)
-   - **Stage 2** (AI - configurable model): AI detects personal information that slipped through; question is then blocked
+   - **Stage 2** (AI - Azure OpenAI GPT-4o, Canada East region): AI detects personal information that slipped through; question is then blocked
 4. **Translation** (AI - configurable mini model): Detects language and translates to English for processing
 5. **Query Rewrite & Search** (AI - mini model): Rewrite the translated question into an optimized search query and run it against Canada.ca or Google. If the first search returns zero or one result, automatically rewrite again with a simplified query and retry; the better result set is kept.
 6. **Context Derivation** (AI - full model): Department matching and context generation from search results; optionally loads department-specific scenarios
@@ -114,6 +116,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 8. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
 9. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
 10. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
+11. **Auto-Evaluation**: Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -217,7 +220,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 ### Evaluation Methods
 - **Innovative Expert Evaluation System**: 
-  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, experiencing the same user experience
+  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation processs with screenshots](docs/pdf/ai-answers-expert-evals-integration.pdf)
   - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
   - **Sentence-Level Scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
   - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)

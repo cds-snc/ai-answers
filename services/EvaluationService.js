@@ -173,14 +173,7 @@ class EvaluationService {
             // Fetch deploymentMode and vectorServiceType from SettingsService
             const deploymentMode = SettingsService.get('deploymentMode') || 'CDS';
             const vectorServiceType = SettingsService.get('vectorServiceType') || 'imvectordb';
-            // Resolve the ai provider from SettingsService (single source of truth)
-            let providerSetting = null;
-            try {
-                providerSetting = SettingsService.get('provider');
-            } catch (e) {
-                providerSetting = null;
-            }
-            const aiProviderToUse = providerSetting || 'openai';
+            const aiProviderToUse = SettingsService.get('model.default') || 'openai-gpt51';
             if (deploymentMode === 'CDS') {
                 // Ensure only one concurrent initialization creates the Piscina pool
                 if (!pool) {
@@ -340,14 +333,7 @@ class EvaluationService {
         const deploymentMode = SettingsService.get('deploymentMode') || 'CDS';
 
 
-        // Resolve global ai provider from settings once (single source of truth)
-        let globalProvider = 'openai';
-        try {
-            const p = SettingsService.get('provider');
-            if (p) globalProvider = p;
-        } catch (e) {
-            globalProvider = 'openai';
-        }
+        const globalProvider = SettingsService.get('model.default') || 'openai-gpt51';
 
         // Compute the batch concurrency from the configured concurrency so the
         // same value is used for slicing batches and for the worker pool.

@@ -267,6 +267,8 @@
       "error": {
         "noFile": "Please select a file first.",
         "nameRequired": "Please enter a batch name.",
+        "invalidFile": "Invalid file type. Please upload a .csv file.",
+        "noValidRows": "No valid rows found in the CSV. Check that the question column header is one of: Problem Details, Question, Redacted Question.",
         "readFailed": "Failed to read the file. Please try uploading again.",
         "saveFailed": "Failed to save batch to server. Please try again."
       }
@@ -623,8 +625,8 @@
       "urlEn": "Referring URL (EN)",
       "urlFr": "Referring URL (FR)",
       "urlPlaceholder": "Filter by full or partial URL",
-      "department": "Department",
-      "allDepartments": "All departments",
+      "department": "Partner institution",
+      "allDepartments": "All institutions",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -646,7 +648,8 @@
       "evalHasError": "Error",
       "evalHasCitationError": "Citation error",
       "evalHarmful": "Harmful",
-      "showAdvanced": "See more filters"
+      "filterOptions": "Filter options",
+      "showAdvanced": "More filter options"
     },
     "publicEval": {
       "title": "Public evaluation",
@@ -964,11 +967,6 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
-    "providerLabel": "Provider",
-    "provider": {
-      "openai": "OpenAI",
-      "azure": "Azure OpenAI"
-    },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
@@ -1177,16 +1175,8 @@
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
-      "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
-      "inputTokens": "Input tokens",
-      "outputTokens": "Output tokens",
       "totalQuestions": "Total questions",
-      "sessionsByQuestionCount": {
-        "singleQuestion": "Single question sessions",
-        "twoQuestions": "Two question sessions",
-        "threeQuestions": "Three question sessions"
-      },
       "answerTypes": {
         "normal": "GC answers",
         "clarifyingQuestion": "Clarifying questions",
@@ -1202,23 +1192,24 @@
       "frPercentage": "FR %",
       "expertScored": {
         "title": "Partner evaluations",
-        "description": "Evaluations by signed-in departmental partners",
+        "description": "Evaluations by signed-in partner institution users",
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error",
-        "hasCitationError": "Has citation error",
-        "hasErrorPercent": "Has error (%)",
-        "harmful": "Coded as harmful"
+        "hasError": "Has answer error",
+        "hasCitationError": "Citation issue",
+        "hasErrorPercent": "Has answer error (%)",
+        "harmful": "Coded as harmful",
+        "hasContentIssue": "Content issue flagged"
       },
       "aiScored": {
         "title": "AI evaluations",
-        "description": "Automated AI evaluations based on expert evaluations of similar questions",
+        "description": "Automated AI evaluations for questions without a partner evaluation",
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error",
-        "hasCitationError": "Has citation error"
+        "hasError": "Has answer error",
+        "hasCitationError": "Citation issue"
       },
       "userScored": {
         "title": "End-user feedback (public)",
@@ -1231,9 +1222,44 @@
         "otherYes": "Other (yes)",
         "otherNo": "Other (no)"
       },
+      "sessions": {
+        "title": "Sessions"
+      },
+      "questions": {
+        "title": "Questions",
+        "firstQuestion": "1st question",
+        "secondQuestion": "2nd question",
+        "thirdOrMore": "3rd question or more"
+      },
+      "accuracy": {
+        "title": "Accuracy summary",
+        "allEvaluations": "Total evaluations",
+        "note": "If a question has both an expert and AI evaluation, only the expert evaluation is used.",
+        "expertEvaluations": "Expert evaluations",
+        "aiEvaluations": "AI evaluations",
+        "totalEvaluated": "Total evaluated",
+        "pctOfQuestions": "% of questions",
+        "hasAnswerError": "Has answer error",
+        "accuracyPct": "Accuracy %"
+      },
+      "questionTypes": {
+        "title": "Question types"
+      },
+      "tokens": {
+        "title": "Tokens",
+        "totalInput": "Total input tokens",
+        "contextInput": "Context input tokens",
+        "answerInput": "Answer input tokens",
+        "totalOutput": "Total output tokens",
+        "contextOutput": "Context output tokens",
+        "answerOutput": "Answer output tokens",
+        "googleSearches": "Google search queries"
+      },
       "byDepartment": {
-        "title": "Department breakdown of expert evaluations",
-        "department": "Department"
+        "title": "Institution breakdown of expert evaluations",
+        "department": "Institution",
+        "noContextDept": "No institution context",
+        "pctEvaluated": "% evaluated"
       }
     }
   },

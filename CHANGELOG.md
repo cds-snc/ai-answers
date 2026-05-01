@@ -1,5 +1,89 @@
 # Changelog
 
+## [1.122.0](https://github.com/cds-snc/ai-answers/compare/v1.121.1...v1.122.0) (2026-04-30)
+
+
+### Features
+
+* add WAFv2 IP allowlist for staging ALB ([b57e09c](https://github.com/cds-snc/ai-answers/commit/b57e09c4b754295c15a6ef9449a0b7b43c433533))
+
+
+### Bug Fixes
+
+* add tariff ([d8905ec](https://github.com/cds-snc/ai-answers/commit/d8905ec2c37431b5ff8b660a669ffdeb07f22f40))
+* bug in label normalization ([88e2e79](https://github.com/cds-snc/ai-answers/commit/88e2e7943d1c3ba85c9db85e49031d29ad661c8d))
+* bug in label normalization ([39fecaf](https://github.com/cds-snc/ai-answers/commit/39fecaff137d0b5e2c7c7f0f151e5430f5712147))
+* change order of rows ([472d7bd](https://github.com/cds-snc/ai-answers/commit/472d7bd68e4a3c6529ccc1ddab84ea19ea244d5e))
+* doc ([aa7f7a1](https://github.com/cds-snc/ai-answers/commit/aa7f7a148dd416fa48ffc57df779cec37270a0d2))
+* docs ([25b98aa](https://github.com/cds-snc/ai-answers/commit/25b98aae8b92d6665fad066755be7ba3657eb58d))
+* filter panel changes ([fe98e6f](https://github.com/cds-snc/ai-answers/commit/fe98e6f6a68bdb8d69af35ca221cbd1aea5431e9))
+* finesse ([9a4eb73](https://github.com/cds-snc/ai-answers/commit/9a4eb73013e8b065d10d1ae8e2aeffc4bbe76cfb))
+* format the token counts ([c397e83](https://github.com/cds-snc/ai-answers/commit/c397e83c385c673d3b9e03e48f47b36307fee91c))
+* label names add rows ([4157655](https://github.com/cds-snc/ai-answers/commit/41576559887c6052453f5c62f8c3ae5df4ab2d40))
+* mark waf_allowed_cidrs as sensitive to prevent IP leak in logs ([f838ad0](https://github.com/cds-snc/ai-answers/commit/f838ad0f94bd66567116e6fb7b6ae98626720067))
+* redesign of tables ([2efee51](https://github.com/cds-snc/ai-answers/commit/2efee51bb511bd53df421cc6c0d9b5c1f29ee375))
+* remove extra dnd depts from filter panel ([34691ea](https://github.com/cds-snc/ai-answers/commit/34691ea1661e1db308c75bfbbf565665ae6c1032))
+* remove extra dnd depts from filter panel ([d58eb56](https://github.com/cds-snc/ai-answers/commit/d58eb560f373d2192c2ce826b32359565cef4d37))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([d0f2ddf](https://github.com/cds-snc/ai-answers/commit/d0f2ddfa730a790d913662dab3db3a3b7f73c32c))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([fcc864a](https://github.com/cds-snc/ai-answers/commit/fcc864a6bec0f338d172b118899521f8fddd6a2f))
+* size tweaks ([9c61059](https://github.com/cds-snc/ai-answers/commit/9c61059d2ef532e38c1eaff9dd4f03765edcb145))
+* validate CIDR format at plan time to prevent bare IPs reaching A… ([3ccdfff](https://github.com/cds-snc/ai-answers/commit/3ccdffff4f49ad907e0e74f1391aeea9f9e3f766))
+* validate CIDR format at plan time to prevent bare IPs reaching AWS API ([4ded198](https://github.com/cds-snc/ai-answers/commit/4ded198d093414baab61e51e51f48d51c092120d))
+
+## [1.121.1](https://github.com/cds-snc/ai-answers/compare/v1.121.0...v1.121.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* add historical pm names ([b7f7792](https://github.com/cds-snc/ai-answers/commit/b7f77924f596198b8d9bf1c6345151f2ab524716))
+* blocked current pm name ([56490cc](https://github.com/cds-snc/ai-answers/commit/56490ccc75953c3ff9889a9c4051b3f2880df61d))
+* PII prompt to not block question numbers ([1773949](https://github.com/cds-snc/ai-answers/commit/177394943fa7d2ecececb0d5f278d42fc69838b4))
+* refine/clarify for mini model ([8e29a98](https://github.com/cds-snc/ai-answers/commit/8e29a98716e156619119dd0b620a83efe346a6ac))
+* search query issue ([8f26993](https://github.com/cds-snc/ai-answers/commit/8f26993ce9f9a4b3b1fcf1484bb49cdf71b5390c))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump uuid from 11.1.0 to 14.0.0 ([cddb6de](https://github.com/cds-snc/ai-answers/commit/cddb6de4be0fca1eb5b3692788d1890ab536522e))
+
+## [1.121.0](https://github.com/cds-snc/ai-answers/compare/v1.120.2...v1.121.0) (2026-04-23)
+
+
+### Features
+
+* add dnd partner scenario file ([7d89f89](https://github.com/cds-snc/ai-answers/commit/7d89f89f2df0ca006d3b81c36beb0dcde271e5b7))
+* add dnd partner scenario file ([89b6794](https://github.com/cds-snc/ai-answers/commit/89b6794609d8b863f5aae05018e9c35f04809e10))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump follow-redirects from 1.15.11 to 1.16.0 ([dc9e6b6](https://github.com/cds-snc/ai-answers/commit/dc9e6b609c898b981714fd76938d3db875e7f361))
+* **deps:** bump langsmith from 0.5.18 to 0.5.20 ([afb5c54](https://github.com/cds-snc/ai-answers/commit/afb5c5434a407775b4a09fd58a8a9073024be37f))
+
+## [1.120.2](https://github.com/cds-snc/ai-answers/compare/v1.120.1...v1.120.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* add 3c back in ([8e60f0b](https://github.com/cds-snc/ai-answers/commit/8e60f0b2e3da944bc3492e548365de8eb7b08e79))
+* add error message for csv read failure ([684085b](https://github.com/cds-snc/ai-answers/commit/684085bed8f749b76bebf4e8dbc79e31085e296f))
+* add example ([936f79a](https://github.com/cds-snc/ai-answers/commit/936f79aa088bd7307cc453834101f7bd9ce7df66))
+* add historical urls ([7948296](https://github.com/cds-snc/ai-answers/commit/7948296aa0ce935b52863c826e67d5959a57c157))
+* add payroll deduction back in ([1a16b9b](https://github.com/cds-snc/ai-answers/commit/1a16b9b13a88dda1e5cce2e13ebc716c6448589a))
+* batch bug ([e7e41cd](https://github.com/cds-snc/ai-answers/commit/e7e41cdbc4c0ad7cf66ecf674554975c23bff42c))
+* context issue ([94dcaca](https://github.com/cds-snc/ai-answers/commit/94dcaca4716586b01de67932e6ca1474c254575e))
+* docs ([69023ab](https://github.com/cds-snc/ai-answers/commit/69023abe3675564f0e19094a946153057598f872))
+* move due date comment ([301d06d](https://github.com/cds-snc/ai-answers/commit/301d06d4a0f5f42e3343f4eee67caabb0fc66617))
+* not computing the date so need to expand ([7329425](https://github.com/cds-snc/ai-answers/commit/73294258379653e19388524fb3ec62511be198c1))
+* payroll line ([fa54baf](https://github.com/cds-snc/ai-answers/commit/fa54baf40c6d3c20efac3b10f81a01306df9c0c5))
+* prompt tweaks ([7becf21](https://github.com/cds-snc/ai-answers/commit/7becf21de14c03b8a75ae1de821d91790a3724fc))
+* revert context prompt ([e54b39c](https://github.com/cds-snc/ai-answers/commit/e54b39cd38c1a9f723f5bd341dc83be132e9e934))
+* try again ([a548e6d](https://github.com/cds-snc/ai-answers/commit/a548e6dcbf445b429db44dace583709941d5dcdd))
+* try different approach ([12b2df7](https://github.com/cds-snc/ai-answers/commit/12b2df7180a609eba774889ebc18d3a3323ea994))
+* update prompt to not put full text in PII tags, also guard again… ([a10ed26](https://github.com/cds-snc/ai-answers/commit/a10ed26bbe95425cea2cdbb9c4ce61cff59e94df))
+* update prompt to not put full text in PII tags, also guard against this in code ([fbd8a5e](https://github.com/cds-snc/ai-answers/commit/fbd8a5e57be5d0b17c0315e81151776578c95cf3))
+* writeEvent was still failing ([e2703f6](https://github.com/cds-snc/ai-answers/commit/e2703f6ab22052319f383340721f1854ebac07a9))
+
 ## [1.120.1](https://github.com/cds-snc/ai-answers/compare/v1.120.0...v1.120.1) (2026-04-17)
 
 

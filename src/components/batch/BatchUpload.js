@@ -40,7 +40,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       return;
     }
 
-    if (!uploadedFile.name.endsWith('.csv')) {
+    if (!uploadedFile.name.toLowerCase().endsWith('.csv')) {
       setError(t('batch.upload.error.invalidFile'));
       setFile(null);
       return;
@@ -89,8 +89,12 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Parse CSV to entries and prepare items for server-side BatchItem creation
         const entries = processCSV(text);
 
+        if (!entries.length) {
+          throw new Error(t('batch.upload.error.noValidRows'));
+        }
+
         // Only keep fields needed: question variants and URLs
-        const questionKeys = ['REDACTEDQUESTION', 'QUESTION', 'PROBLEMDETAILS', 'REDACTED QUESTION'];
+        const questionKeys = ['REDACTEDQUESTION'];
         const items = entries.map((e, idx) => {
           const original = {};
           questionKeys.forEach((key) => {
@@ -149,8 +153,13 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           setProcessing(false);
         }
       } catch (err) {
-        setError(t('batch.upload.error.readFailed'));
+        // Surface the actual parse error (e.g. missing column, empty file)
+        // so the admin can see what's wrong with the CSV.
+        const detail = err?.message || t('batch.upload.error.readFailed');
+        setError(detail);
         console.error('Error reading file:', err);
+        // Re-show the upload button so the user can retry without re-selecting
+        setFileUploaded(false);
         setProcessing(false);
       }
     }
@@ -171,14 +180,13 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         throw new Error('The CSV file is empty or invalid.');
       }
 
-      const headers = jsonData[0].map((header) => header.trim().toUpperCase());
-      const problemDetailsIndex = headers.findIndex(
-        (h) => h === 'PROBLEM DETAILS' || h === 'QUESTION' || h === 'REDACTEDQUESTION'
-      );
+      const headers = jsonData[0].map((header) => String(header ?? '').trim().toUpperCase());
+      const QUESTION_HEADERS = ['PROBLEM DETAILS', 'PROBLEMDETAILS', 'QUESTION', 'REDACTEDQUESTION', 'REDACTED QUESTION'];
+      const problemDetailsIndex = headers.findIndex((h) => QUESTION_HEADERS.includes(h));
 
       if (problemDetailsIndex === -1) {
         throw new Error(
-          'Required column "PROBLEM DETAILS/REDACTEDQUESTION" not found in CSV file. Please ensure you are using a file with that column or downloaded from the Feedback Viewer.'
+          `Required question column not found in CSV file. Expected one of: ${QUESTION_HEADERS.join(', ')}. Found headers: ${headers.filter(Boolean).join(', ') || '(none)'}.`
         );
       }
 
@@ -187,13 +195,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         .map((row) => {
           const entry = {};
           headers.forEach((header, index) => {
-            const key = header === 'PROBLEM DETAILS' ? 'REDACTEDQUESTION' : header;
-            entry[key] = row[index]?.trim() || '';
+            const key = (header === 'PROBLEM DETAILS' || header === 'PROBLEMDETAILS' || header === 'REDACTED QUESTION' || header === 'QUESTION')
+              ? 'REDACTEDQUESTION'
+              : header;
+            entry[key] = String(row[index] ?? '').trim();
           });
-          console.log('Processing entry:', entry);
           return entry;
         })
-        .filter((entry) => entry['REDACTEDQUESTION']); // Only filter based on 'QUESTION' presence
+        .filter((entry) => entry['REDACTEDQUESTION']);
 
       console.log(`Found ${entries.length} valid entries to process`);
       return entries;

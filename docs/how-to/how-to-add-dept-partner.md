@@ -16,6 +16,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `CEO-BEC` | Canada.ca Experience Office | Bureau de l'expérience Canada.ca |
 | `CDS-SNC` | Canadian Digital Service | Service numérique canadien |
 | `CRA-ARC` | Canada Revenue Agency | Agence du revenu du Canada |
+| `DND-MDN` | National Defence (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Défense nationale |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
 | `EDSC-ESDC` | Employment and Social Development Canada | Emploi et Développement social Canada |
 | `FIN` | Finance Canada | Finances Canada |
@@ -149,6 +150,30 @@ This script updates the system prompt documentation to reflect the current list 
 | `{ABBR_KEY}` | `CBSA-ASFC` | The exact `abbrKey` from departments_EN.js |
 | `{slug}` | `cbsa-asfc` | Lowercase version of abbrKey with hyphen |
 | `{UPPER_KEY}` | `CBSA_ASFC` | Uppercase version of abbrKey with underscore |
+
+---
+
+## Shared scenarios (one file for a portfolio of departments)
+
+When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence and the six other Defence-portfolio entities), you don't create seven scenario files. Instead, one canonical scenario file is shared via the alias map.
+
+### How it works
+
+`agents/prompts/scenarios/scenario-aliases.js` maps non-canonical `abbrKey`s to the canonical `abbrKey` whose scenario file should be loaded. `systemPrompt.js` resolves the alias before the dynamic import.
+
+Current aliases:
+- **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
+- **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
+
+### Steps to add a new shared-scenario group
+
+1. **Pick the canonical `abbrKey`** (the partner/home department, e.g. `DND-MDN`).
+2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
+3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
+4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
+5. **`FilterPanel.js`:** add only the canonical `abbrKey` as a filter option — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
+6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
+7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 
 ---
 

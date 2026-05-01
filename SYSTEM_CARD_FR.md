@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
 **Version** : 1.1
-**Date** : Février 2026
+**Date** : Avril 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
@@ -44,6 +44,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 
 ## État actuel
 - **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en janvier 2026.
+- **[Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)**
 - **Production** : https://reponses-ia.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Évaluation** : Collection continue de commentaires d'experts et notation de réponses alimentant les évaluations IA et réponses
 - **Plateforme** : Les institutions fédérales partenaires peuvent ajouter des scénarios d'invite et des fichiers pour répondre aux besoins spécifiques, [voir les invites et un exemple d'invite d'institution partenaire](docs/agents-prompts/system-prompt-documentation.md)
@@ -54,6 +55,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 - Aider les utilisateurs avec des questions sur les enjeux du gouvernement du Canada
 - Fournir des informations précises sur les programmes, prestations et services du gouvernement du Canada
 - Diriger les utilisateurs vers les ressources gouvernementales appropriées et les prochaines étapes
+- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](docs/pdf/short-ai-answers-fr.pdf)
 
 ### Utilisateurs cibles
 - Toute personne visitant Canada.ca ou des sites Web fédéraux
@@ -105,7 +107,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
 3. **Rédaction en deux étapes** :
    - **Étape 1** (Programmatique) : Filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants (listes de mots configurables par les administrateurs via la page Paramètres)
-   - **Étape 2** (IA - modèle configurable) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
+   - **Étape 2** (IA - GPT-4o Azure OpenAI, région Canada Est) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
 4. **Traduction** (IA - mini modèle configurable) : Détecte la langue et traduit en anglais pour le traitement
 5. **Réécriture de requête et recherche** (IA - mini modèle) : Réécrit la question traduite en une requête de recherche optimisée et l'exécute sur Canada.ca ou Google. Si la première recherche ne retourne aucun résultat ou un seul résultat, une nouvelle réécriture simplifiée est effectuée automatiquement et la recherche est relancée; le meilleur ensemble de résultats est conservé.
 6. **Dérivation de contexte** (IA - modèle complet) : Correspondance de département et génération de contexte à partir des résultats de recherche; charge optionnellement les scénarios spécifiques au département
@@ -113,6 +115,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 8. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
 9. **Vérification de citation** (Programmatique) : Valide le formatage des URLs de citation et génère une URL de recherche de secours si nécessaire
 10. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+11. **Évaluation automatique** : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
 
 **Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -216,7 +219,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 ### Méthodes d'évaluation
 - **Système innovant d'évaluation par des experts** :
-  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, vivant la même expérience utilisateur
+  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue
   - **Évaluation flexible** : Les experts peuvent entrer leurs propres questions ou utiliser les identifiants de discussion existants pour évaluer les conversations utilisateur
   - **Notation au niveau des phrases** : Chaque phrase dans les réponses IA est notée individuellement (100/80/0 points) avec des explications détaillées
   - **Notation de citation** : Notation séparée pour la précision et la pertinence de la citation (25/20/0 points)

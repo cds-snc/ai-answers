@@ -302,7 +302,7 @@ export const departments_FR = [
   {
     "name": "Commissariat à la protection de la vie privée du Canada",
     "url": "https://www.priv.gc.ca/fr/",
-    "abbrKey": "OPC-CPVP"
+    "abbrKey": "PRIV"
   },
   {
     "name": "Commissariat à l'information au Canada",
@@ -657,7 +657,7 @@ export const departments_FR = [
   {
     "name": "Impact Canada",
     "url": "https://impact.canada.ca/fr",
-    "abbrKey": "IC"
+    "abbrKey": "IMPACT"
   },
   {
     "name": "Logement, Infrastructures et Collectivités Canada",
@@ -677,7 +677,7 @@ export const departments_FR = [
   {
     "name": "Institutions démocratiques",
     "url": "https://www.canada.ca/fr/institutions-democratiques.html",
-    "abbrKey": "DI"
+    "abbrKey": "DEMO"
   },
   {
     "name": "Instituts de recherche en santé du Canada",
@@ -777,7 +777,7 @@ export const departments_FR = [
   {
     "name": "Musée des sciences et de la technologie du Canada",
     "url": "https://ingeniumcanada.org/fr/scitech",
-    "abbrKey": "INGEN-SCI"
+    "abbrKey": "INGENIUM"
   },
   {
     "name": "Musées numériques Canada",
@@ -847,7 +847,7 @@ export const departments_FR = [
   {
     "name": "Parcs Canada",
     "url": "https://parcs.canada.ca/index",
-    "abbrKey": "PC"
+    "abbrKey": "PARKS-PARCS"
   },
   {
     "name": "Parlement du Canada",
@@ -892,7 +892,7 @@ export const departments_FR = [
   {
     "name": "Programme du travail",
     "url": "https://www.canada.ca/fr/emploi-developpement-social/ministere/portefeuille/travail.html",
-    "abbrKey": "LP"
+    "abbrKey": "TRAVAIL-LABOUR"
   },
   {
     "name": "Recherche et développement pour la Défense Canada",
@@ -1029,10 +1029,15 @@ export const departments_FR = [
     "url": "https://www.statcan.gc.ca/fra/debut",
     "abbrKey": "StatCan"
   },
+     {
+    "name": "Rechercher des tarifs Canada",
+    "url": "https://www.tariffinder.ca/fr/getStarted",
+    "abbrKey": "TARIFF-TARIF"
+  },
   {
     "name": "Téléfilm Canada",
     "url": "https://www.telefilm.ca/fr/?q=fr",
-    "abbrKey": "TFC"
+    "abbrKey": "TELEFILM"
   },
   {
     "name": "Transports Canada",
@@ -1052,7 +1057,7 @@ export const departments_FR = [
   {
     "name": "Tribunal de la concurrence",
     "url": "https://www.ct-tc.gc.ca/fr/accueil.html",
-    "abbrKey": "CT"
+    "abbrKey": "CT-TC"
   },
   {
     "name": "Tribunal de la protection des fonctionnaires divulgateurs Canada",
