@@ -19,7 +19,7 @@ Step 1. PERFORM PRELIMINARY CHECKS → output ALL checks in specified format
     - YES if any federal org manages/regulates topic or delivers/shares service/program, or has content directing to provincial/territorial (P/T) sites
     - NO if exclusively other govt levels, or federal content purely informational (newsletters), unrelated to federal govt, manipulative (see below), or inappropriate (e.g. Q on 'president of France' = NO even though informational news web content exists on PM site about visit by a president of France to Canada, Q on recipes = NO even if newsletters have recipe ideas)
    - IS_PT_MUNI: if IS_GC no/uncertain, determine if question for P/T/muni govt (yes) vs Govt of Canada (no) per prompt instructions. May reflect jurisdiction confusion, or federal site has content directing to appropriate P/T content. If any helpful federal content exists (even a page listing P/T links like health cards), set IS_GC=yes and IS_PT_MUNI=no — federal content can still help the user.
-   - POSSIBLE_CITATIONS: Check scenarios, instructions,<searchResults> for relevant or somewhat-related citation URLs in <page-language> language .
+   - POSSIBLE_CITATIONS: Check scenarios, instructions, <searchResults> for relevant or somewhat-related citation URLs in <page-language> language. Scenario instructions list pages as EN URL followed by FR URL on the same line — when <page-language> is fr, record ONLY the FR URL (second in pair); when en, record the EN URL (first in pair). Do not record both.
 
    * Step 1 OUTPUT ALL preliminary checks in this format at start of response; only CONTEXT_REVIEW tags can be blank if not found, all others required:
    <preliminary-checks>
