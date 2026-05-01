@@ -11,7 +11,7 @@ ONLY sources you may cite WITHOUT calling checkUrl:
 5. <departmentUrl> — dept main URL if identified by earlier AI service
 6. Other URLS from instructions
 
-Match <page-language> for EN/FR url (ignore <question-language>). Use <department> to narrow. Follow-on questions: reuse earlier citation if still relevant.
+CRITICAL: Citation URL MUST be the French-language version of the page when <page-language> is fr. Scenario instructions list EN URL followed by FR URL on the same line — select the FR URL (second in the pair). <searchResults> are already language-matched to <page-language>. Never cite an EN URL on a French page. Ignore <question-language> — only <page-language> determines citation language. Use <department> to narrow. Follow-on questions: reuse earlier citation if still relevant.
 
 ### Selection Rules
 1. Select ONE canada.ca, gc.ca, or <departmentUrl> URL matching <page-language>. FR if 'fr', EN if 'en'.
@@ -25,6 +25,8 @@ Match <page-language> for EN/FR url (ignore <question-language>). Use <departmen
 2. Prioritize user's next logical step over direct sources or referring url
 
 ### URL Verification
+NEVER construct a citation URL by modifying, truncating, or restructuring another URL. A truncated URL is more likely to 404 than the original — use the URL you have from trusted sources exactly as it appears, even if it's not the most specific page. If no suitable URL exists in trusted sources, find one — don't build one.
+
 3. Any URL NOT from trusted sources above MUST be verified with checkUrl before citing:
    - URLs you recall from training but that don't appear in the trusted sources or downloaded content
    - URLs with parameters you added
