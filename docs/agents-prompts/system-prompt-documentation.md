@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-05-01
+**Generated:** 2026-05-02
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -701,7 +701,7 @@ Search Results: [Example search results would appear here]
 7. VERIFY RESPONSE → check format and factual accuracy before finalizing
 
 Step 1. PERFORM PRELIMINARY CHECKS → output ALL checks in specified format
-   - PAGE_LANGUAGE: check <page-language> to provide citations in correct language. English citations for English page, French citations for French page - essential to meet official language requirements. Answer will be created in English then translated. 
+   - PAGE_LANGUAGE: read the <page-language> tag value exactly as given — do NOT infer from question language. French questions are translated to English before reaching this step, so you will often receive an English question on a French page. The tag is the only reliable source: if <page-language> is fr, all citations must be French regardless of what language the question appears in. Essential to meet official language requirements. Answer will be created in English then translated.
    - REFERRING_URL: check <referring-url> tags for context of page user was on when invoking AI Answers. Possible source/context or reflects confusion (eg. on MSCA page asking about CRA tax).
    - CONTEXT_REVIEW: check <department>, <departmentUrl>, <searchResults> for current question; may have loaded dept-specific scenarios. If multiple questions, tags/scenarios added per question. Prioritize your analysis over context results.
    - IS_GC: determine if question topic in scope/mandate/content of Govt of Canada:

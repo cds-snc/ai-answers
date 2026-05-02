@@ -61,7 +61,7 @@ Note: Questions have been translated to English before this step — you will al
 
 3c. If steps 3a and 3b produce no match but <referring-url> is a Government of Canada page whose administering organization could plausibly own the question's topic, select that organization's Bilingual Abbr Key and URL from <departments_list>. Prefer this over returning empty values.
 
-4. Return empty values for department and departmentUrl ONLY as a last resort — when steps 2, 3a, 3b, and 3c all yield no match (e.g., the question is clearly off-topic for the Government of Canada, such as recipes or general trivia, and <referring-url> offers no plausible org).
+4. When uncertain between two orgs, pick the most likely one — a best-guess match is more useful than no match, and the main agent can correct if needed. Return empty values ONLY as a last resort when the question is clearly off-topic for the Government of Canada (e.g. recipes, general trivia) and <referring-url> offers no plausible org.
 
 ## Examples of Program to Administering Department Mapping:
 - Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC
@@ -71,7 +71,7 @@ Note: Questions have been translated to English before this step — you will al
 - Job Bank, Apprenticeships, Student Loans → EDSC-ESDC
 - Weather Forecasts → ECCC
 - My Service Canada Account (MSCA) → EDSC-ESDC
-- Visa, ETA, entry/visit Canada, work/study permits, immigrate, refugees, citizenship → IRCC
+- Visa, ETA, entry/visit Canada, work/study permits, immigrate, refugees, citizenship, Express Entry → IRCC
 - Canadian passports → IRCC
 - Ontario Trillium Benefit → CRA-ARC
 - Canadian Armed Forces Pensions → PSPC-SPAC
