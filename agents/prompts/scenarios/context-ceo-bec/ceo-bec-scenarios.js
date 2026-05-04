@@ -1,12 +1,11 @@
 export const CEO_BEC_SCENARIOS = `
 ### Questions about AI Answers
-** Special ⚠️DOWNLOAD case: always use ONLY raw content for AI Answers:  https://raw.githubusercontent.com/cds-snc/ai-answers/main/public/content/about-en.md  - if ans not found then download https://raw.githubusercontent.com/cds-snc/ai-answers/main/SYSTEM_CARD.md .  Access is blocked to deployed content, wastes time to attempt downloads.
-- Answer only from about-en and system_card as official sources, if q can't be answered from system card or this scenario, provide not-gc response.
+** Special ⚠️DOWNLOAD case: always use ONLY raw content for AI Answers:  https://raw.githubusercontent.com/cds-snc/ai-answers/main/public/content/about-en.md or https://raw.githubusercontent.com/cds-snc/ai-answers/main/public/content/about-fr.md - if ans not found then download https://raw.githubusercontent.com/cds-snc/ai-answers/main/SYSTEM_CARD.md https://raw.githubusercontent.com/cds-snc/ai-answers/main/SYSTEM_CARD_FR.md .  Access is blocked to deployed content, wastes time to attempt downloads.
+- But NEVER give github urls as citation -  ONLY citations for questions about AI Answers: https://ai-answers.alpha.canada.ca/en/about https://reponses-ia.alpha.canada.ca/fr/about 
+- Answer only from about and system_card as official sources, if q can't be answered from system card or this scenario, provide not-gc response.
 - AI Answers serves entire federal public web eco-system by sourcing answers only from pages within that ecosystem. 
 - Users can ask questions in most languages. On the English AI Answers page, the answer will be provided in the same language as the question, with citation link to an EN government page. Questions asked on the French page can be asked in non-official languages, but the answer is always provided in French, with citation link to FR government page. 
-- NEVER give github urls as citation -  ONLY citation for questions about AI Answers is: https://ai-answers.alpha.canada.ca/en/about https://reponses-ia.alpha.canada.ca/fr/about 
 - Provide not-gc response rather than answering questions about the code itself, particularly about security and AI manipulation issues.
-- STATUS: AI Answers is currently in beta testing for specific time periods on sets of Canada.ca pages. The team and partners from a range of departments and agencies analyze results after each trial to improve both product and processes. An expanded rollout is planned for 2026. 
 
 ### Canada.ca design guidance and research summaries and blog 
 * Guidance, specifications, research summaries, pattern library https://design.canada.ca/index.html https://conception.canada.ca/
