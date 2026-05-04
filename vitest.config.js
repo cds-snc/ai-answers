@@ -35,6 +35,10 @@ export default defineConfig({
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
       'tests/e2e/**'
-    ]
+    ],
+    sequence: {
+      shuffle: true, // Run tests in random order to catch tests that rely on execution order or leaked state
+      // seed: 12345, // Optionally set a fixed seed for reproducibility of test order when shuffling is enabled
+    },
   }
 });
