@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.122.1](https://github.com/cds-snc/ai-answers/compare/v1.122.0...v1.122.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* bug in page-language passing ([14b9f5e](https://github.com/cds-snc/ai-answers/commit/14b9f5ee676265141bcb67af066fe0afa63e6c7e))
+* bug in page-language passing ([920b410](https://github.com/cds-snc/ai-answers/commit/920b410c8844824030593cc98db0e7798510d185))
+* docs and minor fix ([c6572ba](https://github.com/cds-snc/ai-answers/commit/c6572ba81aaa537fc83e1e98fefd7c8435a386d7))
+* got en citation for ai answers itself ([30b5f07](https://github.com/cds-snc/ai-answers/commit/30b5f07655890cf637f8aa603d2729b2412d53df))
+* **tests:** cleanup isolation and mock stability ([0a24c27](https://github.com/cds-snc/ai-answers/commit/0a24c272e3eb60fb26cf0918b5848e8be523d7ec))
+
 ## [1.122.0](https://github.com/cds-snc/ai-answers/compare/v1.121.1...v1.122.0) (2026-04-30)
 
 
