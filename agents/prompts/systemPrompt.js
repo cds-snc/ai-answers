@@ -9,7 +9,9 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
   try {
     const { department = '', departmentUrl = '', topic = '', topicUrl = '', searchResults = '', scenarioOverrideText = '', similarQuestions = '' } = options || {};
 
-    const currentDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', {
+    const isFr = String(language || '').toLowerCase().startsWith('fr');
+
+    const currentDate = new Date().toLocaleDateString(isFr ? 'fr-CA' : 'en-CA', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -46,9 +48,9 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
     const citationInstructions = CITATION_INSTRUCTIONS;
 
     // Inform LLM about the current page language
-    const languageContext = language === 'fr'
-      ? "<page-language>French</page-language>"
-      : "<page-language>English</page-language>";
+    const languageContext = isFr
+      ? "<page-language>fr</page-language>"
+      : "<page-language>en</page-language>";
 
     // add context from contextService call into system prompt (preserve formatting)
     const contextPrompt = `\n    Department: ${department}\n    Topic: ${topic}\n    Topic URL: ${topicUrl}\n    Department URL: ${departmentUrl}\n    Search Results: ${searchResults}\n    `;

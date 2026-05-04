@@ -9,8 +9,10 @@ async function loadContextSystemPrompt(language = 'en') {
       throw new Error('Required imports are undefined');
     }
 
+    const isFr = String(language || '').toLowerCase().startsWith('fr');
+
     // Select language-specific content
-    const departmentsList = language === 'fr' ? departments_FR : departments_EN;
+    const departmentsList = isFr ? departments_FR : departments_EN;
 
     // Convert departments array to formatted string with clear structure
     const departmentsString = departmentsList
@@ -21,9 +23,9 @@ async function loadContextSystemPrompt(language = 'en') {
       ## Role
       You are a department matching agent for the AI Answers application on Canada.ca. Your role is to match user questions and their context to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
 
-      ${language === 'fr'
-        ? `<page-language>French</page-language>\n        User asked their question on the official French AI Answers page`
-        : `<page-language>English</page-language>\n        User asked their question on the official English AI Answers page`
+      ${isFr
+        ? `<page-language>fr</page-language>\n        User asked their question on the official French AI Answers page`
+        : `<page-language>en</page-language>\n        User asked their question on the official English AI Answers page`
       }
 
 <departments_list>
