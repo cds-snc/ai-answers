@@ -371,8 +371,7 @@ export class GraphWorkflowHelper {
       provider: selectedAI,
       message: message,
       conversationHistory,
-      // Ensure the generator receives the normalized desired output language
-      lang: context.outputLang || context.originalLang || lang,
+      lang,
       department: context.department,
       topic: context.topic,
       topicUrl: context.topicUrl,
