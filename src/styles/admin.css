@@ -500,3 +500,46 @@
 .filter-checkbox {
   cursor: pointer;
 }
+
+/* Shared radio toggle UI — used in ChatOptions and BatchUpload (both auth-gated) */
+.ai-toggle {
+  margin-bottom: 10px;
+}
+
+.ai-toggle_fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-toggle_container {
+  display: flex;
+  align-items: center;
+}
+
+.ai-toggle_legend {
+  margin-right: 10px;
+}
+
+.ai-toggle_option {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+}
+
+.ai-toggle_radio-input {
+  margin-right: 5px;
+}
+
+.ai-toggle_label {
+  margin-right: 15px;
+}
+
+/* Shared input border style — used in ChatOptions and BatchUpload (both auth-gated) */
+.chat-border {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
