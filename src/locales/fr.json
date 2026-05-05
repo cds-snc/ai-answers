@@ -347,6 +347,7 @@
       "eval": "Administration des évaluations",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
+      "technicalMetrics": "Voir les métriques techniques",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
@@ -1260,6 +1261,36 @@
         "department": "Institution",
         "noContextDept": "Aucun contexte d'institution",
         "pctEvaluated": "% évalué"
+      }
+    }
+  },
+  "technicalMetrics": {
+    "title": "Métriques techniques",
+    "timeRangeTitle": "Obtenir les métriques techniques pour la période sélectionnée",
+    "dashboard": {
+      "title": "Résultats",
+      "metric": "Métrique",
+      "responseTime": {
+        "title": "Temps de réponse total",
+        "note": "Délai entre la soumission de la question par l'utilisateur et la disponibilité de la réponse, en millisecondes. N'inclut pas l'auto-évaluation effectuée après l'affichage de la réponse.",
+        "totalLabel": "Temps de réponse total (ms)",
+        "count": "Questions",
+        "median": "Médiane",
+        "p90": "P90",
+        "p95": "P95",
+        "max": "Max",
+        "maxChatId": "ID de chat pour le max"
+      },
+      "tools": {
+        "title": "Appels de l'outil downloadWebPage",
+        "note": "La plupart des questions déclenchent un seul appel à downloadWebPage. Chaque ligne affiche les statistiques pour le Nᵉ appel dans une question (1 = premier appel, 2 = deuxième appel, etc.). Les positions vides indiquent qu'aucune question n'a fait autant d'appels. Les erreurs sont principalement des dépassements de délai.",
+        "callNumber": "N° d'appel",
+        "totalCount": "Questions avec cet appel",
+        "completedCount": "Complétés",
+        "errorCount": "Erreurs",
+        "errorPercent": "% d'erreurs",
+        "median": "Médiane des complétés (ms)",
+        "p95": "P95 des complétés (ms)"
       }
     }
   },

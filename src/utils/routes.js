@@ -18,6 +18,7 @@ export const ROUTE_SLUGS = {
   'auto-eval-dashboard':   { en: 'auto-eval-dashboard',          fr: 'tableau-de-bord-auto-evaluation' },
   'public-eval':           { en: 'public-eval',                  fr: 'evaluation-publique' },
   metrics:                 { en: 'metrics',                      fr: 'metriques' },
+  'technical-metrics':     { en: 'technical-metrics',            fr: 'metriques-techniques' },
   sessions:                { en: 'sessions',                     fr: 'sessions' },
   'scenario-overrides':    { en: 'scenario-overrides',           fr: 'derogation-scenarios' },
   settings:                { en: 'settings',                     fr: 'parametres' },

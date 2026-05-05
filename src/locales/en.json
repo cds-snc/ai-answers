@@ -347,6 +347,7 @@
       "eval": "Evaluation administration",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
+      "technicalMetrics": "View technical metrics",
       "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
@@ -1260,6 +1261,36 @@
         "department": "Institution",
         "noContextDept": "No institution context",
         "pctEvaluated": "% evaluated"
+      }
+    }
+  },
+  "technicalMetrics": {
+    "title": "Technical metrics",
+    "timeRangeTitle": "Get technical metrics for the selected period",
+    "dashboard": {
+      "title": "Results",
+      "metric": "Metric",
+      "responseTime": {
+        "title": "Total response time",
+        "note": "Time from when the user submits a question to when the answer is ready, in milliseconds. Excludes the auto-evaluation that runs after the answer is shown.",
+        "totalLabel": "Total response time (ms)",
+        "count": "Questions",
+        "median": "Median",
+        "p90": "P90",
+        "p95": "P95",
+        "max": "Max",
+        "maxChatId": "Chat ID for max"
+      },
+      "tools": {
+        "title": "downloadWebPage tool calls",
+        "note": "Most questions trigger one downloadWebPage call. Each row shows stats for the Nth call within a question (1 = first call, 2 = second call, etc.). Empty positions mean no question made that many calls. Errors are mostly timeouts.",
+        "callNumber": "Call #",
+        "totalCount": "Questions with this call",
+        "completedCount": "Completed",
+        "errorCount": "Errors",
+        "errorPercent": "Error %",
+        "median": "Completed median (ms)",
+        "p95": "Completed P95 (ms)"
       }
     }
   },
