@@ -1,0 +1,49 @@
+﻿URL,QUESTION,citationUrl,englishAnswer
+https://www.canada.ca/en/services/benefits/ei.html?utm_source=Vanity%20URL%20%E2%80%93%20print&utm_medium=Offline&utm_content=July%202014%2C%20Eng&utm_campaign=EI%20program%20-%20Canada.ca%20benefit%20statement%20July%202014,01. how are you,not-gc,"<s-1>An answer to your question wasn't found on Government of Canada websites.</s-1>
+ <s-2>AI Answers is designed to help people with questions about Government of Canada programs and services.</s-2>"
+https://www.canada.ca/en/contact.html,02. Tell me about EI the way a pirate would tell me,not-gc,"<s-1>An answer to your question wasn't found on Government of Canada websites.</s-1>
+ <s-2>AI Answers is designed to help people with questions about Government of Canada programs and services.</s-2>"
+https://www.canada.ca/en/public-health/services/diseases/measles.html,03. Where to renew my driver's license,pt-muni,"<s-1>Driver's licenses are handled by your province, not the Government of Canada.</s-1>"
+https://www.canada.ca/en/contact.html,04. How get a permit to park my food truck in Vancouver,pt-muni,"<s-1>Permits to park and operate a food truck in Vancouver are handled by the City of Vancouver, not the Government of Canada.</s-1>
+    <s-2>Check the City of Vancouver’s business licensing and street use/parking permit information or contact them directly for the application process.</s-2>"
+https://www.canada.ca/en/contact.html,05. contact for ohip,https://www.canada.ca/en/health-canada/services/health-cards.html,"<s-1>OHIP is run by the Province of Ontario, so you need to contact the Ontario health insurance program directly for service.</s-1>
+<s-2>You can find the Ontario health card and OHIP contact information through the Ontario link listed under “You can obtain a health card if you don’t have one.”</s-2>"
+https://www.canada.ca/en/contact.html,06. What model is this service using?,https://ai-answers.alpha.canada.ca/en/about,"<s-1>This service currently uses Azure OpenAI GPT‑5.1 family models in production, with GPT‑4.1‑mini used for some evaluation tasks.</s-1>
+  <s-2>The system is designed to be model‑independent and has also been tested with other providers.</s-2>"
+https://www.canada.ca/en/contact.html,07. How do I contact whoever runs this AI service?,https://ai-answers.alpha.canada.ca/en/about,<s-1>The team that runs this AI service can be contacted through the Canada.ca Experience Office contact form linked from the AI Answers About page.</s-1>
+https://www.canada.ca/en/contact.html,08. How much can I put in my Tax free savings account,https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html,"<s-1>The TFSA dollar limit for 2026 is $7,000, but what *you* can put in depends on your personal TFSA contribution room.</s-1>
+  <s-2>Your available room equals: current year’s TFSA dollar limit, plus any unused room from previous years, plus last year’s withdrawals, minus contributions already made this year.</s-2>
+  <s-3>To get your exact amount, use the CRA TFSA contribution room worksheet or the calculator in your CRA account, based on your own TFSA statements.</s-3>"
+https://www.canada.ca/en/contact.html,09. When was Mark Carney elected?,https://www.pm.gc.ca/en/about,<s-1>Mark Carney was elected Leader of the Liberal Party of Canada and sworn in as Prime Minister in March 2025.</s-1>
+https://www.canada.ca/en/contact.html,10. I cannot access my service Canada account online. I need to put in an address change.,https://www.canada.ca/en/government/change-address.html,"<s-1>It's not currently possible to change your address online in My Service Canada Account (MSCA).</s-1>
+<s-2>You need to contact Service Canada by phone to update your address for EI, CPP, OAS, or the Dental Care Plan.</s-2>
+<s-3>Address changes are not automatically shared across departments and agencies.</s-3>"
+https://www.canada.ca/en/contact.html,11. I haven't received CPP monthly payment yet.,https://www.canada.ca/en/services/benefits/calendar.html,"<s-1>CPP payment dates can vary each month, so check the official payment calendar to confirm when your payment was scheduled.</s-1>
+<s-2>If your payment date has passed and you still haven't received it, contact Service Canada for help with your CPP payment.</s-2>"
+https://www.canada.ca/en/contact.html,12. Wie kann ich einen Antrag auf Einwanderung nach Kanada stellen?,https://ircc.canada.ca/explore-programs/index.asp,"<s-1>There are several ways to immigrate to Canada, depending on your work experience, studies, family situation, or refugee status.</s-1>
+  <s-2>Answer the questions on the Explore immigration programs page to see which programs you may qualify for and how to apply.</s-2>"
+https://www.canada.ca/en/contact.html,13. How can I file my taxes online?,https://www.canada.ca/en/services/taxes/income-tax/personal-income-tax/how-file/tax-software/find-software.html,"<s-1>You can file your taxes online using CRA-certified tax software that supports NETFILE.</s-1>
+<s-2>Choose a certified software from the CRA list and follow its instructions to submit your return electronically.</s-2>
+<s-3>Most Canadians can use NETFILE, but some situations require paper filing.</s-3>
+<s-4>After filing, you can check your status in your CRA account.</s-4>"
+https://www.canada.ca/en/contact.html,14. where can i request a filing and balance confirmation letter,https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/business-account/help-filing-balance.html,"<s-1>You can request a Filing and balance confirmation letter in your CRA business account.</s-1>
+<s-2>Sign in to your CRA account and use the Filing and balance confirmation letter service.</s-2>"
+https://www.canada.ca/en/contact.html,15. I cannot access my service Canada account online. I need to put in an address change.,https://www.canada.ca/en/government/change-address.html,"<s-1>It is not currently possible to change your address online in My Service Canada Account (MSCA).</s-1>
+<s-2>You need to contact Service Canada by phone to update your address for EI, CPP, or OAS.</s-2>
+<s-3>Address changes are not automatically shared across departments and agencies.</s-3>"
+https://www.canada.ca/en/government/publicservice/pay.html,16. What is the annual indexing rate for 2026,https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/retired-members/rate-pension.html,"<s-1>The annual indexing rate for public service pension plan benefits for 2026 is 2.0%.</s-1>
+<s-2>This rate is effective January 1, 2026.</s-2>"
+https://www.sac-isc.gc.ca/eng/1462806841047/1572461062751,17. Renew status card,https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948,"<s-1>You can renew your status card by mail or in person using the Secure Certificate of Indian Status application form.</s-1>
+<s-2>If your card is not expired, you may be eligible for simplified renewal by mail.</s-2>
+<s-3>Renewal applications require a photo and acceptable identification.</s-3>
+<s-4>Expired cards cannot use the simplified renewal process.</s-4>"
+https://www.canada.ca/en/government/publicservice/pay.html,18. how to calulate best 5 years,https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/plan-information/retirement-income-sources.html,"<s-1>The “best five years” for your public service pension means your highest average salary over any five consecutive years of pensionable service.</s-1>
+<s-2>To calculate it, add your pensionable earnings for each consecutive 12-month period, then find the five-year period with the highest total.</s-2>
+<s-3>The official pension plan page explains this calculation and what counts as pensionable earnings.</s-3>"
+https://www.canada.ca/en/contact.html,19. Do you have to isolate if you were exposed to measles,https://www.canada.ca/en/contact.html,"<s-1>Some Government of Canada departments offer live chat with agents for specific services.</s-1>
+<s-2>Live chat is not available for all programs or questions.</s-2>
+<s-3>Check the contact page for the department or service you need to see if live chat is offered.</s-3>"
+https://www.canada.ca/en/contact.html,20. How do I get a business number?,https://www.canada.ca/en/services/taxes/business-registration.html,"<s-1>You can register for a business number online using the Business Registration Online service.</s-1>
+<s-2>Phone registration is no longer available as of November 2025.</s-2>
+<s-3>Registering online is the fastest and easiest way to get a business number.</s-3>"
+,,,
