@@ -176,7 +176,7 @@ describe('ExperimentalBatchService', () => {
             const batch = await ExperimentalBatch.create({
                 name: 'Gen Batch',
                 type: 'batch',
-                config: { workflow: 'TestGraph' }
+                config: { workflow: 'TestGraph', pageLanguage: 'en', aiProvider: 'azure' }
             });
             const item = await ExperimentalBatchItem.create({
                 experimentalBatch: batch._id,
@@ -194,6 +194,15 @@ describe('ExperimentalBatchService', () => {
             getGraphApp.mockResolvedValue(mockApp);
 
             await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            expect(mockApp.stream).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userMessage: 'What is 2+2?',
+                    lang: 'en',
+                    selectedAI: 'azure'
+                }),
+                expect.any(Object)
+            );
 
             const updatedItem = await ExperimentalBatchItem.findById(item._id);
             expect(updatedItem.status).toBe('completed');

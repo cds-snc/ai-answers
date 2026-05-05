@@ -209,10 +209,10 @@ class ExperimentalBatchService {
 
                 const input = {
                     chatId,
-                    message: item.question,
+                    userMessage: item.question,
                     conversationHistory,
-                    pageLanguage: batch.config.pageLanguage || 'en',
-                    aiProvider: batch.config.aiProvider || 'azure',
+                    lang: batch.config.pageLanguage || 'en',
+                    selectedAI: batch.config.aiProvider || 'azure',
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
                     skipPersist: true,
                 };
