@@ -12,6 +12,7 @@
   margin: 0 auto;
   padding-left: 1.5rem;
 }
+/* QA: cleanup — 0 usages found in JSX; confirm whether this class is still needed */
 .referring-url-container {
   max-width: 600px;
   margin: 20px auto;
@@ -29,6 +30,7 @@
   margin-left: auto;
 }
 
+/* QA: cleanup — content is commented out so these rules only set display:table, which does nothing without content; verify if these :after/:before rules are needed at all */
 .container-custom :after,
 .container-custom :before {
   display: table;
@@ -70,6 +72,7 @@
 }
 
 /* top banner for alpha/beta warning */
+/* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
 .alpha-top {
   padding-top: 2px !important;
   padding-bottom: 2px !important;
@@ -309,6 +312,7 @@ details > summary {
   margin-right: -1.1em;
 }
 
+/* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
 summary {
   display: list-item !important;
   list-style-type: none;
@@ -327,6 +331,7 @@ details > summary:first-of-type {
 }
 
 /* buttons */
+/* QA: cleanup — .btn-primary-sm and .btn-secondary-sm have 0 usages in JSX; confirm before deleting (also removes the hover/focus selectors that reference them below) */
 .btn-primary-sm {
   margin-top: 10px;
   padding: 6px 12px;
@@ -446,6 +451,7 @@ legend {
   border: 0;
 }
 
+/* QA: cleanup — .gc-chckbxrdio label is defined twice; the second definition (further down) overrides display to block and adds font-size. Merge both into one rule and delete this one. */
 .gc-chckbxrdio label {
   display: inline-block;
   max-width: 100%;
@@ -693,6 +699,7 @@ fieldset[disabled] .radio-inline {
   margin-left: 10px;
 }
 
+/* QA: cleanup — .form-control-static, .input-group-sm/lg, .form-group-sm/lg, .input-sm/lg and all their sub-selectors below are Bootstrap-style size variants with 0 usages in JSX. ~100 lines that can likely be deleted. */
 .form-control-static {
   min-height: 39px;
   padding-top: 11px;
@@ -838,6 +845,7 @@ fieldset.gc-chckbxrdio {
   padding-top: 0;
 }
 
+/* QA: cleanup — duplicate .gc-chckbxrdio label; merge max-width/margin-bottom/font-weight from the first definition above into this one, then delete the first */
 .gc-chckbxrdio label {
   cursor: pointer;
   display: block;

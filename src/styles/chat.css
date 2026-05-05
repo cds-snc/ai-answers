@@ -27,13 +27,13 @@
   font-weight: 500;
 }
 
-/* temp fix spacing shenangians */
+/* QA: cleanup — "temp fix"; investigate proper spacing so this override can be removed */
 .user-message-box p,
 .chat-id p {
   margin-bottom: 0px;
 }
 
-/* temp chat app container */
+/* QA: cleanup — "temp" label; this section is permanent, rename or remove the comment */
 .chat-container {
   width: 100%;
   max-width: 800px;
@@ -575,6 +575,7 @@
   margin-right: 8px;
 }
 
+/* QA: cleanup — duplicate .expert-rating-container; fold position: relative into the first definition above and delete this block */
 .expert-rating-container {
   position: relative;
 }
@@ -633,6 +634,7 @@
   max-width: 800px;
 }
 
+/* QA: cleanup — .field-container label is defined twice; merge display/margin-bottom from here into the second definition below ("Label styling") and delete this block */
 /* Style the label */
 .field-container label {
   display: block;
@@ -818,6 +820,7 @@ textarea:focus {
   max-width: 100%;
 }
 
+/* QA: cleanup — .explanation-field is defined again further down with more properties (padding, border-radius, background); that second definition supersedes this one. Delete this block. */
 .expert-rating-container .explanation-field {
   margin-top: 10px;
   margin-bottom: 20px;
@@ -961,6 +964,7 @@ textarea:focus {
     }
 }
 
+/* QA: cleanup — misleading name in chat.css; shown in ChatInterface readOnly (review) mode only. Consider renaming to .chat-created-date */
 .admin-date {
   font-size: 18px;
   margin-left: 12px
