@@ -271,6 +271,9 @@ class ExperimentalBatchService {
                             question: item.question,
                             answer: item.answer || '',
                             baselineAnswer: item.baselineAnswer,
+                            baselineAnalysisResults: item.baselineAnalysisResults,
+                            baselineMatch: item.baselineMatch,
+                            baselineFlagged: item.baselineFlagged,
                             comparisonAnswer: item.comparisonAnswer,
                             config: { ...aConfig.config, aiProvider: batch.config.aiProvider },
                             originalData: item.originalData
@@ -300,6 +303,9 @@ class ExperimentalBatchService {
                         }
 
                         // Propagate flags/diffs to item level for unified counts/UI
+                        if (res.result.flagged === true) {
+                            item.flagged = true;
+                        }
                         if (res.result.differenceFound === true) {
                             item.flagged = true;
                         }
