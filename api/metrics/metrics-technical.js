@@ -10,9 +10,8 @@ import {
 
 const MAX_DOWNLOAD_POSITIONS = 5;
 
-// Common stages shared by both aggregations: Chat → Interaction → Context →
-// (filter on department/answerType/partnerEval/aiEval) → Answer → Tools →
-// project to { chatId, rt, downloadCalls[] }.
+// Common stages: Chat → Interaction → Context → (filters) → Answer → Tools.
+// Returns documents with chatId, rt, and a downloadCalls array (in original tool order).
 function buildBaseStages(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter) {
     const stages = [
         ...getBaseInteractionPipeline(dateFilter, extraFilters),
@@ -104,11 +103,14 @@ function buildBaseStages(dateFilter, extraFilters, departmentFilter, answerTypeF
         }
     );
 
+    // Final projection: keep only the fields the JS percentile calc needs.
+    // downloadCalls is re-ordered to match the original answer.tools array order
+    // (since $lookup result order is not guaranteed) and filtered to downloadWebPage only.
     stages.push({
         $project: {
+            _id: 0,
             chatId: 1,
             rt: { $convert: { input: '$interactions.responseTime', to: 'int', onError: 0, onNull: 0 } },
-            // Re-order tools to match the original answer.tools array order, then keep only downloadWebPage.
             downloadCalls: {
                 $map: {
                     input: {
@@ -145,96 +147,66 @@ function buildBaseStages(dateFilter, extraFilters, departmentFilter, answerTypeF
     return stages;
 }
 
-function buildResponseTimePipeline(baseStages) {
-    return [
-        ...baseStages,
-        { $match: { rt: { $gt: 0 } } },
-        { $sort: { rt: 1 } },
-        {
-            $group: {
-                _id: null,
-                values: { $push: '$rt' },
-                chatIds: { $push: '$chatId' },
-                count: { $sum: 1 }
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                count: 1,
-                median: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.5] } }] },
-                p90: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.9] } }] },
-                p95: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.95] } }] },
-                max: { $arrayElemAt: ['$values', { $subtract: ['$count', 1] }] },
-                maxChatId: { $arrayElemAt: ['$chatIds', { $subtract: ['$count', 1] }] }
-            }
-        }
-    ];
+// JS-side percentile from a sorted array of numbers. Returns null if empty.
+function percentile(sortedAsc, p) {
+    const n = sortedAsc.length;
+    if (n === 0) return null;
+    const idx = Math.min(Math.floor(n * p), n - 1);
+    return sortedAsc[idx];
 }
 
-function buildDownloadWebPagePipeline(baseStages) {
-    return [
-        ...baseStages,
-        { $unwind: { path: '$downloadCalls', includeArrayIndex: 'callIndex' } },
-        { $match: { callIndex: { $lt: MAX_DOWNLOAD_POSITIONS } } },
-        // Sort by callIndex then duration so $push captures durations in sorted order per group.
-        { $sort: { callIndex: 1, 'downloadCalls.duration': 1 } },
-        {
-            $group: {
-                _id: '$callIndex',
-                totalCount: { $sum: 1 },
-                errorCount: {
-                    $sum: { $cond: [{ $eq: ['$downloadCalls.status', 'error'] }, 1, 0] }
-                },
-                allCalls: { $push: { status: '$downloadCalls.status', duration: '$downloadCalls.duration' } }
+function computeResponseTimeStats(rows) {
+    const valid = rows.filter(r => typeof r.rt === 'number' && r.rt > 0);
+    if (valid.length === 0) {
+        return { count: 0, median: 0, p90: 0, p95: 0, max: 0, maxChatId: '' };
+    }
+    valid.sort((a, b) => a.rt - b.rt);
+    const sortedRt = valid.map(r => r.rt);
+    const last = valid[valid.length - 1];
+    return {
+        count: valid.length,
+        median: percentile(sortedRt, 0.5) || 0,
+        p90: percentile(sortedRt, 0.9) || 0,
+        p95: percentile(sortedRt, 0.95) || 0,
+        max: last.rt,
+        maxChatId: last.chatId || ''
+    };
+}
+
+function computeDownloadStats(rows) {
+    // For each call position 0..MAX-1, accumulate counts and durations.
+    const buckets = Array.from({ length: MAX_DOWNLOAD_POSITIONS }, () => ({
+        totalCount: 0,
+        errorCount: 0,
+        completedDurations: []
+    }));
+    for (const row of rows) {
+        const calls = Array.isArray(row.downloadCalls) ? row.downloadCalls : [];
+        for (let i = 0; i < calls.length && i < MAX_DOWNLOAD_POSITIONS; i++) {
+            const c = calls[i];
+            const b = buckets[i];
+            b.totalCount++;
+            if (c.status === 'error') {
+                b.errorCount++;
+            } else if (c.status === 'completed' && typeof c.duration === 'number') {
+                b.completedDurations.push(c.duration);
             }
-        },
-        {
-            $project: {
-                _id: 0,
-                callIndex: '$_id',
-                totalCount: 1,
-                errorCount: 1,
-                completedDurations: {
-                    $map: {
-                        input: {
-                            $filter: {
-                                input: '$allCalls',
-                                as: 'd',
-                                cond: { $eq: ['$$d.status', 'completed'] }
-                            }
-                        },
-                        as: 'x',
-                        in: '$$x.duration'
-                    }
-                }
-            }
-        },
-        { $addFields: { completedCount: { $size: '$completedDurations' } } },
-        {
-            $project: {
-                callIndex: 1,
-                totalCount: 1,
-                errorCount: 1,
-                completedCount: 1,
-                median: {
-                    $cond: [
-                        { $gt: ['$completedCount', 0] },
-                        { $arrayElemAt: ['$completedDurations', { $floor: { $multiply: ['$completedCount', 0.5] } }] },
-                        null
-                    ]
-                },
-                p95: {
-                    $cond: [
-                        { $gt: ['$completedCount', 0] },
-                        { $arrayElemAt: ['$completedDurations', { $floor: { $multiply: ['$completedCount', 0.95] } }] },
-                        null
-                    ]
-                }
-            }
-        },
-        { $sort: { callIndex: 1 } }
-    ];
+        }
+    }
+    return buckets
+        .map((b, i) => {
+            if (b.totalCount === 0) return null;
+            const sorted = b.completedDurations.slice().sort((a, x) => a - x);
+            return {
+                callNumber: i + 1,
+                totalCount: b.totalCount,
+                errorCount: b.errorCount,
+                completedCount: sorted.length,
+                median: percentile(sorted, 0.5),
+                p95: percentile(sorted, 0.95)
+            };
+        })
+        .filter(Boolean);
 }
 
 async function getTechnicalMetrics(req, res) {
@@ -245,32 +217,11 @@ async function getTechnicalMetrics(req, res) {
 
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const baseStages = buildBaseStages(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
+        const stages = buildBaseStages(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
+        const rows = await executeWithRetry(() => Chat.aggregate(stages).allowDiskUse(true));
 
-        // DocumentDB does not support $facet, so run the two aggregations separately in parallel.
-        const [rtResult, dlResult] = await Promise.all([
-            executeWithRetry(() => Chat.aggregate(buildResponseTimePipeline(baseStages)).allowDiskUse(true)),
-            executeWithRetry(() => Chat.aggregate(buildDownloadWebPagePipeline(baseStages)).allowDiskUse(true))
-        ]);
-
-        const rt = rtResult[0] || {};
-        const responseTime = {
-            count: rt.count || 0,
-            median: rt.median || 0,
-            p90: rt.p90 || 0,
-            p95: rt.p95 || 0,
-            max: rt.max || 0,
-            maxChatId: rt.maxChatId || ''
-        };
-
-        const downloadWebPage = (dlResult || []).map(row => ({
-            callNumber: (row.callIndex || 0) + 1,
-            totalCount: row.totalCount || 0,
-            errorCount: row.errorCount || 0,
-            completedCount: row.completedCount || 0,
-            median: row.median ?? null,
-            p95: row.p95 ?? null
-        }));
+        const responseTime = computeResponseTimeStats(rows);
+        const downloadWebPage = computeDownloadStats(rows);
 
         return res.status(200).json({
             success: true,
