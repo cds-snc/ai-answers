@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
-import '../../styles/App.css';
+import '../../styles/admin.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';

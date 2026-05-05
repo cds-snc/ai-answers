@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../../styles/App.css';
+import '../../styles/chat.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 

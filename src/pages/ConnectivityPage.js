@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { GcdsContainer, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import '../styles/App.css';
+import '../styles/admin.css';
 
 const StatusBadge = ({ status }) => {
     const colors = {
