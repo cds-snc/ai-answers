@@ -250,7 +250,11 @@ class ExperimentalDatasetService {
         const skip = (page - 1) * limit;
 
         const [data, total] = await Promise.all([
-            ExperimentalDataset.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+            ExperimentalDataset.find()
+                .populate('createdBy', 'email')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
             ExperimentalDataset.countDocuments()
         ]);
 

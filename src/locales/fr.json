@@ -1383,6 +1383,7 @@
       "nameLabel": "Nom de l'ensemble de donn?es",
       "descLabel": "Description",
       "typeLabel": "Type d'ensemble de donn?es",
+      "uploadedBy": "T?l?vers? par",
       "fileLabel": "Fichier Excel / CSV",
       "requiredColumns": "Colonnes requises",
       "rowCount": "Lignes",

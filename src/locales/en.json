@@ -1383,6 +1383,7 @@
       "nameLabel": "Dataset Name",
       "descLabel": "Description",
       "typeLabel": "Dataset Type",
+      "uploadedBy": "Uploaded by",
       "fileLabel": "Excel / CSV File",
       "requiredColumns": "Required columns",
       "rowCount": "Rows",

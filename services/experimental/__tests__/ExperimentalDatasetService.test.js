@@ -4,6 +4,7 @@ import xlsx from 'xlsx';
 import ExperimentalDatasetService, { ValidationError, DuplicateError } from '../ExperimentalDatasetService.js';
 import { ExperimentalDataset } from '../../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../../models/experimentalDatasetRow.js';
+import { User } from '../../../models/user.js';
 
 describe('ExperimentalDatasetService', () => {
     const userId = new mongoose.Types.ObjectId();
@@ -16,6 +17,7 @@ describe('ExperimentalDatasetService', () => {
     afterEach(async () => {
         await ExperimentalDataset.deleteMany({});
         await ExperimentalDatasetRow.deleteMany({});
+        await User.deleteMany({});
     });
 
     const createXlsxBuffer = (data) => {
@@ -214,6 +216,24 @@ describe('ExperimentalDatasetService', () => {
             expect(result.data).toHaveLength(2);
             expect(result.total).toBe(3);
             expect(result.totalPages).toBe(2);
+        });
+
+        it('should populate createdBy email on listed datasets', async () => {
+            const user = await User.create({
+                email: 'uploader@example.com',
+                password: 'password123',
+                role: 'partner'
+            });
+            await ExperimentalDataset.create({
+                name: 'DS With Owner',
+                type: 'question-only',
+                createdBy: user._id
+            });
+
+            const result = await ExperimentalDatasetService.list({ page: 1, limit: 20 });
+
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].createdBy.email).toBe('uploader@example.com');
         });
     });
 

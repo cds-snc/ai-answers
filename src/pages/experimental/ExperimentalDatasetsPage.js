@@ -207,6 +207,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                             <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
                                 <th className="p-200">{t('experimental.datasets.nameLabel')}</th>
                                 <th className="p-200">{t('experimental.datasets.typeLabel')}</th>
+                                <th className="p-200">{t('experimental.datasets.uploadedBy')}</th>
                                 <th className="p-200">{t('experimental.datasets.rowCount')}</th>
                                 <th className="p-200">{t('experimental.datasets.created')}</th>
                                 <th className="p-200">{t('experimental.datasets.actions')}</th>
@@ -220,6 +221,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                         <div style={{ fontSize: '0.8rem', color: '#666' }}>{ds.description}</div>
                                     </td>
                                     <td className="p-200">{t(`experimental.datasets.typeInfo.${ds.type}.label`) || ds.type}</td>
+                                    <td className="p-200">{ds.createdBy?.email || t('common.na')}</td>
                                     <td className="p-200">{ds.rowCount}</td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
@@ -236,7 +238,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                             ))}
                             {datasets.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
+                                    <td colSpan="6" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
                                 </tr>
                             )}
                         </tbody>
