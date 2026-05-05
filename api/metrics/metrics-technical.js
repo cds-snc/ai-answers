@@ -120,13 +120,16 @@ function buildPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFil
                                     input: { $ifNull: ['$answer.tools', []] },
                                     as: 'tid',
                                     in: {
-                                        $first: {
-                                            $filter: {
-                                                input: '$toolDocs',
-                                                as: 't',
-                                                cond: { $eq: ['$$t._id', '$$tid'] }
-                                            }
-                                        }
+                                        $arrayElemAt: [
+                                            {
+                                                $filter: {
+                                                    input: '$toolDocs',
+                                                    as: 't',
+                                                    cond: { $eq: ['$$t._id', '$$tid'] }
+                                                }
+                                            },
+                                            0
+                                        ]
                                     }
                                 }
                             },
@@ -277,7 +280,14 @@ async function getTechnicalMetrics(req, res) {
         });
     } catch (error) {
         console.error('Error in technical metrics:', error);
-        return res.status(500).json({ error: 'Failed to fetch technical metrics' });
+        // TEMP DEBUG: surface the underlying error so we can diagnose without server log access.
+        return res.status(500).json({
+            error: 'Failed to fetch technical metrics',
+            debugMessage: error?.message,
+            debugCode: error?.code,
+            debugCodeName: error?.codeName,
+            debugStack: error?.stack?.split('\n').slice(0, 6)
+        });
     }
 }
 
