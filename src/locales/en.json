@@ -1436,6 +1436,7 @@
         "completed": "Completed",
         "failed": "Failed",
         "totalQuestions": "Total questions",
+        "createdBy": "Created by",
         "issues": "Issues",
         "flagged": "Flagged",
         "date": "Date",

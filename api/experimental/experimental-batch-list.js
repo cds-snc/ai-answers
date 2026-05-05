@@ -19,6 +19,7 @@ async function handler(req, res) {
         }
 
         const batches = await ExperimentalBatch.find(query)
+            .populate('createdBy', 'email')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
