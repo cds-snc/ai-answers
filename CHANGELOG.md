@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.122.2](https://github.com/cds-snc/ai-answers/compare/v1.122.1...v1.122.2) (2026-05-05)
+
+
+### Bug Fixes
+
+* add more batch files ([2bd3dc4](https://github.com/cds-snc/ai-answers/commit/2bd3dc4a717acccbac0e93f3261482dffd3f5c6d))
+* prompts length and tools ([1db2fda](https://github.com/cds-snc/ai-answers/commit/1db2fdadfad41f5f9b8ddf0baa146d85ed2d79c9))
+* prompts length and tools ([95b7b56](https://github.com/cds-snc/ai-answers/commit/95b7b56730ec24b3b15d3b4f6540e3ab0e26976b))
+
+
+### Miscellaneous Chores
+
+* adding test shuffling to Vitest config for test hardening ([a9a48a9](https://github.com/cds-snc/ai-answers/commit/a9a48a93fb8c9fa645b0aa032e8bb30501f604ee))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder in /server ([3d887f3](https://github.com/cds-snc/ai-answers/commit/3d887f38171b43093691fa1d8c9a53d44ff34f44))
+* **tests:** follow-up to [#1303](https://github.com/cds-snc/ai-answers/issues/1303) - Vitest shuffle configuration ([e735c1b](https://github.com/cds-snc/ai-answers/commit/e735c1bb082e8a5ce9ad37a44b9a30cb416d2d3d))
+
 ## [1.122.1](https://github.com/cds-snc/ai-answers/compare/v1.122.0...v1.122.1) (2026-05-04)
 
 
