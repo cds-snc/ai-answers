@@ -655,17 +655,6 @@
       "title": "Public evaluation",
       "chatId": "Chat ID",
       "department": "Department",
-      "sessionsTitle": "Active sessions",
-      "sessions": {
-        "chatId": "Chat ID",
-        "lastSeen": "Last seen",
-        "requests": "Requests",
-        "errors": "Errors",
-        "lastLatency": "Last latency (ms)",
-        "avgLatency": "Avg latency (ms)",
-        "errorLoading": "Failed to load sessions: {status} {text}",
-        "errorGeneric": "Error: {message}"
-      },
       "date": "Date"
     },
     "session": {
