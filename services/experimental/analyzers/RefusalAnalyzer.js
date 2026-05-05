@@ -3,7 +3,7 @@ import AnalyzerBase from './AnalyzerBase.js';
 export class RefusalAnalyzer extends AnalyzerBase {
     static id = 'refusal';
     static name = 'Refusal Analyzer';
-    static description = 'Detects prompt-tagged refusal answers (<not-gc> and <pt-muni>) and flags changes versus a baseline run.';
+    static description = 'Detects refusal-class answers, including safety, harm, out-of-scope, and prompt-tagged refusals (<not-gc> and <pt-muni>), and flags changes versus a baseline run.';
     static inputType = 'universal';
     static outputColumns = [
         'status',
@@ -88,6 +88,8 @@ export class RefusalAnalyzer extends AnalyzerBase {
             /(?:^|\b)blocked\b/i,
             /(?:^|\b)denied\b/i,
             /(?:^|\b)not allowed\b/i,
+            /(?:^|\b)unsafe\b/i,
+            /(?:^|\b)harm(?:ful|ing|ed)?\b/i,
             /(?:^|\b)policy(?:\s+violation)?\b/i,
             /(?:^|\b)safety(?:\s+filter|\s+policy|\s+violation)?\b/i,
             /(?:^|\b)guardrail(?:s)?\b/i,
