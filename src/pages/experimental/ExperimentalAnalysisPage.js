@@ -23,41 +23,95 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     // Progress tracking
     const [batchProgress, setBatchProgress] = useState({});
-    const eventSourceRef = useRef(null);
+    const pollRef = useRef(null);
+    const isMountedRef = useRef(true);
+
+    const stopPolling = () => {
+        if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+        }
+    };
+
+    const buildProgressMap = (batchList) => {
+        return batchList
+            .filter(batch => batch.status === 'processing')
+            .reduce((acc, batch) => {
+                const completed = batch.summary?.completed ?? 0;
+                const failed = batch.summary?.failed ?? 0;
+                const total = batch.summary?.total ?? 0;
+
+                acc[batch._id] = {
+                    status: batch.status,
+                    completed,
+                    failed,
+                    total,
+                    percentComplete: total > 0
+                        ? Math.round(((completed + failed) / total) * 100)
+                        : 0,
+                    analyzerSummary: batch.analyzerSummary || {}
+                };
+                return acc;
+            }, {});
+    };
+
+    const loadBatches = async (datasetId = selectedDatasetId) => {
+        try {
+            const result = await ExperimentalBatchClientService.listBatches(1, 100, 'analysis', datasetId);
+            const nextBatches = result.data || [];
+
+            if (!isMountedRef.current) {
+                return nextBatches;
+            }
+
+            setBatches(nextBatches);
+            setBatchProgress(buildProgressMap(nextBatches));
+
+            const hasActiveRuns = nextBatches.some(batch => batch.status === 'processing');
+            if (hasActiveRuns) {
+                if (!pollRef.current) {
+                    pollRef.current = setInterval(() => {
+                        loadBatches(datasetId);
+                    }, 5000);
+                }
+            } else {
+                stopPolling();
+            }
+
+            return nextBatches;
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
+    };
 
     useEffect(() => {
+        isMountedRef.current = true;
         if (datasetIdParam) setSelectedDatasetId(datasetIdParam);
         fetchInitialData();
         return () => {
-            if (eventSourceRef.current) clearInterval(eventSourceRef.current);
+            isMountedRef.current = false;
+            stopPolling();
         };
     }, [datasetIdParam]);
 
     useEffect(() => {
-        fetchBatches();
+        loadBatches(selectedDatasetId);
+        return () => {
+            stopPolling();
+        };
     }, [selectedDatasetId]);
 
     const fetchInitialData = async () => {
         try {
-            const [az, ds, bt] = await Promise.all([
+            const [az, ds] = await Promise.all([
                 ExperimentalBatchClientService.listAnalyzers(),
-                ExperimentalBatchClientService.listDatasets(),
-                ExperimentalBatchClientService.listBatches(1, 100, 'analysis', datasetIdParam)
+                ExperimentalBatchClientService.listDatasets()
             ]);
             setAnalyzers(az);
             setDatasets(ds.data || []);
-            setBatches(bt.data || []);
         } catch (err) {
             console.error('Failed to fetch initial data:', err);
-        }
-    };
-
-    const fetchBatches = async () => {
-        try {
-            const result = await ExperimentalBatchClientService.listBatches(1, 100, 'analysis', selectedDatasetId);
-            setBatches(result.data || []);
-        } catch (err) {
-            console.error(err);
         }
     };
 
@@ -101,7 +155,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             if (result.multiple) {
                 // For multiple results, kick off processing for each and track progress.
                 for (const b of result.batches) {
-                    trackProgress(b._id);
                     try {
                         const resp = await ExperimentalBatchClientService.processBatch(b._id);
                         // Show server message for first batch to aid debugging
@@ -113,7 +166,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 }
                 setMessage(t('experimental.analysis.messages.startedCount', { count: result.batches.length }) || `Started ${result.batches.length} analysis runs.`);
             } else {
-                trackProgress(result._id);
                 try {
                     const procResp = await ExperimentalBatchClientService.processBatch(result._id);
                     setMessage(procResp.message || 'Processing started');
@@ -122,13 +174,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     setMessage(`Error starting processing: ${err.message}`);
                 }
             }
-            fetchBatches();
-
         } catch (err) {
             console.error(err);
-            setMessage(`Error: ${err.message || 'Failed to start analysis'}`);
+                    setMessage(`Error: ${err.message || 'Failed to start analysis'}`);
         } finally {
             setLoading(false);
+            await loadBatches(selectedDatasetId);
         }
     };
 
@@ -136,7 +187,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         if (!window.confirm('Are you sure you want to delete this batch?')) return;
         try {
             await ExperimentalBatchClientService.deleteBatch(batchId);
-            fetchBatches();
+            await loadBatches(selectedDatasetId);
         } catch (err) {
             console.error('Delete error:', err);
             alert('Failed to delete batch');
@@ -169,49 +220,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const baselineOptions = batches.filter(batch => batch.status === 'completed');
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
-
-    const trackProgress = (batchId) => {
-        if (eventSourceRef.current) clearInterval(eventSourceRef.current);
-
-        const url = ExperimentalBatchClientService.getBatchProgressUrl(batchId);
-
-        const pollProgress = async () => {
-            try {
-                const res = await fetch(url, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include' // matches AuthService behavior
-                });
-
-                if (!res.ok) {
-                    throw new Error(`Polling failed with status ${res.status}`);
-                }
-
-                const data = await res.json();
-
-                // If the backend returns an error message inside the json payload
-                if (data.error) {
-                    console.error('Progress Polling Error:', data.error);
-                    clearInterval(eventSourceRef.current);
-                    return;
-                }
-
-                setBatchProgress(prev => ({ ...prev, [batchId]: data }));
-
-                if (['completed', 'failed', 'cancelled'].includes(data.status)) {
-                    clearInterval(eventSourceRef.current);
-                    fetchBatches();
-                }
-            } catch (err) {
-                console.error('Progress Polling Error:', err);
-                clearInterval(eventSourceRef.current);
-            }
-        };
-
-        // Initial fetch then poll every 5 seconds
-        pollProgress();
-        eventSourceRef.current = setInterval(pollProgress, 5000);
-    };
 
     return (
         <GcdsContainer size="xl" centered className="my-400">
@@ -313,6 +321,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     </div>
                                 </div>
                             ))}
+                        </section>
+                    )}
+                    {Object.keys(batchProgress).length === 0 && (
+                        <section>
+                            <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
                 
