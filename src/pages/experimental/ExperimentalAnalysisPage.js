@@ -327,6 +327,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <th className="p-300">{t('experimental.analysis.columns.name')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.analyzer')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.status')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.completed')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.failed')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.totalQuestions')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.flagged')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.date')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.actions')}</th>
@@ -345,6 +348,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         {batch.status}
                                     </span>
                                 </td>
+                                <td className="p-300">{batch.summary?.completed ?? 0}</td>
+                                <td className="p-300">{batch.summary?.failed ?? 0}</td>
+                                <td className="p-300">{batch.summary?.total ?? 0}</td>
                                 <td className="p-300">
                                     {batch.summary?.flagged > 0 ? (
                                         <span style={{ color: '#d30800', fontWeight: 'bold' }}>⚠ {batch.summary.flagged}</span>
