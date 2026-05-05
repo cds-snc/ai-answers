@@ -1,4 +1,5 @@
 {
+  "locale": "en",
   "homepage": {
     "title": "AI Answers",
     "subtitle": {
@@ -16,38 +17,15 @@
       "title": "Use with caution",
       "message": "We're upgrading and experiencing a higher volume of errors. Use with caution, for testing only."
     },
-    "textarea": {
-      "title": "Ask your question here.",
-      "ariaLabel": {
-        "first": "This is Canada dot CA AI answers, please enter your question.",
-        "followon": "Ask a follow-on question or reply.",
-        "skipfo": "Skip and ask a follow-on question"
-      }
-    },
     "scroll": {
       "ariaLabel": "Scroll down to view more content.",
       "title": "Scroll down"
     },
     "about": {
-      "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by Service Canada’s Canada.ca Experience Office.",
-      "status": "The service began as an experiment in late 2024 by the Canada.ca design team. AI Answers is currently undergoing invitation-only trials on high-traffic Canada.ca pages. We analyze results after each trial to improve both product and processes with our partner institutions. An expanded rollout is planned for 2026.",
-      "contactTitle": "Contact us",
-      "contactFormLink": "Use the Canadian Digital Service contact form",
-      "aiServices": {
-        "claude": "AI service Claude: Anthropic Claude Sonnet 3.7, knowledge to February 2025",
-        "chatgpt": "AI service ChatGPT: OpenAI 4.1, knowledge to May 31 2025",
-        "chatgpt51": "AI service ChatGPT: OpenAI 5.1, knowledge to 2026",
-        "chatgpt51-chat": "AI service ChatGPT: OpenAI 5.1 Chat, knowledge to 2026",
-        "azure": "Current AI model: Microsoft Azure OpenAI"
-      },
-      "cdslink": "Canadian Digital Service",
-      "contact": "Contact us for more information",
-      "contactUrl": "https://blog.canada.ca/contact-us",
-      "logChatsToDatabaseLabel": "Log chats to database"
+      "learnMore": "Learn more about AI Answers"
     },
     "feedback": {
-      "title": "",
       "question": "How was this answer?",
       "useful": "Good",
       "notUseful": "Needs improvement",
@@ -94,11 +72,7 @@
         "message": "Reload the page to try again.",
         "button": "Reload"
       },
-      "serviceUnavailable": "AI Answers is unavailable until tomorrow due to reaching daily usage limits. Please check back then.",
-      "statusUnknown": {
-        "title": "Service Status Unknown",
-        "message": "The service status could not be determined. Please try again later."
-      }
+      "serviceUnavailable": "AI Answers is unavailable until tomorrow due to reaching daily usage limits. Please check back then."
     },
     "chat": {
       "chatId": "Chat ID",
@@ -122,13 +96,16 @@
         "title": "Ask your question here.",
         "ariaLabel": {
           "first": "Ask a Canada dot CA question",
-          "followon": "Ask a follow-on question or reply",
-          "skipfo": "Skip to ask follow-on question"
+          "followon": "Ask a follow-up question or reply",
+          "skipfo": "Skip to ask follow-up question"
         }
       },
       "buttons": {
         "send": "Send",
-        "reload": "Reload page"
+        "sendDisabledTooLong": "Your message is too long, please shorten your question.",
+        "reload": "Reload page",
+        "reloadAriaLabel": "Reload page - limit of 3 questions reached",
+        "reloadSessionAriaLabel": "Reload page - session expired"
       },
       "options": {
         "title": "Options",
@@ -136,9 +113,7 @@
           "label": "AI:",
           "anthropic": "Anthropic",
           "openai": "OpenAI",
-          "azure": "Azure",
-          "azure-gpt51": "Azure GPT-5.1",
-          "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+          "azure": "Azure"
         },
         "searchSelection": {
           "label": "Search:",
@@ -148,20 +123,21 @@
         "workflow": {
           "label": "Workflow:"
         },
+        "model": {
+          "label": "Model family:"
+        },
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)"
         }
       },
       "messages": {
-        "startingToThink": "Generating answer...",
-        "thinking": "Generating answer...",
         "thinkingWithContext": "Deriving answer from search results and department.",
-        "thinkingMore": "Generating answer...",
+        "thinkingMore": "Still generating answer...",
         "limitReached": "You've reached the limit of 3 questions per conversation.\nReload to start a new conversation.",
         "error": "Sorry, we're having a problem connecting to the service right now. Please try again in a few minutes.",
         "blockedContent": "Your question used words or emojis that aren't accepted. Please ask it differently below.",
         "blockedMessage": "Your question was not sent to the AI service.",
-        "privateContent": "To protect your privacy, your question was not sent to the AI service. Ask again without any names, or other identifying details.",
+        "privateContent": "To protect your privacy, your question was not sent to the AI service. Ask again below without any names or other identifying details.",
         "privacyMessage": "Personal information in your question is marked as XXX.",
         "characterWarning": "{count} {unit} remaining",
         "characterLimit": "Your message is {count} {unit} too long. Please simplify your question.",
@@ -170,6 +146,7 @@
         "searching": "Searching for relevant information...",
         "generatingAnswer": "Generating answer...",
         "buildingContext": "Building context...",
+        "readingWebPages": "Reading government web pages...",
         "verifyingCitation": "Testing citation link",
         "moderatingAnswer": "Moderating answer...",
         "moderatingQuestion": "Assessing question",
@@ -178,23 +155,32 @@
         "yourAnswerIs": "Your answer is:",
         "warning": "Warning:",
         "shortQueryMessage": "Your question was too short.",
-        "shortQueryDetails": "Try again with more details, or use this link to search Canada.ca for the words you entered.",
-        "shortQuerySearch": "Canada.ca search",
-        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat."
+        "shortQueryDetails": "Try again with more details below, or use this link to search the words you entered on Canada.ca.",
+        "shortQuerySearch": "Search Canada.ca for:",
+        "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
+        "limitReachedHeading": "Limit of 3 questions reached",
+        "answerLabel1": "Your answer is,",
+        "answerLabel2": "Your answer 2 is,",
+        "answerLabel3": "Your answer 3 is,",
+        "errorHeading": "Error",
+        "sessionTimeoutHeading": "Session expired",
+        "chatIssue": "Error in chat",
+        "answerReady": "Your answer is ready"
       },
       "citation": {
-        "confidence": "Confidence:",
-        "ai": "AI:",
-        "fallbackText": "Unable to find a citation - use canada.ca search"
+        "fallbackText": "Unable to find a citation - use Canada.ca search",
+        "heading": "Continue with this link:"
       },
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:"
+      },
+      "section": {
+        "heading": "Chat conversation"
       }
     },
     "expertRating": {
       "title": "Answer rating",
-      "hint": "Rate each part of the answer",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -205,123 +191,93 @@
         "needsImprovement": "Needs improvement",
         "incorrect": "Incorrect",
         "harmful": "Harmful",
-        "contentIssue": "Content Issue",
+        "contentIssue": "Content issue",
         "explanation": "Please explain your rating (optional):",
-        "answerImprovement": "How could the answer be improved (optional)?",
-        "betterCitation": "Better canada.ca or gc.ca citation URL (optional):"
+        "betterCitation": "Better canada.ca or gc.ca citation URL (optional):",
+        "harmfulDetails": {
+          "summary": "When to code as harmful",
+          "intro": "Harmful is for an answer that could result in the user taking an action (or failing to take an action) which results in injury, damage, suffering or loss to the user or to others.",
+          "description": "This includes (but is not limited to) harm to:",
+          "item1": "Physical health",
+          "item2": "Mental health",
+          "item3": "Financial situation",
+          "item4": "Material assets",
+          "item5": "Legal situation",
+          "item6": "Environment"
+        }
       },
       "submit": "Submit evaluation",
-      "errors": {
-        "invalidUrl": "Please enter a valid canada.ca or gc.ca URL"
-      },
       "intro": "Rate the sentences in the answer, or the citation, or both"
     }
   },
-  "aboutPage": {
-    "title": "About Canada.ca AI Answers",
-    "overview": {
-      "title": "Overview",
-      "descriptionPara1": "AI Answers is a specialized AI chat agent designed for users of Canada.ca and all Government of Canada websites. Everyday, thousands of people tell us that they aren't finding what they need on Canada.ca. AI Answers will provide brief answers to user questions about the entire online ecosystem of federal government services, programs, and information.",
-      "descriptionPara2": "In invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government. 82% of the feedback from over 250 trial users was positive, and emphasized savings in time and effort, and prevention of calls and office visits.",
-      "descriptionPara3": "Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and settings. The innovative evaluation system leverages human expert evaluations to produce automated AI evaluations, and improve answer quality."
-    },
-    "systemCard": {
-      "title": "System Card documentation",
-      "description": "For detailed information about how AI Answers works, our safety measures, evaluation methods, and technical architecture, see our complete",
-      "onThisPageTitle": "Key sections:",
-      "currentStatus": "Current Status",
-      "purposeScope": "System Purpose and Scope",
-      "architecture": "Technical Architecture",
-      "riskAssessment": "Risk Assessment and Safety Measures",
-      "performance": "Performance and Evaluation",
-      "limitations": "Limitations and Constraints",
-      "responsibleAI": "Responsible AI Principles and Governance"
-    },
-    "accessibilityUsability": {
-      "title": "Accessibility and Usability",
-      "designRationale": "Users get overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.",
-      "testing": "These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.",
-      "wcag": "The service meets WCAG 2.1 AA accessibility standards for web content accessibility."
-    }
-  },
   "batch": {
-    "title": "Batchs",
-    "navigation": {
-      "title": "On this page",
-      "links": {
-        "newEvaluation": "New Batch",
-        "runningBatches": "Incomplete batches",
-        "processedBatches": "Processed Batches",
-        "onThisPage": "Links on this page"
-      }
-    },
+    "title": "Batches",
     "sections": {
       "evaluator": {
-        "title": "New Batch"
+        "title": "Run a batch"
       },
       "running": {
-        "title": "Incomplete Batches"
+        "title": "Incomplete batches"
       },
       "processed": {
-        "title": "Processed Batches"
+        "title": "Completed batches",
+        "description": "Missing questions? Only questions that pass the privacy/threat/manipulation guardrails are answered, stored in the database and exported into the output file."
       }
     },
     "upload": {
       "batchName": "Name",
-      "intro": "Select the AI service, language, and your CSV file. Use one you've downloaded and cleaned from the Feedback viewer.",
-      "csvRequirements": {
-        "title": "CSV must contain:",
-        "items": {
-          "problemDetails": "Problem Details / Question — required (headers: REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; case‑insensitive)",
-          "url": "URL / Referring URL — optional (headers: URL, REFERRINGURL; case‑insensitive)"
-        }
-      },
-      "adminCode": "Enter Admin Code to enable file upload:",
-      "aiService": {
-        "label": "AI Service:",
-        "openai": "OpenAI",
-        "azure": "Azure OpenAI",
-        "azure-gpt51": "Azure GPT-5.1",
-        "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+      "instructions": {
+        "title": "How to run a batch:",
+        "step1": "Create a CSV file",
+        "step1a": "At minimum, a column with your questions labelled QUESTION and one with your referring URL labelled URL.",
+        "step1b": "The questions can be numbered with a space before the question text — e.g. 001.  How apply for EI",
+        "step1c": "Your CSV file can contain other columns (e.g. with previous answers) — the question numbers help you match them up later.",
+        "step1d": "You'll need separate files for English questions to be asked/answered as if on an English page, and French questions to be asked/answered on the French AI Answers page.",
+        "step2": "Assign a name, choose workflow (usually Default) and model family (usually already selected).",
+        "step3": "Select the language of the batch file (i.e. the language of the page the batch is simulating).",
+        "step4": "Choose your CSV file and click the Upload button that appears.",
+        "step5": "Click the Process button once the file shows up in the Incomplete batches section.",
+        "step6": "When it's done (if it gets interrupted and didn't finish, click the Process button again), it will move to the Completed batches section. You can download the file from there.",
+        "step7": "All of the chats run in the batch will be available to evaluate in the Evaluation dashboard and Chat viewer with the email address of the person who submitted the batch."
       },
       "language": {
-        "label": "Evaluation Language:",
+        "label": "Page language:",
         "english": "English",
         "french": "French"
       },
       "workflow": {
         "label": "Workflow"
       },
+      "model": {
+        "label": "Model family"
+      },
       "file": {
-        "label": "Select feedback CSV file:",
+        "label": "Add CSV file:",
         "selected": "Selected file:"
       },
       "buttons": {
-        "upload": "Upload File",
-        "startProcessing": "Start Processing"
+        "upload": "Upload file"
       },
       "processing": "Processing file, please wait...",
-      "status": {
-        "preparing": "Creating batch...",
-        "started": "Batch started...",
-        "openaiWait": "This may take up to a minute to start..."
-      },
-      "results": {
-        "title": "Processing Complete",
-        "file": "File:",
-        "entriesProcessed": "Entries processed:"
-      },
       "searchService": {
-        "label": "Search Service",
+        "label": "Search service",
         "google": "Google",
-        "canadaca": "Canada.ca Search"
+        "canadaca": "Canada.ca search"
+      },
+      "error": {
+        "noFile": "Please select a file first.",
+        "nameRequired": "Please enter a batch name.",
+        "invalidFile": "Invalid file type. Please upload a .csv file.",
+        "noValidRows": "No valid rows found in the CSV. Check that the question column header is one of: Problem Details, Question, Redacted Question.",
+        "readFailed": "Failed to read the file. Please try uploading again.",
+        "saveFailed": "Failed to save batch to server. Please try again."
       }
     },
     "list": {
       "columns": {
         "batchId": "Batch ID",
         "totals": "Totals",
-        "createdDate": "Created Date",
+        "createdDate": "Created date",
         "provider": "Provider",
         "type": "Type",
         "workflow": "Workflow",
@@ -335,22 +291,54 @@
         "process": "Process",
         "delete": "Delete",
         "cancel": "Cancel"
-      }
+      },
+      "types": {
+        "client": "Client"
+      },
+      "statuses": {
+        "in_progress": "In progress",
+        "processed": "Processed",
+        "completed": "Completed",
+        "finalizing": "Finalizing",
+        "validating": "Validating",
+        "failed": "Failed",
+        "expired": "Expired",
+        "canceled": "Cancelled",
+        "uploaded": "Uploaded",
+        "unknown": "Unknown"
+      },
+      "totalsLabel": "{finished}/{total} completed"
     }
   },
   "logging": {
-    "title": "Chat Viewer",
+    "title": "Chat viewer",
     "refresh": "Display logs for level",
-    "refreshPending": "Please wait..."
+    "refreshPending": "Please wait...",
+    "backToAdmin": "Back to admin",
+    "createdAt": "Created at",
+    "level": "Level",
+    "message": "Message",
+    "metadata": "Metadata",
+    "enterChatId": "Enter Chat ID:",
+    "filterByLevel": "Filter by level:",
+    "all": "All",
+    "info": "Info",
+    "debug": "Debug",
+    "warn": "Warning",
+    "error": "Error",
+    "noLogs": "No logs available",
+    "metadataDetails": "Metadata details",
+    "expand": "Expand",
+    "close": "Close"
   },
   "admin": {
     "title": "AI Answers Admin",
-    "partnerTitle": "AI Answers Partner Dashboard",
-    "backToAdmin": "Back to Admin",
+    "partnerTitle": "AI Answers Partner dashboard",
+    "backToAdmin": "Back to admin",
     "navigation": {
-      "ariaLabel": "Admin Navigation",
-      "title": "Admin Menu",
-      "partnerMenu": "Partner Menu",
+      "ariaLabel": "Admin navigation",
+      "title": "Admin menu",
+      "partnerMenu": "Partner menu",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -367,18 +355,141 @@
       "logout": "Sign out",
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios",
-      "connectivity": "Service Connectivity",
-      "autoEvalDashboard": "Auto-Evaluation dashboard"
+      "connectivity": "Service connectivity",
+      "autoEvalDashboard": "Auto-evaluation dashboard"
     },
     "database": {
-      "createIndexes": "Create/Rebuild Indexes",
+      "title": "Database management",
+      "createIndexes": "Create/rebuild indexes",
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
-      "createIndexesButton": "Rebuild All Indexes",
+      "createIndexesButton": "Rebuild all indexes",
+      "createIndexesConfirm": "This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?",
       "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
-      "createIndexesError": "Create indexes failed: {error}"
+      "createIndexesError": "Create indexes failed: {error}",
+      "dropIndexesConfirm": "This will drop all database indexes. Database operations may be slower until indexes are rebuilt automatically. Are you sure you want to continue?",
+      "dropIndexesSuccess": "Indexes dropped successfully for {count} collections",
+      "dropIndexesError": "Drop indexes failed: {error}",
+      "deleteSystemLogsConfirm": "Are you sure you want to delete all logs with chatId = \"system\"? This cannot be undone.",
+      "deleteSystemLogsSuccess": "Deleted {count} system logs.",
+      "deleteSystemLogsError": "Delete system logs failed: {error}",
+      "deleteAllBatchesConfirm": "This will delete ALL batches and batchItems. This cannot be undone. Are you sure you want to continue?",
+      "deleteAllBatchesSuccess": "Deleted batches: {batches}, deleted batchItems: {batchItems}",
+      "deleteAllBatchesError": "Delete all batches failed: {error}",
+      "repairTimestampsConfirm": "This will add updatedAt timestamps to existing tool records without them. Are you sure you want to continue?",
+      "repairTimestampsSuccess": "Tool timestamps repaired successfully. Tools: {updated}/{total}",
+      "repairTimestampsError": "Repair timestamps failed: {error}",
+      "repairExpertFeedbackConfirm": "This will set the \"type\" field to \"expert\" for expert feedback records that have missing or empty type fields. Records with \"public\" or \"ai\" types will be left unchanged. Are you sure you want to continue?",
+      "repairExpertFeedbackSuccess": "Expert feedback types repaired successfully. Updated: {updated}/{total} ({alreadyCorrect} already correct)",
+      "repairExpertFeedbackError": "Repair expert feedback failed: {error}",
+      "migratePublicFeedbackConfirm": "This will migrate all public feedback from expert feedback to the new public feedback collection. Are you sure you want to continue?",
+      "migratePublicFeedbackSuccess": "Migration completed. Migrated {migrated} feedback documents.",
+      "migratePublicFeedbackError": "Migration failed: {error}",
+      "collections": {
+        "all": "All",
+        "allButLogs": "All but logs",
+        "interaction": "Interaction",
+        "question": "Question",
+        "answer": "Answer",
+        "citation": "Citation",
+        "expertfeedback": "Expert feedback",
+        "publicfeedback": "Public feedback",
+        "context": "Context",
+        "chat": "Chat",
+        "batch": "Batch",
+        "scenariooverride": "Scenario override",
+        "tool": "Tool",
+        "eval": "Evaluation",
+        "user": "User",
+        "logs": "Logs",
+        "embedding": "Embedding",
+        "setting": "Setting",
+        "batchitem": "Batch item",
+        "sentenceembedding": "Sentence embedding",
+        "sessionstate": "Session state"
+      },
+      "tableRecordCounts": "Table record counts",
+      "tableColumn": "Table",
+      "countColumn": "Count",
+      "tableLabel": "Table:",
+      "startDate": "Start date:",
+      "endDate": "End date:",
+      "limitLabel": "Limit:",
+      "exporting": "Exporting...",
+      "exportButton": "Export database",
+      "dropIndexesTitle": "Drop all indexes",
+      "dropIndexesDescription": "Remove all database indexes. This can be useful to fix database performance issues. Indexes will be automatically rebuilt by the database as needed.",
+      "dropIndexesButton": "Drop all indexes",
+      "droppingLabel": "Dropping indexes...",
+      "indexStatusTitle": "Check index status",
+      "indexStatusDescription": "Check the current status of all database indexes across all collections.",
+      "checkIndexStatusButton": "Check index status",
+      "checkingLabel": "Checking...",
+      "indexStatusError": "Index status check failed: {error}",
+      "indexCreationFailed": "Index creation failed for the following collections:",
+      "collectionColumn": "Collection",
+      "currentColumn": "Current",
+      "expectedColumn": "Expected",
+      "statusColumn": "Status",
+      "inProgressLabel": "In progress",
+      "missingLabel": "Missing:",
+      "deleteSystemLogsTitle": "Delete system logs",
+      "deleteSystemLogsDescription": "Delete all logs where chatId = \"system\". This action cannot be undone.",
+      "deleteSystemLogsButton": "Delete system logs",
+      "repairTimestampsTitle": "Repair tool timestamps",
+      "repairTimestampsDescription": "Add updatedAt timestamps to existing tool records without them. This will use the createdAt date if available, or the current date as fallback.",
+      "repairTimestampsButton": "Repair tool timestamps",
+      "repairingLabel": "Repairing...",
+      "creatingIndexesLabel": "Creating indexes...",
+      "deleteAllBatchesTitle": "Delete all batches",
+      "deleteAllBatchesDescription": "Delete all batch records and their associated batchItems. This is destructive and cannot be undone.",
+      "deleteAllBatchesButton": "Delete all batches",
+      "deletingLabel": "Deleting...",
+      "repairExpertFeedbackTitle": "Repair expert feedback types",
+      "repairExpertFeedbackDescription": "Set the \"type\" field to \"expert\" for expert feedback records that have missing or empty type fields. Records with \"public\" or \"ai\" types will be left unchanged.",
+      "repairExpertFeedbackButton": "Repair expert feedback types",
+      "migratePublicFeedbackTitle": "Migrate public feedback",
+      "migratePublicFeedbackDescription": "Move all public feedback from the expert feedback collection to the new public feedback collection.",
+      "migratePublicFeedbackButton": "Migrate public feedback",
+      "migratingLabel": "Migrating...",
+      "importTitle": "Import database",
+      "importDescription": "Restore the database from a backup file. Warning: This will replace all existing data.",
+      "chunkSizeLabel": "Chunk size (MB):",
+      "throttleLabel": "Throttle (ms):",
+      "tableSelectLabel": "Table (hold Ctrl/Cmd to multi-select):",
+      "importingLabel": "Importing...",
+      "importButton": "Import database",
+      "integrityTitle": "Integrity checks",
+      "integrityDescription": "Run read-only checks to find orphaned documents and parent records that reference missing children.",
+      "coreChecksLabel": "Core orphan & parent-reference checks",
+      "runningLabel": "Running...",
+      "runCheckButton": "Run check",
+      "countLabel": "Count:",
+      "noResultsLabel": "No results",
+      "breakdownMissing": "Missing — Chat: {chat}, Interaction: {interaction}, Question: {question}, Answer: {answer}",
+      "breakdownSamples": "Samples: {samples}",
+      "indexCodeLabel": "Code {code}",
+      "removeDuplicatesConfirm": "This will delete older duplicate records, keeping only the newest. Are you sure?",
+      "removeDuplicatesSuccess": "Removed {count} duplicate records.",
+      "removeDuplicatesError": "Remove duplicates failed: {error}",
+      "removingLabel": "Removing...",
+      "removeDuplicatesButton": "Remove duplicates",
+      "checks": {
+        "orphanCitations": "Orphaned citations (not referenced by any answer)",
+        "orphanTools": "Orphaned tools (not referenced by any answer)",
+        "orphanAnswers": "Orphaned answers (not referenced by any interaction or embedding)",
+        "orphanQuestions": "Orphaned questions (not referenced by any interaction or embedding)",
+        "orphanInteractions": "Orphaned interactions (not referenced by any chat)",
+        "interactionMissingChildren": "Interactions referencing missing children (question/answer/feedback/context/eval)",
+        "embeddingsMissingRefs": "Embeddings with missing chat/interaction/question/answer refs",
+        "sentenceEmbeddingOrphans": "Sentence embeddings with missing parent embedding",
+        "chatInvalidInteractions": "Chats with invalid interaction references",
+        "answerInvalidTools": "Answers with invalid tool references",
+        "evalInvalidInteraction": "Evals referencing missing interactions",
+        "duplicateKeys": "Duplicate keys (index violations)"
+      }
     },
     "notifications": {
-      "title": "User Notifications",
+      "title": "User notifications",
       "ariaLabel": "User notifications",
       "newInactive": "new user(s) awaiting activation (last 7 days)",
       "totalInactive": "total inactive user(s)",
@@ -391,7 +502,7 @@
       "button": "View chat"
     },
     "evalPage": {
-      "similarityTitle": "Similarity-Based Expert Feedback Transfer",
+      "similarityTitle": "Similarity-based expert feedback transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
       "label": {
         "expertEvaluations": "Expert Evaluations in System:",
@@ -417,7 +528,7 @@
           }
         },
         "sentenceMatching": {
-          "title": "Sentence-Level Matching",
+          "title": "Sentence-level matching",
           "item": {
             "findMostSimilar": "For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)",
             "threshold": "Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors",
@@ -426,7 +537,7 @@
           }
         },
         "citationMatch": {
-          "title": "Citation Matching",
+          "title": "Citation matching",
           "item": {
             "compare": "Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match",
             "score": "Score and record a citation match (score, explanation, matched interaction/chat ids)",
@@ -434,7 +545,7 @@
           }
         },
         "qaFallback": {
-          "title": "QA High Score Fallback",
+          "title": "QA high score fallback",
           "item": {
             "checkTop": "If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores",
             "citationCheck": "For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source",
@@ -442,14 +553,14 @@
           }
         },
         "fallbackCompare": {
-          "title": "Fallback Compare Checks",
+          "title": "Fallback compare checks",
           "item": {
             "agent": "A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded",
             "record": "Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability"
           }
         },
         "creation": {
-          "title": "Evaluation Creation & Scoring",
+          "title": "Evaluation creation & scoring",
           "item": {
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
@@ -458,14 +569,14 @@
           }
         },
         "noMatch": {
-          "title": "No Match / Rejection Cases",
+          "title": "No match / rejection cases",
           "item": {
             "recordNoMatch": "If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes",
             "trace": "No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected"
           }
         },
         "timeline": {
-          "title": "Stage Timeline & Telemetry",
+          "title": "Stage timeline & telemetry",
           "item": {
             "record": "The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics",
             "telemetry": "Agent and VectorService telemetry (latency, tokens, model) are captured where applicable"
@@ -489,14 +600,14 @@
         "loading": "Loading metrics..."
       },
       "date": {
-        "startLabel": "Start Date",
-        "endLabel": "End Date"
+        "startLabel": "Start date",
+        "endLabel": "End date"
       },
       "button": {
         "processing": "Processing...",
-        "generate": "Generate Evaluations",
-        "deleteAll": "Delete Evaluations",
-        "deleteEmpty": "Delete Empty Evaluations"
+        "generate": "Generate evaluations",
+        "deleteAll": "Delete evaluations",
+        "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
         "processed": "Processed",
@@ -508,58 +619,39 @@
       }
     },
     "filters": {
-      "title": "Filters - select then Apply to view",
+      "title": "Filters - select then apply to view",
       "clearAll": "Clear",
       "apply": "Apply",
       "loading": "Loading...",
       "dateRange": "Date range (24-hour)",
-      "days": "days",
-      "allTime": "All time",
-      "allDates": "All Dates",
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "last7Days": "Last 7 Days",
-      "last30Days": "Last 30 Days",
-      "thisMonth": "This Month",
-      "lastMonth": "Last Month",
-      "referringUrl": "Referring URL",
-      "referringUrlPlaceholder": "Enter referring URL...",
       "urlEn": "Referring URL (EN)",
       "urlFr": "Referring URL (FR)",
       "urlPlaceholder": "Filter by full or partial URL",
-      "department": "Department",
-      "allDepartments": "All departments",
+      "department": "Partner institution",
+      "allDepartments": "All institutions",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
+      "referredPublicUsers": "Public Referred",
       "adminUsers": "Admin",
-      "answerType": "Answer Type",
-      "allAnswerTypes": "All Answer Types",
-      "partnerEval": "Partner Evaluation",
+      "answerType": "Answer type",
+      "allAnswerTypes": "All answer types",
+      "answerTypeNotGc": "Not GC",
+      "answerTypeClarifying": "Clarifying question",
+      "answerTypePtMuni": "PT/Muni",
+      "answerTypeNormal": "Normal",
+      "partnerEval": "Partner evaluation",
       "allPartnerEvals": "All",
-      "noEvaluation": "No Evaluation",
-      "aiEval": "AI Evaluation",
+      "noEvaluation": "No evaluation",
+      "aiEval": "AI evaluation",
       "allAiEvals": "All",
-      "activeFilters": "Active filters",
-      "noActiveFilters": "No active filters",
-      "showAdvanced": "See more filters",
-      "hideAdvanced": "See less filters"
-    },
-    "dateRange": {
-      "title": "Select time period",
-      "filterType": "Date filter type",
-      "presetRanges": "Preset ranges",
-      "customRange": "Custom range",
-      "chooseRange": "Choose a range",
-      "startDateTime": "Start date and time",
-      "endDateTime": "End date and time",
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "thisWeek": "This week",
-      "currentSelection": "Current selection",
-      "period": "Period:",
-      "from": "From:",
-      "to": "To:"
+      "evalCorrect": "Correct",
+      "evalNeedsImprovement": "Needs improvement",
+      "evalHasError": "Error",
+      "evalHasCitationError": "Citation error",
+      "evalHarmful": "Harmful",
+      "filterOptions": "Filter options",
+      "showAdvanced": "More filter options"
     },
     "publicEval": {
       "title": "Public evaluation",
@@ -621,10 +713,10 @@
         "createdAt": "Created",
         "referringUrl": "Referring URL",
         "date": "Date",
-        "userType": "User Type",
-        "answerType": "Answer Type",
-        "partnerEval": "Partner Eval",
-        "aiEval": "AI Eval"
+        "userType": "User type",
+        "answerType": "Answer type",
+        "partnerEval": "Partner eval",
+        "aiEval": "AI eval"
       },
       "labels": {
         "userType": {
@@ -677,11 +769,13 @@
         "fallback": "Fallback",
         "any": "Any",
         "reason": "No-match reason",
+        "feedback": "Feedback",
+        "download": "Download",
         "date": "Date"
       }
     },
     "autoEvalDashboard": {
-      "title": "Auto-Evaluation dashboard",
+      "title": "Auto-evaluation dashboard",
       "description": "Filter auto-evaluations and explore details in the table below.",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
@@ -706,31 +800,24 @@
     },
     "chatLogs": {
       "title": "Download chat logs",
-      "timeRange": "Time range",
-      "last1Day": "Last 1 day",
-      "last7Days": "Last 7 days",
-      "last30Days": "Last 30 days",
-      "last60Days": "Last 60 days",
-      "last90Days": "Last 90 days",
-      "allLogs": "All logs",
       "getLogs": "Get logs",
-      "loading": "Loading...",
-      "loadingLogs": "Loading logs...",
-      "downloadJson": "Download JSON",
-      "downloadCsv": "Download CSV",
-      "downloadExcel": "Download Excel",
-      "found": "Found",
-      "interactionsFound": "chats. Select a view and format, then export.",
-      "date": "Date",
-      "chatId": "Chat ID",
-      "interactions": "Interactions",
-      "loadingRecordsLeft": "Loading logs: {recordsLeft} records left to load ({totalCount} total records)",
-      "exportView": "Export View",
+      "exportView": "Export view",
       "exportFormat": "Format",
       "export": "Export",
       "exporting": "Exporting...",
       "exportingMessage": "Please wait while your file is being generated.",
-      "exportDescription": "Select export options, configure filters below, then click Export to download."
+      "exportDescription": "Select export options, configure filters below, then click Export to download.",
+      "exportError": "Export failed: {error}",
+      "views": {
+        "default": "Default",
+        "tools": "Tools",
+        "autoEvalDebug": "Auto-eval debug"
+      },
+      "formats": {
+        "xlsx": "Excel (.xlsx)",
+        "csv": "CSV (.csv)",
+        "json": "JSON (.json)"
+      }
     },
     "deleteChat": {
       "title": "Delete a chat from the logs",
@@ -807,7 +894,9 @@
       "error": "Failed to reset password",
       "invalid": "Invalid reset link",
       "passwordTooShort": "Password must be at least 8 characters",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "lockedOut": "Too many failed attempts. Please try again later.",
+      "invalidCode": "Invalid or expired code. Please try again."
     }
   },
   "signup": {
@@ -815,21 +904,11 @@
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm password",
-    "submit": "Submit",
+    "submit": "Create account",
     "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
     "errorOccurred": "An error occurred creating your account",
-    "form": {
-      "username": "Username:",
-      "password": "Password:",
-      "submit": "Submit",
-      "submitting": "Creating account...wait for approval"
-    },
-    "messages": {
-      "success": "Success! You can now ",
-      "error": "An error occurred creating your account",
-      "failed": "Signup failed",
-      "loginLink": "sign in to AI Answers Admin"
-    }
+    "submitting": "Creating account...wait for approval"
   },
   "users": {
     "title": "Manage user accounts",
@@ -837,62 +916,59 @@
       "email": "Email",
       "role": "Role",
       "status": "Status",
-      "createdAt": "Created At",
+      "createdAt": "Created at",
       "actions": "Action"
+    },
+    "roles": {
+      "admin": "Admin",
+      "partner": "Partner"
     },
     "status": {
       "active": "Active",
       "inactive": "Inactive"
     },
     "actions": {
-      "activate": "Activate",
-      "deactivate": "Deactivate",
-      "save": "Save",
       "delete": "Delete",
-      "confirmDelete": "Are you sure you want to delete this user?"
+      "confirmDelete": "Are you sure you want to delete this user?",
+      "adminOnly": "Only administrators can delete users."
     }
+  },
+  "workflows": {
+    "default": "Default",
+    "defaultWithVector": "Instant answer ON",
+    "instantAndQA": "Instant answer with context ON"
+  },
+  "models": {
+    "gpt51": "Azure GPT-5.1",
+    "azure41": "Azure GPT-4.1 (legacy)"
   },
   "settings": {
     "title": "Settings",
     "general": {
       "title": "General settings"
     },
-    "liveGraph": {
-      "title": "Live Graph",
-      "description": "Edit the workflow values used by the Live Graph visualization.",
-      "save": "Save Live Graph"
-    },
     "defaultWorkflow": {
-      "label": "Default workflow",
-      "options": {
-        "Default": "Default",
-        "DefaultAlwaysContext": "Default (always include context)",
-        "DefaultWithVector": "Default with vector",
-        "DefaultWithVectorGraph": "Default with vector graph"
-      }
+      "label": "Default workflow"
+    },
+    "defaultModel": {
+      "label": "Default model family"
     },
     "statusLabel": "Service status",
     "statuses": {
       "available": "Available",
       "unavailable": "Unavailable"
     },
-    "deploymentModeLabel": "Deployment Mode",
+    "deploymentModeLabel": "Deployment mode",
     "deploymentMode": {
       "cds": "CDS (Background worker)",
       "vercel": "Vercel (Wait for completion)",
       "serverless": "Serverless (Wait for completion)"
     },
-    "vectorServiceTypeLabel": "Vector Service Type",
+    "vectorServiceTypeLabel": "Vector service type",
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
-    "providerLabel": "Provider",
-    "provider": {
-      "openai": "OpenAI",
-      "azure": "Azure OpenAI"
-    },
-    "logChatsToDatabaseLabel": "Log chats to database",
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
@@ -900,17 +976,13 @@
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
     "notify": {
-      "resetTemplateLabel": "Reset Link Template ID"
-    },
-    "site": {
-      "baseUrl": "Base URL (frontend)"
+      "resetTemplateLabel": "Reset link template ID"
     },
     "session": {
       "title": "Session settings",
-      "managementEnabled": "Enable Session Management",
+      "managementEnabled": "Enable session management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
-      "cleanupSeconds": "Session cleanup interval (seconds)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)",
       "storeType": "Session store (memory | mongo)",
       "store": {
@@ -921,7 +993,6 @@
         }
       },
       "persistence": {
-        "label": "Session persistence",
         "options": {
           "memory": "Memory (in-process)",
           "mongo": "DocumentDB (persistent/cache)"
@@ -939,28 +1010,31 @@
       "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
     },
     "redaction": {
-      "title": "Redaction Settings",
+      "title": "Redaction settings",
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
-      "manipulation": "Manipulation"
+      "manipulation": "Manipulation",
+      "langEnglish": "English",
+      "langFrench": "Français"
     },
     "metrics": {
-      "storeType": "Chat Metrics Store (memory | mongo)"
+      "storeType": "Chat metrics store (memory | mongo)"
     }
   },
   "outage": {
     "title": "Service Unavailable",
-    "message": "This service is currently unavailable."
+    "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
-    "backToAdmin": "Back to Admin",
+    "backToAdmin": "Back to admin",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
     "error": "Error",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "na": "N/A"
   },
   "eval": {
     "metric": "Metric",
@@ -988,7 +1062,26 @@
     "matchedCitationChatId": "Matched citation chatId",
     "modelData": "Model data",
     "createdAt": "Created at",
-    "updatedAt": "Updated at"
+    "updatedAt": "Updated at",
+    "totalScore": "Score",
+    "referringUrl": "Referring URL",
+    "interactionUpdatedAt": "Date of chat",
+    "allEvalsGenerated": "All evaluations have been generated! Final totals: {processed} successful, {failed} failed.",
+    "generateEvalsFailed": "Failed to generate evals. Check the console for details.",
+    "deleteEvalsConfirm": "This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
+    "deleteEvalsSuccess": "Deleted {deleted} evaluations and {expertFeedbackDeleted} expert feedback records.",
+    "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
+    "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
+    "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
+    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details.",
+    "noMatchReasonTypes": {
+      "no_embeddings": "No embeddings found",
+      "no_qa_match": "No similar embeddings found",
+      "forced_fallback_no_match": "Forced fallback did not find a passing candidate",
+      "no_sentence_match": "Not all sentences matched",
+      "no_citation_match": "No matching citation found",
+      "unknown": "Unknown"
+    }
   },
   "reviewPanels": {
     "sentence": "Sentence",
@@ -1034,7 +1127,9 @@
     "sentenceMatchTrace": "Sentence match trace",
     "agentUsage": "Agent usage",
     "metric": "Metric",
+    "sentenceCompare": "Sentence-compare",
     "sentenceCompareUsed": "Sentence compare used",
+    "fallbackCompare": "Fallback-compare",
     "fallbackCompareUsed": "Fallback compare used",
     "field": "Field",
     "value": "Value",
@@ -1051,7 +1146,7 @@
     "candidateIndex": "Candidate index",
     "text": "Text",
     "numbers": "Numbers",
-    "dates_times": "Dates/Times",
+    "dates_times": "Dates/times",
     "negation": "Negation",
     "entities": "Entities",
     "quantifiers": "Quantifiers",
@@ -1059,7 +1154,7 @@
     "connectives": "Connectives",
     "modifiers": "Modifiers",
     "reEvaluate": "Re-evaluate",
-    "deleteEvaluation": "Delete Evaluation",
+    "deleteEvaluation": "Delete evaluation",
     "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
     "fallbackType": "Fallback type",
@@ -1074,24 +1169,16 @@
     "agentSelections": "Agent selections",
     "agentSelectedIndex": "Agent selected index",
     "agentSelectionExplanation": "Agent selection explanation",
-    "neverStale": "Never stale"
+    "neverStale": "Never stale",
+    "downloadedPagesTitle": "Downloaded pages"
   },
   "metrics": {
     "title": "Metrics dashboard",
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "title": "Results",
-      "loading": "Loading metrics...",
-      "usageMetrics": "Usage metrics",
       "totalSessions": "Total sessions",
-      "inputTokens": "Input tokens",
-      "outputTokens": "Output tokens",
       "totalQuestions": "Total questions",
-      "sessionsByQuestionCount": {
-        "singleQuestion": "Single question sessions",
-        "twoQuestions": "Two question sessions",
-        "threeQuestions": "Three question sessions"
-      },
       "answerTypes": {
         "normal": "GC answers",
         "clarifyingQuestion": "Clarifying questions",
@@ -1107,23 +1194,24 @@
       "frPercentage": "FR %",
       "expertScored": {
         "title": "Partner evaluations",
-        "description": "Evaluations by signed-in departmental partners",
+        "description": "Evaluations by signed-in partner institution users",
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error",
-        "hasCitationError": "Has citation error",
-        "hasErrorPercent": "Has error (%)",
-        "harmful": "Coded as harmful"
+        "hasError": "Has answer error",
+        "hasCitationError": "Citation issue",
+        "hasErrorPercent": "Has answer error (%)",
+        "harmful": "Coded as harmful",
+        "hasContentIssue": "Content issue flagged"
       },
       "aiScored": {
         "title": "AI evaluations",
-        "description": "Automated AI evaluations based on expert evaluations of similar questions",
+        "description": "Automated AI evaluations for questions without a partner evaluation",
         "total": "Total questions evaluated",
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
-        "hasError": "Has error",
-        "hasCitationError": "Has citation error"
+        "hasError": "Has answer error",
+        "hasCitationError": "Citation issue"
       },
       "userScored": {
         "title": "End-user feedback (public)",
@@ -1131,16 +1219,49 @@
         "total": "Total questions with feedback",
         "helpful": "Helpful (yes)",
         "unhelpful": "Issue (no)",
-        "reasonBreakdown": "Reason Breakdown",
         "reasonTableTitle": "Public feedback reasons breakdown",
-        "reason": "Reason"
+        "reason": "Reason",
+        "otherYes": "Other (yes)",
+        "otherNo": "Other (no)"
+      },
+      "sessions": {
+        "title": "Sessions"
+      },
+      "questions": {
+        "title": "Questions",
+        "firstQuestion": "1st question",
+        "secondQuestion": "2nd question",
+        "thirdOrMore": "3rd question or more"
+      },
+      "accuracy": {
+        "title": "Accuracy summary",
+        "allEvaluations": "Total evaluations",
+        "note": "If a question has both an expert and AI evaluation, only the expert evaluation is used.",
+        "expertEvaluations": "Expert evaluations",
+        "aiEvaluations": "AI evaluations",
+        "totalEvaluated": "Total evaluated",
+        "pctOfQuestions": "% of questions",
+        "hasAnswerError": "Has answer error",
+        "accuracyPct": "Accuracy %"
+      },
+      "questionTypes": {
+        "title": "Question types"
+      },
+      "tokens": {
+        "title": "Tokens",
+        "totalInput": "Total input tokens",
+        "contextInput": "Context input tokens",
+        "answerInput": "Answer input tokens",
+        "totalOutput": "Total output tokens",
+        "contextOutput": "Context output tokens",
+        "answerOutput": "Answer output tokens",
+        "googleSearches": "Google search queries"
       },
       "byDepartment": {
-        "title": "Department breakdown of expert evaluations",
-        "department": "Department",
-        "totalQuestions": "Total expert evaluations",
-        "totalSessions": "Total sessions",
-        "expertTotal": "Expert evaluations"
+        "title": "Institution breakdown of expert evaluations",
+        "department": "Institution",
+        "noContextDept": "No institution context",
+        "pctEvaluated": "% evaluated"
       }
     }
   },
@@ -1148,23 +1269,37 @@
     "title": "Vector administration",
     "indexManagement": "Vector index management",
     "manageDescription": "Manage vector indexes and view vector database statistics.",
-    "reinitializeIndex": "Reinitialize Index",
+    "reinitializeIndex": "Reinitialize index",
     "loading": "Loading...",
-    "fetchStats": "Fetch Vector Stats",
-    "createIndex": "Create Vector Index",
-    "embeddingManagement": "Embedding Management",
+    "fetchStats": "Fetch vector stats",
+    "createIndex": "Create vector index",
+    "embeddingManagement": "Embedding management",
     "embeddingDescription": "Process interactions to generate embeddings.",
-    "generateEmbeddings": "Generate Embeddings",
-    "regenerateEmbeddings": "Regenerate Embeddings",
+    "generateEmbeddings": "Generate embeddings",
+    "regenerateEmbeddings": "Regenerate embeddings",
     "regenerating": "Regenerating...",
     "processing": "Processing...",
     "remaining": "Remaining",
     "autoProcessingActive": "Auto-processing active",
-    "similarChats": "Find Similar Chats",
+    "similarChats": "Find similar chats",
     "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
     "chatIdPlaceholder": "Enter Chat ID",
-    "getSimilarChats": "Get Similar Chats",
-    "loadingSimilarChats": "Loading similar chats..."
+    "getSimilarChats": "Get similar chats",
+    "loadingSimilarChats": "Loading similar chats...",
+    "enterChatId": "Please enter a chat ID",
+    "fetchError": "Failed to fetch similar chats",
+    "columns": {
+      "chatId": "Chat ID",
+      "similarity": "Similarity",
+      "aiProvider": "AI provider",
+      "searchProvider": "Search provider",
+      "pageLanguage": "Page language",
+      "user": "User"
+    },
+    "allEmbeddingsGenerated": "All embeddings have been generated!",
+    "generateEmbeddingsFailed": "Failed to generate embeddings. Check the console for details.",
+    "regenerateConfirm": "This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?",
+    "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully!"
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
@@ -1203,16 +1338,29 @@
     }
   },
   "connectivity": {
-    "title": "Service Connectivity Dashboard",
+    "title": "Service connectivity dashboard",
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
-    "runTests": "Run Connectivity Tests",
+    "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
     "connected": "Connected",
     "errors": "Errors",
     "warnings": "Warnings",
-    "notConfigured": "Not Configured",
+    "notConfigured": "Not configured",
     "lastRun": "Last run",
-    "serviceDetails": "Service Details"
+    "serviceDetails": "Service details",
+    "latency": "Latency",
+    "details": "Details",
+    "error": "Error"
+  },
+  "validation": {
+    "required": "Please fill in this field.",
+    "emailInvalid": "Please enter a valid email address."
+  },
+  "notFound": {
+    "breadcrumb": "AI Answers",
+    "title": "Page not found",
+    "message": "We can't find the page you're looking for.",
+    "homeLink": "Return to AI Answers"
   },
   "experimental": {
     "datasets": {
@@ -1305,3 +1453,4 @@
     }
   }
 }
+

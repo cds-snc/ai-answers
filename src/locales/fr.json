@@ -1,4 +1,5 @@
 {
+  "locale": "fr",
   "homepage": {
     "title": "Réponses IA",
     "subtitle": {
@@ -16,37 +17,15 @@
       "title": "À utiliser avec précaution",
       "message": "Nous effectuons une mise à niveau et rencontrons un nombre plus élevé d'erreurs. À utiliser avec précaution, à des fins de test uniquement."
     },
-    "textarea": {
-      "ariaLabel": {
-        "first": "Voici les réponses de Canada point CA, veuillez entrer votre question.",
-        "followon": "Posez une question de suivi ou répondez.",
-        "skipfo": "Passer pour poser une autre question"
-      }
-    },
     "scroll": {
       "ariaLabel": "Faites défiler vers le bas pour voir plus de contenu.",
       "title": "Faites défiler vers le bas"
     },
     "about": {
-      "title": "À propos de Réponses IA",
       "builtBy": "Réponses IA est conçu, exploité et maintenu par le Bureau de l’expérience Canada.ca de Service Canada.",
-      "status": "Le service a débuté comme une expérience en fin 2024 par l'équipe qui conçoit Canada.ca. Réponses IA subit actuellement des essais sur invitation uniquement sur les pages à fort trafic de Canada.ca. Nous analysons les résultats après chaque essai pour améliorer à la fois le produit et les processus avec nos institutions partenaires. Un déploiement élargi est prévu pour 2026.",
-      "contactTitle": "Contactez-nous",
-      "contactFormLink": "Utiliser le formulaire de contact du Service numérique canadien",
-      "aiServices": {
-        "claude": "Service d'IA Claude : Claude 3.7 Sonnet d'Anthropic, connaissances jusqu'en février 2025",
-        "chatgpt": "Service d'IA ChatGPT : GPT-4.1 d'OpenAI, connaissances jusqu'en mai 2025",
-        "chatgpt51": "Service d'IA ChatGPT : GPT-5.1 d'OpenAI, connaissances jusqu'en 2026",
-        "chatgpt51-chat": "Service d'IA ChatGPT : GPT-5.1 Chat d'OpenAI, connaissances jusqu'en 2026",
-        "azure": "Modèle d'IA actuel : Microsoft Azure OpenAI"
-      },
-      "cdslink": "Service numérique canadien",
-      "contact": "Contactez-nous pour plus d'informations",
-      "contactUrl": "https://blogue.canada.ca/contactez-nous.html",
-      "logChatsToDatabaseLabel": "Enregistrer les conversations dans la base de données"
+      "learnMore": "Lire plus sur Réponses IA"
     },
     "feedback": {
-      "title": "",
       "question": "Cette réponse était-elle utile?",
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
@@ -93,11 +72,7 @@
         "message": "Actualisez la page pour réessayer.",
         "button": "Actualiser"
       },
-      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard.",
-      "statusUnknown": {
-        "title": "État du service inconnu",
-        "message": "L'état du service n'a pas pu être déterminé. Veuillez réessayer plus tard."
-      }
+      "serviceUnavailable": "Réponses IA est indisponible jusqu'à demain en raison de l'atteinte des limites d'utilisation quotidiennes. Veuillez revenir plus tard."
     },
     "chat": {
       "chatId": "ID de chat",
@@ -127,7 +102,10 @@
       },
       "buttons": {
         "send": "Envoyer",
-        "reload": "Actualiser la page"
+        "sendDisabledTooLong": "Votre message est trop long, veuillez simplifier votre question.",
+        "reload": "Actualiser la page",
+        "reloadAriaLabel": "Recharger la page — limite de 3 questions atteinte",
+        "reloadSessionAriaLabel": "Recharger la page — session expirée"
       },
       "options": {
         "title": "Options",
@@ -135,9 +113,7 @@
           "label": "IA :",
           "anthropic": "Anthropic",
           "openai": "OpenAI",
-          "azure": "Azure",
-          "azure-gpt51": "Azure GPT-5.1",
-          "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+          "azure": "Azure"
         },
         "searchSelection": {
           "label": "Recherche :",
@@ -147,20 +123,21 @@
         "workflow": {
           "label": "Flux de travail :"
         },
+        "model": {
+          "label": "Famille de modèles :"
+        },
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
         }
       },
       "messages": {
-        "startingToThink": "Génération de la réponse...",
-        "thinking": "Génération de la réponse...",
         "thinkingWithContext": "Génération de la réponse à partir de ",
-        "thinkingMore": "Génération de la réponse en cours...",
+        "thinkingMore": "Toujours en train de générer la réponse...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
         "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
-        "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Demandez à nouveau sans mentionner de noms ou d'autres détails permettant d'identifier la personne.",
+        "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Demandez à nouveau ci-dessous sans mentionner de noms ou d'autres détails permettant d'identifier la personne.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
         "characterWarning": "{count} {unit} restants",
         "characterLimit": "Votre message est trop long de {count} {unit}. Veuillez simplifier votre question.",
@@ -169,6 +146,7 @@
         "searching": "Recherche d'informations pertinentes...",
         "generatingAnswer": "Génération de la réponse...",
         "buildingContext": "Construction du contexte...",
+        "readingWebPages": "Lecture des pages Web du gouvernement...",
         "verifyingCitation": "Test du lien de citation",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Évaluation de la question",
@@ -177,64 +155,36 @@
         "yourAnswerIs": "Votre réponse est :",
         "warning": "Avertissement :",
         "shortQueryMessage": "Votre question était trop courte.",
-        "shortQueryDetails": "Veuillez réessayer en fournissant plus de détails ou utilisez ce lien pour effectuer pour les mots que vous avez saisis.",
-        "shortQuerySearch": "Recherche Canada.ca",
-        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion."
+        "shortQueryDetails": "Veuillez réessayer avec plus de détails ci-dessous, ou utilisez ce lien pour rechercher les mots que vous avez entrés sur Canada.ca.",
+        "shortQuerySearch": "Rechercher sur Canada.ca :",
+        "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
+        "limitReachedHeading": "Limite de 3 questions atteinte",
+        "answerLabel1": "Votre réponse est,",
+        "answerLabel2": "Votre réponse 2 est,",
+        "answerLabel3": "Votre réponse 3 est,",
+        "errorHeading": "Erreur",
+        "sessionTimeoutHeading": "Session expirée",
+        "chatIssue": "Erreur dans le chat",
+        "answerReady": "Votre réponse est prête"
       },
       "citation": {
-        "confidence": "Niveau de confiance :",
-        "ai": "IA :",
-        "fallbackText": "Impossible de trouver une citation - utilisez la recherche canada.ca"
+        "fallbackText": "Impossible de trouver une citation - utilisez la recherche Canada.ca",
+        "heading": "Continuez avec ce lien\u00a0:"
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :"
+      },
+      "section": {
+        "heading": "Conversation par clavardage"
       }
     },
     "expertRating": {
       "title": "Évaluation de la réponse",
-      "hint": "Évaluez chaque partie de la réponse",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
       "sentence4": "Phrase 4",
-      "noEvaluation": "Aucune évaluation disponible.",
-      "noMatchReason": "Raison de non-correspondance",
-      "createdAt": "Créé le",
-      "updatedAt": "Mis à jour le",
-      "matchedText": "Texte apparié",
-      "matchStatus": "Statut de correspondance",
-      "similarityScores": "Scores de similarité",
-      "sentenceMatchTrace": "Trace de correspondance des phrases",
-      "agentUsage": "Utilisation de l’agent",
-      "metric": "Métrique",
-      "sentenceCompareUsed": "Comparaison de phrases utilisée",
-      "fallbackCompareUsed": "Comparaison de repli utilisée",
-      "field": "Champ",
-      "value": "Valeur",
-      "fallbackCompareChecks": "Vérifications de la comparaison de repli",
-      "check": "Vérification",
-      "pass": "Réussite",
-      "details": "Détails",
-      "fallbackCompareRaw": "Données brutes de la comparaison de repli",
-      "expertFeedbackId": "ID de l'évaluation d'expert",
-      "fallbackSourceChatId": "ID de chat source pour le repli",
-      "matchedCitationInteractionId": "ID d'interaction de citation appariée",
-      "matchedCitationChatId": "ID de chat de citation appariée",
-      "agentCandidateChoices": "Choix candidats de l’agent",
-      "candidateIndex": "Index du candidat",
-      "text": "Texte",
-      "numbers": "Nombres",
-      "dates_times": "Dates/Heures",
-      "negation": "Négation",
-      "entities": "Entités",
-      "quantifiers": "Quantificateurs",
-      "conditionals": "Conditionnels",
-      "connectives": "Connecteurs",
-      "modifiers": "Modificateurs",
-      "reEvaluate": "Réévaluer",
-      "deleteEvaluation": "Supprimer l’évaluation",
-      "runEvaluation": "Lancer l’évaluation",
       "citation": "Citation",
       "options": {
         "good": "Bonne",
@@ -243,93 +193,66 @@
         "harmful": "Nuisible",
         "contentIssue": "Problème de contenu",
         "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
-        "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
-        "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
+        "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :",
+        "harmfulDetails": {
+          "summary": "Quand coder comme nuisible",
+          "intro": "Nuisible s'applique à une réponse qui pourrait amener l'utilisateur à poser un geste (ou à ne pas en poser un) entraînant une blessure, un dommage, une souffrance ou une perte pour l'utilisateur ou pour autrui.",
+          "description": "Cela comprend (sans s'y limiter) les préjudices à :",
+          "item1": "La santé physique",
+          "item2": "La santé mentale",
+          "item3": "La situation financière",
+          "item4": "Les biens matériels",
+          "item5": "La situation juridique",
+          "item6": "L'environnement"
+        }
       },
       "submit": "Soumettre l'évaluation",
-      "errors": {
-        "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
-      },
       "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
-    }
-  },
-  "aboutPage": {
-    "title": "À propos de Canada.ca Réponses IA",
-    "overview": {
-      "title": "Aperçu",
-      "descriptionPara1": "Réponses IA est un agent de discussion IA spécialisé conçu pour les utilisateurs de Canada.ca et de tous les sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent qu'elles ne trouvent pas ce dont elles ont besoin sur Canada.ca. Réponses IA fournira des réponses brèves aux questions des utilisateurs sur l'ensemble de l'écosystème en ligne des services, programmes et informations du gouvernement fédéral.",
-      "descriptionPara2": "Lors d'essais sur invitation sur les pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement. 82 % des commentaires de plus de 250 utilisateurs des essais étaient positifs, et soulignaient les économies de temps et d'efforts, ainsi que l'évitement des appels et des visites au bureau.",
-      "descriptionPara3": "Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts humains pour produire des évaluations IA automatisées et améliorer la qualité des réponses."
-    },
-    "systemCard": {
-      "title": "Documentation de la fiche système",
-      "description": "Pour des informations détaillées sur le fonctionnement de Réponses IA, nos mesures de sécurité, nos méthodes d'évaluation et notre architecture technique, voir notre",
-      "onThisPageTitle": "Sections clés :",
-      "currentStatus": "État actuel",
-      "purposeScope": "Objectif et portée du système",
-      "architecture": "Architecture technique",
-      "riskAssessment": "Évaluation des risques et mesures de sécurité",
-      "performance": "Performance et évaluation",
-      "limitations": "Limitations et contraintes",
-      "responsibleAI": "Principes d'IA responsable et gouvernance"
-    },
-    "accessibilityUsability": {
-      "title": "Accessibilité et convivialité",
-      "designRationale": "Les utilisateurs sont submergés par les longues pages contenant plusieurs instructions et ont de la difficulté à choisir entre les liens. Beaucoup visitent les sites Web gouvernementaux depuis des téléphones mobiles. Réponses IA produit un maximum de quatre phrases par réponse, soigneusement conçues pour être aussi claires que possible. Un seul lien de citation est fourni pour vous permettre de passer à l'étape suivante et de vérifier la réponse, réduisant la surcharge de choix. Des réponses plus courtes avec une seule citation augmentent également la précision.",
-      "testing": "Ces choix de conception sont basés sur des données provenant de plus de 50 tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.",
-      "wcag": "Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web."
     }
   },
   "batch": {
     "title": "Lots",
-    "navigation": {
-      "title": "Sur cette page",
-      "links": {
-        "onThisPage": "Links on this page",
-        "newEvaluation": "Nouveau lot",
-        "runningBatches": "Lots incomplets",
-        "processedBatches": "Lots traités"
-      }
-    },
     "sections": {
       "evaluator": {
-        "title": "Nouveau lot"
+        "title": "Exécuter un lot"
       },
       "running": {
         "title": "Lots incomplets"
       },
       "processed": {
-        "title": "Lots traités"
+        "title": "Lots terminés",
+        "description": "Des questions manquantes? Seules les questions qui passent les mesures de protection en matière de confidentialité, de menaces et de manipulation reçoivent une réponse, sont stockées dans la base de données et exportées dans le fichier de sortie."
       }
     },
     "upload": {
       "batchName": "Nom",
-      "intro": "Sélectionnez le service d'IA, la langue et votre fichier CSV. Utilisez un fichier que vous avez téléchargé et nettoyé depuis le visualiseur de rétroaction.",
-      "csvRequirements": {
-        "title": "Le CSV doit contenir :",
-        "items": {
-          "problemDetails": "Détails du problème / Question — requis (en-têtes : REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; insensible à la casse)",
-          "url": "URL / URL de référence — optionnel (en-têtes : URL, REFERRINGURL; insensible à la casse)"
-        }
-      },
-      "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
-      "aiService": {
-        "label": "Service d'IA :",
-        "openai": "OpenAI",
-        "azure": "Azure OpenAI",
-        "azure-gpt51": "Azure GPT-5.1",
-        "azure-gpt51-chat": "Azure GPT-5.1 Chat"
+      "instructions": {
+        "title": "Comment exécuter un lot :",
+        "step1": "Créez un fichier CSV",
+        "step1a": "Au minimum, une colonne avec vos questions intitulée QUESTION et une avec votre URL de référence intitulée URL.",
+        "step1b": "Les questions peuvent être numérotées avec un espace avant le texte — p. ex. 001.  Comment faire une demande d'AE",
+        "step1c": "Votre fichier CSV peut contenir d'autres colonnes (p. ex. avec des réponses précédentes) — les numéros de questions vous aident à les associer par la suite.",
+        "step1d": "Vous aurez besoin de fichiers séparés pour les questions en anglais à poser/répondre comme si elles étaient sur une page anglaise, et les questions en français à poser/répondre sur la page française de Réponses IA.",
+        "step2": "Attribuez un nom, choisissez le flux de travail (habituellement Défaut) et la famille de modèles (habituellement déjà sélectionnée).",
+        "step3": "Sélectionnez la langue du fichier de lot (c.-à-d. la langue de la page que le lot simule).",
+        "step4": "Choisissez votre fichier CSV et cliquez sur le bouton Télécharger qui apparaît.",
+        "step5": "Cliquez sur le bouton Traiter une fois que le fichier apparaît dans la section Lots incomplets.",
+        "step6": "Lorsque c'est terminé (si le traitement est interrompu et n'est pas terminé, cliquez à nouveau sur le bouton Traiter), il sera déplacé vers la section Lots terminés. Vous pouvez télécharger le fichier à partir de là.",
+        "step7": "Tous les clavardages exécutés dans le lot seront disponibles pour évaluation dans le Tableau de bord d'évaluation et le Visualiseur de clavardage avec l'adresse courriel de la personne qui a soumis le lot."
       },
       "language": {
-        "label": "Langue d'évaluation :",
+        "label": "Langue de la page :",
         "english": "Anglais",
         "french": "Français"
       },
       "workflow": {
         "label": "Flux de travail"
       },
+      "model": {
+        "label": "Famille de modèles"
+      },
       "file": {
-        "label": "Sélectionner le fichier CSV de rétroaction :",
+        "label": "Ajouter un fichier CSV :",
         "selected": "Fichier sélectionné :"
       },
       "searchService": {
@@ -338,23 +261,19 @@
         "canadaca": "Recherche Canada.ca"
       },
       "buttons": {
-        "upload": "Télécharger le fichier",
-        "startProcessing": "Démarrer le traitement"
+        "upload": "Télécharger le fichier"
       },
       "processing": "Traitement du fichier, veuillez patienter...",
-      "status": {
-        "preparing": "Création du lot...",
-        "started": "Lot démarré...",
-        "openaiWait": "Cela peut prendre jusqu'à une minute pour démarrer..."
-      },
-      "results": {
-        "title": "Traitement terminé",
-        "file": "Fichier :",
-        "entriesProcessed": "Entrées traitées :"
+      "error": {
+        "noFile": "Veuillez sélectionner un fichier d'abord.",
+        "nameRequired": "Veuillez entrer un nom de lot.",
+        "invalidFile": "Type de fichier non valide. Veuillez télécharger un fichier .csv.",
+        "noValidRows": "Aucune ligne valide trouvée dans le fichier CSV. Vérifiez que l'en-tête de la colonne de questions est l'un des suivants : Problem Details, Question, Redacted Question.",
+        "readFailed": "Impossible de lire le fichier. Veuillez réessayer de le télécharger.",
+        "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer."
       }
     },
     "list": {
-      "title": "title",
       "columns": {
         "batchName": "Nom",
         "totals": "Totaux",
@@ -372,13 +291,45 @@
         "process": "Traiter",
         "delete": "Supprimer",
         "cancel": "Annuler"
-      }
+      },
+      "types": {
+        "client": "Client"
+      },
+      "statuses": {
+        "in_progress": "En cours",
+        "processed": "Traité",
+        "completed": "Terminé",
+        "finalizing": "Finalisation",
+        "validating": "Validation",
+        "failed": "Échoué",
+        "expired": "Expiré",
+        "canceled": "Annulé",
+        "uploaded": "Téléversé",
+        "unknown": "Inconnu"
+      },
+      "totalsLabel": "{finished}/{total} terminé"
     }
   },
   "logging": {
     "title": "Visualiseur de chat",
     "refresh": "Afficher les journaux par niveau",
-    "refreshPending": "Patientez..."
+    "refreshPending": "Patientez...",
+    "backToAdmin": "Retour à l'administration",
+    "createdAt": "Créé le",
+    "level": "Niveau",
+    "message": "Message",
+    "metadata": "Métadonnées",
+    "enterChatId": "Entrez l'identifiant du clavardage :",
+    "filterByLevel": "Filtrer par niveau :",
+    "all": "Tous",
+    "info": "Info",
+    "debug": "Débogage",
+    "warn": "Avertissement",
+    "error": "Erreur",
+    "noLogs": "Aucun journal disponible",
+    "metadataDetails": "Détails des métadonnées",
+    "expand": "Développer",
+    "close": "Fermer"
   },
   "admin": {
     "title": "Administration de Réponses IA",
@@ -408,11 +359,134 @@
       "autoEvalDashboard": "Tableau de bord des évaluations automatiques"
     },
     "database": {
+      "title": "Gestion de la base de données",
       "createIndexes": "Créer/Reconstruire des index",
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
+      "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?",
       "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
-      "createIndexesError": "Échec de la création des index: {error}"
+      "createIndexesError": "Échec de la création des index: {error}",
+      "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer?",
+      "dropIndexesSuccess": "Indexes supprimés avec succès pour {count} collections",
+      "dropIndexesError": "Échec de la suppression des index: {error}",
+      "deleteSystemLogsConfirm": "Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = \"system\" ? Cette action est irréversible.",
+      "deleteSystemLogsSuccess": "Supprimé {count} journaux système.",
+      "deleteSystemLogsError": "Échec de la suppression des journaux système: {error}",
+      "deleteAllBatchesConfirm": "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?",
+      "deleteAllBatchesSuccess": "Lots supprimés : {batches}, batchItems supprimés : {batchItems}",
+      "deleteAllBatchesError": "Échec de la suppression des lots : {error}",
+      "repairTimestampsConfirm": "Cela ajoutera des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. Êtes-vous sûr de vouloir continuer?",
+      "repairTimestampsSuccess": "Horodatages des outils réparés avec succès. Outils: {updated}/{total}",
+      "repairTimestampsError": "Échec de la réparation des horodatages: {error}",
+      "repairExpertFeedbackConfirm": "Cela définira le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types \"public\" ou \"ai\" resteront inchangés. Êtes-vous sûr de vouloir continuer?",
+      "repairExpertFeedbackSuccess": "Types de commentaires d'experts réparés avec succès. Mis à jour: {updated}/{total} ({alreadyCorrect} déjà corrects)",
+      "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts: {error}",
+      "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?",
+      "migratePublicFeedbackSuccess": "Migration terminée. {migrated} commentaires migrés.",
+      "migratePublicFeedbackError": "Échec de la migration: {error}",
+      "collections": {
+        "all": "Tout",
+        "allButLogs": "Tout sauf les journaux",
+        "interaction": "Interaction",
+        "question": "Question",
+        "answer": "Réponse",
+        "citation": "Citation",
+        "expertfeedback": "Rétroaction d'expert",
+        "publicfeedback": "Rétroaction du public",
+        "context": "Contexte",
+        "chat": "Clavardage",
+        "batch": "Lot",
+        "scenariooverride": "Dérogation de scénario",
+        "tool": "Outil",
+        "eval": "Évaluation",
+        "user": "Utilisateur",
+        "logs": "Journaux",
+        "embedding": "Incorporation",
+        "setting": "Paramètre",
+        "batchitem": "Élément de lot",
+        "sentenceembedding": "Incorporation de phrase",
+        "sessionstate": "État de session"
+      },
+      "tableRecordCounts": "Nombre d'enregistrements par table",
+      "tableColumn": "Table",
+      "countColumn": "Nombre",
+      "tableLabel": "Table :",
+      "startDate": "Date de début :",
+      "endDate": "Date de fin :",
+      "limitLabel": "Limite :",
+      "exporting": "Exportation...",
+      "exportButton": "Exporter la base de données",
+      "dropIndexesTitle": "Supprimer tous les index",
+      "dropIndexesDescription": "Supprimer tous les index de la base de données. Cela peut être utile pour résoudre les problèmes de performance. Les index seront reconstruits automatiquement selon les besoins.",
+      "dropIndexesButton": "Supprimer tous les index",
+      "droppingLabel": "Suppression des index...",
+      "indexStatusTitle": "Vérifier l'état des index",
+      "indexStatusDescription": "Vérifier l'état actuel de tous les index de base de données pour toutes les collections.",
+      "checkIndexStatusButton": "Vérifier l'état des index",
+      "checkingLabel": "Vérification...",
+      "indexStatusError": "Échec de la vérification de l'état des index : {error}",
+      "indexCreationFailed": "La création d'index a échoué pour les collections suivantes :",
+      "collectionColumn": "Collection",
+      "currentColumn": "Actuel",
+      "expectedColumn": "Attendu",
+      "statusColumn": "Statut",
+      "inProgressLabel": "En cours",
+      "missingLabel": "Manquant :",
+      "deleteSystemLogsTitle": "Supprimer les journaux système",
+      "deleteSystemLogsDescription": "Supprimer tous les journaux où chatId = \"system\". Cette action est irréversible.",
+      "deleteSystemLogsButton": "Supprimer les journaux système",
+      "repairTimestampsTitle": "Réparer les horodatages des outils",
+      "repairTimestampsDescription": "Ajouter des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. La date createdAt sera utilisée si disponible, sinon la date actuelle.",
+      "repairTimestampsButton": "Réparer les horodatages des outils",
+      "repairingLabel": "Réparation...",
+      "creatingIndexesLabel": "Création des index...",
+      "deleteAllBatchesTitle": "Supprimer tous les lots",
+      "deleteAllBatchesDescription": "Supprimer tous les enregistrements de lots et leurs batchItems associés. Cette action est destructive et irréversible.",
+      "deleteAllBatchesButton": "Supprimer tous les lots",
+      "deletingLabel": "Suppression...",
+      "repairExpertFeedbackTitle": "Réparer les types de commentaires d'experts",
+      "repairExpertFeedbackDescription": "Définir le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts ayant des champs de type manquants ou vides. Les enregistrements de types \"public\" ou \"ai\" ne seront pas modifiés.",
+      "repairExpertFeedbackButton": "Réparer les types de commentaires d'experts",
+      "migratePublicFeedbackTitle": "Migrer les commentaires publics",
+      "migratePublicFeedbackDescription": "Déplacer tous les commentaires publics de la collection des commentaires d'experts vers la nouvelle collection des commentaires publics.",
+      "migratePublicFeedbackButton": "Migrer les commentaires publics",
+      "migratingLabel": "Migration...",
+      "importTitle": "Importer la base de données",
+      "importDescription": "Restaurer la base de données à partir d'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.",
+      "chunkSizeLabel": "Taille du bloc (Mo) :",
+      "throttleLabel": "Limitation (ms) :",
+      "tableSelectLabel": "Table (maintenir Ctrl/Cmd pour la sélection multiple) :",
+      "importingLabel": "Importation...",
+      "importButton": "Importer la base de données",
+      "integrityTitle": "Vérifications d'intégrité",
+      "integrityDescription": "Exécuter des vérifications en lecture seule pour trouver les documents orphelins et les enregistrements parents référençant des enfants manquants.",
+      "coreChecksLabel": "Vérifications principales des orphelins et des références parentes",
+      "runningLabel": "En cours...",
+      "runCheckButton": "Lancer la vérification",
+      "countLabel": "Nombre :",
+      "noResultsLabel": "Aucun résultat",
+      "breakdownMissing": "Manquant — Clavardage : {chat}, Interaction : {interaction}, Question : {question}, Réponse : {answer}",
+      "breakdownSamples": "Exemples : {samples}",
+      "indexCodeLabel": "Code {code}",
+      "removeDuplicatesConfirm": "Cela supprimera les anciens enregistrements en double, ne gardant que les plus récents. Êtes-vous sûr ?",
+      "removeDuplicatesSuccess": "Supprimé {count} enregistrements en double.",
+      "removeDuplicatesError": "Échec de la suppression des doublons : {error}",
+      "removingLabel": "Suppression...",
+      "removeDuplicatesButton": "Supprimer les doublons",
+      "checks": {
+        "orphanCitations": "Citations orphelines (non référencées par une réponse)",
+        "orphanTools": "Outils orphelins (non référencés par une réponse)",
+        "orphanAnswers": "Réponses orphelines (non référencées par une interaction ou un embedding)",
+        "orphanQuestions": "Questions orphelines (non référencées par une interaction ou un embedding)",
+        "orphanInteractions": "Interactions orphelines (non référencées par un chat)",
+        "interactionMissingChildren": "Interactions référençant des enfants manquants (question/réponse/rétroaction/contexte/éval)",
+        "embeddingsMissingRefs": "Embeddings avec des refs chat/interaction/question/réponse manquantes",
+        "sentenceEmbeddingOrphans": "Embeddings de phrases avec embedding parent manquant",
+        "chatInvalidInteractions": "Chats avec des références d'interactions invalides",
+        "answerInvalidTools": "Réponses avec des références d'outils invalides",
+        "evalInvalidInteraction": "Évals référençant des interactions manquantes",
+        "duplicateKeys": "Clés en double (violations d'index)"
+      }
     },
     "notifications": {
       "title": "Notifications utilisateur",
@@ -550,53 +624,34 @@
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
-      "days": "jours",
-      "allTime": "Tout le temps",
-      "allDates": "Toutes les dates",
-      "today": "Aujourd'hui",
-      "yesterday": "Hier",
-      "last7Days": "7 derniers jours",
-      "last30Days": "30 derniers jours",
-      "thisMonth": "Ce mois-ci",
-      "lastMonth": "Le mois dernier",
-      "referringUrl": "URL de référence",
-      "referringUrlPlaceholder": "Entrez l'URL de référence...",
       "urlEn": "URL de référence (EN)",
       "urlFr": "URL de référence (FR)",
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
-      "department": "Département",
-      "allDepartments": "Tous les départements",
+      "department": "Institution partenaire",
+      "allDepartments": "Toutes les institutions",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
+      "referredPublicUsers": "Public référé",
       "adminUsers": "Administrateur",
       "answerType": "Type de réponse",
       "allAnswerTypes": "Tous les types de réponses",
+      "answerTypeNotGc": "Non GC",
+      "answerTypeClarifying": "Question de clarification",
+      "answerTypePtMuni": "PT/Muni",
+      "answerTypeNormal": "Normal",
       "partnerEval": "Évaluation partenaire",
       "allPartnerEvals": "Tous",
       "noEvaluation": "Aucune évaluation",
       "aiEval": "Évaluation IA",
       "allAiEvals": "Tous",
-      "activeFilters": "Filtres actifs",
-      "noActiveFilters": "Aucun filtre actif",
-      "showAdvanced": "Voir plus de filtres",
-      "hideAdvanced": "Voir moins de filtres"
-    },
-    "dateRange": {
-      "title": "Sélectionner la période",
-      "filterType": "Type de filtre de date",
-      "presetRanges": "Plages prédéfinies",
-      "customRange": "Plage personnalisée",
-      "chooseRange": "Choisir une plage",
-      "startDateTime": "Date et heure de début",
-      "endDateTime": "Date et heure de fin",
-      "today": "Aujourd'hui",
-      "yesterday": "Hier",
-      "thisWeek": "Cette semaine",
-      "currentSelection": "Sélection actuelle",
-      "period": "Période:",
-      "from": "De:",
-      "to": "À:"
+      "evalCorrect": "Correct",
+      "evalNeedsImprovement": "Nécessite amélioration",
+      "evalHasError": "Erreur",
+      "evalHasCitationError": "Erreur de citation",
+      "evalHarmful": "Nuisible",
+      "filterOptions": "Options de filtre",
+      "showAdvanced": "Plus d'options de filtre"
     },
     "publicEval": {
       "title": "Évaluation publique",
@@ -605,15 +660,12 @@
       "date": "Date",
       "sessionsTitle": "Sessions actives",
       "sessions": {
-        "sessionId": "ID de session",
-        "creditsLeft": "Crédits restants",
         "chatId": "ID de chat",
         "lastSeen": "Dernière activité",
         "requests": "Requêtes",
         "errors": "Erreurs",
         "lastLatency": "Dernière latence (ms)",
         "avgLatency": "Latence moyenne (ms)",
-        "rpm": "Requêtes / minute",
         "errorLoading": "Échec du chargement des sessions : {status} {text}",
         "errorGeneric": "Erreur : {message}"
       }
@@ -690,7 +742,8 @@
           "incorrect": "incorrect"
         }
       },
-      "departmentMore": "+{count} de plus"
+      "departmentMore": "+{count} de plus",
+      "columnFilterPlaceholder": "Filtrer"
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
@@ -716,6 +769,8 @@
         "fallback": "Repli",
         "any": "Tous",
         "reason": "Raison de non-correspondance",
+        "feedback": "Rétroaction",
+        "download": "Téléchargement",
         "date": "Date"
       }
     },
@@ -765,31 +820,24 @@
     },
     "chatLogs": {
       "title": "Télécharger les journaux de chat",
-      "timeRange": "Plage de temps",
-      "last1Day": "Dernier jour",
-      "last7Days": "7 derniers jours",
-      "last30Days": "30 derniers jours",
-      "last60Days": "60 derniers jours",
-      "last90Days": "90 derniers jours",
-      "allLogs": "Tous les journaux",
       "getLogs": "Obtenir les journaux",
-      "loading": "Chargement...",
-      "loadingLogs": "Chargement des journaux...",
-      "downloadJson": "Télécharger JSON",
-      "downloadCsv": "Télécharger CSV",
-      "downloadExcel": "Télécharger Excel",
-      "found": "Trouvé",
-      "interactionsFound": "chats. Sélectionnez une vue et un format, puis exportez.",
-      "date": "Date",
-      "chatId": "ID de chat",
-      "interactions": "Interactions",
-      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)",
       "exportView": "Vue d'exportation",
       "exportFormat": "Format",
       "export": "Exporter",
       "exporting": "Exportation en cours...",
       "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
-      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger."
+      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger.",
+      "exportError": "Échec de l'exportation : {error}",
+      "views": {
+        "default": "Par défaut",
+        "tools": "Outils",
+        "autoEvalDebug": "Débogage auto-éval"
+      },
+      "formats": {
+        "xlsx": "Excel (.xlsx)",
+        "csv": "CSV (.csv)",
+        "json": "JSON (.json)"
+      }
     }
   },
   "signup": {
@@ -797,21 +845,11 @@
     "email": "Courriel",
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
-    "submit": "Soumettre",
+    "submit": "Créer un compte",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
     "errorOccurred": "Une erreur est survenue lors de l'inscription",
-    "form": {
-      "username": "Nom d'utilisateur :",
-      "password": "Mot de passe :",
-      "submit": "Soumettre",
-      "submitting": "Création du compte...en attente d'approbation"
-    },
-    "messages": {
-      "success": "Succès ! Vous pouvez maintenant ",
-      "error": "Une erreur est survenue lors de l'inscription",
-      "failed": "L'inscription a échoué",
-      "loginLink": "vous connecter à l'administration de Réponses IA"
-    }
+    "submitting": "Création du compte...en attente d'approbation"
   },
   "login": {
     "title": "Se connecter à l'administration de Réponses IA",
@@ -867,7 +905,9 @@
       "error": "Échec de la réinitialisation du mot de passe",
       "invalid": "Lien de réinitialisation invalide",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-      "passwordMismatch": "Les mots de passe ne correspondent pas"
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "lockedOut": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
+      "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
   },
   "users": {
@@ -879,36 +919,39 @@
       "createdAt": "Créé le",
       "actions": "Action"
     },
+    "roles": {
+      "admin": "Administrateur",
+      "partner": "Partenaire"
+    },
     "status": {
       "active": "Actif",
       "inactive": "Inactif"
     },
     "actions": {
-      "activate": "Activer",
-      "deactivate": "Désactiver",
-      "save": "Enregistrer",
       "delete": "Supprimer",
-      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+      "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs."
     }
+  },
+  "workflows": {
+    "default": "Par défaut",
+    "defaultWithVector": "Réponse instantanée ACTIVÉE",
+    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
+  },
+  "models": {
+    "gpt51": "Azure GPT-5.1",
+    "azure41": "Azure GPT-4.1 (ancien)"
   },
   "settings": {
     "title": "Paramètres",
     "general": {
       "title": "Paramètres généraux"
     },
-    "liveGraph": {
-      "title": "Live Graph",
-      "description": "Modifiez les valeurs de workflow utilisées par la visualisation Live Graph.",
-      "save": "Enregistrer Live Graph"
-    },
     "defaultWorkflow": {
-      "label": "Workflow par défaut",
-      "options": {
-        "Default": "Par défaut",
-        "DefaultAlwaysContext": "Par défaut (toujours inclure le contexte)",
-        "DefaultWithVector": "Par défaut avec vecteur",
-        "DefaultWithVectorGraph": "Par défaut avec graphe vectoriel"
-      }
+      "label": "Workflow par défaut"
+    },
+    "defaultModel": {
+      "label": "Famille de modèles par défaut"
     },
     "statusLabel": "Statut du service",
     "statuses": {
@@ -926,12 +969,6 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
-    "providerLabel": "Fournisseur",
-    "provider": {
-      "openai": "OpenAI",
-      "azure": "Azure OpenAI"
-    },
-    "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données",
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
@@ -941,15 +978,11 @@
     "notify": {
       "resetTemplateLabel": "ID du modèle pour le lien de réinitialisation"
     },
-    "site": {
-      "baseUrl": "URL de base (frontend)"
-    },
     "session": {
       "title": "Paramètres de session",
       "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
-      "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
       "storeType": "Stockage de session (mémoire | mongo)",
       "store": {
@@ -960,7 +993,6 @@
         }
       },
       "persistence": {
-        "label": "Persistance des sessions",
         "options": {
           "memory": "Mémoire (en processus)",
           "mongo": "DocumentDB (persistant/cache)"
@@ -982,7 +1014,9 @@
       "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
       "profanity": "Gros mots",
       "threat": "Menaces",
-      "manipulation": "Manipulation"
+      "manipulation": "Manipulation",
+      "langEnglish": "English",
+      "langFrench": "Français"
     },
     "metrics": {
       "storeType": "Magasin de métriques de discussion (mémoire | mongo)"
@@ -990,7 +1024,7 @@
   },
   "outage": {
     "title": "Service indisponible",
-    "message": "Ce service est actuellement indisponible."
+    "message": "Réponses IA fait l'objet de mises à niveau ou de problèmes de capacité en ce moment. Veuillez revenir plus tard."
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
@@ -999,7 +1033,8 @@
     "processing": "Traitement...",
     "error": "Erreur",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "na": "S.O."
   },
   "eval": {
     "metric": "Métrique",
@@ -1025,15 +1060,28 @@
     "fallbackSourceChatId": "ID de chat source pour le repli",
     "matchedCitationInteractionId": "ID d'interaction de citation appariée",
     "matchedCitationChatId": "ID de chat de citation appariée",
-    "stageTimeline": "Chronologie des étapes",
-    "rawTimeline": "Chronologie brute (JSON)",
-    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "modelData": "Données du modèle",
     "createdAt": "Créé le",
     "updatedAt": "Mis à jour le",
     "totalScore": "Score",
     "referringUrl": "URL de référence",
-    "interactionUpdatedAt": "Date du chat"
+    "interactionUpdatedAt": "Date du chat",
+    "allEvalsGenerated": "Toutes les évaluations ont été générées ! Totaux finaux : {processed} réussies, {failed} échouées.",
+    "generateEvalsFailed": "Échec de la génération des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEvalsSuccess": "{deleted} évaluations et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
+    "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
+    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails.",
+    "noMatchReasonTypes": {
+      "no_embeddings": "Aucune intégration trouvée",
+      "no_qa_match": "Aucune intégration similaire trouvée",
+      "forced_fallback_no_match": "Le repli forcé n'a trouvé aucun candidat acceptable",
+      "no_sentence_match": "Toutes les phrases n'ont pas correspondu",
+      "no_citation_match": "Aucune citation correspondante trouvée",
+      "unknown": "Inconnu"
+    }
   },
   "reviewPanels": {
     "sentence": "Phrase",
@@ -1080,24 +1128,57 @@
     "agentSelections": "Sélections de l'agent",
     "agentSelectedIndex": "Index sélectionné par l'agent",
     "agentSelectionExplanation": "Explication de la sélection de l'agent",
-    "neverStale": "Toujours valide"
+    "neverStale": "Toujours valide",
+    "downloadedPagesTitle": "Pages téléchargées",
+    "noEvaluation": "Aucune évaluation disponible.",
+    "noMatchReason": "Raison de non-correspondance",
+    "createdAt": "Créé le",
+    "updatedAt": "Mis à jour le",
+    "stageTimeline": "Chronologie des étapes",
+    "rawTimeline": "Chronologie brute (JSON)",
+    "noStageTimeline": "Aucune chronologie d'étapes disponible.",
+    "matchedText": "Texte apparié",
+    "matchStatus": "Statut d'appariement",
+    "similarityScores": "Scores de similarité",
+    "sentenceMatchTrace": "Trace d'appariement de phrases",
+    "agentUsage": "Utilisation de l'agent",
+    "metric": "Métrique",
+    "sentenceCompare": "Comparaison de phrases",
+    "fallbackCompare": "Comparaison de repli",
+    "sentenceCompareUsed": "Comparaison de phrases utilisée",
+    "fallbackCompareUsed": "Comparaison de repli utilisée",
+    "field": "Champ",
+    "value": "Valeur",
+    "fallbackCompareChecks": "Vérifications de la comparaison de repli",
+    "check": "Vérification",
+    "pass": "Réussite",
+    "details": "Détails",
+    "expertFeedbackId": "ID d'évaluation d'expert",
+    "fallbackSourceChatId": "ID de chat source pour le repli",
+    "matchedCitationInteractionId": "ID d'interaction de citation appariée",
+    "matchedCitationChatId": "ID de chat de citation appariée",
+    "agentCandidateChoices": "Choix de candidats de l'agent",
+    "candidateIndex": "Index du candidat",
+    "text": "Texte",
+    "numbers": "Nombres",
+    "dates_times": "Dates/heures",
+    "negation": "Négation",
+    "entities": "Entités",
+    "quantifiers": "Quantificateurs",
+    "conditionals": "Conditionnels",
+    "connectives": "Connectifs",
+    "modifiers": "Modificateurs",
+    "reEvaluate": "Réévaluer",
+    "deleteEvaluation": "Supprimer l'évaluation",
+    "runEvaluation": "Lancer l'évaluation"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "title": "Résultats",
-      "loading": "Chargement des métriques...",
-      "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
-      "inputTokens": "Jetons d'entrée",
-      "outputTokens": "Jetons de sortie",
       "totalQuestions": "Total des questions",
-      "sessionsByQuestionCount": {
-        "singleQuestion": "Sessions à une question",
-        "twoQuestions": "Sessions à deux questions",
-        "threeQuestions": "Sessions à trois questions"
-      },
       "answerTypes": {
         "normal": "Réponses GC",
         "clarifyingQuestion": "Questions de clarification",
@@ -1113,23 +1194,24 @@
       "frPercentage": "% FR",
       "expertScored": {
         "title": "Évaluations des partenaires",
-        "description": "Évaluations par des partenaires ministériels connectés",
+        "description": "Évaluations par des utilisateurs connectés des institutions partenaires",
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation",
-        "hasErrorPercent": "Contient une erreur (%)",
-        "harmful": "Codé comme nuisible"
+        "hasError": "Contient une erreur de réponse",
+        "hasCitationError": "Problème de citation",
+        "hasErrorPercent": "Contient une erreur de réponse (%)",
+        "harmful": "Codé comme nuisible",
+        "hasContentIssue": "Problème de contenu signalé"
       },
       "aiScored": {
         "title": "Évaluations IA",
-        "description": "Évaluations automatisées par IA basées sur les évaluations d'experts de questions similaires",
+        "description": "Évaluations automatisées par IA pour les questions sans évaluation partenaire",
         "total": "Total des questions évaluées",
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur",
-        "hasCitationError": "Contient une erreur de citation"
+        "hasError": "Contient une erreur de réponse",
+        "hasCitationError": "Problème de citation"
       },
       "userScored": {
         "title": "Rétroaction des utilisateurs (publique)",
@@ -1137,16 +1219,49 @@
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
         "unhelpful": "Problème (non)",
-        "reasonBreakdown": "Répartition des raisons",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
-        "reason": "Raison"
+        "reason": "Raison",
+        "otherYes": "Autre (oui)",
+        "otherNo": "Autre (non)"
+      },
+      "sessions": {
+        "title": "Sessions"
+      },
+      "questions": {
+        "title": "Questions",
+        "firstQuestion": "1ère question",
+        "secondQuestion": "2e question",
+        "thirdOrMore": "3e question ou plus"
+      },
+      "accuracy": {
+        "title": "Résumé de l'exactitude",
+        "allEvaluations": "Total des évaluations",
+        "note": "Si une question a à la fois une évaluation d'expert et une évaluation IA, seule l'évaluation d'expert est utilisée.",
+        "expertEvaluations": "Évaluations des experts",
+        "aiEvaluations": "Évaluations IA",
+        "totalEvaluated": "Total évalué",
+        "pctOfQuestions": "% des questions",
+        "hasAnswerError": "Contient une erreur de réponse",
+        "accuracyPct": "% d'exactitude"
+      },
+      "questionTypes": {
+        "title": "Types de questions"
+      },
+      "tokens": {
+        "title": "Jetons",
+        "totalInput": "Total des jetons d'entrée",
+        "contextInput": "Jetons d'entrée du contexte",
+        "answerInput": "Jetons d'entrée de la réponse",
+        "totalOutput": "Total des jetons de sortie",
+        "contextOutput": "Jetons de sortie du contexte",
+        "answerOutput": "Jetons de sortie de la réponse",
+        "googleSearches": "Requêtes de recherche Google"
       },
       "byDepartment": {
-        "title": "Répartition par département des évaluations d'experts",
-        "department": "Département",
-        "totalQuestions": "Total des évaluations d'experts",
-        "totalSessions": "Sessions totales",
-        "expertTotal": "Évaluations d'experts"
+        "title": "Répartition par institution des évaluations d'experts",
+        "department": "Institution",
+        "noContextDept": "Aucun contexte d'institution",
+        "pctEvaluated": "% évalué"
       }
     }
   },
@@ -1170,7 +1285,21 @@
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
     "chatIdPlaceholder": "Entrez l'ID du chat",
     "getSimilarChats": "Obtenir les chats similaires",
-    "loadingSimilarChats": "Chargement des chats similaires..."
+    "loadingSimilarChats": "Chargement des chats similaires...",
+    "enterChatId": "Veuillez entrer un identifiant de clavardage",
+    "fetchError": "Impossible de récupérer les clavardages similaires",
+    "columns": {
+      "chatId": "ID du clavardage",
+      "similarity": "Similarité",
+      "aiProvider": "Fournisseur IA",
+      "searchProvider": "Fournisseur de recherche",
+      "pageLanguage": "Langue de la page",
+      "user": "Utilisateur"
+    },
+    "allEmbeddingsGenerated": "Tous les incorporations ont été générées !",
+    "generateEmbeddingsFailed": "Échec de la génération des incorporations. Vérifiez la console pour plus de détails.",
+    "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !"
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
@@ -1209,104 +1338,117 @@
     }
   },
   "connectivity": {
-    "title": "Tableau de bord de connectivité du service",
-    "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
-    "runTests": "Exécuter les tests de connectivité",
+    "title": "Tableau de bord de connectivit? du service",
+    "description": "Tester la connectivit? ? tous les services externes et fournisseurs d'IA utilis?s par R?ponses IA.",
+    "runTests": "Ex?cuter les tests de connectivit?",
     "testing": "Test des connexions...",
-    "connected": "Connecté",
+    "connected": "Connect?",
     "errors": "Erreurs",
     "warnings": "Avertissements",
-    "notConfigured": "Non configuré",
-    "lastRun": "Dernière exécution",
-    "serviceDetails": "Détails du service"
+    "notConfigured": "Non configur?",
+    "lastRun": "Derni?re ex?cution",
+    "serviceDetails": "D?tails du service",
+    "latency": "Latence",
+    "details": "D?tails",
+    "error": "Erreur"
+  },
+  "validation": {
+    "required": "Veuillez remplir ce champ.",
+    "emailInvalid": "Veuillez entrer une adresse courriel valide."
+  },
+  "notFound": {
+    "breadcrumb": "R?ponses IA",
+    "title": "Page introuvable",
+    "message": "Nous ne trouvons pas la page que vous cherchez.",
+    "homeLink": "Retourner ? R?ponses IA"
   },
   "experimental": {
     "datasets": {
-      "title": "Ensembles de données expérimentaux",
+      "title": "Ensembles de donn?es exp?rimentaux",
       "analyze": "Analyser",
-      "uploadNew": "Télécharger un nouvel ensemble de données",
-      "upload": "Télécharger un ensemble de données",
-      "uploading": "Téléchargement en cours...",
-      "uploadSuccess": "Ensemble de données téléchargé avec succès !",
-      "uploadFailed": "Le téléchargement a échoué",
+      "uploadNew": "T?l?charger un nouvel ensemble de donn?es",
+      "upload": "T?l?charger un ensemble de donn?es",
+      "uploading": "T?l?chargement en cours...",
+      "uploadSuccess": "Ensemble de donn?es t?l?charg? avec succ?s?!",
+      "uploadFailed": "Le t?l?chargement a ?chou?",
       "readFailed": "Impossible de lire le fichier",
-      "delete": "Supprimer l'ensemble de données",
-      "view": "Voir les données",
-      "viewing": "Affichage des données : {name}",
+      "delete": "Supprimer l'ensemble de donn?es",
+      "view": "Voir les donn?es",
+      "viewing": "Affichage des donn?es : {name}",
       "backToList": "Retour aux ensembles",
-      "errorLoadingRows": "Échec du chargement des données.",
-      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
-      "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
-      "nameLabel": "Nom de l'ensemble de données",
+      "errorLoadingRows": "?chec du chargement des donn?es.",
+      "confirmDelete": "?tes-vous s?r de vouloir supprimer cet ensemble de donn?es?? Cette action est irr?versible.",
+      "inUse": "Cet ensemble de donn?es est utilis? par des lots actifs et ne peut pas ?tre supprim?.",
+      "nameLabel": "Nom de l'ensemble de donn?es",
       "descLabel": "Description",
-      "typeLabel": "Type d'ensemble de données",
+      "typeLabel": "Type d'ensemble de donn?es",
       "fileLabel": "Fichier Excel / CSV",
       "requiredColumns": "Colonnes requises",
       "rowCount": "Lignes",
-      "created": "Créé le",
-      "existing": "Ensembles de données existants",
-      "loading": "Chargement des ensembles de données...",
-      "empty": "Aucun ensemble de données trouvé.",
+      "created": "Cr?? le",
+      "existing": "Ensembles de donn?es existants",
+      "loading": "Chargement des ensembles de donn?es...",
+      "empty": "Aucun ensemble de donn?es trouv?.",
       "actions": "Actions",
       "typeInfo": {
         "question-only": {
           "label": "Questions seulement",
-          "description": "Une liste de questions auxquelles l'IA doit répondre. Utilisez ce type pour lancer une génération par lot et obtenir des réponses de l'IA.",
+          "description": "Une liste de questions auxquelles l'IA doit r?pondre. Utilisez ce type pour lancer une g?n?ration par lot et obtenir des r?ponses de l'IA.",
           "columns": "question (requis), referringUrl (optionnel), chatId (optionnel)"
         },
         "qa-pair": {
           "label": "Paire Q et R",
-          "description": "Un ensemble de questions associées à des réponses existantes. Utilisez ce type pour exécuter des analyseurs qui évaluent une réponse IA existante sans référence séparée.",
+          "description": "Un ensemble de questions associ?es ? des r?ponses existantes. Utilisez ce type pour ex?cuter des analyseurs qui ?valuent une r?ponse IA existante sans r?f?rence s?par?e.",
           "columns": "question, answer (requis), referringUrl (optionnel), chatId (optionnel)"
         },
         "evaluation-set": {
-          "label": "Ensemble d'évaluation (Réponses de référence)",
-          "description": "Des questions associées à une réponse de référence (dorée) et optionnellement une nouvelle réponse à comparer. Utilisez ce type avec des analyseurs de comparaison comme Expert Scorer.",
+          "label": "Ensemble d'?valuation (R?ponses de r?f?rence)",
+          "description": "Des questions associ?es ? une r?ponse de r?f?rence (dor?e) et optionnellement une nouvelle r?ponse ? comparer. Utilisez ce type avec des analyseurs de comparaison comme Expert Scorer.",
           "columns": "question, answer (requis), comparisonAnswer (optionnel), referringUrl (optionnel), chatId (optionnel)"
         }
       }
     },
     "analysis": {
       "title": "Analyse par lot",
-      "datasetLabel": "Ensemble de données :",
-      "changeDataset": "Changer d'ensemble de données",
+      "datasetLabel": "Ensemble de donn?es :",
+      "changeDataset": "Changer d'ensemble de donn?es",
       "configuration": "Configuration",
-      "selectAnalyzers": "Sélectionner les analyseurs",
-      "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
-      "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
-      "noBaseline": "-- Aucune référence (évaluation autonome) --",
-      "useExistingDataset": "Utiliser un ensemble de données existant",
-      "uploadInstead": "-- Télécharger un nouveau fichier à la place --",
-      "orUpload": "Ou télécharger de nouvelles données :",
-      "inputFile": "Fichier d'entrée (Excel/CSV)",
+      "selectAnalyzers": "S?lectionner les analyseurs",
+      "selectBaseline": "S?lectionner une ex?cution de r?f?rence (comparaison)",
+      "baselineHint": "Choisissez une analyse pr?c?dente comme r?f?rence. Les ex?cutions suivantes seront compar?es aux r?ponses de celle-ci.",
+      "noBaseline": "-- Aucune r?f?rence (?valuation autonome) --",
+      "useExistingDataset": "Utiliser un ensemble de donn?es existant",
+      "uploadInstead": "-- T?l?charger un nouveau fichier ? la place --",
+      "orUpload": "Ou t?l?charger de nouvelles donn?es :",
+      "inputFile": "Fichier d'entr?e (Excel/CSV)",
       "comparisonFile": "Fichier de comparaison (optionnel)",
       "run": "Lancer l'analyse",
-      "starting": "Démarrage...",
-      "runningStatus": "Statut de l'exécution",
-      "noActiveRuns": "Aucune exécution active n'est actuellement suivie.",
-      "previousRuns": "Exécutions précédentes",
+      "starting": "D?marrage...",
+      "runningStatus": "Statut de l'ex?cution",
+      "noActiveRuns": "Aucune ex?cution active n'est actuellement suivie.",
+      "previousRuns": "Ex?cutions pr?c?dentes",
       "columns": {
-        "name": "Nom de l'exécution",
+        "name": "Nom de l'ex?cution",
         "analyzer": "Analyseur",
         "status": "Statut",
-        "issues": "Problèmes",
-        "flagged": "Signalés",
+        "issues": "Probl?mes",
+        "flagged": "Signal?s",
         "date": "Date",
         "actions": "Actions"
       },
-      "baseline": "RÉFÉRENCE",
+      "baseline": "R?F?RENCE",
       "export": "Exporter",
-      "useAsBaseline": "Utiliser comme référence",
+      "useAsBaseline": "Utiliser comme r?f?rence",
       "delete": "Supprimer",
-      "empty": "Aucune exécution précédente trouvée pour cet ensemble de données.",
+      "empty": "Aucune ex?cution pr?c?dente trouv?e pour cet ensemble de donn?es.",
       "messages": {
-        "selectAnalyzer": "Veuillez sélectionner au moins un analyseur.",
-        "selectData": "Veuillez sélectionner un ensemble de données ou télécharger un fichier.",
-        "comparisonRequired": "L'analyse de comparaison nécessite un deuxième fichier ou un type d'ensemble de données spécifique.",
-        "startedCount": "{count} exécutions d'analyse lancées.",
-        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
-        "deleteError": "Échec de la suppression du lot",
-        "exportError": "Échec de l'exportation du lot"
+        "selectAnalyzer": "Veuillez s?lectionner au moins un analyseur.",
+        "selectData": "Veuillez s?lectionner un ensemble de donn?es ou t?l?charger un fichier.",
+        "comparisonRequired": "L'analyse de comparaison n?cessite un deuxi?me fichier ou un type d'ensemble de donn?es sp?cifique.",
+        "startedCount": "{count} ex?cutions d'analyse lanc?es.",
+        "confirmDelete": "?tes-vous s?r de vouloir supprimer ce lot??",
+        "deleteError": "?chec de la suppression du lot",
+        "exportError": "?chec de l'exportation du lot"
       }
     }
   }

@@ -48,7 +48,6 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
         },
         {
             $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] },
                 department: { $arrayElemAt: ['$ctx.department', 0] },
                 autoEval: { $arrayElemAt: ['$autoEval', 0] }
             }
@@ -75,6 +74,8 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
                 category: getAiEvalAggregationExpression('$autoEval.expertFeedback')
             }
         },
+        // Exclude questions that have a human expert eval — expert takes precedence
+        { $match: { 'interactions.expertFeedback': { $eq: null } } },
         // Project only fields needed for aggregation (optimization)
         {
             $project: {

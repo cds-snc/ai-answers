@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
 **Version** : 1.1
-**Date** : Février 2026
+**Date** : Avril 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
@@ -43,10 +43,11 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 </details>
 
 ## État actuel
-- **Environnement** : Préparation pour le projet pilote public
+- **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en janvier 2026.
+- **[Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)**
 - **Production** : https://reponses-ia.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Évaluation** : Collection continue de commentaires d'experts et notation de réponses alimentant les évaluations IA et réponses
-- **Plateforme** : Les départements peuvent ajouter des scénarios d'invite pour répondre aux besoins spécifiques
+- **Plateforme** : Les institutions fédérales partenaires peuvent ajouter des scénarios d'invite et des fichiers pour répondre aux besoins spécifiques, [voir les invites et un exemple d'invite d'institution partenaire](docs/agents-prompts/system-prompt-documentation.md)
 
 ## Objectif et portée du système
 
@@ -54,6 +55,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 - Aider les utilisateurs avec des questions sur les enjeux du gouvernement du Canada
 - Fournir des informations précises sur les programmes, prestations et services du gouvernement du Canada
 - Diriger les utilisateurs vers les ressources gouvernementales appropriées et les prochaines étapes
+- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](docs/pdf/short-ai-answers-fr.pdf)
 
 ### Utilisateurs cibles
 - Toute personne visitant Canada.ca ou des sites Web fédéraux
@@ -64,13 +66,10 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 - **Sources** : Seulement les domaines Canada.ca, gc.ca et d'organisations fédérales
 
 ### Support linguistique
-- Support bilingue complet (pages anglaises/françaises)
-- Conformité aux langues officielles
+- Support bilingue complet (pages anglaises/françaises, y compris l'administration) pour la conformité aux langues officielles
 - Sur la page anglaise : Les utilisateurs peuvent poser des questions dans n'importe quelle langue et recevoir des réponses dans la même langue qu'ils ont posée
 - Sur la page française : Les utilisateurs reçoivent des réponses en français quelle que soit la langue dans laquelle la question a été posée
 - Citation correspond à la langue de la page
-- Répond dans d'autres langues au besoin (traduit d'abord en anglais pour la précision et la journalisation)
-
 ## Architecture technique
 
 ### Composants du système
@@ -82,10 +81,11 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 **Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ### Détails des modèles IA
-- **Modèles de production** : Famille Azure OpenAI GPT-4.1 (configurable par étape de pipeline et variante de graphe)
+- **Modèles de production** : Famille Azure OpenAI GPT-5.1 ; les agents d'évaluation utilisent GPT-4.1-mini
+- **Routage par famille de modèles** : Le choix d'une famille de modèles (p. ex. GPT-5.1) n'utilise pas un seul modèle pour chaque étape. Le système achemine automatiquement chaque étape du pipeline vers le modèle approprié au sein de cette famille — les étapes de support (rédaction des renseignements personnels, traduction, réécriture de requête) utilisent la variante mini (p. ex. GPT-5-mini) pour le coût et la rapidité, tandis que la génération de contexte et la génération de réponse utilisent le modèle complet (p. ex. GPT-5.1). Ce routage est géré en interne par AgentFactory et n'est pas configurable par étape par les administrateurs.
 - **Température** : 0 (réponses déterministes)
-- **Ingénierie d'invite** : Invites de chaîne de pensée avec sortie structurée, invite de département tirée au besoin
-- **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs IA, testé avec GPT et Claude
+- **Ingénierie de contexte** : Des agents séparés dans LangGraph effectuent les étapes du pipeline, l'agent de contexte sélectionne l'invite de département et les fichiers de contexte à tirer au besoin
+- **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs IA, testé avec GPT et Claude, des plans sont en place pour déployer d'autres modèles via AWS Bedrock
 
 ### Capacités agentiques
 - **Utilisation d'outils** : L'IA peut utiliser de manière autonome des outils spécialisés pour améliorer les réponses pendant la génération de réponses
@@ -107,17 +107,15 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
 3. **Rédaction en deux étapes** :
    - **Étape 1** (Programmatique) : Filtrage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants (listes de mots configurables par les administrateurs via la page Paramètres)
-   - **Étape 2** (IA - modèle configurable) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
+   - **Étape 2** (IA - GPT-4o Azure OpenAI, région Canada Est) : Détection alimentée par IA des renseignements personnels qui ont échappé au premier filtrage
 4. **Traduction** (IA - mini modèle configurable) : Détecte la langue et traduit en anglais pour le traitement
-5. **Dérivation de contexte** (IA - mini modèle pour la réécriture de requête; modèle complet pour la génération de contexte) :
-   - Réécriture de requête pour une recherche optimisée
-   - Exécution de recherche (Canada.ca ou Google)
-   - Correspondance de département et génération de contexte
-   - Optionnel : Chargement de scénarios spécifiques au département
-6. **Vérification de court-circuit** (IA) : Recherche de similarité vectorielle pour trouver des questions similaires déjà répondues. Présent uniquement dans certaines variantes de graphe, pas dans le pipeline par défaut
-7. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
-8. **Vérification de citation** (Programmatique) : Valide le formatage des URLs de citation et génère une URL de recherche de secours si nécessaire
-9. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+5. **Réécriture de requête et recherche** (IA - mini modèle) : Réécrit la question traduite en une requête de recherche optimisée et l'exécute sur Canada.ca ou Google. Si la première recherche ne retourne aucun résultat ou un seul résultat, une nouvelle réécriture simplifiée est effectuée automatiquement et la recherche est relancée; le meilleur ensemble de résultats est conservé.
+6. **Dérivation de contexte** (IA - modèle complet) : Correspondance de département et génération de contexte à partir des résultats de recherche; charge optionnellement les scénarios spécifiques au département
+7. **Vérification de court-circuit** (IA) : Recherche de similarité vectorielle pour trouver des questions similaires déjà répondues. Présent uniquement dans certaines variantes de graphe, pas dans le pipeline par défaut
+8. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
+9. **Vérification de citation** (Programmatique) : Valide le formatage des URLs de citation et génère une URL de recherche de secours si nécessaire
+10. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+11. **Évaluation automatique** : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
 
 **Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -135,7 +133,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 - **Vérification de contenu en temps réel** : L'outil downloadWebPage télécharge et lit les pages Web actuelles pour vérifier la précision de l'information
 - **Exigences de citation** : Chaque réponse doit inclure un seul lien source gouvernemental vérifié
 - **Validation d'URL** : Vérification automatique des URLs de citation pour la validité et l'accessibilité
-- **Système d'évaluation d'experts** : Évaluation humaine experte continue de la précision des réponses
+- **Système d'évaluation d'experts** : Évaluation humaine experte continue de la précision des réponses — un échantillon de 2 500 questions a été évalué au cours des essais publics, produisant un taux d'exactitude de 96 %
 - **Surveillance de fraîcheur du contenu** : Priorise le contenu fraîchement téléchargé sur les données d'entraînement potentiellement périmées
 - **Scénarios spécifiques aux départements** : Invites adaptées pour différents départements gouvernementaux pour améliorer la précision
 
@@ -221,7 +219,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 ### Méthodes d'évaluation
 - **Système innovant d'évaluation par des experts** :
-  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, vivant la même expérience utilisateur
+  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue
   - **Évaluation flexible** : Les experts peuvent entrer leurs propres questions ou utiliser les identifiants de discussion existants pour évaluer les conversations utilisateur
   - **Notation au niveau des phrases** : Chaque phrase dans les réponses IA est notée individuellement (100/80/0 points) avec des explications détaillées
   - **Notation de citation** : Notation séparée pour la précision et la pertinence de la citation (25/20/0 points)
@@ -281,7 +279,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 ### Rôles d'utilisateurs et contrôle d'accès
 - **Utilisateurs administrateurs** : Accès complet au système incluant la gestion des utilisateurs, les opérations de base de données et la configuration du système
-- **Utilisateurs partenaires** : Accès aux outils d'évaluation, au traitement par lot et aux métriques de performance
+- **Utilisateurs partenaires** : Accès à une suite d'outils d'évaluation pour noter les phrases et les citations des réponses de clavardage, au traitement par lot et aux métriques de performance
 - **Interface basée sur les rôles** : Différentes interfaces et capacités basées sur les permissions d'utilisateurs
 - **Authentification** : Système d'authentification sécurisé avec protection des routes basée sur les rôles
 
@@ -340,8 +338,6 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 - **Systèmes de commentaires distincts** : Évaluation d'experts (au niveau des phrases) vs commentaires publics (utile/non utile)
 
 ### Fonctionnalités spécifiques aux partenaires
-- **Sélection de service IA** : Choisir entre OpenAI et Anthropic pour les tests
-- **Basculement de service de recherche** : Basculer entre les services de recherche Google et Canada.ca
 - **Outils de commentaires d'experts** : Accès aux interfaces d'évaluation détaillées
 - **Traitement par lot** : Créer et gérer les lots d'évaluation
 - **Métriques de performance** : Voir la performance du système et les analyses de commentaires d'utilisateurs

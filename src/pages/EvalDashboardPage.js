@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 
@@ -17,7 +18,7 @@ const escapeHtmlAttribute = (value) => {
     .replace(/>/g, '&gt;');
 };
 
-const TABLE_STORAGE_KEY = `evalDashboard_tableState_v1_`;
+const TABLE_STORAGE_KEY = `evalDashboard_tableState_v2_`;
 
 const truncateEmail = (email) => {
   if (!email) return '';
@@ -137,9 +138,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
+        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
       },
-      searchable: true,
+      searchable: false,
       orderable: true
     },
     {
@@ -147,17 +150,19 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       data: 'questionNumber',
       render: (value) => value != null ? String(value) : '',
       width: '40px',
-      searchable: true,
+      searchable: false,
       orderable: true
     },
-    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
+    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: false, orderable: true },
+    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: false, orderable: true },
+    { title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => v ? escapeHtmlAttribute(v) : '', searchable: false, orderable: true },
+    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
+    { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: false, orderable: true }
   ]), [formatDate, t]);
 
   return (
@@ -166,13 +171,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
+          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 
       <p className="mb-0 small-text">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
 
-      <FilterPanel onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+      <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -201,9 +206,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 searching: true,
                 ordering: true,
                 autoWidth: false,
-                order: [[9, 'desc']],
+                order: [[11, 'desc']],
                 stateSave: true,
                 language: {
+                  ...dataTableLanguage(lang),
                   search: t('admin.evalDashboard.searchLabel', 'Search'),
                   searchPlaceholder: t('admin.evalDashboard.searchPlaceholder', 'Enter search term...')
                 },
@@ -265,8 +271,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 9, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'department', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 11, dir: 'desc' };
+                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'feedback', 'hasDownload', 'department', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';

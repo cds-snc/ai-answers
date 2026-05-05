@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
@@ -7,7 +7,7 @@ import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
 import BatchPage from './pages/BatchPage.js';
 import ChatViewer from './pages/ChatViewer.js';
-import SignupPage from './pages/SignupPage.js';
+import RegisterPage from './pages/RegisterPage.js';
 import LoginPage from './pages/LoginPage.js';
 import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
@@ -31,7 +31,9 @@ import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
 import ExperimentalAnalysisPage from './pages/experimental/ExperimentalAnalysisPage.js';
 import ExperimentalDatasetsPage from './pages/experimental/ExperimentalDatasetsPage.js';
+import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
+import { translateSlug } from './utils/routes.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -68,7 +70,7 @@ const getAlternatePath = (currentPath, currentLang) => {
   newSegments.push(newLang);
 
   if (restSegments && restSegments.length) {
-    newSegments.push(...restSegments.filter(Boolean));
+    newSegments.push(...restSegments.filter(Boolean).map(seg => translateSlug(seg, currentLang, newLang)));
   }
 
   const result = newSegments.join('/') || `/${newLang}`;
@@ -167,11 +169,19 @@ const computeAlternateLangHref = (location) => {
   return { alternateLangHref, currentLang };
 };
 
+const NotFoundRoute = () => {
+  const location = useLocation();
+  const { currentLang } = computeAlternateLangHref(location);
+  return <NotFoundPage lang={currentLang} />;
+};
+
 const AppLayout = () => {
   const location = useLocation();
 
   const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
   const { t } = useTranslations(currentLang);
+  const matches = useMatches();
+  const is404 = matches.some(m => m.handle?.is404);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
@@ -300,24 +310,26 @@ const AppLayout = () => {
 
   return (
     <>
-      <section className="alpha-top">
-        <div className="container">
-          <small>
-            <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
-            {t('homepage.status.description')}
-          </small>
-        </div>
-      </section>
+      {!is404 && (
+        <section className="alpha-top">
+          <div className="container">
+            <small>
+              <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
+              {t('homepage.status.description')}
+            </small>
+          </div>
+        </section>
+      )}
       <GcdsHeader
         lang={currentLang}
         langHref={alternateLangHref}
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Show AI Answers breadcrumb on About page */}
-          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos')) && (
+          {/* Show AI Answers breadcrumb on About and 404 pages */}
+          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
             <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
-              {currentLang === 'fr' ? 'Réponses IA' : 'AI Answers'}
+              {t('notFound.breadcrumb')}
             </GcdsBreadcrumbsItem>
           )}
         </GcdsBreadcrumbs>
@@ -326,7 +338,7 @@ const AppLayout = () => {
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
       </main>
-      <GcdsFooter display="compact" lang={currentLang} />
+      <GcdsFooter display={is404 ? 'full' : 'compact'} lang={currentLang} />
     </>
   );
 };
@@ -339,59 +351,69 @@ export default function App() {
     const hostPrefixMatch = runtimeHostname.match(/^(ai-answers|reponses-ia)(?:\.|$)/);
     const defaultLang = hostPrefixMatch && hostPrefixMatch[1] === 'reponses-ia' ? 'fr' : 'en';
     const homeDefault = defaultLang === 'fr' ? homeFr : homeEn;
+    const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
+
     const publicRoutes = [
-      { path: '/', element: homeDefault },
-      { path: '/en', element: homeEn },
-      { path: '/fr', element: homeFr },
+      ...(requireAuthForChat ? [] : [
+        { path: '/', element: homeDefault },
+        { path: '/en', element: homeEn },
+        { path: '/fr', element: homeFr },
+      ]),
       { path: '/en/about', element: <AboutPage lang="en" /> },
-      { path: '/fr/about', element: <AboutPage lang="fr" /> },
+      { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
-      { path: '/fr/signin', element: <LoginPage lang="fr" /> },
+      { path: '/fr/se-connecter', element: <LoginPage lang="fr" /> },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },
-      { path: '/fr/reset-request', element: <ResetRequestPage lang="fr" /> },
+      { path: '/fr/reinitialisation', element: <ResetRequestPage lang="fr" /> },
       { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" /> },
-      { path: '/fr/reset-verify', element: <ResetVerifyPage lang="fr" /> },
+      { path: '/fr/verification-reinitialisation', element: <ResetVerifyPage lang="fr" /> },
       { path: '/en/reset-complete', element: <ResetCompletePage lang="en" /> },
-      { path: '/fr/reset-complete', element: <ResetCompletePage lang="fr" /> },
-      { path: '/en/signup', element: <SignupPage lang="en" /> },
-      { path: '/fr/signup', element: <SignupPage lang="fr" /> },
+      { path: '/fr/reinitialisation-reussie', element: <ResetCompletePage lang="fr" /> },
+      { path: '/en/register', element: <RegisterPage lang="en" /> },
+      { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" /> },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
-      { path: '/fr/logout', element: <LogoutPage lang="fr" /> }
+      { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> },
+      { path: '*', element: <NotFoundRoute />, handle: { is404: true } }
     ];
 
     const protectedRoutes = [
+      ...(requireAuthForChat ? [
+        { path: '/', element: homeDefault, roles: ['admin', 'partner'] },
+        { path: '/en', element: homeEn, roles: ['admin', 'partner'] },
+        { path: '/fr', element: homeFr, roles: ['admin', 'partner'] },
+      ] : []),
       { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/chat-dashboard', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/batch', element: <BatchPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/chat-viewer', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/visualiseur-de-clavardage', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/users', element: <UsersPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/utilisateurs', element: <UsersPage lang="fr" />, roles: ['admin'] },
       { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/eval', element: <EvalPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/evaluation', element: <EvalPage lang="fr" />, roles: ['admin'] },
       { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/eval-dashboard', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord-evaluation', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/tableau-de-bord-auto-evaluation', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'] },
       { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/metrics', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
       { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
       { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/scenario-overrides', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/derogation-scenarios', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/parametres', element: <SettingsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
-      { path: '/fr/database', element: <DatabasePage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/base-de-donnees', element: <DatabasePage lang="fr" />, roles: ['admin'] },
       { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'] },
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/connectivity', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'] },
       { path: '/fr/experimental/analysis', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },
@@ -412,7 +434,7 @@ export default function App() {
           ...protectedRoutes.map(route => ({
             path: route.path,
             element: (
-              <RoleProtectedRoute roles={route.roles} lang={route.path.includes('/fr/') ? 'fr' : 'en'}>
+              <RoleProtectedRoute roles={route.roles} lang={route.path === '/fr' || route.path.startsWith('/fr/') ? 'fr' : 'en'}>
                 {route.element}
               </RoleProtectedRoute>
             )

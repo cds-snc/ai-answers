@@ -7,14 +7,16 @@ import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 
 const FilterPanel = ({
+  lang,
   onApplyFilters,
   onClearFilters,
   isVisible = false,
   autoApply = false,
   applyButtonText = null,
-  applyDisabled = false
+  applyDisabled = false,
+  defaultUserType = 'all'
 }) => {
-  const { t } = useTranslations();
+  const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
 
@@ -64,7 +66,7 @@ const FilterPanel = ({
   const [department, setDepartment] = useState('');
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
-  const [userType, setUserType] = useState('all');
+  const [userType, setUserType] = useState(defaultUserType);
   const [answerType, setAnswerType] = useState([]);
   const [partnerEval, setPartnerEval] = useState([]);
   const [aiEval, setAiEval] = useState([]);
@@ -81,7 +83,7 @@ const FilterPanel = ({
         department: '',
         urlEn: '',
         urlFr: '',
-        userType: 'all',
+        userType: defaultUserType,
         answerType: 'all',
         partnerEval: 'all',
         aiEval: 'all'
@@ -201,6 +203,7 @@ const FilterPanel = ({
     { value: 'CEO-BEC', label: 'CEO-BEC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
+    { value: 'DND-MDN', label: 'DND-MDN' },
     { value: 'ECCC', label: 'ECCC' },
     { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
     { value: 'FIN', label: 'FIN' },
@@ -221,37 +224,38 @@ const FilterPanel = ({
   const userTypeOptions = [
     { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
     { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
+    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') || 'Public Referred' },
     { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
   ];
 
   // Answer type options
   const answerTypeOptions = [
-    { value: 'all', label: t('admin.filters.allAnswerTypes') || 'All Answer Types' },
-    { value: 'not-gc', label: 'Not GC' },
-    { value: 'clarifying-question', label: 'Clarifying Question' },
-    { value: 'pt-muni', label: 'PT/Muni' },
-    { value: 'normal', label: 'Normal' }
+    { value: 'all', label: t('admin.filters.allAnswerTypes') },
+    { value: 'not-gc', label: t('admin.filters.answerTypeNotGc') },
+    { value: 'clarifying-question', label: t('admin.filters.answerTypeClarifying') },
+    { value: 'pt-muni', label: t('admin.filters.answerTypePtMuni') },
+    { value: 'normal', label: t('admin.filters.answerTypeNormal') }
   ];
 
   // Partner evaluation options
   const partnerEvalOptions = [
-    { value: 'all', label: t('admin.filters.allPartnerEvals') || 'All' },
-    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
-    { value: 'correct', label: t('metrics.dashboard.expertScored.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('metrics.dashboard.expertScored.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('metrics.dashboard.expertScored.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('metrics.dashboard.expertScored.hasCitationError') || 'Has Citation Error' },
-    { value: 'harmful', label: t('metrics.dashboard.expertScored.harmful') || 'Harmful' }
+    { value: 'all', label: t('admin.filters.allPartnerEvals') },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') },
+    { value: 'correct', label: t('admin.filters.evalCorrect') },
+    { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
+    { value: 'hasError', label: t('admin.filters.evalHasError') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') },
+    { value: 'harmful', label: t('admin.filters.evalHarmful') }
   ];
 
   // AI evaluation options
   const aiEvalOptions = [
-    { value: 'all', label: t('admin.filters.allAiEvals') || 'All' },
-    { value: 'noEval', label: t('admin.filters.noEvaluation') || 'No Evaluation' },
-    { value: 'correct', label: t('metrics.dashboard.aiScored.correct') || 'Correct' },
-    { value: 'needsImprovement', label: t('metrics.dashboard.aiScored.needsImprovement') || 'Needs Improvement' },
-    { value: 'hasError', label: t('metrics.dashboard.aiScored.hasError') || 'Has Error' },
-    { value: 'hasCitationError', label: t('metrics.dashboard.aiScored.hasCitationError') || 'Has Citation Error' }
+    { value: 'all', label: t('admin.filters.allAiEvals') },
+    { value: 'noEval', label: t('admin.filters.noEvaluation') },
+    { value: 'correct', label: t('admin.filters.evalCorrect') },
+    { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
+    { value: 'hasError', label: t('admin.filters.evalHasError') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') }
   ];
 
   const handleApply = () => {
@@ -280,7 +284,7 @@ const FilterPanel = ({
     setDepartment('');
     setUrlEn('');
     setUrlFr('');
-    setUserType('all');
+    setUserType(defaultUserType);
     setAnswerType([]);
     setPartnerEval([]);
     setAiEval([]);
@@ -326,7 +330,7 @@ const FilterPanel = ({
       </summary>
       <div className="filter-panel-content">
         <div className="filter-grid">
-          {/* Left column - Date Range and URL Filters */}
+          {/* Left column - Date Range and Users */}
           <div className="filter-column">
             <div className="filter-row">
               <label htmlFor="dateRangePicker" className="filter-label">
@@ -343,31 +347,21 @@ const FilterPanel = ({
             </div>
 
             <div className="filter-row">
-              <label htmlFor="url-en" className="filter-label">
-                {t('admin.filters.urlEn') || 'URL (EN)'}
+              <label htmlFor="user-type" className="filter-label">
+                {t('admin.filters.users') || 'User Type'}
               </label>
-              <input
-                type="text"
-                id="url-en"
-                value={urlEn}
-                onChange={(e) => setUrlEn(e.target.value)}
-                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                className="filter-input"
-              />
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="url-fr" className="filter-label">
-                {t('admin.filters.urlFr') || 'URL (FR)'}
-              </label>
-              <input
-                type="text"
-                id="url-fr"
-                value={urlFr}
-                onChange={(e) => setUrlFr(e.target.value)}
-                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                className="filter-input"
-              />
+              <select
+                id="user-type"
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                className="filter-select"
+              >
+                {userTypeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -391,25 +385,8 @@ const FilterPanel = ({
               </select>
             </div>
 
-            <div className="filter-row">
-              <label htmlFor="user-type" className="filter-label">
-                {t('admin.filters.users') || 'User Type'}
-              </label>
-              <select
-                id="user-type"
-                value={userType}
-                onChange={(e) => setUserType(e.target.value)}
-                className="filter-select"
-              >
-                {userTypeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Advanced Filters - Collapsible (Closed by default) */}
+            <div className="filter-label">{t('admin.filters.filterOptions')}</div>
             <details
               className="filter-advanced-details"
               open={showAdvancedFilters}
@@ -419,6 +396,32 @@ const FilterPanel = ({
                 {t('admin.filters.showAdvanced')}
               </summary>
               <div className="filter-advanced-section mt-100">
+                <div className="filter-row">
+                  <label htmlFor="url-en" className="filter-label">
+                    {t('admin.filters.urlEn') || 'URL (EN)'}
+                  </label>
+                  <input
+                    type="text"
+                    id="url-en"
+                    value={urlEn}
+                    onChange={(e) => setUrlEn(e.target.value)}
+                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                    className="filter-input"
+                  />
+                </div>
+                <div className="filter-row">
+                  <label htmlFor="url-fr" className="filter-label">
+                    {t('admin.filters.urlFr') || 'URL (FR)'}
+                  </label>
+                  <input
+                    type="text"
+                    id="url-fr"
+                    value={urlFr}
+                    onChange={(e) => setUrlFr(e.target.value)}
+                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                    className="filter-input"
+                  />
+                </div>
                 <div className="filter-row">
                   <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
                     <summary className="filter-label">

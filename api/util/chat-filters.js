@@ -6,7 +6,7 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export function categorizeExpertFeedback(expertFeedback) {
   if (!expertFeedback) return null;
 
-  const hasCitationError = expertFeedback.citationScore === 0;
+  const hasCitationError = expertFeedback.citationScore === 0 || expertFeedback.citationScore === 20;
   const totalScore = expertFeedback.totalScore;
 
   const feedbackFields = [
@@ -106,7 +106,7 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                   ]
                 },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
-                hasCitationError: { $eq: ['$$ef.citationScore', 0] },
+                hasCitationError: { $in: ['$$ef.citationScore', [0, 20]] },
                 hasHarmful: {
                   $or: [
                     { $eq: ['$$ef.sentence1Harmful', true] },
@@ -130,7 +130,6 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] },
                     { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
@@ -187,7 +186,7 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                   ]
                 },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
-                hasCitationError: { $eq: ['$$ef.citationScore', 0] },
+                hasCitationError: { $in: ['$$ef.citationScore', [0, 20]] },
                 hasHarmful: {
                   $or: [
                     { $eq: ['$$ef.sentence1Harmful', true] },
@@ -211,7 +210,6 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] },
                     { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
@@ -242,17 +240,55 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
   };
 }
 
+// Subdomains of canada.ca to exclude from the "Public Referred" filter.
+// These are CDS-owned, internal, or non-public-facing sites.
+// Add both EN and FR variants when applicable.
+const EXCLUDED_CANADA_CA_SUBDOMAINS = [
+  // CDS sites (EN / FR)
+  'blog', 'blogue',
+  'digital', 'numerique',
+  'design', 'conception',
+  // Pre-production / internal
+  'alpha',                    // includes ai-answers.alpha.canada.ca
+  'staging',
+  'test',
+];
+
+// Build exclusion regex from the list (exact subdomain match only)
+// Anchored to ://, . or ^ to handle URLs with or without protocol prefix
+const _excluded = EXCLUDED_CANADA_CA_SUBDOMAINS.map(s => escapeRegex(s)).join('|');
+const REFERRED_PUBLIC_EXCLUSION_REGEX =
+  `(://|\\.|^)(${_excluded})\\.canada\\.ca(/|$)`;
+
 export function getChatFilterConditions(filters, options = {}) {
-  const { basePath = 'interactions' } = options;
+  const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;
   const prefix = basePath ? `${basePath}.` : '';
   const withPath = (field) => `${prefix}${field}`;
   const conditions = [];
 
   // userType
-  if (filters.userType === 'public') {
-    conditions.push({ user: { $exists: false } });
-  } else if (filters.userType === 'admin') {
-    conditions.push({ user: { $exists: true, $ne: null } });
+  if (!skipUserCondition) {
+    if (filters.userType === 'public') {
+      conditions.push({ [userField]: { $exists: false } });
+    } else if (filters.userType === 'admin') {
+      conditions.push({ [userField]: { $exists: true, $ne: null } });
+    } else if (filters.userType === 'referredPublic') {
+      conditions.push({ [userField]: { $exists: false } });
+    }
+  }
+
+  if (filters.userType === 'referredPublic') {
+    conditions.push({
+      [withPath('referringUrl')]: {
+        $regex: '(://|\\.|^)(canada\\.ca|gc\\.ca)(/|$)',
+        $options: 'i'
+      }
+    });
+    conditions.push({
+      [withPath('referringUrl')]: {
+        $not: { $regex: REFERRED_PUBLIC_EXCLUSION_REGEX, $options: 'i' }
+      }
+    });
   }
 
   // department

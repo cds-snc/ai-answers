@@ -175,11 +175,8 @@ export function getBaseInteractionPipeline(dateFilter, extraFilters = [], option
                 as: 'ctx'
             }
         },
-        {
-            $addFields: {
-                pageLanguage: { $arrayElemAt: ['$ctx.pageLanguage', 0] }
-            }
-        }
+        // Note: pageLanguage lives on the Chat document root, not on Context.
+        // No $addFields needed — it flows through from the Chat collection.
     );
 
     return stages;

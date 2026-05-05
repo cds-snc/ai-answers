@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import DataStoreService from '../services/DataStoreService.js';
 
@@ -39,7 +40,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
       <h1 className="mb-400">{t('admin.publicEval.title', 'Public Evaluation')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
-          <GcdsLink href={`/${language}/admin`}>{t('common.backToAdmin', 'Back to Admin')}</GcdsLink>
+          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
       <DataTable
@@ -57,7 +58,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
             render: (data) => formatDate(data)
           }
         ]}
-        options={{ paging: true, searching: true, ordering: true }}
+        options={{ paging: true, searching: true, ordering: true, language: dataTableLanguage(lang) }}
       />
     </GcdsContainer>
   );

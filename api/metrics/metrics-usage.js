@@ -38,8 +38,8 @@ function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter =
             $project: {
                 chatId: 1,
                 searchProvider: 1,
-                pageLanguage: '$interactions.context.pageLanguage',
-                department: '$interactions.context.department',
+                pageLanguage: 1,
+                department: { $arrayElemAt: ['$ctx.department', 0] },
                 contextInputTokens: { $convert: { input: '$interactions.context.inputTokens', to: 'int', onError: 0, onNull: 0 } },
                 contextOutputTokens: { $convert: { input: '$interactions.context.outputTokens', to: 'int', onError: 0, onNull: 0 } },
                 // We need answer lookup for tokens and answerType
@@ -77,27 +77,27 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
         }
     });
 
-    // Project minimal answer fields + Tokens
+    // Pre-compute answer tokens once so the combined totals can reuse them
+    stages.push({
+        $addFields: {
+            answerInputTokens: { $convert: { input: '$answer.inputTokens', to: 'int', onError: 0, onNull: 0 } },
+            answerOutputTokens: { $convert: { input: '$answer.outputTokens', to: 'int', onError: 0, onNull: 0 } }
+        }
+    });
+
     stages.push({
         $project: {
             chatId: 1,
             searchProvider: 1,
             pageLanguage: 1,
             department: 1,
-            inputTokens: {
-                $add: [
-                    '$contextInputTokens',
-                    { $convert: { input: '$answer.inputTokens', to: 'int', onError: 0, onNull: 0 } }
-                ]
-            },
-            outputTokens: {
-                $add: [
-                    '$contextOutputTokens',
-                    { $convert: { input: '$answer.outputTokens', to: 'int', onError: 0, onNull: 0 } }
-                ]
-            },
+            contextInputTokens: '$contextInputTokens',
+            answerInputTokens: 1,
+            contextOutputTokens: '$contextOutputTokens',
+            answerOutputTokens: 1,
+            inputTokens: { $add: ['$contextInputTokens', '$answerInputTokens'] },
+            outputTokens: { $add: ['$contextOutputTokens', '$answerOutputTokens'] },
             answerType: { $ifNull: ['$answer.answerType', 'normal'] },
-            // Keep IDs for further lookups if needed
             expertFeedbackId: 1,
             autoEvalId: 1
         }
@@ -184,7 +184,20 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             ptMuniCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$answerType', 'pt-muni'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
             notGcCount: { $sum: { $cond: [{ $eq: ['$answerType', 'not-gc'] }, 1, 0] } },
             notGcCountEn: { $sum: { $cond: [{ $and: [{ $eq: ['$answerType', 'not-gc'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
-            notGcCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$answerType', 'not-gc'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } }
+            notGcCountFr: { $sum: { $cond: [{ $and: [{ $eq: ['$answerType', 'not-gc'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
+            // Context vs answer token breakdown
+            totalContextInputTokens: { $sum: '$contextInputTokens' },
+            totalContextInputTokensEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$contextInputTokens', 0] } },
+            totalContextInputTokensFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$contextInputTokens', 0] } },
+            totalAnswerInputTokens: { $sum: '$answerInputTokens' },
+            totalAnswerInputTokensEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$answerInputTokens', 0] } },
+            totalAnswerInputTokensFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$answerInputTokens', 0] } },
+            totalContextOutputTokens: { $sum: '$contextOutputTokens' },
+            totalContextOutputTokensEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$contextOutputTokens', 0] } },
+            totalContextOutputTokensFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$contextOutputTokens', 0] } },
+            totalAnswerOutputTokens: { $sum: '$answerOutputTokens' },
+            totalAnswerOutputTokensEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$answerOutputTokens', 0] } },
+            totalAnswerOutputTokensFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$answerOutputTokens', 0] } }
         }
     });
 
@@ -218,7 +231,19 @@ async function getUsageMetrics(req, res) {
                 'clarifying-question': { total: overall.clarifyingCount || 0, en: overall.clarifyingCountEn || 0, fr: overall.clarifyingCountFr || 0 },
                 'pt-muni': { total: overall.ptMuniCount || 0, en: overall.ptMuniCountEn || 0, fr: overall.ptMuniCountFr || 0 },
                 'not-gc': { total: overall.notGcCount || 0, en: overall.notGcCountEn || 0, fr: overall.notGcCountFr || 0 }
-            }
+            },
+            totalContextInputTokens: overall.totalContextInputTokens || 0,
+            totalContextInputTokensEn: overall.totalContextInputTokensEn || 0,
+            totalContextInputTokensFr: overall.totalContextInputTokensFr || 0,
+            totalAnswerInputTokens: overall.totalAnswerInputTokens || 0,
+            totalAnswerInputTokensEn: overall.totalAnswerInputTokensEn || 0,
+            totalAnswerInputTokensFr: overall.totalAnswerInputTokensFr || 0,
+            totalContextOutputTokens: overall.totalContextOutputTokens || 0,
+            totalContextOutputTokensEn: overall.totalContextOutputTokensEn || 0,
+            totalContextOutputTokensFr: overall.totalContextOutputTokensFr || 0,
+            totalAnswerOutputTokens: overall.totalAnswerOutputTokens || 0,
+            totalAnswerOutputTokensEn: overall.totalAnswerOutputTokensEn || 0,
+            totalAnswerOutputTokensFr: overall.totalAnswerOutputTokensFr || 0
         };
         return res.status(200).json({ success: true, metrics });
     } catch (error) {

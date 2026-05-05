@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchRetrieveHandler(req, res) {
     if (req.method !== 'GET') {
@@ -37,5 +37,5 @@ async function batchRetrieveHandler(req, res) {
 }
 
 export default function handler(req, res) {
-    return withProtection(batchRetrieveHandler, authMiddleware, adminMiddleware)(req, res);
+    return withProtection(batchRetrieveHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

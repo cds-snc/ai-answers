@@ -203,6 +203,19 @@ const ExpertFeedbackComponent = ({
                     />
                     <label htmlFor={`sentence${index + 1}-harmful`}
                     >{t('homepage.expertRating.options.harmful')}</label>
+                    <details className="harmful-details mt-100">
+                      <summary>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
+                      <p className="mb-100 mt-100 font-size-text-xsm-nr">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
+                      <p className="mb-100 font-size-text-xsm-nr">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
+                      <ul className="mb-200 list-disc font-size-text-xsm-nr">
+                        <li>{t('homepage.expertRating.options.harmfulDetails.item1')}</li>
+                        <li>{t('homepage.expertRating.options.harmfulDetails.item2')}</li>
+                        <li>{t('homepage.expertRating.options.harmfulDetails.item3')}</li>
+                        <li>{t('homepage.expertRating.options.harmfulDetails.item4')}</li>
+                        <li>{t('homepage.expertRating.options.harmfulDetails.item5')}</li>
+                        <li>{t('homepage.expertRating.options.harmfulDetails.item6')}</li>
+                      </ul>
+                    </details>
                   </li>
                 )}
               </ul>

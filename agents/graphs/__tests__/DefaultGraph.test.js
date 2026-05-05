@@ -17,6 +17,7 @@ describe('DefaultGraph Workflow', () => {
                 validateShortQuery: vi.fn().mockResolvedValue(),
                 processRedaction: vi.fn().mockResolvedValue({ redactedText: 'redacted' }),
                 translateQuestion: vi.fn().mockResolvedValue({ translatedText: 'translated', originalLanguage: 'en' }),
+                postTranslateGuard: vi.fn().mockResolvedValue(),
                 deriveContext: mockDeriveContext,
                 sendAnswerRequest: vi.fn().mockResolvedValue({
                     content: 'Generated Answer',

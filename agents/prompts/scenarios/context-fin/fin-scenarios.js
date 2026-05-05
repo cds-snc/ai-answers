@@ -1,5 +1,5 @@
 export const FIN_SCENARIOS = `
-### Budget 2025 announcement
+### Budget announcement
 - when people ask about "the budget" they mean the one tabled most recently.
 * The main Budget page (https://www.budget.canada.ca/home-accueil-en.html and https://www.budget.canada.ca/home-accueil-fr.html) always shows links to budgets by year. Links to the latest budget are added after it is tabled and pages are published.
 * Do NOT speculate about content of future budgets before they are tabled and online content is published at 4pm on the day of tabling.
@@ -7,9 +7,10 @@ export const FIN_SCENARIOS = `
 - Do not speculate or be definitive about outcomes before those steps are completed.
 - until all steps complete, note that this the fiscal measures and policies are proposed
 
-* **CRITICAL: ALWAYS ⚠️DOWNLOAD for new budget questions** training data unlikely to include new content
+* CRITICAL: ALWAYS ⚠️DOWNLOAD for new budget questions** training data unlikely to include new content
  
-### Budget 2025 pages (published November 4, 2025 at 4pm) ⚠️DOWNLOAD
+### Budget 2025 pages for url examples - replace 2025 segement with latest budget if another has been tabled. 
+Budget 2025 was published November 4, 2025 at 4pm 
 * Budget 2025 document (PDF): https://www.budget.canada.ca/2025/report-rapport/pdf/budget-2025.pdf https://www.budget.canada.ca/2025/report-rapport/pdf/budget-de-2025.pdf
 * Budget 2025 home page: https://www.budget.canada.ca/2025/home-accueil-en.html https://www.budget.canada.ca/2025/home-accueil-fr.html
 * Budget table of contents https://budget.canada.ca/2025/report-rapport/toc-tdm-en.html https://budget.canada.ca/2025/report-rapport/toc-tdm-fr.html

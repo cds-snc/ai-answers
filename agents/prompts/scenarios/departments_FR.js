@@ -262,7 +262,7 @@ export const departments_FR = [
   {
     "name": "Centre national des arts",
     "url": "https://nac-cna.ca/fr/",
-    "abbrKey": "NSC-CNA"
+    "abbrKey": "NAC-CNA"
   },
   {
     "name": "Chaires de recherche du Canada",
@@ -302,7 +302,7 @@ export const departments_FR = [
   {
     "name": "Commissariat à la protection de la vie privée du Canada",
     "url": "https://www.priv.gc.ca/fr/",
-    "abbrKey": "OPC-CPVP"
+    "abbrKey": "PRIV"
   },
   {
     "name": "Commissariat à l'information au Canada",
@@ -347,7 +347,7 @@ export const departments_FR = [
   {
     "name": "Commission canadienne des grains",
     "url": "https://www.grainscanada.gc.ca/fr/",
-    "abbrKey": "MAB-CCG"
+    "abbrKey": "CGC-CCG"
   },
   {
     "name": "Commission canadienne du lait",
@@ -502,12 +502,12 @@ export const departments_FR = [
   {
     "name": "Conseil national des aînés",
     "url": "https://www.canada.ca/fr/conseil-national-aines.html",
-    "abbrKey": "NSC-CNA"
+    "abbrKey": "NSC-CNSA"
   },
   {
     "name": "Construction de Défense Canada",
     "url": "https://www.cdc-dcc.gc.ca/",
-    "abbrKey": "LCC-CDC"
+    "abbrKey": "DCC-CDC"
   },
   {
     "name": "CORCAN",
@@ -627,7 +627,7 @@ export const departments_FR = [
   {
     "name": "Forces armées canadiennes emplois",
     "url": "https://forces.ca/fr/",
-    "abbrKey": "FCC-FAC"
+    "abbrKey": "CAF-FAC"
   },
   {
     "name": "Garde côtière canadienne",
@@ -657,12 +657,7 @@ export const departments_FR = [
   {
     "name": "Impact Canada",
     "url": "https://impact.canada.ca/fr",
-    "abbrKey": "IC"
-  },
-  {
-    "name": "Innovation Canada Outil de recherche d'aide aux entreprises",
-    "url": "https://innovation.ised-isde.canada.ca/s/?language=fr_CA",
-    "abbrKey": "INNOVATION"
+    "abbrKey": "IMPACT"
   },
   {
     "name": "Logement, Infrastructures et Collectivités Canada",
@@ -682,7 +677,7 @@ export const departments_FR = [
   {
     "name": "Institutions démocratiques",
     "url": "https://www.canada.ca/fr/institutions-democratiques.html",
-    "abbrKey": "DI"
+    "abbrKey": "DEMO"
   },
   {
     "name": "Instituts de recherche en santé du Canada",
@@ -782,7 +777,7 @@ export const departments_FR = [
   {
     "name": "Musée des sciences et de la technologie du Canada",
     "url": "https://ingeniumcanada.org/fr/scitech",
-    "abbrKey": "INGEN-SCI"
+    "abbrKey": "INGENIUM"
   },
   {
     "name": "Musées numériques Canada",
@@ -817,7 +812,7 @@ export const departments_FR = [
   {
     "name": "Normes d'accessibilité Canada",
     "url": "https://accessibilite.canada.ca/",
-    "abbrKey": "NAC-CNA"
+    "abbrKey": "ASC-NCA"
   },
   {
     "name": "Office d'investissement du régime de pensions du Canada",
@@ -852,7 +847,7 @@ export const departments_FR = [
   {
     "name": "Parcs Canada",
     "url": "https://parcs.canada.ca/index",
-    "abbrKey": "PC"
+    "abbrKey": "PARKS-PARCS"
   },
   {
     "name": "Parlement du Canada",
@@ -873,11 +868,6 @@ export const departments_FR = [
     "name": "Pétrole et gaz des Indiens du Canada",
     "url": "https://www.pgic-iogc.gc.ca/fra/1100110010002/1100110010005",
     "abbrKey": "PGIC-IOGC"
-  },
-  {
-    "name": "Programme de passeport",
-    "url": "https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens.html",
-    "abbrKey": "PASSPORT"
   },
   {
     "name": "Pont Blue Water Canada",
@@ -902,7 +892,7 @@ export const departments_FR = [
   {
     "name": "Programme du travail",
     "url": "https://www.canada.ca/fr/emploi-developpement-social/ministere/portefeuille/travail.html",
-    "abbrKey": "LP"
+    "abbrKey": "TRAVAIL-LABOUR"
   },
   {
     "name": "Recherche et développement pour la Défense Canada",
@@ -913,11 +903,6 @@ export const departments_FR = [
     "name": "Relations Couronne-Autochtones et Affaires du Nord Canada",
     "url": "https://www.canada.ca/fr/relations-couronne-autochtones-affaires-nord.html",
     "abbrKey": "RCAANC-CIRNAC"
-  },
-  {
-    "name": "Régime de pensions du Canada",
-    "url": "https://www.canada.ca/fr/services/prestations/pensionspubliques.html",
-    "abbrKey": "CPP-RPC"
   },
   {
     "name": "Réseau canadien d'information sur le patrimoine",
@@ -945,11 +930,6 @@ export const departments_FR = [
     "abbrKey": "HOC-CDC"
   },
   {
-    "name": "Commission des lieux et monuments historiques du Canada",
-    "url": "https://parcs.canada.ca/culture/designation",
-    "abbrKey": "HSMBC-CLMHC"
-  },
-  {
     "name": "Savoir polaire Canada",
     "url": "https://www.canada.ca/fr/savoir-polaire.html",
     "abbrKey": "POLAR-POLAIRE"
@@ -974,11 +954,6 @@ export const departments_FR = [
     "url": "https://www.securitepublique.gc.ca/index-fr.aspx",
     "abbrKey": "PS-SP"
   },
-    {
-    "name": "Service Canada",
-    "url": "https://www.canada.ca/fr/emploi-developpement-social/ministere/portefeuille/service-canada.html",
-    "abbrKey": "EDSC-ESDC"
-  },
   {
     "name": "Service canadien d'appui aux tribunaux administratifs",
     "url": "https://www.canada.ca/fr/service-canadien-appui-tribunaux-administratifs.html",
@@ -1002,7 +977,7 @@ export const departments_FR = [
   {
     "name": "Service correctionnel Canada",
     "url": "https://www.canada.ca/fr/service-correctionnel.html",
-    "abbrKey": "SCC-CSC"
+    "abbrKey": "CSC-SCC"
   },
   {
     "name": "Service des délégués commerciaux du Canada",
@@ -1054,10 +1029,15 @@ export const departments_FR = [
     "url": "https://www.statcan.gc.ca/fra/debut",
     "abbrKey": "StatCan"
   },
+     {
+    "name": "Rechercher des tarifs Canada",
+    "url": "https://www.tariffinder.ca/fr/getStarted",
+    "abbrKey": "TARIFF-TARIF"
+  },
   {
     "name": "Téléfilm Canada",
     "url": "https://www.telefilm.ca/fr/?q=fr",
-    "abbrKey": "TFC"
+    "abbrKey": "TELEFILM"
   },
   {
     "name": "Transports Canada",
@@ -1077,7 +1057,7 @@ export const departments_FR = [
   {
     "name": "Tribunal de la concurrence",
     "url": "https://www.ct-tc.gc.ca/fr/accueil.html",
-    "abbrKey": "CT"
+    "abbrKey": "CT-TC"
   },
   {
     "name": "Tribunal de la protection des fonctionnaires divulgateurs Canada",

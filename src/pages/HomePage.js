@@ -14,6 +14,7 @@ import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
+import { getPath } from "../utils/routes.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -111,16 +112,19 @@ const HomePage = ({ lang = "en" }) => {
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
   // const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch session and availability in one go
-  // [DEPRECATED] Removal of chat-init call for lazy-init architecture
-
-  // Lazy init: chatId will be null initially and set from server response after first message
+  // Lazy init: chatId will be null initially and set from server response after first message.
+  // Check siteStatus so admins can take the site offline via SettingsPage.
   useEffect(() => {
     if (!authLoading && !reviewChatId) {
-      // No pre-generation needed - server will create chatId on first request
-      setServiceStatus({ isAvailable: true, sessionAvailable: true, message: '' });
+      DataStoreService.getSiteStatus().then((status) => {
+        if (status === 'available') {
+          setServiceStatus({ isAvailable: true, sessionAvailable: true, message: '' });
+        } else {
+          setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });
+        }
+      });
     }
-  }, [authLoading, reviewChatId]);
+  }, [authLoading, reviewChatId, t]);
 
   useEffect(() => {
     if (reviewChatId) {
@@ -186,7 +190,7 @@ const HomePage = ({ lang = "en" }) => {
   };
 
   if (serviceStatus.isAvailable === false || chatSessionFailed) {
-    return <OutageComponent />;
+    return <OutageComponent lang={lang} />;
   }
 
   return (
@@ -252,9 +256,9 @@ const HomePage = ({ lang = "en" }) => {
           <GcdsText>
             {t("homepage.about.builtBy")}{" "}
             <GcdsLink
-              href={lang === "fr" ? "/fr/about" : "/en/about"}
+              href={getPath('about', lang)}
             >
-              {lang === "fr" ? "Lire plus sur Réponses IA" : "Learn more about AI Answers"}
+              {t("homepage.about.learnMore")}
             </GcdsLink>
           </GcdsText>
         </div>

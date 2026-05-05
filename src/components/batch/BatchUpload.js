@@ -1,10 +1,12 @@
 // src/components/batch/BatchUpload.js
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
+import DataStoreService from '../../services/DataStoreService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
+import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -12,14 +14,22 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [processing, setProcessing] = useState(false);
   // Removed unused results state
   const [error, setError] = useState(null);
-  const [selectedAI, setSelectedAI] = useState('azure');
   const [fileUploaded, setFileUploaded] = useState(false);
   const [batchId, setBatchId] = useState(null);
   const [batchStatus, setBatchStatus] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
-  const [selectedSearch, setSelectedSearch] = useState('google');
+  // Hardcoded to 'google' until Canada.ca search is available
+  const selectedSearch = 'google';
   const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
+  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
+
+  // Load the configured default model from Settings so batch matches the system default
+  useEffect(() => {
+    DataStoreService.getSetting('model.default', null).then(model => {
+      if (model) setSelectedModel(model);
+    }).catch(() => {});
+  }, []);
 
   const handleFileChange = (event) => {
     setError(null);
@@ -30,7 +40,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       return;
     }
 
-    if (!uploadedFile.name.endsWith('.csv')) {
+    if (!uploadedFile.name.toLowerCase().endsWith('.csv')) {
       setError(t('batch.upload.error.invalidFile'));
       setFile(null);
       return;
@@ -40,13 +50,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     setFileUploaded(false);
   };
 
-  const handleAIToggle = (e) => {
-    setSelectedAI(e.target.value);
-  };
-
-  const handleSearchToggle = (e) => {
-    setSelectedSearch(e.target.value);
-  };
+  // handleSearchToggle removed — uncomment when Canada.ca search is re-enabled
 
   const handleWorkflowChange = (e) => {
     setSelectedWorkflow(e.target.value);
@@ -64,12 +68,12 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     e.preventDefault();
     if (!processing) {
       if (!file) {
-        setError('Please select a file first');
+        setError(t('batch.upload.error.noFile'));
         return;
       }
 
       if (!batchName.trim()) {
-        setError(t('batch.upload.error.nameRequired') || 'Please enter a batch name');
+        setError(t('batch.upload.error.nameRequired'));
         return;
       }
 
@@ -85,8 +89,12 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Parse CSV to entries and prepare items for server-side BatchItem creation
         const entries = processCSV(text);
 
+        if (!entries.length) {
+          throw new Error(t('batch.upload.error.noValidRows'));
+        }
+
         // Only keep fields needed: question variants and URLs
-        const questionKeys = ['REDACTEDQUESTION', 'QUESTION', 'PROBLEMDETAILS', 'REDACTED QUESTION'];
+        const questionKeys = ['REDACTEDQUESTION'];
         const items = entries.map((e, idx) => {
           const original = {};
           questionKeys.forEach((key) => {
@@ -100,7 +108,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         // Persist an initial batch record so it shows up in the processing list (server will create BatchItems)
         const payload = {
           name: batchName || `client-batch-${Date.now()}`,
-          aiProvider: selectedAI,
+          aiProvider: selectedModel,
           pageLanguage: selectedLanguage,
           searchProvider: selectedSearch,
           workflow: selectedWorkflow,
@@ -139,14 +147,19 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           setFileUploaded(false);
         } catch (persistErr) {
           console.error('Failed to persist batch:', persistErr);
-          setError(persistErr?.message || 'Failed to save batch to server');
+          setError(persistErr?.message || t('batch.upload.error.saveFailed'));
           // Re-show the upload button so the user can retry
           setFileUploaded(false);
           setProcessing(false);
         }
       } catch (err) {
-        setError('Failed to read the file. Please try uploading again.');
+        // Surface the actual parse error (e.g. missing column, empty file)
+        // so the admin can see what's wrong with the CSV.
+        const detail = err?.message || t('batch.upload.error.readFailed');
+        setError(detail);
         console.error('Error reading file:', err);
+        // Re-show the upload button so the user can retry without re-selecting
+        setFileUploaded(false);
         setProcessing(false);
       }
     }
@@ -167,14 +180,13 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         throw new Error('The CSV file is empty or invalid.');
       }
 
-      const headers = jsonData[0].map((header) => header.trim().toUpperCase());
-      const problemDetailsIndex = headers.findIndex(
-        (h) => h === 'PROBLEM DETAILS' || h === 'QUESTION' || h === 'REDACTEDQUESTION'
-      );
+      const headers = jsonData[0].map((header) => String(header ?? '').trim().toUpperCase());
+      const QUESTION_HEADERS = ['PROBLEM DETAILS', 'PROBLEMDETAILS', 'QUESTION', 'REDACTEDQUESTION', 'REDACTED QUESTION'];
+      const problemDetailsIndex = headers.findIndex((h) => QUESTION_HEADERS.includes(h));
 
       if (problemDetailsIndex === -1) {
         throw new Error(
-          'Required column "PROBLEM DETAILS/REDACTEDQUESTION" not found in CSV file. Please ensure you are using a file with that column or downloaded from the Feedback Viewer.'
+          `Required question column not found in CSV file. Expected one of: ${QUESTION_HEADERS.join(', ')}. Found headers: ${headers.filter(Boolean).join(', ') || '(none)'}.`
         );
       }
 
@@ -183,13 +195,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         .map((row) => {
           const entry = {};
           headers.forEach((header, index) => {
-            const key = header === 'PROBLEM DETAILS' ? 'REDACTEDQUESTION' : header;
-            entry[key] = row[index]?.trim() || '';
+            const key = (header === 'PROBLEM DETAILS' || header === 'PROBLEMDETAILS' || header === 'REDACTED QUESTION' || header === 'QUESTION')
+              ? 'REDACTEDQUESTION'
+              : header;
+            entry[key] = String(row[index] ?? '').trim();
           });
-          console.log('Processing entry:', entry);
           return entry;
         })
-        .filter((entry) => entry['REDACTEDQUESTION']); // Only filter based on 'QUESTION' presence
+        .filter((entry) => entry['REDACTEDQUESTION']);
 
       console.log(`Found ${entries.length} valid entries to process`);
       return entries;
@@ -216,12 +229,24 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     <GcdsContainer className="mb-600">
       <div className="steps-container">
         <div className="step">
-          <GcdsText>{t('batch.upload.intro')}</GcdsText>
-          <GcdsText>{t('batch.upload.csvRequirements.title')}</GcdsText>
-          <ul>
-            <li>{t('batch.upload.csvRequirements.items.problemDetails')}</li>
-            <li>{t('batch.upload.csvRequirements.items.url')}</li>
-          </ul>
+          <h3>{t('batch.upload.instructions.title')}</h3>
+          <ol style={{ paddingLeft: '1.5em', listStyleType: 'decimal' }}>
+            <li>
+              <strong>{t('batch.upload.instructions.step1')}</strong>
+              <ul style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+                <li>{t('batch.upload.instructions.step1a')}</li>
+                <li>{t('batch.upload.instructions.step1b')}</li>
+                <li>{t('batch.upload.instructions.step1c')}</li>
+                <li>{t('batch.upload.instructions.step1d')}</li>
+              </ul>
+            </li>
+            <li>{t('batch.upload.instructions.step2')}</li>
+            <li>{t('batch.upload.instructions.step3')}</li>
+            <li>{t('batch.upload.instructions.step4')}</li>
+            <li>{t('batch.upload.instructions.step5')}</li>
+            <li>{t('batch.upload.instructions.step6')}</li>
+            <li>{t('batch.upload.instructions.step7')}</li>
+          </ol>
 
           <form onSubmit={handleUpload} className="mt-400">
             <div className="mrgn-bttm-20">
@@ -239,65 +264,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               />
             </div>
 
-            <div className="ai-toggle">
-              <fieldset className="ai-toggle_fieldset">
-                <div className="ai-toggle_container">
-                  <legend className="ai-toggle_legend">{t('batch.upload.aiService.label')}</legend>
-
-                  <div className="flex-center">
-                    <input
-                      type="radio"
-                      id="chatgpt"
-                      name="ai-selection"
-                      value="openai"
-                      checked={selectedAI === 'openai'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label className="mrgn-rght-15" htmlFor="chatgpt">
-                      {t('batch.upload.aiService.openai')}
-                    </label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure"
-                      name="ai-selection"
-                      value="azure"
-                      checked={selectedAI === 'azure'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure">{t('batch.upload.aiService.azure')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure-gpt51"
-                      name="ai-selection"
-                      value="openai-gpt51"
-                      checked={selectedAI === 'openai-gpt51'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure-gpt51">{t('batch.upload.aiService.azure-gpt51')}</label>
-                  </div>
-                  <div className="ai-toggle_option">
-                    <input
-                      type="radio"
-                      id="azure-gpt51-chat"
-                      name="ai-selection"
-                      value="openai-gpt51-chat"
-                      checked={selectedAI === 'openai-gpt51-chat'}
-                      onChange={handleAIToggle}
-                      className="ai-toggle_radio-input"
-                    />
-                    <label htmlFor="azure-gpt51-chat">{t('batch.upload.aiService.azure-gpt51-chat')}</label>
-                  </div>
-                </div>
-              </fieldset>
-            </div>
-
+            {/* Search service toggle – commented out until Canada.ca search is available
             <div className="search-toggle">
               <fieldset className="ai-toggle_fieldset">
                 <div className="ai-toggle_container">
@@ -334,11 +301,12 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                 </div>
               </fieldset>
             </div>
+            */}
 
             <div className="workflow-select mrgn-bttm-20">
               <div className="mrgn-bttm-10">
                 <label htmlFor="workflow" className="mrgn-bttm-10 display-block">
-                  {t('batch.upload.workflow.label') || 'Workflow'}
+                  {t('batch.upload.workflow.label')}
                 </label>
                 <select
                   id="workflow"
@@ -348,12 +316,29 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   className="chat-border"
                   style={{ width: 'auto', display: 'inline-block' }}
                 >
-                  <option value="DefaultGraph">DefaultGraph</option>
-                  <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-                  <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-                  <option value="GPT5MiniDefaultGraph">GPT5MiniDefaultGraph</option>
-                  <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
-                  <option value="GPT5OneChatGraph">GPT5OneChatGraph</option>
+                  {WORKFLOWS.map(w => (
+                    <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="workflow-select mrgn-bttm-20">
+              <div className="mrgn-bttm-10">
+                <label htmlFor="model" className="mrgn-bttm-10 display-block">
+                  {t('batch.upload.model.label')}
+                </label>
+                <select
+                  id="model"
+                  name="model"
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="chat-border"
+                  style={{ width: 'auto', display: 'inline-block' }}
+                >
+                  {AVAILABLE_MODELS.map(m => (
+                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -414,7 +399,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
             {processing && (
               <div className="processing-message mrgn-bttm-10">
-                {t('batch.upload.processing') || 'Processing file, please wait...'}
+                {t('batch.upload.processing')}
               </div>
             )}
 

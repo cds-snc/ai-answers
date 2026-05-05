@@ -1,4 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
+import { ROUTE_SLUGS } from '../utils/routes.js';
 
 
 class AuthService {
@@ -223,7 +224,9 @@ class AuthService {
     });
     if (!resp.ok) {
       const json = await resp.json().catch(() => ({}));
-      throw new Error(json.message || 'Failed to reset password');
+      const err = new Error(json.message || 'Failed to reset password');
+      err.code = json.code || null;
+      throw err;
     }
     return await resp.json();
   }
@@ -249,8 +252,17 @@ class AuthService {
   }
 
   static isPublicRoute(pathname) {
-    const publicRoutes = ['/', '/signin', '/signup', '/about', '/contact'];
-    return publicRoutes.some(route => pathname.startsWith(route));
+    const publicRouteNames = ['signin', 'about', 'register', 'logout', 'reset-request', 'reset-verify', 'reset-complete'];
+    const publicPaths = ['/', '/contact'];
+    for (const name of publicRouteNames) {
+      const slugs = ROUTE_SLUGS[name];
+      if (slugs) {
+        for (const [lang, slug] of Object.entries(slugs)) {
+          publicPaths.push(`/${lang}/${slug}`);
+        }
+      }
+    }
+    return publicPaths.some(route => pathname.startsWith(route));
   }
 
   static async hasRole(requiredRoles = []) {
