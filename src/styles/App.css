@@ -1,4 +1,0 @@
-/* Forwarding file — import the split stylesheets directly instead */
-@import './global.css';
-@import './chat.css';
-@import './admin.css';
