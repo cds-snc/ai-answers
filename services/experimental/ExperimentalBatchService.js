@@ -190,6 +190,9 @@ class ExperimentalBatchService {
                 if (!app) throw new Error(`Graph ${graphName} not found`);
 
                 const chatId = item.chatId || crypto.randomUUID();
+                const batchUser = batch.createdBy
+                    ? { userId: batch.createdBy.toString() }
+                    : null;
 
                 // Build conversationHistory from previous turns in the same chatId group
                 let conversationHistory = [];
@@ -213,11 +216,12 @@ class ExperimentalBatchService {
                     conversationHistory,
                     lang: batch.config.pageLanguage || 'en',
                     selectedAI: batch.config.aiProvider || 'azure',
+                    searchProvider: batch.config.searchProvider || 'google',
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
                     skipPersist: true,
                 };
 
-                await graphRequestContext.run({ headers: {}, user: null }, async () => {
+                await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
                         if (update.result?.answer) {

@@ -8,6 +8,7 @@ import { ExperimentalDatasetRow } from '../../../models/experimentalDatasetRow.j
 import ExperimentalQueueService from '../ExperimentalQueueService.js';
 import ExperimentalAnalyzerRegistry from '../ExperimentalAnalyzerRegistry.js';
 import { getGraphApp } from '../../../agents/graphs/registry.js';
+import { graphRequestContext } from '../../../agents/graphs/requestContext.js';
 
 // Mock dependencies
 vi.mock('../ExperimentalQueueService.js', () => ({
@@ -192,6 +193,7 @@ describe('ExperimentalBatchService', () => {
             };
             const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
             getGraphApp.mockResolvedValue(mockApp);
+            const runSpy = vi.spyOn(graphRequestContext, 'run').mockImplementation((store, callback) => callback());
 
             await ExperimentalBatchService._processItem(batch._id, item._id);
 
@@ -199,15 +201,57 @@ describe('ExperimentalBatchService', () => {
                 expect.objectContaining({
                     userMessage: 'What is 2+2?',
                     lang: 'en',
-                    selectedAI: 'azure'
+                    selectedAI: 'azure',
+                    searchProvider: 'google'
                 }),
                 expect.any(Object)
+            );
+            expect(runSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    user: null
+                }),
+                expect.any(Function)
             );
 
             const updatedItem = await ExperimentalBatchItem.findById(item._id);
             expect(updatedItem.status).toBe('completed');
             expect(updatedItem.answer).toBe('It is 4');
             expect(updatedItem.chatId).toBeDefined();
+            runSpy.mockRestore();
+        });
+
+        it('should seed graph request context with the batch starter user', async () => {
+            const starterId = new mongoose.Types.ObjectId();
+            const batch = await ExperimentalBatch.create({
+                name: 'Starter User Batch',
+                type: 'batch',
+                createdBy: starterId,
+                config: { workflow: 'TestGraph', pageLanguage: 'en', aiProvider: 'azure', searchProvider: 'google' }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'What is 2+2?'
+            });
+
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield { result: { answer: 'It is 4' } };
+                }
+            };
+            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
+            getGraphApp.mockResolvedValue(mockApp);
+            const runSpy = vi.spyOn(graphRequestContext, 'run').mockImplementation((store, callback) => callback());
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            expect(runSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    user: expect.objectContaining({ userId: starterId.toString() })
+                }),
+                expect.any(Function)
+            );
+            runSpy.mockRestore();
         });
 
         it('should build conversationHistory from previous turns and pass it to graph', async () => {

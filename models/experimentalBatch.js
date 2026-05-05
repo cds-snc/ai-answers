@@ -61,6 +61,8 @@ const ExperimentalBatchSchema = new mongoose.Schema({
 
     analyzerSummary: { type: mongoose.Schema.Types.Mixed, default: {} }, // { [analyzerId]: { completed, failed, skipped } }
 
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
     error: { type: String }
 
 }, {

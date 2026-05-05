@@ -19,7 +19,7 @@ async function handler(req, res) {
         }
 
         const batch = await ExperimentalBatchService.createBatch(
-            { name, description, type, config, createdBy: req.user?._id },
+            { name, description, type, config, createdBy: req.user?.userId },
             items
         );
 
