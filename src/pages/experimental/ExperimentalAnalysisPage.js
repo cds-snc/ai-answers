@@ -227,16 +227,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                                 Select Analyzers
                             </label>
-                            <div className="border p-200 rounded" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                            <div className="border p-200 rounded gc-chckbxrdio" >
                                 {analyzers.map(a => (
-                                    <div key={a.id} className="mb-100">
+                                    <div key={a.id} className="checkbox mb-100">
                                         <input
                                             type="checkbox"
                                             id={`az-${a.id}`}
                                             checked={selectedAnalyzerIds.includes(a.id)}
                                             onChange={() => toggleAnalyzer(a.id)}
                                         />
-                                        <label htmlFor={`az-${a.id}`} className="ml-100">
+                                        <label htmlFor={`az-${a.id}`}>
                                             <strong>{a.name}</strong> - {a.description}
                                         </label>
                                     </div>

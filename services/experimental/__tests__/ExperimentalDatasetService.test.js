@@ -48,6 +48,26 @@ describe('ExperimentalDatasetService', () => {
             expect(rows[1].data.answer).toBe('Magic');
         });
 
+        it('should normalize problem details into the canonical question field', async () => {
+            const data = [
+                { 'Problem Details': 'What is IA?', answer: 'Intelligence Artificielle' }
+            ];
+            const buffer = createXlsxBuffer(data);
+            const metadata = { name: 'Problem Details Dataset', type: 'qa-pair' };
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                metadata,
+                userId
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows).toHaveLength(1);
+            expect(rows[0].data).toHaveProperty('question', 'What is IA?');
+            expect(rows[0].data).not.toHaveProperty('Problem Details');
+        });
+
         it('should throw DuplicateError if name already exists', async () => {
             await ExperimentalDataset.create({ name: 'Existing', type: 'question-only' });
             const buffer = createXlsxBuffer([{ question: 'test' }]);

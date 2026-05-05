@@ -111,7 +111,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
             <div className="my-400">
                 <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
-                    {showUpload ? t('experimental.datasets.hideUpload') || 'Hide Upload' : t('experimental.datasets.uploadNew') || 'Upload New Dataset'}
+                    {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadNew')}
                 </GcdsButton>
 
                 {showUpload && (

@@ -26,7 +26,8 @@ class ExperimentalDatasetService {
      */
     async createFromUpload(fileBuffer, mimetype, metadata, userId) {
         // Parse file
-        const rows = this._parseFile(fileBuffer, mimetype);
+        const parsedRows = this._parseFile(fileBuffer, mimetype);
+        const rows = parsedRows.map(row => this._normalizeUploadedRow(row));
 
         // Validate structure
         const validation = this._validateRows(rows, metadata.type);
@@ -96,8 +97,10 @@ class ExperimentalDatasetService {
             return rawRows.map(row => {
                 const sanitizedRow = {};
                 for (const [key, value] of Object.entries(row)) {
-                    // Replace all dots and dollars
-                    const safeKey = key.replace(/[.$]/g, '_');
+                    // Replace dots and dollars, and remove all whitespace from header names
+                    // so headers like "Problem Details" become "ProblemDetails" or
+                    // without spaces depending on normalization elsewhere.
+                    const safeKey = String(key).replace(/[.$]/g, '_').trim();
                     sanitizedRow[safeKey] = value;
                 }
                 return sanitizedRow;
@@ -109,10 +112,24 @@ class ExperimentalDatasetService {
 
     _validateRows(rows, type) {
         const errors = [];
+
+        // Required columns schema. Each dataset `type` maps to an array of
+        // requirements. Each requirement may be either:
+        // - a string: the required column name, or
+        // - an object: { canonicalName: [alt1, alt2, ...] } where any alt satisfies the requirement.
+        // This makes it explicit which alternate headers satisfy a requirement.
         const requiredColumns = {
-            'question-only': ['question'],
-            'qa-pair': ['question', 'answer'],
-            'evaluation-set': ['question', 'answer'],
+            'question-only': [
+                { question: ['question', 'problemdetails', 'problem details'] }
+            ],
+            'qa-pair': [
+                { question: ['question', 'problemdetails', 'problem details'] },
+                'answer'
+            ],
+            'evaluation-set': [
+                { question: ['question', 'problemdetails', 'problem details'] },
+                'answer'
+            ],
         };
 
         const required = requiredColumns[type] || [];
@@ -122,12 +139,25 @@ class ExperimentalDatasetService {
 
         if (rows.length > 0) {
             const firstRow = rows[0];
-            for (const col of required) {
-                const hasCol = Object.keys(firstRow).some(
-                    k => k.toLowerCase() === col.toLowerCase()
-                );
+            const keysNormalized = Object.keys(firstRow).map(k => this._normalizeColumnKey(k));
+
+            for (const req of required) {
+                let canonicalName = null;
+                let alternatives = [];
+
+                if (typeof req === 'string') {
+                    canonicalName = req;
+                    alternatives = [req];
+                } else if (typeof req === 'object' && req !== null) {
+                    canonicalName = Object.keys(req)[0];
+                    alternatives = Array.isArray(req[canonicalName]) ? req[canonicalName] : [req[canonicalName]];
+                }
+
+                const altNormalized = alternatives.map(a => this._normalizeColumnKey(a));
+                const hasCol = keysNormalized.some(k => altNormalized.includes(k));
+
                 if (!hasCol) {
-                    errors.push(`Missing required column: "${col}"`);
+                    errors.push(`Missing required column: "${canonicalName || JSON.stringify(req)}"`);
                 }
             }
         }
@@ -149,13 +179,42 @@ class ExperimentalDatasetService {
         }));
     }
 
+    _normalizeColumnKey(input = '') {
+        return String(input)
+            .toLowerCase()
+            .replace(/[\s_-]+/g, '')
+            .trim();
+    }
+
+    _normalizeUploadedRow(row) {
+        const normalized = { ...row };
+        const questionAliases = ['question', 'problemdetails', 'problem details'];
+        const questionKey = this._findColumnKey(normalized, questionAliases);
+
+        if (questionKey && questionKey !== 'question') {
+            normalized.question = normalized[questionKey];
+            delete normalized[questionKey];
+        }
+
+        return normalized;
+    }
+
+    _findColumnKey(row, aliases = []) {
+        const normalizedAliases = aliases.map(alias => this._normalizeColumnKey(alias));
+        return Object.keys(row).find(key => normalizedAliases.includes(this._normalizeColumnKey(key)));
+    }
+
     _buildPairKey(row, pairKeyColumn) {
-        if (pairKeyColumn && row[pairKeyColumn]) {
-            return String(row[pairKeyColumn]);
+        if (pairKeyColumn) {
+            const explicitKey = this._findColumnKey(row, [pairKeyColumn]);
+            if (explicitKey && row[explicitKey]) {
+                return String(row[explicitKey]);
+            }
         }
 
         // Fallback: question-number pairing or hash
-        const question = row.question || row.Question || '';
+        const questionKey = this._findColumnKey(row, ['question', 'problemdetails', 'problem details']);
+        const question = questionKey ? row[questionKey] : '';
         const numMatch = question.match(/^(\d{1,3})\.\s*/);
         if (numMatch) {
             return numMatch[1].padStart(3, '0');

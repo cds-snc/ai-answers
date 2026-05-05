@@ -1367,6 +1367,7 @@
       "title": "Experimental Datasets",
       "analyze": "Analyze",
       "uploadNew": "Upload New Dataset",
+      "hideUpload": "Hide upload",
       "upload": "Upload Dataset",
       "uploading": "Uploading...",
       "uploadSuccess": "Dataset uploaded successfully!",
@@ -1453,4 +1454,3 @@
     }
   }
 }
-

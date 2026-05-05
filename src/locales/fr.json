@@ -1367,6 +1367,7 @@
       "title": "Ensembles de donn?es exp?rimentaux",
       "analyze": "Analyser",
       "uploadNew": "T?l?charger un nouvel ensemble de donn?es",
+      "hideUpload": "Masquer le t?l?chargement",
       "upload": "T?l?charger un ensemble de donn?es",
       "uploading": "T?l?chargement en cours...",
       "uploadSuccess": "Ensemble de donn?es t?l?charg? avec succ?s?!",
