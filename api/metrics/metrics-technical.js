@@ -143,29 +143,29 @@ function buildPipeline(dateFilter, extraFilters, departmentFilter, answerTypeFil
 
     stages.push({
         $facet: {
-            // Branch 1: Response time stats (median, p90, p95, max + chatId)
+            // Branch 1: Response time stats (median, p90, p95, max + chatId).
+            // After sorting rt ascending, parallel arrays let us pluck percentiles
+            // by index and the max (last element) along with its chatId.
             responseTime: [
                 { $match: { rt: { $gt: 0 } } },
+                { $sort: { rt: 1 } },
                 {
-                    $facet: {
-                        stats: [
-                            { $sort: { rt: 1 } },
-                            { $group: { _id: null, values: { $push: '$rt' }, count: { $sum: 1 } } },
-                            {
-                                $project: {
-                                    _id: 0,
-                                    count: 1,
-                                    median: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.5] } }] },
-                                    p90: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.9] } }] },
-                                    p95: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.95] } }] }
-                                }
-                            }
-                        ],
-                        max: [
-                            { $sort: { rt: -1 } },
-                            { $limit: 1 },
-                            { $project: { _id: 0, rt: 1, chatId: 1 } }
-                        ]
+                    $group: {
+                        _id: null,
+                        values: { $push: '$rt' },
+                        chatIds: { $push: '$chatId' },
+                        count: { $sum: 1 }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        count: 1,
+                        median: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.5] } }] },
+                        p90: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.9] } }] },
+                        p95: { $arrayElemAt: ['$values', { $floor: { $multiply: ['$count', 0.95] } }] },
+                        max: { $arrayElemAt: ['$values', { $subtract: ['$count', 1] }] },
+                        maxChatId: { $arrayElemAt: ['$chatIds', { $subtract: ['$count', 1] }] }
                     }
                 }
             ],
@@ -252,17 +252,14 @@ async function getTechnicalMetrics(req, res) {
         );
         const data = result[0] || {};
 
-        const rtFacet = data.responseTime?.[0] || {};
-        const stats = rtFacet.stats?.[0] || {};
-        const max = rtFacet.max?.[0] || {};
-
+        const rt = data.responseTime?.[0] || {};
         const responseTime = {
-            count: stats.count || 0,
-            median: stats.median || 0,
-            p90: stats.p90 || 0,
-            p95: stats.p95 || 0,
-            max: max.rt || 0,
-            maxChatId: max.chatId || ''
+            count: rt.count || 0,
+            median: rt.median || 0,
+            p90: rt.p90 || 0,
+            p95: rt.p95 || 0,
+            max: rt.max || 0,
+            maxChatId: rt.maxChatId || ''
         };
 
         const downloadWebPage = (data.downloadWebPage || []).map(row => ({
