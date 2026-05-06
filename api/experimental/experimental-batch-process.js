@@ -14,18 +14,26 @@ const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 async function handler(req, res) {
     try {
         const { id } = req.params;
+        const forceResume = req.query.force === 'true' || req.query.resume === 'true';
 
         const batch = await ExperimentalBatch.findById(id);
         if (!batch) {
             return res.status(404).json({ error: 'Batch not found' });
         }
 
-        if (batch.status === 'processing') {
+        if (batch.status === 'processing' && !forceResume) {
             return res.status(409).json({ error: 'Batch is already processing' });
         }
 
         if (batch.status === 'cancelled') {
             return res.status(409).json({ error: 'Cancelled batch cannot be processed again' });
+        }
+
+        if (forceResume) {
+            await ExperimentalBatchItem.updateMany(
+                { experimentalBatch: id, status: 'processing' },
+                { $set: { status: 'pending' }, $unset: { error: 1 } }
+            );
         }
 
         const retryEligibleItems = await ExperimentalBatchItem.find({

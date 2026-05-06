@@ -53,8 +53,8 @@ export const ExperimentalBatchClientService = {
      * Trigger processing for a batch
      * @param {string} id 
      */
-    async processBatch(id) {
-        const url = getApiUrl(`experimental-batch-process/${encodeURIComponent(id)}`);
+    async processBatch(id, force = false) {
+        const url = getApiUrl(`experimental-batch-process/${encodeURIComponent(id)}${force ? '?force=true' : ''}`);
         const res = await AuthService.fetch(url, { method: 'POST' });
         if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));

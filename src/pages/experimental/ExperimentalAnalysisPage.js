@@ -212,6 +212,20 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
+    const handleResumeBatch = async (batchId) => {
+        try {
+            setLoading(true);
+            const resp = await ExperimentalBatchClientService.processBatch(batchId, true);
+            setMessage(resp.message || t('experimental.analysis.messages.resumeStarted'));
+            await loadBatches(selectedDatasetId);
+        } catch (err) {
+            console.error('Resume batch error:', err);
+            setMessage(`Error: ${err.message || 'Failed to resume batch'}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
 
     const getAnalyzerLabel = (batch) => {
@@ -397,6 +411,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-200">
                                     <div className="flex gap-200">
                                         <GcdsButton size="small" onClick={() => handleExport(batch._id)}>Export</GcdsButton>
+                                        {batch.status === 'processing' && (
+                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>
+                                                {t('experimental.analysis.resume')}
+                                            </GcdsButton>
+                                        )}
                                         {batch.status === 'completed' && (
                                             <GcdsButton size="small" buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'} onClick={() => handleUseAsBaseline(batch._id)}>
                                                 {baselineBatchId === batch._id ? 'Baseline Selected' : 'Use as Baseline'}

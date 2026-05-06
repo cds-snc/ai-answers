@@ -1422,6 +1422,7 @@
       "comparisonFile": "Comparison File (Optional)",
       "run": "Run Analysis",
       "starting": "Starting...",
+      "resume": "Resume",
       "runningStatus": "Running Status",
       "noActiveRuns": "No active runs currently tracked.",
       "previousRuns": "Previous Runs",
@@ -1448,6 +1449,7 @@
         "selectData": "Please select a dataset or upload a file.",
         "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
         "startedCount": "Started {count} analysis runs.",
+        "resumeStarted": "Resume requested.",
         "confirmDelete": "Are you sure you want to delete this batch?",
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch"
