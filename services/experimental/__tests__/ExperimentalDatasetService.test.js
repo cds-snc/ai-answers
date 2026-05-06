@@ -27,6 +27,13 @@ describe('ExperimentalDatasetService', () => {
         return xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
     };
 
+    const createXlsxBufferFromAoa = (data) => {
+        const wb = xlsx.utils.book_new();
+        const ws = xlsx.utils.aoa_to_sheet(data);
+        xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
+        return xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    };
+
 
     describe('createFromUpload', () => {
         it('should successfully create a dataset and rows from a valid XLSX', async () => {
@@ -174,6 +181,32 @@ describe('ExperimentalDatasetService', () => {
             expect(rowData['invalid.name']).toBeUndefined();
             expect(rowData['$cost']).toBeUndefined();
             expect(rowData).toHaveProperty('no problem', true); // Unaffected keys shouldn't be altered
+        });
+
+        it('should drop empty-header and empty-value columns during import', async () => {
+            const buffer = createXlsxBufferFromAoa([
+                ['question', '', 'answer', 'notes'],
+                ['What is IA?', 'hidden value', 'Intelligence Artificielle', ''],
+                ['How it works?', '', 'Magic', '   ']
+            ]);
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                { name: 'Clean Import', type: 'qa-pair' },
+                userId
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id }).sort({ rowIndex: 1 });
+            expect(rows).toHaveLength(2);
+            expect(rows[0].data).toHaveProperty('question', 'What is IA?');
+            expect(rows[0].data).toHaveProperty('answer', 'Intelligence Artificielle');
+            expect(rows[0].data).not.toHaveProperty('__EMPTY');
+            expect(rows[0].data).not.toHaveProperty('notes');
+            expect(rows[1].data).toHaveProperty('question', 'How it works?');
+            expect(rows[1].data).toHaveProperty('answer', 'Magic');
+            expect(rows[1].data).not.toHaveProperty('__EMPTY');
+            expect(rows[1].data).not.toHaveProperty('notes');
         });
     });
 

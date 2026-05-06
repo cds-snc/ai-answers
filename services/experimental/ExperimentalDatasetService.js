@@ -101,6 +101,9 @@ class ExperimentalDatasetService {
                     // so headers like "Problem Details" become "ProblemDetails" or
                     // without spaces depending on normalization elsewhere.
                     const safeKey = String(key).replace(/[.$]/g, '_').trim();
+                    if (!this._shouldImportColumn(safeKey, value)) {
+                        continue;
+                    }
                     sanitizedRow[safeKey] = value;
                 }
                 return sanitizedRow;
@@ -197,6 +200,26 @@ class ExperimentalDatasetService {
         }
 
         return normalized;
+    }
+
+    _shouldImportColumn(key, value) {
+        if (!key) {
+            return false;
+        }
+
+        if (/^__EMPTY(?:_\d+)?$/.test(key)) {
+            return false;
+        }
+
+        if (value === undefined || value === null) {
+            return false;
+        }
+
+        if (typeof value === 'string' && value.trim() === '') {
+            return false;
+        }
+
+        return true;
     }
 
     _findColumnKey(row, aliases = []) {
