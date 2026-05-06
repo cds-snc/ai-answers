@@ -3,7 +3,7 @@
   "homepage": {
     "title": "Réponses IA",
     "subtitle": {
-      "text": "Obtenez des réponses à vos questions sur Canada.ca.",
+      "text": "Obtenez des réponses à vos questions sur Canada.ca",
       "ariaLabel": "Obtenez des réponses à vos questions sur Canada point CA."
     },
     "status": {
@@ -657,18 +657,7 @@
       "title": "Évaluation publique",
       "chatId": "ID de chat",
       "department": "Ministère",
-      "date": "Date",
-      "sessionsTitle": "Sessions actives",
-      "sessions": {
-        "chatId": "ID de chat",
-        "lastSeen": "Dernière activité",
-        "requests": "Requêtes",
-        "errors": "Erreurs",
-        "lastLatency": "Dernière latence (ms)",
-        "avgLatency": "Latence moyenne (ms)",
-        "errorLoading": "Échec du chargement des sessions : {status} {text}",
-        "errorGeneric": "Erreur : {message}"
-      }
+      "date": "Date"
     },
     "session": {
       "title": "Sessions",
@@ -934,7 +923,7 @@
     }
   },
   "workflows": {
-    "default": "Par défaut",
+    "generic": "Générique",
     "defaultWithVector": "Réponse instantanée ACTIVÉE",
     "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
   },
@@ -948,7 +937,7 @@
       "title": "Paramètres généraux"
     },
     "defaultWorkflow": {
-      "label": "Workflow par défaut"
+      "label": "Flux générique"
     },
     "defaultModel": {
       "label": "Famille de modèles par défaut"

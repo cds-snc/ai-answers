@@ -6,7 +6,6 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
-import '../styles/App.css';
 
 DataTable.use(DT);
 

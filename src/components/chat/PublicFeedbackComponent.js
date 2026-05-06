@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import FeedbackService from '../../services/FeedbackService.js';
 import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';

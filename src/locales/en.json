@@ -3,7 +3,7 @@
   "homepage": {
     "title": "AI Answers",
     "subtitle": {
-      "text": "Get answers to your Canada.ca questions.",
+      "text": "Get answers to your Canada.ca questions",
       "ariaLabel": "Get answers to your Canada dot CA questions."
     },
     "status": {
@@ -657,17 +657,6 @@
       "title": "Public evaluation",
       "chatId": "Chat ID",
       "department": "Department",
-      "sessionsTitle": "Active sessions",
-      "sessions": {
-        "chatId": "Chat ID",
-        "lastSeen": "Last seen",
-        "requests": "Requests",
-        "errors": "Errors",
-        "lastLatency": "Last latency (ms)",
-        "avgLatency": "Avg latency (ms)",
-        "errorLoading": "Failed to load sessions: {status} {text}",
-        "errorGeneric": "Error: {message}"
-      },
       "date": "Date"
     },
     "session": {
@@ -934,7 +923,7 @@
     }
   },
   "workflows": {
-    "default": "Default",
+    "generic": "Generic",
     "defaultWithVector": "Instant answer ON",
     "instantAndQA": "Instant answer with context ON"
   },
@@ -948,7 +937,7 @@
       "title": "General settings"
     },
     "defaultWorkflow": {
-      "label": "Default workflow"
+      "label": "Generic workflow"
     },
     "defaultModel": {
       "label": "Default model family"

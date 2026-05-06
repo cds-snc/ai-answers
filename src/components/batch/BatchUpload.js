@@ -4,7 +4,6 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
-import '../../styles/App.css';
 import * as XLSX from 'xlsx';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 
@@ -21,7 +20,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [batchName, setBatchName] = useState('');
   // Hardcoded to 'google' until Canada.ca search is available
   const selectedSearch = 'google';
-  const [selectedWorkflow, setSelectedWorkflow] = useState('DefaultGraph');
+  const [selectedWorkflow, setSelectedWorkflow] = useState('GenericGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
 
   // Load the configured default model from Settings so batch matches the system default

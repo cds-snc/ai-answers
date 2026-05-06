@@ -101,7 +101,7 @@ async function handler(req, res) {
 
   // Server-side Workflow Resolution
   let graphName;
-  const defaultWorkflow = SettingsService.get('workflow.default') || 'DefaultGraph';
+  const defaultWorkflow = SettingsService.get('workflow.default') || 'GenericGraph';
 
   if (req.user) {
     // Authenticated users can choose their workflow, fallback to default if not provided
@@ -128,35 +128,15 @@ async function handler(req, res) {
     input.selectedAI = defaultModel;
   }
 
-  // Legacy graph name mapping — GPT5* graphs were copies of DefaultGraph with a hardcoded model.
-  // They've been removed; map old names (from DB, localStorage, in-progress batches) to DefaultGraph
-  // and coerce the implied model. GPT5MiniDefaultGraph originally implied openai-gpt5-mini, but
-  // gpt-5-mini is no longer a selectable provider, so legacy records fall back to openai-gpt51.
-  const LEGACY_MODEL_MAP = {
-    'GPT5MiniDefaultGraph': 'openai-gpt51',
-    'GPT5OneDefaultGraph': 'openai-gpt51',
-    'GPT5OneChatGraph': 'openai-gpt51-chat',
-  };
-  if (LEGACY_MODEL_MAP[graphName]) {
-    input.selectedAI = input.selectedAI || LEGACY_MODEL_MAP[graphName];
-    graphName = 'DefaultGraph';
-  }
-
-  // Map configuration names to internal registry keys
-  let registryName = graphName;
-  if (graphName === 'DefaultGraph') {
-    registryName = 'GenericWorkflowGraph';
-  }
-
-  const graphApp = await getGraphApp(registryName);
+  const graphApp = await getGraphApp(graphName);
   if (!graphApp) {
     // Fallback to DefaultWithVectorGraph if the resolved name is invalid/missing
     const fallbackApp = await getGraphApp('DefaultWithVectorGraph');
     if (fallbackApp) {
       // Log warning but proceed with fallback
-      if (console && console.warn) console.warn(`Unknown graph '${registryName}', falling back to DefaultWithVectorGraph`);
+      if (console && console.warn) console.warn(`Unknown graph '${graphName}', falling back to DefaultWithVectorGraph`);
     } else {
-      return res.status(404).json({ message: `Unknown graph: ${registryName}` });
+      return res.status(404).json({ message: `Unknown graph: ${graphName}` });
     }
   }
   const appToRun = graphApp || await getGraphApp('DefaultWithVectorGraph');
