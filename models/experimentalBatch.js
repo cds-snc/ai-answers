@@ -17,7 +17,7 @@ const ExperimentalBatchSchema = new mongoose.Schema({
     // Configuration for the run
     config: {
         // Shared
-        aiProvider: { type: String, default: 'azure' },
+        aiProvider: { type: String },
 
         // For 'batch' type
         workflow: { type: String },

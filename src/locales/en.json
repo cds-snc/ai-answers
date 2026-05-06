@@ -1412,6 +1412,7 @@
       "changeDataset": "Change Dataset",
       "configuration": "Configuration",
       "selectAnalyzers": "Select analyzer",
+      "workflowLabel": "Workflow",
       "selectBaseline": "Select Baseline Run (Comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
       "noBaseline": "-- No baseline (Standalone Evaluation) --",
@@ -1429,6 +1430,8 @@
       "columns": {
         "name": "Run Name",
         "analyzer": "Analyzer",
+        "workflow": "Workflow",
+        "modelFamily": "Model family",
         "status": "Status",
         "completed": "Completed",
         "failed": "Failed",

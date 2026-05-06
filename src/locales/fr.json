@@ -1412,6 +1412,7 @@
       "changeDataset": "Changer d'ensemble de donn?es",
       "configuration": "Configuration",
       "selectAnalyzers": "S?lectionner un analyseur",
+      "workflowLabel": "Flux de travail",
       "selectBaseline": "S?lectionner une ex?cution de r?f?rence (comparaison)",
       "baselineHint": "Choisissez une analyse pr?c?dente comme r?f?rence. Les ex?cutions suivantes seront compar?es aux r?ponses de celle-ci.",
       "noBaseline": "-- Aucune r?f?rence (?valuation autonome) --",
@@ -1429,6 +1430,8 @@
       "columns": {
         "name": "Nom de l'ex?cution",
         "analyzer": "Analyseur",
+        "workflow": "Flux de travail",
+        "modelFamily": "Famille de mod?les",
         "status": "Statut",
         "completed": "Terminées",
         "failed": "Échouées",
