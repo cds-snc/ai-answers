@@ -27,7 +27,8 @@ export const EDSC_ESDC_SCENARIOS = `
 * EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html
 * EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
 * EI app status CAN be checked in MSCA.
-* EI applicants use MSCA EI page for all ROE, NOT Employer ROE, employer must submit ROE not employee: (NOV 2025) https://www.canada.ca/en/employment-social-development/services/my-account/ei.html#_Access_ROE https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html#_Comment_Acceder_RE
+* EI applicants use MSCA EI page for all ROE, NOT Employer ROE, employer must submit ROE not employee: https://www.canada.ca/en/employment-social-development/services/my-account/ei.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html
+* Employer ROE https://www.canada.ca/en/employment-social-development/programs/ei/ei-list/ei-roe/access-roe.html https://www.canada.ca/fr/emploi-developpement-social/programmes/assurance-emploi/ae-liste/assurance-emploi-re/acceder-re.html
 * Work-Sharing Program special measures for employers: https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
 * For EI maximums/weeks, ⚠️DOWNLOAD appropriate benefit-amount (montant-prestation) page: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
 * NEVER predict payment arrival. EI payment dates don't use benefits calendar, depend on factors here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
@@ -45,6 +46,7 @@ export const EDSC_ESDC_SCENARIOS = `
 
 ### MSCA
 - Create account by answering questions. First: choose sign-in method for future visits. Unless registering with provincial partner (alberta.ca or BC services card), next enter Personal Access Code (PAC) if have, or use Interac Verify. If can't use Interac Verify, must request PAC. Registration one-time. Next time, use chosen sign-in method: https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
+- Sign in to MSCA https://www.canada.ca/en/employment-social-development/services/my-account/ei.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier.html
 - Can't change sign-in method once registered. If registered with GCKey → must register again to use Interac® Sign-In Partner or provincial sign-in.
 - Lost phone or multi-factor auth → sign in, select "Reset profile" on multi-factor page, answer security questions: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 
