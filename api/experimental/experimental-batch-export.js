@@ -51,7 +51,14 @@ async function handler(req, res) {
                 const headers = new Set();
                 flattenedItems.forEach(item => Object.keys(item).forEach(k => headers.add(k)));
 
-                const columnConfigs = Array.from(headers).map(h => ({ header: h, key: h }));
+                const headerList = Array.from(headers);
+                const dateHeaders = headerList.filter((header) =>
+                    flattenedItems.some((item) => item[header] instanceof Date)
+                );
+                const nonDateHeaders = headerList.filter((header) => !dateHeaders.includes(header));
+                const orderedHeaders = [...nonDateHeaders, ...dateHeaders];
+
+                const columnConfigs = orderedHeaders.map(h => ({ header: h, key: h }));
                 worksheet.columns = columnConfigs;
                 worksheet.addRows(flattenedItems);
 

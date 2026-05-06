@@ -73,6 +73,7 @@ describe('experimental-batch-export API', () => {
             emit: vi.fn()
         };
         vi.clearAllMocks();
+        mockWorksheet.columns = [];
 
         // Setup default mock responses
         const mockItems = [{ rowIndex: 1, question: 'A' }];
@@ -91,6 +92,19 @@ describe('experimental-batch-export API', () => {
 
     it('should export items as Excel when format=excel', async () => {
         req.query.format = 'excel';
+        const mockItems = [{
+            rowIndex: 1,
+            question: 'A',
+            answer: 'B',
+            createdAt: new Date('2026-05-06T12:00:00.000Z'),
+            updatedAt: new Date('2026-05-06T13:00:00.000Z'),
+            lastAttemptAt: new Date('2026-05-06T14:00:00.000Z')
+        }];
+        const findMock = {
+            sort: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue(mockItems)
+        };
+        ExperimentalBatchItem.find.mockReturnValue(findMock);
 
         await handler(req, res);
 
@@ -102,6 +116,14 @@ describe('experimental-batch-export API', () => {
 
         // Verify workbook and worksheet usage
         expect(mockWorkbookInstance.addWorksheet).toHaveBeenCalledWith('Batch Results');
+        expect(mockWorksheet.columns.map((column) => column.key)).toEqual([
+            'rowIndex',
+            'question',
+            'answer',
+            'createdAt',
+            'updatedAt',
+            'lastAttemptAt'
+        ]);
         expect(mockWorkbookInstance.xlsx.write).toHaveBeenCalledWith(res);
         expect(res.end).toHaveBeenCalled();
     });
