@@ -43,21 +43,24 @@ vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => (
 
 vi.mock('@cdssnc/gcds-components-react', () => ({
     GcdsContainer: ({ children }) => <div>{children}</div>,
-    GcdsHeading: ({ children }) => <h2>{children}</h2>,
+    GcdsHeading: ({ children, tag: Tag = 'h2' }) => <Tag>{children}</Tag>,
     GcdsButton: ({ children, onClick, disabled, size }) => (
         <button onClick={onClick} disabled={disabled} data-size={size}>
             {children}
         </button>
     ),
-    GcdsText: ({ children }) => <div>{children}</div>
+    GcdsText: ({ children }) => <div>{children}</div>,
+    GcdsLink: ({ children, href }) => <a href={href}>{children}</a>
 }));
 
 describe('ExperimentalAnalysisPage', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         mockListAnalyzers.mockReset().mockResolvedValue([]);
-        mockListDatasets.mockReset().mockResolvedValue({ data: [{ _id: 'dataset-1', name: 'Dataset 1', rowCount: 1 }] });
-        mockListBatches.mockReset();
+        mockListDatasets.mockReset().mockResolvedValue({
+            data: [{ _id: 'dataset-1', name: 'Dataset 1', description: 'Dataset description', rowCount: 1 }]
+        });
+        mockListBatches.mockReset().mockResolvedValue({ data: [] });
     });
 
     afterEach(() => {
@@ -108,5 +111,19 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(mockListBatches).toHaveBeenCalledTimes(2);
         expect(screen.queryByText(/processing/, { selector: 'div' })).toBeNull();
+    });
+
+    it('shows the selected dataset name, description, and datasets link', async () => {
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.getByRole('heading', { name: 'Dataset 1' })).toBeTruthy();
+        expect(screen.getByText('Dataset description')).toBeTruthy();
+        expect(screen.getByRole('link', { name: 'experimental.datasets.backToList' }).getAttribute('href')).toBe(
+            '/en/experimental/datasets'
+        );
     });
 });

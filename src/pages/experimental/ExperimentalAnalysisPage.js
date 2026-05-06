@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams } from 'react-router-dom';
 
@@ -223,7 +223,19 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     return (
         <GcdsContainer size="xl" centered className="my-400">
-            <GcdsHeading tag="h1">Experimental Analysis</GcdsHeading>
+            <header className="mb-400">
+                <GcdsHeading tag="h1">
+                    {selectedDataset?.name || t('experimental.analysis.title')}
+                </GcdsHeading>
+                {selectedDataset?.description && (
+                    <GcdsText className="mb-200">
+                        {selectedDataset.description}
+                    </GcdsText>
+                )}
+                <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    {t('experimental.datasets.backToList')}
+                </GcdsLink>
+            </header>
             
 
             
