@@ -3,7 +3,13 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams } from 'react-router-dom';
-import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
+
+const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
+
+const normalizeWorkflow = (workflow) => (
+    WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
+);
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -17,7 +23,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
     const [baselineBatchId, setBaselineBatchId] = useState('');
-    const [selectedWorkflow, setSelectedWorkflow] = useState(WORKFLOWS[0]?.value || 'DefaultGraph');
+    const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
 
     const [loading, setLoading] = useState(false);
@@ -150,7 +156,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 config: {
                     analyzerId: selectedAnalyzerId,
                     analyzerIds: [selectedAnalyzerId],
-                    workflow: selectedWorkflow,
+                    workflow: normalizeWorkflow(selectedWorkflow),
                     aiProvider: selectedModel || undefined,
                     datasetId: selectedDatasetId || undefined,
                     baselineRunId: baselineBatchId || undefined,
@@ -242,7 +248,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const getWorkflowLabel = (batch) => {
         const workflowId = batch?.config?.workflow;
         if (!workflowId) return t('common.na');
-        const workflow = WORKFLOWS.find(item => item.value === workflowId);
+        const workflow = WORKFLOWS.find(item => item.value === normalizeWorkflow(workflowId));
         return workflow?.labelKey ? t(workflow.labelKey) : t('common.na');
     };
 

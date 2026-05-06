@@ -138,7 +138,7 @@ describe('ExperimentalAnalysisPage', () => {
                     analyzerSummary: {},
                     config: {
                         analyzerIds: ['bias-detection'],
-                        workflow: 'DefaultGraph',
+                        workflow: 'GenericGraph',
                         aiProvider: 'azure'
                     },
                     createdAt: '2026-05-05T00:00:00.000Z',
@@ -165,7 +165,7 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.workflow' })).toBeTruthy();
         expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' })).toBeTruthy();
-        expect(screen.getAllByText('workflows.default').some(node => node.tagName === 'TD')).toBe(true);
+        expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
     });
