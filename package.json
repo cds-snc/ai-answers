@@ -70,7 +70,7 @@
     "lucide-react": "^0.454.0",
     "moment": "^2.30.1",
     "mongodb": "^6.9.0",
-    "mongoose": "^8.17.1",
+    "mongoose": "^8.22.1",
     "notifications-node-client": "^8.2.1",
     "openai": "^4.73.1",
     "otplib": "^12.0.1",
