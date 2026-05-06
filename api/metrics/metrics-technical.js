@@ -229,14 +229,7 @@ async function getTechnicalMetrics(req, res) {
         });
     } catch (error) {
         console.error('Error in technical metrics:', error);
-        // TEMP DEBUG: surface the underlying error so we can diagnose without server log access.
-        return res.status(500).json({
-            error: 'Failed to fetch technical metrics',
-            debugMessage: error?.message,
-            debugCode: error?.code,
-            debugCodeName: error?.codeName,
-            debugStack: error?.stack?.split('\n').slice(0, 6)
-        });
+        return res.status(500).json({ error: 'Failed to fetch technical metrics' });
     }
 }
 
