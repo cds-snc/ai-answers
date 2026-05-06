@@ -4,7 +4,6 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
-import '../../styles/App.css';
 import * as XLSX from 'xlsx';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 

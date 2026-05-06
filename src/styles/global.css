@@ -1,0 +1,1033 @@
+/* Add Font Awesome CSS import at the top */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
+
+/* Suppress focus ring on programmatically focused elements (tabindex="-1").
+   These are never reachable via keyboard tab so removing the outline is safe. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+}
+/* QA: cleanup — 0 usages found in JSX; confirm whether this class is still needed */
+.referring-url-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.container-custom:first-of-type {
+  margin-bottom: 0px !important;
+}
+
+.container-custom {
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* QA: cleanup — content is commented out so these rules only set display:table, which does nothing without content; verify if these :after/:before rules are needed at all */
+.container-custom :after,
+.container-custom :before {
+  display: table;
+}
+
+.container-custom :after {
+  clear: both;
+}
+
+@media (min-width: 480px) {
+  .container-custom {
+    width: 470px;
+  }
+}
+
+@media (min-width: 640px) {
+  .container-custom {
+    width: 605px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-custom {
+    width: 750px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container-custom {
+    width: 970px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container-custom {
+    width: 1170px;
+  }
+}
+
+/* top banner for alpha/beta warning */
+/* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
+.alpha-top {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  top: 0;
+  background-color: #f2f2f2;
+  z-index: 100;
+}
+.alpha {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: white;
+  z-index: 100;
+}
+.alpha-label {
+  background-color: black;
+  border: none;
+  color: white;
+  font-weight: 700;
+  padding: 8px 8px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin: 4px 2px;
+  border-radius: 0px;
+  font-size: 14px !important;
+}
+.alpha-fill {
+  background-color: #f2f2f2;
+  padding: 0.6em 1em 0.6em 0.6em;
+}
+
+/* index.css */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.wb-inv {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
+  font-size: 1em;
+}
+
+/* When focused, make it visible for keyboard users */
+.wb-inv:focus,
+.wb-inv:active {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background-color: var(--gcds-link-focus-background);
+  color: var(--gcds-link-focus-text);
+  border-radius: var(--gcds-link-focus-border-radius);
+  box-shadow: var(--gcds-link-focus-box-shadow);
+  outline: var(--gcds-link-focus-outline-width) solid
+    var(--gcds-link-focus-background);
+  outline-offset: var(--gcds-link-focus-outline-offset);
+  text-decoration: none;
+  padding: 10px;
+  display: inline-block;
+  z-index: 9999;
+  transition: none;
+  animation: none;
+}
+
+/* modifications of GCDS-tokens to Canada.ca design where appropriate */
+:root {
+  --gcds-header-margin: 0 0 1.55rem !important;
+  --gcds-heading-h1-border-background: #af3c43 !important;
+  --gcds-link-font-regular-desktop: 400 1rem / 150% "Noto Sans", sans-serif !important;
+  --gcds-link-font-small-desktop: 400 1rem / 135% "Noto Sans", sans-serif;
+  --gcds-header-brand-grid-gap: 0rem !important;
+  --gcds-header-brand-padding: 0 0 0.9rem !important;
+  --gcds-header-brand-border-color: #ddd !important;
+  --gcds-header-brand-border-width: 0.01rem !important;
+  --gcds-link-underline-offset: 0.1rem !important;
+  --gcds-label-font-desktop: 600 1.45rem / 120% "Lato", sans-serif !important; /* want this to look like heading intentionally */
+  --gcds-label-font-mobile: 600 1.3rem / 120% "Lato", sans-serif !important;
+  --gcds-text-size-body-desktop: 400 1.25rem / 160% "Noto Sans", sans-serif !important;
+  --gcds-link-font-small-desktop: 400 1rem / 150% "Noto Sans", sans-serif !important;
+}
+
+/* clean up margins and spacing */
+gcds-button.send-button {
+  margin-bottom: 40px;
+}
+gcds-container {
+  margin-bottom: 40px !important;
+}
+gcds-details {
+  margin-bottom: 0px !important;
+}
+
+.mrgn-bttm-20 {
+  margin-bottom: 20px;
+}
+
+.mrgn-bttm-10 {
+  margin-bottom: 10px;
+}
+
+.mrgn-bttm-4 {
+  margin-bottom: 4px;
+}
+
+.display-block {
+  display: block;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.mrgn-rght-15 {
+  margin-right: 15px;
+}
+
+.red {
+  color: red;
+}
+
+.mrgn-tp-1r {
+  margin-top: 1rem;
+}
+
+.mrgn-lft-sm {
+  margin-left: 16px;
+  margin-top: 0px !important;
+}
+
+/* main page styles */
+h2:first-of-type {
+  font-size: 26px;
+  margin-bottom: 10px;
+  color: #333 !important;
+}
+
+gcds-container:first-of-type {
+  margin-bottom: 0px !important;
+}
+
+.loading-container {
+  border: 1px solid #d9d9d9;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 0.5rem;
+}
+
+.loading-text {
+  flex: 1;
+}
+
+.loading-animation {
+  color: #333;
+  position: relative;
+  font-size: 4px;
+  background: #333;
+  animation: escaleY 1s infinite ease-in-out;
+  width: 1em;
+  height: 4em;
+  animation-delay: -0.16s;
+}
+.loading-animation:before,
+.loading-animation:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 2em;
+  background: #333;
+  width: 1em;
+  height: 4em;
+  animation: escaleY 1s infinite ease-in-out;
+}
+.loading-animation:before {
+  left: -2em;
+  animation-delay: -0.32s;
+}
+
+@keyframes escaleY {
+  0%,
+  80%,
+  100% {
+    box-shadow: 0 0;
+    height: 4em;
+  }
+  40% {
+    box-shadow: 0 -2em;
+    height: 5em;
+  }
+}
+
+/* detail/summary styling */
+details {
+  padding-left: 1.1em;
+  padding-right: 1.1em;
+  margin-bottom: 0.25em;
+}
+
+details[open] {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+}
+
+details summary {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #295376;
+  padding: 5px 15px;
+  background-color: white;
+}
+
+details > summary {
+  margin-left: -1.1em;
+  margin-right: -1.1em;
+}
+
+/* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
+summary {
+  display: list-item !important;
+  list-style-type: none;
+  list-style-type: disclosure-closed;
+  visibility: visible !important;
+}
+
+summary {
+  cursor: pointer;
+}
+
+details > summary:first-of-type {
+  display: list-item;
+  counter-increment: list-item 0;
+  list-style: inside disclosure-closed;
+}
+
+/* buttons */
+/* QA: cleanup — .btn-primary-sm and .btn-secondary-sm have 0 usages in JSX; confirm before deleting (also removes the hover/focus selectors that reference them below) */
+.btn-primary-sm {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: var(--gcds-color-blue-900);
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1.55em;
+  font-family: "Noto Sans";
+}
+
+.btn-secondary-sm {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: white;
+  font-weight: 500;
+  color: #26374a;
+  border: solid 2px var(--gcds-color-blue-900);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1.55em;
+  font-family: "Noto Sans";
+}
+
+.btn-primary {
+  margin-top: 10px;
+  padding: 10px 18px;
+  background-color: var(--gcds-color-blue-900);
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1.55em;
+  font-family: "Noto Sans";
+}
+
+.btn-primary-sm:hover,
+.btn-primary:hover,
+.btn-primary-send:hover {
+  background-color: var(--gcds-color-blue-700);
+}
+
+.btn-secondary-sm:hover {
+  background-color: var(--gcds-color-blue-100);
+}
+
+.btn-primary-sm:focus,
+summary:focus,
+.close-icon:focus {
+  background-color: var(--gcds-details-focus-background);
+  border-radius: var(--gcds-details-focus-border-radius);
+  box-shadow: var(--gcds-details-focus-box-shadow);
+  color: var(--gcds-details-focus-text);
+  outline: var(--gcds-details-focus-outline);
+  outline-offset: var(--gcds-details-focus-outline-offset);
+  text-decoration: none;
+}
+
+.hr {
+  padding-top: 30px;
+  margin-top: 60px;
+  border-top: 1px solid #ccc;
+}
+
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  user-select: none;
+}
+
+.mrgn-bttm-lg {
+  margin-bottom: 22px;
+}
+
+.small-text {
+  font-size: 16px;
+}
+
+/* radios */
+
+fieldset {
+  border: 1px solid silver;
+  margin: 0 2px;
+  padding: 0.35em 0.625em 0.75em;
+}
+
+fieldset.gc-chckbxrdio legend:first-of-type {
+  padding-top: 20px;
+}
+
+legend {
+  border: 0;
+  padding: 0;
+}
+
+.gc-chckbxrdio legend {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin-bottom: 23px;
+  line-height: inherit;
+  color: #333;
+  border: 0;
+}
+
+/* QA: cleanup — .gc-chckbxrdio label is defined twice; the second definition (further down) overrides display to block and adds font-size. Merge both into one rule and delete this one. */
+.gc-chckbxrdio label {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+input[type="search"] {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.gc-chckbxrdio input[type="checkbox"],
+.gc-chckbxrdio input[type="radio"] {
+  margin: 4px 0 0;
+  line-height: normal;
+}
+
+fieldset[disabled] input[type="checkbox"],
+fieldset[disabled] input[type="radio"],
+input[type="checkbox"].disabled,
+input[type="checkbox"][disabled],
+input[type="radio"].disabled,
+input[type="radio"][disabled] {
+  cursor: not-allowed;
+}
+
+input[type="file"] {
+  display: block;
+}
+
+input[type="range"] {
+  display: block;
+  width: 100%;
+}
+
+select[multiple],
+select[size] {
+  height: auto;
+}
+
+input[type="checkbox"]:focus,
+input[type="file"]:focus,
+input[type="radio"]:focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+output {
+  display: block;
+  padding-top: 11px;
+  font-size: 16px;
+  line-height: 1.4375;
+  color: rgb(85.425, 85.425, 85.425);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: 37px;
+  padding: 10px 14px;
+  font-size: 16px;
+  line-height: 1.4375;
+  color: rgb(85.425, 85.425, 85.425);
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-transition: border-color ease-in-out 0.15s,
+    box-shadow ease-in-out 0.15s;
+  -webkit-transition: border-color ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+}
+
+.form-control:focus {
+  border-color: #66afe9;
+  outline: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
+    0 0 8px rgba(102, 175, 233, 0.6);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
+    0 0 8px rgba(102, 175, 233, 0.6);
+}
+
+.form-control::-moz-placeholder {
+  color: #5c5c5c !important;
+  opacity: 1;
+}
+
+.form-control:-ms-input-placeholder {
+  color: #5c5c5c !important;
+}
+
+.form-control::-webkit-input-placeholder {
+  color: #5c5c5c !important;
+}
+
+.form-control::-ms-expand {
+  background-color: transparent;
+  border: 0;
+}
+
+.form-control[disabled],
+.form-control[readonly],
+fieldset[disabled] .form-control {
+  background-color: rgb(238.425, 238.425, 238.425);
+  opacity: 1;
+}
+
+.form-control[disabled],
+fieldset[disabled] .form-control {
+  cursor: not-allowed;
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="date"].form-control,
+  input[type="datetime-local"].form-control,
+  input[type="month"].form-control,
+  input[type="time"].form-control {
+    line-height: 37px;
+  }
+
+  .input-group-sm input[type="date"],
+  .input-group-sm input[type="datetime-local"],
+  .input-group-sm input[type="month"],
+  .input-group-sm input[type="time"],
+  .input-group-sm > .input-group-btn > input[type="date"].btn,
+  .input-group-sm > .input-group-btn > input[type="datetime-local"].btn,
+  .input-group-sm > .input-group-btn > input[type="month"].btn,
+  .input-group-sm > .input-group-btn > input[type="time"].btn,
+  input[type="date"].input-sm,
+  input[type="datetime-local"].input-sm,
+  input[type="month"].input-sm,
+  input[type="time"].input-sm {
+    line-height: 33px;
+  }
+
+  .input-group-lg input[type="date"],
+  .input-group-lg input[type="datetime-local"],
+  .input-group-lg input[type="month"],
+  .input-group-lg input[type="time"],
+  .input-group-lg > .input-group-btn > input[type="date"].btn,
+  .input-group-lg > .input-group-btn > input[type="datetime-local"].btn,
+  .input-group-lg > .input-group-btn > input[type="month"].btn,
+  .input-group-lg > .input-group-btn > input[type="time"].btn,
+  input[type="date"].input-lg,
+  input[type="datetime-local"].input-lg,
+  input[type="month"].input-lg,
+  input[type="time"].input-lg {
+    line-height: 46px;
+  }
+}
+
+.gc-chckbxrdio fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.answer-improvement label,
+label.expert-citation-url {
+  font-weight: 500 !important;
+  margin-top: 30px !important;
+}
+.gc-chckbxrdio .checkbox,
+.gc-chckbxrdio .radio {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 26px;
+  line-height: 2.8em;
+}
+
+.gc-chckbxrdio.sm-v .checkbox,
+.gc-chckbxrdio.sm-v .radio {
+  margin-top: 10px;
+  margin-bottom: 18px;
+  line-height: 1em;
+}
+
+.checkbox.disabled label,
+.radio.disabled label,
+fieldset[disabled] .checkbox label,
+fieldset[disabled] .radio label {
+  cursor: not-allowed;
+}
+
+.checkbox label,
+.radio label {
+  min-height: 23px;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"],
+.checkbox-inline input[type="checkbox"],
+.radio input[type="radio"],
+.radio-inline input[type="radio"] {
+  position: absolute;
+  margin-left: -20px;
+}
+
+.checkbox + .checkbox,
+.radio + .radio {
+  margin-top: -5px;
+}
+
+.checkbox-inline,
+.radio-inline {
+  position: relative;
+  display: inline-block;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: 400;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.checkbox-inline.disabled,
+.radio-inline.disabled,
+fieldset[disabled] .checkbox-inline,
+fieldset[disabled] .radio-inline {
+  cursor: not-allowed;
+}
+
+.checkbox-inline + .checkbox-inline,
+.radio-inline + .radio-inline {
+  margin-top: 0;
+  margin-left: 10px;
+}
+
+/* QA: cleanup — .form-control-static, .input-group-sm/lg, .form-group-sm/lg, .input-sm/lg and all their sub-selectors below are Bootstrap-style size variants with 0 usages in JSX. ~100 lines that can likely be deleted. */
+.form-control-static {
+  min-height: 39px;
+  padding-top: 11px;
+  padding-bottom: 11px;
+  margin-bottom: 0;
+}
+
+.form-control-static.input-lg,
+.form-control-static.input-sm,
+.input-group-lg > .form-control-static.form-control,
+.input-group-lg > .form-control-static.input-group-addon,
+.input-group-lg > .input-group-btn > .form-control-static.btn,
+.input-group-sm > .form-control-static.form-control,
+.input-group-sm > .form-control-static.input-group-addon,
+.input-group-sm > .input-group-btn > .form-control-static.btn {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.input-group-sm > .form-control,
+.input-group-sm > .input-group-addon,
+.input-group-sm > .input-group-btn > .btn,
+.input-sm {
+  height: 33px;
+  padding: 5px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+.input-group-sm > .input-group-btn > select.btn,
+.input-group-sm > select.form-control,
+.input-group-sm > select.input-group-addon,
+select.input-sm {
+  height: 33px;
+  line-height: 33px;
+}
+
+.input-group-sm > .input-group-btn > select[multiple].btn,
+.input-group-sm > .input-group-btn > textarea.btn,
+.input-group-sm > select[multiple].form-control,
+.input-group-sm > select[multiple].input-group-addon,
+.input-group-sm > textarea.form-control,
+.input-group-sm > textarea.input-group-addon,
+select[multiple].input-sm,
+textarea.input-sm {
+  height: auto;
+}
+
+.form-group-sm .form-control {
+  height: 33px;
+  padding: 5px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+.form-group-sm select.form-control {
+  height: 33px;
+  line-height: 33px;
+}
+
+.form-group-sm select[multiple].form-control,
+.form-group-sm textarea.form-control {
+  height: auto;
+}
+
+.form-group-sm .form-control-static {
+  height: 33px;
+  min-height: 37px;
+  padding: 6px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.input-group-lg > .form-control,
+.input-group-lg > .input-group-addon,
+.input-group-lg > .input-group-btn > .btn,
+.input-lg {
+  height: 46px;
+  padding: 10px 16px;
+  font-size: 18px;
+  line-height: 1.3333333;
+  border-radius: 6px;
+}
+
+.input-group-lg > .input-group-btn > select.btn,
+.input-group-lg > select.form-control,
+.input-group-lg > select.input-group-addon,
+select.input-lg {
+  height: 46px;
+  line-height: 46px;
+}
+
+.input-group-lg > .input-group-btn > select[multiple].btn,
+.input-group-lg > .input-group-btn > textarea.btn,
+.input-group-lg > select[multiple].form-control,
+.input-group-lg > select[multiple].input-group-addon,
+.input-group-lg > textarea.form-control,
+.input-group-lg > textarea.input-group-addon,
+select[multiple].input-lg,
+textarea.input-lg {
+  height: auto;
+}
+
+.form-group-lg .form-control {
+  height: 46px;
+  padding: 10px 16px;
+  font-size: 18px;
+  line-height: 1.3333333;
+  border-radius: 6px;
+}
+
+.form-group-lg select.form-control {
+  height: 46px;
+  line-height: 46px;
+}
+
+.form-group-lg select[multiple].form-control,
+.form-group-lg textarea.form-control {
+  height: auto;
+}
+
+.form-group-lg .form-control-static {
+  height: 46px;
+  min-height: 41px;
+  padding: 11px 16px;
+  font-size: 18px;
+  line-height: 1.3333333;
+}
+
+.form-inline .gc-chckbxrdio.checkbox input[type="checkbox"] {
+  position: absolute;
+}
+
+.form-inline.gc-chckbxrdio .checkbox input[type="checkbox"],
+.form-inline.gc-chckbxrdio .radio input[type="radio"] {
+  position: absolute;
+}
+
+fieldset.gc-chckbxrdio {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* QA: cleanup — duplicate .gc-chckbxrdio label; merge max-width/margin-bottom/font-weight from the first definition above into this one, then delete the first */
+.gc-chckbxrdio label {
+  cursor: pointer;
+  display: block;
+  font-size: 20px;
+}
+
+.gc-chckbxrdio legend {
+  float: none;
+  font-family: "Lato";
+  font-size: 1.625rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  margin-top: 0;
+}
+
+.gc-chckbxrdio input[type="checkbox"],
+.gc-chckbxrdio input[type="radio"] {
+  margin-left: 10px;
+  opacity: 0;
+  z-index: 2;
+}
+
+.gc-chckbxrdio input[type="checkbox"][disabled] + label,
+.gc-chckbxrdio input[type="radio"][disabled] + label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.gc-chckbxrdio input[type="checkbox"] + label,
+.gc-chckbxrdio input[type="radio"] + label {
+  display: inline-block;
+  line-height: 2;
+  margin-left: 40px;
+  width: auto;
+}
+
+.gc-chckbxrdio.sm-v input[type="checkbox"] + label,
+.gc-chckbxrdio.sm-v input[type="radio"] + label {
+  margin-left: 32px;
+}
+
+.gc-chckbxrdio input[type="checkbox"] + label::before,
+.gc-chckbxrdio input[type="radio"] + label::before {
+  border: 13px solid #fff;
+  -webkit-box-shadow: 0 0 0 2px #333;
+  box-shadow: 0 0 0 2px #000;
+  content: "";
+  display: inline-block;
+  height: 19px;
+  left: 0;
+  position: absolute;
+  top: 2px;
+  width: 19px;
+}
+
+.gc-chckbxrdio.sm-v input[type="checkbox"] + label::before,
+.gc-chckbxrdio.sm-v input[type="radio"] + label::before {
+  border: 10px solid #fff;
+  height: 16px;
+  width: 16px;
+}
+
+.gc-chckbxrdio input[type="checkbox"] + label:hover::before,
+.gc-chckbxrdio input[type="radio"] + label:hover::before {
+  background-image: -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    from(#e5e5e5),
+    color-stop(50%, #fff)
+  );
+  background-image: linear-gradient(to bottom, #e5e5e5, #fff 50%);
+}
+
+.gc-chckbxrdio input[type="checkbox"]:hover,
+.gc-chckbxrdio input[type="radio"]:hover {
+  cursor: pointer;
+}
+
+.gc-chckbxrdio input[type="checkbox"]:hover + label::before,
+.gc-chckbxrdio input[type="radio"]:hover + label::before {
+  background-image: -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    from(#e5e5e5),
+    color-stop(50%, #fff)
+  );
+  background-image: linear-gradient(to bottom, #e5e5e5, #fff 50%);
+}
+
+.gc-chckbxrdio input[type="checkbox"]:focus + label::before,
+.gc-chckbxrdio input[type="radio"]:focus + label::before {
+  outline: 4px solid #0535d2;
+  outline-offset: 4px;
+}
+.gc-chckbxrdio.sm-v input[type="checkbox"]:focus:checked + label::after {
+  border-color: #0535d2;
+}
+
+.gc-chckbxrdio input[type="checkbox"]:focus + label::before,
+.gc-chckbxrdio input[type="radio"]:focus + label::before {
+  box-shadow: 0 0 0 2px #0535d2;
+}
+
+.gc-chckbxrdio input[type="radio"]:focus + label::before {
+  background: #0535d2;
+}
+
+.gc-chckbxrdio input[type="radio"]:checked:focus + label::before {
+  background: #0535d2;
+}
+
+.gc-chckbxrdio input[type="radio"] + label::before {
+  border-radius: 50%;
+}
+
+.gc-chckbxrdio input[type="radio"]:checked + label::before {
+  background: #333;
+}
+
+.gc-chckbxrdio.checkbox input[type="checkbox"] + label,
+.gc-chckbxrdio.checkbox input[type="checkbox"] + label + ul {
+  font-size: 17px;
+  min-height: 23px;
+}
+
+.gc-chckbxrdio.checkbox input[type="checkbox"] + label::before {
+  height: 24px;
+  left: 6px;
+  top: 4px;
+  width: 24px;
+}
+
+.gc-chckbxrdio.checkbox input[type="checkbox"]:checked + label::after {
+  border-width: 0 3px 3px 0;
+  height: 16px;
+  left: 14px;
+  top: 6px;
+  width: 9px;
+}
+
+.gc-chckbxrdio.sm-v input[type="checkbox"]:checked + label::after {
+  border-width: 0 5px 5px 0;
+  height: 20px;
+  left: 11px;
+  width: 9px;
+}
+
+.gc-chckbxrdio input[type="checkbox"]:checked + label::after {
+  border-color: #333;
+  border-style: solid;
+  border-width: 0 5px 5px 0;
+  content: "";
+  display: inline-block;
+  height: 26px;
+  left: 12px;
+  position: absolute;
+  top: 4px;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+  width: 13px;
+}
+
+.gc-chckbxrdio.form-inline .label-inline {
+  padding-right: 20px;
+}
+
+.gc-chckbxrdio.form-inline .label-inline label {
+  padding-left: 10px;
+}
+
+@media (prefers-contrast: more) {
+  .gc-chckbxrdio input[type="checkbox"]:focus + label::before {
+    border: 5px double #000;
+  }
+
+  .gc-chckbxrdio input[type="radio"]:focus + label::before {
+    border: 5px double #000;
+  }
+
+  .gc-chckbxrdio input[type="radio"]:checked + label::before {
+    outline: 10px solid #444;
+    outline-offset: -20px;
+  }
+}
