@@ -34,7 +34,6 @@
 .container-custom :after,
 .container-custom :before {
   display: table;
-  /* content: " " */
 }
 
 .container-custom :after {

@@ -3,6 +3,7 @@
 ## Environment notes
 - **React build restriction**: Files imported by frontend code (`src/`) must live inside `src/`. Never place shared config intended for UI components in `config/` (root) — use `src/config/` instead. Server-side code (`api/`, `agents/`, `services/`) can import from anywhere.
 - **Test runner**: This project uses **vitest**, not jest. Run tests with `npx vitest run <path>` (or `npm test` for all).
+- **CSS loading**: All app styles are loaded once in `src/App.js` (`global.css`, `admin.css`, `chat.css`). Never import these files in individual pages or components — they are already globally available. Do not move these imports to `index.js` either: `App.js` must load after `index.js`'s GCDS CSS (`gcds-utility.min.css` imports Lato/Noto Sans from Google Fonts) so that webpack resolves the stylesheets in the correct order. Moving app CSS into `index.js` alongside GCDS CSS breaks the GC Design System fonts.
 
 ## How to work well in this codebase
 
