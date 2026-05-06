@@ -99,6 +99,16 @@ Each consumer has a different aggregation pipeline shape. A regex or filter cond
 - **Cleanup `$project` stages**: If you add a `$lookup` + `$addFields` for a new field, don't remove it in the cleanup `$project` if a later `$project` still needs it.
 - **Chat Dashboard doesn't support per-column filters** (only global search). Eval Dashboard does via `columnSearch` + `initComplete` filter inputs. Adding column filters to Chat Dashboard requires both frontend (`initComplete` + `columnSearch` in ajax) and backend (`columnSearch` handling in `chat-dashboard.js`).
 
+## Adding new pages
+
+When adding a new page, register its route in `src/utils/routes.js` under `ROUTE_SLUGS` with both English and French slugs:
+
+```js
+'my-new-page': { en: 'my-new-page', fr: 'ma-nouvelle-page' },
+```
+
+French slugs must be real translations — not copied English slugs. Once registered, use `getPath('my-new-page', lang)` to generate links and `ROUTE_SLUGS['my-new-page']` to define the route in `App.js`. Never hardcode URL paths as strings elsewhere in the codebase.
+
 ## Key rules
 - Department abbreviations (abbrKey) are defined in `agents/prompts/scenarios/departments_EN.js` / `departments_FR.js` — never invent new ones
 - Pipeline is a LangGraph state machine in `agents/graphs/` — understand node flow before modifying
