@@ -180,10 +180,9 @@ When promoting batch items to dataset rows, include `referringUrl` and `chatId` 
 ### Layer 4 — UI Changes
 
 #### Locale files (`en.json`, `fr.json`)
-Update the `typeInfo` column descriptions to mention the optional columns:
+Update the dataset upload descriptions to mention the optional columns:
 - `question-only.columns`: `"question (required), referringUrl (optional), chatId (optional)"`
 - `qa-pair.columns`: `"question, answer (required), referringUrl (optional), chatId (optional)"`
-- `evaluation-set.columns`: `"question, answer (required), comparisonAnswer (optional), referringUrl (optional), chatId (optional)"`
 
 ---
 

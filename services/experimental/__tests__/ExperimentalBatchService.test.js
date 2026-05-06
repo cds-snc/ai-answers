@@ -450,6 +450,47 @@ describe('ExperimentalBatchService', () => {
                 answer: 'Generated analysis answer'
             }));
         });
+
+        it('should persist visible refusal text when the answer payload nests it in englishAnswer', async () => {
+            const batch = await ExperimentalBatch.create({
+                name: 'Refusal Payload Batch',
+                type: 'analysis',
+                config: { analyzerIds: ['refusal'] }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'Can you help me?',
+                answer: ''
+            });
+
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield {
+                        result: {
+                            answer: {
+                                answerType: 'not-gc',
+                                content: '',
+                                englishAnswer: 'An answer to your question was not found on Government of Canada websites.'
+                            }
+                        }
+                    };
+                }
+            };
+            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
+            getGraphApp.mockResolvedValue(mockApp);
+
+            ExperimentalAnalyzerRegistry.get.mockResolvedValue({
+                id: 'refusal',
+                processor: vi.fn().mockResolvedValue({ status: 'flagged', refusalDetected: true })
+            });
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            const updatedItem = await ExperimentalBatchItem.findById(item._id);
+            expect(updatedItem.status).toBe('completed');
+            expect(updatedItem.answer).toBe('An answer to your question was not found on Government of Canada websites.');
+        });
     });
 
     describe('promoteToDataset', () => {

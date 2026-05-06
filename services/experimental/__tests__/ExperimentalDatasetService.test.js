@@ -97,6 +97,26 @@ describe('ExperimentalDatasetService', () => {
             expect(rows[0].data).not.toHaveProperty('NewAnswer');
         });
 
+        it('should drop answer columns for question-only uploads', async () => {
+            const data = [
+                { question: 'What is IA?', answer: 'Intelligence Artificielle' }
+            ];
+            const buffer = createXlsxBuffer(data);
+            const metadata = { name: 'Question Only Dataset', type: 'question-only' };
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                metadata,
+                userId
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows).toHaveLength(1);
+            expect(rows[0].data).toHaveProperty('question', 'What is IA?');
+            expect(rows[0].data).not.toHaveProperty('answer');
+        });
+
         it('should throw DuplicateError if name already exists', async () => {
             await ExperimentalDataset.create({ name: 'Existing', type: 'question-only' });
             const buffer = createXlsxBuffer([{ question: 'test' }]);

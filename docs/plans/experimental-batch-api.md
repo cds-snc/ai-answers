@@ -549,7 +549,7 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
   type: { 
     type: String, 
     required: true, 
-    enum: ['question-only', 'qa-pair', 'evaluation-set', 'batch-output'] 
+    enum: ['question-only', 'qa-pair', 'batch-output'] 
   },
   rowCount: { type: Number, default: 0 },
   columns: [{ 
@@ -672,7 +672,6 @@ class ExperimentalDatasetService {
     const requiredColumns = {
       'question-only': ['question'],
       'qa-pair': ['question', 'answer'],
-      'evaluation-set': ['question', 'answer'],
     };
     
     const required = requiredColumns[type] || [];
@@ -1178,7 +1177,6 @@ Add translations for experimental features in both languages:
       "types": {
         "question-only": "Questions Only",
         "qa-pair": "Q&A Pairs",
-        "evaluation-set": "Evaluation Set",
         "batch-output": "Batch Output"
       },
       "errors": {
@@ -1235,7 +1233,6 @@ Add translations for experimental features in both languages:
       "types": {
         "question-only": "Questions seulement",
         "qa-pair": "Paires Q/R",
-        "evaluation-set": "Ensemble d'Ã©valuation",
         "batch-output": "Sortie de lot"
       },
       "errors": {
@@ -1615,5 +1612,4 @@ Manual walkthrough can still be run for UX confidence, but implementation is con
 -   **Batch-mode Graph Variant**: Create a dedicated `BatchModeGraph` that skips certain nodes (like persist) to improve throughput.
 -   **Webhook Notifications**: Allow users to configure webhooks for batch completion notifications.
 -   **Export Formats**: Add CSV/Excel export for analysis results (in addition to existing functionality).
-
 

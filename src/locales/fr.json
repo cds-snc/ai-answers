@@ -1386,28 +1386,24 @@
       "uploadedBy": "T?l?vers? par",
       "fileLabel": "Fichier Excel / CSV",
       "requiredColumns": "Colonnes requises",
+      "uploadDescriptions": {
+        "questionOnly": "Importez uniquement les questions. Toutes les colonnes de r?ponse seront ignor?es.",
+        "qaPair": "Importez les questions avec leurs r?ponses existantes. La colonne de r?ponse sera conserv?e."
+      },
+      "uploadColumns": {
+        "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
+        "qaPair": "question et answer (requis), referringUrl (optionnel), chatId (optionnel)"
+      },
       "rowCount": "Lignes",
       "created": "Cr?? le",
       "existing": "Ensembles de donn?es existants",
       "loading": "Chargement des ensembles de donn?es...",
       "empty": "Aucun ensemble de donn?es trouv?.",
       "actions": "Actions",
-      "typeInfo": {
-        "question-only": {
-          "label": "Questions seulement",
-          "description": "Une liste de questions auxquelles l'IA doit r?pondre. Utilisez ce type pour lancer une g?n?ration par lot et obtenir des r?ponses de l'IA.",
-          "columns": "question (requis), referringUrl (optionnel), chatId (optionnel)"
-        },
-        "qa-pair": {
-          "label": "Paire Q et R",
-          "description": "Un ensemble de questions associ?es ? des r?ponses existantes. Utilisez ce type pour ex?cuter des analyseurs qui ?valuent une r?ponse IA existante sans r?f?rence s?par?e.",
-          "columns": "question, answer (requis), referringUrl (optionnel), chatId (optionnel)"
-        },
-        "evaluation-set": {
-          "label": "Ensemble d'?valuation (R?ponses de r?f?rence)",
-          "description": "Des questions associ?es ? une r?ponse de r?f?rence (dor?e) et optionnellement une nouvelle r?ponse ? comparer. Utilisez ce type avec des analyseurs de comparaison comme Expert Scorer.",
-          "columns": "question, answer (requis), comparisonAnswer (optionnel), referringUrl (optionnel), chatId (optionnel)"
-        }
+      "type": {
+        "questionOnly": "Question seulement",
+        "qaPair": "Paire Q/R",
+        "batchOutput": "Sortie de lot"
       }
     },
     "analysis": {

@@ -26,6 +26,40 @@ const pickNormalizedAnswer = (item = {}) => {
     return '';
 };
 
+const extractAnswerText = (answerPayload) => {
+    if (typeof answerPayload === 'string') {
+        return answerPayload.trim();
+    }
+
+    if (!answerPayload || typeof answerPayload !== 'object') {
+        return '';
+    }
+
+    const paragraphText = Array.isArray(answerPayload.paragraphs)
+        ? answerPayload.paragraphs.filter(Boolean).join('\n\n').trim()
+        : '';
+    const sentenceText = Array.isArray(answerPayload.sentences)
+        ? answerPayload.sentences.filter(Boolean).join(' ').trim()
+        : '';
+
+    const candidates = [
+        answerPayload.content,
+        answerPayload.englishAnswer,
+        answerPayload.answer,
+        answerPayload.text,
+        paragraphText,
+        sentenceText
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+
+    return '';
+};
+
 const makeError = (message, code, statusCode) => {
     const err = new Error(message);
     err.code = code;
@@ -234,10 +268,9 @@ class ExperimentalBatchService {
                 await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
-                        if (update.result?.answer) {
-                            item.answer = typeof update.result.answer === 'string'
-                                ? update.result.answer
-                                : update.result.answer.content;
+                        const answerText = extractAnswerText(update.result?.answer ?? update.answer ?? update.result?.result?.answer);
+                        if (answerText) {
+                            item.answer = answerText;
                         }
                     }
                 });

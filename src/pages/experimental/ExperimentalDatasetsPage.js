@@ -59,7 +59,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         selectedFile.name,
                         { name: newName, description: newDesc, type: newType }
                     );
-                    setMessage({ type: 'success', text: t('experimental.datasets.uploadSuccess') || 'Upload successful' });
+                    setMessage({ type: 'success', text: t('experimental.datasets.uploadSuccess') });
                     fetchDatasets();
                     setNewName('');
                     setNewDesc('');
@@ -68,7 +68,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                 } catch (err) {
                     setMessage({
                         type: 'error',
-                        text: err.response?.data?.error || t('experimental.datasets.uploadFailed') || 'Upload failed',
+                        text: err.response?.data?.error || t('experimental.datasets.uploadFailed'),
                         details: err.response?.data?.details
                     });
                 } finally {
@@ -79,19 +79,19 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         } catch (err) {
             console.error(err);
             setUploading(false);
-            setMessage({ type: 'error', text: t('experimental.datasets.readFailed') || 'Read failed' });
+            setMessage({ type: 'error', text: t('experimental.datasets.readFailed') });
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm(t('experimental.datasets.confirmDelete') || 'Are you sure you want to delete this dataset?')) return;
+        if (!window.confirm(t('experimental.datasets.confirmDelete'))) return;
 
         try {
             await ExperimentalBatchClientService.deleteDataset(id);
             fetchDatasets();
         } catch (err) {
             if (err.response?.data?.code === 'IN_USE') {
-                alert(t('experimental.datasets.inUse') || 'Dataset is in use');
+                alert(t('experimental.datasets.inUse'));
             } else {
                 alert(err.response?.data?.error || err.message);
             }
@@ -103,7 +103,15 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         window.location.href = `/${lang}/experimental/analysis?datasetId=${id}`;
     };
 
-    const typeInfo = t(`experimental.datasets.typeInfo.${newType}`) || {};
+    const typeInfo = newType === 'qa-pair'
+        ? {
+            description: t('experimental.datasets.uploadDescriptions.qaPair'),
+            columns: t('experimental.datasets.uploadColumns.qaPair')
+        }
+        : {
+            description: t('experimental.datasets.uploadDescriptions.questionOnly'),
+            columns: t('experimental.datasets.uploadColumns.questionOnly')
+        };
 
     return (
         <GcdsContainer size="xl" centered className="my-400">
@@ -141,38 +149,26 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     onChange={(e) => setNewType(e.target.value)}
                                     style={{ padding: '8px', width: '100%', marginBottom: '10px' }}
                                 >
-                                    <option value="question-only">{t('experimental.datasets.typeInfo.question-only.label') || 'Question Only'}</option>
-                                    <option value="qa-pair">{t('experimental.datasets.typeInfo.qa-pair.label') || 'QA Pair'}</option>
-                                    <option value="evaluation-set">{t('experimental.datasets.typeInfo.evaluation-set.label') || 'Evaluation Set'}</option>
+                                    <option value="question-only">{t('experimental.datasets.type.questionOnly')}</option>
+                                    <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
                                 </select>
-
-                                {typeInfo && (
-                                    <div style={{
-                                        padding: '12px 16px',
-                                        backgroundColor: '#f0f4f9',
-                                        borderLeft: '4px solid #2B4380',
-                                        borderRadius: '0 4px 4px 0',
-                                        fontSize: '0.875rem',
-                                    }}>
-                                        <p style={{ margin: '0 0 8px', color: '#333' }}>{typeInfo.description}</p>
-                                        <p style={{ margin: 0, color: '#555' }}>
-                                            <strong>{t('experimental.datasets.requiredColumns') || 'Required Columns'}: </strong>
-                                            <code style={{ backgroundColor: '#e8edf5', padding: '2px 6px', borderRadius: '3px' }}>
-                                                {typeInfo.columns}
-                                            </code>
-                                        </p>
-                                    </div>
-                                )}
                             </div>
+                            <GcdsText className="mb-200">
+                                {typeInfo.description}
+                            </GcdsText>
+                            <GcdsText className="mb-200">
+                                <strong>{t('experimental.datasets.requiredColumns')}: </strong>
+                                {typeInfo.columns}
+                            </GcdsText>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                                    {t('experimental.datasets.fileLabel') || 'File'}
+                                    {t('experimental.datasets.fileLabel')}
                                 </label>
                                 <input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileChange} />
                             </div>
                             <div>
                                 <GcdsButton onClick={handleUpload} disabled={uploading || !selectedFile || !newName}>
-                                    {uploading ? t('experimental.datasets.uploading') || 'Uploading...' : t('experimental.datasets.upload') || 'Upload'}
+                                    {uploading ? t('experimental.datasets.uploading') : t('experimental.datasets.upload')}
                                 </GcdsButton>
                             </div>
                             {message && (
@@ -220,14 +216,22 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                         <strong>{ds.name}</strong>
                                         <div style={{ fontSize: '0.8rem', color: '#666' }}>{ds.description}</div>
                                     </td>
-                                    <td className="p-200">{t(`experimental.datasets.typeInfo.${ds.type}.label`) || ds.type}</td>
+                                    <td className="p-200">
+                                        {ds.type === 'question-only'
+                                            ? t('experimental.datasets.type.questionOnly')
+                                            : ds.type === 'qa-pair'
+                                                ? t('experimental.datasets.type.qaPair')
+                                                : ds.type === 'batch-output'
+                                                ? t('experimental.datasets.type.batchOutput')
+                                                : ds.type}
+                                    </td>
                                     <td className="p-200">{ds.createdBy?.email || t('common.na')}</td>
                                     <td className="p-200">{ds.rowCount}</td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
                                         <div className="d-flex gap-200">
                                             <GcdsButton size="small" onClick={() => handleViewDataset(ds._id)}>
-                                                {t('experimental.datasets.analyze') || 'Analyze'}
+                                            {t('experimental.datasets.analyze')}
                                             </GcdsButton>
                                             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
                                                 {t('experimental.datasets.delete')}

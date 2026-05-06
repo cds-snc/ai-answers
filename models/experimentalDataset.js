@@ -11,7 +11,7 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['question-only', 'qa-pair', 'evaluation-set', 'batch-output']
+        enum: ['question-only', 'qa-pair', 'batch-output']
     },
     rowCount: { type: Number, default: 0 },
     columns: [{

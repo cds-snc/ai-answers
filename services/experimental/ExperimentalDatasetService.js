@@ -5,7 +5,6 @@ import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const QUESTION_ALIASES = ['question', 'problemdetails', 'problem details'];
-const ANSWER_ALIASES = ['answer', 'response', 'newanswer', 'comparison', 'comparisonanswer'];
 
 export class ValidationError extends Error {
     constructor(errors) {
@@ -29,7 +28,7 @@ class ExperimentalDatasetService {
     async createFromUpload(fileBuffer, mimetype, metadata, userId) {
         // Parse file
         const parsedRows = this._parseFile(fileBuffer, mimetype);
-        const rows = parsedRows.map(row => this._normalizeUploadedRow(row));
+        const rows = parsedRows.map(row => this._normalizeUploadedRow(row, metadata.type));
 
         // Validate structure
         const validation = this._validateRows(rows, metadata.type);
@@ -58,6 +57,7 @@ class ExperimentalDatasetService {
         try {
             const datasets = await ExperimentalDataset.create([{
                 ...metadata,
+                type: metadata.type || 'question-only',
                 rowCount: rows.length,
                 columns: this._inferColumns(rows),
                 contentHash,
@@ -118,11 +118,6 @@ class ExperimentalDatasetService {
     _validateRows(rows, type) {
         const errors = [];
 
-        // Required columns schema. Each dataset `type` maps to an array of
-        // requirements. Each requirement may be either:
-        // - a string: the required column name, or
-        // - an object: { canonicalName: [alt1, alt2, ...] } where any alt satisfies the requirement.
-        // This makes it explicit which alternate headers satisfy a requirement.
         const requiredColumns = {
             'question-only': [
                 { question: ['question', 'problemdetails', 'problem details'] }
@@ -131,13 +126,9 @@ class ExperimentalDatasetService {
                 { question: ['question', 'problemdetails', 'problem details'] },
                 'answer'
             ],
-            'evaluation-set': [
-                { question: ['question', 'problemdetails', 'problem details'] },
-                'answer'
-            ],
         };
 
-        const required = requiredColumns[type] || [];
+        const required = requiredColumns[type] || requiredColumns['question-only'];
         if (rows.length === 0) {
             errors.push('File contains no data rows');
         }
@@ -191,7 +182,7 @@ class ExperimentalDatasetService {
             .trim();
     }
 
-    _normalizeUploadedRow(row) {
+    _normalizeUploadedRow(row, type) {
         const normalized = { ...row };
         const questionKey = this._findColumnKey(normalized, QUESTION_ALIASES);
 
@@ -200,10 +191,16 @@ class ExperimentalDatasetService {
             delete normalized[questionKey];
         }
 
-        const answerKey = this._findColumnKey(normalized, ANSWER_ALIASES);
-        if (answerKey && answerKey !== 'answer') {
-            normalized.answer = normalized[answerKey];
-            delete normalized[answerKey];
+        const answerKey = this._findColumnKey(normalized, ['answer', 'response', 'newanswer', 'comparison', 'comparisonanswer']);
+        if (answerKey) {
+            if (type === 'qa-pair') {
+                normalized.answer = normalized[answerKey];
+                if (answerKey !== 'answer') {
+                    delete normalized[answerKey];
+                }
+            } else {
+                delete normalized[answerKey];
+            }
         }
 
         return normalized;

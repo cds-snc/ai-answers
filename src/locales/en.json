@@ -1386,28 +1386,24 @@
       "uploadedBy": "Uploaded by",
       "fileLabel": "Excel / CSV File",
       "requiredColumns": "Required columns",
+      "uploadDescriptions": {
+        "questionOnly": "Upload questions only. Any answer columns will be ignored.",
+        "qaPair": "Upload questions with their existing answers. The answer column will be kept."
+      },
+      "uploadColumns": {
+        "questionOnly": "question (required), referringUrl (optional), chatId (optional)",
+        "qaPair": "question and answer (required), referringUrl (optional), chatId (optional)"
+      },
       "rowCount": "Rows",
       "created": "Created",
       "existing": "Existing Datasets",
       "loading": "Loading datasets...",
       "empty": "No datasets found.",
       "actions": "Actions",
-      "typeInfo": {
-        "question-only": {
-          "label": "Question Only",
-          "description": "A list of questions to be answered by the AI. Use this to run a batch generation and obtain AI responses.",
-          "columns": "question (required), referringUrl (optional), chatId (optional)"
-        },
-        "qa-pair": {
-          "label": "Q&A Pair",
-          "description": "A matched set of questions and existing answers. Use this to run analyzers that evaluate an existing AI response without a separate baseline.",
-          "columns": "question, answer (required), referringUrl (optional), chatId (optional)"
-        },
-        "evaluation-set": {
-          "label": "Evaluation Set (Golden Answers)",
-          "description": "Questions paired with a golden/baseline answer and optionally a new answer to compare against. Use this with comparison analyzers like Expert Scorer.",
-          "columns": "question, answer (required), comparisonAnswer (optional), referringUrl (optional), chatId (optional)"
-        }
+      "type": {
+        "questionOnly": "Question only",
+        "qaPair": "Q&A pair",
+        "batchOutput": "Batch output"
       }
     },
     "analysis": {
