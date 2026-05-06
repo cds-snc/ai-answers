@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
@@ -116,6 +116,11 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     return (
         <GcdsContainer size="xl" centered className="my-400">
             <GcdsHeading tag="h1">{t('experimental.datasets.title')}</GcdsHeading>
+            <div className="mb-400">
+                <GcdsLink href={`/${lang}/admin`}>
+                    {t('common.backToAdmin')}
+                </GcdsLink>
+            </div>
 
             <div className="my-400">
                 <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
