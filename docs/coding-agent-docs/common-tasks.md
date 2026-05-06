@@ -1,4 +1,4 @@
-# Common Task Patterns
+﻿# Common Task Patterns
 
 Read this before starting any task matching the patterns below.
 
@@ -41,7 +41,7 @@ This regenerates `docs/agents-prompts/system-prompt-documentation.md`.
 
 ## Upgrading the AI Model
 
-Model selection is decoupled from workflow logic. Workflows (DefaultGraph, DefaultWithVectorGraph, InstantAndQAGraph) define the pipeline structure. The model (which LLM to call) is set independently via Settings.
+Model selection is decoupled from workflow logic. Workflows (GenericGraph, DefaultWithVectorGraph, InstantAndQAGraph) define the pipeline structure. The model (which LLM to call) is set independently via Settings.
 
 ### Adding a new model (code change — deploy required)
 
@@ -76,8 +76,6 @@ Model selection is decoupled from workflow logic. Workflows (DefaultGraph, Defau
 - Authenticated admins can override via the chat Options dropdown (for testing)
 - **The setting selects a model family, not a single model.** `AgentFactory.js` automatically routes each pipeline step to the right model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini), while context and answer generation use the full model (e.g. GPT-5.1). Admins do not configure this; it is handled internally.
 - The evaluation pipeline uses its own model (`gpt-4.1-mini`) configured separately in `AgentFactory.js` — it is not affected by the default model family setting
-- Legacy graph names (e.g. `GPT5OneDefaultGraph`) in old DB records or localStorage are mapped automatically to DefaultGraph + the implied model
-
 ## Modifying the Pipeline
 
 1. Understand the node flow: `init → validate → redact → translate → context → answer → verify → persist`
@@ -121,3 +119,5 @@ Key services to know:
 - `QuestionAnswerService` — finds similar Q&A pairs from history
 - `PIIAgentService` — detects PII in user messages
 - `ScenarioOverrideService` — fetches/applies custom scenario text per department
+
+

@@ -35,7 +35,7 @@ This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the
 
 ### Exceptions
 - **Backend/console/database output**: `console.log`, `console.error`, server-side log strings, developer-facing CLI output, and dynamic content retrieved from the database are exempt.
-- **Internal technical identifiers used as option values**: e.g. workflow names like `DefaultGraph` where the value and label are the same internal enum — these are not user-facing text.
+- **Internal technical identifiers used as option values**: e.g. workflow names like `GenericGraph` where the value and label are the same internal enum — these are not user-facing text.
 
 ### Sentence case
 All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.

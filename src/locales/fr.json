@@ -921,7 +921,7 @@
     }
   },
   "workflows": {
-    "default": "Par défaut",
+    "generic": "Générique",
     "defaultWithVector": "Réponse instantanée ACTIVÉE",
     "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
   },
@@ -935,7 +935,7 @@
       "title": "Paramètres généraux"
     },
     "defaultWorkflow": {
-      "label": "Workflow par défaut"
+      "label": "Flux générique"
     },
     "defaultModel": {
       "label": "Famille de modèles par défaut"

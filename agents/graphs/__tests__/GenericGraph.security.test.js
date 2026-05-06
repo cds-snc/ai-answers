@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { runDefaultGraph } from '../DefaultGraph.js';
+import { runGenericGraph } from '../GenericGraph.js';
 import { logGraphEvent } from '../GraphEventLogger.js';
 import { GraphWorkflowHelper } from '../workflows/GraphWorkflowHelper.js';
 import { redactionService } from '../services/redactionService.js';
@@ -38,7 +38,7 @@ vi.mock('../workflows/GraphWorkflowHelper.js', () => {
     };
 });
 
-describe('DefaultGraph Security Regression', () => {
+describe('GenericGraph Security Regression', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -53,7 +53,7 @@ describe('DefaultGraph Security Regression', () => {
         };
 
         try {
-            await runDefaultGraph(input);
+            await runGenericGraph(input);
         } catch (e) {
             // Some nodes might fail due to mocks, but we only care about log calls
         }

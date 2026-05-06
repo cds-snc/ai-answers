@@ -50,7 +50,7 @@ graph.addNode('init', async (state) => {
     selectedAI: state.selectedAI,
   });
 
-  await ServerLoggingService.info('Starting DefaultGraph', state.chatId, {
+  await ServerLoggingService.info('Starting GenericGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
@@ -224,7 +224,7 @@ graph.addNode('persistNode', async (state) => {
     finalCitationUrl,
     context: contextData,
     chatId: state.chatId,
-    workflow: 'DefaultGraph',
+    workflow: 'GenericGraph',
     pageLanguage: state.lang,
     responseTime: totalResponseTime,
     searchProvider: state.searchProvider,
@@ -251,10 +251,10 @@ graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
-export const defaultGraphApp = graph.compile();
+export const genericGraphApp = graph.compile();
 
-export async function runDefaultGraph(input) {
-  return defaultGraphApp.invoke(input);
+export async function runGenericGraph(input) {
+  return genericGraphApp.invoke(input);
 }
 
-export default defaultGraphApp;
+export default genericGraphApp;

@@ -5,8 +5,8 @@ const { mockDeriveContext } = vi.hoisted(() => ({
     mockDeriveContext: vi.fn().mockResolvedValue({ topic: 't', department: 'd', searchResults: 'results' })
 }));
 
-describe('DefaultGraph Workflow', () => {
-    let defaultGraphApp;
+describe('GenericGraph Workflow', () => {
+    let genericGraphApp;
 
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -41,8 +41,8 @@ describe('DefaultGraph Workflow', () => {
             default: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }
         }));
 
-        const mod = await import('../DefaultGraph.js');
-        defaultGraphApp = mod.defaultGraphApp;
+        const mod = await import('../GenericGraph.js');
+        genericGraphApp = mod.genericGraphApp;
 
         vi.spyOn(graphRequestContext, 'getStore').mockReturnValue({ user: { userId: 'test-user' }, headers: {} });
     });
@@ -71,7 +71,7 @@ describe('DefaultGraph Workflow', () => {
             selectedAI: 'openai'
         };
 
-        const resultState = await defaultGraphApp.invoke(inputWithHistory);
+        const resultState = await genericGraphApp.invoke(inputWithHistory);
 
         expect(resultState.status).toBe('complete');
         // Verify that deriveContext was called despite history

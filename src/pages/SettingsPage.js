@@ -18,7 +18,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
+  const [defaultWorkflow, setDefaultWorkflow] = useState('GenericGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
@@ -75,10 +75,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
       // Load default workflow setting
-      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
+      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'GenericGraph');
       // Validate default workflow against known options
       const allowedWorkflows = WORKFLOW_VALUES;
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'GenericGraph');
       // Load default model setting (seeded server-side on startup if missing)
       const defaultModelSetting = await DataStoreService.getSetting('model.default', AVAILABLE_MODELS[0].value);
       setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
@@ -429,7 +429,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               try {
                 const allowedWorkflows = WORKFLOW_VALUES;
                 const current = await saveAndVerify('workflow.default', v);
-                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
+                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'GenericGraph');
               } finally {
                 setSavingDefaultWorkflow(false);
               }

@@ -921,7 +921,7 @@
     }
   },
   "workflows": {
-    "default": "Default",
+    "generic": "Generic",
     "defaultWithVector": "Instant answer ON",
     "instantAndQA": "Instant answer with context ON"
   },
@@ -935,7 +935,7 @@
       "title": "General settings"
     },
     "defaultWorkflow": {
-      "label": "Default workflow"
+      "label": "Generic workflow"
     },
     "defaultModel": {
       "label": "Default model family"

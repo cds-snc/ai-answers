@@ -5,7 +5,7 @@
 // this file — the change propagates everywhere automatically.
 
 export const WORKFLOWS = [
-  { value: 'DefaultGraph', labelKey: 'workflows.default' },
+  { value: 'GenericGraph', labelKey: 'workflows.generic' },
   { value: 'DefaultWithVectorGraph', labelKey: 'workflows.defaultWithVector' },
   { value: 'InstantAndQAGraph', labelKey: 'workflows.instantAndQA' },
 ];
