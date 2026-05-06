@@ -126,4 +126,47 @@ describe('ExperimentalAnalysisPage', () => {
             '/en/experimental/datasets'
         );
     });
+
+    it('shows workflow and model family values from saved batch config and falls back to N/A when missing', async () => {
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-1',
+                    name: 'Analysis - configured',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: {
+                        analyzerIds: ['bias-detection'],
+                        workflow: 'DefaultGraph',
+                        aiProvider: 'azure'
+                    },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-2',
+                    name: 'Analysis - legacy',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['bias-detection'] },
+                    createdAt: '2026-05-04T00:00:00.000Z',
+                    createdBy: { email: 'legacy@example.com' }
+                }
+            ]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.workflow' })).toBeTruthy();
+        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' })).toBeTruthy();
+        expect(screen.getAllByText('workflows.default').some(node => node.tagName === 'TD')).toBe(true);
+        expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
+        expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
+    });
 });

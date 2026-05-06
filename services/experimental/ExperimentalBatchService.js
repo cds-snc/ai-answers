@@ -15,6 +15,9 @@ const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
+const WORKFLOW_ALIASES = {
+    DefaultGraph: 'GenericWorkflowGraph'
+};
 
 const pickNormalizedAnswer = (item = {}) => {
     for (const key of ANSWER_ALIASES) {
@@ -48,6 +51,11 @@ const resolveSelectedAnalyzerId = (config = {}) => {
     }
 
     return '';
+};
+
+const resolveWorkflowName = (workflow = '') => {
+    const trimmed = String(workflow || '').trim();
+    return WORKFLOW_ALIASES[trimmed] || trimmed;
 };
 
 class ExperimentalBatchService {
@@ -250,7 +258,7 @@ class ExperimentalBatchService {
             const shouldGenerateAnswer = batch.type === 'batch'
                 || (batch.type === 'analysis' && !item.answer);
             if (shouldGenerateAnswer) {
-                const graphName = batch.config.workflow || 'GenericWorkflowGraph';
+                const graphName = resolveWorkflowName(batch.config.workflow || 'DefaultGraph');
                 const app = await getGraphApp(graphName);
                 if (!app) throw new Error(`Graph ${graphName} not found`);
 

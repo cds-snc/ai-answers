@@ -98,6 +98,16 @@ describe('ExperimentalBatchService', () => {
             expect(item.baselineAnswer).toBe('Base');
         });
 
+        it('should not invent a model family when none is explicitly provided', async () => {
+            const batchData = { name: 'Blank Model', type: 'analysis', config: { analyzerId: 'refusal' } };
+            const itemsData = [{ question: 'Q1' }];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const saved = await ExperimentalBatch.findById(batch._id).lean();
+
+            expect(saved.config.aiProvider).toBeUndefined();
+        });
+
         it('should extract referringUrl and chatId from provided data', async () => {
             const batchData = { name: 'Field Extraction', type: 'batch' };
             const itemsData = [{
@@ -266,6 +276,33 @@ describe('ExperimentalBatchService', () => {
             expect(updatedItem.status).toBe('completed');
             expect(updatedItem.answer).toBe('It is 4');
             expect(updatedItem.chatId).toBeDefined();
+            runSpy.mockRestore();
+        });
+
+        it('should resolve DefaultGraph to the generic registry graph', async () => {
+            const batch = await ExperimentalBatch.create({
+                name: 'Default Graph Batch',
+                type: 'batch',
+                config: { workflow: 'DefaultGraph', pageLanguage: 'en', aiProvider: 'azure' }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'What is 2+2?'
+            });
+
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield { result: { answer: 'It is 4' } };
+                }
+            };
+            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
+            getGraphApp.mockResolvedValue(mockApp);
+            const runSpy = vi.spyOn(graphRequestContext, 'run').mockImplementation((store, callback) => callback());
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            expect(getGraphApp).toHaveBeenCalledWith('GenericWorkflowGraph');
             runSpy.mockRestore();
         });
 

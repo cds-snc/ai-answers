@@ -3,6 +3,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams } from 'react-router-dom';
+import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -16,6 +17,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
     const [baselineBatchId, setBaselineBatchId] = useState('');
+    const [selectedWorkflow, setSelectedWorkflow] = useState(WORKFLOWS[0]?.value || 'DefaultGraph');
+    const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -147,10 +150,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 config: {
                     analyzerId: selectedAnalyzerId,
                     analyzerIds: [selectedAnalyzerId],
+                    workflow: selectedWorkflow,
+                    aiProvider: selectedModel || undefined,
                     datasetId: selectedDatasetId || undefined,
                     baselineRunId: baselineBatchId || undefined,
-                pageLanguage: 'en',
-            }
+                    pageLanguage: 'en',
+                }
             };
 
             const result = await ExperimentalBatchClientService.createBatch(batchData);
@@ -234,6 +239,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return analyzers.find(a => a.id === id)?.name || id;
     };
 
+    const getWorkflowLabel = (batch) => {
+        const workflowId = batch?.config?.workflow;
+        if (!workflowId) return t('common.na');
+        const workflow = WORKFLOWS.find(item => item.value === workflowId);
+        return workflow?.labelKey ? t(workflow.labelKey) : t('common.na');
+    };
+
+    const getModelLabel = (batch) => {
+        const modelId = batch?.config?.aiProvider;
+        if (!modelId) return t('common.na');
+        if (modelId === 'azure') return t('common.na');
+        const model = AVAILABLE_MODELS.find(item => item.value === modelId);
+        return model?.labelKey ? t(model.labelKey) : t('common.na');
+    };
+
     const baselineOptions = batches.filter(batch =>
         batch.status === 'completed' &&
         (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
@@ -284,6 +304,42 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     {analyzers.find(a => a.id === selectedAnalyzerId)?.description || ''}
                                 </GcdsText>
                             )}
+                        </div>
+
+                        <div className="mb-400">
+                            <label htmlFor="workflow-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.workflowLabel')}
+                            </label>
+                            <select
+                                id="workflow-select"
+                                value={selectedWorkflow}
+                                onChange={(e) => setSelectedWorkflow(e.target.value)}
+                                style={{ padding: '8px', width: '100%' }}
+                            >
+                                {WORKFLOWS.map(workflow => (
+                                    <option key={workflow.value} value={workflow.value}>
+                                        {t(workflow.labelKey)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="mb-400">
+                            <label htmlFor="model-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('batch.upload.model.label')}
+                            </label>
+                            <select
+                                id="model-select"
+                                value={selectedModel}
+                                onChange={(e) => setSelectedModel(e.target.value)}
+                                style={{ padding: '8px', width: '100%' }}
+                            >
+                                {AVAILABLE_MODELS.map(model => (
+                                    <option key={model.value} value={model.value}>
+                                        {t(model.labelKey)}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Dataset Selection */}
@@ -373,6 +429,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                             <th className="p-300">{t('experimental.analysis.columns.name')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.analyzer')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.workflow')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.modelFamily')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.status')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.completed')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.failed')}</th>
@@ -388,6 +446,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <tr key={batch._id} style={{ borderBottom: '1px solid #eee' }}>
                                 <td className="p-200">{batch.name}</td>
                                 <td className="p-200">{getAnalyzerLabel(batch)}</td>
+                                <td className="p-200">{getWorkflowLabel(batch)}</td>
+                                <td className="p-200">{getModelLabel(batch)}</td>
                                 <td className="p-300">
                                     <span style={{
                                         color: batch.status === 'completed' ? 'green' : (batch.status === 'failed' ? 'red' : 'orange'),
