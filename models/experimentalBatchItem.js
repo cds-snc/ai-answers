@@ -29,7 +29,6 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
     baselineAnalysisResults: { type: mongoose.Schema.Types.Mixed, default: {} },
     baselineMatch: { type: Boolean },
     baselineFlagged: { type: Boolean },
-    comparisonAnswer: { type: String },
 
     // Analysis Results (Standardized)
     similarityScore: { type: Number },

@@ -14,6 +14,17 @@ const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
+
+const pickNormalizedAnswer = (item = {}) => {
+    for (const key of ANSWER_ALIASES) {
+        const value = item[key];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+            return value;
+        }
+    }
+    return '';
+};
 
 const makeError = (message, code, statusCode) => {
     const err = new Error(message);
@@ -83,7 +94,7 @@ class ExperimentalBatchService {
                         data.baselineMatch = match.match;
                         data.baselineFlagged = match.flagged;
 
-                        // If we are NOT in 'batch' mode (generation), the 'answer' to analyze 
+                        // If we are NOT in 'batch' mode (generation), the 'answer' to analyze
                         // should be the one from the dataset itself (or the baseline being re-evaluated).
                         if (batchData.type === 'analysis' && !data.answer) {
                             data.answer = match.answer;
@@ -106,12 +117,11 @@ class ExperimentalBatchService {
 
         const items = finalItems.map((item, index) => ({
             question: item.question || item.Question || item.REDACTEDQUESTION || item.Prompt || '',
-            answer: item.answer || item.Answer || item.Response || '',
+            answer: pickNormalizedAnswer(item),
             baselineAnswer: item.baselineAnswer || item.baseline || item.GoldenAnswer || '',
             baselineAnalysisResults: item.baselineAnalysisResults || {},
             baselineMatch: item.baselineMatch,
             baselineFlagged: item.baselineFlagged,
-            comparisonAnswer: item.comparisonAnswer || item.comparison || item.NewAnswer || '',
             referringUrl: item.referringUrl || item.ReferringUrl || item.referringurl || '',
             chatId: item.chatId || item.ChatId || item.chatid || '',
             originalData: item,
@@ -183,7 +193,7 @@ class ExperimentalBatchService {
             // - Always for batch runs.
             // - For analysis runs, generate only when no answer-like input exists.
             const shouldGenerateAnswer = batch.type === 'batch'
-                || (batch.type === 'analysis' && !item.answer && !item.comparisonAnswer);
+                || (batch.type === 'analysis' && !item.answer);
             if (shouldGenerateAnswer) {
                 const graphName = batch.config.workflow || 'GenericWorkflowGraph';
                 const app = await getGraphApp(graphName);
@@ -253,12 +263,6 @@ class ExperimentalBatchService {
                 analyzerConfigs.push({ id: batch.config.analyzerId, config: batch.config.analyzerConfig || {} });
             }
 
-            // Resolve answer before analysis: prioritize comparisonAnswer for comparison runs,
-            // otherwise keep existing answer (from dataset or generation).
-            if (!item.answer && item.comparisonAnswer) {
-                item.answer = item.comparisonAnswer;
-            }
-
             if (analyzerConfigs.length > 0) {
                 const analysisPromises = analyzerConfigs.map(async (aConfig) => {
                     const analyzerDef = await ExperimentalAnalyzerRegistry.get(aConfig.id);
@@ -274,7 +278,6 @@ class ExperimentalBatchService {
                             baselineAnalysisResults: item.baselineAnalysisResults,
                             baselineMatch: item.baselineMatch,
                             baselineFlagged: item.baselineFlagged,
-                            comparisonAnswer: item.comparisonAnswer,
                             config: { ...aConfig.config, aiProvider: batch.config.aiProvider },
                             originalData: item.originalData
                         });
@@ -500,8 +503,11 @@ class ExperimentalBatchService {
 
             await ExperimentalDatasetRow.insertMany(rows);
 
+            await ExperimentalDataset.updateOne(
+                { _id: dataset._id },
+                { rowCount: rows.length }
+            );
             dataset.rowCount = rows.length;
-            await dataset.save();
 
             return {
                 dataset,

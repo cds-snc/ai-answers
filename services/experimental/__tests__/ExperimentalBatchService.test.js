@@ -85,7 +85,7 @@ describe('ExperimentalBatchService', () => {
             const batchData = { name: 'Mapping Test', type: 'analysis' };
             const itemsData = [{
                 Question: 'Standard Q',
-                Answer: 'Standard A',
+                Response: 'Standard A',
                 baseline: 'Base',
                 NewAnswer: 'Comp'
             }];
@@ -96,7 +96,6 @@ describe('ExperimentalBatchService', () => {
             expect(item.question).toBe('Standard Q');
             expect(item.answer).toBe('Standard A');
             expect(item.baselineAnswer).toBe('Base');
-            expect(item.comparisonAnswer).toBe('Comp');
         });
 
         it('should extract referringUrl and chatId from provided data', async () => {

@@ -16,7 +16,7 @@ export class AnalyzerBase {
 
     /**
      * Analyze input and return structured results.
-     * @param {Object} input - { question, answer, baselineAnswer, comparisonAnswer, config, originalData }
+     * @param {Object} input - { question, answer, baselineAnswer, config, originalData }
      * @returns {Promise<Object>} - Analysis results matching outputColumns
      */
     async analyze(input) {
@@ -30,8 +30,8 @@ export class AnalyzerBase {
      */
     validateInput(input) {
         if (this.constructor.inputType === 'comparison') {
-            if (!input.baselineAnswer || !input.comparisonAnswer) {
-                return { valid: false, error: 'Comparison requires baselineAnswer and comparisonAnswer' };
+            if (!input.baselineAnswer || !input.answer) {
+                return { valid: false, error: 'Comparison requires baselineAnswer and answer' };
             }
         } else if (this.constructor.inputType === 'single') {
             if (!input.answer && !input.question) {

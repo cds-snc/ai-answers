@@ -77,6 +77,26 @@ describe('ExperimentalDatasetService', () => {
             expect(rows[0].data).not.toHaveProperty('Problem Details');
         });
 
+        it('should normalize answer aliases into the canonical answer field', async () => {
+            const data = [
+                { question: 'What is IA?', NewAnswer: 'Intelligence Artificielle' }
+            ];
+            const buffer = createXlsxBuffer(data);
+            const metadata = { name: 'Answer Alias Dataset', type: 'qa-pair' };
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                metadata,
+                userId
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows).toHaveLength(1);
+            expect(rows[0].data).toHaveProperty('answer', 'Intelligence Artificielle');
+            expect(rows[0].data).not.toHaveProperty('NewAnswer');
+        });
+
         it('should throw DuplicateError if name already exists', async () => {
             await ExperimentalDataset.create({ name: 'Existing', type: 'question-only' });
             const buffer = createXlsxBuffer([{ question: 'test' }]);

@@ -4,6 +4,8 @@ import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const QUESTION_ALIASES = ['question', 'problemdetails', 'problem details'];
+const ANSWER_ALIASES = ['answer', 'response', 'newanswer', 'comparison', 'comparisonanswer'];
 
 export class ValidationError extends Error {
     constructor(errors) {
@@ -191,12 +193,17 @@ class ExperimentalDatasetService {
 
     _normalizeUploadedRow(row) {
         const normalized = { ...row };
-        const questionAliases = ['question', 'problemdetails', 'problem details'];
-        const questionKey = this._findColumnKey(normalized, questionAliases);
+        const questionKey = this._findColumnKey(normalized, QUESTION_ALIASES);
 
         if (questionKey && questionKey !== 'question') {
             normalized.question = normalized[questionKey];
             delete normalized[questionKey];
+        }
+
+        const answerKey = this._findColumnKey(normalized, ANSWER_ALIASES);
+        if (answerKey && answerKey !== 'answer') {
+            normalized.answer = normalized[answerKey];
+            delete normalized[answerKey];
         }
 
         return normalized;
@@ -236,7 +243,7 @@ class ExperimentalDatasetService {
         }
 
         // Fallback: question-number pairing or hash
-        const questionKey = this._findColumnKey(row, ['question', 'problemdetails', 'problem details']);
+        const questionKey = this._findColumnKey(row, QUESTION_ALIASES);
         const question = questionKey ? row[questionKey] : '';
         const numMatch = question.match(/^(\d{1,3})\.\s*/);
         if (numMatch) {

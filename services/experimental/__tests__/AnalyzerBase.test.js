@@ -34,15 +34,15 @@ describe('AnalyzerBase', () => {
 
         it('should validate comparison input with both answers', () => {
             const analyzer = new TestComparisonAnalyzer();
-            const result = analyzer.validateInput({ baselineAnswer: 'a', comparisonAnswer: 'b' });
+            const result = analyzer.validateInput({ baselineAnswer: 'a', answer: 'b' });
             expect(result.valid).toBe(true);
         });
 
         it('should fail comparison input if baseline is missing', () => {
             const analyzer = new TestComparisonAnalyzer();
-            const result = analyzer.validateInput({ comparisonAnswer: 'b' });
+            const result = analyzer.validateInput({ answer: 'b' });
             expect(result.valid).toBe(false);
-            expect(result.error).toContain('requires baselineAnswer and comparisonAnswer');
+            expect(result.error).toContain('requires baselineAnswer and answer');
         });
     });
 
