@@ -26,45 +26,28 @@ const pickNormalizedAnswer = (item = {}) => {
     return '';
 };
 
-const extractAnswerText = (answerPayload) => {
-    if (typeof answerPayload === 'string') {
-        return answerPayload.trim();
-    }
-
-    if (!answerPayload || typeof answerPayload !== 'object') {
-        return '';
-    }
-
-    const paragraphText = Array.isArray(answerPayload.paragraphs)
-        ? answerPayload.paragraphs.filter(Boolean).join('\n\n').trim()
-        : '';
-    const sentenceText = Array.isArray(answerPayload.sentences)
-        ? answerPayload.sentences.filter(Boolean).join(' ').trim()
-        : '';
-
-    const candidates = [
-        answerPayload.content,
-        answerPayload.englishAnswer,
-        answerPayload.answer,
-        answerPayload.text,
-        paragraphText,
-        sentenceText
-    ];
-
-    for (const candidate of candidates) {
-        if (typeof candidate === 'string' && candidate.trim()) {
-            return candidate.trim();
-        }
-    }
-
-    return '';
-};
-
 const makeError = (message, code, statusCode) => {
     const err = new Error(message);
     err.code = code;
     err.statusCode = statusCode;
     return err;
+};
+
+const resolveSelectedAnalyzerId = (config = {}) => {
+    if (typeof config.analyzerId === 'string' && config.analyzerId.trim()) {
+        return config.analyzerId.trim();
+    }
+
+    if (Array.isArray(config.analyzerIds)) {
+        const ids = config.analyzerIds
+            .map(id => String(id || '').trim())
+            .filter(Boolean);
+        if (ids.length === 1) {
+            return ids[0];
+        }
+    }
+
+    return '';
 };
 
 class ExperimentalBatchService {
@@ -98,6 +81,44 @@ class ExperimentalBatchService {
 
     async createBatch(batchData, itemsData) {
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
+        const config = batchData.config || {};
+
+        if (batchData.type === 'analysis') {
+            const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
+            const requestedAnalyzerIds = Array.isArray(config.analyzerIds)
+                ? config.analyzerIds.map(id => String(id || '').trim()).filter(Boolean)
+                : [];
+
+            if (!selectedAnalyzerId || requestedAnalyzerIds.length > 1) {
+                throw makeError('Analysis runs require exactly one analyzer', 'BAD_REQUEST', 400);
+            }
+
+            // Normalize to a single source of truth for new runs.
+            batchData.config = {
+                ...config,
+                analyzerId: selectedAnalyzerId,
+                analyzerIds: [selectedAnalyzerId]
+            };
+
+            if (batchData.config.baselineRunId) {
+                if (!mongoose.Types.ObjectId.isValid(batchData.config.baselineRunId)) {
+                    throw makeError('Invalid baselineRunId', 'BAD_REQUEST', 400);
+                }
+
+                const baselineBatch = await ExperimentalBatch.findById(batchData.config.baselineRunId).lean();
+                if (!baselineBatch) {
+                    throw makeError('Baseline run not found', 'NOT_FOUND', 404);
+                }
+                if (baselineBatch.type !== 'analysis') {
+                    throw makeError('Baseline run must be an analysis batch', 'BAD_REQUEST', 400);
+                }
+
+                const baselineAnalyzerId = resolveSelectedAnalyzerId(baselineBatch.config || {});
+                if (!baselineAnalyzerId || baselineAnalyzerId !== selectedAnalyzerId) {
+                    throw makeError('Baseline analyzer must match the selected analyzer', 'BAD_REQUEST', 400);
+                }
+            }
+        }
 
         // If no items provided, check if we should load from a dataset
         if (finalItems.length === 0 && batchData.config?.datasetId) {
@@ -268,41 +289,27 @@ class ExperimentalBatchService {
                 await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
-                        const answerText = extractAnswerText(update.result?.answer ?? update.answer ?? update.result?.result?.answer);
-                        if (answerText) {
-                            item.answer = answerText;
+                        if (update.result?.answer) {
+                            item.answer = typeof update.result.answer === 'string'
+                                ? update.result.answer
+                                : update.result.answer.content;
                         }
                     }
                 });
                 item.chatId = chatId;
             }
 
-            // 2. Analysis Phase (multi-analyzer)
-            const analyzerConfigs = Array.isArray(batch.config?.analyzers)
-                ? [...batch.config.analyzers]
-                : [];
-
-            // Handle analyzerIds array (strings)
-            if (Array.isArray(batch.config?.analyzerIds)) {
-                for (const id of batch.config.analyzerIds) {
-                    if (!analyzerConfigs.some(a => a.id === id)) {
-                        analyzerConfigs.push({ id, config: batch.config.analyzerConfig || {} });
-                    }
-                }
-            }
-
-            // Backward compatibility for single analyzerId
-            if (batch.config.analyzerId && !analyzerConfigs.some(a => a.id === batch.config.analyzerId)) {
-                analyzerConfigs.push({ id: batch.config.analyzerId, config: batch.config.analyzerConfig || {} });
-            }
-
-            if (analyzerConfigs.length > 0) {
-                const analysisPromises = analyzerConfigs.map(async (aConfig) => {
-                    const analyzerDef = await ExperimentalAnalyzerRegistry.get(aConfig.id);
-                    if (!analyzerDef) {
-                        return { id: aConfig.id, error: { code: 'NOT_FOUND', message: `Analyzer ${aConfig.id} not found` } };
-                    }
-
+            // 2. Analysis Phase (single analyzer)
+            const analyzerId = resolveSelectedAnalyzerId(batch.config || {});
+            if (analyzerId) {
+                const analyzerDef = await ExperimentalAnalyzerRegistry.get(analyzerId);
+                if (!analyzerDef) {
+                    if (!item.analysisErrors) item.analysisErrors = {};
+                    item.analysisErrors[analyzerId] = {
+                        code: 'NOT_FOUND',
+                        message: `Analyzer ${analyzerId} not found`
+                    };
+                } else {
                     try {
                         const result = await this._runAnalyzer(analyzerDef, {
                             question: item.question,
@@ -311,51 +318,37 @@ class ExperimentalBatchService {
                             baselineAnalysisResults: item.baselineAnalysisResults,
                             baselineMatch: item.baselineMatch,
                             baselineFlagged: item.baselineFlagged,
-                            config: { ...aConfig.config, aiProvider: batch.config.aiProvider },
+                            config: { ...(batch.config.analyzerConfig || {}), aiProvider: batch.config.aiProvider },
                             originalData: item.originalData
                         });
-                        return { id: aConfig.id, result };
-                    } catch (err) {
-                        return { id: aConfig.id, error: { code: 'ANALYSIS_FAILED', message: err.message } };
-                    }
-                });
 
-                const results = await Promise.all(analysisPromises);
-
-                results.forEach(res => {
-                    if (res.result) {
                         if (!item.analysisResults) item.analysisResults = {};
-                        item.analysisResults[res.id] = res.result;
+                        item.analysisResults[analyzerId] = result;
 
                         // Legacy field mapping for common fields
-                        if (res.id === 'semantic-comparison' || res.id === 'expert-scorer') {
-                            if (res.result.similarityScore !== undefined) item.similarityScore = res.result.similarityScore;
-                            if (res.result.match !== undefined) item.match = res.result.match;
-                            if (res.result.explanation) item.explanation = res.result.explanation;
-                            if (res.result.verdict) {
-                                item.match = res.result.verdict === 'pass';
-                                item.explanation = res.result.explanation;
+                        if (analyzerId === 'semantic-comparison' || analyzerId === 'expert-scorer') {
+                            if (result.similarityScore !== undefined) item.similarityScore = result.similarityScore;
+                            if (result.match !== undefined) item.match = result.match;
+                            if (result.explanation) item.explanation = result.explanation;
+                            if (result.verdict) {
+                                item.match = result.verdict === 'pass';
+                                item.explanation = result.explanation;
                             }
                         }
 
                         // Propagate flags/diffs to item level for unified counts/UI
-                        if (res.result.flagged === true) {
-                            item.flagged = true;
-                        }
-                        if (res.result.differenceFound === true) {
-                            item.flagged = true;
-                        }
-                        if (res.result.label === 'biased' || res.result.label === 'caution') {
-                            item.flagged = true;
-                        }
-                        if (res.result.status === 'flagged' || res.result.verdict === 'fail') {
-                            item.flagged = true;
-                        }
-                    } else if (res.error) {
+                        if (result.flagged === true) item.flagged = true;
+                        if (result.differenceFound === true) item.flagged = true;
+                        if (result.label === 'biased' || result.label === 'caution') item.flagged = true;
+                        if (result.status === 'flagged' || result.verdict === 'fail') item.flagged = true;
+                    } catch (err) {
                         if (!item.analysisErrors) item.analysisErrors = {};
-                        item.analysisErrors[res.id] = res.error;
+                        item.analysisErrors[analyzerId] = {
+                            code: 'ANALYSIS_FAILED',
+                            message: err.message
+                        };
                     }
-                });
+                }
 
                 if (item.analysisResults) item.markModified('analysisResults');
                 if (item.analysisErrors) item.markModified('analysisErrors');

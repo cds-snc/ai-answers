@@ -1411,7 +1411,7 @@
       "datasetLabel": "Dataset:",
       "changeDataset": "Change Dataset",
       "configuration": "Configuration",
-      "selectAnalyzers": "Select Analyzers",
+      "selectAnalyzers": "Select analyzer",
       "selectBaseline": "Select Baseline Run (Comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
       "noBaseline": "-- No baseline (Standalone Evaluation) --",
@@ -1444,7 +1444,7 @@
       "delete": "Delete",
       "empty": "No previous runs found for this dataset.",
       "messages": {
-        "selectAnalyzer": "Please select at least one analyzer.",
+        "selectAnalyzer": "Please select an analyzer.",
         "selectData": "Please select a dataset or upload a file.",
         "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
         "startedCount": "Started {count} analysis runs.",

@@ -1411,7 +1411,7 @@
       "datasetLabel": "Ensemble de donn?es :",
       "changeDataset": "Changer d'ensemble de donn?es",
       "configuration": "Configuration",
-      "selectAnalyzers": "S?lectionner les analyseurs",
+      "selectAnalyzers": "S?lectionner un analyseur",
       "selectBaseline": "S?lectionner une ex?cution de r?f?rence (comparaison)",
       "baselineHint": "Choisissez une analyse pr?c?dente comme r?f?rence. Les ex?cutions suivantes seront compar?es aux r?ponses de celle-ci.",
       "noBaseline": "-- Aucune r?f?rence (?valuation autonome) --",
@@ -1444,7 +1444,7 @@
       "delete": "Supprimer",
       "empty": "Aucune ex?cution pr?c?dente trouv?e pour cet ensemble de donn?es.",
       "messages": {
-        "selectAnalyzer": "Veuillez s?lectionner au moins un analyseur.",
+        "selectAnalyzer": "Veuillez s?lectionner un analyseur.",
         "selectData": "Veuillez s?lectionner un ensemble de donn?es ou t?l?charger un fichier.",
         "comparisonRequired": "L'analyse de comparaison n?cessite un deuxi?me fichier ou un type d'ensemble de donn?es sp?cifique.",
         "startedCount": "{count} ex?cutions d'analyse lanc?es.",

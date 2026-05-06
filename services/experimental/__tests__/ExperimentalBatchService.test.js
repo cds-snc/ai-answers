@@ -71,7 +71,7 @@ describe('ExperimentalBatchService', () => {
             const batchData = {
                 name: 'Dataset Batch',
                 type: 'analysis',
-                config: { datasetId: ds._id.toString() }
+                config: { datasetId: ds._id.toString(), analyzerId: 'refusal' }
             };
 
             const batch = await ExperimentalBatchService.createBatch(batchData, []);
@@ -82,7 +82,7 @@ describe('ExperimentalBatchService', () => {
         });
 
         it('should map various field names to standardized item fields', async () => {
-            const batchData = { name: 'Mapping Test', type: 'analysis' };
+            const batchData = { name: 'Mapping Test', type: 'analysis', config: { analyzerId: 'refusal' } };
             const itemsData = [{
                 Question: 'Standard Q',
                 Response: 'Standard A',
@@ -139,10 +139,60 @@ describe('ExperimentalBatchService', () => {
             const ds = await ExperimentalDataset.create({ name: 'Empty DS', type: 'question-only' });
             await expect(
                 ExperimentalBatchService.createBatch(
-                    { name: 'No Rows', type: 'analysis', config: { datasetId: ds._id.toString() } },
+                    { name: 'No Rows', type: 'analysis', config: { datasetId: ds._id.toString(), analyzerId: 'refusal' } },
                     []
                 )
             ).rejects.toMatchObject({ code: 'NO_ITEMS' });
+        });
+
+        it('should require exactly one analyzer for analysis runs', async () => {
+            await expect(
+                ExperimentalBatchService.createBatch(
+                    {
+                        name: 'Too Many Analyzers',
+                        type: 'analysis',
+                        config: { analyzerIds: ['refusal', 'expert-scorer'] }
+                    },
+                    [{ question: 'Q1' }]
+                )
+            ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+        });
+
+        it('should reject baseline comparisons when analyzer ids differ', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Baseline DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: ds._id,
+                rowIndex: 1,
+                data: { question: 'Q baseline' }
+            });
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline',
+                type: 'analysis',
+                config: { analyzerId: 'refusal', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create({
+                experimentalBatch: baselineBatch._id,
+                rowIndex: 1,
+                question: 'Q baseline',
+                answer: 'A baseline',
+                status: 'completed'
+            });
+
+            await expect(
+                ExperimentalBatchService.createBatch(
+                    {
+                        name: 'Mismatch Baseline',
+                        type: 'analysis',
+                        config: {
+                            analyzerId: 'expert-scorer',
+                            datasetId: ds._id.toString(),
+                            baselineRunId: baselineBatch._id.toString()
+                        }
+                    },
+                    []
+                )
+            ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
         });
     });
 
@@ -449,47 +499,6 @@ describe('ExperimentalBatchService', () => {
                 question: 'How to find job in Canada?',
                 answer: 'Generated analysis answer'
             }));
-        });
-
-        it('should persist visible refusal text when the answer payload nests it in englishAnswer', async () => {
-            const batch = await ExperimentalBatch.create({
-                name: 'Refusal Payload Batch',
-                type: 'analysis',
-                config: { analyzerIds: ['refusal'] }
-            });
-            const item = await ExperimentalBatchItem.create({
-                experimentalBatch: batch._id,
-                rowIndex: 1,
-                question: 'Can you help me?',
-                answer: ''
-            });
-
-            const mockStream = {
-                async *[Symbol.asyncIterator]() {
-                    yield {
-                        result: {
-                            answer: {
-                                answerType: 'not-gc',
-                                content: '',
-                                englishAnswer: 'An answer to your question was not found on Government of Canada websites.'
-                            }
-                        }
-                    };
-                }
-            };
-            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
-            getGraphApp.mockResolvedValue(mockApp);
-
-            ExperimentalAnalyzerRegistry.get.mockResolvedValue({
-                id: 'refusal',
-                processor: vi.fn().mockResolvedValue({ status: 'flagged', refusalDetected: true })
-            });
-
-            await ExperimentalBatchService._processItem(batch._id, item._id);
-
-            const updatedItem = await ExperimentalBatchItem.findById(item._id);
-            expect(updatedItem.status).toBe('completed');
-            expect(updatedItem.answer).toBe('An answer to your question was not found on Government of Canada websites.');
         });
     });
 

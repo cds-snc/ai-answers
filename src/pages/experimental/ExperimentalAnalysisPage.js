@@ -11,7 +11,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     // State
     const [analyzers, setAnalyzers] = useState([]);
-    const [selectedAnalyzerIds, setSelectedAnalyzerIds] = useState([]);
+    const [selectedAnalyzerId, setSelectedAnalyzerId] = useState('');
 
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
@@ -115,15 +115,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const toggleAnalyzer = (id) => {
-        setSelectedAnalyzerIds(prev =>
-            prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-        );
+    const resolveBatchAnalyzerId = (batch) => {
+        if (batch?.config?.analyzerId) return batch.config.analyzerId;
+        if (Array.isArray(batch?.config?.analyzerIds) && batch.config.analyzerIds.length > 0) {
+            return batch.config.analyzerIds[0];
+        }
+        return '';
     };
 
     const handleRunAnalysis = async () => {
-        if (selectedAnalyzerIds.length === 0) {
-            setMessage('Please select at least one analyzer.');
+        if (!selectedAnalyzerId) {
+            setMessage(t('experimental.analysis.messages.selectAnalyzer'));
             return;
         }
 
@@ -140,10 +142,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             // Create Batch
             const batchData = {
                 name: `Analysis - ${new Date().toLocaleString()}`,
-                description: `Analyzers: ${selectedAnalyzerIds.join(', ')}`,
+                description: `Analyzer: ${selectedAnalyzerId}`,
                 type: 'analysis',
                 config: {
-                    analyzerIds: selectedAnalyzerIds,
+                    analyzerId: selectedAnalyzerId,
+                    analyzerIds: [selectedAnalyzerId],
                     datasetId: selectedDatasetId || undefined,
                     baselineRunId: baselineBatchId || undefined,
                 pageLanguage: 'en',
@@ -212,13 +215,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
 
     const getAnalyzerLabel = (batch) => {
-        const ids = batch.config?.analyzerIds || (batch.config?.analyzerId ? [batch.config.analyzerId] : []);
-        if (!ids || ids.length === 0) return batch.name;
-        const names = ids.map(id => analyzers.find(a => a.id === id)?.name || id);
-        return names.join(', ');
+        const id = resolveBatchAnalyzerId(batch);
+        if (!id) return batch.name;
+        return analyzers.find(a => a.id === id)?.name || id;
     };
 
-    const baselineOptions = batches.filter(batch => batch.status === 'completed');
+    const baselineOptions = batches.filter(batch =>
+        batch.status === 'completed' &&
+        (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
+    );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
 
     return (
@@ -242,26 +247,29 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     <section>
                         <GcdsHeading tag="h2">Configuration</GcdsHeading>
 
-                        {/* Analyzer Multi-Selector */}
+                        {/* Analyzer selector */}
                         <div className="mb-400">
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                                Select Analyzers
+                            <label htmlFor="analyzer-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.selectAnalyzers')}
                             </label>
-                            <div className="border p-200 rounded gc-chckbxrdio" >
+                            <select
+                                id="analyzer-select"
+                                value={selectedAnalyzerId}
+                                onChange={(e) => setSelectedAnalyzerId(e.target.value)}
+                                style={{ padding: '8px', width: '100%' }}
+                            >
+                                <option value="">{t('experimental.analysis.messages.selectAnalyzer')}</option>
                                 {analyzers.map(a => (
-                                    <div key={a.id} className="checkbox mb-100">
-                                        <input
-                                            type="checkbox"
-                                            id={`az-${a.id}`}
-                                            checked={selectedAnalyzerIds.includes(a.id)}
-                                            onChange={() => toggleAnalyzer(a.id)}
-                                        />
-                                        <label htmlFor={`az-${a.id}`}>
-                                            <strong>{a.name}</strong> - {a.description}
-                                        </label>
-                                    </div>
+                                    <option key={a.id} value={a.id}>
+                                        {a.name}
+                                    </option>
                                 ))}
-                            </div>
+                            </select>
+                            {selectedAnalyzerId && (
+                                <GcdsText className="mt-200">
+                                    {analyzers.find(a => a.id === selectedAnalyzerId)?.description || ''}
+                                </GcdsText>
+                            )}
                         </div>
 
                         {/* Dataset Selection */}
@@ -308,8 +316,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </div>
                         )}
 
-                        <GcdsButton onClick={handleRunAnalysis} disabled={loading || selectedAnalyzerIds.length === 0}>
-                            {loading ? 'Starting...' : 'Run Analysis'}
+                        <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
+                            {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}
                         </GcdsButton>
                         {message && <GcdsText className="mt-200" role="status"><strong>{message}</strong></GcdsText>}
                     </section>
