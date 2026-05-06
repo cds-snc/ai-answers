@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
@@ -28,6 +28,81 @@ const ChatViewer = ({ lang = 'en' }) => {
       setChatId(storedChatId);
     }
   }, []);
+
+  // Build a per-node duration timeline from `node:<step> input/output` events
+  // emitted by logGraphEvent (agents/graphs/GraphEventLogger.js). A chatId can
+  // hold multiple interactions, so scope to the latest "Starting <Graph>" run.
+  const stepTimeline = useMemo(() => {
+    if (!logs || logs.length === 0) return null;
+
+    const sorted = [...logs].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    let runStartTs = null;
+    let graphName = null;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const msg = typeof sorted[i].message === 'string' ? sorted[i].message : '';
+      if (msg.startsWith('Starting ')) {
+        runStartTs = new Date(sorted[i].createdAt).getTime();
+        graphName = msg.replace(/^Starting /, '');
+        break;
+      }
+    }
+
+    const runLogs =
+      runStartTs != null
+        ? sorted.filter((l) => new Date(l.createdAt).getTime() >= runStartTs)
+        : sorted;
+
+    const stepMap = new Map();
+    let workflowComplete = null;
+
+    for (const log of runLogs) {
+      const msg = typeof log.message === 'string' ? log.message : '';
+      if (msg === 'Workflow complete') {
+        workflowComplete = {
+          ts: new Date(log.createdAt).getTime(),
+          totalResponseTime: log.metadata?.totalResponseTime ?? null,
+        };
+        continue;
+      }
+      const m = msg.match(/^node:(\S+)\s+(input|output)$/);
+      if (!m) continue;
+      const [, stepName, kind] = m;
+      if (!stepMap.has(stepName)) stepMap.set(stepName, { name: stepName });
+      const entry = stepMap.get(stepName);
+      const ts = new Date(log.createdAt).getTime();
+      if (kind === 'input' && entry.input == null) entry.input = ts;
+      if (kind === 'output') entry.output = ts;
+    }
+
+    if (stepMap.size === 0 && runStartTs == null) return null;
+
+    const anchor =
+      runStartTs ??
+      Math.min(...Array.from(stepMap.values()).map((e) => e.input ?? Infinity));
+    if (!Number.isFinite(anchor)) return null;
+
+    const totalMs =
+      workflowComplete?.totalResponseTime ??
+      (workflowComplete?.ts != null ? workflowComplete.ts - anchor : null);
+
+    const steps = Array.from(stepMap.values())
+      .map((e) => ({
+        name: e.name,
+        startRel: e.input != null ? e.input - anchor : null,
+        endRel: e.output != null ? e.output - anchor : null,
+        duration: e.input != null && e.output != null ? e.output - e.input : null,
+      }))
+      .sort((a, b) => (a.startRel ?? Infinity) - (b.startRel ?? Infinity));
+
+    return {
+      graphName,
+      totalMs,
+      steps,
+    };
+  }, [logs]);
 
   // DataTable initialization and update
   useEffect(() => {
@@ -331,6 +406,67 @@ const ChatViewer = ({ lang = 'en' }) => {
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
+
+            {chatId && stepTimeline && (
+              <div className="bg-white shadow rounded-lg p-4">
+                <h2 className="text-lg font-semibold mb-2">{t('logging.timeline.title')}</h2>
+                {(stepTimeline.graphName || stepTimeline.totalMs != null) && (
+                  <p className="mb-2 text-sm">
+                    {stepTimeline.graphName && (
+                      <span className="mr-4">
+                        <strong>{t('logging.timeline.graph')}:</strong> {stepTimeline.graphName}
+                      </span>
+                    )}
+                    {stepTimeline.totalMs != null && (
+                      <span>
+                        <strong>{t('logging.timeline.totalResponseTime')}:</strong>{' '}
+                        {stepTimeline.totalMs} ms
+                      </span>
+                    )}
+                  </p>
+                )}
+                {stepTimeline.steps.length > 0 ? (
+                  <table className="display" style={{ width: 'auto' }}>
+                    <thead>
+                      <tr>
+                        <th>{t('logging.timeline.step')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('logging.timeline.start')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('logging.timeline.end')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('logging.timeline.duration')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('logging.timeline.pctOfTotal')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stepTimeline.steps.map((s) => {
+                        const pct =
+                          s.duration != null && stepTimeline.totalMs
+                            ? ((s.duration / stepTimeline.totalMs) * 100).toFixed(1)
+                            : null;
+                        const note =
+                          s.startRel == null
+                            ? t('logging.timeline.skipped')
+                            : s.endRel == null
+                              ? t('logging.timeline.incomplete')
+                              : null;
+                        return (
+                          <tr key={s.name}>
+                            <td>{s.name}</td>
+                            <td style={{ textAlign: 'right' }}>{s.startRel ?? '—'}</td>
+                            <td style={{ textAlign: 'right' }}>{s.endRel ?? '—'}</td>
+                            <td style={{ textAlign: 'right' }}>
+                              {s.duration != null ? s.duration : note ? `(${note})` : '—'}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>{pct != null ? `${pct}%` : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-gray-500">{t('logging.timeline.noTimeline')}</p>
+                )}
+              </div>
+            )}
 
             {chatId && logs && (
               <div className="bg-white shadow rounded-lg">

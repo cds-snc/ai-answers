@@ -329,7 +329,20 @@
     "noLogs": "No logs available",
     "metadataDetails": "Metadata details",
     "expand": "Expand",
-    "close": "Close"
+    "close": "Close",
+    "timeline": {
+      "title": "Pipeline step timeline",
+      "graph": "Graph",
+      "totalResponseTime": "Total response time",
+      "step": "Step",
+      "start": "Start (ms)",
+      "end": "End (ms)",
+      "duration": "Duration (ms)",
+      "pctOfTotal": "% of total",
+      "skipped": "skipped",
+      "incomplete": "no end event",
+      "noTimeline": "No pipeline events found in these logs."
+    }
   },
   "admin": {
     "title": "AI Answers Admin",

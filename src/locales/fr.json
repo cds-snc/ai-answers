@@ -329,7 +329,20 @@
     "noLogs": "Aucun journal disponible",
     "metadataDetails": "Détails des métadonnées",
     "expand": "Développer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "timeline": {
+      "title": "Chronologie des étapes du pipeline",
+      "graph": "Graphe",
+      "totalResponseTime": "Temps de réponse total",
+      "step": "Étape",
+      "start": "Début (ms)",
+      "end": "Fin (ms)",
+      "duration": "Durée (ms)",
+      "pctOfTotal": "% du total",
+      "skipped": "ignorée",
+      "incomplete": "aucun événement de fin",
+      "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux."
+    }
   },
   "admin": {
     "title": "Administration de Réponses IA",
