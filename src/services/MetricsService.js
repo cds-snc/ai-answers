@@ -38,6 +38,10 @@ class MetricsService {
     return this._fetchMetric('metrics-departments', filters, signal);
   }
 
+  static async getTechnicalMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-technical', filters, signal);
+  }
+
   static async _fetchMetric(endpoint, filters, signal) {
     try {
       const queryParams = new URLSearchParams(filters).toString();

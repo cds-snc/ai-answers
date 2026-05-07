@@ -74,6 +74,11 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
+              <GcdsLink href={getPath('technical-metrics', lang)}>
+                {t('admin.navigation.technicalMetrics')}
+              </GcdsLink>
+            </li>
+            <li>
               <GcdsLink href={getPath('scenario-overrides', lang)}>
                 {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
               </GcdsLink>

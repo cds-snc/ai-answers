@@ -312,7 +312,7 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "refresh": "Afficher les journaux par niveau",
+    "refresh": "Actualiser",
     "refreshPending": "Patientez...",
     "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",
@@ -329,7 +329,22 @@
     "noLogs": "Aucun journal disponible",
     "metadataDetails": "Détails des métadonnées",
     "expand": "Développer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "timeline": {
+      "title": "Chronologie des étapes du pipeline",
+      "graph": "Graphe",
+      "step": "Étape",
+      "start": "Début (ms)",
+      "end": "Fin (ms)",
+      "duration": "Durée (ms)",
+      "pctOfTotal": "% du total",
+      "skipped": "ignorée",
+      "incomplete": "aucun événement de fin",
+      "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux.",
+      "downloads": "téléchargements",
+      "generation": "génération",
+      "userPerceived": "Temps de réponse perçu par l'utilisateur"
+    }
   },
   "admin": {
     "title": "Administration de Réponses IA",
@@ -347,6 +362,7 @@
       "eval": "Administration des évaluations",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
+      "technicalMetrics": "Voir les métriques techniques",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
@@ -1236,6 +1252,7 @@
       },
       "tokens": {
         "title": "Jetons",
+        "note": "Inclut uniquement les jetons utilisés lors des appels de réponse et de contexte, et non ceux utilisés dans les autres étapes du pipeline (par exemple la rédaction de RP ou la traduction).",
         "totalInput": "Total des jetons d'entrée",
         "contextInput": "Jetons d'entrée du contexte",
         "answerInput": "Jetons d'entrée de la réponse",
@@ -1249,6 +1266,36 @@
         "department": "Institution",
         "noContextDept": "Aucun contexte d'institution",
         "pctEvaluated": "% évalué"
+      }
+    }
+  },
+  "technicalMetrics": {
+    "title": "Métriques techniques",
+    "timeRangeTitle": "Obtenir les métriques techniques pour la période sélectionnée",
+    "dashboard": {
+      "title": "Résultats",
+      "metric": "Métrique",
+      "responseTime": {
+        "title": "Temps de réponse total",
+        "note": "Délai entre la soumission de la question par l'utilisateur et la disponibilité de la réponse, en millisecondes. N'inclut pas l'auto-évaluation effectuée après l'affichage de la réponse.",
+        "totalLabel": "Temps de réponse total (ms)",
+        "count": "Questions",
+        "median": "Médiane",
+        "p90": "P90",
+        "p95": "P95",
+        "max": "Max",
+        "maxChatId": "ID de chat pour le max"
+      },
+      "tools": {
+        "title": "Appels de l'outil downloadWebPage",
+        "note": "La plupart des questions déclenchent un seul appel à downloadWebPage. Chaque ligne affiche les statistiques pour le Nᵉ appel dans une question (1 = premier appel, 2 = deuxième appel, etc.). Les positions vides indiquent qu'aucune question n'a fait autant d'appels. Les erreurs sont principalement des dépassements de délai.",
+        "callNumber": "N° d'appel",
+        "totalCount": "Questions avec cet appel",
+        "completedCount": "Complétés",
+        "errorCount": "Erreurs",
+        "errorPercent": "% d'erreurs",
+        "median": "Médiane des complétés (ms)",
+        "p95": "P95 des complétés (ms)"
       }
     }
   },
