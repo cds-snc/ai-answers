@@ -11,7 +11,6 @@ import 'prismjs/components/prism-xml-doc.js';
 
 const ChatViewer = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const { language } = usePageContext();
   const [chatId, setChatId] = useState('');
   const [logLevel, setLogLevel] = useState('');
   const [expandedMetadata, setExpandedMetadata] = useState(null);
