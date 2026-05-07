@@ -48,11 +48,9 @@ export function buildMetadataCellHtml(data, expandLabel) {
       <div class="metadata-content">
         <pre><code class="language-${isXML ? 'xml' : 'json'}">${escapedContent}</code></pre>
       </div>
-      <div class="metadata-actions">
-        <button class="expand-button gcds-button gcds-button--secondary">
-          ${expandLabel}
-        </button>
-      </div>
+      <button class="expand-button gcds-button gcds-button--secondary" type="button">
+        ${expandLabel}
+      </button>
     </div>`;
 }
 

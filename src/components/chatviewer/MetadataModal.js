@@ -31,7 +31,7 @@ const MetadataModal = ({ metadata, onClose, t }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-stretch justify-stretch z-[9999]"
       style={{
         position: 'fixed',
         top: 0,
@@ -39,26 +39,52 @@ const MetadataModal = ({ metadata, onClose, t }) => {
         right: 0,
         bottom: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'stretch',
+        justifyContent: 'stretch',
         zIndex: 9999,
-        padding: '2rem',
+        padding: 0,
       }}
     >
       <div
-        className="bg-white rounded-lg w-full max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col metadata-modal"
-        style={{ position: 'relative' }}
+        className="bg-white flex flex-col metadata-modal"
+        style={{
+          position: 'relative',
+          width: '100vw',
+          height: '100vh',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          overflow: 'hidden',
+          borderRadius: 0,
+        }}
       >
-        <div className="p-4 border-b flex justify-between items-center">
+        <div
+          className="p-4 border-b flex justify-between items-center"
+          style={{
+            flex: '0 0 auto',
+            background: '#fff',
+          }}
+        >
           <h2 className="text-xl font-semibold">{t('logging.metadataDetails')}</h2>
           <GcdsButton type="button" variant="secondary" onClick={onClose}>
             {t('logging.close')}
           </GcdsButton>
         </div>
-        <div className="p-6 overflow-auto flex-grow">
+        <div
+          className="p-6 overflow-auto flex-grow"
+          style={{
+            minHeight: 0,
+            overflowX: 'auto',
+            overflowY: 'auto',
+          }}
+        >
           <pre
             className="whitespace-pre-wrap break-words"
-            style={{ maxWidth: '100%', fontSize: '14px', lineHeight: '1.5' }}
+            style={{
+              maxWidth: '100%',
+              fontSize: '14px',
+              lineHeight: '1.5',
+              margin: 0,
+            }}
           >
             <code ref={codeRef} className={`language-${isXml ? 'xml' : 'json'}`}>
               {typeof metadata === 'string'

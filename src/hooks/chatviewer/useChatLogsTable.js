@@ -37,55 +37,90 @@ export function useChatLogsTable({
         {
           title: t('logging.createdAt'),
           data: 'createdAt',
+          width: '12%',
           render: (data) => new Date(data).toLocaleString(),
         },
         {
           title: t('logging.level'),
           data: 'logLevel',
+          width: '7%',
           render: (data) => data ?? '',
         },
         {
           title: t('logging.message'),
           data: 'message',
+          width: '25%',
           render: (data) => data ?? '',
         },
         {
           title: t('logging.metadata'),
           data: 'metadata',
           className: 'metadata-column',
+          width: '56%',
           render: (data) => buildMetadataCellHtml(data, t('logging.expand')),
         },
       ],
       order: [[0, 'desc']],
-      scrollX: true,
+      autoWidth: false,
+      scrollX: false,
       pageLength: 50,
       language: dataTableLanguage(lang),
       drawCallback: function () {
         Prism.highlightAll();
 
+        $(tableRef.current).css({
+          width: '100%',
+          'table-layout': 'fixed',
+        });
+
+        $(tableRef.current).find('td').css({
+          'vertical-align': 'top',
+        });
+
+        $(tableRef.current).find('td:nth-child(3)').css({
+          'white-space': 'normal',
+          'overflow-wrap': 'anywhere',
+        });
+
         $('.metadata-wrapper').css({
           position: 'relative',
-          'min-height': '50px',
-          'max-height': '200px',
-          display: 'flex',
-          'flex-direction': 'column',
-          width: '750px',
+          display: 'block',
+          width: '100%',
+          'min-width': '0',
+          'max-width': '100%',
+          'min-height': '200px',
+          'box-sizing': 'border-box',
+          'vertical-align': 'top',
+          overflow: 'visible',
+        });
+
+        $('.metadata-column').css({
+          'vertical-align': 'top',
+          overflow: 'visible',
         });
 
         $('.metadata-content').css({
-          flex: '1',
-          'overflow-y': 'auto',
-          'overflow-x': 'auto',
           position: 'relative',
+          height: '200px',
+          'min-height': '200px',
+          'max-height': '200px',
+          overflow: 'scroll',
+          'overflow-x': 'scroll',
+          'overflow-y': 'scroll',
+          'scrollbar-gutter': 'stable both-edges',
+          width: '100%',
+          'min-width': '0',
+          'max-width': '100%',
+          'box-sizing': 'border-box',
           'background-color': '#f5f5f5',
           'border-radius': '4px',
-          'max-width': '900px',
         });
 
         $('.metadata-content pre').css({
           margin: '0',
           padding: '8px',
-          'min-width': 'fit-content',
+          'min-width': 'max-content',
+          'min-height': '260px',
           width: 'max-content',
         });
 
@@ -96,16 +131,17 @@ export function useChatLogsTable({
           'white-space': 'pre',
         });
 
-        $('.metadata-actions').css({
-          padding: '4px 0',
-          'text-align': 'right',
-        });
-
         $('.expand-button')
           .css({
-            'margin-top': '4px',
+            position: 'absolute',
+            top: '6px',
+            right: '24px',
+            'z-index': '3',
             'font-size': '14px',
             padding: '4px 8px',
+            'line-height': '1.2',
+            'white-space': 'nowrap',
+            'background-color': '#fff',
           })
           .off('click')
           .on('click', function (e) {
