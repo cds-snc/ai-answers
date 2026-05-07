@@ -3,6 +3,7 @@
 ## Environment notes
 - **React build restriction**: Files imported by frontend code (`src/`) must live inside `src/`. Never place shared config intended for UI components in `config/` (root) — use `src/config/` instead. Server-side code (`api/`, `agents/`, `services/`) can import from anywhere.
 - **Test runner**: This project uses **vitest**, not jest. Run tests with `npx vitest run <path>` (or `npm test` for all).
+- **CSS loading**: All app styles are loaded once in `src/App.js` (`global.css`, `admin.css`, `chat.css`). Never import these files in individual pages or components — they are already globally available. Do not move these imports to `index.js` either: `App.js` must load after `index.js`'s GCDS CSS (`gcds-utility.min.css` imports Lato/Noto Sans from Google Fonts) so that webpack resolves the stylesheets in the correct order. Moving app CSS into `index.js` alongside GCDS CSS breaks the GC Design System fonts.
 
 ## How to work well in this codebase
 
@@ -34,7 +35,7 @@ This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the
 
 ### Exceptions
 - **Backend/console/database output**: `console.log`, `console.error`, server-side log strings, developer-facing CLI output, and dynamic content retrieved from the database are exempt.
-- **Internal technical identifiers used as option values**: e.g. workflow names like `DefaultGraph` where the value and label are the same internal enum — these are not user-facing text.
+- **Internal technical identifiers used as option values**: e.g. workflow names like `GenericGraph` where the value and label are the same internal enum — these are not user-facing text.
 
 ### Sentence case
 All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
@@ -97,6 +98,16 @@ Each consumer has a different aggregation pipeline shape. A regex or filter cond
 - **Eval dashboard aggregates from `Interaction`, not `Chat`**: Fields from the parent chat (like `user`, `chatId`, `pageLanguage`) must be `$lookup`'d and extracted. The `user` field lives on `Chat`, so in the eval pipeline it's `chatUser` — pass `userField: 'chatUser'` to `getChatFilterConditions`.
 - **Cleanup `$project` stages**: If you add a `$lookup` + `$addFields` for a new field, don't remove it in the cleanup `$project` if a later `$project` still needs it.
 - **Chat Dashboard doesn't support per-column filters** (only global search). Eval Dashboard does via `columnSearch` + `initComplete` filter inputs. Adding column filters to Chat Dashboard requires both frontend (`initComplete` + `columnSearch` in ajax) and backend (`columnSearch` handling in `chat-dashboard.js`).
+
+## Adding new pages
+
+When adding a new page, register its route in `src/utils/routes.js` under `ROUTE_SLUGS` with both English and French slugs:
+
+```js
+'my-new-page': { en: 'my-new-page', fr: 'ma-nouvelle-page' },
+```
+
+French slugs must be real translations — not copied English slugs. Once registered, use `getPath('my-new-page', lang)` to generate links and `ROUTE_SLUGS['my-new-page']` to define the route in `App.js`. Never hardcode URL paths as strings elsewhere in the codebase.
 
 ## Key rules
 - Department abbreviations (abbrKey) are defined in `agents/prompts/scenarios/departments_EN.js` / `departments_FR.js` — never invent new ones

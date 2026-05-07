@@ -1,4 +1,4 @@
-# Proposed: Decompose Answer Generation into Multi-Agent Pipeline
+﻿# Proposed: Decompose Answer Generation into Multi-Agent Pipeline
 
 ## Context
 
@@ -13,7 +13,7 @@ This proposal adds **1 pre-context agent** and replaces the single `answerNode` 
 
 ---
 
-## Current Pipeline (Base: DefaultGraph)
+## Current Pipeline (Base: GenericGraph)
 
 1. `init` - Initialize state
 2. `validate` - Short query validation
@@ -306,3 +306,4 @@ Based on analysis of `agents/prompts/agenticBase.js` (187 lines):
 5. Test against existing test cases
 6. Measure latency and cost impact
 7. Iterate based on results
+
