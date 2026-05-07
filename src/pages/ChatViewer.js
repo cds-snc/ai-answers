@@ -11,7 +11,7 @@ import 'prismjs/components/prism-xml-doc.js';
 import DataStoreService from '../services/DataStoreService.js';
 
 const ChatViewer = ({ lang = 'en' }) => {
-  const { t } = useTranslations();
+  const { t } = useTranslations(lang);
   const { language } = usePageContext();
   const [chatId, setChatId] = useState('');
   const [logs, setLogs] = useState([]);
