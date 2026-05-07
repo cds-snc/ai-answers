@@ -343,7 +343,8 @@
       "incomplete": "aucun événement de fin",
       "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux.",
       "downloads": "téléchargements",
-      "generation": "génération"
+      "generation": "génération",
+      "userPerceived": "Temps de réponse perçu par l'utilisateur"
     }
   },
   "admin": {
@@ -1252,6 +1253,7 @@
       },
       "tokens": {
         "title": "Jetons",
+        "note": "Inclut uniquement les jetons utilisés lors des appels de réponse et de contexte, et non ceux utilisés dans les autres étapes du pipeline (par exemple la rédaction de RP ou la traduction).",
         "totalInput": "Total des jetons d'entrée",
         "contextInput": "Jetons d'entrée du contexte",
         "answerInput": "Jetons d'entrée de la réponse",

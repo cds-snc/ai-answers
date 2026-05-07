@@ -231,6 +231,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
               isLoading={loadingState.usage}
               error={errorState.usage}
               title={t('metrics.dashboard.tokens.title')}
+              note={t('metrics.dashboard.tokens.note')}
             >
               <div className="bg-gray-50 p-4 rounded-lg">
                 <DataTable

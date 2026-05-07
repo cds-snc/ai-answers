@@ -131,10 +131,19 @@ const ChatViewer = ({ lang = 'en' }) => {
       }
     }
 
+    // The result is emitted to the client at the end of verifyNode; persistNode
+    // runs after delivery (see api/chat/chat-graph-run.js comments) so it's
+    // excluded from the user-perceived view.
+    const verifyStep = steps.find((s) => s.name === 'verify');
+    const userPerceivedMs = verifyStep?.endRel ?? null;
+    const visibleSteps = steps.filter((s) => s.name !== 'persist');
+
     return {
       graphName,
       totalMs,
-      steps,
+      userPerceivedMs,
+      pctDenom: userPerceivedMs ?? totalMs,
+      steps: visibleSteps,
     };
   }, [logs]);
 
@@ -444,11 +453,19 @@ const ChatViewer = ({ lang = 'en' }) => {
             {chatId && stepTimeline && (
               <div className="bg-white shadow rounded-lg p-4">
                 <h2 className="text-lg font-semibold mb-2">{t('logging.timeline.title')}</h2>
-                {(stepTimeline.graphName || stepTimeline.totalMs != null) && (
+                {(stepTimeline.graphName ||
+                  stepTimeline.totalMs != null ||
+                  stepTimeline.userPerceivedMs != null) && (
                   <p className="mb-2 text-sm">
                     {stepTimeline.graphName && (
                       <span className="mr-4">
                         <strong>{t('logging.timeline.graph')}:</strong> {stepTimeline.graphName}
+                      </span>
+                    )}
+                    {stepTimeline.userPerceivedMs != null && (
+                      <span className="mr-4">
+                        <strong>{t('logging.timeline.userPerceived')}:</strong>{' '}
+                        {stepTimeline.userPerceivedMs} ms
                       </span>
                     )}
                     {stepTimeline.totalMs != null && (
@@ -473,8 +490,8 @@ const ChatViewer = ({ lang = 'en' }) => {
                     <tbody>
                       {stepTimeline.steps.flatMap((s) => {
                         const pct =
-                          s.duration != null && stepTimeline.totalMs
-                            ? ((s.duration / stepTimeline.totalMs) * 100).toFixed(1)
+                          s.duration != null && stepTimeline.pctDenom
+                            ? ((s.duration / stepTimeline.pctDenom) * 100).toFixed(1)
                             : null;
                         const note =
                           s.startRel == null
@@ -494,11 +511,11 @@ const ChatViewer = ({ lang = 'en' }) => {
                           </tr>,
                         ];
                         if (s.breakdown) {
-                          const dlPct = stepTimeline.totalMs
-                            ? ((s.breakdown.downloadDuration / stepTimeline.totalMs) * 100).toFixed(1)
+                          const dlPct = stepTimeline.pctDenom
+                            ? ((s.breakdown.downloadDuration / stepTimeline.pctDenom) * 100).toFixed(1)
                             : null;
-                          const genPct = stepTimeline.totalMs
-                            ? ((s.breakdown.generationDuration / stepTimeline.totalMs) * 100).toFixed(1)
+                          const genPct = stepTimeline.pctDenom
+                            ? ((s.breakdown.generationDuration / stepTimeline.pctDenom) * 100).toFixed(1)
                             : null;
                           rows.push(
                             <tr key={`${s.name}-downloads`}>

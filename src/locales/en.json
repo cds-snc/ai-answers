@@ -343,7 +343,8 @@
       "incomplete": "no end event",
       "noTimeline": "No pipeline events found in these logs.",
       "downloads": "downloads",
-      "generation": "generation"
+      "generation": "generation",
+      "userPerceived": "User-perceived response time"
     }
   },
   "admin": {
@@ -1252,6 +1253,7 @@
       },
       "tokens": {
         "title": "Tokens",
+        "note": "Includes only tokens used in the answer and context calls, not tokens used in the other pipeline steps (for example PI redaction or translation).",
         "totalInput": "Total input tokens",
         "contextInput": "Context input tokens",
         "answerInput": "Answer input tokens",
