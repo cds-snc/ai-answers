@@ -87,9 +87,9 @@ const ChatViewer = ({ lang = 'en' }) => {
           </div>
 
           <div className="space-y-6">
-            <div className="flex gap-4 items-center">
-              <div className="flex-shrink-0">
-                <label htmlFor="logLevelFilter" className="mr-2">
+            <div className="flex items-end gap-6 flex-nowrap">
+              <div className="flex items-center shrink-0">
+                <label htmlFor="logLevelFilter" className="mr-3">
                   {t('logging.filterByLevel')}
                 </label>
                 <select
@@ -97,7 +97,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                   value={logLevel}
                   onChange={handleLogLevelChange}
                   className="filter-select"
-                  style={{ width: 'auto', minWidth: '10rem' }}
+                  style={{ width: 'auto', minWidth: '8.5rem' }}
                 >
                   <option value="">{t('logging.all')}</option>
                   <option value="info">{t('logging.info')}</option>
@@ -111,6 +111,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                 type="button"
                 disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
+                className="whitespace-nowrap shrink-0"
               >
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>

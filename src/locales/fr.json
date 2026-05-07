@@ -312,7 +312,7 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "refresh": "Afficher les journaux par niveau",
+    "refresh": "Actualiser",
     "refreshPending": "Patientez...",
     "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",
