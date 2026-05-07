@@ -88,8 +88,8 @@ const MetadataModal = ({ metadata, onClose, t }) => {
           >
             <code ref={codeRef} className={`language-${isXml ? 'xml' : 'json'}`}>
               {typeof metadata === 'string'
-                ? metadata.replace(/\n/g, '\n')
-                : JSON.stringify(metadata || {}, null, 2).replace(/\n/g, '\n')}
+                ? metadata
+                : JSON.stringify(metadata || {}, null, 2)}
             </code>
           </pre>
         </div>
