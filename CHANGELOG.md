@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.123.0](https://github.com/cds-snc/ai-answers/compare/v1.122.2...v1.123.0) (2026-05-07)
+
+
+### Features
+
+* **ChatViewer:** implement chat logs functionality with metadata modal ([0b95ce4](https://github.com/cds-snc/ai-answers/commit/0b95ce451687fa1afbe96efd9c1ef99cfe208e8c))
+* make technical metrics page ([ec8513e](https://github.com/cds-snc/ai-answers/commit/ec8513ed390b15a552b507b15552d3b95ef60b32))
+* make technical metrics page ([f8b939b](https://github.com/cds-snc/ai-answers/commit/f8b939b0faae66945e817af6d527dbfd43e20a88))
+* **MetricsService:** implement getTechnicalMetrics function and add tests ([f9324ef](https://github.com/cds-snc/ai-answers/commit/f9324ef3021bd1b6fc3b9338776f10b3699cee24))
+* remove commented out css ([7af88d4](https://github.com/cds-snc/ai-answers/commit/7af88d423fe70209a25a62ccc09ed36588018c1b))
+* route slug instructions ([4450ab2](https://github.com/cds-snc/ai-answers/commit/4450ab23cc088f1ddbb043d4a34f5021d3dacfee))
+
+
+### Bug Fixes
+
+* add debug ([b8dbfb6](https://github.com/cds-snc/ai-answers/commit/b8dbfb612124b6ecfc18920abbd4519804cf6abf))
+* add notes and time ([6f24681](https://github.com/cds-snc/ai-answers/commit/6f24681993f736cccd7c9ddd78a503ce4f713913))
+* add time breakdown table ([b15a960](https://github.com/cds-snc/ai-answers/commit/b15a9603664013b91699bd4695ceb052cfca9699))
+* **auth:** add middleware to withProtection for enhanced security ([fbcbb33](https://github.com/cds-snc/ai-answers/commit/fbcbb336e48c58f2ed99a84f4247546eb33017b4))
+* break down the answer into downloads and generation ([793ea97](https://github.com/cds-snc/ai-answers/commit/793ea9704066f88566bb3fd91244faeb73d627c9))
+* **ChatViewer:** improve layout and styling of log level filter ([7fec5e8](https://github.com/cds-snc/ai-answers/commit/7fec5e86fc865845f9e173925a1a98c8588b1063))
+* code review and length tweak ([d9a93ec](https://github.com/cds-snc/ai-answers/commit/d9a93ecaed8d5692d2ca9fb46250f1d45b2e1275))
+* facets ([4d3f251](https://github.com/cds-snc/ai-answers/commit/4d3f2519182774551bff77d767fac4bac3d24758))
+* fix fr pass lang ([7e1439f](https://github.com/cds-snc/ai-answers/commit/7e1439fa589a6698ea9d69f07eeca11c7652eadb))
+* follow same pattern as perf metrics ([4166561](https://github.com/cds-snc/ai-answers/commit/4166561353fef4175e69439894107c4c500a59c2))
+* longest chat id link is to chat view not trace ([073fecd](https://github.com/cds-snc/ai-answers/commit/073fecdcd8c20141864924f8d6ad58046eae02ba))
+* **MetadataModal:** simplify metadata display logic in code block ([c9aa3f6](https://github.com/cds-snc/ai-answers/commit/c9aa3f6b032409e1dfd5fdd56a6271d1ca402c71))
+* prompt to address download timeouts scenario ([0b7bcf1](https://github.com/cds-snc/ai-answers/commit/0b7bcf11ddb3923f05c4c23679951ab4d480437c))
+* remove app.css ([bb582d8](https://github.com/cds-snc/ai-answers/commit/bb582d8f20c400f2c193a188b5e7cc9e382f919e))
+* remove dead line ([eb24499](https://github.com/cds-snc/ai-answers/commit/eb244991c1aafe031ec532df43a3a547ed6aab91))
+* remove facet ([877d6b2](https://github.com/cds-snc/ai-answers/commit/877d6b29c1ff73681cb3de2d2927d83592db9f29))
+* remove total time, fix spacing ([04fcc67](https://github.com/cds-snc/ai-answers/commit/04fcc67906a99aa045cd711280dc4244d977b59d))
+* scrollbars and buttons ([fedd3e1](https://github.com/cds-snc/ai-answers/commit/fedd3e17ce4674300318fe250c0750f5502ffe35))
+
+
+### Miscellaneous Chores
+
+* Cleanup workflow/graph names all that crap ([77d6cdf](https://github.com/cds-snc/ai-answers/commit/77d6cdf34ce0be719e783973d7e8359e5e95ed97))
+* Cleanup workflow/graph names all that crap ([fd06fc7](https://github.com/cds-snc/ai-answers/commit/fd06fc71b717b01334996a38cab79474409adb40))
+* **deps:** bump axios from 1.15.0 to 1.16.0 ([0a223dd](https://github.com/cds-snc/ai-answers/commit/0a223ddf1b163e13b68a34fe9e11105a783dd5dc))
+* **deps:** bump mongoose from 8.21.0 to 8.22.1 ([e288cfc](https://github.com/cds-snc/ai-answers/commit/e288cfcc344b6f8d302ad3a418a9eb8144a863cc))
+* **deps:** bump mongoose from 8.21.0 to 8.22.1 ([540419b](https://github.com/cds-snc/ai-answers/commit/540419b54603a45ae8d32853f4ab5155bfecbd0b))
+
+
+### Code Refactoring
+
+* **TechnicalMetricsDashboard:** integrate useTechnicalMetrics hook and clean up code ([624b4f9](https://github.com/cds-snc/ai-answers/commit/624b4f9d24257916d982ab1123a7d5740e91871b))
+
 ## [1.122.2](https://github.com/cds-snc/ai-answers/compare/v1.122.1...v1.122.2) (2026-05-05)
 
 
