@@ -6,7 +6,6 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';
-import { getPath } from '../../utils/routes.js';
 
 DataTable.use(DT);
 
@@ -143,7 +142,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
 
   const renderMaxChatId = (data) => {
     if (!data) return '–';
-    const href = `${getPath('chat-viewer', lang)}?chatId=${encodeURIComponent(data)}`;
+    const href = `/${lang}?chat=${encodeURIComponent(data)}&review=1`;
     return `<a href="${href}">${data}</a>`;
   };
 
