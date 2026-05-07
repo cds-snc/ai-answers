@@ -333,7 +333,6 @@
     "timeline": {
       "title": "Chronologie des étapes du pipeline",
       "graph": "Graphe",
-      "totalResponseTime": "Temps de réponse total",
       "step": "Étape",
       "start": "Début (ms)",
       "end": "Fin (ms)",

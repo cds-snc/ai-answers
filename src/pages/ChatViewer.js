@@ -133,9 +133,18 @@ const ChatViewer = ({ lang = 'en' }) => {
 
     // The result is emitted to the client at the end of verifyNode; persistNode
     // runs after delivery (see api/chat/chat-graph-run.js comments) so it's
-    // excluded from the user-perceived view.
+    // excluded from the user-perceived view. Anchor in `totalMs` (which is
+    // measured in-process via Date.now and is accurate) rather than diffing
+    // log createdAt timestamps, which are stamped at queue-flush time and can
+    // drift by 100s of ms between events.
+    const persistStep = steps.find((s) => s.name === 'persist');
     const verifyStep = steps.find((s) => s.name === 'verify');
-    const userPerceivedMs = verifyStep?.endRel ?? null;
+    let userPerceivedMs = null;
+    if (totalMs != null && persistStep?.duration != null) {
+      userPerceivedMs = Math.max(0, totalMs - persistStep.duration);
+    } else if (verifyStep?.endRel != null) {
+      userPerceivedMs = verifyStep.endRel;
+    }
     const visibleSteps = steps.filter((s) => s.name !== 'persist');
 
     return {
@@ -453,28 +462,28 @@ const ChatViewer = ({ lang = 'en' }) => {
             {chatId && stepTimeline && (
               <div className="bg-white shadow rounded-lg p-4">
                 <h2 className="text-lg font-semibold mb-2">{t('logging.timeline.title')}</h2>
-                {(stepTimeline.graphName ||
-                  stepTimeline.totalMs != null ||
-                  stepTimeline.userPerceivedMs != null) && (
-                  <p className="mb-2 text-sm">
+                {(stepTimeline.graphName || stepTimeline.userPerceivedMs != null) && (
+                  <ul
+                    style={{
+                      listStyle: 'none',
+                      padding: 0,
+                      margin: '0 0 0.75rem 0',
+                      fontSize: '0.95rem',
+                      lineHeight: 1.6,
+                    }}
+                  >
                     {stepTimeline.graphName && (
-                      <span className="mr-4">
+                      <li>
                         <strong>{t('logging.timeline.graph')}:</strong> {stepTimeline.graphName}
-                      </span>
+                      </li>
                     )}
                     {stepTimeline.userPerceivedMs != null && (
-                      <span className="mr-4">
+                      <li>
                         <strong>{t('logging.timeline.userPerceived')}:</strong>{' '}
                         {stepTimeline.userPerceivedMs} ms
-                      </span>
+                      </li>
                     )}
-                    {stepTimeline.totalMs != null && (
-                      <span>
-                        <strong>{t('logging.timeline.totalResponseTime')}:</strong>{' '}
-                        {stepTimeline.totalMs} ms
-                      </span>
-                    )}
-                  </p>
+                  </ul>
                 )}
                 {stepTimeline.steps.length > 0 ? (
                   <table className="display" style={{ width: 'auto' }}>

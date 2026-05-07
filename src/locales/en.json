@@ -333,7 +333,6 @@
     "timeline": {
       "title": "Pipeline step timeline",
       "graph": "Graph",
-      "totalResponseTime": "Total response time",
       "step": "Step",
       "start": "Start (ms)",
       "end": "End (ms)",
