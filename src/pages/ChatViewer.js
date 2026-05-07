@@ -1,27 +1,34 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { dataTableLanguage } from '../utils/dataTableLanguage.js';
-import { usePageContext } from '../hooks/usePageParam.js';
-import $ from 'jquery';
-import Prism from 'prismjs';
+import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
+import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
+import { useChatLogsTable } from '../hooks/chatviewer/useChatLogsTable.js';
+import MetadataModal from '../components/chatviewer/MetadataModal.js';
 import 'prismjs/themes/prism.css';
 import 'prismjs/components/prism-json.js';
 import 'prismjs/components/prism-xml-doc.js';
-import DataStoreService from '../services/DataStoreService.js';
 
 const ChatViewer = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
   const [chatId, setChatId] = useState('');
-  const [logs, setLogs] = useState([]);
   const [logLevel, setLogLevel] = useState('');
-  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
-  const tableRef = useRef(null);
-  const dataTableRef = useRef(null);
   const [expandedMetadata, setExpandedMetadata] = useState(null);
+  const tableRef = useRef(null);
 
-  // Auto-refresh once on initial mount
+  const { clearLogs, isRefreshingLogs, logs, refreshLogs } = useChatLogs(chatId);
+  const stepTimeline = useChatTimeline(logs);
+
+  useChatLogsTable({
+    tableRef,
+    logs,
+    lang,
+    logLevel,
+    t,
+    onExpandMetadata: setExpandedMetadata,
+  });
+
   useEffect(() => {
     const storedChatId = localStorage.getItem('chatId');
     if (storedChatId) {
@@ -29,345 +36,19 @@ const ChatViewer = ({ lang = 'en' }) => {
     }
   }, []);
 
-  // Build a per-node duration timeline from `node:<step> input/output` events
-  // emitted by logGraphEvent (agents/graphs/GraphEventLogger.js). A chatId can
-  // hold multiple interactions, so scope to the latest "Starting <Graph>" run.
-  const stepTimeline = useMemo(() => {
-    if (!logs || logs.length === 0) return null;
-
-    const sorted = [...logs].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
-    let runStartTs = null;
-    let graphName = null;
-    for (let i = sorted.length - 1; i >= 0; i--) {
-      const msg = typeof sorted[i].message === 'string' ? sorted[i].message : '';
-      if (msg.startsWith('Starting ')) {
-        runStartTs = new Date(sorted[i].createdAt).getTime();
-        graphName = msg.replace(/^Starting /, '');
-        break;
-      }
-    }
-
-    const runLogs =
-      runStartTs != null
-        ? sorted.filter((l) => new Date(l.createdAt).getTime() >= runStartTs)
-        : sorted;
-
-    const stepMap = new Map();
-    const toolCompletions = []; // { ts, tool, duration }
-    let workflowComplete = null;
-
-    for (const log of runLogs) {
-      const msg = typeof log.message === 'string' ? log.message : '';
-      if (msg === 'Workflow complete') {
-        workflowComplete = {
-          ts: new Date(log.createdAt).getTime(),
-          totalResponseTime: log.metadata?.totalResponseTime ?? null,
-        };
-        continue;
-      }
-      const toolMatch = msg.match(/^Tool execution completed:\s+(\S+)/);
-      if (toolMatch && typeof log.metadata?.duration === 'number') {
-        toolCompletions.push({
-          ts: new Date(log.createdAt).getTime(),
-          tool: toolMatch[1],
-          duration: log.metadata.duration,
-        });
-        continue;
-      }
-      const m = msg.match(/^node:(\S+)\s+(input|output)$/);
-      if (!m) continue;
-      const [, stepName, kind] = m;
-      if (!stepMap.has(stepName)) stepMap.set(stepName, { name: stepName });
-      const entry = stepMap.get(stepName);
-      const ts = new Date(log.createdAt).getTime();
-      if (kind === 'input' && entry.input == null) entry.input = ts;
-      if (kind === 'output') entry.output = ts;
-    }
-
-    if (stepMap.size === 0 && runStartTs == null) return null;
-
-    const anchor =
-      runStartTs ??
-      Math.min(...Array.from(stepMap.values()).map((e) => e.input ?? Infinity));
-    if (!Number.isFinite(anchor)) return null;
-
-    const totalMs =
-      workflowComplete?.totalResponseTime ??
-      (workflowComplete?.ts != null ? workflowComplete.ts - anchor : null);
-
-    const steps = Array.from(stepMap.values())
-      .map((e) => ({
-        name: e.name,
-        startRel: e.input != null ? e.input - anchor : null,
-        endRel: e.output != null ? e.output - anchor : null,
-        duration: e.input != null && e.output != null ? e.output - e.input : null,
-        input: e.input,
-        output: e.output,
-      }))
-      .sort((a, b) => (a.startRel ?? Infinity) - (b.startRel ?? Infinity));
-
-    // Attribute download time inside the answer step. A completed tool log's
-    // ts is the end timestamp; its start is `ts - duration`. We include it if
-    // its end falls inside the answer window.
-    const answerStep = steps.find((s) => s.name === 'answer');
-    if (answerStep && answerStep.input != null && answerStep.output != null) {
-      const downloads = toolCompletions.filter(
-        (t) =>
-          t.tool === 'downloadWebPage' &&
-          t.ts >= answerStep.input &&
-          t.ts <= answerStep.output
-      );
-      const downloadCount = downloads.length;
-      const downloadDuration = downloads.reduce((sum, t) => sum + t.duration, 0);
-      if (downloadCount > 0) {
-        answerStep.breakdown = {
-          downloadCount,
-          downloadDuration,
-          generationDuration: Math.max(0, answerStep.duration - downloadDuration),
-        };
-      }
-    }
-
-    // The result is emitted to the client at the end of verifyNode; persistNode
-    // runs after delivery (see api/chat/chat-graph-run.js comments) so it's
-    // excluded from the user-perceived view. Anchor in `totalMs` (which is
-    // measured in-process via Date.now and is accurate) rather than diffing
-    // log createdAt timestamps, which are stamped at queue-flush time and can
-    // drift by 100s of ms between events.
-    const persistStep = steps.find((s) => s.name === 'persist');
-    const verifyStep = steps.find((s) => s.name === 'verify');
-    let userPerceivedMs = null;
-    if (totalMs != null && persistStep?.duration != null) {
-      userPerceivedMs = Math.max(0, totalMs - persistStep.duration);
-    } else if (verifyStep?.endRel != null) {
-      userPerceivedMs = verifyStep.endRel;
-    }
-    const visibleSteps = steps.filter((s) => s.name !== 'persist');
-
-    return {
-      graphName,
-      totalMs,
-      userPerceivedMs,
-      pctDenom: userPerceivedMs ?? totalMs,
-      steps: visibleSteps,
-    };
-  }, [logs]);
-
-  // DataTable initialization and update
-  useEffect(() => {
-    if (logs?.length > 0 && tableRef.current) {
-      // Ensure we clean up any existing DataTable before creating a new one
-      if (dataTableRef.current) {
-        dataTableRef.current.destroy();
-        dataTableRef.current = null;
-      }
-
-      // Initialize DataTable
-      dataTableRef.current = $(tableRef.current).DataTable({
-        data: logs, // Directly provide data during initialization
-        columns: [
-          {
-            title: t('logging.createdAt'),
-            data: 'createdAt',
-            render: (data) => {
-              const date = new Date(data);
-              return date.toLocaleString();
-            },
-          },
-          {
-            title: t('logging.level'),
-            data: 'logLevel',
-            render: (data) => data ?? '',
-          },
-          {
-            title: t('logging.message'),
-            data: 'message',
-            render: (data) => data ?? '',
-          },
-          {
-            title: t('logging.metadata'),
-            data: 'metadata',
-            className: 'metadata-column',
-
-            render: (data) => {
-              if (!data) {
-                data = {}; // Default to empty object for consistent formatting
-              }
-
-              try {
-                let formattedContent = '';
-                let isXML = false;
-
-                if (typeof data === 'string') {
-                  // Check if it looks like XML
-                  if (data.trim().startsWith('<') && data.trim().endsWith('>')) {
-                    isXML = true;
-                    formattedContent = data.replace(/></g, '>\n<').replace(/\s+/g, ' ').trim();
-                  } else {
-                    // Try parsing as JSON if it's not XML
-                    try {
-                      const parsed = JSON.parse(data);
-                      formattedContent = JSON.stringify(parsed, null, 2);
-                    } catch {
-                      formattedContent = data;
-                    }
-                  }
-                } else {
-                  formattedContent = JSON.stringify(data, null, 2);
-                }
-
-                const escapedContent = formattedContent
-                  .replace(/&/g, '&amp;')
-                  .replace(/</g, '&lt;')
-                  .replace(/>/g, '&gt;')
-                  .replace(/"/g, '&quot;')
-                  .replace(/'/g, '&#039;');
-
-                // Wrap content in a scrollable container
-                return `
-                  <div class="metadata-wrapper">
-                    <div class="metadata-content">
-                      <pre><code class="language-${isXML ? 'xml' : 'json'}">${escapedContent}</code></pre>
-                    </div>
-                    <div class="metadata-actions">
-                      <button class="expand-button gcds-button gcds-button--secondary">
-                        ${t('logging.expand')}
-                      </button>
-                    </div>
-                  </div>`;
-              } catch (e) {
-                console.error('Error formatting metadata:', e);
-                return String(data);
-              }
-            },
-          },
-        ],
-        order: [[0, 'desc']],
-        scrollX: true, // Enable horizontal scrolling for the whole table
-        pageLength: 50, // Set number of items per page to 50
-        language: dataTableLanguage(lang),
-        // Add styling options for the table
-        drawCallback: function () {
-          Prism.highlightAll();
-
-          // Update styling for metadata containers
-          $('.metadata-wrapper').css({
-            position: 'relative',
-            'min-height': '50px',
-            'max-height': '200px',
-            display: 'flex',
-            'flex-direction': 'column',
-            width: '750px', // Match the column width
-          });
-
-          $('.metadata-content').css({
-            flex: '1',
-            'overflow-y': 'auto',
-            'overflow-x': 'auto',
-            position: 'relative',
-            'background-color': '#f5f5f5',
-            'border-radius': '4px',
-            'max-width': '900px', // Match the column width
-          });
-
-          $('.metadata-content pre').css({
-            margin: '0',
-            padding: '8px',
-            'min-width': 'fit-content',
-            width: 'max-content',
-          });
-
-          $('.metadata-content code').css({
-            'font-family': 'monospace',
-            'font-size': '13px',
-            'line-height': '1.4',
-            'white-space': 'pre',
-          });
-
-          $('.metadata-actions').css({
-            padding: '4px 0',
-            'text-align': 'right',
-          });
-
-          $('.expand-button').css({
-            'margin-top': '4px',
-            'font-size': '14px',
-            padding: '4px 8px',
-          });
-
-          // Add click handler for expand buttons
-          $('.expand-button')
-            .off('click')
-            .on('click', function (e) {
-              e.stopPropagation();
-              // Use the row element selector to fetch correct row data
-              const tr = $(this).closest('tr');
-              const rowData = dataTableRef.current.row(tr).data();
-              setExpandedMetadata(rowData.metadata);
-            });
-        },
-      });
-      // Apply log level filter if set
-      if (logLevel && dataTableRef.current) {
-        dataTableRef.current.column(1).search(logLevel, false, false).draw();
-      }
-    }
-
-    return () => {
-      if (dataTableRef.current) {
-        dataTableRef.current.destroy();
-        dataTableRef.current = null;
-      }
-    };
-  }, [logs, logLevel]);
-
-  // Handler for log level filter
   const handleLogLevelChange = (e) => {
-    const value = e.target.value;
-    setLogLevel(value);
-    if (dataTableRef.current) {
-      dataTableRef.current.column(1).search(value, false, false).draw();
-    }
+    setLogLevel(e.target.value);
   };
 
   const handleChatIdChange = (e) => {
     const newValue = e.target ? e.target.value : e;
 
-    // If chat ID changes, clear the data table
     if (newValue !== chatId) {
-      // Properly cleanup DataTable before clearing logs
-      if (dataTableRef.current) {
-        console.log('Destroying DataTable instance before changing chat ID');
-        dataTableRef.current.destroy();
-        dataTableRef.current = null;
-      }
-
-      // Clear logs when chat ID changes
-      setLogs([]);
+      clearLogs();
+      setExpandedMetadata(null);
     }
 
     setChatId(newValue);
-  };
-
-
-  const fetchLogs = async () => {
-    if (!chatId) {
-      console.log('No chat ID available, cannot fetch logs');
-      return;
-    }
-
-    console.log('Fetching logs for chat ID:', chatId);
-    try {
-      const data = await DataStoreService.getLogs(chatId);
-      console.log('Logs fetched successfully:', data.logs?.length || 0, 'entries');
-      setLogs(data.logs || []);
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-      setLogs([]);
-    }
   };
 
   const handleRefreshLogs = async () => {
@@ -375,33 +56,8 @@ const ChatViewer = ({ lang = 'en' }) => {
       return;
     }
 
-    setIsRefreshingLogs(true);
-    try {
-      await fetchLogs();
-    } finally {
-      setIsRefreshingLogs(false);
-    }
+    await refreshLogs();
   };
-
-  useEffect(() => {
-    // Control body scroll when modal is open
-    if (expandedMetadata) {
-      document.body.style.overflow = 'hidden';
-      // Highlight code in modal after it appears
-      setTimeout(() => {
-        const codeBlock = document.querySelector('.metadata-modal code');
-        if (codeBlock) {
-          Prism.highlightElement(codeBlock);
-        }
-      }, 0);
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [expandedMetadata]);
 
   return (
     <>
@@ -415,7 +71,7 @@ const ChatViewer = ({ lang = 'en' }) => {
 
         <section className="mb-600">
           <div className="mb-400">
-            <div className="">
+            <div>
               <label htmlFor="chatIdInput" className="block mb-2">
                 {t('logging.enterChatId')}
               </label>
@@ -429,18 +85,20 @@ const ChatViewer = ({ lang = 'en' }) => {
                 className="form-control p-2 border rounded w-full"
               />
             </div>
-
           </div>
+
           <div className="space-y-6">
-            <div className="flex gap-4 items-center">
-              <div className="flex-shrink-0">
-                <label htmlFor="logLevelFilter" className="mr-2">{t('logging.filterByLevel')}</label>
+            <div className="flex items-end gap-6 flex-nowrap">
+              <div className="flex items-center shrink-0">
+                <label htmlFor="logLevelFilter" className="mr-3">
+                  {t('logging.filterByLevel')}
+                </label>
                 <select
                   id="logLevelFilter"
                   value={logLevel}
                   onChange={handleLogLevelChange}
-                  className="form-control p-2 border rounded w-40"
-                  style={{ minWidth: '120px' }}
+                  className="filter-select"
+                  style={{ width: 'auto', minWidth: '8.5rem' }}
                 >
                   <option value="">{t('logging.all')}</option>
                   <option value="info">{t('logging.info')}</option>
@@ -454,6 +112,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                 type="button"
                 disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
+                className="whitespace-nowrap shrink-0"
               >
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
@@ -485,6 +144,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                     )}
                   </ul>
                 )}
+
                 {stepTimeline.steps.length > 0 ? (
                   <table className="display" style={{ width: 'auto' }}>
                     <thead>
@@ -497,56 +157,59 @@ const ChatViewer = ({ lang = 'en' }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {stepTimeline.steps.flatMap((s) => {
+                      {stepTimeline.steps.flatMap((step) => {
                         const pct =
-                          s.duration != null && stepTimeline.pctDenom
-                            ? ((s.duration / stepTimeline.pctDenom) * 100).toFixed(1)
+                          step.duration != null && stepTimeline.pctDenom
+                            ? ((step.duration / stepTimeline.pctDenom) * 100).toFixed(1)
                             : null;
                         const note =
-                          s.startRel == null
+                          step.startRel == null
                             ? t('logging.timeline.skipped')
-                            : s.endRel == null
+                            : step.endRel == null
                               ? t('logging.timeline.incomplete')
                               : null;
                         const rows = [
-                          <tr key={s.name}>
-                            <td>{s.name}</td>
-                            <td style={{ textAlign: 'right' }}>{s.startRel ?? '—'}</td>
-                            <td style={{ textAlign: 'right' }}>{s.endRel ?? '—'}</td>
+                          <tr key={step.name}>
+                            <td>{step.name}</td>
+                            <td style={{ textAlign: 'right' }}>{step.startRel ?? '-'}</td>
+                            <td style={{ textAlign: 'right' }}>{step.endRel ?? '-'}</td>
                             <td style={{ textAlign: 'right' }}>
-                              {s.duration != null ? s.duration : note ? `(${note})` : '—'}
+                              {step.duration != null ? step.duration : note ? `(${note})` : '-'}
                             </td>
-                            <td style={{ textAlign: 'right' }}>{pct != null ? `${pct}%` : '—'}</td>
+                            <td style={{ textAlign: 'right' }}>{pct != null ? `${pct}%` : '-'}</td>
                           </tr>,
                         ];
-                        if (s.breakdown) {
+
+                        if (step.breakdown) {
                           const dlPct = stepTimeline.pctDenom
-                            ? ((s.breakdown.downloadDuration / stepTimeline.pctDenom) * 100).toFixed(1)
+                            ? ((step.breakdown.downloadDuration / stepTimeline.pctDenom) * 100).toFixed(1)
                             : null;
                           const genPct = stepTimeline.pctDenom
-                            ? ((s.breakdown.generationDuration / stepTimeline.pctDenom) * 100).toFixed(1)
+                            ? ((step.breakdown.generationDuration / stepTimeline.pctDenom) * 100).toFixed(1)
                             : null;
+
                           rows.push(
-                            <tr key={`${s.name}-downloads`}>
+                            <tr key={`${step.name}-downloads`}>
                               <td style={{ paddingLeft: '1.5em' }}>
-                                ↳ {t('logging.timeline.downloads')} (×{s.breakdown.downloadCount})
+                                -> {t('logging.timeline.downloads')} (x{step.breakdown.downloadCount})
                               </td>
-                              <td style={{ textAlign: 'right' }}>—</td>
-                              <td style={{ textAlign: 'right' }}>—</td>
-                              <td style={{ textAlign: 'right' }}>{s.breakdown.downloadDuration}</td>
-                              <td style={{ textAlign: 'right' }}>{dlPct != null ? `${dlPct}%` : '—'}</td>
+                              <td style={{ textAlign: 'right' }}>-</td>
+                              <td style={{ textAlign: 'right' }}>-</td>
+                              <td style={{ textAlign: 'right' }}>{step.breakdown.downloadDuration}</td>
+                              <td style={{ textAlign: 'right' }}>{dlPct != null ? `${dlPct}%` : '-'}</td>
                             </tr>,
-                            <tr key={`${s.name}-generation`}>
+                            <tr key={`${step.name}-generation`}>
                               <td style={{ paddingLeft: '1.5em' }}>
-                                ↳ {t('logging.timeline.generation')}
+                                -> {t('logging.timeline.generation')}
                               </td>
-                              <td style={{ textAlign: 'right' }}>—</td>
-                              <td style={{ textAlign: 'right' }}>—</td>
-                              <td style={{ textAlign: 'right' }}>{s.breakdown.generationDuration}</td>
-                              <td style={{ textAlign: 'right' }}>{genPct != null ? `${genPct}%` : '—'}</td>
+                              <td style={{ textAlign: 'right' }}>-</td>
+                              <td style={{ textAlign: 'right' }}>-</td>
+                              <td style={{ textAlign: 'right' }}>{step.breakdown.generationDuration}</td>
+                              <td style={{ textAlign: 'right' }}>{genPct != null ? `${genPct}%` : '-'}</td>
                             </tr>
                           );
                         }
+
                         return rows;
                       })}
                     </tbody>
@@ -559,7 +222,7 @@ const ChatViewer = ({ lang = 'en' }) => {
 
             {chatId && logs && (
               <div className="bg-white shadow rounded-lg">
-                {logs?.length > 0 ? (
+                {logs.length > 0 ? (
                   <div className="p-4">
                     <table ref={tableRef} className="display">
                       <thead>
@@ -583,59 +246,11 @@ const ChatViewer = ({ lang = 'en' }) => {
         </section>
       </GcdsContainer>
 
-      {/* Modal for expanded metadata */}
-      {expandedMetadata && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '2rem',
-          }}
-        >
-          <div
-            className="bg-white rounded-lg w-full max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col metadata-modal"
-            style={{ position: 'relative' }}
-          >
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">{t('logging.metadataDetails')}</h2>
-              <GcdsButton
-                type="button"
-                variant="secondary"
-                onClick={() => setExpandedMetadata(null)}
-              >
-                {t('logging.close')}
-              </GcdsButton>
-            </div>
-            <div className="p-6 overflow-auto flex-grow">
-              <pre
-                className="whitespace-pre-wrap break-words"
-                style={{ maxWidth: '100%', fontSize: '14px', lineHeight: '1.5' }}
-              >
-                <code
-                  className={`language-${typeof expandedMetadata === 'string' &&
-                    expandedMetadata.trim().startsWith('<') &&
-                    expandedMetadata.trim().endsWith('>')
-                    ? 'xml'
-                    : 'json'
-                    }`}
-                >
-                  {typeof expandedMetadata === 'string'
-                    ? expandedMetadata.replace(/\n/g, '\n')
-                    : JSON.stringify(expandedMetadata || {}, null, 2).replace(/\n/g, '\n')}
-                </code>
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
+      <MetadataModal
+        metadata={expandedMetadata}
+        onClose={() => setExpandedMetadata(null)}
+        t={t}
+      />
     </>
   );
 };

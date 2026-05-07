@@ -109,6 +109,37 @@ When adding a new page, register its route in `src/utils/routes.js` under `ROUTE
 
 French slugs must be real translations — not copied English slugs. Once registered, use `getPath('my-new-page', lang)` to generate links and `ROUTE_SLUGS['my-new-page']` to define the route in `App.js`. Never hardcode URL paths as strings elsewhere in the codebase.
 
+## UI architecture and folders
+
+For UI work, follow the layered pattern below so data flow and responsibilities stay clear:
+
+1. **Service ->** API calls and raw response handling (`fetch`, endpoint URLs, request/response shape)
+2. **Hook ->** stateful UI logic that consumes services (`loading`, `error`, refresh, memoized derived state)
+3. **Component ->** reusable/presentational UI blocks
+4. **Page ->** route-level composition only (wire hooks/components together, keep business logic thin)
+
+### Folder convention for page-specific UI work
+
+Use high-level folders by type, then a page/feature subfolder:
+
+- `src/pages/<PageName>.js` for the route page
+- `src/hooks/<feature>/` for hooks used by that page/feature
+- `src/components/<feature>/` for components used by that page/feature
+- `src/utils/<feature>/` for pure helpers used by that page/feature
+
+Example (ChatViewer):
+
+- `src/pages/ChatViewer.js`
+- `src/hooks/chatviewer/...`
+- `src/components/chatviewer/...`
+- `src/utils/chatviewer/...`
+
+Notes:
+
+- Prefer putting logic in a hook before moving it to the page.
+- Keep utils pure (no React state/effects); move stateful logic to hooks.
+- If a hook/component/helper becomes cross-feature, promote it to a shared location and update imports.
+
 ## Key rules
 - Department abbreviations (abbrKey) are defined in `agents/prompts/scenarios/departments_EN.js` / `departments_FR.js` — never invent new ones
 - Pipeline is a LangGraph state machine in `agents/graphs/` — understand node flow before modifying

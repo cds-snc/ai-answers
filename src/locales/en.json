@@ -312,7 +312,7 @@
   },
   "logging": {
     "title": "Chat viewer",
-    "refresh": "Display logs for level",
+    "refresh": "Refresh",
     "refreshPending": "Please wait...",
     "backToAdmin": "Back to admin",
     "createdAt": "Created at",
