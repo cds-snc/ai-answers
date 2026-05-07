@@ -1,6 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 import {
     parseRequestFilters,
@@ -233,4 +233,4 @@ async function getTechnicalMetrics(req, res) {
     }
 }
 
-export default withProtection(getTechnicalMetrics);
+export default withProtection(getTechnicalMetrics, authMiddleware, partnerOrAdminMiddleware);
