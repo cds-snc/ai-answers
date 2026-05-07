@@ -341,7 +341,9 @@
       "pctOfTotal": "% du total",
       "skipped": "ignorée",
       "incomplete": "aucun événement de fin",
-      "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux."
+      "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux.",
+      "downloads": "téléchargements",
+      "generation": "génération"
     }
   },
   "admin": {

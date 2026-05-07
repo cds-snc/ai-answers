@@ -56,6 +56,7 @@ const ChatViewer = ({ lang = 'en' }) => {
         : sorted;
 
     const stepMap = new Map();
+    const toolCompletions = []; // { ts, tool, duration }
     let workflowComplete = null;
 
     for (const log of runLogs) {
@@ -65,6 +66,15 @@ const ChatViewer = ({ lang = 'en' }) => {
           ts: new Date(log.createdAt).getTime(),
           totalResponseTime: log.metadata?.totalResponseTime ?? null,
         };
+        continue;
+      }
+      const toolMatch = msg.match(/^Tool execution completed:\s+(\S+)/);
+      if (toolMatch && typeof log.metadata?.duration === 'number') {
+        toolCompletions.push({
+          ts: new Date(log.createdAt).getTime(),
+          tool: toolMatch[1],
+          duration: log.metadata.duration,
+        });
         continue;
       }
       const m = msg.match(/^node:(\S+)\s+(input|output)$/);
@@ -94,8 +104,32 @@ const ChatViewer = ({ lang = 'en' }) => {
         startRel: e.input != null ? e.input - anchor : null,
         endRel: e.output != null ? e.output - anchor : null,
         duration: e.input != null && e.output != null ? e.output - e.input : null,
+        input: e.input,
+        output: e.output,
       }))
       .sort((a, b) => (a.startRel ?? Infinity) - (b.startRel ?? Infinity));
+
+    // Attribute download time inside the answer step. A completed tool log's
+    // ts is the end timestamp; its start is `ts - duration`. We include it if
+    // its end falls inside the answer window.
+    const answerStep = steps.find((s) => s.name === 'answer');
+    if (answerStep && answerStep.input != null && answerStep.output != null) {
+      const downloads = toolCompletions.filter(
+        (t) =>
+          t.tool === 'downloadWebPage' &&
+          t.ts >= answerStep.input &&
+          t.ts <= answerStep.output
+      );
+      const downloadCount = downloads.length;
+      const downloadDuration = downloads.reduce((sum, t) => sum + t.duration, 0);
+      if (downloadCount > 0) {
+        answerStep.breakdown = {
+          downloadCount,
+          downloadDuration,
+          generationDuration: Math.max(0, answerStep.duration - downloadDuration),
+        };
+      }
+    }
 
     return {
       graphName,
@@ -437,7 +471,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {stepTimeline.steps.map((s) => {
+                      {stepTimeline.steps.flatMap((s) => {
                         const pct =
                           s.duration != null && stepTimeline.totalMs
                             ? ((s.duration / stepTimeline.totalMs) * 100).toFixed(1)
@@ -448,7 +482,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                             : s.endRel == null
                               ? t('logging.timeline.incomplete')
                               : null;
-                        return (
+                        const rows = [
                           <tr key={s.name}>
                             <td>{s.name}</td>
                             <td style={{ textAlign: 'right' }}>{s.startRel ?? '—'}</td>
@@ -457,8 +491,37 @@ const ChatViewer = ({ lang = 'en' }) => {
                               {s.duration != null ? s.duration : note ? `(${note})` : '—'}
                             </td>
                             <td style={{ textAlign: 'right' }}>{pct != null ? `${pct}%` : '—'}</td>
-                          </tr>
-                        );
+                          </tr>,
+                        ];
+                        if (s.breakdown) {
+                          const dlPct = stepTimeline.totalMs
+                            ? ((s.breakdown.downloadDuration / stepTimeline.totalMs) * 100).toFixed(1)
+                            : null;
+                          const genPct = stepTimeline.totalMs
+                            ? ((s.breakdown.generationDuration / stepTimeline.totalMs) * 100).toFixed(1)
+                            : null;
+                          rows.push(
+                            <tr key={`${s.name}-downloads`}>
+                              <td style={{ paddingLeft: '1.5em' }}>
+                                ↳ {t('logging.timeline.downloads')} (×{s.breakdown.downloadCount})
+                              </td>
+                              <td style={{ textAlign: 'right' }}>—</td>
+                              <td style={{ textAlign: 'right' }}>—</td>
+                              <td style={{ textAlign: 'right' }}>{s.breakdown.downloadDuration}</td>
+                              <td style={{ textAlign: 'right' }}>{dlPct != null ? `${dlPct}%` : '—'}</td>
+                            </tr>,
+                            <tr key={`${s.name}-generation`}>
+                              <td style={{ paddingLeft: '1.5em' }}>
+                                ↳ {t('logging.timeline.generation')}
+                              </td>
+                              <td style={{ textAlign: 'right' }}>—</td>
+                              <td style={{ textAlign: 'right' }}>—</td>
+                              <td style={{ textAlign: 'right' }}>{s.breakdown.generationDuration}</td>
+                              <td style={{ textAlign: 'right' }}>{genPct != null ? `${genPct}%` : '—'}</td>
+                            </tr>
+                          );
+                        }
+                        return rows;
                       })}
                     </tbody>
                   </table>

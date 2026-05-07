@@ -341,7 +341,9 @@
       "pctOfTotal": "% of total",
       "skipped": "skipped",
       "incomplete": "no end event",
-      "noTimeline": "No pipeline events found in these logs."
+      "noTimeline": "No pipeline events found in these logs.",
+      "downloads": "downloads",
+      "generation": "generation"
     }
   },
   "admin": {
