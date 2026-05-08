@@ -109,6 +109,13 @@ export class GraphClient {
         }
 
         if (eventType === 'status' && parsedData && parsedData.status) {
+          try {
+            if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+              console.debug('[chat-graph-run status]', parsedData);
+            }
+          } catch (_e) {
+            // ignore client-side debug logging errors
+          }
           ChatWorkflowService.sendStatusUpdate(onStatusUpdate, parsedData.status);
           return { done: false };
         }
