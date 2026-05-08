@@ -12,6 +12,7 @@ export const WORKFLOWS = [
 
 export const AVAILABLE_MODELS = [
   { value: 'openai-gpt51', labelKey: 'models.gpt51' },
+  { value: 'openai-gpt51-chat', labelKey: 'models.gpt51Chat' },
   { value: 'azure', labelKey: 'models.azure41' },
 ];
 

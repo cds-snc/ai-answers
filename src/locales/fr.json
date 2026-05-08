@@ -943,6 +943,7 @@
   },
   "models": {
     "gpt51": "Azure GPT-5.1",
+    "gpt51Chat": "Azure GPT-5.1 chat (sans raisonnement)",
     "azure41": "Azure GPT-4.1 (ancien)"
   },
   "settings": {
