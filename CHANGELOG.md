@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.125.0](https://github.com/cds-snc/ai-answers/compare/v1.124.0...v1.125.0) (2026-05-08)
+
+
+### Features
+
+* comment so it will push ([67d0a6d](https://github.com/cds-snc/ai-answers/commit/67d0a6d6cc82f6b546d1a5d2e6ebd3c7dda7ad52))
+
 ## [1.124.0](https://github.com/cds-snc/ai-answers/compare/v1.123.0...v1.124.0) (2026-05-08)
 
 
