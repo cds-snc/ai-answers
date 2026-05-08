@@ -59,10 +59,7 @@ export class GraphClient {
 
       const response = await AuthService.fetch(getApiUrl('chat-graph-run'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         signal: controller.signal
       });
