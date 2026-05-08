@@ -18,6 +18,21 @@ function writeEvent(res, event, data) {
   }
 }
 
+export function setStreamingHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+
+  // Make sure Node pushes small SSE frames immediately.
+  res.socket?.setNoDelay?.(true);
+  res.flushHeaders?.();
+}
+
 function buildGraphErrorPayload(error) {
   const base = {
     name: error?.name || 'Error',
@@ -143,10 +158,7 @@ async function handler(req, res) {
 
   const forwardedHeaders = buildForwardedHeaders(req.headers || {});
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
+  setStreamingHeaders(res);
 
   res.write(': connected\n\n');
 
