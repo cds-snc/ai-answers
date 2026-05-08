@@ -56,7 +56,7 @@ export class GraphClient {
           visitorId,
         },
       };
-
+      // make sure it accepts event streams
       const response = await AuthService.fetch(getApiUrl('chat-graph-run'), {
         method: 'POST',
         headers: {
