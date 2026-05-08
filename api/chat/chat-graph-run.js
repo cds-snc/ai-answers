@@ -157,6 +157,7 @@ async function handler(req, res) {
   const appToRun = graphApp || await getGraphApp('DefaultWithVectorGraph');
 
   const forwardedHeaders = buildForwardedHeaders(req.headers || {});
+  let eventSequence = 0;
 
   setStreamingHeaders(res);
 
@@ -165,7 +166,17 @@ async function handler(req, res) {
   // Send periodic SSE comments to prevent proxies (e.g. Akamai) from dropping
   // idle connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
   let keepAliveTimer = setInterval(() => {
-    try { res.write(': ping\n\n'); } catch (_e) { clearInterval(keepAliveTimer); }
+    try {
+      writeEvent(res, 'status', {
+        status: 'keepalive',
+        graph: graphName,
+        heartbeat: true,
+        serverSentAt: Date.now(),
+        sequence: ++eventSequence,
+      });
+    } catch (_e) {
+      clearInterval(keepAliveTimer);
+    }
   }, 15000);
 
   let resultSent = false;
@@ -174,7 +185,12 @@ async function handler(req, res) {
   const handlers = {
     onStatus: (status) => {
       if (status) {
-        writeEvent(res, 'status', { status, graph: graphName });
+        writeEvent(res, 'status', {
+          status,
+          graph: graphName,
+          serverSentAt: Date.now(),
+          sequence: ++eventSequence,
+        });
       }
     },
     onResult: (result) => {
