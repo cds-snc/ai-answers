@@ -29,6 +29,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
     const [message, setMessage] = useState('');
+    const [startingRun, setStartingRun] = useState(null);
 
     // Progress tracking
     const [batchProgress, setBatchProgress] = useState({});
@@ -144,6 +145,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
 
         setLoading(true);
+        setStartingRun({
+            status: t('experimental.analysis.startingRun'),
+            message: t('experimental.analysis.messages.startingRun')
+        });
         setMessage('');
 
         try {
@@ -192,6 +197,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             console.error(err);
                     setMessage(`Error: ${err.message || 'Failed to start analysis'}`);
         } finally {
+            setStartingRun(null);
             setLoading(false);
             await loadBatches(selectedDatasetId);
         }
@@ -295,7 +301,24 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <select
                                 id="analyzer-select"
                                 value={selectedAnalyzerId}
-                                onChange={(e) => setSelectedAnalyzerId(e.target.value)}
+                                onChange={(e) => {
+                                    const nextAnalyzerId = e.target.value;
+                                    setSelectedAnalyzerId(nextAnalyzerId);
+                                    setBaselineBatchId((currentBaselineId) => {
+                                        if (!currentBaselineId || !nextAnalyzerId) {
+                                            return currentBaselineId;
+                                        }
+
+                                        const currentBaseline = batches.find(batch => batch._id === currentBaselineId);
+                                        if (!currentBaseline) {
+                                            return '';
+                                        }
+
+                                        return resolveBatchAnalyzerId(currentBaseline) === nextAnalyzerId
+                                            ? currentBaselineId
+                                            : '';
+                                    });
+                                }}
                                 style={{ padding: '8px', width: '100%' }}
                             >
                                 <option value="">{t('experimental.analysis.messages.selectAnalyzer')}</option>
@@ -398,9 +421,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         {message && <GcdsText className="mt-200" role="status"><strong>{message}</strong></GcdsText>}
                     </section>
 
-                    {Object.keys(batchProgress).length > 0 && (
+                    {(startingRun || Object.keys(batchProgress).length > 0) && (
                         <section>
-                            <GcdsHeading tag="h2">Running Status</GcdsHeading>
+                            <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                            {startingRun && (
+                                <div className="border p-200 mb-200 rounded bg-light">
+                                    <div><strong>{startingRun.status}</strong></div>
+                                    <GcdsText className="mt-200">{startingRun.message}</GcdsText>
+                                </div>
+                            )}
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
                                     <div><strong>Batch {id.slice(-6)}</strong>: {prog.status}</div>
@@ -419,13 +448,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             ))}
                         </section>
                     )}
-                    {Object.keys(batchProgress).length === 0 && (
+                    {!startingRun && Object.keys(batchProgress).length === 0 && (
                         <section>
                             <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
-                
-            
 
             {/* History List */}
             <section style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
@@ -485,7 +512,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                             </GcdsButton>
                                         )}
                                         {batch.status === 'completed' && (
-                                            <GcdsButton size="small" buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'} onClick={() => handleUseAsBaseline(batch._id)}>
+                                            <GcdsButton
+                                                size="small"
+                                                buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
+                                                disabled={!!selectedAnalyzerId && resolveBatchAnalyzerId(batch) !== selectedAnalyzerId}
+                                                onClick={() => handleUseAsBaseline(batch._id)}
+                                            >
                                                 {baselineBatchId === batch._id ? 'Baseline Selected' : 'Use as Baseline'}
                                             </GcdsButton>
                                         )}
