@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.124.0](https://github.com/cds-snc/ai-answers/compare/v1.123.0...v1.124.0) (2026-05-08)
+
+
+### Features
+
+* add more clear comment (and force deployment for main) ([f6bab19](https://github.com/cds-snc/ai-answers/commit/f6bab19701cbc300a19119bcd99a9d2831c7eb77))
+* add more clear comment (and force deployment for main) ([168c03b](https://github.com/cds-snc/ai-answers/commit/168c03b2bf23304bc4da6d0aa93b6809f078b26b))
+
 ## [1.123.0](https://github.com/cds-snc/ai-answers/compare/v1.122.2...v1.123.0) (2026-05-07)
 
 
