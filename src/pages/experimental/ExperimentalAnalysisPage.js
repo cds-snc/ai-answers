@@ -428,9 +428,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             
 
             {/* History List */}
-            <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns') || 'Previous Runs'}</GcdsHeading>
-            <div className="overflow-auto">
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <section style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+                <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
+                    <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns') || 'Previous Runs'}</GcdsHeading>
+                    <div className="overflow-auto">
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                             <th className="p-300">{t('experimental.analysis.columns.name')}</th>
@@ -494,7 +496,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         ))}
                     </tbody>
                 </table>
-            </div>
+                    </div>
+                </div>
+            </section>
         </GcdsContainer>
     );
 }
