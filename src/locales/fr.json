@@ -360,6 +360,8 @@
       "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
+      "experimental": "Expérimental",
+      "dataAnalysis": "Analyse de données",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
       "technicalMetrics": "Voir les métriques techniques",
@@ -1372,18 +1374,18 @@
     }
   },
   "connectivity": {
-    "title": "Tableau de bord de connectivité du service",
-    "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
-    "runTests": "Exécuter les tests de connectivité",
+    "title": "Tableau de bord de connectivit? du service",
+    "description": "Tester la connectivit? ? tous les services externes et fournisseurs d'IA utilis?s par R?ponses IA.",
+    "runTests": "Ex?cuter les tests de connectivit?",
     "testing": "Test des connexions...",
-    "connected": "Connecté",
+    "connected": "Connect?",
     "errors": "Erreurs",
     "warnings": "Avertissements",
-    "notConfigured": "Non configuré",
-    "lastRun": "Dernière exécution",
-    "serviceDetails": "Détails du service",
+    "notConfigured": "Non configur?",
+    "lastRun": "Derni?re ex?cution",
+    "serviceDetails": "D?tails du service",
     "latency": "Latence",
-    "details": "Détails",
+    "details": "D?tails",
     "error": "Erreur"
   },
   "validation": {
@@ -1391,9 +1393,108 @@
     "emailInvalid": "Veuillez entrer une adresse courriel valide."
   },
   "notFound": {
-    "breadcrumb": "Réponses IA",
+    "breadcrumb": "R?ponses IA",
     "title": "Page introuvable",
     "message": "Nous ne trouvons pas la page que vous cherchez.",
-    "homeLink": "Retourner à Réponses IA"
+    "homeLink": "Retourner ? R?ponses IA"
+  },
+  "experimental": {
+    "datasets": {
+      "title": "Ensembles de donn?es exp?rimentaux",
+      "analyze": "Analyser",
+      "uploadNew": "T?l?charger un nouvel ensemble de donn?es",
+      "hideUpload": "Masquer le t?l?chargement",
+      "upload": "T?l?charger un ensemble de donn?es",
+      "uploading": "T?l?chargement en cours...",
+      "uploadSuccess": "Ensemble de donn?es t?l?charg? avec succ?s?!",
+      "uploadFailed": "Le t?l?chargement a ?chou?",
+      "readFailed": "Impossible de lire le fichier",
+      "delete": "Supprimer l'ensemble de donn?es",
+      "view": "Voir les donn?es",
+      "viewing": "Affichage des donn?es : {name}",
+      "backToList": "Retour aux ensembles",
+      "errorLoadingRows": "?chec du chargement des donn?es.",
+      "confirmDelete": "?tes-vous s?r de vouloir supprimer cet ensemble de donn?es?? Cette action est irr?versible.",
+      "inUse": "Cet ensemble de donn?es est utilis? par des lots actifs et ne peut pas ?tre supprim?.",
+      "nameLabel": "Nom de l'ensemble de donn?es",
+      "descLabel": "Description",
+      "typeLabel": "Type d'ensemble de donn?es",
+      "uploadedBy": "T?l?vers? par",
+      "fileLabel": "Fichier Excel / CSV",
+      "requiredColumns": "Colonnes requises",
+      "uploadDescriptions": {
+        "questionOnly": "Importez uniquement les questions. Toutes les colonnes de r?ponse seront ignor?es.",
+        "qaPair": "Importez les questions avec leurs r?ponses existantes. La colonne de r?ponse sera conserv?e."
+      },
+      "uploadColumns": {
+        "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
+        "qaPair": "question et answer (requis), referringUrl (optionnel), chatId (optionnel)"
+      },
+      "rowCount": "Lignes",
+      "created": "Cr?? le",
+      "existing": "Ensembles de donn?es existants",
+      "loading": "Chargement des ensembles de donn?es...",
+      "empty": "Aucun ensemble de donn?es trouv?.",
+      "actions": "Actions",
+      "type": {
+        "questionOnly": "Question seulement",
+        "qaPair": "Paire Q/R",
+        "batchOutput": "Sortie de lot"
+      }
+    },
+    "analysis": {
+      "title": "Analyse par lot",
+      "datasetLabel": "Ensemble de donn?es :",
+      "changeDataset": "Changer d'ensemble de donn?es",
+      "configuration": "Configuration",
+      "selectAnalyzers": "S?lectionner un analyseur",
+      "workflowLabel": "Flux de travail",
+      "selectBaseline": "S?lectionner une ex?cution de r?f?rence (comparaison)",
+      "baselineHint": "Choisissez une analyse pr?c?dente comme r?f?rence. Les ex?cutions suivantes seront compar?es aux r?ponses de celle-ci.",
+      "noBaseline": "-- Aucune r?f?rence (?valuation autonome) --",
+      "useExistingDataset": "Utiliser un ensemble de donn?es existant",
+      "uploadInstead": "-- T?l?charger un nouveau fichier ? la place --",
+      "orUpload": "Ou t?l?charger de nouvelles donn?es :",
+      "inputFile": "Fichier d'entr?e (Excel/CSV)",
+      "comparisonFile": "Fichier de comparaison (optionnel)",
+      "run": "Lancer l'analyse",
+      "starting": "D?marrage...",
+      "startingRun": "D?marrage de l'analyse...",
+      "resume": "Reprendre",
+      "runningStatus": "Statut de l'ex?cution",
+      "noActiveRuns": "Aucune ex?cution active n'est actuellement suivie.",
+      "previousRuns": "Ex?cutions pr?c?dentes",
+      "columns": {
+        "name": "Nom de l'ex?cution",
+        "analyzer": "Analyseur",
+        "workflow": "Flux de travail",
+        "modelFamily": "Famille de mod?les",
+        "status": "Statut",
+        "completed": "Terminées",
+        "failed": "Échouées",
+        "totalQuestions": "Total des questions",
+        "createdBy": "Créé par",
+        "issues": "Probl?mes",
+        "flagged": "Signal?s",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "baseline": "R?F?RENCE",
+      "export": "Exporter",
+      "useAsBaseline": "Utiliser comme r?f?rence",
+      "delete": "Supprimer",
+      "empty": "Aucune ex?cution pr?c?dente trouv?e pour cet ensemble de donn?es.",
+      "messages": {
+        "selectAnalyzer": "Veuillez s?lectionner un analyseur.",
+        "selectData": "Veuillez s?lectionner un ensemble de donn?es ou t?l?charger un fichier.",
+        "comparisonRequired": "L'analyse de comparaison n?cessite un deuxi?me fichier ou un type d'ensemble de donn?es sp?cifique.",
+        "startingRun": "D?marrage de votre analyse. Veuillez patienter un instant.",
+        "startedCount": "{count} ex?cutions d'analyse lanc?es.",
+        "resumeStarted": "La reprise a ?t? demand?e.",
+        "confirmDelete": "?tes-vous s?r de vouloir supprimer ce lot??",
+        "deleteError": "?chec de la suppression du lot",
+        "exportError": "?chec de l'exportation du lot"
+      }
+    }
   }
 }

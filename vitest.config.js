@@ -14,13 +14,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8'
     },
-    setupFiles: ['./test/setup.js'],
+    setupFiles: ['./test/vitest-hooks.js'],
     globalSetup: ['./test/setup.js'],
     // Improve test isolation: clear/restore mocks between tests
     clearMocks: true,
     restoreMocks: true,
     // Isolate each test file's module registry to avoid module-level mock leakage
     isolate: true,
+    fileParallelism: false,
     // pool options for vitest 3+
     poolOptions: {
       threads: {
@@ -37,7 +38,7 @@ export default defineConfig({
       'tests/e2e/**'
     ],
     sequence: {
-      shuffle: true, // Run tests in random order to catch tests that rely on execution order or leaked state
+      shuffle: false,
       // seed: 12345, // Optionally set a fixed seed for reproducibility of test order when shuffling is enabled
     },
   }

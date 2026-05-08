@@ -39,6 +39,9 @@ export async function teardown() {
 
 // This will be called before each test
 export async function reset() {
+  if (mongoose.connection.readyState !== 1) {
+    return;
+  }
   // Clear all collections between tests
   const collections = mongoose.connection.collections;
   for (const key in collections) {
