@@ -147,6 +147,7 @@
         "generatingAnswer": "Génération de la réponse...",
         "buildingContext": "Construction du contexte...",
         "readingWebPages": "Lecture des pages Web du gouvernement...",
+        "searchingOpenData": "Recherche dans le portail de données ouvertes...",
         "verifyingCitation": "Test du lien de citation",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Évaluation de la question",

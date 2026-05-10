@@ -2,11 +2,14 @@
 
 Add a `searchOpenData` LangChain tool so the answer agent can search and describe datasets from Canada's Open Government portal (`open.canada.ca`) when users ask about government data. Agreed with TBS OpenGov team to start with find-and-describe only (no in-dataset querying). Skipping MCP in favour of a direct CKAN API tool for simplicity.
 
+> **Plan reviewed 2026-05-10.** CKAN `package_search` confirmed live and returning expected fields (bilingual `title_translated`/`notes_translated`, `organization`, `resources`, `metadata_modified`). Two updates folded in: (1) the answer-agent prompt's `### TOOLS` list in `agents/prompts/agenticBase.js` must be updated — the original plan missed this, and without it the agent won't know the tool exists; (2) Future Phase 4's "wait for OpenGov MCP" framing is stale — third-party CKAN MCP servers (e.g. `ondata/ckan-mcp-server`) now exist and can wrap any CKAN portal, including open.canada.ca.
+
 ## Background
 
 - The Open Government portal at `open.canada.ca` exposes the standard **CKAN Action API v3** at `https://open.canada.ca/data/api/3/action/`
 - 46,500+ datasets, bilingual metadata (EN/FR titles, notes, keywords), Open Government Licence
 - The `tbs-sct-scenarios.js` file already has an `### ATIP & government data` section that directs users to the portal — this tool lets the agent search it directly
+- For Canada's portal, the CKAN `id` and `name` fields are both the dataset UUID, so dataset page URLs work with either. Prefer `name` to follow CKAN convention.
 - Future phase may add MCP integration or in-dataset SQL querying via DataStore API
 
 ## Scope — Pilot (Find & Describe)
@@ -55,8 +58,9 @@ const searchOpenData = tool(
       const formats = [...new Set(
         (ds.resources || []).map(r => r.format).filter(Boolean)
       )].join(", ");
-      const url = `https://open.canada.ca/data/en/dataset/${ds.id}`;
-      const urlFr = `https://open.canada.ca/data/fr/dataset/${ds.id}`;
+      const slug = ds.name || ds.id;
+      const url = `https://open.canada.ca/data/en/dataset/${slug}`;
+      const urlFr = `https://open.canada.ca/data/fr/dataset/${slug}`;
       const modified = ds.metadata_modified?.slice(0, 10) || "unknown";
 
       return [
@@ -121,13 +125,21 @@ return {
 
 ### 3. Update `agents/ToolTrackingHandler.js`
 
-Add SSE status event for the new tool so the UI shows a status message while searching:
+Add an additional `if` branch in `handleToolStart` (next to the existing `if (toolName === 'downloadWebPage')` block at ~line 45) so the UI shows a status message while searching, and a matching emit on end/error to revert to `generatingAnswer`:
 
 ```js
-// In handleToolStart or equivalent:
-case 'searchOpenData':
-  // emit 'searchingOpenData' status
+// In handleToolStart:
+if (toolName === 'searchOpenData') {
+  this._emitStatus('searchingOpenData');
+}
+
+// In handleToolEnd / handleToolError:
+if (toolCall.tool === 'searchOpenData') {
+  this._emitStatus('generatingAnswer');
+}
 ```
+
+Tool-emitted statuses route through `graphRequestContext.getStore().onStatus` → `api/chat/chat-graph-run.js` `handlers.onStatus` → SSE, with no `displayableStatuses` allowlist in between (that filter only applies to the legacy non-graph workflow). So adding the locale key in step 6 is the only other UI plumbing needed.
 
 ### 4. Add global scenario instruction: `agents/prompts/scenarios/scenarios-all.js`
 
@@ -163,13 +175,30 @@ Add translation keys for the searching status in `src/locales/en.json` and `src/
 "status.searchingOpenData": "Recherche dans le portail de données ouvertes..."
 ```
 
-### 7. Regenerate system prompt documentation
+### 7. Update answer-agent TOOLS list in `agents/prompts/agenticBase.js`
+
+The answer agent has an explicit `### TOOLS` block (~line 182) that enumerates the tools it can call. Add `searchOpenData` so the agent knows it's available:
+
+```
+### TOOLS
+Access to:
+- downloadWebPage: download page from URL to develop/verify answer.
+- checkUrl: check if URL live/valid.
+- searchOpenData: search Canada's Open Government data portal (open.canada.ca) for datasets by keyword. Returns dataset summaries with title, description, organization, formats, and EN/FR dataset page URLs.
+NO access - NEVER call:
+- multi_tool_use.parallel ...
+- generateContext
+```
+
+Without this update, even though the tool is wired into `AgentFactory.createTools`, the prompt won't tell the agent the tool exists — and discoverability via tool description alone is unreliable.
+
+### 8. Regenerate system prompt documentation
 
 ```bash
 node scripts/generate-system-prompt-documentation.js
 ```
 
-Required since `scenarios-all.js` is being changed (it's not a department scenario, so it's included in the generated docs).
+Required since `scenarios-all.js` and `agenticBase.js` are both being changed (neither is a department scenario, so both are included in the generated docs).
 
 ## Testing
 
@@ -195,7 +224,7 @@ Required since `scenarios-all.js` is being changed (it's not a department scenar
 |-------|---------|-------|
 | 2 | `package_show` tool | Deep-dive into a specific dataset's resources and metadata |
 | 3 | `datastore_search` | Query tabular data within datasets — needs token limits and SQL guardrails |
-| 4 | MCP integration | Swap direct API calls for MCP client if OpenGov ships a production MCP server |
+| 4 | MCP integration | Third-party CKAN MCP servers now exist (e.g. [`ondata/ckan-mcp-server`](https://github.com/ondata/ckan-mcp-server)) and can wrap any CKAN portal including open.canada.ca. Could be evaluated independently of whether OpenGov ships a first-party MCP. Tradeoff: extra protocol layer + transport hop vs. broader tool surface (DataStore SQL, organizations, groups, tags) without per-endpoint code. |
 | 5 | Croissant metadata | Enrich dataset descriptions with ML-friendly schema info if CKAN adopts Croissant |
 
 ## Risk & Mitigation
