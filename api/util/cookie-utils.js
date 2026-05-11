@@ -9,6 +9,11 @@ export const getParentDomain = (host, nodeEnv = process.env.NODE_ENV) => {
 
   // Strip port if present
   const hostOnly = host.split(':')[0];
+  const lower = hostOnly.toLowerCase();
+
+  // Lambda preview URLs are shared infrastructure hosts, so browsers reject
+  // domain-scoped cookies for them. Keep those cookies host-only.
+  if (lower.includes('lambda-url') || lower.endsWith('.on.aws')) return undefined;
   
   const parts = hostOnly.split('.').filter(Boolean);
   // If not a multi-label hostname (localhost, example), don't set domain
