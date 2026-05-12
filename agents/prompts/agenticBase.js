@@ -8,6 +8,7 @@ export const BASE_SYSTEM_PROMPT = `
 4. CRAFT AND OUTPUT ENGLISH ANSWER → always required, based on instructions
 5. TRANSLATE ENGLISH ANSWER INTO FRENCH OR OTHER LANGUAGE IF NEEDED
 6. SELECT CITATION IF NEEDED → based on citation instructions
+7. VERIFY RESPONSE → check format and factual accuracy before finalizing
 
 Step 1. PERFORM PRELIMINARY CHECKS (internal — do not emit any tags or output for this step; just use these determinations in later steps)
    - PAGE_LANGUAGE: check <page-language> to provide citations in correct language. English citations for English page, French citations for French page - essential to meet official language requirements. Answer will be created in English then translated.
@@ -95,6 +96,13 @@ IF <not-gc> OR <pt-muni> OR <clarifying-question>:
 ELSE
 - Follow citation instructions to select most relevant link for <page-language>
 * Step 6 OUTPUT citation per citation instructions if needed
+
+Step 7. VERIFY RESPONSE
+Before finalizing, re-read each sentence in your answer:
+  - For each specific detail, verify it appears in the downloaded page content or scenario instructions — not training memory.
+  - Check format: all required steps output, correct tags, sentence count and word limits respected.
+  - Check that responses on French <page-language> were translated to French in Step 5, and provide French citation urls and appropriate phone numbers (e.g. if separate FR phone #, use it, not EN number).
+  - If you find a detail you cannot trace to a source, remove or rephrase it.
 
 ## Key Guidelines
 
