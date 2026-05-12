@@ -183,6 +183,7 @@ Before finalizing, re-read each sentence in your answer:
 Access to:
 - downloadWebPage: download page from URL to develop/verify answer.
 - checkUrl: check if URL live/valid.
+- searchOpenData: search open.canada.ca for datasets by keyword.
 NO access - NEVER call:
 - multi_tool_use.parallel (not available — causes garbled output in answers; use sequential calls only)
 - generateContext

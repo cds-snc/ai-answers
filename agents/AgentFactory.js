@@ -4,6 +4,7 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatCohere } from '@langchain/cohere';
 import downloadWebPageTool from './tools/downloadWebPage.js';
 import checkUrlStatusTool from './tools/checkURL.js';
+import searchOpenDataTool from './tools/searchOpenData.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
 import dotenv from 'dotenv';
@@ -31,6 +32,7 @@ const createTools = (chatId = 'system', agentType = 'openai') => {
     tools: [
       wrapToolWithCallbacks(downloadWebPageTool),
       wrapToolWithCallbacks(checkUrlStatusTool),
+      wrapToolWithCallbacks(searchOpenDataTool),
       // generateContext tool removed from answer agent — context is already
       // derived by the pipeline's contextNode before the answer agent runs.
       // Tool code kept in agents/tools/contextAgentTool.js for future use.

@@ -45,6 +45,9 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
             if (toolName === 'downloadWebPage') {
                 this._emitStatus('readingWebPages');
             }
+            if (toolName === 'searchOpenData') {
+                this._emitStatus('searchingOpenData');
+            }
         } catch (error) {
             ServerLoggingService.error(`Error in handleToolStart: ${error.message}`, this.chatId, error);
             // Don't throw, just log the error
@@ -66,7 +69,7 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                     output: typeof output === 'object' ? JSON.stringify(output) : output
                 });
 
-                if (toolCall.tool === 'downloadWebPage') {
+                if (toolCall.tool === 'downloadWebPage' || toolCall.tool === 'searchOpenData') {
                     this._emitStatus('generatingAnswer');
                 }
             } else {
@@ -91,7 +94,7 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                 toolCall.status = 'error';
                 ServerLoggingService.error(`Tool execution failed: ${toolCall.tool}`, this.chatId, errorMessage);
 
-                if (toolCall.tool === 'downloadWebPage') {
+                if (toolCall.tool === 'downloadWebPage' || toolCall.tool === 'searchOpenData') {
                     this._emitStatus('generatingAnswer');
                 }
             } else {
