@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.126.0](https://github.com/cds-snc/ai-answers/compare/v1.125.0...v1.126.0) (2026-05-12)
+
+
+### Features
+
+* add opengov tool ([b201e71](https://github.com/cds-snc/ai-answers/commit/b201e715aa62992120632d1eaa55d6d4cdbeae36))
+* add opengov tool ([2e4b9e5](https://github.com/cds-snc/ai-answers/commit/2e4b9e51c0056eddd346e81d4cecdd8a44be761f))
+
+
+### Bug Fixes
+
+* cookie handling for Lambda preview URLs and add tests ([8a2c4a1](https://github.com/cds-snc/ai-answers/commit/8a2c4a13a0ed55997e2a69b36dbd2215b5dcd59c))
+* cookie handling for Lambda preview URLs and add tests ([a644419](https://github.com/cds-snc/ai-answers/commit/a644419f3b1dd4c179da2300d81648f9db4e32f6))
+
 ## [1.125.0](https://github.com/cds-snc/ai-answers/compare/v1.124.0...v1.125.0) (2026-05-08)
 
 
