@@ -46,6 +46,9 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
   const isGPT5 = modelConfig.name === 'openai-gpt51' ||
     modelConfig.name === 'openai-gpt51-chat';
 
+  if (isGPT5) {
+    console.log('[AgentFactory] answer agent reasoning config:', JSON.stringify(modelConfig.reasoning));
+  }
   const openai = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
     azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
@@ -135,7 +138,7 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
-      console.log('Creating GPT5.1 Azure OpenAI context agent with model:', azureConfig.name);
+      console.log('Creating GPT5.1 Azure OpenAI context agent with model:', azureConfig.name, 'reasoning:', JSON.stringify(azureConfig.reasoning));
       break;
     }
     case 'cohere': {

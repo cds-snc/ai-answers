@@ -46,7 +46,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 180000,
         reasoning: {
-          effort: "low"
+          effort: "none"
         }
       },
       "openai-gpt51": {
@@ -55,7 +55,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 180000,
         reasoning: {
-          effort: "low"
+          effort: "none"
         }
       },
     },
