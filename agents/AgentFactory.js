@@ -67,7 +67,7 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
     llm: openai, tools,
     agentConfig: {
       handleParsingErrors: true,
-      maxIterations: 25,
+      maxIterations: 10,
       returnIntermediateSteps: true,
       parallel_tool_calls: false
     }
