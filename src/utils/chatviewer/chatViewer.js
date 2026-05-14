@@ -160,10 +160,12 @@ export function buildStepTimeline(logs) {
   const verifyStep = steps.find((step) => step.name === 'verify');
   let userPerceivedMs = null;
 
-  if (totalMs != null && persistStep?.duration != null) {
-    userPerceivedMs = Math.max(0, totalMs - persistStep.duration);
+  if (persistStep?.startRel != null) {
+    userPerceivedMs = persistStep.startRel;
   } else if (verifyStep?.endRel != null) {
     userPerceivedMs = verifyStep.endRel;
+  } else if (totalMs != null) {
+    userPerceivedMs = totalMs;
   }
 
   return {
