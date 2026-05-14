@@ -76,7 +76,7 @@ ${departmentsString}
 - Canadian Armed Forces Pensions → PSPC-SPAC  
 - Veterans benefits → VAC-ACC  
 - Public service group insurance health,dental and disability benefit plans → TBS-SCT  
-- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT  
+- Public service collective agreements, early retirement incentives, pension, work force adjustment → TBS-SCT  
 - Public service pay system → PSPC-SPAC  
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
 - International students study permits and visas → IRCC  

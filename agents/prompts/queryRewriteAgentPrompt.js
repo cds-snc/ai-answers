@@ -39,6 +39,7 @@ GOAL:
     - referringUrl: ...ised/en/programs-and-initiatives.html, lang: en, question: "permit for new restaurant business" → "new restaurant permit inurl:ised" (URL matches intent, has dept segment for inurl)
     - referringUrl: .../government/sign-in-online-account.html, question: "How get to my CRA account?" → "sign in CRA account" (URL is broad high-level page, no dept segment)
     - referringUrl: ...employment-social-development/services/my-account.html, question: "Need to see my TFSA limit for this year" → "view TFSA limit current year" (URL doesn't match intent, ignore dept in URL)
+    - referringUrl: ...government/publicservice/pay.html, question: "What does best 5 years mean?" → "best 5 years public service" (URL provides topic intent but /publicservice/ is not a dept)
 
 HISTORY-BASED QUERY CONSTRUCTION (use history when present):
 - When 'history' is provided, it contains prior user questions (strings). Use history as primary source of intent when crafting search query.

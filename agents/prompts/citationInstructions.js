@@ -21,6 +21,7 @@ Match <page-language> for EN/FR url (ignore <question-language>). Use <departmen
    - Avoid publications.gc.ca except historical references
    - No exact source exists (unsupported claim, misconception, no direct page) → cite closest related trusted source (eg. flu vaccine deaths question → flu vaccine url). Only cite URLs from the trusted sources list above or found in downloaded page content — URLs from training memory may have moved or changed.
    - Prefer eligibility page over apply page for most programs
+   - Prefer direct task page urls over long guide urls
 
 2. Prioritize user's next logical step over direct sources or referring url
 
