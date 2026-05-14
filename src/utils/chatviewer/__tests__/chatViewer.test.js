@@ -14,14 +14,14 @@ describe('buildStepTimeline', () => {
       { createdAt: '2026-05-07T10:00:00.700Z', message: 'node:verify output' },
       { createdAt: '2026-05-07T10:00:00.800Z', message: 'node:persist input' },
       { createdAt: '2026-05-07T10:00:00.900Z', message: 'node:persist output' },
-      { createdAt: '2026-05-07T10:00:00.950Z', message: 'Workflow complete', metadata: { totalResponseTime: 950 } },
+      { createdAt: '2026-05-07T10:00:00.950Z', message: 'Workflow complete', metadata: { totalResponseTime: 800 } },
     ];
 
     const timeline = buildStepTimeline(logs);
 
     expect(timeline.graphName).toBe('GenericGraph');
-    expect(timeline.totalMs).toBe(950);
-    expect(timeline.userPerceivedMs).toBe(850);
+    expect(timeline.totalMs).toBe(800);
+    expect(timeline.userPerceivedMs).toBe(800);
     expect(timeline.steps.map((step) => step.name)).toEqual(['init', 'answer', 'verify']);
 
     const answerStep = timeline.steps.find((step) => step.name === 'answer');
