@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.126.1](https://github.com/cds-snc/ai-answers/compare/v1.126.0...v1.126.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* bugs in storing times and in displaying ([f245b10](https://github.com/cds-snc/ai-answers/commit/f245b103e9f1cfdf0b20cd3e28ce19c3b540a90f))
+* bugs in storing times and in displaying ([1dc9009](https://github.com/cds-snc/ai-answers/commit/1dc9009624ea8b9f97460dc371e2f0c1ad24174f))
+
 ## [1.126.0](https://github.com/cds-snc/ai-answers/compare/v1.125.0...v1.126.0) (2026-05-12)
 
 
