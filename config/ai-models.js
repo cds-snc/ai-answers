@@ -29,7 +29,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 120000,
         reasoning: {
-          effort: "none"
+          effort: "low"
         }
       },
       "openai-gpt5-nano": {
@@ -37,7 +37,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 60000,
         reasoning: {
-          effort: "none"
+          effort: "low"
         }
       },
       "openai-gpt51-chat": {
@@ -46,7 +46,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 180000,
         reasoning: {
-          effort: "none"
+          effort: "low"
         }
       },
       "openai-gpt51": {
@@ -55,7 +55,7 @@ const AI_MODELS = {
         temperature: 0.0,
         timeoutMs: 180000,
         reasoning: {
-          effort: "none"
+          effort: "low"
         }
       },
     },
