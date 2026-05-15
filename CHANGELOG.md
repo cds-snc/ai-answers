@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.127.0](https://github.com/cds-snc/ai-answers/compare/v1.126.1...v1.127.0) (2026-05-15)
+
+
+### Features
+
+* implement workflow-scoped model templates refactor plan ([797ef6e](https://github.com/cds-snc/ai-answers/commit/797ef6eaebdea0e2ea32809e4f4fe1ee892bd622))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @babel/plugin-transform-modules-systemjs from 7.28.5 to 7.29.4 ([4bf2e6d](https://github.com/cds-snc/ai-answers/commit/4bf2e6d09e686d26d7996dcb09c8a876a1c73da5))
+* **deps:** bump fast-uri from 3.1.0 to 3.1.2 ([2fbef9f](https://github.com/cds-snc/ai-answers/commit/2fbef9fe39066d4898afe5d22dc17fabd8e76366))
+* **deps:** bump fast-xml-builder from 1.1.4 to 1.2.0 ([c37d4c1](https://github.com/cds-snc/ai-answers/commit/c37d4c16c0dffeb82492b75236ad3cdc82f5cb4b))
+* **deps:** bump fast-xml-builder from 1.1.5 to 1.2.0 in /server ([1b15972](https://github.com/cds-snc/ai-answers/commit/1b15972b0935f3cfc7dc0513256b80e4099c0504))
+* **deps:** bump fast-xml-builder from 1.1.5 to 1.2.0 in /server ([4443e08](https://github.com/cds-snc/ai-answers/commit/4443e08c26e31e75defa6d894e22c306d48601a1))
+* **deps:** bump langsmith from 0.5.20 to 0.7.0 ([73b21ac](https://github.com/cds-snc/ai-answers/commit/73b21acf1942fb5d36920b4a770340597ed7d36b))
+
 ## [1.126.1](https://github.com/cds-snc/ai-answers/compare/v1.126.0...v1.126.1) (2026-05-14)
 
 
