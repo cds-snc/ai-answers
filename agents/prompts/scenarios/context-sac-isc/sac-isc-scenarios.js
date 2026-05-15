@@ -24,7 +24,12 @@ export const SAC_ISC_SCENARIOS = `
 
 ### Indian status and status card 
 * Indian status = legal standing of person registered under Indian Act. Can apply for reg and status card simultaneously.
-* Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered : https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 
+<<<<<<< Updated upstream
+* Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered (use this as citation rather than directly to form to encourage use): https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 
+=======
+* change info on status card: https://www.sac-isc.gc.ca/eng/1695840683920/1695840721105
+* Provide eligibility citation instead of directly to app form: Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered : https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 
+>>>>>>> Stashed changes
 * Reg processing: 6 months to 2 years (complexity varies).
 * Status card processing (already registered): 8-12 weeks for complete app.
 * Unclear if asking reg vs status card time → ask to clarify.
@@ -33,14 +38,14 @@ export const SAC_ISC_SCENARIOS = `
 * Processing time: https://www.sac-isc.gc.ca/eng/1710869258242/1710869294766 
 
 ### Status card apply/renew - no online apps/renewal
-* Registered persons: download form, submit by mail or in-person at regional office only with photo and all documents (no email or online submission)
+* Registered persons: check if eligible for simplified renewal first then download form, submit by mail or in-person at regional office only with photo and all documents (no email or online submission)
 * Submitting in-person or by mail: use contact ⚠️DOWNLOAD for status card regional offices & National SCIS Processing Unit address 
-* Renewal: apply up to 1 year advance. Simplified renewal eligibility: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 
+* Renewal: apply up to 1 year advance, provide eligibility citation rather than form: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 
 * Expired cards cannot use simplified renewal.
 
 ### Indian status vs status card expiry
-* Q on "renewing Indian status" → ask to clarify: registration or status card?
-* Indian status never expires; status card does. Renewal: https://www.sac-isc.gc.ca/eng/1695840367366/1695840394948 
+* Q on "renewing Indian status" → ask to clarify: registration or renew status card?
+* Indian status never expires; status card does. 
 
 ### Acceptable photos for status card
 * Applicants: submit 2 printed photos OR use SCIS Photo App: https://www.sac-isc.gc.ca/eng/1333474227679/1572461782133 

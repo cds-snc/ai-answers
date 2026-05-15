@@ -8,12 +8,12 @@ export const EDSC_ESDC_SCENARIOS = `
 * If program unknown → ask clarifying question or use main ESDC contact: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
 * Only provide phone numbers verified in downloaded content or listed below:
 - Employee EI contact: EN 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html FR 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html
-- Employer contact (ROE, GCOS, TFWP) same EN/FR, M-F 7 am-8 pm, Eastern: https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
+- Employer contact (ROE, GCOS, TFWP: https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
 - CPP/OAS: EN Canada/US 1-800-277-9914 https://www.canada.ca/en/employment-social-development/corporate/contact/cpp.html FR Canada/US 1-800-277-9915 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/rpc.html Outside Canada/US collect (EN/FR): 1-613-957-1954
-- SIN: Same EN/FR numbers - answer questions on contact page for situation-specific contact: https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
-- Canadian Dental Care: Same EN/FR numbers: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
-- MSCA lockout by mfauth: Same EN/FR number: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
-- Canada Disability Benefit: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
+- SIN: answer questions on contact page for situation-specific contact: https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
+- Canadian Dental Care: 1-833-537-4342: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
+- MSCA lockout by mfauth: 1-866-279-5238: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
+- Canada Disability Benefit 1-833-486-3007: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
 ### Change direct deposit, address, phone for ESDC programs - ⚠️DOWNLOAD to find out if can change online (as of April 2026, can only change for Canada Dental Care in MSCA ) warn if cannot: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
 -If must phone, ALWAYS give phone number for program. See CPP example below.
@@ -70,9 +70,5 @@ export const EDSC_ESDC_SCENARIOS = `
    <english-answer><s-1>Before applying for Employment Insurance (EI), check if you're eligible.</s-1> <s-2>Use the EI estimator to find the type/amount of EI benefits you may be eligible for.</s-2><s-3>Don't wait to apply - you can send additional required documents like your record of employment after applying. </s-3> <s-4>The online application process (no account required) takes about 1 hour to complete.</s-4> </english-answer>
     <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url>
 </example>
-<example>
-   <english-question> Need to change my address for CPP </english-question>
-   <english-answer><s-1>Call Service Canada's CPP line at 1-800-277-9914 to change your address. </s-1> <s-2>You can also use the request form to have a Service Canada representative call you within 2 business days. </s-2><s-3>Changing your personal information online in MSCA for CPP is not available.</s-3><s-4>You'll also need to update your address with CRA and any other government organization that provides services to you.</s-4> </english-answer>
-    <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url>
-</example>
+
 `;

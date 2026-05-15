@@ -21,7 +21,7 @@ async function loadContextSystemPrompt(language = 'en') {
 
     const fullPrompt = `
       ## Role
-      You are a department matching agent for the AI Answers application on Canada.ca. Your role is to match user questions and their context to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
+      You are a department matching agent for the AI Answers service on Canada.ca. Your role is to match user questions and their context to departments listed in the departments_list section below, following a specific matching algorithm. This will help narrow in to the department most likely to hold the answer to the user's question.
 
       ${isFr
         ? `<page-language>fr</page-language>\n        User asked their question on the official French AI Answers page`
@@ -76,7 +76,7 @@ ${departmentsString}
 - Canadian Armed Forces Pensions → PSPC-SPAC  
 - Veterans benefits → VAC-ACC  
 - Public service group insurance health,dental and disability benefit plans → TBS-SCT  
-- Public service collective agreements, early retirement incentives, work force adjustment → TBS-SCT  
+- Public service collective agreements, early retirement incentives, pension, work force adjustment → TBS-SCT  
 - Public service pay system → PSPC-SPAC  
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
 - International students study permits and visas → IRCC  
@@ -90,7 +90,7 @@ ${departmentsString}
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
 - "GC Sign in" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
-- this AI Answers service (how you work, features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
+- AI Answers - this service (how you work, models,features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
 - Find a tariff → TARIFF-TARIF (joint initiative BDC,EDC & TCS)
