@@ -32,8 +32,28 @@ function formatSentenceFeedback(ef) {
       parts.push(`S${idx}: ${bits.join('; ')}`);
     }
   }
-  if (parts.length === 0 && ef.answerImprovement) {
-    parts.push(`Improvement: ${ef.answerImprovement}`);
+  // Citation-specific expert feedback. expertCitationUrl is the URL the expert says
+  // should have been used when the AI's original citation was wrong — surface it
+  // explicitly so the model can prefer it over the AI's original citation.
+  const cscore = ef.citationScore;
+  const cexpl = ef.citationExplanation;
+  const correctUrl = ef.expertCitationUrl;
+  const hasCitationFeedback =
+    (cscore !== null && cscore !== undefined) ||
+    (cexpl && cexpl.trim().length) ||
+    (correctUrl && correctUrl.trim().length);
+  if (hasCitationFeedback) {
+    const bits = [];
+    if (cscore !== null && cscore !== undefined) bits.push(`score=${cscore}`);
+    if (cexpl && cexpl.trim().length) bits.push(`note=${cexpl.trim()}`);
+    if (correctUrl && correctUrl.trim().length) bits.push(`correct-url=${correctUrl.trim()}`);
+    parts.push(`Citation: ${bits.join('; ')}`);
+  }
+  if (ef.answerImprovement && ef.answerImprovement.trim().length) {
+    parts.push(`Improvement: ${ef.answerImprovement.trim()}`);
+  }
+  if (ef.feedback && ef.feedback.trim().length) {
+    parts.push(`Overall: ${ef.feedback.trim()}`);
   }
   return parts.join(' | ');
 }
