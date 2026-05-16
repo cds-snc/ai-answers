@@ -11,6 +11,10 @@ const graphLoaders = {
     const mod = await import('./GenericGraph.js');
     return mod.genericGraphApp;
   },
+  GenericWithQAGraph: async () => {
+    const mod = await import('./GenericWithQAGraph.js');
+    return mod.genericWithQAGraphApp;
+  },
 };
 
 const graphCache = new Map();

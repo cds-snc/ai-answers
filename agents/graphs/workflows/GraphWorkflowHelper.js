@@ -308,9 +308,10 @@ export class GraphWorkflowHelper {
       selectedAI,
       pageLanguage: lang || null,
       detectedLanguage: detectedLang || null,
-    }); // removed searchProvider arg as service didn't seem to take it, or it was implicit? original helper passed it.
-    // Checked service: findSimilarAnswer({ chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage })
-    // It does NOT take searchProvider. So that's fine.
+      // Short-circuit must only fire on perfect-score (100) past answers. The vector layer
+      // defaults to expertFeedbackComparison='eq', so this is an exact-match filter.
+      requestedRating: 100,
+    });
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
