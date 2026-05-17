@@ -1,4 +1,6 @@
 # Tighten step 5 shortCircuit + new graph for QA context without shortCircuit
+## Goal: set up a separate graph that passes evals with scores <100 into context like the QA graph, but WITHOUT the short circuit option, so can test and implement separately. Short circuit is far more dangerous. 
+- also fix bugs found in default vector and instant qa 
 
 ## Context
 
