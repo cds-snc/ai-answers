@@ -940,7 +940,8 @@
   "workflows": {
     "generic": "Générique",
     "defaultWithVector": "Réponse instantanée ACTIVÉE",
-    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
+    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE",
+    "genericWithQA": "Contexte de Q-R antérieures ACTIVÉ"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",

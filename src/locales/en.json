@@ -940,7 +940,8 @@
   "workflows": {
     "generic": "Generic",
     "defaultWithVector": "Instant answer ON",
-    "instantAndQA": "Instant answer with context ON"
+    "instantAndQA": "Instant answer with context ON",
+    "genericWithQA": "Past Q&A context ON"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",

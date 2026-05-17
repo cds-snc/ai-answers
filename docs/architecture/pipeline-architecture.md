@@ -265,22 +265,26 @@ This is a second-stage guardrail, not a replacement for the `redact` node. The `
 **Type:** AI-powered (vector similarity + reranking)
 **Status:** `generatingAnswer`
 
-**Purpose:** Detect if a similar question was already answered (runs BEFORE context derivation)
+**Purpose:** Detect if a similar question was already answered **perfectly** (runs BEFORE context derivation)
 
 **Process:**
 1. Skip short-circuit if conversation already has prior AI replies
 2. Generate embedding for current question
-3. Search embeddings database for similar questions
-4. Use reranker agent (GPT-4 mini) to score candidates
-5. If high similarity match found (threshold met):
-   - Set `shortCircuitPayload` with existing answer
+3. Search embeddings database for similar questions **filtered to `expertFeedback.totalScore === 100`** (perfect-score past answers only)
+4. Use reranker agent to validate candidates against the current question
+5. If a perfect-score candidate passes the reranker's `allPass(checks)` verdict:
+   - Set `shortCircuitPayload` with the existing answer
    - Skip directly to `verifyNode` (bypass context and answer generation)
 6. Otherwise: proceed to `contextNode`
+
+**Why score=100 only:** Short-circuit serves a past answer verbatim with no opportunity for correction. Anything less than a perfect expert score means there is at least one flagged issue in that answer, so it must not be served as-is. The expert-score filter is enforced at the vector retrieval layer (`requestedRating: 100` in `GraphWorkflowHelper.checkSimilarAnswer`).
 
 **Benefits:**
 - Faster responses (no context derivation or answer generation needed)
 - Lower AI costs
-- Consistent answers to similar questions
+- Consistent, high-quality answers to similar questions
+
+**Note:** `GenericWithQAGraph` and `InstantAndQAGraph` separately surface score-<100 past answers as **context** for the answer node (via a `similarQuestions` node, not via short-circuit) so the model can see "here's what was wrong last time." See `QuestionAnswerService.getSimilarQuestionsContext()`.
 
 **File:** [`api/chat/chat-similar-answer.js`](../../api/chat/chat-similar-answer.js)
 
