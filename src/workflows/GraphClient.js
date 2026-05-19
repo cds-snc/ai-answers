@@ -62,6 +62,7 @@ export class GraphClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream, application/x-ndjson',
+          'Accept-Encoding': 'identity',
         },
         body: JSON.stringify(payload),
         signal: controller.signal
