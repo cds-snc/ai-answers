@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.128.0](https://github.com/cds-snc/ai-answers/compare/v1.127.0...v1.128.0) (2026-05-19)
+
+
+### Features
+
+* optional use ndjson events instead of SSE, might work with Akamai ([6003c2a](https://github.com/cds-snc/ai-answers/commit/6003c2a9b3294a0e8383f086f9828caf28583ed1))
+* optional use ndjson events instead of SSE, might work with Akamai ([12dcbfb](https://github.com/cds-snc/ai-answers/commit/12dcbfbf23d5f266913ff7f75239c48da9dd514c))
+* refactor chat transport handling to support NDJSON and remove deprecated config ([b4d3003](https://github.com/cds-snc/ai-answers/commit/b4d30036f8d50a98ef8caa09e5272dae0580dbcd))
+
+
+### Bug Fixes
+
+* maybe-work-on-Akamai ([3385cd3](https://github.com/cds-snc/ai-answers/commit/3385cd311713e0440b1a74c1224db118c84540e8))
+
 ## [1.127.0](https://github.com/cds-snc/ai-answers/compare/v1.126.1...v1.127.0) (2026-05-15)
 
 
