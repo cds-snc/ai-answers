@@ -152,9 +152,9 @@ graph.addNode('similarQuestions', async (state) => {
   try {
     similarQuestions = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
-      threshold: 0.8,
+      threshold: 0.6,
       expertFeedbackRating: 100,
-      expertFeedbackComparison: 'lt',
+      expertFeedbackComparison: 'lte',
       language: state.lang,
       includeQuestionFlow: true,
       provider: state.selectedAI,

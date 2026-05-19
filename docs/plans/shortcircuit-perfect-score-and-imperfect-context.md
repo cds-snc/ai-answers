@@ -54,7 +54,11 @@ No changes needed in `SimilarAnswerService`, `DocDBVectorService`, or `IMVectorS
 
 **New file:** `agents/graphs/GenericWithQAGraph.js`
 
-Structurally this is **`GenericGraph` + the `similarQuestions` node from `InstantAndQAGraph`**. Same node sequence as `GenericGraph` (no shortCircuit), with one extra node inserted between `contextNode` and `answerNode` that calls `QuestionAnswerService.getSimilarQuestionsContext()` with `expertFeedbackRating: 100, expertFeedbackComparison: 'lt'` (i.e., imperfect past answers).
+Structurally this is **`GenericGraph` + the `similarQuestions` node from `InstantAndQAGraph`**. Same node sequence as `GenericGraph` (no shortCircuit), with one extra node inserted between `contextNode` and `answerNode` that calls `QuestionAnswerService.getSimilarQuestionsContext()` with `expertFeedbackRating: 100, expertFeedbackComparison: 'lte'` (i.e., both perfect-100 and imperfect past answers as context).
+
+Because this graph has no shortCircuit, perfect-100 past answers can safely be surfaced as **context** (the model sees them as guidance, with score and feedback notes) rather than served verbatim. This is the key difference from `InstantAndQAGraph`, which keeps `'lt'` — perfect-100s in that graph are handled by the shortCircuit path instead.
+
+Similarity threshold is set looser (`0.6`) than in `InstantAndQAGraph` because the context-injection use case tolerates topically-adjacent matches that wouldn't be safe to serve verbatim.
 
 Mirror the existing `similarQuestions` node from `InstantAndQAGraph.js:166–191`:
 
@@ -64,9 +68,9 @@ graph.addNode('similarQuestions', async (state) => {
   try {
     similarQuestions = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
-      threshold: 0.8,
+      threshold: 0.6,
       expertFeedbackRating: 100,
-      expertFeedbackComparison: 'lt',
+      expertFeedbackComparison: 'lte',
       language: state.lang,
       includeQuestionFlow: true,
       provider: state.selectedAI,
@@ -77,6 +81,8 @@ graph.addNode('similarQuestions', async (state) => {
   return { context: { ...state.context, similarQuestions } };
 });
 ```
+
+**Known tradeoff:** with `k:3` and similarity-only ranking, perfect-100 matches may crowd out imperfect ones (perfect answers tend to cluster near common phrasings). If logs show the imperfect "what went wrong last time" signal is being lost, revisit with a two-fetch merge strategy.
 
 Edges: `START → init → validate → redact → translate → contextNode → similarQuestions → answerNode → verifyNode → persistNode → END`. No shortCircuit node, no `requireSimilarShortCircuit` conditional.
 
@@ -145,11 +151,11 @@ Considered a boolean setting (`enableSimilarQuestionsContext`) but rejected:
 2. **Existing tests:** Run `npx vitest run` over `services/` and `agents/` test suites to confirm no regressions in vector retrieval, graph wiring, or the workflows config.
 3. **Manual integration check — new graph (QA context, no shortCircuit):**
    - Set workflow to `GenericWithQAGraph` in Settings.
-   - Pick a question known to have a past answer with score < 100 (use eval dashboard to find one).
+   - Pick a question known to have a past answer with any expert score (≤100, use eval dashboard to find one).
    - Send the question in dev; watch logs.
    - Confirm there is **no** `node:shortCircuit` log entry (the node doesn't exist in this graph).
    - Confirm `node:similarQuestions output { hasSimilar: true }`.
-   - Inspect the answer prompt and confirm the "Verified Similar Questions" block with `Score: X/100` and `Feedback: ...` appears.
+   - Inspect the answer prompt and confirm the "Verified Similar Questions" block with `Score: X/100` and `Feedback: ...` appears. Verify both perfect-100 and sub-100 matches can appear (run questions targeted at each).
 4. **Manual integration check — shortCircuit tightening:**
    - Set workflow to `DefaultWithVectorGraph`.
    - Send a question that previously triggered shortCircuit on a score-<100 answer (find one from logs).
