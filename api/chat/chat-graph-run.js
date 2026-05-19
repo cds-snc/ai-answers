@@ -7,6 +7,12 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES } from '../../src/config/workflows.js';
 
 const REQUIRED_METHOD = 'POST';
+const DEFAULT_CHAT_TRANSPORT = 'sse';
+const NDJSON_CHAT_TRANSPORT = 'ndjson';
+
+function normalizeChatTransport(value) {
+  return value === NDJSON_CHAT_TRANSPORT ? NDJSON_CHAT_TRANSPORT : DEFAULT_CHAT_TRANSPORT;
+}
 
 function writeEvent(res, event, data) {
   try {
@@ -31,6 +37,36 @@ export function setStreamingHeaders(res) {
   // Make sure Node pushes small SSE frames immediately.
   res.socket?.setNoDelay?.(true);
   res.flushHeaders?.();
+}
+
+export function setNdjsonHeaders(res) {
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+
+  res.socket?.setNoDelay?.(true);
+  res.flushHeaders?.();
+}
+
+function createGraphEventWriter(res, transport) {
+  if (transport === NDJSON_CHAT_TRANSPORT) {
+    setNdjsonHeaders(res);
+    return (event, data) => {
+      try {
+        res.write(`${JSON.stringify({ event, data })}\n`);
+      } catch (_e) {
+        // Client may have disconnected after receiving the result.
+      }
+    };
+  }
+
+  setStreamingHeaders(res);
+  return (event, data) => writeEvent(res, event, data);
 }
 
 function buildGraphErrorPayload(error) {
@@ -158,16 +194,20 @@ async function handler(req, res) {
 
   const forwardedHeaders = buildForwardedHeaders(req.headers || {});
   let eventSequence = 0;
+  const transport = normalizeChatTransport(SettingsService.get('chat.transport'));
+  const writeGraphEvent = createGraphEventWriter(res, transport);
 
-  setStreamingHeaders(res);
+  if (transport === NDJSON_CHAT_TRANSPORT) {
+    writeGraphEvent('connected', { graph: graphName, serverSentAt: Date.now() });
+  } else {
+    res.write(': connected\n\n');
+  }
 
-  res.write(': connected\n\n');
-
-  // Send periodic SSE comments to prevent proxies (e.g. Akamai) from dropping
-  // idle connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
+  // Send periodic status events to prevent proxies (e.g. Akamai) from dropping
+  // idle stream connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
   let keepAliveTimer = setInterval(() => {
     try {
-      writeEvent(res, 'status', {
+      writeGraphEvent('status', {
         status: 'keepalive',
         graph: graphName,
         heartbeat: true,
@@ -185,7 +225,7 @@ async function handler(req, res) {
   const handlers = {
     onStatus: (status) => {
       if (status) {
-        writeEvent(res, 'status', {
+        writeGraphEvent('status', {
           status,
           graph: graphName,
           serverSentAt: Date.now(),
@@ -197,7 +237,7 @@ async function handler(req, res) {
       if (!resultSent && result && result.answer && result.answer.answerType) {
         resultSent = true;
         // Include server-generated chatId so client can store it
-        writeEvent(res, 'result', { ...result, chatId: req.chatId });
+        writeGraphEvent('result', { ...result, chatId: req.chatId });
       }
     },
   };
@@ -208,7 +248,7 @@ async function handler(req, res) {
     if (req.user) {
       store.graphEventWriter = (eventName, data) => {
         try {
-          writeEvent(res, eventName, data);
+          writeGraphEvent(eventName, data);
         } catch (_err) {
           // ignore writer errors
         }
@@ -243,17 +283,17 @@ async function handler(req, res) {
             // ignore signature generation failures
           }
         }
-        writeEvent(res, 'error', buildGraphErrorPayload(err));
+        writeGraphEvent('error', buildGraphErrorPayload(err));
       } catch (_e) {
         // fallback to minimal message if serialization fails
-        writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+        writeGraphEvent('error', { message: err?.message || 'Graph execution failed' });
       }
       resultSent = true;
     }
   } finally {
     clearInterval(keepAliveTimer);
     if (!resultSent && !streamError) {
-      writeEvent(res, 'error', { message: 'Graph completed without result payload' });
+      writeGraphEvent('error', { message: 'Graph completed without result payload' });
     }
     res.end();
   }

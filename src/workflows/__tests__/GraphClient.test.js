@@ -66,6 +66,9 @@ describe('GraphClient', () => {
 
     mockFetch.mockResolvedValue({
       ok: true,
+      headers: {
+        get: vi.fn(() => 'text/event-stream; charset=utf-8'),
+      },
       body: {
         getReader: () => reader,
       },
@@ -81,6 +84,7 @@ describe('GraphClient', () => {
       '',
       '',
       'gpt-5',
+      () => {},
       () => {},
       'google'
     );
@@ -98,6 +102,64 @@ describe('GraphClient', () => {
         status: 'searching',
         graph: 'GenericGraph',
         serverSentAt: 123,
+        sequence: 1,
+      })
+    );
+  });
+
+  it('parses NDJSON status events and resolves the final result', async () => {
+    const encoded = new TextEncoder();
+    const bodyText = [
+      JSON.stringify({ event: 'status', data: { status: 'buildingContext', graph: 'GenericGraph', sequence: 1 } }),
+      JSON.stringify({ event: 'result', data: { answer: { answerType: 'normal', content: 'done' } } }),
+      '',
+    ].join('\n');
+
+    const reader = {
+      read: vi
+        .fn()
+        .mockResolvedValueOnce({ done: false, value: encoded.encode(bodyText) })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+      cancel: vi.fn().mockResolvedValue(undefined),
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      headers: {
+        get: vi.fn(() => 'application/x-ndjson; charset=utf-8'),
+      },
+      body: {
+        getReader: () => reader,
+      },
+    });
+
+    const client = new GraphClient('GenericGraph');
+    const result = await client.processResponse(
+      'chat-1',
+      'question',
+      'message-1',
+      [],
+      'en',
+      '',
+      '',
+      'gpt-5',
+      () => {},
+      () => {},
+      'google'
+    );
+
+    expect(result).toMatchObject({
+      answer: {
+        answerType: 'normal',
+        content: 'done',
+      },
+    });
+    expect(mockSendStatusUpdate).toHaveBeenCalledWith(expect.any(Function), 'buildingContext');
+    expect(consoleDebugSpy).toHaveBeenCalledWith(
+      '[chat-graph-run status]',
+      expect.objectContaining({
+        status: 'buildingContext',
+        graph: 'GenericGraph',
         sequence: 1,
       })
     );

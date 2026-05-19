@@ -957,6 +957,13 @@
     "defaultModel": {
       "label": "Famille de modèles par défaut"
     },
+    "chatTransport": {
+      "label": "Transport des événements de clavardage",
+      "options": {
+        "sse": "Événements envoyés par le serveur",
+        "ndjson": "Flux NDJSON"
+      }
+    },
     "statusLabel": "Statut du service",
     "statuses": {
       "available": "Disponible",

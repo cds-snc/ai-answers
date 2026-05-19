@@ -56,12 +56,12 @@ export class GraphClient {
           visitorId,
         },
       };
-      // make sure it accepts event streams
+      // Accept both stream formats; the server chooses the active transport from Settings.
       const response = await AuthService.fetch(getApiUrl('chat-graph-run'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
+          'Accept': 'text/event-stream, application/x-ndjson',
         },
         body: JSON.stringify(payload),
         signal: controller.signal
@@ -80,10 +80,12 @@ export class GraphClient {
       const decoder = new TextDecoder();
       let buffer = '';
       let completed = false;
+      const contentType = response.headers?.get?.('content-type') || '';
+      const isNdjson = contentType.includes('application/x-ndjson');
 
-      const processEvent = (chunk) => {
+      const parseSseEvent = (chunk) => {
         if (!chunk.trim()) {
-          return { done: false };
+          return null;
         }
 
         const lines = chunk.split('\n');
@@ -98,32 +100,48 @@ export class GraphClient {
           }
         }
 
-        let parsedData = null;
+        let data = null;
         if (dataLines.length) {
           const payloadStr = dataLines.join('\n');
           try {
-            parsedData = JSON.parse(payloadStr);
+            data = JSON.parse(payloadStr);
           } catch (_err) {
-            parsedData = payloadStr;
+            data = payloadStr;
           }
         }
-       // comment on comment
-        if (eventType === 'status' && parsedData && parsedData.status) {
+
+        return { event: eventType, data };
+      };
+
+      const parseNdjsonEvent = (line) => {
+        if (!line.trim()) {
+          return null;
+        }
+
+        const parsed = JSON.parse(line);
+        return {
+          event: parsed.event || parsed.type || 'message',
+          data: parsed.data ?? parsed.payload ?? null,
+        };
+      };
+
+      const processParsedEvent = ({ event, data }) => {
+        if (event === 'status' && data && data.status) {
           try {
             if (typeof console !== 'undefined' && typeof console.debug === 'function') {
-              console.debug('[chat-graph-run status]', parsedData);
+              console.debug('[chat-graph-run status]', data);
             }
           } catch (_e) {
             // ignore client-side debug logging errors
           }
-          ChatWorkflowService.sendStatusUpdate(onStatusUpdate, parsedData.status);
+          ChatWorkflowService.sendStatusUpdate(onStatusUpdate, data.status);
           return { done: false };
         }
 
-        if (eventType === 'log' && parsedData) {
+        if (event === 'log' && data) {
           try {
-            const level = parsedData.level || 'log';
-            const payload = parsedData;
+            const level = data.level || 'log';
+            const payload = data;
             if (console && typeof console[level] === 'function') {
               console[level](payload);
             } else if (console && console.log) {
@@ -135,45 +153,45 @@ export class GraphClient {
           return { done: false };
         }
 
-        if (eventType === 'result') {
+        if (event === 'result') {
           completed = true;
-          if (parsedData) {
-            return { done: true, value: parsedData };
+          if (data) {
+            return { done: true, value: data };
           }
           throw new Error('Graph completed without result payload');
         }
 
-        if (eventType === 'error') {
+        if (event === 'error') {
           // Expect a structured payload produced by the server (buildGraphErrorPayload)
-          if (parsedData && typeof parsedData === 'object') {
-            const errorName = parsedData.name || parsedData.type;
+          if (data && typeof data === 'object') {
+            const errorName = data.name || data.type;
             if (errorName === 'ShortQueryValidation') {
-              const fallbackUrl = parsedData.fallbackUrl || parsedData.searchUrl || '';
+              const fallbackUrl = data.fallbackUrl || data.searchUrl || '';
               const sq = new ShortQueryValidation(
-                parsedData.message || 'Short query detected',
-                parsedData.userMessage || userMessage,
+                data.message || 'Short query detected',
+                data.userMessage || userMessage,
                 fallbackUrl
               );
-              if (parsedData.historySignature) sq.historySignature = parsedData.historySignature;
+              if (data.historySignature) sq.historySignature = data.historySignature;
               throw sq;
             }
             if (errorName === 'RedactionError') {
               const re = new RedactionError(
-                parsedData.message || 'Redaction error',
-                parsedData.redactedText || '',
-                parsedData.redactedItems || null
+                data.message || 'Redaction error',
+                data.redactedText || '',
+                data.redactedItems || null
               );
-              if (parsedData.historySignature) re.historySignature = parsedData.historySignature;
+              if (data.historySignature) re.historySignature = data.historySignature;
               throw re;
             }
             // Unknown named error: construct and throw Error with provided name
-            const err = new Error(parsedData.message || 'Graph execution failed');
-            err.name = parsedData.name || parsedData.type || err.name;
+            const err = new Error(data.message || 'Graph execution failed');
+            err.name = data.name || data.type || err.name;
             throw err;
           }
           // If server sent a plain string, throw it as an Error
-          if (typeof parsedData === 'string') {
-            throw new Error(parsedData);
+          if (typeof data === 'string') {
+            throw new Error(data);
           }
           throw new Error('Graph execution failed');
         }
@@ -187,7 +205,8 @@ export class GraphClient {
             if (done) {
               if (buffer) {
                 try {
-                  const finalResult = processEvent(buffer);
+                  const finalEvent = isNdjson ? parseNdjsonEvent(buffer) : parseSseEvent(buffer);
+                  const finalResult = finalEvent ? processParsedEvent(finalEvent) : { done: false };
                   if (finalResult?.done && finalResult.value) {
                     resolve(finalResult.value);
                     return;
@@ -204,13 +223,14 @@ export class GraphClient {
             }
 
             buffer += decoder.decode(value, { stream: true });
-            const segments = buffer.split('\n\n');
+            const segments = buffer.split(isNdjson ? '\n' : '\n\n');
             buffer = segments.pop() || '';
 
             for (const segment of segments) {
               let parsed;
               try {
-                parsed = processEvent(segment);
+                const event = isNdjson ? parseNdjsonEvent(segment) : parseSseEvent(segment);
+                parsed = event ? processParsedEvent(event) : { done: false };
               } catch (err) {
                 reject(err);
                 return;

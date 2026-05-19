@@ -5,6 +5,10 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
 
+const normalizeChatTransport = (value) => (
+  ['sse', 'ndjson'].includes(value) ? value : 'sse'
+);
+
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
@@ -24,6 +28,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [savingDefaultModel, setSavingDefaultModel] = useState(false);
+  const [chatTransport, setChatTransport] = useState('sse');
+  const [savingChatTransport, setSavingChatTransport] = useState(false);
 
 
 
@@ -82,6 +88,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load default model setting (seeded server-side on startup if missing)
       const defaultModelSetting = await DataStoreService.getSetting('model.default', AVAILABLE_MODELS[0].value);
       setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
+      const chatTransportSetting = await DataStoreService.getSetting('chat.transport', 'sse');
+      setChatTransport(normalizeChatTransport(chatTransportSetting));
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
@@ -439,6 +447,29 @@ const SettingsPage = ({ lang = 'en' }) => {
             {WORKFLOWS.map(w => (
               <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
             ))}
+          </select>
+
+          <label htmlFor="chat-transport" className="mb-200 display-block mt-400">
+            {t('settings.chatTransport.label')}
+          </label>
+          <select
+            id="chat-transport"
+            value={chatTransport}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setChatTransport(v);
+              setSavingChatTransport(true);
+              try {
+                const current = await saveAndVerify('chat.transport', v);
+                setChatTransport(normalizeChatTransport(current));
+              } finally {
+                setSavingChatTransport(false);
+              }
+            }}
+            disabled={savingChatTransport}
+          >
+            <option value="sse">{t('settings.chatTransport.options.sse')}</option>
+            <option value="ndjson">{t('settings.chatTransport.options.ndjson')}</option>
           </select>
 
           <label htmlFor="default-model" className="mb-200 display-block mt-400">
