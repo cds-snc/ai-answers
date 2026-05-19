@@ -4,7 +4,10 @@ import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
-import { CHAT_TRANSPORTS, normalizeChatTransport } from '../config/chatTransport.js';
+
+const normalizeChatTransport = (value) => (
+  ['sse', 'ndjson'].includes(value) ? value : 'sse'
+);
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -465,8 +468,8 @@ const SettingsPage = ({ lang = 'en' }) => {
             }}
             disabled={savingChatTransport}
           >
-            <option value={CHAT_TRANSPORTS.SSE}>{t('settings.chatTransport.options.sse')}</option>
-            <option value={CHAT_TRANSPORTS.NDJSON}>{t('settings.chatTransport.options.ndjson')}</option>
+            <option value="sse">{t('settings.chatTransport.options.sse')}</option>
+            <option value="ndjson">{t('settings.chatTransport.options.ndjson')}</option>
           </select>
 
           <label htmlFor="default-model" className="mb-200 display-block mt-400">

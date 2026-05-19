@@ -5,9 +5,14 @@ import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES } from '../../src/config/workflows.js';
-import { CHAT_TRANSPORTS, normalizeChatTransport } from '../../src/config/chatTransport.js';
 
 const REQUIRED_METHOD = 'POST';
+const DEFAULT_CHAT_TRANSPORT = 'sse';
+const NDJSON_CHAT_TRANSPORT = 'ndjson';
+
+function normalizeChatTransport(value) {
+  return value === NDJSON_CHAT_TRANSPORT ? NDJSON_CHAT_TRANSPORT : DEFAULT_CHAT_TRANSPORT;
+}
 
 function writeEvent(res, event, data) {
   try {
@@ -49,7 +54,7 @@ export function setNdjsonHeaders(res) {
 }
 
 function createGraphEventWriter(res, transport) {
-  if (transport === CHAT_TRANSPORTS.NDJSON) {
+  if (transport === NDJSON_CHAT_TRANSPORT) {
     setNdjsonHeaders(res);
     return (event, data) => {
       try {
@@ -192,7 +197,7 @@ async function handler(req, res) {
   const transport = normalizeChatTransport(SettingsService.get('chat.transport'));
   const writeGraphEvent = createGraphEventWriter(res, transport);
 
-  if (transport === CHAT_TRANSPORTS.NDJSON) {
+  if (transport === NDJSON_CHAT_TRANSPORT) {
     writeGraphEvent('connected', { graph: graphName, serverSentAt: Date.now() });
   } else {
     res.write(': connected\n\n');
