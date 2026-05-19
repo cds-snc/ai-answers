@@ -444,7 +444,7 @@ Page Language: en
 - `context-eccc/` - Environment and Climate Change Canada (ECCC)
 - `context-edsc-esdc/` - Employment and Social Development Canada (EDSC-ESDC)
 - `context-fin/` - Department of Finance Canada (FIN)
-- `context-hc-sc/` - Health Canada (HC-SC) and Public Health Agency (PHAC-ASPC)
+- `context-hc-sc/` - Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)
 - `context-ircc/` - Immigration, Refugees and Citizenship Canada (IRCC)
 - `context-ised-isde/` - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with the seven Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), Canadian Northern Economic Development Agency (CanNor), Federal Economic Development Agency for Southern Ontario (FedDev Ontario), Federal Economic Development Agency for Northern Ontario (FedNor), Pacific Economic Development Canada (PacifiCan), and Prairies Economic Development Canada (PrairiesCan)
 - `context-jus/` - Department of Justice Canada (JUS)
@@ -1008,7 +1008,7 @@ Additional instructions specific to the matched department (in this example: EDS
 - Important URLs and resources
 - Special handling instructions
 
-**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE and the seven Regional Development Agencies (ACOA-APECA, CED-QR, CanNor, FedDev Ontario, FedNor, PacifiCan, PrairiesCan). Other departments use only the general scenarios until their partner scenario files are created.
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE and the seven Regional Development Agencies (ACOA-APECA, CED-QR, CanNor, FedDev Ontario, FedNor, PacifiCan, PrairiesCan); the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:

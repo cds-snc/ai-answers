@@ -167,6 +167,7 @@ Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
 - **Regional Development Agencies → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `FedDev Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan`
+- **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
 
 ### Steps to add a new shared-scenario group
 

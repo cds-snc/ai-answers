@@ -6,7 +6,9 @@
 //   Defence portfolio → DND-MDN
 //   Crown-Indigenous / Indigenous Services → SAC-ISC
 //   Regional Development Agencies → ISED-ISDE
+//   Public Health Agency → HC-SC
 export const SCENARIO_ALIASES = {
+  'PHAC-ASPC': 'HC-SC',
   'CFHA-ALFC': 'DND-MDN',
   'DCC-CDC': 'DND-MDN',
   'DIA-AID': 'DND-MDN',
