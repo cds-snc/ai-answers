@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.128.1](https://github.com/cds-snc/ai-answers/compare/v1.128.0...v1.128.1) (2026-05-19)
+
+
+### Miscellaneous Chores
+
+* add 'Accept-Encoding' header with 'identity' for response hand… ([4137671](https://github.com/cds-snc/ai-answers/commit/41376712e75d224f3cafd55f801e0157659e43b5))
+* add 'Accept-Encoding' header with 'identity' for response handling ([2ec7e1e](https://github.com/cds-snc/ai-answers/commit/2ec7e1ec39684d4c4e79b3bb49e8bb5351d9cb05))
+
 ## [1.128.0](https://github.com/cds-snc/ai-answers/compare/v1.127.0...v1.128.0) (2026-05-19)
 
 
