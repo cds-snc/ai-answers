@@ -5,6 +5,7 @@ import { Setting } from '../models/setting.js';
 // Seeded on startup if missing from the database.
 const SETTING_DEFAULTS = {
   'model.default': 'openai-gpt51',
+  'chat.transport': 'sse',
 };
 
 class SettingsServiceClass {
