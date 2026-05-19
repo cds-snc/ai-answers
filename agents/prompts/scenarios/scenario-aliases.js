@@ -5,6 +5,7 @@
 // Portfolio scenarios (one partner, many matched abbrKeys):
 //   Defence portfolio → DND-MDN
 //   Crown-Indigenous / Indigenous Services → SAC-ISC
+//   Regional Development Agencies → ISED-ISDE
 export const SCENARIO_ALIASES = {
   'CFHA-ALFC': 'DND-MDN',
   'DCC-CDC': 'DND-MDN',
@@ -13,6 +14,13 @@ export const SCENARIO_ALIASES = {
   'IRPDA-CIEAD': 'DND-MDN',
   'ONDCAF': 'DND-MDN',
   'RCAANC-CIRNAC': 'SAC-ISC',
+  'ACOA-APECA': 'ISED-ISDE',
+  'CED-QR': 'ISED-ISDE',
+  'CanNor': 'ISED-ISDE',
+  'FedDev Ontario': 'ISED-ISDE',
+  'FedNor': 'ISED-ISDE',
+  'PacifiCan': 'ISED-ISDE',
+  'PrairiesCan': 'ISED-ISDE',
 };
 
 export const resolveScenarioKey = (key) => SCENARIO_ALIASES[key] || key;
