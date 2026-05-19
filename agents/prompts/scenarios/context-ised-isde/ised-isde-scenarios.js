@@ -1,6 +1,5 @@
 // Shared scenarios for ISED-ISDE and the seven Regional Development Agencies
-// (all report to the Minister of ISED). The following abbrKeys resolve to this
-// file via SCENARIO_ALIASES in scenario-aliases.js:
+// The following abbrKeys resolve to this file via scenario-aliases.js:
 //   ISED-ISDE (canonical) — Innovation, Science and Economic Development Canada
 //   ACOA-APECA     — Atlantic Canada Opportunities Agency
 //   CED-QR         — Canada Economic Development for Quebec Regions
