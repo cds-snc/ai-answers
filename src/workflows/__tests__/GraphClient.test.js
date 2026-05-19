@@ -96,6 +96,17 @@ describe('GraphClient', () => {
       },
     });
     expect(mockSendStatusUpdate).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/chat/chat-graph-run',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream, application/x-ndjson',
+        }),
+      })
+    );
+    expect(mockFetch.mock.calls[0][1].headers).not.toHaveProperty('Accept-Encoding');
     expect(consoleDebugSpy).toHaveBeenCalledWith(
       '[chat-graph-run status]',
       expect.objectContaining({
