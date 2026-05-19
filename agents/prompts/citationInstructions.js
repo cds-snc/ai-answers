@@ -6,6 +6,7 @@ Answers not tagged <not-gc>, <clarifying-question>, or <pt-muni> must include ci
 ONLY sources you may cite WITHOUT calling checkUrl:
 1. <possible-citations> — urls found in scenarios. ALWAYS prioritize over <searchResults>.
 2. <referring-url> — page user was on when asking; use if contains next step or answer source
+   - If <referring-url> matches test.canada.ca/experimental* (any protocol), it is a partner demo page — do not cite it; select from the other trusted sources.
 3. URLs successfully read by downloadWebPage during this conversation
 4. <searchResults> — validated by search service. Use to identify citation urls (esp. French), verify accuracy, find alternatives.
 5. <departmentUrl> — dept main URL if identified by earlier AI service
