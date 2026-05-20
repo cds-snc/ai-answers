@@ -310,8 +310,23 @@ class DocDBVectorService {
 
     // Build aggregation pipelines for each embedding (do not run them yet)
     const pageLang = language ? desiredPageLang(language) : null;
+    ServerLoggingService.info('matchQuestions start', 'DocDBVectorService', {
+      questionCount: questions.length,
+      provider,
+      modelName: modelName || null,
+      k,
+      threshold,
+      expertFeedbackRating,
+      expertFeedbackComparison,
+      language,
+      pageLang,
+    });
     const hasPostSearchFilters = Boolean(pageLang) || typeof expertFeedbackRating === 'number';
     const engineK = hasPostSearchFilters ? Math.max(k * 20, 100) : k * 2;
+    ServerLoggingService.info('matchQuestions search config', 'DocDBVectorService', {
+      hasPostSearchFilters,
+      engineK,
+    });
     const pipelines = embeddings.map((emb) => {
       const pipeline = [];
       pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: engineK, efSearch: 200 } } });
@@ -349,9 +364,17 @@ class DocDBVectorService {
     }));
 
     const allDocs = await Promise.all(aggPromises);
+    ServerLoggingService.info('matchQuestions pipeline complete', 'DocDBVectorService', {
+      docsPerQuestion: allDocs.map((docs) => (Array.isArray(docs) ? docs.length : 0)),
+    });
 
     // Map each pipeline result to the simplified output shape
-    const resultsPerQuestion = allDocs.map((docs) => {
+    const resultsPerQuestion = allDocs.map((docs, idx) => {
+      ServerLoggingService.info('matchQuestions candidate counts', 'DocDBVectorService', {
+        questionIndex: idx,
+        beforeSlice: Array.isArray(docs) ? docs.length : 0,
+        afterSlice: Array.isArray(docs) ? docs.slice(0, k).length : 0,
+      });
       const topDocs = Array.isArray(docs) ? docs.slice(0, k) : [];
       const mapped = topDocs.map((r) => {
         const expertFeedbackId = r.expertFeedbackId || null;
@@ -372,9 +395,19 @@ class DocDBVectorService {
       const withEF = mapped.find((s) => s.expertFeedbackId);
       if (withEF) {
         const rest = mapped.filter((s) => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        ServerLoggingService.info('matchQuestions final result', 'DocDBVectorService', {
+          questionIndex: idx,
+          promotedExpertFeedbackId: withEF.expertFeedbackId,
+          finalCount: [withEF, ...rest].length,
+        });
         return [withEF, ...rest];
       }
 
+      ServerLoggingService.info('matchQuestions final result', 'DocDBVectorService', {
+        questionIndex: idx,
+        promotedExpertFeedbackId: null,
+        finalCount: mapped.slice(0, k).length,
+      });
       return mapped.slice(0, k);
     });
 
