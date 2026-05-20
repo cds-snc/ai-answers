@@ -199,6 +199,7 @@ const FilterPanel = ({
   // Department options
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
+    { value: 'BAC-LAC', label: 'BAC-LAC' },
     { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
     { value: 'CEO-BEC', label: 'CEO-BEC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
@@ -217,7 +218,8 @@ const FilterPanel = ({
     { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
     { value: 'SAC-ISC', label: 'SAC-ISC' },
     { value: 'StatCan', label: 'StatCan' },
-    { value: 'TBS-SCT', label: 'TBS-SCT' }
+    { value: 'TBS-SCT', label: 'TBS-SCT' },
+    { value: 'VAC-ACC', label: 'VAC-ACC' }
   ];
 
   // User type options

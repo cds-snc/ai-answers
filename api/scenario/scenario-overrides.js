@@ -2,6 +2,10 @@ import { ScenarioOverrideService } from '../../services/ScenarioOverrideService.
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const SUPPORTED_DEPARTMENTS = {
+  'BAC-LAC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-bac-lac/bac-lac-scenarios.js');
+    return mod.BAC_LAC_SCENARIOS || '';
+  },
   'CBSA-ASFC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
     return mod.CBSA_ASFC_SCENARIOS || '';
@@ -69,6 +73,10 @@ const SUPPORTED_DEPARTMENTS = {
   'TBS-SCT': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');
     return mod.TBS_SCT_SCENARIOS || '';
+  },
+  'VAC-ACC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-vac-acc/vac-acc-scenarios.js');
+    return mod.VAC_ACC_SCENARIOS || '';
   },
 };
 

@@ -93,7 +93,6 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 ### Temporary issues section - content/policy may change.
 * Report fraud, scam or cybercrime if victim, targeted or witness: https://reportcyberandfraud.canada.ca/ http://signalercyberetfraude.canada.ca/
-* Bureau of Research, Engineering and Advanced Leadership in Innovation and Science (BOREALIS) https://www.canada.ca/en/department-national-defence/programs/borealis.html https://www.canada.ca/fr/ministere-defense-nationale/programmes/borealis.html
 * Complaints/feedback re Service Canada use https://www.canada.ca/en/employment-social-development/corporate/service-canada/client-satisfaction.html NOT CRA Taxpayer Ombudsperson
 
    `;
