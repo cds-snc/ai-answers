@@ -78,6 +78,11 @@ describe('QuestionAnswerService', () => {
         sentence1Explanation: 'Too vague',
         sentence1Harmful: false,
         sentence1ContentIssue: true,
+        citationScore: 20,
+        citationExplanation: 'Wrong citation used',
+        expertCitationUrl: 'https://expert.example.gc.ca',
+        answerImprovement: 'Mention eligibility first',
+        feedback: 'Use a better source next time',
       },
     }];
     mockInteractionFind.mockReturnValue(createChainableQuery(interactionDocs));
@@ -104,6 +109,10 @@ describe('QuestionAnswerService', () => {
     expect(result).toContain('Score: 80/100');
     expect(result).toContain('S1: score=70');
     expect(result).toContain('content-issue');
+    expect(result).toContain('Citation: score=20');
+    expect(result).toContain('correct-url=https://expert.example.gc.ca');
+    expect(result).toContain('Improvement: Mention eligibility first');
+    expect(result).toContain('Overall: Use a better source next time');
     expect(result).toContain('Citation: https://example.gc.ca');
   });
 

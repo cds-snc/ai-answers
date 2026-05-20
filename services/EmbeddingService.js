@@ -39,10 +39,12 @@ class EmbeddingService {
    * @param {string} provider - The provider to use (openai or azure)
    * @param {string|null} modelName - Optional specific model name, otherwise default is used
    * @returns {OpenAIEmbeddings|null} The embedding client or null if creation failed
-   */
+  */
   createEmbeddingClient(provider = "openai", modelName = null) {
     try {
-      if (provider === "openai") {
+      const normalizedProvider = normalizeEmbeddingProvider(provider);
+
+      if (normalizedProvider === "openai") {
         if (!process.env.OPENAI_API_KEY) {
           ServerLoggingService.error(
             "OpenAI API key not found",
@@ -60,7 +62,7 @@ class EmbeddingService {
           timeout: modelConfig.timeoutMs,
           maxRetries: 3,
         });
-      } else if (provider === "azure") {
+      } else if (normalizedProvider === "azure") {
         if (
           !process.env.AZURE_OPENAI_API_KEY ||
           !process.env.AZURE_OPENAI_ENDPOINT
@@ -73,7 +75,7 @@ class EmbeddingService {
         }
 
         const modelConfig =
-          getEmbeddingModelConfig(provider, modelName) ||
+          getEmbeddingModelConfig(normalizedProvider, modelName) ||
           getEmbeddingModelConfig("openai", modelName);
 
         let instanceName = process.env.AZURE_OPENAI_ENDPOINT.replace(

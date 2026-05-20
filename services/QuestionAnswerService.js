@@ -32,8 +32,41 @@ function formatSentenceFeedback(ef) {
       parts.push(`S${idx}: ${bits.join('; ')}`);
     }
   }
-  if (parts.length === 0 && ef.answerImprovement) {
-    parts.push(`Improvement: ${ef.answerImprovement}`);
+  return parts.join(' | ');
+}
+
+function formatCitationFeedback(ef) {
+  if (!ef) return '';
+
+  // Citation-specific expert feedback. expertCitationUrl is the URL the expert says
+  // should have been used when the AI's original citation was wrong. Surface it
+  // explicitly so the model can prefer it over the AI's original citation.
+  const cscore = ef.citationScore;
+  const cexpl = ef.citationExplanation;
+  const correctUrl = ef.expertCitationUrl;
+  const hasCitationFeedback =
+    (cscore !== null && cscore !== undefined) ||
+    (cexpl && cexpl.trim().length) ||
+    (correctUrl && correctUrl.trim().length);
+
+  if (!hasCitationFeedback) return '';
+
+  const bits = [];
+  if (cscore !== null && cscore !== undefined) bits.push(`score=${cscore}`);
+  if (cexpl && cexpl.trim().length) bits.push(`note=${cexpl.trim()}`);
+  if (correctUrl && correctUrl.trim().length) bits.push(`correct-url=${correctUrl.trim()}`);
+  return `Citation: ${bits.join('; ')}`;
+}
+
+function formatOverallFeedback(ef) {
+  if (!ef) return '';
+
+  const parts = [];
+  if (ef.answerImprovement && ef.answerImprovement.trim().length) {
+    parts.push(`Improvement: ${ef.answerImprovement.trim()}`);
+  }
+  if (ef.feedback && ef.feedback.trim().length) {
+    parts.push(`Overall: ${ef.feedback.trim()}`);
   }
   return parts.join(' | ');
 }
@@ -75,13 +108,13 @@ class QuestionAnswerService {
   }
 
   async getSimilarQuestionsContext(question, opts = {}) {
-    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, provider = null } = opts;
+    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true } = opts;
     if (!question || typeof question !== 'string') return '';
 
     try {
       await dbConnect();
       const vectorService = await initVectorService();
-      const matches = await vectorService.matchQuestions([question], { provider, k, threshold, expertFeedbackRating, expertFeedbackComparison, language });
+      const matches = await vectorService.matchQuestions([question], { provider: 'azure', modelName: 'text-embedding-3-large', k, threshold, expertFeedbackRating, expertFeedbackComparison, language });
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);
@@ -104,7 +137,10 @@ class QuestionAnswerService {
 
         const questionText = inter.question?.redactedQuestion || inter.question?.englishQuestion || '';
         const answerText = inter.answer.content || inter.answer.englishAnswer || '';
-        const feedbackText = formatSentenceFeedback(inter.expertFeedback);
+        const sentenceFeedbackText = formatSentenceFeedback(inter.expertFeedback);
+        const citationFeedbackText = formatCitationFeedback(inter.expertFeedback);
+        const overallFeedbackText = formatOverallFeedback(inter.expertFeedback);
+        const feedbackText = [sentenceFeedbackText, citationFeedbackText, overallFeedbackText].filter(Boolean).join(' | ');
         const totalScore = typeof inter.expertFeedback.totalScore === 'number' ? inter.expertFeedback.totalScore : null;
         const citationText = formatCitation(inter.answer.citation);
         const flowText = includeQuestionFlow ? await this.buildQuestionFlow(inter._id) : '';

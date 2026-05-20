@@ -1,7 +1,7 @@
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
-import { GraphWorkflowHelper, RedactionError, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
+import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
 
@@ -34,7 +34,6 @@ const GraphState = Annotation.Root({
   cleanedHistory: Annotation(),
   context: Annotation(),
   usedExistingContext: Annotation(),
-  shortCircuitPayload: Annotation(),
   answer: Annotation(),
   finalCitationUrl: Annotation(),
   status: Annotation(),
@@ -46,7 +45,7 @@ const graph = new StateGraph(GraphState);
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
   // 'Starting <Graph>' must be logged before 'node:init input' — ChatViewer uses it as the timeline anchor.
-  await ServerLoggingService.info('Starting InstantAndQAGraph', state.chatId, {
+  await ServerLoggingService.info('Starting GenericWithQAGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
@@ -75,9 +74,6 @@ graph.addNode('validate', async (state) => {
     logGraphEvent('info', 'node:validate output', state.chatId, out);
     return out;
   } catch (error) {
-    if (error instanceof ShortQueryValidation) {
-      throw error;
-    }
     throw error;
   }
 });
@@ -95,15 +91,12 @@ graph.addNode('redact', async (state) => {
     logGraphEvent('info', 'node:redact output', state.chatId, out);
     return out;
   } catch (error) {
-    if (error instanceof RedactionError) {
-      throw error;
-    }
     throw error;
   }
 });
 
 graph.addNode('translate', async (state) => {
-  const translationContext = workflow.buildTranslationContext(state.conversationHistory);
+  const translationContext = workflow.buildTranslationContext ? workflow.buildTranslationContext(state.conversationHistory) : null;
   logGraphEvent('info', 'node:translate input', state.chatId, {
     redactedText: state.redactedText,
     translationContext,
@@ -113,7 +106,7 @@ graph.addNode('translate', async (state) => {
   const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
   await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
-  const out = { translationData };
+  const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
   logGraphEvent('info', 'node:translate output', state.chatId, out);
   return out;
 });
@@ -125,38 +118,25 @@ graph.addNode('contextNode', async (state) => {
     lang: state.lang,
   });
 
-  const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
-    conversationHistory: state.conversationHistory,
-    department: state.department,
-    overrideUserId: state.overrideUserId,
-    translationData: state.translationData,
-    userMessage: state.userMessage,
-    lang: state.lang,
-    searchProvider: state.searchProvider,
-    chatId: state.chatId,
-    selectedAI: state.selectedAI,
-  });
+  const cleanedHistory = (state.conversationHistory || []).filter(m => m && !m.error);
 
-  let context = preContext;
-  if (!usedExistingContext) {
-    context = await workflow.deriveContext({
-      selectedAI: state.selectedAI,
-      translationData: state.translationData,
-      lang: state.lang,
-      department: state.department,
-      referringUrl: state.referringUrl,
-      searchProvider: state.searchProvider,
-      conversationHistory: cleanedHistory,
-      overrideUserId: state.overrideUserId,
-      chatId: state.chatId,
-      userMessage: state.userMessage,
-    });
-  }
+  const context = await workflow.deriveContext({
+    selectedAI: state.selectedAI,
+    translationData: state.translationData,
+    lang: state.lang,
+    department: state.department,
+    referringUrl: state.referringUrl,
+    searchProvider: state.searchProvider,
+    conversationHistory: cleanedHistory,
+    overrideUserId: state.overrideUserId,
+    chatId: state.chatId,
+    userMessage: state.userMessage,
+  });
 
   const out = {
     context,
     cleanedHistory,
-    usedExistingContext,
+    usedExistingContext: false,
     status: WorkflowStatus.GENERATING_ANSWER,
   };
   logGraphEvent('info', 'node:context output', state.chatId, out);
@@ -174,7 +154,7 @@ graph.addNode('similarQuestions', async (state) => {
       k: 3,
       threshold: 0.6,
       expertFeedbackRating: 100,
-      expertFeedbackComparison: 'lt',
+      expertFeedbackComparison: 'lte',
       language: state.lang,
       includeQuestionFlow: true,
     });
@@ -186,78 +166,6 @@ graph.addNode('similarQuestions', async (state) => {
     context: { ...state.context, similarQuestions },
   };
   logGraphEvent('info', 'node:similarQuestions output', state.chatId, { hasSimilar: !!similarQuestions });
-  return out;
-});
-graph.addNode('shortCircuit', async (state) => {
-  // Emit input log for shortCircuit node
-  logGraphEvent('info', 'node:shortCircuit input', state.chatId, {
-    translationData: state.translationData,
-    lang: state.lang,
-  });
-
-  const detectedLang = state.translationData?.originalLanguage || state.lang;
-
-  // Determine whether there is any prior AI reply in the original conversation history.
-  // If there is an AI reply, skip the similar-answer short-circuit and proceed to context derivation.
-  const cleanedHistory = (state.conversationHistory || []).filter(m => m && !m.error);
-  const hasAIReply = cleanedHistory.some(m => m.sender === 'ai' || (m.interaction && m.interaction.answer));
-
-  if (hasAIReply) {
-    logGraphEvent('info', 'skipping shortCircuit similar-answer because prior AI reply exists in original conversation history', state.chatId, {
-      hasAIReply,
-    });
-    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
-    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true });
-    return out;
-  }
-
-  const similar = await workflow.checkSimilarAnswer({
-    chatId: state.chatId,
-    userMessage: state.userMessage,
-    conversationHistory: cleanedHistory,
-    selectedAI: state.selectedAI,
-    lang: state.lang,
-    detectedLang,
-    searchProvider: state.searchProvider,
-  });
-
-  if (similar) {
-    const payload = workflow.buildShortCircuitPayload({
-      similarShortCircuit: similar,
-      startTime: state.startTime,
-      endTime: Date.now(),
-      translationData: state.translationData,
-      userMessage: state.userMessage,
-      userMessageId: state.userMessageId,
-      referringUrl: state.referringUrl,
-      selectedAI: state.selectedAI,
-      chatId: state.chatId,
-      lang: state.lang,
-      searchProvider: state.searchProvider,
-      contextOverride: state.context,
-    });
-
-    try {
-      const ctx = graphRequestContext.getStore();
-      const user = ctx?.user;
-      await workflow.persistInteraction({ ...payload, workflow: 'InstantAndQAGraph' }, user);
-    } catch (err) {
-      await ServerLoggingService.error('Short-circuit persistence error', state.chatId, err);
-    }
-
-    const out = {
-      status: WorkflowStatus.GENERATING_ANSWER,
-      shortCircuitPayload: payload,
-      finalCitationUrl: payload.finalCitationUrl,
-    };
-    // Emit output log for shortCircuit node
-    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: true, payload: out });
-    return out;
-  }
-
-  const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
-  // Emit output log for shortCircuit node when no short circuit detected
-  logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false });
   return out;
 });
 
@@ -287,7 +195,6 @@ graph.addNode('verifyNode', async (state) => {
 
   logGraphEvent('info', 'node:verify input', state.chatId, {
     answer: state.answer,
-    shortCircuit: Boolean(state.shortCircuitPayload),
   });
 
   if (state.answer && state.answer.answerType === 'normal') {
@@ -303,19 +210,16 @@ graph.addNode('verifyNode', async (state) => {
     finalCitationUrl = citationResult.url || citationResult.fallbackUrl;
   }
 
-  const isShortCircuit = Boolean(state.shortCircuitPayload);
-  const answerData = isShortCircuit ? state.shortCircuitPayload.answer : state.answer;
-  const contextData = isShortCircuit ? state.shortCircuitPayload.context : state.context;
   const needsClarification = Boolean(state.answer && state.answer.answerType && state.answer.answerType.includes('question'));
   const out = {
     status: WorkflowStatus.VERIFYING_CITATION,
     finalCitationUrl: finalCitationUrl ?? state.finalCitationUrl,
     result: {
-      answer: answerData,
-      context: contextData,
+      answer: state.answer,
+      context: state.context,
       question: state.userMessage,
-      citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
-      historySignature: answerData?.historySignature ?? null,
+      citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? null,
+      historySignature: state.answer?.historySignature ?? null,
     },
   };
   logGraphEvent('info', 'node:verify output', state.chatId, {
@@ -328,35 +232,30 @@ graph.addNode('persistNode', async (state) => {
   const endTime = Date.now();
   const totalResponseTime = endTime - state.startTime;
 
-  const isShortCircuit = Boolean(state.shortCircuitPayload);
-
   logGraphEvent('info', 'node:persist input', state.chatId, {
-    isShortCircuit,
     totalResponseTime,
   });
 
-  if (!isShortCircuit) {
-    const answerData = state.answer;
-    const contextData = state.context;
-    const finalCitationUrl = state.finalCitationUrl ?? null;
+  const answerData = state.answer;
+  const contextData = state.context;
+  const finalCitationUrl = state.finalCitationUrl ?? null;
 
-    const ctx = graphRequestContext.getStore();
-    const user = ctx?.user;
-    await workflow.persistInteraction({
-      selectedAI: state.selectedAI,
-      question: state.userMessage,
-      userMessageId: state.userMessageId,
-      referringUrl: state.referringUrl,
-      answer: answerData,
-      finalCitationUrl,
-      context: contextData,
-      chatId: state.chatId,
-      workflow: 'InstantAndQAGraph',
-      pageLanguage: state.lang,
-      responseTime: totalResponseTime,
-      searchProvider: state.searchProvider,
-    }, user);
-  }
+  const ctx = graphRequestContext.getStore();
+  const user = ctx?.user;
+  await workflow.persistInteraction({
+    selectedAI: state.selectedAI,
+    question: state.userMessage,
+    userMessageId: state.userMessageId,
+    referringUrl: state.referringUrl,
+    answer: answerData,
+    finalCitationUrl,
+    context: contextData,
+    chatId: state.chatId,
+    workflow: 'GenericWithQAGraph',
+    pageLanguage: state.lang,
+    responseTime: totalResponseTime,
+    searchProvider: state.searchProvider,
+  }, user);
 
   await ServerLoggingService.info('Workflow complete', state.chatId, { totalResponseTime });
 
@@ -369,27 +268,21 @@ graph.addNode('persistNode', async (state) => {
   return out;
 });
 
-graph.addConditionalEdges('shortCircuit', (state) =>
-  state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
-  {
-    skipAnswer: 'verifyNode',
-    runAnswer: 'contextNode',
-  },
-);
-
 graph.addEdge(START, 'init');
 graph.addEdge('init', 'validate');
 graph.addEdge('validate', 'redact');
 graph.addEdge('redact', 'translate');
-graph.addEdge('translate', 'shortCircuit');
+graph.addEdge('translate', 'contextNode');
 graph.addEdge('contextNode', 'similarQuestions');
 graph.addEdge('similarQuestions', 'answerNode');
 graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
-export const instantAndQAGraphApp = graph.compile();
+export const genericWithQAGraphApp = graph.compile();
 
-export async function runInstantAndQAGraph(input) {
-  return instantAndQAGraphApp.invoke(input);
+export async function runGenericWithQAGraph(input) {
+  return genericWithQAGraphApp.invoke(input);
 }
+
+export default genericWithQAGraphApp;
