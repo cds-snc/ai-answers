@@ -32,8 +32,14 @@ function formatSentenceFeedback(ef) {
       parts.push(`S${idx}: ${bits.join('; ')}`);
     }
   }
+  return parts.join(' | ');
+}
+
+function formatCitationFeedback(ef) {
+  if (!ef) return '';
+
   // Citation-specific expert feedback. expertCitationUrl is the URL the expert says
-  // should have been used when the AI's original citation was wrong — surface it
+  // should have been used when the AI's original citation was wrong. Surface it
   // explicitly so the model can prefer it over the AI's original citation.
   const cscore = ef.citationScore;
   const cexpl = ef.citationExplanation;
@@ -42,13 +48,20 @@ function formatSentenceFeedback(ef) {
     (cscore !== null && cscore !== undefined) ||
     (cexpl && cexpl.trim().length) ||
     (correctUrl && correctUrl.trim().length);
-  if (hasCitationFeedback) {
-    const bits = [];
-    if (cscore !== null && cscore !== undefined) bits.push(`score=${cscore}`);
-    if (cexpl && cexpl.trim().length) bits.push(`note=${cexpl.trim()}`);
-    if (correctUrl && correctUrl.trim().length) bits.push(`correct-url=${correctUrl.trim()}`);
-    parts.push(`Citation: ${bits.join('; ')}`);
-  }
+
+  if (!hasCitationFeedback) return '';
+
+  const bits = [];
+  if (cscore !== null && cscore !== undefined) bits.push(`score=${cscore}`);
+  if (cexpl && cexpl.trim().length) bits.push(`note=${cexpl.trim()}`);
+  if (correctUrl && correctUrl.trim().length) bits.push(`correct-url=${correctUrl.trim()}`);
+  return `Citation: ${bits.join('; ')}`;
+}
+
+function formatOverallFeedback(ef) {
+  if (!ef) return '';
+
+  const parts = [];
   if (ef.answerImprovement && ef.answerImprovement.trim().length) {
     parts.push(`Improvement: ${ef.answerImprovement.trim()}`);
   }
@@ -124,7 +137,10 @@ class QuestionAnswerService {
 
         const questionText = inter.question?.redactedQuestion || inter.question?.englishQuestion || '';
         const answerText = inter.answer.content || inter.answer.englishAnswer || '';
-        const feedbackText = formatSentenceFeedback(inter.expertFeedback);
+        const sentenceFeedbackText = formatSentenceFeedback(inter.expertFeedback);
+        const citationFeedbackText = formatCitationFeedback(inter.expertFeedback);
+        const overallFeedbackText = formatOverallFeedback(inter.expertFeedback);
+        const feedbackText = [sentenceFeedbackText, citationFeedbackText, overallFeedbackText].filter(Boolean).join(' | ');
         const totalScore = typeof inter.expertFeedback.totalScore === 'number' ? inter.expertFeedback.totalScore : null;
         const citationText = formatCitation(inter.answer.citation);
         const flowText = includeQuestionFlow ? await this.buildQuestionFlow(inter._id) : '';
