@@ -300,7 +300,7 @@ class DocDBVectorService {
     if (!this.isInitialized) await this.initialize();
 
     // Use top-level EmbeddingService import to format and embed the questions
-    const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
+    const formatted = EmbeddingService.buildQuestionsEmbeddingText(questions);
     if (!formatted || !formatted.length) return [];
 
     const embeddingClient = EmbeddingService.createEmbeddingClient(provider, modelName);

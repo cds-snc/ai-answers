@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../EmbeddingService.js', () => ({
   default: {
     formatQuestionsForEmbedding: (qs) => qs,
+    buildQuestionsEmbeddingText: (qs) => Array.isArray(qs) ? qs.join('\n') : '',
     createEmbeddingClient: () => ({
       embedDocuments: async (arr) => arr.map(() => [0.1, 0.2, 0.3]),
     }),

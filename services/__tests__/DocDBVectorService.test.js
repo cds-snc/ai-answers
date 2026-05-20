@@ -6,6 +6,7 @@ const mockEmbedDocuments = vi.fn();
 vi.mock('../EmbeddingService.js', () => ({
   default: {
     formatQuestionsForEmbedding: vi.fn((questions) => questions.join('\n')),
+    buildQuestionsEmbeddingText: vi.fn((questions) => questions.join('\n')),
     createEmbeddingClient: vi.fn(() => ({
       embedDocuments: mockEmbedDocuments,
     })),
