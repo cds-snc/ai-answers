@@ -165,14 +165,20 @@ graph.addNode('similarQuestions', async (state) => {
   const out = {
     context: { ...state.context, similarQuestions },
   };
-  logGraphEvent('info', 'node:similarQuestions output', state.chatId, { hasSimilar: !!similarQuestions });
+  logGraphEvent('info', 'node:similarQuestions output', state.chatId, {
+    hasSimilar: !!similarQuestions,
+    similarQuestionsLength: typeof similarQuestions === 'string' ? similarQuestions.length : 0,
+    similarQuestionsText: similarQuestions || '',
+  });
   return out;
 });
 
 graph.addNode('answerNode', async (state) => {
   logGraphEvent('info', 'node:answer input', state.chatId, {
     selectedAI: state.selectedAI,
-    contextSummary: state.context?.summary || null,
+    contextTopic: state.context?.topic || null,
+    contextDepartment: state.context?.department || null,
+    searchResultsCount: Array.isArray(state.context?.searchResults) ? state.context.searchResults.length : 0,
     hasSimilar: Boolean(state.context?.similarQuestions),
   });
 

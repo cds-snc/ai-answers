@@ -147,7 +147,9 @@ graph.addNode('contextNode', async (state) => {
 graph.addNode('answerNode', async (state) => {
   logGraphEvent('info', 'node:answer input', state.chatId, {
     selectedAI: state.selectedAI,
-    contextSummary: state.context?.summary || null,
+    contextTopic: state.context?.topic || null,
+    contextDepartment: state.context?.department || null,
+    searchResultsCount: Array.isArray(state.context?.searchResults) ? state.context.searchResults.length : 0,
   });
 
   const answer = await workflow.sendAnswerRequest({
