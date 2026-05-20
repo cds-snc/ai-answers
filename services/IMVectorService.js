@@ -493,6 +493,9 @@ class IMVectorService {
     return {
       isInitialized: this.isInitialized,
       embeddings,
+      questionEmbeddings: questions,
+      questionsEmbeddings: questions,
+      answerEmbeddings: embeddings,
       questions,
       sentences,
       searches,

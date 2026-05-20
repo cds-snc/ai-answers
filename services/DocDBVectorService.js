@@ -309,11 +309,13 @@ class DocDBVectorService {
     const embeddings = await embeddingClient.embedDocuments([formatted]);
 
     // Build aggregation pipelines for each embedding (do not run them yet)
-    const pageLang = desiredPageLang(language);
+    const pageLang = language ? desiredPageLang(language) : null;
+    const hasPostSearchFilters = Boolean(pageLang) || typeof expertFeedbackRating === 'number';
+    const engineK = hasPostSearchFilters ? Math.max(k * 20, 100) : k * 2;
     const pipelines = embeddings.map((emb) => {
       const pipeline = [];
-      pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } });
-      pipeline.push({ $limit: k * 2 });
+      pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: engineK, efSearch: 200 } } });
+      pipeline.push({ $limit: engineK });
       if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
       pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
       pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
@@ -394,6 +396,24 @@ class DocDBVectorService {
       ...this.filterQuery,
     });
 
+    const questionEmbeddings = await this.collection.countDocuments({
+      questionEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
+    const questionsEmbeddings = await this.collection.countDocuments({
+      questionsEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
+    const answerEmbeddings = await this.collection.countDocuments({
+      answerEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
     const parentIds = (await this.collection.find({ interactionId: { $in: validInteractionIds } })
       .project({ _id: 1 }).toArray()).map(e => e._id);
 
@@ -406,6 +426,9 @@ class DocDBVectorService {
     ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
       isInitialized: this.isInitialized,
       embeddings,
+      questionEmbeddings,
+      questionsEmbeddings,
+      answerEmbeddings,
       sentences,
       searches,
       qaSearches,
@@ -416,6 +439,9 @@ class DocDBVectorService {
     return {
       isInitialized: this.isInitialized,
       embeddings,
+      questionEmbeddings,
+      questionsEmbeddings,
+      answerEmbeddings,
       sentences,
       searches,
       qaSearches,
