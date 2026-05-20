@@ -400,20 +400,38 @@ class IMVectorService {
 
     // Use EmbeddingService to format and embed
     const EmbeddingService = (await import('./EmbeddingService.js')).default;
-    const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
+    const formatted = EmbeddingService.buildQuestionsEmbeddingText(questions);
     if (!formatted || !formatted.length) return [];
 
     const client = EmbeddingService.createEmbeddingClient(provider, modelName);
     if (!client) throw new Error('Failed to create embedding client');
 
     const embeddings = await client.embedDocuments([formatted]);
+    const pageLang = language ? desiredPageLang(language) : null;
+    ServerLoggingService.info('matchQuestions start', 'IMVectorService', {
+      questionCount: questions.length,
+      provider,
+      modelName: modelName || null,
+      k,
+      threshold,
+      expertFeedbackRating,
+      expertFeedbackComparison,
+      language,
+      pageLang,
+      usingQuestionsIndex: Boolean(this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0),
+    });
 
   const resultsPerQuestion = [];
-    for (const emb of embeddings) {
+    for (let questionIndex = 0; questionIndex < embeddings.length; questionIndex++) {
+      const emb = embeddings[questionIndex];
       // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
       const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
       let results = await searchDb.query(emb, k * 2);
       results = results.sort((a, b) => b.similarity - a.similarity);
+      ServerLoggingService.info('matchQuestions raw search results', 'IMVectorService', {
+        questionIndex,
+        rawCount: Array.isArray(results) ? results.length : 0,
+      });
 
       // Map the top results to the simplified shape but do NOT apply a client-side
       // similarity threshold. We trust the underlying index to return nearest
@@ -428,6 +446,10 @@ class IMVectorService {
         mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
         if (mapped.length >= k * 2) break;
       }
+      ServerLoggingService.info('matchQuestions mapped results', 'IMVectorService', {
+        questionIndex,
+        mappedCount: mapped.length,
+      });
 
       // Attach citation from prepopulated qaMeta (populated during initialize)
       for (const m of mapped) {
@@ -440,7 +462,6 @@ class IMVectorService {
       // provided, keep existing behavior.
       let filtered = mapped;
       if (language) {
-        const pageLang = desiredPageLang(language);
         const interactionIds = Array.from(new Set(mapped.map(m => m.interactionId).filter(Boolean)));
         if (interactionIds.length) {
           // Find chats that contain these interactions and map interactionId -> pageLanguage
@@ -458,14 +479,33 @@ class IMVectorService {
             const lang = interactionToLang[m.interactionId?.toString?.() || m.interactionId] || '';
             return lang === pageLang;
           });
+          ServerLoggingService.info('matchQuestions language filter', 'IMVectorService', {
+            questionIndex,
+            requestedLanguage: language,
+            pageLang,
+            interactionIdsCount: interactionIds.length,
+            chatsMatched: chats.length,
+            beforeCount: mapped.length,
+            afterCount: filtered.length,
+          });
         } else {
           // no interaction ids -> no matches
           filtered = [];
+          ServerLoggingService.info('matchQuestions language filter', 'IMVectorService', {
+            questionIndex,
+            requestedLanguage: language,
+            pageLang,
+            interactionIdsCount: 0,
+            chatsMatched: 0,
+            beforeCount: mapped.length,
+            afterCount: 0,
+          });
         }
       }
 
       // If a specific expertFeedbackRating was requested, filter by comparison (default eq for compatibility).
       if (typeof expertFeedbackRating === 'number') {
+        const beforeEfFilter = filtered.length;
         filtered = filtered.filter(m => {
           const meta = this.qaMeta.get(m.id) || {};
           const score = typeof meta.expertFeedbackScore === 'number' ? meta.expertFeedbackScore : null;
@@ -474,14 +514,31 @@ class IMVectorService {
           if (expertFeedbackComparison === 'lte') return score <= expertFeedbackRating;
           return score === expertFeedbackRating; // eq
         });
+        ServerLoggingService.info('matchQuestions expert feedback filter', 'IMVectorService', {
+          questionIndex,
+          expertFeedbackRating,
+          expertFeedbackComparison,
+          beforeCount: beforeEfFilter,
+          afterCount: filtered.length,
+        });
       }
 
       // Promote the first expert-feedback-backed item, preserving the remaining order
       const withEF = filtered.find(s => s.expertFeedbackId);
       if (withEF) {
         const rest = filtered.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        ServerLoggingService.info('matchQuestions final result', 'IMVectorService', {
+          questionIndex,
+          promotedExpertFeedbackId: withEF.expertFeedbackId,
+          finalCount: [withEF, ...rest].length,
+        });
         resultsPerQuestion.push([withEF, ...rest]);
       } else {
+        ServerLoggingService.info('matchQuestions final result', 'IMVectorService', {
+          questionIndex,
+          promotedExpertFeedbackId: null,
+          finalCount: filtered.slice(0, k).length,
+        });
         resultsPerQuestion.push(filtered.slice(0, k));
       }
     }
@@ -493,6 +550,9 @@ class IMVectorService {
     return {
       isInitialized: this.isInitialized,
       embeddings,
+      questionEmbeddings: questions,
+      questionsEmbeddings: questions,
+      answerEmbeddings: embeddings,
       questions,
       sentences,
       searches,

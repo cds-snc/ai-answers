@@ -249,7 +249,9 @@ graph.addNode('answerNode', async (state) => {
   // Emit input log for answer node
   logGraphEvent('info', 'node:answer input', state.chatId, {
     selectedAI: state.selectedAI,
-    contextSummary: state.context?.summary || null,
+    contextTopic: state.context?.topic || null,
+    contextDepartment: state.context?.department || null,
+    searchResultsCount: Array.isArray(state.context?.searchResults) ? state.context.searchResults.length : 0,
   });
 
   const answer = await workflow.sendAnswerRequest({
@@ -390,7 +392,6 @@ export const defaultWithVectorGraphApp = graph.compile();
 export async function runDefaultWithVectorGraph(input) {
   return defaultWithVectorGraphApp.invoke(input);
 }
-
 
 
 

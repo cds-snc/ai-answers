@@ -55,4 +55,26 @@ describe('EmbeddingService', () => {
     expect(openaiEmbeddingsCtor).toHaveBeenCalledTimes(1);
     expect(azureEmbeddingsCtor).not.toHaveBeenCalled();
   });
+
+  it('builds canonical question/flow/qa embedding texts from shared methods', () => {
+    const question = EmbeddingService.buildQuestionEmbeddingText('What is EI?', 2);
+    const flow = EmbeddingService.buildQuestionsEmbeddingText(['First', 'Second']);
+    const qa = EmbeddingService.buildQuestionsAnswerEmbeddingText(['First', 'Second'], 'Here is the answer');
+    const all = EmbeddingService.buildAllEmbeddingTexts({
+      previousQuestions: ['First'],
+      currentQuestion: 'Second',
+      answer: 'Here is the answer',
+      sentences: ['Sentence one.'],
+    });
+
+    expect(question).toBe('Question 2: What is EI?');
+    expect(flow).toBe('Question 1: First\nQuestion 2: Second');
+    expect(qa).toBe('Question 1: First\nQuestion 2: Second\nAnswer 2: Here is the answer');
+    expect(all.questionEmbeddingText).toBe('Question 2: Second');
+    expect(all.questionsEmbeddingText).toBe('Question 1: First\nQuestion 2: Second');
+    expect(all.answerEmbeddingText).toBe('Answer 2: Here is the answer');
+    expect(all.questionsAnswerEmbeddingText).toBe('Question 1: First\nQuestion 2: Second\nAnswer 2: Here is the answer');
+    expect(all.sentenceEmbeddingTexts).toEqual(['Sentence 1: Sentence one.']);
+    expect(all.textsToEmbed.length).toBe(5);
+  });
 });

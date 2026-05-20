@@ -121,13 +121,84 @@ class EmbeddingService {
    * @returns {string}
    */
   formatQuestionsForEmbedding(questions = []) {
+    return this.buildQuestionsEmbeddingText(questions);
+  }
+
+  buildQuestionEmbeddingText(question = '', questionNumber = 1) {
+    const cleaned = this.cleanTextForEmbedding(String(question || ''));
+    if (!cleaned) return '';
+    return `Question ${questionNumber}: ${cleaned}`.trim();
+  }
+
+  buildQuestionsEmbeddingText(questions = []) {
     if (!Array.isArray(questions) || questions.length === 0) return '';
     const labeled = [];
     for (let i = 0; i < questions.length; i++) {
-      const cleaned = this.cleanTextForEmbedding(String(questions[i] || ''));
-      if (cleaned) labeled.push(`Question ${i + 1}: ${cleaned}`.trim());
+      const labeledQuestion = this.buildQuestionEmbeddingText(questions[i], i + 1);
+      if (labeledQuestion) labeled.push(labeledQuestion);
     }
     return labeled.join("\n");
+  }
+
+  buildAnswerEmbeddingText(answer = '', questionNumber = 1) {
+    const cleaned = this.cleanTextForEmbedding(String(answer || ''));
+    if (!cleaned) return '';
+    return `Answer ${questionNumber}: ${cleaned}`.trim();
+  }
+
+  buildQuestionsAnswerEmbeddingText(questions = [], answer = '') {
+    const questionFlow = this.buildQuestionsEmbeddingText(questions);
+    const answerLine = this.buildAnswerEmbeddingText(answer, questions.length || 1);
+    return [questionFlow, answerLine].filter((text) => text && text.trim()).join("\n");
+  }
+
+  buildSentenceEmbeddingTexts(sentences = []) {
+    if (!Array.isArray(sentences) || !sentences.length) return [];
+    return sentences
+      .map((sentence, index) => {
+        const cleaned = this.cleanTextForEmbedding(String(sentence || ''));
+        return cleaned.trim() ? `Sentence ${index + 1}: ${cleaned}` : null;
+      })
+      .filter(Boolean);
+  }
+
+  buildAllEmbeddingTexts({
+    previousQuestions = [],
+    currentQuestion = '',
+    answer = '',
+    sentences = [],
+  } = {}) {
+    const questionTexts = [...(Array.isArray(previousQuestions) ? previousQuestions : []), currentQuestion]
+      .map((q) => this.cleanTextForEmbedding(String(q || '')))
+      .filter((q) => q && q.trim());
+
+    if (!questionTexts.length) {
+      throw new Error('Cannot build embedding texts without at least one valid question');
+    }
+
+    const currentQuestionNumber = questionTexts.length;
+    const questionEmbeddingText = this.buildQuestionEmbeddingText(questionTexts[questionTexts.length - 1], currentQuestionNumber);
+    const questionsEmbeddingText = this.buildQuestionsEmbeddingText(questionTexts);
+    const answerEmbeddingText = this.buildAnswerEmbeddingText(answer, currentQuestionNumber);
+    const questionsAnswerEmbeddingText = this.buildQuestionsAnswerEmbeddingText(questionTexts, answer);
+    const sentenceEmbeddingTexts = this.buildSentenceEmbeddingTexts(sentences);
+
+    const textsToEmbed = [
+      questionEmbeddingText,
+      questionsEmbeddingText,
+      answerEmbeddingText,
+      questionsAnswerEmbeddingText,
+      ...sentenceEmbeddingTexts,
+    ].filter((text) => text && text.trim());
+
+    return {
+      questionEmbeddingText,
+      questionsEmbeddingText,
+      answerEmbeddingText,
+      questionsAnswerEmbeddingText,
+      sentenceEmbeddingTexts,
+      textsToEmbed,
+    };
   }
 
   async createEmbedding(interaction, provider = "openai", modelName = null) {
@@ -165,28 +236,21 @@ class EmbeddingService {
         throw new Error("Interaction not found in chat");
       }
 
-      // Collect all previous questions with labels (excluding current)
-      const labeledQuestions = [];
-      let questionCounter = 1;
-
-      // Handle previous questions (if any)
+      // Collect previous questions in sequence (excluding current)
+      const previousQuestions = [];
       for (let i = 0; i < currentInteractionIndex; i++) {
         const chatInteraction = chat.interactions[i];
         if (chatInteraction.question) {
-          const cleanedQuestion = this.cleanTextForEmbedding(
+          const questionText = this.cleanTextForEmbedding(
             chatInteraction.question.englishQuestion ||
             chatInteraction.question.redactedQuestion
           );
-          if (cleanedQuestion.trim()) {
-            const labeledQuestion = `Question ${questionCounter}: ${cleanedQuestion}`;
-            labeledQuestions.push(labeledQuestion);
-            questionCounter++;
-          }
+          if (questionText.trim()) previousQuestions.push(questionText);
         }
       }
 
       // Process current question
-      const questionText = this.cleanTextForEmbedding(
+      const currentQuestionText = this.cleanTextForEmbedding(
         populatedInteraction.question.englishQuestion ||
         populatedInteraction.question.redactedQuestion
       );
@@ -195,34 +259,13 @@ class EmbeddingService {
         populatedInteraction.answer.content
       );
 
-      // The current question/answer number is based on previous questions count + 1
-      const currentQuestionNumber = questionCounter;
-      const labeledQuestionText = `Question ${currentQuestionNumber}: ${questionText}`;
-      const labeledAnswerText = answerText.trim()
-        ? `Answer ${currentQuestionNumber}: ${answerText}`
-        : "";
-
-      // Process sentences
       const sentences = populatedInteraction.answer.sentences || [];
-      const cleanedSentences = sentences
-        .map((sentence, index) => {
-          const cleaned = this.cleanTextForEmbedding(sentence);
-          return cleaned.trim() ? `Sentence ${index + 1}: ${cleaned}` : null;
-        })
-        .filter(Boolean);
-
-      // Create properly formatted texts for embedding
-      const textsToEmbed = [
-        labeledQuestionText.trim(), // For questionEmbedding
-        labeledQuestions.length > 0
-          ? [...labeledQuestions, labeledQuestionText].join("\n")
-          : labeledQuestionText.trim(), // For questionsEmbedding - all previous questions + current question
-        labeledAnswerText.trim(), // For answerEmbedding
-        [...labeledQuestions, labeledQuestionText, labeledAnswerText]
-          .filter((text) => text.trim())
-          .join("\n"), // For questionsAnswerEmbedding with newlines
-        ...cleanedSentences,
-      ].filter((text) => text.trim());
+      const { sentenceEmbeddingTexts, textsToEmbed } = this.buildAllEmbeddingTexts({
+        previousQuestions,
+        currentQuestion: currentQuestionText,
+        answer: answerText,
+        sentences,
+      });
 
       const embeddings = await this.embedDocuments(
         textsToEmbed,
@@ -232,7 +275,7 @@ class EmbeddingService {
 
       const sentenceEmbeddings = embeddings.slice(
         4,
-        4 + cleanedSentences.length
+        4 + sentenceEmbeddingTexts.length
       );
 
       const embeddingDoc = {
