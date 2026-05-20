@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.129.0](https://github.com/cds-snc/ai-answers/compare/v1.128.1...v1.129.0) (2026-05-20)
+
+
+### Features
+
+* add plan for stats can API tool ([b57fcfd](https://github.com/cds-snc/ai-answers/commit/b57fcfd1056c4a89aae6f2c2273ab7ab2f0d9d71))
+
+
+### Bug Fixes
+
+* add VAC and LAC as partners ([327617f](https://github.com/cds-snc/ai-answers/commit/327617f7a37e98a4fd53d624e132493b359ed839))
+* enhance feedback formatting to include citation details and overall feedback ([7d3dab6](https://github.com/cds-snc/ai-answers/commit/7d3dab624a99f7571f2536c69fef30ab13740eb3))
+* enhance logging in answer and similarQuestions nodes to include context topic, department, and search results count ([09119b5](https://github.com/cds-snc/ai-answers/commit/09119b50cfae1af3c8d6be4d9aa9191f8a9ab5a2))
+* enhance logging in matchQuestions method for better traceability and debugging ([2e31724](https://github.com/cds-snc/ai-answers/commit/2e3172434fe43d741eeb5a8ceb80a28787ea513e))
+* enhance logging in matchQuestions method for better tracking of question processing and filtering ([7ec0839](https://github.com/cds-snc/ai-answers/commit/7ec08390df2953b58a0e1e30b74011c86360db7b))
+* get scenarios started ([c4a0e57](https://github.com/cds-snc/ai-answers/commit/c4a0e578726f6d047e35027a76a57688c9e131c4))
+* phac not mapped properly - bug ([a561221](https://github.com/cds-snc/ai-answers/commit/a561221446721c0abd6bfe25c0c3261deeb76c20))
+* prevent citations of demo pages ([de1ca46](https://github.com/cds-snc/ai-answers/commit/de1ca461e065a61af997644c030a4559fd588e66))
+* refactor EmbeddingService methods for better question and answer embedding handling ([ac49b3f](https://github.com/cds-snc/ai-answers/commit/ac49b3fd6d0e6669c8f9630e839b389e551b2796))
+* remove unused provider parameter from similarQuestions node and update embedding client creation logic ([2cb7260](https://github.com/cds-snc/ai-answers/commit/2cb72609fa8d1e223896765fee6b75ced7dc6138))
+* start DND scenario ([98a9f6b](https://github.com/cds-snc/ai-answers/commit/98a9f6ba7920ae28e52a95a61a78b2f47591f300))
+* update DocDBVectorService to handle language filters and enhance embedding statistics ([742c3c5](https://github.com/cds-snc/ai-answers/commit/742c3c5dea3dd04265b881732f5e23bf5f58a97d))
+* update DocDBVectorService to handle language filters and enhance… ([005573a](https://github.com/cds-snc/ai-answers/commit/005573a1694ab1193be5eaf8a0f488c6c5dd9434))
+
 ## [1.128.1](https://github.com/cds-snc/ai-answers/compare/v1.128.0...v1.128.1) (2026-05-19)
 
 
