@@ -90,10 +90,12 @@ When building Mongo/Mongoose queries from request data or other user-controlled 
 Use the shared helpers in `api/util/db-query.js`:
 
 ```js
-import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
+import { requireObjectIdString, requireLiteralString, requireString } from '../util/db-query.js';
 ```
 
-Use `requireObjectIdString(value, fieldName)` for ObjectId-backed fields, and `requireLiteralString(value, fieldName)` for exact-match string fields that will be used directly in a query.
+Use `requireObjectIdString(value, fieldName)` for ObjectId-backed fields, `requireLiteralString(value, fieldName)` for exact-match string fields that will be used directly in a query, and `requireString(value, fieldName)` for plain string fields such as generated UUID-style IDs.
+
+Normalize user-controlled query values by assigning back to the existing variable before the query. Prefer `chatId = requireString(chatId, 'chatId')` over introducing `safeChatId` / `safe*` variables unless a separate raw value is genuinely needed later.
 
 Keep existing route error contracts unless the task explicitly asks to change them. In most alert-cleanup work, let helper-thrown errors fall through the endpoint's existing `catch` block instead of adding new invalid-ID/status branches.
 

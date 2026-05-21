@@ -1,5 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { requireString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function deleteChatHandler(req, res) {
@@ -11,12 +12,13 @@ async function deleteChatHandler(req, res) {
 		await dbConnect();
 		console.log('DB Connected in delete-chat endpoint');
 
-		const { chatId } = req.query;
+		let { chatId } = req.query;
 		if (!chatId) {
 			return res.status(400).json({ message: 'Chat ID is required' });
 		}
+		chatId = requireString(chatId, 'chatId');
 
-		const chat = await Chat.findOne({ chatId: chatId });
+		const chat = await Chat.findOne({ chatId });
 		if (!chat) {
 			return res.status(404).json({ message: 'Chat not found' });
 		}

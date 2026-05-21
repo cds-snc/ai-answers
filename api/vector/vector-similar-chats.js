@@ -4,6 +4,7 @@ import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { Embedding } from '../../models/embedding.js';
 import { VectorService } from '../../services/VectorServiceFactory.js';
+import { requireString } from '../util/db-query.js';
 
 async function similarChatsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -11,10 +12,11 @@ async function similarChatsHandler(req, res) {
   }
   await dbConnect();
   try {
-    const { chatId, limit = 20 } = req.query;
+    let { chatId, limit = 20 } = req.query;
     if (!chatId) {
       return res.status(400).json({ message: 'chatId is required' });
     }
+    chatId = requireString(chatId, 'chatId');
     // Find the Chat document by chatId string
     const chatRecord = await Chat.findOne({ chatId });
     if (!chatRecord) {

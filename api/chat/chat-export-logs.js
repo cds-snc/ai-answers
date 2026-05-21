@@ -7,6 +7,7 @@ import {
     withProtection
 } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';
@@ -422,10 +423,10 @@ async function chatExportHandler(req, res) {
             startDate, endDate,
             department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
             timezoneOffsetMinutes,
-            batchId,
             view = 'default',
             format = 'xlsx'
         } = req.query;
+        let { batchId } = req.query;
 
         if (!VIEW_DEFINITIONS[view]) {
             return res.status(400).json({ error: `Invalid view: ${view}` });
@@ -643,6 +644,7 @@ async function chatExportHandler(req, res) {
         } else {
             // Non-Aggregate Optimized Path - used when no filters are specified
             if (batchId) {
+                batchId = requireObjectIdString(batchId, 'batchId');
                 const bItems = await BatchItem.find({ batch: batchId }).select('chat');
                 const bIds = bItems.map(i => i.chat);
                 dateFilter._id = { $in: bIds };

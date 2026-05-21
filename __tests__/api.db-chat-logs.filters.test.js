@@ -26,11 +26,13 @@ function makeRes() {
 describe('db-chat-logs handler filters (V2)', () => {
   let dbModule;
   let Chat;
+  let BatchItem;
 
   beforeEach(async () => {
     // load the handler module fresh each time
     dbModule = await import('../api/db/db-chat-logs.js');
     Chat = (await import('../models/chat.js')).Chat;
+    BatchItem = (await import('../models/batchItem.js')).BatchItem;
   });
 
   afterEach(() => {
@@ -73,5 +75,22 @@ describe('db-chat-logs handler filters (V2)', () => {
       return and.some(cond => cond['interactions.answerType'] === 'pt-muni');
     });
     expect(hasAnswerType).toBe(true);
+  });
+
+  it('normalizes batchId before querying batch items', async () => {
+    const batchId = '64fec1000000000000000001';
+    const batchItemSelect = vi.fn().mockResolvedValue([{ chat: 'chat-1' }]);
+    const batchFind = vi.spyOn(BatchItem, 'find').mockReturnValue({ select: batchItemSelect });
+    const aggregate = vi.spyOn(Chat, 'aggregate').mockResolvedValue([]);
+
+    const req = makeReq({ batchId, limit: '5' });
+    const res = makeRes();
+
+    const defaultExport = dbModule.default;
+    await defaultExport(req, res);
+
+    expect(batchFind).toHaveBeenCalledWith({ batch: batchId });
+    expect(batchItemSelect).toHaveBeenCalledWith('chat');
+    expect(aggregate).toHaveBeenCalled();
   });
 });
