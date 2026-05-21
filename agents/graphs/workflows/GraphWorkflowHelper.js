@@ -115,9 +115,8 @@ export class GraphWorkflowHelper {
       .map(m => m.text || '');
   }
 
-  determineOutputLang(pageLang, translationData) {
-    const originalLang = translationData?.originalLanguage || 'eng';
-    return pageLang === 'fr' ? 'fra' : originalLang;
+  determineOutputLang(translationData) {
+    return translationData?.originalLanguage || 'eng';
   }
 
   async applyScenarioOverride({ context, departmentKey, overrideUserId, chatId }) {
@@ -185,7 +184,7 @@ export class GraphWorkflowHelper {
       searchQuery: searchResult.query || searchResult.searchQuery || contextPayload.searchResults?.query || '',
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
-      outputLang: this.determineOutputLang(lang, translationData),
+      outputLang: this.determineOutputLang(translationData),
       originalLang: translationData?.originalLanguage || lang,
       originalUserMessage: userMessage,
     };
@@ -220,7 +219,7 @@ export class GraphWorkflowHelper {
       const context = { ...lastMessage.interaction.context };
       context.translatedQuestion = translationData?.translatedText || userMessage;
       context.originalLang = translationData?.originalLanguage || lang;
-      context.outputLang = this.determineOutputLang(lang, translationData);
+      context.outputLang = this.determineOutputLang(translationData);
       const departmentKey = department || context.department;
       const updatedContext = await this.applyScenarioOverride({
         context,
