@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const DEFAULT_LITERAL_STRING_PATTERN = /^[A-Za-z0-9._:-]+$/;
+const DEFAULT_LITERAL_STRING_PATTERN = /^[-A-Za-z0-9._:]+$/;
 
 function normalizeObjectIdCandidate(value) {
   if (value == null) {

@@ -17,7 +17,7 @@ import { ScenarioOverrideService } from '../ScenarioOverrideService.js';
 
 const exampleOverride = (overrides = {}) => ({
   _id: 'override-id',
-  userId: 'user-1',
+  userId: '64fec1000000000000000001',
   departmentKey: 'HC-SC',
   overrideText: 'custom text',
   enabled: true,
@@ -30,7 +30,7 @@ beforeEach(() => {
   scenarioModelMock.findOne.mockReset();
   scenarioModelMock.findOneAndUpdate.mockReset();
   scenarioModelMock.deleteOne.mockReset();
-  ScenarioOverrideService.invalidateCache('user-1');
+  ScenarioOverrideService.invalidateCache('64fec1000000000000000001');
 });
 
 describe('ScenarioOverrideService', () => {
@@ -39,12 +39,12 @@ describe('ScenarioOverrideService', () => {
     const findLean = vi.fn().mockResolvedValue(records);
     scenarioModelMock.find.mockReturnValue({ lean: findLean });
 
-    const first = await ScenarioOverrideService.getOverridesForUser('user-1');
+    const first = await ScenarioOverrideService.getOverridesForUser('64fec1000000000000000001');
     expect(first).toEqual(records);
     expect(scenarioModelMock.find).toHaveBeenCalledTimes(1);
     expect(findLean).toHaveBeenCalledTimes(1);
 
-    const second = await ScenarioOverrideService.getOverridesForUser('user-1');
+    const second = await ScenarioOverrideService.getOverridesForUser('64fec1000000000000000001');
     expect(second).toEqual(records);
     expect(scenarioModelMock.find).toHaveBeenCalledTimes(1);
     expect(findLean).toHaveBeenCalledTimes(1);
@@ -54,9 +54,9 @@ describe('ScenarioOverrideService', () => {
     const disabledLean = vi.fn().mockResolvedValue(exampleOverride({ enabled: false }));
     scenarioModelMock.findOne.mockReturnValue({ lean: disabledLean });
 
-    const override = await ScenarioOverrideService.getActiveOverride('user-1', 'HC-SC');
+    const override = await ScenarioOverrideService.getActiveOverride('64fec1000000000000000001', 'HC-SC');
     expect(override).toBeNull();
-    expect(scenarioModelMock.findOne).toHaveBeenCalledWith({ userId: 'user-1', departmentKey: 'HC-SC' });
+    expect(scenarioModelMock.findOne).toHaveBeenCalledWith({ userId: '64fec1000000000000000001', departmentKey: 'HC-SC' });
     expect(disabledLean).toHaveBeenCalledTimes(1);
   });
 
@@ -65,13 +65,13 @@ describe('ScenarioOverrideService', () => {
     const enabledLean = vi.fn().mockResolvedValue(record);
     scenarioModelMock.findOne.mockReturnValue({ lean: enabledLean });
 
-    const override = await ScenarioOverrideService.getActiveOverride('user-1', 'HC-SC');
+    const override = await ScenarioOverrideService.getActiveOverride('64fec1000000000000000001', 'HC-SC');
     expect(override).toEqual(record);
     expect(scenarioModelMock.findOne).toHaveBeenCalledTimes(1);
     expect(enabledLean).toHaveBeenCalledTimes(1);
 
     // Second call should use cache
-    const cached = await ScenarioOverrideService.getActiveOverride('user-1', 'HC-SC');
+    const cached = await ScenarioOverrideService.getActiveOverride('64fec1000000000000000001', 'HC-SC');
     expect(cached).toEqual(record);
     expect(scenarioModelMock.findOne).toHaveBeenCalledTimes(1);
     expect(enabledLean).toHaveBeenCalledTimes(1);
@@ -83,19 +83,19 @@ describe('ScenarioOverrideService', () => {
     const invalidateSpy = vi.spyOn(ScenarioOverrideService, 'invalidateCache');
 
     const result = await ScenarioOverrideService.upsertOverride({
-      userId: 'user-1',
+      userId: '64fec1000000000000000001',
       departmentKey: 'HC-SC',
       overrideText: 'updated',
       enabled: true,
     });
 
     expect(scenarioModelMock.findOneAndUpdate).toHaveBeenCalledWith(
-      { userId: 'user-1', departmentKey: 'HC-SC' },
-      { $set: { overrideText: 'updated', enabled: true }, $setOnInsert: { userId: 'user-1', departmentKey: 'HC-SC' } },
+      { userId: '64fec1000000000000000001', departmentKey: 'HC-SC' },
+      { $set: { overrideText: 'updated', enabled: true }, $setOnInsert: { userId: '64fec1000000000000000001', departmentKey: 'HC-SC' } },
       { new: true, upsert: true, lean: true }
     );
     expect(result).toEqual(record);
-    expect(invalidateSpy).toHaveBeenCalledWith('user-1', 'HC-SC');
+    expect(invalidateSpy).toHaveBeenCalledWith('64fec1000000000000000001', 'HC-SC');
     invalidateSpy.mockRestore();
   });
 
@@ -103,10 +103,10 @@ describe('ScenarioOverrideService', () => {
     scenarioModelMock.deleteOne.mockResolvedValue({ acknowledged: true, deletedCount: 1 });
     const invalidateSpy = vi.spyOn(ScenarioOverrideService, 'invalidateCache');
 
-    await ScenarioOverrideService.deleteOverride('user-1', 'HC-SC');
+    await ScenarioOverrideService.deleteOverride('64fec1000000000000000001', 'HC-SC');
 
-    expect(scenarioModelMock.deleteOne).toHaveBeenCalledWith({ userId: 'user-1', departmentKey: 'HC-SC' });
-    expect(invalidateSpy).toHaveBeenCalledWith('user-1', 'HC-SC');
+    expect(scenarioModelMock.deleteOne).toHaveBeenCalledWith({ userId: '64fec1000000000000000001', departmentKey: 'HC-SC' });
+    expect(invalidateSpy).toHaveBeenCalledWith('64fec1000000000000000001', 'HC-SC');
     invalidateSpy.mockRestore();
   });
 });

@@ -10,19 +10,17 @@ async function feedbackExpertNeverStaleHandler(req, res) {
   }
 
   try {
-    const { interactionId, neverStale } = req.body;
+    let { interactionId, neverStale } = req.body || {};
     if (!interactionId || typeof neverStale === 'undefined') {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    if (typeof interactionId !== 'string') {
-      throw new Error('Invalid interactionId');
-    }
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
     await dbConnect();
 
     // Find interaction by ObjectId or by interactionId field
     let interaction = null;
     try {
-      interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId'));
+      interaction = await Interaction.findById(interactionId);
     } catch (e) {
       // ignore cast errors
     }

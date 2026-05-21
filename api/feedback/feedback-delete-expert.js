@@ -9,19 +9,17 @@ async function feedbackDeleteExpertHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   try {
-    const { interactionId } = req.body;
+    let { interactionId } = req.body || {};
     if (!interactionId) {
       return res.status(400).json({ error: 'interactionId is required' });
     }
-    if (typeof interactionId !== 'string') {
-      throw new Error('Invalid interactionId');
-    }
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
     await dbConnect();
 
     // Try to find by _id first, then by interactionId field
     let interaction = null;
     try {
-      interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId'));
+      interaction = await Interaction.findById(interactionId);
     } catch (e) {
       // ignore cast errors and try by field
     }
