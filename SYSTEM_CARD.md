@@ -43,7 +43,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 </details>
 
 ## Current Status
-- **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in January 2026.
+- **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in February 2026.
 - **Trial report**: [blog post](https://digital.canada.ca/2025/12/17/ai-answers-enterprise-scale-trial-for-canada.ca/)
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Evaluation**: Ongoing expert evaluation and response scoring generating AI automated evals & answers
@@ -67,8 +67,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ### Language Support
 - Full bilingual support (English/French pages, including Admin) for Official language compliance
-- On the English page: Users can ask questions in any language and receive answers in the same language they asked
-- On the French page: Users receive answers in French regardless of the language in which the question was asked
+- Users can ask questions in any language and receive answers in the same language they asked
 - Citation matches the page language
 
 ## Technical Architecture
@@ -178,8 +177,8 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Screen reader testing**: Iterative usability sessions held with range of screen reader users to test and improve
 - **WCAG 2.1 AA compliance**: Full accessibility standards implementation
 - **Bilingual support**: Full English/French support with official language compliance
-- **Multi-language input**: On the English page, users can ask questions in many languages and receive an answer in the same language asked. On the French page, users receive answers in French regardless of question language. Indigenous language support is planned
-- **Plain language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing
+- **Multi-language input**: Users can ask questions in many languages and receive an answer in the same language asked. Indigenous language support will be planned and supported by Indigenous Services Canada. 
+- **Plain language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing of the short answers. 
 
 #### **System reliability risks**
 **Potential harms:**
