@@ -63,3 +63,20 @@ export function requireLiteralString(value, fieldName = 'value', options) {
   }
   return normalized;
 }
+
+export function normalizeString(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+export function requireString(value, fieldName = 'value') {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    throw new Error(`Invalid ${fieldName}`);
+  }
+  return normalized;
+}

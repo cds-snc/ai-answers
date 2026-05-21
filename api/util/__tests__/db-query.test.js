@@ -4,8 +4,10 @@ import {
   normalizeLiteralString,
   normalizeObjectId,
   normalizeObjectIdString,
+  normalizeString,
   requireLiteralString,
   requireObjectIdString,
+  requireString,
 } from '../db-query.js';
 
 describe('db query helpers', () => {
@@ -50,5 +52,16 @@ describe('db query helpers', () => {
 
   it('throws for invalid literal values', () => {
     expect(() => requireLiteralString({ $ne: 'siteStatus' }, 'setting key')).toThrow('Invalid setting key');
+  });
+
+  it('normalizes plain string values', () => {
+    expect(normalizeString(' openai-gpt51 ')).toBe('openai-gpt51');
+    expect(normalizeString('')).toBeNull();
+    expect(normalizeString({ value: 'openai-gpt51' })).toBeNull();
+  });
+
+  it('throws for invalid plain string values', () => {
+    expect(() => requireString('', 'setting value')).toThrow('Invalid setting value');
+    expect(() => requireString({ value: 'openai-gpt51' }, 'setting value')).toThrow('Invalid setting value');
   });
 });

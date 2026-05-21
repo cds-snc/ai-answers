@@ -1,6 +1,6 @@
 import dbConnect from './db-connect.js';
 import { Setting } from '../../models/setting.js';
-import { requireLiteralString } from '../util/db-query.js';
+import { requireLiteralString, requireString } from '../util/db-query.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function settingsHandler(req, res) {
@@ -19,6 +19,7 @@ async function settingsHandler(req, res) {
       return res.status(400).json({ message: 'Key required' });
     }
     key = requireLiteralString(key, 'setting key');
+    value = requireString(value, 'setting value');
     await dbConnect();
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
     return res.status(200).json({ message: 'Setting updated' });
