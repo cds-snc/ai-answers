@@ -1,5 +1,6 @@
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { requireString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function handler(req, res) {
@@ -7,10 +8,11 @@ async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { chatId } = req.query;
+  let { chatId } = req.query;
   if (!chatId) {
     return res.status(400).json({ message: 'chatId query parameter required' });
   }
+  chatId = requireString(chatId, 'chatId');
 
   try {
     await dbConnect();

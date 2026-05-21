@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { Chat } from '../../models/chat.js';
-import { requireObjectIdString } from '../util/db-query.js';
+import { requireObjectIdString, requireString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchItemsUpsertHandler(req, res) {
@@ -21,6 +21,7 @@ async function batchItemsUpsertHandler(req, res) {
 
     const findChatWithRetries = async (chatId, attempts = 6, delayMs = 500) => {
       if (!chatId) return null;
+      chatId = requireString(chatId, 'chatId');
       await new Promise((r) => setTimeout(r, delayMs));
       for (let i = 0; i < attempts; i++) {
         try {

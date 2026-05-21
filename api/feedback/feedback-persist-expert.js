@@ -5,6 +5,7 @@ import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { VectorService } from '../../services/VectorServiceFactory.js';
 import { Embedding } from '../../models/embedding.js';
 import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
+import { requireString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackPersistExpertHandler(req, res) {
@@ -14,10 +15,11 @@ async function feedbackPersistExpertHandler(req, res) {
 
   try {
     await dbConnect();
-    const { chatId, interactionId, expertFeedback } = req.body;
+    let { chatId, interactionId, expertFeedback } = req.body;
     if (!chatId || !interactionId || !expertFeedback) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    chatId = requireString(chatId, 'chatId');
     let chat = await Chat.findOne({ chatId }).populate({ path: 'interactions' });
     if (!chat) {
       return res.status(404).json({ message: 'Chat not found' });

@@ -11,7 +11,7 @@ import Piscina from 'piscina';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { requireObjectIdString } from '../api/util/db-query.js';
+import { requireObjectIdString, requireString } from '../api/util/db-query.js';
 
 
 let pool;
@@ -83,6 +83,7 @@ class EvaluationService {
             if (!chatId) {
                 return { error: 'chatId is required', status: 400 };
             }
+            chatId = requireString(chatId, 'chatId');
             const chat = await Chat.findOne({ chatId }).populate('interactions');
             if (!chat) {
                 return { error: 'Chat not found', status: 404 };

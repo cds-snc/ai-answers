@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { PublicFeedback } from '../../models/publicFeedback.js';
+import { requireString } from '../util/db-query.js';
 
 
 async function feedbackPersistPublicHandler(req, res) {
@@ -10,10 +11,11 @@ async function feedbackPersistPublicHandler(req, res) {
 
   try {
     await dbConnect();
-    const { chatId, interactionId, publicFeedback } = req.body;
+    let { chatId, interactionId, publicFeedback } = req.body;
     if (!chatId || !interactionId || !publicFeedback) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    chatId = requireString(chatId, 'chatId');
     let chat = await Chat.findOne({ chatId }).populate({ path: 'interactions' });
     if (!chat) {
       return res.status(404).json({ message: 'Chat not found' });

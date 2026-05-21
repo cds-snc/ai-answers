@@ -4,6 +4,7 @@ import EmbeddingService from './EmbeddingService.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import EvaluationService from './EvaluationService.js';
 import { Setting } from '../models/setting.js';
+import { requireString } from '../api/util/db-query.js';
 
 export const InteractionPersistenceService = {
     async persistInteraction(arg1, arg2, arg3, arg4) {
@@ -40,9 +41,10 @@ export const InteractionPersistenceService = {
         if (!chatId) {
             throw new Error('chatId_required');
         }
+        chatId = requireString(chatId, 'chatId');
 
         ServerLoggingService.info('[InteractionPersistenceService] Start - chatId:', chatId);
-        let chat = await Chat.findOne({ chatId: chatId });
+        let chat = await Chat.findOne({ chatId });
 
         if (!chat) {
             chat = new Chat();
