@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackDeleteExpertHandler(req, res) {
@@ -8,16 +9,19 @@ async function feedbackDeleteExpertHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   try {
-    await dbConnect();
     const { interactionId } = req.body;
     if (!interactionId) {
       return res.status(400).json({ error: 'interactionId is required' });
     }
+    if (typeof interactionId !== 'string') {
+      throw new Error('Invalid interactionId');
+    }
+    await dbConnect();
 
     // Try to find by _id first, then by interactionId field
     let interaction = null;
     try {
-      interaction = await Interaction.findById(interactionId);
+      interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId'));
     } catch (e) {
       // ignore cast errors and try by field
     }

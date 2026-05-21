@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackExpertNeverStaleHandler(req, res) {
@@ -9,16 +10,19 @@ async function feedbackExpertNeverStaleHandler(req, res) {
   }
 
   try {
-    await dbConnect();
     const { interactionId, neverStale } = req.body;
     if (!interactionId || typeof neverStale === 'undefined') {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    if (typeof interactionId !== 'string') {
+      throw new Error('Invalid interactionId');
+    }
+    await dbConnect();
 
     // Find interaction by ObjectId or by interactionId field
     let interaction = null;
     try {
-      interaction = await Interaction.findById(interactionId);
+      interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId'));
     } catch (e) {
       // ignore cast errors
     }

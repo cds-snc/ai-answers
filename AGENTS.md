@@ -83,6 +83,20 @@ Before starting work, read the relevant reference doc:
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
 
+## Database query safety
+
+When building Mongo/Mongoose queries from request data or other user-controlled input, normalize the value before placing it in a query predicate. Do not rely on Mongoose casting or filter sanitization to prove the query is safe for CodeQL.
+
+Use the shared helpers in `api/util/db-query.js`:
+
+```js
+import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
+```
+
+Use `requireObjectIdString(value, fieldName)` for ObjectId-backed fields, and `requireLiteralString(value, fieldName)` for exact-match string fields that will be used directly in a query.
+
+Keep existing route error contracts unless the task explicitly asks to change them. In most alert-cleanup work, let helper-thrown errors fall through the endpoint's existing `catch` block instead of adding new invalid-ID/status branches.
+
 ## FilterPanel and filter logic
 When changing `FilterPanel.js` or the backend filter logic in `getChatFilterConditions` (`api/util/chat-filters.js`), you must verify the change works across **all consumers**:
 - **ChatDashboardPage** (`api/chat/chat-dashboard.js`)

@@ -97,4 +97,20 @@ describe('api/batch/batch-stats handler', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: 'batchId is required' });
   });
+
+  it('uses the existing error contract when batchId is not a valid ObjectId string', async () => {
+    const req = {
+      method: 'GET',
+      query: { batchId: { $ne: 'anything' } },
+      path: '/api/batch/batch-stats',
+      isAuthenticated: vi.fn(() => true),
+      user: { role: 'admin', userId: 'test-admin' },
+    };
+    const res = makeRes();
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Failed to compute stats', error: 'Invalid batchId' });
+  });
 });

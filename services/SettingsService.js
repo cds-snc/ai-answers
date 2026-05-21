@@ -1,5 +1,6 @@
 import dbConnect from '../api/db/db-connect.js';
 import { Setting } from '../models/setting.js';
+import { requireLiteralString } from '../api/util/db-query.js';
 
 // Default values for settings that must always exist.
 // Seeded on startup if missing from the database.
@@ -32,11 +33,13 @@ class SettingsServiceClass {
   }
 
   get(key) {
+    key = requireLiteralString(key, 'setting key');
     // Synchronous read from cache
     return this.cache.hasOwnProperty(key) ? this.cache[key] : null;
   }
 
   async set(key, value) {
+    key = requireLiteralString(key, 'setting key');
     // Update cache immediately
     this.cache[key] = value;
     // Persist to DB asynchronously
