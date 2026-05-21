@@ -1,5 +1,6 @@
 import dbConnect from '../api/db/db-connect.js';
 import { ScenarioOverride } from '../models/scenarioOverride.js';
+import { normalizeLiteralString, normalizeObjectIdString, requireLiteralString, requireObjectIdString } from '../api/util/db-query.js';
 
 class ScenarioOverrideServiceClass {
   constructor() {
@@ -26,6 +27,7 @@ class ScenarioOverrideServiceClass {
     if (!userId) {
       return [];
     }
+    userId = requireObjectIdString(userId, 'userId');
     const userCache = this._getUserCache(userId);
     if (userCache && userCache.fullyLoaded) {
       return Array.from(userCache.values());
@@ -47,6 +49,8 @@ class ScenarioOverrideServiceClass {
     if (!userId || !departmentKey) {
       return null;
     }
+    userId = requireObjectIdString(userId, 'userId');
+    departmentKey = requireLiteralString(departmentKey, 'departmentKey');
     const userCache = this._getUserCache(userId);
     if (userCache && userCache.has(departmentKey)) {
       const cached = userCache.get(departmentKey);
@@ -65,6 +69,8 @@ class ScenarioOverrideServiceClass {
     if (!userId || !departmentKey) {
       throw new Error('userId and departmentKey are required');
     }
+    userId = requireObjectIdString(userId, 'userId');
+    departmentKey = requireLiteralString(departmentKey, 'departmentKey');
     await dbConnect();
 
     const payload = {
@@ -90,6 +96,8 @@ class ScenarioOverrideServiceClass {
     if (!userId || !departmentKey) {
       throw new Error('userId and departmentKey are required');
     }
+    userId = requireObjectIdString(userId, 'userId');
+    departmentKey = requireLiteralString(departmentKey, 'departmentKey');
     await dbConnect();
     await ScenarioOverride.deleteOne({ userId, departmentKey });
     this.invalidateCache(userId, departmentKey);
@@ -99,6 +107,11 @@ class ScenarioOverrideServiceClass {
     if (!userId) {
       return;
     }
+    userId = normalizeObjectIdString(userId);
+    if (!userId) {
+      return;
+    }
+    departmentKey = departmentKey ? normalizeLiteralString(departmentKey) : null;
     const userCache = this.cache.get(userId);
     if (!userCache) {
       return;

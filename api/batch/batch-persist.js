@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchPersistHandler(req, res) {
@@ -12,6 +13,10 @@ async function batchPersistHandler(req, res) {
     const batchData = req.body;
     console.log(`[batch-persist] called with:`, batchData);
     if (!batchData) return res.status(400).json({ message: 'Missing batch data' });
+
+    if (batchData._id) {
+      batchData._id = requireObjectIdString(batchData._id, 'batch ID');
+    }
 
     await dbConnect();
 

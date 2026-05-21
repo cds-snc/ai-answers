@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
-import mongoose from 'mongoose';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const COUNT_MAX_TIME_MS = 20000;
@@ -9,18 +9,15 @@ const COUNT_MAX_TIME_MS = 20000;
 async function batchStatsHandler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ message: 'Method Not Allowed' });
 
-  const { batchId } = req.query || {};
+  let { batchId } = req.query || {};
   if (!batchId) return res.status(400).json({ message: 'batchId is required' });
 
   try {
     await dbConnect();
+    batchId = requireObjectIdString(batchId, 'batchId');
 
-    
-    let batch = null;
-    if (mongoose.Types.ObjectId.isValid(batchId)) {
-      batch = await Batch.findById(batchId);
-      if (batch) console.log(`[batch-stats] Found batch by _id: _id=${batch._id}`);
-    }
+    const batch = await Batch.findById(batchId);
+    if (batch) console.log(`[batch-stats] Found batch by _id: _id=${batch._id}`);
     
     if (!batch) return res.status(404).json({ message: 'Batch not found' });
 
@@ -42,7 +39,7 @@ async function batchStatsHandler(req, res) {
 
     console.log(`[batch-stats] Counts: total=${total} processed=${processed} failed=${failed} skipped=${skipped} finished=${finished}`);
 
-  return res.status(200).json({ batchId: String(batch._id), workflow: batch.workflow || 'Default', total, processed, failed, skipped, finished });
+    return res.status(200).json({ batchId: String(batch._id), workflow: batch.workflow || 'Default', total, processed, failed, skipped, finished });
   } catch (err) {
     const isTimeout = err?.codeName === 'MaxTimeMSExpired' || err?.code === 50;
     if (isTimeout) {
@@ -57,4 +54,3 @@ async function batchStatsHandler(req, res) {
 export default function handler(req, res) {
   return withProtection(batchStatsHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }
-

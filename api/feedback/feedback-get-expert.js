@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackGetExpertHandler(req, res) {
@@ -8,9 +9,10 @@ async function feedbackGetExpertHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   try {
-    await dbConnect();
-    const { interactionId } = req.body;
+    let { interactionId } = req.body;
     if (!interactionId) return res.status(400).json({ message: 'Missing required fields' });
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
+    await dbConnect();
     const interaction = await Interaction.findById(interactionId).lean();
     if (!interaction) return res.status(404).json({ message: 'Interaction not found' });
     if (!interaction.expertFeedback) return res.status(200).json({ message: 'No expert feedback', sentences: [] });
