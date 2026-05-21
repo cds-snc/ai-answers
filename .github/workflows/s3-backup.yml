@@ -1,4 +1,7 @@
 name: S3 backup
+permissions:
+  contents: read
+  id-token: write
 on:
   workflow_dispatch:
   schedule:
