@@ -98,6 +98,11 @@
     "vitest": "^3.1.4",
     "web-vitals": "^2.1.4"
   },
+  "overrides": {
+    "postcss-svgo": {
+      "svgo": "2.8.1"
+    }
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
