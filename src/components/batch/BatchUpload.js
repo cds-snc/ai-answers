@@ -4,8 +4,8 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
-import * as XLSX from 'xlsx';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
+import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -86,7 +86,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
         const text = await file.text();
         // Parse CSV to entries and prepare items for server-side BatchItem creation
-        const entries = processCSV(text);
+        const entries = parseBatchCsv(text);
 
         if (!entries.length) {
           throw new Error(t('batch.upload.error.noValidRows'));
@@ -154,7 +154,10 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       } catch (err) {
         // Surface the actual parse error (e.g. missing column, empty file)
         // so the admin can see what's wrong with the CSV.
-        const detail = err?.message || t('batch.upload.error.readFailed');
+        const detail = {
+          EMPTY_CSV: t('batch.upload.error.invalidCsv'),
+          MISSING_QUESTION_COLUMN: t('batch.upload.error.missingQuestionColumn'),
+        }[err?.code] || err?.message || t('batch.upload.error.readFailed');
         setError(detail);
         console.error('Error reading file:', err);
         // Re-show the upload button so the user can retry without re-selecting
@@ -163,58 +166,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       }
     }
   };
-
-  const processCSV = (csvText) => {
-    try {
-      // Parse the CSV content using XLSX
-      const workbook = XLSX.read(csvText, { type: 'string' });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-
-      // Convert sheet data to JSON
-      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
-
-      // Validate and extract data
-      if (!jsonData.length) {
-        throw new Error('The CSV file is empty or invalid.');
-      }
-
-      const headers = jsonData[0].map((header) => String(header ?? '').trim().toUpperCase());
-      const QUESTION_HEADERS = ['PROBLEM DETAILS', 'PROBLEMDETAILS', 'QUESTION', 'REDACTEDQUESTION', 'REDACTED QUESTION'];
-      const problemDetailsIndex = headers.findIndex((h) => QUESTION_HEADERS.includes(h));
-
-      if (problemDetailsIndex === -1) {
-        throw new Error(
-          `Required question column not found in CSV file. Expected one of: ${QUESTION_HEADERS.join(', ')}. Found headers: ${headers.filter(Boolean).join(', ') || '(none)'}.`
-        );
-      }
-
-      const entries = jsonData
-        .slice(1)
-        .map((row) => {
-          const entry = {};
-          headers.forEach((header, index) => {
-            const key = (header === 'PROBLEM DETAILS' || header === 'PROBLEMDETAILS' || header === 'REDACTED QUESTION' || header === 'QUESTION')
-              ? 'REDACTEDQUESTION'
-              : header;
-            entry[key] = String(row[index] ?? '').trim();
-          });
-          return entry;
-        })
-        .filter((entry) => entry['REDACTEDQUESTION']);
-
-      console.log(`Found ${entries.length} valid entries to process`);
-      return entries;
-    } catch (error) {
-      console.error('Error processing CSV:', error);
-      throw new Error(`Failed to process CSV file: ${error.message}`);
-    }
-  };
-
-
-
-
-
 
   useEffect(() => {
     console.log('State changed:', {
