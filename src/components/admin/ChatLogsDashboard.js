@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import { usePageContext } from '../hooks/usePageParam.js';
 import { RoleProtectedRoute } from '../components/RoleProtectedRoute.js';
 import MetricsDashboard from '../components/admin/MetricsDashboard.js';
@@ -10,7 +10,7 @@ const MetricsPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('metrics.title')}</h1>
       
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>

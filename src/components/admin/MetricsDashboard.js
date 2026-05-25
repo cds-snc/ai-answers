@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';

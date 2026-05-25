@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsButton, GcdsDetails, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsButton, GcdsDetails, GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 // Removed unused imports
@@ -117,7 +117,7 @@ const EvalPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer size="xl" centered>
+    <GcdsContainer layout="page">
       <h1 className="mb-400">{t('admin.navigation.eval', 'Evaluation Administration')}</h1>
       
       <nav className="mb-400">

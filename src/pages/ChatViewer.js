@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
 import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
@@ -60,7 +60,7 @@ const ChatViewer = ({ lang = 'en' }) => {
 
   return (
     <>
-      <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+      <GcdsContainer layout="page" tag="main" className="mb-600">
         <h1 className="mb-400">{t('logging.title')}</h1>
         <nav className="mb-400">
           <GcdsText>

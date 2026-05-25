@@ -11,8 +11,8 @@
     "@aws-sdk/client-sts": "^3.981.0",
     "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@cdssnc/gcds-components": "^0.26.1",
-    "@cdssnc/gcds-components-react": "^0.34.3",
+    "@gcds-core/components": "^1.2.0",
+    "@gcds-core/components-react": "^1.2.0",
     "@cdssnc/gcds-utility": "^1.4.0",
     "@fingerprintjs/fingerprintjs": "^3.4.2",
     "@fortawesome/fontawesome-free": "^6.7.2",
@@ -132,6 +132,15 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "storybook": "8.6.17",
+    "@storybook/core": "8.6.17",
+    "@storybook/instrumenter": "8.6.17",
+    "@storybook/test": "8.6.17",
+    "@storybook/addon-a11y": "8.6.17",
+    "@storybook/addon-highlight": "8.6.17",
+    "@storybook/theming": "8.6.17"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.9",

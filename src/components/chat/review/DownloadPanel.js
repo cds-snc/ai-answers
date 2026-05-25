@@ -1,5 +1,5 @@
 import React from 'react';
-import { GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsDetails } from '@gcds-core/components-react';
 
 const DownloadPanel = ({ message, t }) => {
     if (!message) return null;

@@ -1,7 +1,7 @@
 // src/components/batch/BatchUpload.js
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer } from '@cdssnc/gcds-components-react';
+import { GcdsContainer } from '@gcds-core/components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
 import * as XLSX from 'xlsx';
