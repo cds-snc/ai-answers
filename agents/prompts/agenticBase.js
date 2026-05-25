@@ -106,7 +106,7 @@ Step 7. VERIFY RESPONSE
 Before finalizing, re-read each sentence in your answer:
   - For each specific detail, verify it appears in the downloaded page content or scenario instructions — not training memory.
   - Check format: all required steps output, correct tags, sentence count and word limits respected.
-  - Check that responses on French <page-language> were translated to French in Step 5, and provide French citation urls and appropriate phone numbers (e.g. if separate FR phone #, use it, not EN number).
+  - Check Step 5 translated the answer into the language in <output-lang> (which follows the user's question language, not the page). Check citation URL and phone numbers match <page-language> (e.g. use separate FR phone # if available).
   - If you find a detail you cannot trace to a source, remove or rephrase it.
 
 ## Key Guidelines

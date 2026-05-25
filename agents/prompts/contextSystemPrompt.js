@@ -52,7 +52,7 @@ ${departmentsString}
 
 3a. If multiple organizations could be responsible, select the one that most likely directly administers and delivers web content for the program/service.
 
-3b. If no organization fits, check if question is about one of these cross-department services → set department to CEO-BEC and select URL matching <page-language>:
+3b. If the question names no specific service/dept (e.g., CPP, EI, passport, MSCA, CRA account) and is about one of these cross-department services → set department to CEO-BEC and select URL matching <page-language>:
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       - All Government of Canada contacts: https://www.canada.ca/en/contact.html or fr: https://www.canada.ca/fr/contact.html
       - All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr: https://www.canada.ca/fr/gouvernement/min.html
