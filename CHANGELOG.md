@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.129.1](https://github.com/cds-snc/ai-answers/compare/v1.129.0...v1.129.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* add helpers to database calls to stop the ability for user to tamper with database queries. ([9e5088f](https://github.com/cds-snc/ai-answers/commit/9e5088fb6ece971a8e050529ab9c99dedf866bce))
+* citation for FR and scenario issues ([78fcf93](https://github.com/cds-snc/ai-answers/commit/78fcf93dec313b95e56dbf76ac9a0921cfc4fa6b))
+* enhance string validation for setting values in database operations ([e7b4a0c](https://github.com/cds-snc/ai-answers/commit/e7b4a0c65dc577d9afd7a7ef2cbe7da9bcbff5e0))
+* FR page respond in question language ([9d2731d](https://github.com/cds-snc/ai-answers/commit/9d2731d2a3a3fed777be73ec3dcd3fb119d734dc))
+* FR page respond in question language - tested in preview ([1d7e107](https://github.com/cds-snc/ai-answers/commit/1d7e107525718ce9306657892c7c9d1bafde8007))
+* normalize string handling for chatId and batchId across various … ([2c44d36](https://github.com/cds-snc/ai-answers/commit/2c44d36717326518d85dafa72901584e3c522201))
+* normalize string handling for chatId and batchId across various endpoints ([12c5506](https://github.com/cds-snc/ai-answers/commit/12c550687b36835083ffdca41b7016ec2998ff17))
+* update system card to reflect language change ([878e322](https://github.com/cds-snc/ai-answers/commit/878e3221ac3fb73fb95b7148b594afc75a5136a5))
+* update userId handling to require ObjectId format in feedback and scenario services ([91b3318](https://github.com/cds-snc/ai-answers/commit/91b33184735e4308eb6cd7beec0bc6b7d23f43a3))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump jsonpath from 1.2.1 to 1.3.0 ([f2853f1](https://github.com/cds-snc/ai-answers/commit/f2853f1ef8eba8095d4e419d161dd30660f172a5))
+* **deps:** bump jsonpath from 1.2.1 to 1.3.0 ([dbb3d11](https://github.com/cds-snc/ai-answers/commit/dbb3d1108b1d48a3555e86da09b707765d3cfc92))
+* **deps:** bump mongoose from 8.12.1 to 8.22.1 in /server ([58ed5d7](https://github.com/cds-snc/ai-answers/commit/58ed5d785f99fe95840aa51f9f1fb07917a48a2e))
+* **deps:** bump mongoose from 8.12.1 to 8.22.1 in /server ([209b7be](https://github.com/cds-snc/ai-answers/commit/209b7bef273722f61a0de8b9ae79955005188d8d))
+* **deps:** bump ws from 8.19.0 to 8.20.1 ([5766421](https://github.com/cds-snc/ai-answers/commit/5766421a2652c8472945d0c4ea9485c1a498646f))
+
 ## [1.129.0](https://github.com/cds-snc/ai-answers/compare/v1.128.1...v1.129.0) (2026-05-20)
 
 
