@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { requireObjectIdString } from '../util/db-query.js';
+import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchPersistHandler(req, res) {
@@ -23,10 +23,34 @@ async function batchPersistHandler(req, res) {
     // If a batchId is provided, update the existing batch (or upsert when not found).
     if (batchData._id) {
       console.log(`[batch-persist] updating existing batch ${batchData._id}`);
-     
+
+      // Whitelist and sanitize updatable fields to avoid operator injection
+      const allowedFields = [
+        'status',
+        'type',
+        'workflow',
+        'name',
+        'aiProvider',
+        'searchProvider',
+        'pageLanguage',
+      ];
+
+      const safeSet = {};
+      for (const key of allowedFields) {
+        if (Object.prototype.hasOwnProperty.call(batchData, key) && batchData[key] != null) {
+          // Use requireLiteralString to enforce a safe pattern and length
+          try {
+            safeSet[key] = requireLiteralString(batchData[key], key);
+          } catch (err) {
+            return res.status(400).json({ message: `Invalid value for ${key}` });
+          }
+        }
+      }
+
+      // Prevent updating createdBy or _id via this endpoint
       const updated = await Batch.findOneAndUpdate(
         { _id: batchData._id },
-        { $set: batchData },
+        { $set: safeSet },
         { new: true, upsert: true }
       );
       console.log(`[batch-persist] updated result:`, updated ? { _id: updated._id } : null);
