@@ -36,7 +36,7 @@ async function start() {
           stdio: "inherit",
           env: {
             ...process.env,
-            REACT_APP_API_URL: `${apiUrl}/api`,
+            VITE_API_URL: `${apiUrl}/api`,
           },
           shell: true, // Fix for Windows
         });
@@ -60,7 +60,7 @@ async function start() {
       ...process.env,
       MONGODB_URI: uri,
       PORT: port,
-      REACT_APP_API_URL: `${apiUrl}/api`,
+      VITE_API_URL: `${apiUrl}/api`,
     },
     shell: true, // Fix for Windows
   });

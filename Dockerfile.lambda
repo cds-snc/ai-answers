@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install deps for build
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+RUN npm ci
 
 # Copy source
 COPY . .
@@ -33,7 +33,7 @@ COPY global-bundle.pem /app/global-bundle.pem
 # Install runtime dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy built frontend + backend
 COPY --from=build /app/build ./build
