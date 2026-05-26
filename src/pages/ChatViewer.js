@@ -140,16 +140,6 @@ const ChatViewer = ({ lang = 'en' }) => {
               >
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
-              <GcdsButton
-                id="download-logs-button"
-                type="button"
-                buttonRole="secondary"
-                disabled={!chatId || !logs || logs.length === 0}
-                onClick={handleDownloadLogs}
-                className="whitespace-nowrap shrink-0"
-              >
-                {t('logging.download')}
-              </GcdsButton>
             </div>
 
             {chatId && stepTimeline && (
