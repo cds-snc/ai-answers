@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'; // Import createRoot
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import BatchService from '../../services/BatchService.js';

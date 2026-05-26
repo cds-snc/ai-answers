@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';

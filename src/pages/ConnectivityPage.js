@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsContainer, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 
 const StatusBadge = ({ status }) => {
@@ -111,7 +111,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     }, []);
 
     return (
-        <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+        <GcdsContainer layout="page" tag="main" className="mb-600">
             <h1 className="mb-400">
                 {t('connectivity.title', 'Service Connectivity Dashboard')}
             </h1>

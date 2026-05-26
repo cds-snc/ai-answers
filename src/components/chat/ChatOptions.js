@@ -1,5 +1,5 @@
 import React from 'react';
-import { GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsDetails } from '@gcds-core/components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 

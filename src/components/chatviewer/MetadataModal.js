@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import Prism from 'prismjs';
 
 const MetadataModal = ({ metadata, onClose, t }) => {
