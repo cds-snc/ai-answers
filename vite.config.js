@@ -18,6 +18,13 @@ const jsAsJsx = {
 
 export default defineConfig({
   plugins: [jsAsJsx, react()],
+  optimizeDeps: {
+    esbuildOptions: {
+      loader: {
+        '.js': 'jsx'
+      }
+    }
+  },
   server: {
     host: '0.0.0.0',
     port: Number(process.env.PORT || 3000),
