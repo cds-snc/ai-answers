@@ -58,6 +58,31 @@ const ChatViewer = ({ lang = 'en' }) => {
     await refreshLogs();
   };
 
+  const handleDownloadLogs = () => {
+    if (!chatId || !logs || logs.length === 0) {
+      return;
+    }
+
+    const payload = {
+      chatId,
+      exportedAt: new Date().toISOString(),
+      logCount: logs.length,
+      logs,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `chat-logs-${chatId}-${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
@@ -114,6 +139,16 @@ const ChatViewer = ({ lang = 'en' }) => {
                 className="whitespace-nowrap shrink-0"
               >
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
+              </GcdsButton>
+              <GcdsButton
+                id="download-logs-button"
+                type="button"
+                buttonRole="secondary"
+                disabled={!chatId || !logs || logs.length === 0}
+                onClick={handleDownloadLogs}
+                className="whitespace-nowrap shrink-0"
+              >
+                {t('logging.download')}
               </GcdsButton>
             </div>
 

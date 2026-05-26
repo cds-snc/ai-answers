@@ -153,13 +153,15 @@ Both QA-graph nodes emit a `node:similarQuestions output` event after the servic
 
 1. **MongoDB `Logs` collection** (`models/logs.js`) — the durable, query-friendly copy. Schema: `chatId`, `logLevel`, `message`, `metadata`, `createdAt`. Indexed on `chatId`.
 2. **Blob storage** (`Storage.js`) — JSON file at `${chatId}/${interactionId}/${timestamp}-${suffix}.json`. Note: this event fires **before** `persistNode` assigns an `interactionId`, so its blob lands under `system` rather than the real interaction id. Mongo is the more reliable lookup.
-3. **Live SSE stream** — forwarded to the browser, consumed by the ChatViewer page (`/en/chat-viewer`, `/fr/visualiseur-de-clavardage`).
+3. **Live SSE stream** — forwarded to the browser during execution (consumed by the ChatViewer page below).
 
 ### Three ways to view the injected block
 
-**Live, during the run.** Open `/en/chat-viewer` in another tab; events stream in as the graph executes. Look for the `node:similarQuestions output` entry — its metadata contains `similarQuestionsText`.
+**ChatViewer page** (`/en/chat-viewer`, `/fr/visualiseur-de-clavardage`, admin/partner only). Paste any chatId — past or in-progress — and the page fetches that chat's full log stream from Mongo. Look for the `node:similarQuestions output` row and expand its metadata to see `similarQuestionsText`. Easiest path for manual testing.
 
-**API, after the fact.** Hit `GET /api/db/db-log?chatId=<chatId>&limit=1000` (admin or partner auth required). Filter the response for entries where `message === 'node:similarQuestions output'` and read `metadata.similarQuestionsText`.
+The page has a **"Download logs (JSON)"** button next to **Refresh**. It exports the full set of logs currently loaded for that chatId as a self-describing JSON file (`chatId`, `exportedAt`, `logCount`, `logs[]`). Handy for handing a prod or staging run to someone (or an LLM) for offline analysis.
+
+**API.** Hit `GET /api/db/db-log?chatId=<chatId>&limit=1000` (admin or partner auth required). Filter the response for entries where `message === 'node:similarQuestions output'` and read `metadata.similarQuestionsText`.
 
 **MongoDB direct.**
 ```js
