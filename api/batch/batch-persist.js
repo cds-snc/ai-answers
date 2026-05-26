@@ -14,15 +14,16 @@ async function batchPersistHandler(req, res) {
     console.log(`[batch-persist] called with:`, batchData);
     if (!batchData) return res.status(400).json({ message: 'Missing batch data' });
 
+    let batchId = null;
     if (batchData._id) {
-      batchData._id = requireObjectIdString(batchData._id, 'batch ID');
+      batchId = requireObjectIdString(batchData._id, 'batch ID');
     }
 
     await dbConnect();
 
     // If a batchId is provided, update the existing batch (or upsert when not found).
-    if (batchData._id) {
-      console.log(`[batch-persist] updating existing batch ${batchData._id}`);
+    if (batchId) {
+      console.log(`[batch-persist] updating existing batch ${batchId}`);
 
       // Whitelist and sanitize updatable fields to avoid operator injection
       const allowedFields = [
@@ -49,7 +50,7 @@ async function batchPersistHandler(req, res) {
 
       // Prevent updating createdBy or _id via this endpoint
       const updated = await Batch.findOneAndUpdate(
-        { _id: batchData._id },
+        { _id: batchId },
         { $set: safeSet },
         { new: true, upsert: true }
       );
