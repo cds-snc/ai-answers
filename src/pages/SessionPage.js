@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -54,7 +54,7 @@ const SessionPage = ({ lang: propLang }) => {
   }, [fetchSessions]);
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('admin.session.title', 'Sessions')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>

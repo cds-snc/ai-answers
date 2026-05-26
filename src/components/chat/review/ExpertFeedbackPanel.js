@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 

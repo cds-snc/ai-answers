@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -365,7 +365,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title')}</h1>
       <nav className="mb-400">
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>

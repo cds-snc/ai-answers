@@ -13,7 +13,7 @@ import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
 import ResetVerifyPage from './pages/ResetVerifyPage.js';
 import ResetCompletePage from './pages/ResetCompletePage.js';
-import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@cdssnc/gcds-components-react';
+import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@gcds-core/components-react';
 import './styles/global.css';
 import './styles/admin.css';
 import './styles/chat.css';

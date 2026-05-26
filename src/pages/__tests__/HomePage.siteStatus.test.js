@@ -48,7 +48,7 @@ vi.mock('../../components/chat/ChatAppContainer.js', () => ({
   default: () => <div data-testid="chat-app">Chat</div>,
 }));
 
-vi.mock('@cdssnc/gcds-components-react', () => ({
+vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsDetails: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <div>{children}</div>,

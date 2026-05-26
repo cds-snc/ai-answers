@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.js';
 import reportWebVitals from './reportWebVitals.js';
-import '@cdssnc/gcds-components-react/gcds.css';
+import '@gcds-core/components-react/gcds.css';
 import '@cdssnc/gcds-utility/dist/gcds-utility.min.css';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
