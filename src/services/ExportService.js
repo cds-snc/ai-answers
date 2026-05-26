@@ -1,7 +1,19 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { flatten } from 'flat';
 import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
+import { serializeCsvRows } from '../utils/spreadsheets/csv.js';
+
+function columnNumberToLetter(columnNumber) {
+  let remainder = columnNumber;
+  let letters = '';
+  while (remainder > 0) {
+    const current = (remainder - 1) % 26;
+    letters = String.fromCharCode(65 + current) + letters;
+    remainder = Math.floor((remainder - current - 1) / 26);
+  }
+  return letters || 'A';
+}
 
 class ExportService {
   static async exportChatLogs(format = 'json', filters = {}) {
@@ -77,11 +89,8 @@ class ExportService {
   }
 
   static worksheetDataToCSV(worksheetData, filename) {
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Batch Data');
-    const csvBuffer = XLSX.write(workbook, { bookType: 'csv', type: 'array' });
-    const blob = new Blob([csvBuffer], { type: 'text/csv;charset=utf-8;' });
+    const csvText = serializeCsvRows(worksheetData);
+    const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -90,36 +99,34 @@ class ExportService {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    if (typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(url);
+    }
   }
 
-  static worksheetDataToExcel(worksheetData, filename) {
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  static async worksheetDataToExcel(worksheetData, filename) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Batch Data');
 
-    // Bold the headings
-    const headingRange = XLSX.utils.decode_range(worksheet['!ref']);
-    for (let C = headingRange.s.c; C <= headingRange.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-      if (!worksheet[cellAddress]) continue;
-      if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
-      if (!worksheet[cellAddress].s.font) worksheet[cellAddress].s.font = {};
-      worksheet[cellAddress].s.font.bold = true;
+    worksheet.addRows(worksheetData);
+
+    if (worksheet.rowCount > 0) {
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.autoFilter = `A1:${columnNumberToLetter(Math.max(worksheet.columnCount, 1))}1`;
     }
 
-    // Add filters
-    worksheet['!autofilter'] = { ref: worksheet['!ref'] };
+    if (worksheetData.length > 0) {
+      worksheetData[0].forEach((_, index) => {
+        const maxLength = worksheetData.reduce((max, row) => {
+          const value = row?.[index];
+          const text = value === null || value === undefined ? '' : String(value);
+          return Math.max(max, text.length);
+        }, 10);
+        worksheet.getColumn(index + 1).width = Math.min(maxLength + 2, 60);
+      });
+    }
 
-    // Adjust column widths
-    const colWidths = worksheetData[0].map((_, colIndex) => ({
-      wch: Math.max(
-        ...worksheetData.map((row) => (row[colIndex] ? row[colIndex].toString().length : 10))
-      ),
-    }));
-    worksheet['!cols'] = colWidths;
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Batch Data');
-
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const excelBuffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -129,6 +136,9 @@ class ExportService {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    if (typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(url);
+    }
   }
 
   static async toSpreadsheet(chats, headerOrder, type = 'excel', filename) {
@@ -195,7 +205,7 @@ class ExportService {
     }
 
     if (type === 'xlsx') {
-      ExportService.worksheetDataToExcel(worksheetData, filename);
+      await ExportService.worksheetDataToExcel(worksheetData, filename);
     } else if (type === 'csv') {
       ExportService.worksheetDataToCSV(worksheetData, filename);
     }
