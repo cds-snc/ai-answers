@@ -157,6 +157,7 @@ graph.addNode('similarQuestions', async (state) => {
       expertFeedbackComparison: 'lte',
       language: state.lang,
       includeQuestionFlow: true,
+      recencyDays: 365,
     });
   } catch (err) {
     await ServerLoggingService.warn('similarQuestions node failed', state.chatId, err);

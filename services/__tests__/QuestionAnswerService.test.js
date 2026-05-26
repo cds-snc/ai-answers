@@ -162,6 +162,40 @@ describe('QuestionAnswerService', () => {
     expect(result).not.toContain('Q: Stale Q?');
   });
 
+  it('drops hits with missing or unparseable expertFeedback.createdAt (treats unknown age as stale)', async () => {
+    mockMatchQuestions.mockResolvedValue([[
+      { interactionId: 'no-date', expertFeedbackId: 'ef-no-date', similarity: 0.95 },
+      { interactionId: 'bad-date', expertFeedbackId: 'ef-bad-date', similarity: 0.90 },
+    ]]);
+
+    mockInteractionFind.mockReturnValue(createChainableQuery([
+      {
+        _id: 'no-date',
+        question: { redactedQuestion: 'Missing date Q?' },
+        answer: { content: 'Missing date A.' },
+        expertFeedback: { totalScore: 80, neverStale: false }, // no createdAt at all
+      },
+      {
+        _id: 'bad-date',
+        question: { redactedQuestion: 'Bad date Q?' },
+        answer: { content: 'Bad date A.' },
+        expertFeedback: { totalScore: 80, createdAt: 'not-a-date', neverStale: false },
+      },
+    ]));
+
+    mockChatFindOne.mockReturnValue({ populate: () => ({ lean: async () => null }) });
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      recencyDays: 365,
+      includeQuestionFlow: false,
+    });
+
+    expect(result).not.toContain('Missing date Q?');
+    expect(result).not.toContain('Bad date Q?');
+    expect(result).toBe('');
+  });
+
   it('keeps a stale hit when expertFeedback.neverStale is true', async () => {
     const staleDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000);
 

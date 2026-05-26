@@ -146,8 +146,12 @@ class QuestionAnswerService {
         if (cutoff !== null) {
           const ef = inter.expertFeedback;
           const neverStale = ef.neverStale === true || String(ef.neverStale) === 'true';
-          const efCreated = ef.createdAt ? new Date(ef.createdAt).getTime() : 0;
-          if (!neverStale && efCreated < cutoff) continue;
+          // Treat missing OR unparseable createdAt the same way: unknown age → drop
+          // (unless flagged neverStale). Without this, `new Date('garbage').getTime()`
+          // would return NaN and silently pass the recency check.
+          const efCreated = ef.createdAt ? new Date(ef.createdAt).getTime() : NaN;
+          const isFresh = Number.isFinite(efCreated) && efCreated >= cutoff;
+          if (!neverStale && !isFresh) continue;
         }
 
         const questionText = inter.question?.redactedQuestion || inter.question?.englishQuestion || '';

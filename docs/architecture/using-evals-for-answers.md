@@ -84,7 +84,8 @@ Singleton service exposing two methods:
 
 - **Timestamp used:** `expertFeedback.createdAt` (when the expert rated the answer), **not** `interaction.createdAt`. A two-year-old question rated last week is treated as fresh; what matters is how current the expert judgement is. `ExpertFeedback` already carries `timestamps: true` and indexes `createdAt`.
 - **Hard cutoff, not a re-rank.** Survivors stay in the vector-similarity order returned by `matchQuestions`. Recency drops old hits; it doesn't promote newer ones over more-similar ones.
-- **`neverStale` escape hatch** — `expertFeedback.neverStale === true` always passes the filter. This is the same flag `SimilarAnswerService` honours for evergreen content.
+- **Unknown age is treated as stale.** A hit is kept iff `Number.isFinite(efCreated) && efCreated >= cutoff`. Missing `createdAt` (legacy records pre-dating `timestamps: true`) and unparseable `createdAt` (`new Date('garbage').getTime() === NaN`) both fail this check and are dropped. Conservative by design — when in doubt, exclude.
+- **`neverStale` escape hatch** — `expertFeedback.neverStale === true` always passes the filter, including for unknown-age records. This is the same flag `SimilarAnswerService` honours for evergreen content.
 - **Over-fetch ratio (`k * 3`, capped at 15)** — picked to absorb the common case where 1–2 of the top hits have stale feedback without ballooning the populate query. If the corpus becomes thin in the recent window the section may still return fewer than `k` blocks (or empty), which the system prompt handles cleanly by omitting the section.
 - **Disabling the filter:** pass `recencyDays: 0` (or `null`). Useful for backfill / debug scenarios.
 
@@ -118,7 +119,7 @@ contextNode → similarQuestions → answerNode
 
 The node calls `QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, { ... })` and writes the result onto `state.context.similarQuestions`. Failures are caught and logged as warnings — the node always returns, so a vector or DB outage degrades gracefully to "no examples" instead of failing the whole graph.
 
-Per-graph tuning is shown in the graph comparison table above. Both pass `language: state.lang` and `includeQuestionFlow: true`. Neither overrides `recencyDays`, so both inherit the 365-day default.
+Per-graph tuning is shown in the graph comparison table above. Both pass `language: state.lang`, `includeQuestionFlow: true`, and `recencyDays: 365` declared explicitly at the call site (so the behaviour is visible from the graph file, not inherited silently from a service default).
 
 ### Workflow → agent
 
