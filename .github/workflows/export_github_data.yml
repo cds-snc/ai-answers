@@ -4,7 +4,6 @@ permissions:
   issues: read
   pull-requests: read
   actions: read
-  metadata: read
 on:
   workflow_dispatch:
   schedule:
