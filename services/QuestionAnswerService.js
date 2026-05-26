@@ -108,13 +108,16 @@ class QuestionAnswerService {
   }
 
   async getSimilarQuestionsContext(question, opts = {}) {
-    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true } = opts;
+    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365 } = opts;
     if (!question || typeof question !== 'string') return '';
 
     try {
       await dbConnect();
       const vectorService = await initVectorService();
-      const matches = await vectorService.matchQuestions([question], { provider: 'azure', modelName: 'text-embedding-3-large', k, threshold, expertFeedbackRating, expertFeedbackComparison, language });
+      // Over-fetch so the recency filter (applied after expertFeedback populates) has
+      // headroom to still return k hits. Capped to avoid pathological fan-out.
+      const vectorK = Math.min(k * 3, 15);
+      const matches = await vectorService.matchQuestions([question], { provider: 'azure', modelName: 'text-embedding-3-large', k: vectorK, threshold, expertFeedbackRating, expertFeedbackComparison, language });
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);
@@ -130,10 +133,22 @@ class QuestionAnswerService {
 
       const interById = new Map(interactions.map((i) => [i._id.toString(), i]));
 
+      const cutoff = typeof recencyDays === 'number' && recencyDays > 0
+        ? Date.now() - (recencyDays * 24 * 60 * 60 * 1000)
+        : null;
+
       const lines = [];
-      for (const hit of filtered.slice(0, k)) {
+      for (const hit of filtered) {
+        if (lines.length >= k) break;
         const inter = interById.get(hit.interactionId.toString());
         if (!inter || !inter.answer || !inter.expertFeedback) continue;
+
+        if (cutoff !== null) {
+          const ef = inter.expertFeedback;
+          const neverStale = ef.neverStale === true || String(ef.neverStale) === 'true';
+          const efCreated = ef.createdAt ? new Date(ef.createdAt).getTime() : 0;
+          if (!neverStale && efCreated < cutoff) continue;
+        }
 
         const questionText = inter.question?.redactedQuestion || inter.question?.englishQuestion || '';
         const answerText = inter.answer.content || inter.answer.englishAnswer || '';

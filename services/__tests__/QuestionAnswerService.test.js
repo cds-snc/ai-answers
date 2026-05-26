@@ -83,6 +83,7 @@ describe('QuestionAnswerService', () => {
         expertCitationUrl: 'https://expert.example.gc.ca',
         answerImprovement: 'Mention eligibility first',
         feedback: 'Use a better source next time',
+        createdAt: new Date(),
       },
     }];
     mockInteractionFind.mockReturnValue(createChainableQuery(interactionDocs));
@@ -123,5 +124,95 @@ describe('QuestionAnswerService', () => {
 
     const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits');
     expect(result).toBe('');
+  });
+
+  it('drops hits whose expertFeedback.createdAt is older than recencyDays', async () => {
+    const recentDate = new Date();
+    const staleDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000); // 400 days old
+
+    mockMatchQuestions.mockResolvedValue([[
+      { interactionId: 'stale', expertFeedbackId: 'ef-stale', similarity: 0.95 },
+      { interactionId: 'fresh', expertFeedbackId: 'ef-fresh', similarity: 0.90 },
+    ]]);
+
+    mockInteractionFind.mockReturnValue(createChainableQuery([
+      {
+        _id: 'stale',
+        question: { redactedQuestion: 'Stale Q?' },
+        answer: { content: 'Stale A.' },
+        expertFeedback: { totalScore: 80, createdAt: staleDate, neverStale: false },
+      },
+      {
+        _id: 'fresh',
+        question: { redactedQuestion: 'Fresh Q?' },
+        answer: { content: 'Fresh A.' },
+        expertFeedback: { totalScore: 80, createdAt: recentDate, neverStale: false },
+      },
+    ]));
+
+    mockChatFindOne.mockReturnValue({ populate: () => ({ lean: async () => null }) });
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      recencyDays: 365,
+      includeQuestionFlow: false,
+    });
+
+    expect(result).toContain('Q: Fresh Q?');
+    expect(result).not.toContain('Q: Stale Q?');
+  });
+
+  it('keeps a stale hit when expertFeedback.neverStale is true', async () => {
+    const staleDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000);
+
+    mockMatchQuestions.mockResolvedValue([[
+      { interactionId: 'evergreen', expertFeedbackId: 'ef-ever', similarity: 0.95 },
+    ]]);
+
+    mockInteractionFind.mockReturnValue(createChainableQuery([
+      {
+        _id: 'evergreen',
+        question: { redactedQuestion: 'Evergreen Q?' },
+        answer: { content: 'Evergreen A.' },
+        expertFeedback: { totalScore: 100, createdAt: staleDate, neverStale: true },
+      },
+    ]));
+
+    mockChatFindOne.mockReturnValue({ populate: () => ({ lean: async () => null }) });
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      recencyDays: 365,
+      includeQuestionFlow: false,
+    });
+
+    expect(result).toContain('Q: Evergreen Q?');
+  });
+
+  it('disables the recency filter when recencyDays is 0', async () => {
+    const staleDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000);
+
+    mockMatchQuestions.mockResolvedValue([[
+      { interactionId: 'stale', expertFeedbackId: 'ef-stale', similarity: 0.95 },
+    ]]);
+
+    mockInteractionFind.mockReturnValue(createChainableQuery([
+      {
+        _id: 'stale',
+        question: { redactedQuestion: 'Stale Q?' },
+        answer: { content: 'Stale A.' },
+        expertFeedback: { totalScore: 80, createdAt: staleDate, neverStale: false },
+      },
+    ]));
+
+    mockChatFindOne.mockReturnValue({ populate: () => ({ lean: async () => null }) });
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      recencyDays: 0,
+      includeQuestionFlow: false,
+    });
+
+    expect(result).toContain('Q: Stale Q?');
   });
 });
