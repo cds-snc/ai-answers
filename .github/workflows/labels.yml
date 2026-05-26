@@ -1,4 +1,8 @@
 on: [issues, pull_request, workflow_dispatch]
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
 
 jobs:
   sync-labels:
