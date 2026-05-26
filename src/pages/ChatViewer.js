@@ -223,17 +223,6 @@ const ChatViewer = ({ lang = 'en' }) => {
               <div className="bg-white shadow rounded-lg">
                 {logs.length > 0 ? (
                   <div className="p-4">
-                    <div className="mb-3">
-                      <GcdsButton
-                        id="download-logs-button"
-                        type="button"
-                        buttonRole="secondary"
-                        onClick={handleDownloadLogs}
-                        className="whitespace-nowrap shrink-0"
-                      >
-                        {t('logging.download')}
-                      </GcdsButton>
-                    </div>
                     <table ref={tableRef} className="display">
                       <thead>
                         <tr>
