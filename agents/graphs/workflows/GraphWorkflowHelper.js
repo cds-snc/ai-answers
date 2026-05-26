@@ -67,7 +67,22 @@ export class GraphWorkflowHelper {
   // other than EN/FR are still caught. AI PII check only runs when the source
   // language is not EN/FR (cost gate); it fails open on errors so a flaky PII
   // agent can't take down the pipeline — stage 1 already ran on the original.
+  // Encoded/obfuscated input (originalLanguage === 'zxx') is hard-blocked here:
+  // the working assumption is that legitimate users don't submit Morse/Base64/
+  // leetspeak, so the encoding label itself is the signal. The block is only as
+  // good as the translator's labeling — false positives will reject legit users,
+  // which is why we log every trigger for auditing (see finding logged below).
   async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
+    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
+    if (sourceLang === 'zxx') {
+      await ServerLoggingService.info('postTranslateGuard zxx hard-block', chatId, {
+        originalText: translationData?.originalText,
+        translatedText: translationData?.translatedText,
+        translatedLanguage: translationData?.translatedLanguage,
+      });
+      throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null);
+    }
+
     const translatedText = translationData?.translatedText;
     if (!translatedText) return;
 
@@ -85,7 +100,6 @@ export class GraphWorkflowHelper {
       }
     }
 
-    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
     const isEnOrFr = ['en', 'eng', 'fr', 'fra'].includes(sourceLang);
     if (isEnOrFr) return;
 
