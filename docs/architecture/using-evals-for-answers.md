@@ -137,6 +137,53 @@ When `similarQuestions` is empty the entire section is omitted (no header, no pr
 
 ---
 
+## Inspecting what was injected (manual testing)
+
+The full text of the injected eval block is **not persisted** on `Interaction` or `Answer`. It lives only in the graph event log.
+
+Both QA-graph nodes emit a `node:similarQuestions output` event after the service returns. The event's metadata carries:
+
+| Field | Meaning |
+|---|---|
+| `hasSimilar` | Boolean — did the service return anything? |
+| `similarQuestionsLength` | Length in characters of the injected block. Useful for a quick sanity check. |
+| `similarQuestionsText` | The **complete injected block**, exactly as it appears in the system prompt. |
+
+`logGraphEvent` (`agents/graphs/GraphEventLogger.js`) routes the event to three sinks:
+
+1. **MongoDB `Logs` collection** (`models/logs.js`) — the durable, query-friendly copy. Schema: `chatId`, `logLevel`, `message`, `metadata`, `createdAt`. Indexed on `chatId`.
+2. **Blob storage** (`Storage.js`) — JSON file at `${chatId}/${interactionId}/${timestamp}-${suffix}.json`. Note: this event fires **before** `persistNode` assigns an `interactionId`, so its blob lands under `system` rather than the real interaction id. Mongo is the more reliable lookup.
+3. **Live SSE stream** — forwarded to the browser, consumed by the ChatViewer page (`/en/chat-viewer`, `/fr/visualiseur-de-clavardage`).
+
+### Three ways to view the injected block
+
+**Live, during the run.** Open `/en/chat-viewer` in another tab; events stream in as the graph executes. Look for the `node:similarQuestions output` entry — its metadata contains `similarQuestionsText`.
+
+**API, after the fact.** Hit `GET /api/db/db-log?chatId=<chatId>&limit=1000` (admin or partner auth required). Filter the response for entries where `message === 'node:similarQuestions output'` and read `metadata.similarQuestionsText`.
+
+**MongoDB direct.**
+```js
+db.logs.find(
+  { chatId: '<chatId>', message: 'node:similarQuestions output' },
+  { metadata: 1, createdAt: 1 }
+).sort({ createdAt: -1 })
+```
+
+### Related logged events
+
+| Event message | What it tells you |
+|---|---|
+| `node:similarQuestions input` | Node started. Currently logs only `lang`. |
+| `node:similarQuestions output` | Node finished. Contains the injected block. |
+| `node:answer input` | Logs `hasSimilar: Boolean(state.context?.similarQuestions)` so you can confirm the block actually reached the answer node. |
+| `node:shortCircuit output` (Default / Instant graphs) | Tells you whether the short-circuit mechanism fired instead. If it did, no `similarQuestions` event will follow. |
+
+### Confirming the block hit the LLM
+
+Set the system prompt to debug-log mode is not currently wired, but you can verify indirectly: if the `node:answer input` event reports `hasSimilar: true` and `similarQuestionsLength > 0`, the block was passed to `buildAnswerSystemPrompt` and embedded between general scenarios and department scenarios in the final prompt.
+
+---
+
 ## Shared dependencies
 
 - **Vector index** — `DocDBVectorService` or `IMVectorService` (selected by `initVectorService()`). Both must return `interactionId`, `expertFeedbackId`, and propagate `expertFeedbackRating` so the service-level filter and the threshold/rating filter can work.
