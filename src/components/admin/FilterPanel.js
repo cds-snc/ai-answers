@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import $ from 'jquery';
-import moment from 'moment';
+import moment from '../../utils/momentSetup.js';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 
@@ -96,6 +96,12 @@ const FilterPanel = ({
   // Initialize daterangepicker
   useEffect(() => {
     if (!dateRangePickerRef.current || dateRangePickerInstance.current) return;
+    if (typeof window !== 'undefined') {
+      window.moment = moment;
+    }
+    if (typeof globalThis !== 'undefined') {
+      globalThis.moment = moment;
+    }
 
     const locale = t('locale') === 'fr' ? 'fr' : 'en';
     const isFrench = locale === 'fr';

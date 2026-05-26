@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "proxy": "http://localhost:3001",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
     "@aws-sdk/client-bedrock-runtime": "^3.981.0",
@@ -21,7 +20,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@langchain/anthropic": "^1.3.14",
-    "@langchain/cohere": "^1.0.2",
+    "@langchain/cohere": "1.0.2",
     "@langchain/core": "^1.1.19",
     "@langchain/langgraph": "^1.1.3",
     "@langchain/openai": "^1.2.4",
@@ -71,6 +70,7 @@
     "moment": "^2.30.1",
     "mongodb": "^6.9.0",
     "mongoose": "^8.22.1",
+    "nodemon": "^3.1.11",
     "notifications-node-client": "^8.2.1",
     "openai": "^4.73.1",
     "otplib": "^12.0.1",
@@ -86,7 +86,6 @@
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.1.5",
-    "react-scripts": "^5.0.1",
     "recharts": "^2.15.3",
     "redis": "^5.10.0",
     "similarity": "^1.2.1",
@@ -98,18 +97,13 @@
     "vitest": "^3.1.4",
     "web-vitals": "^2.1.4"
   },
-  "overrides": {
-    "postcss-svgo": {
-      "svgo": "2.8.1"
-    }
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "vite --host 0.0.0.0",
+    "build": "vite build",
     "test": "vitest run",
     "test:services": "vitest run services/__tests__ --reporter verbose",
-    "eject": "react-scripts eject",
     "start-server": "node server/server.js",
+    "start-server:watch": "nodemon --watch server --watch api --watch agents --watch services --watch models --watch middleware --ext js,json --exec node server/server.js",
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
     "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
@@ -119,11 +113,6 @@
     "test:e2e:production": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment production",
     "test:e2e:headed:sandbox": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment sandbox",
     "test:e2e:headed:production": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment production"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
   },
   "browserslist": {
     "production": [
@@ -138,6 +127,9 @@
     ]
   },
   "overrides": {
+    "postcss-svgo": {
+      "svgo": "2.8.1"
+    },
     "storybook": "8.6.17",
     "@storybook/core": "8.6.17",
     "@storybook/instrumenter": "8.6.17",
@@ -149,6 +141,7 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.9",
     "@babel/preset-env": "^7.25.4",
+    "@vitejs/plugin-react": "^4.3.3",
     "@tktco/node-actionlint": "^1.6.0",
     "concurrently": "^9.0.1",
     "cross-env": "^7.0.3",
@@ -156,6 +149,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
     "get-port": "^7.1.0",
-    "mongodb-memory-server": "^10.1.4"
+    "mongodb-memory-server": "^10.1.4",
+    "vite": "^5.4.14"
   }
 }
