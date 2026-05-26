@@ -15,8 +15,8 @@ Both mechanisms read from the same vector index (`DocDBVectorService` or `IMVect
 |---|---|---|---|
 | `DefaultWithVectorGraph` | ✅ rating = 100 (`eq`) | ❌ | The primary production graph. Will serve a verified past answer when one exists; otherwise runs the full pipeline with **no** in-prompt eval examples. |
 | `GenericGraph` | ❌ | ❌ | Baseline — runs context → answer with no eval-driven steps. Useful as a control. |
-| `GenericWithQAGraph` | ❌ | ✅ rating ≤ 100 (`lte`, k=3, threshold=0.6) | Always runs the LLM, but feeds it expert-rated examples — including perfect-score ones — for in-context learning. |
-| `InstantAndQAGraph` | ✅ rating = 100 (`eq`) | ✅ rating < 100 (`lt`, k=3, threshold=0.6) | Both mechanisms: short-circuit on a perfect match, otherwise feed the LLM only **imperfect** examples (so the model sees flagged-issue cases to avoid, while perfect ones are reserved for short-circuit). |
+| `GenericWithQAGraph` | ❌ | ✅ rating ≤ 100 (`lte`, k=3, threshold=0.75) | Always runs the LLM, but feeds it expert-rated examples — including perfect-score ones and negative-feedback ones (so the model can avoid repeating past mistakes). |
+| `InstantAndQAGraph` | ✅ rating = 100 (`eq`) | ✅ rating < 100 (`lt`, k=3, threshold=0.75) | Both mechanisms: short-circuit on a perfect match, otherwise feed the LLM only **imperfect** examples (so the model sees flagged-issue cases to avoid, while perfect ones are reserved for short-circuit). |
 
 All four graphs share the same backbone: `init → validate → redact → translate → … → answer → verify → persist`. The eval-aware graphs add a `shortCircuit` node before `contextNode` and/or a `similarQuestions` node between `contextNode` and `answerNode`.
 

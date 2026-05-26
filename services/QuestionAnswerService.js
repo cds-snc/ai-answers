@@ -163,6 +163,10 @@ class QuestionAnswerService {
         const totalScore = typeof inter.expertFeedback.totalScore === 'number' ? inter.expertFeedback.totalScore : null;
         const citationText = formatCitation(inter.answer.citation);
         const flowText = includeQuestionFlow ? await this.buildQuestionFlow(inter._id) : '';
+        const efCreatedAt = inter.expertFeedback.createdAt ? new Date(inter.expertFeedback.createdAt) : null;
+        const dateStr = efCreatedAt && Number.isFinite(efCreatedAt.getTime())
+          ? efCreatedAt.toISOString().slice(0, 10)
+          : null;
 
         if (!questionText || !answerText) continue;
 
@@ -171,6 +175,7 @@ class QuestionAnswerService {
         if (flowText) blockParts.push(`Flow: ${flowText}`);
         blockParts.push(`A: ${truncate(answerText, maxAnswerChars)}`);
         if (totalScore !== null) blockParts.push(`Score: ${totalScore}/100 (expert feedback)`);
+        if (dateStr) blockParts.push(`Date: ${dateStr}`);
         if (feedbackText) blockParts.push(`Feedback: ${feedbackText}`);
         if (citationText) blockParts.push(`Citation: ${citationText}`);
 
