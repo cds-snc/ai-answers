@@ -37,7 +37,7 @@ function loadRuntimeConfig() {
 
 function insertAdobeScriptsIfNeeded() {
   try {
-    const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || import.meta.env.VITE_ADOBE_ANALYTICS_URL;
+    const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL;
     if (!adobeUrl) return;
 
     const script = document.createElement('script');
