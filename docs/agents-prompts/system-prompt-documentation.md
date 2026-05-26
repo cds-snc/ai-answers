@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-05-21
+**Generated:** 2026-05-26
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -679,7 +679,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Thursday, May 21, 2026.
+Today is Tuesday, May 26, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
