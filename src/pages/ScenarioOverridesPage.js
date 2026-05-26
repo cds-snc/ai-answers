@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import ScenarioOverrideService from '../services/ScenarioOverrideService.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -81,7 +81,7 @@ class PageErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+        <GcdsContainer layout="page" tag="main" className="mb-600">
           <h1 className="mb-400">{this.props.t ? this.props.t('scenarioOverrides.title', 'Scenario overrides') : 'Scenario overrides'}</h1>
           <p style={{ color: '#d3080c' }}>{this.props.t ? this.props.t('scenarioOverrides.error.fallback', 'An error occurred while loading this page.') : 'An error occurred while loading this page.'}</p>
           <p>{this.state.error?.toString?.() || ''}</p>
@@ -300,7 +300,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
 
   return (
     <PageErrorBoundary t={t}>
-      <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+      <GcdsContainer layout="page" tag="main" className="mb-600">
         {/* no overlay styles needed in simplified UI */}
         <h1 className="mb-400">{pageTitle}</h1>
         <nav className="mb-400">

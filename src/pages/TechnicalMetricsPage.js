@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import { RoleProtectedRoute } from '../components/RoleProtectedRoute.js';
 import TechnicalMetricsDashboard from '../components/admin/TechnicalMetricsDashboard.js';
 
@@ -8,7 +8,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('technicalMetrics.title')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
