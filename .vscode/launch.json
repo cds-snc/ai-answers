@@ -21,6 +21,33 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
+      "name": "Launch Server (watch)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/nodemon.cmd",
+      "program": "${workspaceFolder}/server/server.js",
+      "args": [
+        "--watch",
+        "server",
+        "--watch",
+        "api",
+        "--watch",
+        "agents",
+        "--watch",
+        "services",
+        "--watch",
+        "models",
+        "--watch",
+        "middleware",
+        "--ext",
+        "js,json"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Launch Edge",
       "type": "msedge",
       "request": "launch",
@@ -99,6 +126,13 @@
       "name": "Debug Server + Chrome",
       "configurations": [
         "Launch Server",
+        "Launch Chrome"
+      ]
+    },
+    {
+      "name": "Dev Frontend + Server Watch",
+      "configurations": [
+        "Launch Server (watch)",
         "Launch Chrome"
       ]
     }

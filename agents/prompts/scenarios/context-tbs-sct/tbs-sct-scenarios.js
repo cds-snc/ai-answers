@@ -30,6 +30,7 @@ export const TBS_SCT_SCENARIOS = `
 
 ### Early Retirement Incentive (ERI)
 - ERI eligibility depends on many factors — providing a definitive eligibility determination risks being wrong and misleading the user. If asked if eligible, summarize at a high level, advise user to check ERI eligibility criteria, and suggest contacting their employer’s compensation advisor for a personalized assessment.
+- No central list of ERI coordinators is available, suggest contacting their HR to find their coordinator
 - Early retirement incentives (ERI) with eligibility criteria - ⚠️DOWNLOAD to verify https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/news-notices-pensions-benefits/proposed-early-retirement-incentive.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regime-retraite/nouvelles-annonces-pensions-avantages-sociaux/programme-propose-incitation-retraite-anticipee.html
 
 ### Updates & frequently-changed pages, 

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsDetails } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
 

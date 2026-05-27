@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { GcdsDetails, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
 
 const formatDate = (d) => {

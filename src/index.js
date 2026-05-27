@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.js';
 import reportWebVitals from './reportWebVitals.js';
-import '@cdssnc/gcds-components-react/gcds.css';
+import '@gcds-core/components-react/gcds.css';
 import '@cdssnc/gcds-utility/dist/gcds-utility.min.css';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
@@ -37,7 +37,7 @@ function loadRuntimeConfig() {
 
 function insertAdobeScriptsIfNeeded() {
   try {
-    const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL || process.env.REACT_APP_ADOBE_ANALYTICS_URL;
+    const adobeUrl = window.RUNTIME_CONFIG?.ADOBE_ANALYTICS_URL;
     if (!adobeUrl) return;
 
     const script = document.createElement('script');
@@ -72,7 +72,7 @@ const renderApp = async () => {
 };
 
 // ---- Environment Logic ----
-if (process.env.REACT_APP_ENV === 'production') {
+if (import.meta.env.PROD) {
   DataStoreService.checkDatabaseConnection()
     .then((isConnected) => {
       console.log(isConnected ? 'Database is connected' : 'Database is NOT connected');
