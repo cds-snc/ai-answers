@@ -67,7 +67,35 @@ export class GraphWorkflowHelper {
   // other than EN/FR are still caught. AI PII check only runs when the source
   // language is not EN/FR (cost gate); it fails open on errors so a flaky PII
   // agent can't take down the pipeline — stage 1 already ran on the original.
+  // Two source-language signals are hard-blocked here:
+  //   - 'zxx' = encoded/obfuscated input (Morse/Base64/leetspeak/etc). Working
+  //     assumption: legitimate users don't submit coded text, so the label is
+  //     the signal.
+  //   - 'und' = unsupported language (currently Canadian Indigenous languages).
+  //     Translation quality is too poor to proceed safely until approved
+  //     mechanisms are in place. Logged separately so we can monitor false
+  //     positives independently from the zxx case.
+  // Both blocks are only as good as the translator's labeling — false positives
+  // will reject legit users, which is why we log every trigger for auditing.
   async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
+    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
+    if (sourceLang === 'zxx') {
+      await ServerLoggingService.info('postTranslateGuard zxx hard-block', chatId, {
+        originalText: translationData?.originalText,
+        translatedText: translationData?.translatedText,
+        translatedLanguage: translationData?.translatedLanguage,
+      });
+      throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null);
+    }
+    if (sourceLang === 'und') {
+      await ServerLoggingService.info('postTranslateGuard und hard-block (unsupported language)', chatId, {
+        originalText: translationData?.originalText,
+        translatedText: translationData?.translatedText,
+        translatedLanguage: translationData?.translatedLanguage,
+      });
+      throw new RedactionError('Blocked unsupported language after translation', '#############', null);
+    }
+
     const translatedText = translationData?.translatedText;
     if (!translatedText) return;
 
@@ -85,7 +113,6 @@ export class GraphWorkflowHelper {
       }
     }
 
-    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
     const isEnOrFr = ['en', 'eng', 'fr', 'fra'].includes(sourceLang);
     if (isEnOrFr) return;
 
