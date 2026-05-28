@@ -3,7 +3,7 @@ import { GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
-import { formatNumber } from '../../utils/numberFormat.js';
+import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
@@ -73,6 +73,7 @@ const NO_OTHER_SCORE = FEEDBACK_OPTIONS.NO.find(o => o.id === 'other').score;
 
 const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
+  const fmtPct = (n) => formatPercent(n, lang);
   const rawYesReasons = metrics.publicFeedbackReasons?.yes || {};
   const rawNoReasons = metrics.publicFeedbackReasons?.no || {};
 
@@ -110,29 +111,29 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
             {
               metric: t('metrics.dashboard.userScored.total'),
               count: fmtN(metrics.publicFeedbackTotals.totalQuestionsWithFeedback),
-              percentage: '100%',
+              percentage: fmtPct(100),
               enCount: fmtN(metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo),
-              enPercentage: '100%',
+              enPercentage: fmtPct(100),
               frCount: fmtN(metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo),
-              frPercentage: '100%'
+              frPercentage: fmtPct(100)
             },
             {
               metric: t('metrics.dashboard.userScored.helpful'),
               count: fmtN(metrics.publicFeedbackTotals.yes),
-              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.yes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.yes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
               enCount: fmtN(metrics.publicFeedbackTotals.enYes),
-              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.enYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.enYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
               frCount: fmtN(metrics.publicFeedbackTotals.frYes),
-              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.frYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%'
+              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.frYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0)
             },
             {
               metric: t('metrics.dashboard.userScored.unhelpful'),
               count: fmtN(metrics.publicFeedbackTotals.no),
-              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.no / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.no / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
               enCount: fmtN(metrics.publicFeedbackTotals.enNo),
-              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.enNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.enNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
               frCount: fmtN(metrics.publicFeedbackTotals.frNo),
-              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.frNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%'
+              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.frNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0)
             }
           ]}
           columns={[

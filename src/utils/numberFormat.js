@@ -7,3 +7,8 @@ export function formatNumber(n, lang) {
   }
   return formatters[locale].format(n ?? 0);
 }
+
+export function formatPercent(n, lang) {
+  const sep = lang === 'fr' ? ' ' : '';
+  return `${n ?? 0}${sep}%`;
+}
