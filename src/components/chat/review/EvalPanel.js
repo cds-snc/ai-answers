@@ -26,7 +26,7 @@ const renderChatLink = (chatId) => {
   );
 };
 
-const EvalPanel = ({ message, t }) => {
+const EvalPanel = ({ message, t, lang = 'en' }) => {
   // Show panel in review mode as requested (no longer hidden)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -124,7 +124,10 @@ const EvalPanel = ({ message, t }) => {
     if (v === null || typeof v === 'undefined' || v === '') return v;
     const n = Number(v);
     if (Number.isNaN(n)) return v;
-    return n.toFixed(3);
+    return new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    }).format(n);
   };
 
   // Translation helper: if the translator returns the raw key (meaning missing),

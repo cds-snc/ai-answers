@@ -4,6 +4,7 @@ import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
 import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';
@@ -66,6 +67,7 @@ const initialMetricsState = {
 
 const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const fmtN = (n) => formatNumber(n, lang);
   const [metrics, setMetrics] = useState(initialMetricsState);
   const [loadingState, setLoadingState] = useState({
     usage: false,
@@ -223,38 +225,38 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.totalQuestions'),
-                      count: metrics.totalQuestions,
+                      count: fmtN(metrics.totalQuestions),
                       percentage: '100%',
-                      enCount: metrics.totalQuestionsEn,
+                      enCount: fmtN(metrics.totalQuestionsEn),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.totalQuestionsEn / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.totalQuestionsFr,
+                      frCount: fmtN(metrics.totalQuestionsFr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.totalQuestionsFr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.questions.firstQuestion'),
-                      count: metrics.totalConversations,
+                      count: fmtN(metrics.totalConversations),
                       percentage: metrics.totalQuestions ? Math.round((metrics.totalConversations / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: metrics.totalConversationsEn,
+                      enCount: fmtN(metrics.totalConversationsEn),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.totalConversationsEn / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.totalConversationsFr,
+                      frCount: fmtN(metrics.totalConversationsFr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.totalConversationsFr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.questions.secondQuestion'),
-                      count: secondQuestionTotal,
+                      count: fmtN(secondQuestionTotal),
                       percentage: metrics.totalQuestions ? Math.round((secondQuestionTotal / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: secondQuestionEn,
+                      enCount: fmtN(secondQuestionEn),
                       enPercentage: metrics.totalQuestions ? Math.round((secondQuestionEn / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: secondQuestionFr,
+                      frCount: fmtN(secondQuestionFr),
                       frPercentage: metrics.totalQuestions ? Math.round((secondQuestionFr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.questions.thirdOrMore'),
-                      count: metrics.sessionsByQuestionCount.threeQuestions.total,
+                      count: fmtN(metrics.sessionsByQuestionCount.threeQuestions.total),
                       percentage: metrics.totalQuestions ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.total / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: metrics.sessionsByQuestionCount.threeQuestions.en,
+                      enCount: fmtN(metrics.sessionsByQuestionCount.threeQuestions.en),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.en / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.sessionsByQuestionCount.threeQuestions.fr,
+                      frCount: fmtN(metrics.sessionsByQuestionCount.threeQuestions.fr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.sessionsByQuestionCount.threeQuestions.fr / metrics.totalQuestions) * 100) + '%' : '0%'
                     }
                   ]}
@@ -280,27 +282,27 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.accuracy.allEvaluations'),
-                      totalEvaluated: metrics.expertScored.total.total + metrics.aiScored.total.total,
+                      totalEvaluated: fmtN(metrics.expertScored.total.total + metrics.aiScored.total.total),
                       pctOfQuestions: metrics.totalQuestions ? Math.round(((metrics.expertScored.total.total + metrics.aiScored.total.total) / metrics.totalQuestions) * 100) + '%' : '-',
-                      hasAnswerError: metrics.expertScored.hasError.total + metrics.aiScored.hasError.total,
+                      hasAnswerError: fmtN(metrics.expertScored.hasError.total + metrics.aiScored.hasError.total),
                       accuracyPct: (metrics.expertScored.total.total + metrics.aiScored.total.total)
                         ? (100 - Math.round(((metrics.expertScored.hasError.total + metrics.aiScored.hasError.total) / (metrics.expertScored.total.total + metrics.aiScored.total.total)) * 100)) + '%'
                         : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.accuracy.expertEvaluations'),
-                      totalEvaluated: metrics.expertScored.total.total,
+                      totalEvaluated: fmtN(metrics.expertScored.total.total),
                       pctOfQuestions: metrics.totalQuestions ? Math.round((metrics.expertScored.total.total / metrics.totalQuestions) * 100) + '%' : '-',
-                      hasAnswerError: metrics.expertScored.hasError.total,
+                      hasAnswerError: fmtN(metrics.expertScored.hasError.total),
                       accuracyPct: metrics.expertScored.total.total
                         ? (100 - Math.round((metrics.expertScored.hasError.total / metrics.expertScored.total.total) * 100)) + '%'
                         : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.accuracy.aiEvaluations'),
-                      totalEvaluated: metrics.aiScored.total.total,
+                      totalEvaluated: fmtN(metrics.aiScored.total.total),
                       pctOfQuestions: metrics.totalQuestions ? Math.round((metrics.aiScored.total.total / metrics.totalQuestions) * 100) + '%' : '-',
-                      hasAnswerError: metrics.aiScored.hasError.total,
+                      hasAnswerError: fmtN(metrics.aiScored.hasError.total),
                       accuracyPct: metrics.aiScored.total.total
                         ? (100 - Math.round((metrics.aiScored.hasError.total / metrics.aiScored.total.total) * 100)) + '%'
                         : '0%'
@@ -325,11 +327,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.totalSessions'),
-                      count: metrics.totalConversations,
+                      count: fmtN(metrics.totalConversations),
                       percentage: '100%',
-                      enCount: metrics.totalConversationsEn,
+                      enCount: fmtN(metrics.totalConversationsEn),
                       enPercentage: metrics.totalConversations ? Math.round((metrics.totalConversationsEn / metrics.totalConversations) * 100) + '%' : '0%',
-                      frCount: metrics.totalConversationsFr,
+                      frCount: fmtN(metrics.totalConversationsFr),
                       frPercentage: metrics.totalConversations ? Math.round((metrics.totalConversationsFr / metrics.totalConversations) * 100) + '%' : '0%'
                     },
                   ]}
@@ -354,38 +356,38 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.answerTypes.normal'),
-                      count: metrics.answerTypes.normal.total,
+                      count: fmtN(metrics.answerTypes.normal.total),
                       percentage: metrics.totalQuestions ? Math.round((metrics.answerTypes.normal.total / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: metrics.answerTypes.normal.en,
+                      enCount: fmtN(metrics.answerTypes.normal.en),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes.normal.en / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.answerTypes.normal.fr,
+                      frCount: fmtN(metrics.answerTypes.normal.fr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes.normal.fr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.answerTypes.clarifyingQuestion'),
-                      count: metrics.answerTypes['clarifying-question'].total,
+                      count: fmtN(metrics.answerTypes['clarifying-question'].total),
                       percentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['clarifying-question'].total / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: metrics.answerTypes['clarifying-question'].en,
+                      enCount: fmtN(metrics.answerTypes['clarifying-question'].en),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['clarifying-question'].en / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.answerTypes['clarifying-question'].fr,
+                      frCount: fmtN(metrics.answerTypes['clarifying-question'].fr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['clarifying-question'].fr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.answerTypes.ptMuni'),
-                      count: metrics.answerTypes['pt-muni'].total,
+                      count: fmtN(metrics.answerTypes['pt-muni'].total),
                       percentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['pt-muni'].total / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: metrics.answerTypes['pt-muni'].en,
+                      enCount: fmtN(metrics.answerTypes['pt-muni'].en),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['pt-muni'].en / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.answerTypes['pt-muni'].fr,
+                      frCount: fmtN(metrics.answerTypes['pt-muni'].fr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['pt-muni'].fr / metrics.totalQuestions) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.answerTypes.notGc'),
-                      count: metrics.answerTypes['not-gc'].total,
+                      count: fmtN(metrics.answerTypes['not-gc'].total),
                       percentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['not-gc'].total / metrics.totalQuestions) * 100) + '%' : '0%',
-                      enCount: metrics.answerTypes['not-gc'].en,
+                      enCount: fmtN(metrics.answerTypes['not-gc'].en),
                       enPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['not-gc'].en / metrics.totalQuestions) * 100) + '%' : '0%',
-                      frCount: metrics.answerTypes['not-gc'].fr,
+                      frCount: fmtN(metrics.answerTypes['not-gc'].fr),
                       frPercentage: metrics.totalQuestions ? Math.round((metrics.answerTypes['not-gc'].fr / metrics.totalQuestions) * 100) + '%' : '0%'
                     }
                   ]}
@@ -411,65 +413,65 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.expertScored.total'),
-                      count: metrics.expertScored.total.total,
+                      count: fmtN(metrics.expertScored.total.total),
                       percentage: '100%',
-                      enCount: metrics.expertScored.total.en,
+                      enCount: fmtN(metrics.expertScored.total.en),
                       enPercentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.total.en / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.total.fr,
+                      frCount: fmtN(metrics.expertScored.total.fr),
                       frPercentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.total.fr / metrics.expertScored.total.total) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.expertScored.hasError'),
-                      count: metrics.expertScored.hasError.total,
+                      count: fmtN(metrics.expertScored.hasError.total),
                       percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.hasError.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.expertScored.hasError.en,
+                      enCount: fmtN(metrics.expertScored.hasError.en),
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.hasError.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.hasError.fr,
+                      frCount: fmtN(metrics.expertScored.hasError.fr),
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.hasError.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.expertScored.harmful'),
-                      count: metrics.expertScored.harmful.total,
+                      count: fmtN(metrics.expertScored.harmful.total),
                       percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.harmful.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.expertScored.harmful.en,
+                      enCount: fmtN(metrics.expertScored.harmful.en),
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.harmful.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.harmful.fr,
+                      frCount: fmtN(metrics.expertScored.harmful.fr),
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.harmful.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.expertScored.hasContentIssue'),
-                      count: metrics.expertScored.hasContentIssue.total,
+                      count: fmtN(metrics.expertScored.hasContentIssue.total),
                       percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.hasContentIssue.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.expertScored.hasContentIssue.en,
+                      enCount: fmtN(metrics.expertScored.hasContentIssue.en),
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.hasContentIssue.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.hasContentIssue.fr,
+                      frCount: fmtN(metrics.expertScored.hasContentIssue.fr),
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.hasContentIssue.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.expertScored.correct'),
-                      count: metrics.expertScored.correct.total,
+                      count: fmtN(metrics.expertScored.correct.total),
                       percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.correct.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.expertScored.correct.en,
+                      enCount: fmtN(metrics.expertScored.correct.en),
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.correct.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.correct.fr,
+                      frCount: fmtN(metrics.expertScored.correct.fr),
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.correct.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.expertScored.needsImprovement'),
-                      count: metrics.expertScored.needsImprovement.total,
+                      count: fmtN(metrics.expertScored.needsImprovement.total),
                       percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.needsImprovement.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.expertScored.needsImprovement.en,
+                      enCount: fmtN(metrics.expertScored.needsImprovement.en),
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.needsImprovement.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.needsImprovement.fr,
+                      frCount: fmtN(metrics.expertScored.needsImprovement.fr),
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.needsImprovement.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.expertScored.hasCitationError'),
-                      count: metrics.expertScored.hasCitationError.total,
+                      count: fmtN(metrics.expertScored.hasCitationError.total),
                       percentage: metrics.expertScored.total.total ? Math.round((metrics.expertScored.hasCitationError.total / metrics.expertScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.expertScored.hasCitationError.en,
+                      enCount: fmtN(metrics.expertScored.hasCitationError.en),
                       enPercentage: metrics.expertScored.total.en ? Math.round((metrics.expertScored.hasCitationError.en / metrics.expertScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.expertScored.hasCitationError.fr,
+                      frCount: fmtN(metrics.expertScored.hasCitationError.fr),
                       frPercentage: metrics.expertScored.total.fr ? Math.round((metrics.expertScored.hasCitationError.fr / metrics.expertScored.total.fr) * 100) + '%' : '0%'
                     }
                   ]}
@@ -503,47 +505,47 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   data={[
                     {
                       metric: t('metrics.dashboard.aiScored.total'),
-                      count: metrics.aiScored.total.total,
+                      count: fmtN(metrics.aiScored.total.total),
                       percentage: '100%',
-                      enCount: metrics.aiScored.total.en,
+                      enCount: fmtN(metrics.aiScored.total.en),
                       enPercentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.total.en / metrics.aiScored.total.total) * 100) + '%' : '0%',
-                      frCount: metrics.aiScored.total.fr,
+                      frCount: fmtN(metrics.aiScored.total.fr),
                       frPercentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.total.fr / metrics.aiScored.total.total) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.aiScored.hasError'),
-                      count: metrics.aiScored.hasError.total,
+                      count: fmtN(metrics.aiScored.hasError.total),
                       percentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.hasError.total / metrics.aiScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.aiScored.hasError.en,
+                      enCount: fmtN(metrics.aiScored.hasError.en),
                       enPercentage: metrics.aiScored.total.en ? Math.round((metrics.aiScored.hasError.en / metrics.aiScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.aiScored.hasError.fr,
+                      frCount: fmtN(metrics.aiScored.hasError.fr),
                       frPercentage: metrics.aiScored.total.fr ? Math.round((metrics.aiScored.hasError.fr / metrics.aiScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.aiScored.correct'),
-                      count: metrics.aiScored.correct.total,
+                      count: fmtN(metrics.aiScored.correct.total),
                       percentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.correct.total / metrics.aiScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.aiScored.correct.en,
+                      enCount: fmtN(metrics.aiScored.correct.en),
                       enPercentage: metrics.aiScored.total.en ? Math.round((metrics.aiScored.correct.en / metrics.aiScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.aiScored.correct.fr,
+                      frCount: fmtN(metrics.aiScored.correct.fr),
                       frPercentage: metrics.aiScored.total.fr ? Math.round((metrics.aiScored.correct.fr / metrics.aiScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.aiScored.needsImprovement'),
-                      count: metrics.aiScored.needsImprovement.total,
+                      count: fmtN(metrics.aiScored.needsImprovement.total),
                       percentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.needsImprovement.total / metrics.aiScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.aiScored.needsImprovement.en,
+                      enCount: fmtN(metrics.aiScored.needsImprovement.en),
                       enPercentage: metrics.aiScored.total.en ? Math.round((metrics.aiScored.needsImprovement.en / metrics.aiScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.aiScored.needsImprovement.fr,
+                      frCount: fmtN(metrics.aiScored.needsImprovement.fr),
                       frPercentage: metrics.aiScored.total.fr ? Math.round((metrics.aiScored.needsImprovement.fr / metrics.aiScored.total.fr) * 100) + '%' : '0%'
                     },
                     {
                       metric: t('metrics.dashboard.aiScored.hasCitationError'),
-                      count: metrics.aiScored.hasCitationError.total,
+                      count: fmtN(metrics.aiScored.hasCitationError.total),
                       percentage: metrics.aiScored.total.total ? Math.round((metrics.aiScored.hasCitationError.total / metrics.aiScored.total.total) * 100) + '%' : '0%',
-                      enCount: metrics.aiScored.hasCitationError.en,
+                      enCount: fmtN(metrics.aiScored.hasCitationError.en),
                       enPercentage: metrics.aiScored.total.en ? Math.round((metrics.aiScored.hasCitationError.en / metrics.aiScored.total.en) * 100) + '%' : '0%',
-                      frCount: metrics.aiScored.hasCitationError.fr,
+                      frCount: fmtN(metrics.aiScored.hasCitationError.fr),
                       frPercentage: metrics.aiScored.total.fr ? Math.round((metrics.aiScored.hasCitationError.fr / metrics.aiScored.total.fr) * 100) + '%' : '0%'
                     }
                   ]}
@@ -588,10 +590,10 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   }))}
                   columns={[
                     { title: t('metrics.dashboard.byDepartment.department'), data: 'department' },
-                    { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions' },
-                    { title: t('metrics.dashboard.expertScored.total'), data: 'expertScoredTotal' },
+                    { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions', render: (d, type) => type === 'display' ? fmtN(d) : d },
+                    { title: t('metrics.dashboard.expertScored.total'), data: 'expertScoredTotal', render: (d, type) => type === 'display' ? fmtN(d) : d },
                     { title: t('metrics.dashboard.byDepartment.pctEvaluated'), data: 'expertScoredPct' },
-                    { title: t('metrics.dashboard.expertScored.hasError'), data: 'expertScoredHasError' },
+                    { title: t('metrics.dashboard.expertScored.hasError'), data: 'expertScoredHasError', render: (d, type) => type === 'display' ? fmtN(d) : d },
                     { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'expertScoredAccuracyPct' }
                   ]}
                   options={{
