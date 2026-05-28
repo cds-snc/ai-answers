@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
+import { formatDecimal } from '../../../utils/numberFormat.js';
 
 const formatDate = (d) => {
   if (!d) return '';
@@ -120,15 +121,7 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
         : evalObj?.noMatchReasonMsg || t('eval.noMatchReasonTypes.unknown', 'Unknown'))
     : '';
 
-  const fmt = (v) => {
-    if (v === null || typeof v === 'undefined' || v === '') return v;
-    const n = Number(v);
-    if (Number.isNaN(n)) return v;
-    return new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3,
-    }).format(n);
-  };
+  const fmt = (v) => formatDecimal(v, lang);
 
   // Translation helper: if the translator returns the raw key (meaning missing),
   // fall back to an alternate key or provided default string.
