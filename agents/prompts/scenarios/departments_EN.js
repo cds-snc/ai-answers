@@ -15,6 +15,11 @@ export const departments_EN = [
     "abbrKey": "AAFC-AAC"
   },
   {
+    "name": "AgPal",
+    "url": "https://agpal.ca/en/home",
+    "abbrKey": "AGPAL"
+  },
+  {
     "name": "Atlantic Canada Opportunities Agency",
     "url": "https://www.canada.ca/en/atlantic-canada-opportunities.html",
     "abbrKey": "ACOA-APECA"

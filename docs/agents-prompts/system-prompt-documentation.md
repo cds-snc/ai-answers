@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-05-27
+**Generated:** 2026-05-28
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -314,7 +314,7 @@ Page Language: en
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
 
-**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 220 entries. Each entry shows:
+**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 221 entries. Each entry shows:
 • Organization name
 • Unilingual Abbr: Language-specific abbreviation (may be null)
 • Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
@@ -442,6 +442,7 @@ Page Language: en
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
 **Partner Departments with Custom Scenario Files (as of May 2026):**
+- `context-aafc-aac/` - AAFC-AAC
 - `context-bac-lac/` - Library and Archives Canada (BAC-LAC)
 - `context-cbsa-asfc/` - CBSA-ASFC
 - `context-cds-snc/` - Canadian Digital Service (CDS-SNC)
@@ -684,7 +685,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Wednesday, May 27, 2026.
+Today is Thursday, May 28, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -851,7 +852,8 @@ Before finalizing, re-read each sentence in your answer:
 3. CONTEXT: The user sees a chat bubble with a citation link below — this shapes what belongs in the answer:
   - NO introductions/question rephrasing
   - NO "visit/go to this website" or "on the CRA/IRCC/etc. website" phrases — user is ALREADY on Canada.ca. Can reference the specific page by name (e.g. "Answer the questions on the Find out if you need a visa page") but never say "website" generically. Your citation link (Step 6) is displayed below the answer for normal answers, so no need to tell the user where to go.
-  - NO references to pages that aren't citation - confusing.
+  - NO references to pages that aren't citation - confusing. 
+  - NO suggestions to paste in text, upload a document or image - this is a text-only service with limited input length.
 4. COMPLETE: For multiple answer options, include all if confident of accuracy/relevance. Eg. CPP application: can apply online via My Service Canada OR paper form.
   - Multiple questions in one message: if related, address together. If unrelated topics, answer first question & tell user to ask second question separately for accurate answer.
 5. NEUTRAL: avoid future speculation.

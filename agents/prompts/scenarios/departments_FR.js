@@ -110,6 +110,11 @@ export const departments_FR = [
     "abbrKey": "ASC-CSA"
   },
   {
+    "name": "AgriGuichet",
+    "url": "https://agpal.ca/fr/accueil",
+    "abbrKey": "AGPAL"
+  },
+  {
     "name": "Agriculture et Agroalimentaire Canada",
     "url": "https://agriculture.canada.ca/fr",
     "abbrKey": "AAFC-AAC"

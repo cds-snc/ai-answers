@@ -3,6 +3,10 @@ import { requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const SUPPORTED_DEPARTMENTS = {
+  'AAFC-AAC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-aafc-aac/aafc-aac-scenarios.js');
+    return mod.AAFC_AAC_SCENARIOS || '';
+  },
   'BAC-LAC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-bac-lac/bac-lac-scenarios.js');
     return mod.BAC_LAC_SCENARIOS || '';
