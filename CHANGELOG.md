@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.131.0](https://github.com/cds-snc/ai-answers/compare/v1.130.0...v1.131.0) (2026-05-28)
+
+
+### Features
+
+* add AAFC as partner ([497d5ca](https://github.com/cds-snc/ai-answers/commit/497d5ca05f86960c8d08313f5deb2f910f627737))
+* add AAFC as partner - tested ([1fce636](https://github.com/cds-snc/ai-answers/commit/1fce636ec644d93a74f8a2791eb7628d19340ea8))
+* combine decimals in file ([461cf51](https://github.com/cds-snc/ai-answers/commit/461cf51861c3d50714a6afe08993e8374c08f754))
+* fix table sorting ([2954f49](https://github.com/cds-snc/ai-answers/commit/2954f49fe9cf4de2c3aa6133fb1f63a808e31b11))
+* number format refinement ([b147ff5](https://github.com/cds-snc/ai-answers/commit/b147ff5d209daae463f1c90828e41141cea1b3ed))
+
+
+### Bug Fixes
+
+* add ebola url to temporary measures ([93c3e97](https://github.com/cds-snc/ai-answers/commit/93c3e97469ff80cef6aaee7d5f97c8769e002336))
+* add ebola url to temporary measures ([b692a70](https://github.com/cds-snc/ai-answers/commit/b692a702518497147ee473dc8e13b6307d7c1b9b))
+* clear text input on search ([aaaeef2](https://github.com/cds-snc/ai-answers/commit/aaaeef26203cdd5a7d0d194ee603a47c9830247a))
+* clear text input on search ([9560309](https://github.com/cds-snc/ai-answers/commit/956030940373da6b869430e41d92e007e7a1afce))
+* french number formatting ([14c5a9c](https://github.com/cds-snc/ai-answers/commit/14c5a9cde711f4dc12d43429c84b2843938f9d06))
+* french number formatting ([1a9bf58](https://github.com/cds-snc/ai-answers/commit/1a9bf58624c5b5ed83db6dcda8cd25a2a94d0fe0))
+* french number formatting ([c3317c3](https://github.com/cds-snc/ai-answers/commit/c3317c3d83c602f4c42e1fe3a70ed2f9b334c9fd))
+* handle percentage ([f2b4d47](https://github.com/cds-snc/ai-answers/commit/f2b4d47f3993d1443d0ada0fc8ae0a33f068236a))
+* update agents for number formatting ([bdd92ac](https://github.com/cds-snc/ai-answers/commit/bdd92acad7f1743b24b6213397f5f58b807c5e09))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump vite from 5.4.21 to 8.0.14 ([586bb10](https://github.com/cds-snc/ai-answers/commit/586bb104f49a490c5aa71e4eb03bd27a919b1ba8))
+* **deps-dev:** bump vite from 5.4.21 to 8.0.14 ([620ead3](https://github.com/cds-snc/ai-answers/commit/620ead39c01379d823ba236c94874a6de334f2cb))
+* **deps:** bump postcss from 8.5.6 to 8.5.15 ([c66a43c](https://github.com/cds-snc/ai-answers/commit/c66a43c2d34a139cf0709b330115ebf2533775b4))
+* **deps:** bump postcss from 8.5.6 to 8.5.15 ([278d2bc](https://github.com/cds-snc/ai-answers/commit/278d2bc2812b69631eda74e37c4eddacd9656977))
+* **deps:** bump tmp from 0.2.5 to 0.2.7 ([cb46503](https://github.com/cds-snc/ai-answers/commit/cb465037a3be74c90377a497f7302b885842a7c3))
+* format dependencies section in package.json ([865a99c](https://github.com/cds-snc/ai-answers/commit/865a99c2f0e4e6b553505801e80f3ea4d75f6ab8))
+* remove peer flag from several dependencies and add @emnapi/core and @emnapi/runtime ([4df747e](https://github.com/cds-snc/ai-answers/commit/4df747ead70db4e4468f55729418df7fe1312d13))
+* update @vitejs/plugin-react to v5.0.0 and add esbuild as a dependency ([9900f1c](https://github.com/cds-snc/ai-answers/commit/9900f1ca2242e4378526d745e1c70ff7d792bd89))
+
 ## [1.130.0](https://github.com/cds-snc/ai-answers/compare/v1.129.1...v1.130.0) (2026-05-27)
 
 
