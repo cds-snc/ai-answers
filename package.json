@@ -130,6 +130,7 @@
     "postcss-svgo": {
       "svgo": "2.8.1"
     },
+    "uuid": "$uuid",
     "storybook": "8.6.17",
     "@storybook/core": "8.6.17",
     "@storybook/instrumenter": "8.6.17",
