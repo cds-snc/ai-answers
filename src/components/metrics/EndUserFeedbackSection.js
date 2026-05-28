@@ -160,11 +160,11 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
             data={tableData}
             columns={[
               { title: t('metrics.dashboard.userScored.reason'), data: 'label' },
-              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.enCount')}`, data: 'yesEn', render: (d) => fmtN(d) },
-              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.frCount')}`, data: 'yesFr', render: (d) => fmtN(d) },
-              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.enCount')}`, data: 'noEn', render: (d) => fmtN(d) },
-              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.frCount')}`, data: 'noFr', render: (d) => fmtN(d) },
-              { title: t('metrics.dashboard.count'), data: 'total', render: (d) => fmtN(d) }
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.enCount')}`, data: 'yesEn', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.frCount')}`, data: 'yesFr', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.enCount')}`, data: 'noEn', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.frCount')}`, data: 'noFr', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: t('metrics.dashboard.count'), data: 'total', render: (d, type) => type === 'display' ? fmtN(d) : d }
             ]}
             options={{
               paging: false,
