@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "dependencies": {
+  "dependencies": {   
     "@anthropic-ai/sdk": "^0.33.1",
     "@aws-sdk/client-bedrock-runtime": "^3.981.0",
     "@aws-sdk/client-s3": "^3.981.0",
