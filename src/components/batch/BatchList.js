@@ -6,6 +6,7 @@ import DT from 'datatables.net-dt';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 import BatchService from '../../services/BatchService.js';
 
 DataTable.use(DT);
@@ -163,7 +164,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               const failed = Number(stats.failed || 0);
               const finished = Number(stats.finished ?? processed + failed);
               if (totalsCell) {
-                totalsCell.innerText = t('batch.list.totalsLabel').replace('{finished}', finished).replace('{total}', total);
+                totalsCell.innerText = t('batch.list.totalsLabel').replace('{finished}', formatNumber(finished, lang)).replace('{total}', formatNumber(total, lang));
               }
             } catch (e) {
               // ignore totals rendering errors
