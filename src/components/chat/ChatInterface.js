@@ -602,7 +602,7 @@ const ChatInterface = ({
                           t={t}
                         />
                         <DownloadPanel message={message} t={t} />
-                        <EvalPanel message={message} t={t} />
+                        <EvalPanel message={message} t={t} lang={lang} />
                       </div>
                     </>
                   )}

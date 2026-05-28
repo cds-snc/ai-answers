@@ -54,6 +54,27 @@ This reports:
 
 Parity gaps must be fixed before merging. Dead keys and duplicates are cleaned up incrementally — fix a few per PR rather than all at once.
 
+### Number and percentage formatting
+
+**This is an Official Languages requirement.** French and English have different conventions for numbers and percentages (`1 000` vs `1,000`; `45 %` vs `45%`). Any component or page that displays numeric data to users must format numbers and percentages using the shared helpers in `src/utils/numberFormat.js`:
+
+```js
+import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
+
+const fmtN = (n) => formatNumber(n, lang);   // 1 000 (fr) / 1,000 (en)
+const fmtPct = (n) => formatPercent(n, lang); // 45 % (fr) / 45% (en)
+```
+
+- **`formatNumber(n, lang)`** — formats integers and large numbers with the correct thousands separator (`fr-CA` uses non-breaking space, `en-CA` uses comma). Handles `null`/`undefined` → `0`.
+- **`formatPercent(n, lang)`** — appends `%` with a non-breaking space before it in French (`45 %`), no space in English (`45%`). Takes an already-computed integer (0–100), not a fraction.
+- **`formatDecimal(n, lang, fractionDigits = 3)`** — formats a decimal number with locale-aware separators (`,` vs `.`) and a fixed number of decimal places. Pass-through for `null`/`undefined`/empty/non-numeric values.
+
+Rules:
+- Never use `+ '%'`, `'0%'`, or `'100%'` as literal strings in data displayed to users — always go through `fmtPct`.
+- Never use `n.toFixed(d)` or inline `Intl.NumberFormat` for decimal values displayed to users — always go through `formatDecimal`.
+- For DataTables columns with sorting enabled, pass raw numbers in the data object and use the `render: (d, type) => type === 'display' ? fmtN(d) : d` pattern so sorting operates on the raw value.
+- These helpers apply to dashboards, tables, batch lists, and any other UI that surfaces counts, totals, or percentages.
+
 ### PR review checklist — official languages
 Every PR that touches UI components, pages, or locale files must be verified against these before merging.
 
@@ -63,6 +84,8 @@ Every PR that touches UI components, pages, or locale files must be verified aga
 - [ ] Every new `t('key')` call has a matching entry in **both** `en.json` and `fr.json`
 - [ ] `node scripts/find-dead-locale-keys.cjs` reports **0 parity gaps**
 - [ ] French translations are real translations — not copied English text or placeholders
+- [ ] All numbers displayed to users go through `formatNumber(n, lang)` — no raw `.toLocaleString()`, `toString()`, or unformatted numeric values
+- [ ] All percentages displayed to users go through `formatPercent(n, lang)` — no `+ '%'`, `'0%'`, or `'100%'` string literals
 
 **Flag but don't block:**
 - Sentence case is generally preferred for all text visible to users — note inconsistencies (e.g. mid-sentence capitals, ALL-CAPS emphasis) in review and fix opportunistically
