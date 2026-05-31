@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "dependencies": {
+  "dependencies": {   
     "@anthropic-ai/sdk": "^0.33.1",
     "@aws-sdk/client-bedrock-runtime": "^3.981.0",
     "@aws-sdk/client-s3": "^3.981.0",
@@ -130,6 +130,7 @@
     "postcss-svgo": {
       "svgo": "2.8.1"
     },
+    "uuid": "$uuid",
     "storybook": "8.6.17",
     "@storybook/core": "8.6.17",
     "@storybook/instrumenter": "8.6.17",
@@ -141,15 +142,16 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.9",
     "@babel/preset-env": "^7.25.4",
-    "@vitejs/plugin-react": "^4.3.3",
+    "@vitejs/plugin-react": "^5.0.0",
     "@tktco/node-actionlint": "^1.6.0",
     "concurrently": "^9.0.1",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^7.4.4",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
+    "esbuild": "^0.28.0",
     "get-port": "^7.1.0",
     "mongodb-memory-server": "^10.1.4",
-    "vite": "^5.4.14"
+    "vite": "^8.0.14"
   }
 }

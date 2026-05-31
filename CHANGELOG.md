@@ -1,5 +1,81 @@
 # Changelog
 
+## [1.131.0](https://github.com/cds-snc/ai-answers/compare/v1.130.0...v1.131.0) (2026-05-28)
+
+
+### Features
+
+* add AAFC as partner ([497d5ca](https://github.com/cds-snc/ai-answers/commit/497d5ca05f86960c8d08313f5deb2f910f627737))
+* add AAFC as partner - tested ([1fce636](https://github.com/cds-snc/ai-answers/commit/1fce636ec644d93a74f8a2791eb7628d19340ea8))
+* combine decimals in file ([461cf51](https://github.com/cds-snc/ai-answers/commit/461cf51861c3d50714a6afe08993e8374c08f754))
+* fix table sorting ([2954f49](https://github.com/cds-snc/ai-answers/commit/2954f49fe9cf4de2c3aa6133fb1f63a808e31b11))
+* number format refinement ([b147ff5](https://github.com/cds-snc/ai-answers/commit/b147ff5d209daae463f1c90828e41141cea1b3ed))
+
+
+### Bug Fixes
+
+* add ebola url to temporary measures ([93c3e97](https://github.com/cds-snc/ai-answers/commit/93c3e97469ff80cef6aaee7d5f97c8769e002336))
+* add ebola url to temporary measures ([b692a70](https://github.com/cds-snc/ai-answers/commit/b692a702518497147ee473dc8e13b6307d7c1b9b))
+* clear text input on search ([aaaeef2](https://github.com/cds-snc/ai-answers/commit/aaaeef26203cdd5a7d0d194ee603a47c9830247a))
+* clear text input on search ([9560309](https://github.com/cds-snc/ai-answers/commit/956030940373da6b869430e41d92e007e7a1afce))
+* french number formatting ([14c5a9c](https://github.com/cds-snc/ai-answers/commit/14c5a9cde711f4dc12d43429c84b2843938f9d06))
+* french number formatting ([1a9bf58](https://github.com/cds-snc/ai-answers/commit/1a9bf58624c5b5ed83db6dcda8cd25a2a94d0fe0))
+* french number formatting ([c3317c3](https://github.com/cds-snc/ai-answers/commit/c3317c3d83c602f4c42e1fe3a70ed2f9b334c9fd))
+* handle percentage ([f2b4d47](https://github.com/cds-snc/ai-answers/commit/f2b4d47f3993d1443d0ada0fc8ae0a33f068236a))
+* update agents for number formatting ([bdd92ac](https://github.com/cds-snc/ai-answers/commit/bdd92acad7f1743b24b6213397f5f58b807c5e09))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump vite from 5.4.21 to 8.0.14 ([586bb10](https://github.com/cds-snc/ai-answers/commit/586bb104f49a490c5aa71e4eb03bd27a919b1ba8))
+* **deps-dev:** bump vite from 5.4.21 to 8.0.14 ([620ead3](https://github.com/cds-snc/ai-answers/commit/620ead39c01379d823ba236c94874a6de334f2cb))
+* **deps:** bump postcss from 8.5.6 to 8.5.15 ([c66a43c](https://github.com/cds-snc/ai-answers/commit/c66a43c2d34a139cf0709b330115ebf2533775b4))
+* **deps:** bump postcss from 8.5.6 to 8.5.15 ([278d2bc](https://github.com/cds-snc/ai-answers/commit/278d2bc2812b69631eda74e37c4eddacd9656977))
+* **deps:** bump tmp from 0.2.5 to 0.2.7 ([cb46503](https://github.com/cds-snc/ai-answers/commit/cb465037a3be74c90377a497f7302b885842a7c3))
+* format dependencies section in package.json ([865a99c](https://github.com/cds-snc/ai-answers/commit/865a99c2f0e4e6b553505801e80f3ea4d75f6ab8))
+* remove peer flag from several dependencies and add @emnapi/core and @emnapi/runtime ([4df747e](https://github.com/cds-snc/ai-answers/commit/4df747ead70db4e4468f55729418df7fe1312d13))
+* update @vitejs/plugin-react to v5.0.0 and add esbuild as a dependency ([9900f1c](https://github.com/cds-snc/ai-answers/commit/9900f1ca2242e4378526d745e1c70ff7d792bd89))
+
+## [1.130.0](https://github.com/cds-snc/ai-answers/compare/v1.129.1...v1.130.0) (2026-05-27)
+
+
+### Features
+
+* refactor FilterPanel to use custom moment setup and add tests ([016aded](https://github.com/cds-snc/ai-answers/commit/016adedda1b765207e0af33cf1c7fe4c2978ed32))
+* update VSCode configurations and add nodemon for server watching ([414ad19](https://github.com/cds-snc/ai-answers/commit/414ad1985d5a40c4a50ab41b3c456910838a782f))
+
+
+### Bug Fixes
+
+* add otherlanguages batch ([76234c1](https://github.com/cds-snc/ai-answers/commit/76234c1f1751eb23a6ed9c91438fa929f0a58bd1))
+* block indigenous languages ([f6ec538](https://github.com/cds-snc/ai-answers/commit/f6ec538a408fc66a8bc0c590dcbbe4bd5aae8324))
+* blocking set was malformed ([5da4b2a](https://github.com/cds-snc/ai-answers/commit/5da4b2aa00af13714eae122f3fba4368141148c7))
+* button location ([b1d1f9e](https://github.com/cds-snc/ai-answers/commit/b1d1f9ecf23c3d0237e80cd4b2c21a35ac12f51e))
+* catch FR obfuscations ([a11545e](https://github.com/cds-snc/ai-answers/commit/a11545e8d8b64fc85faa90feeda9fc850f4c297b))
+* correct GcdsContainer formatting in DatabasePage and EvalPage ([15fb45b](https://github.com/cds-snc/ai-answers/commit/15fb45b74a9985fcb0ab76946eef1a6fbf6b890f))
+* prompts ([6a1d864](https://github.com/cds-snc/ai-answers/commit/6a1d8644a1152dfc080b110b6200f28cda3fbe80))
+* remove old PI file ([9b3bcb8](https://github.com/cds-snc/ai-answers/commit/9b3bcb87f2cd70c21679d369d4903a5982f3f5b1))
+* remove VITE_API_URL from environment variables in mem-mongo.js ([fcd21d8](https://github.com/cds-snc/ai-answers/commit/fcd21d89f6c7126bfb42aa5a6df202b737252b8f))
+* rename and edit blocking file ([0f2371e](https://github.com/cds-snc/ai-answers/commit/0f2371e40d99016cc1b29957f70ba8b76a411005))
+* safety instructions ([00a22f7](https://github.com/cds-snc/ai-answers/commit/00a22f7b11f9770ff88d9645793b276379ced015))
+* search ([4f489fb](https://github.com/cds-snc/ai-answers/commit/4f489fbca4e5cf23380bb7c5bc8a04bcecdaf7b9))
+* translation prompt and catch morse code ([588270c](https://github.com/cds-snc/ai-answers/commit/588270c937a0a2b753f7bf39526be9532ea97019))
+* translation prompt and catch morse code ([24ebca1](https://github.com/cds-snc/ai-answers/commit/24ebca10d645ca3c5493976c45133bddd23d3d76))
+* try again on indigenous language ([07657bc](https://github.com/cds-snc/ai-answers/commit/07657bc5516a8c07ae9777685c787e2108830d95))
+* update redact.csv ([0b58089](https://github.com/cds-snc/ai-answers/commit/0b580899141fae3bd24455e5965b945505fb0a87))
+* update svgo version and add overrides in package.json ([32ff2d7](https://github.com/cds-snc/ai-answers/commit/32ff2d7ab3af77de8c5dd4c123095aaaa0fe8225))
+* update svgo version and add overrides in package.json ([7fd5001](https://github.com/cds-snc/ai-answers/commit/7fd5001060fd266d648bf7ea7e1e17f294c57175))
+* wasn't catching FR obfuscations ([cc216d5](https://github.com/cds-snc/ai-answers/commit/cc216d5b7344dda82df4909aec7a00f194513be3))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump qs and cohere-ai in /server ([c5cf8b8](https://github.com/cds-snc/ai-answers/commit/c5cf8b845c55c5d234acc9041a5bc8a721fbe4c3))
+* **deps:** bump qs and express ([69a6d9a](https://github.com/cds-snc/ai-answers/commit/69a6d9af7ea9648119c1610d44c439148c00044f))
+* migrate s3-backup to OIDC auth, upgrade actions, simplify upload ([04181b4](https://github.com/cds-snc/ai-answers/commit/04181b413fbf0a53e3cdb91bbcadb12e874ba9fc))
+* update actions/checkout to v4 and add @tktco/node-actionlint d… ([1df5262](https://github.com/cds-snc/ai-answers/commit/1df52629ea43344c27cf4dec7302f63b23732bd9))
+* update actions/checkout to v4 and add @tktco/node-actionlint dependency ([544ff5e](https://github.com/cds-snc/ai-answers/commit/544ff5e4198d6ab2d282b8933a8d6ce4def1cefe))
+
 ## [1.129.1](https://github.com/cds-snc/ai-answers/compare/v1.129.0...v1.129.1) (2026-05-25)
 
 

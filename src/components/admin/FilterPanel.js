@@ -205,6 +205,7 @@ const FilterPanel = ({
   // Department options
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
+    { value: 'AAFC-AAC', label: 'AAFC-AAC' },
     { value: 'BAC-LAC', label: 'BAC-LAC' },
     { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
     { value: 'CEO-BEC', label: 'CEO-BEC' },

@@ -12,6 +12,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
+| `AAFC-AAC` | Agriculture and Agri-Food Canada (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Agriculture et Agroalimentaire Canada |
 | `BAC-LAC` | Library and Archives Canada | Bibliothèque et Archives Canada |
 | `CBSA-ASFC` | Canada Border Services Agency | Agence des services frontaliers du Canada |
 | `CEO-BEC` | Canada.ca Experience Office | Bureau de l'expérience Canada.ca |
@@ -168,6 +169,7 @@ Current aliases:
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
 - **Regional Development Agencies → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `FedDev Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan`
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
+- **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 
 ### Steps to add a new shared-scenario group
 

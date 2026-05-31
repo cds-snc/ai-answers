@@ -84,12 +84,13 @@ ${departmentsString}
 - Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
 - Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
 - Find a member of Parliament →  HOC-CDC  
-- Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
+- Find permits & licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
+- Find funding, insurance, licensing for agriculture and agri-food businesses → AGPAL (federal/provincial/territorial partnership administered by AAFC-AAC)
 - Access to Information requests (ATIP), AIPRP (Accès à l'information et protection des renseignements personnels) → TBS-SCT  
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
-- "GC Sign in" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
+- "CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - AI Answers - this service (how you work, models,features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)

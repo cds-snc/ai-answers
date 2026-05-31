@@ -4,6 +4,7 @@ import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import FilterPanel from './FilterPanel.js';
 import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
 
@@ -20,10 +21,10 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
     loadingState,
   } = useTechnicalMetrics();
 
-  const fmtNum = (n) => (n ?? 0).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA');
+  const fmtNum = (n) => formatNumber(n, lang);
   const fmtMs = (n) => (n == null ? '–' : fmtNum(n));
   const fmtTokens = (n) => fmtNum(Math.round((n ?? 0) / 1000)) + 'K';
-  const fmtPct = (num, denom) => (denom ? `${Math.round((num / denom) * 100)}%` : '0%');
+  const fmtPct = (num, denom) => denom ? formatPercent(Math.round((num / denom) * 100), lang) : formatPercent(0, lang);
 
   const SectionWrapper = ({ children, isLoading, title, error, note }) => (
     <div className="mb-600 relative">
@@ -168,7 +169,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     {
                       metric: t('metrics.dashboard.tokens.totalInput'),
                       count: fmtTokens(data.totalInputTokens),
-                      percentage: '100%',
+                      percentage: formatPercent(100, lang),
                       enCount: fmtTokens(data.totalInputTokensEn),
                       enPercentage: fmtPct(data.totalInputTokensEn, data.totalInputTokens),
                       frCount: fmtTokens(data.totalInputTokensFr),
@@ -195,7 +196,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     {
                       metric: t('metrics.dashboard.tokens.totalOutput'),
                       count: fmtTokens(data.totalOutputTokens),
-                      percentage: '100%',
+                      percentage: formatPercent(100, lang),
                       enCount: fmtTokens(data.totalOutputTokensEn),
                       enPercentage: fmtPct(data.totalOutputTokensEn, data.totalOutputTokens),
                       frCount: fmtTokens(data.totalOutputTokensFr),

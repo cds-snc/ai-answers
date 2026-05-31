@@ -7,7 +7,9 @@
 //   Crown-Indigenous / Indigenous Services → SAC-ISC
 //   Regional Development Agencies → ISED-ISDE
 //   Public Health Agency → HC-SC
+//   Agriculture portfolio → AAFC-AAC
 export const SCENARIO_ALIASES = {
+  'AGPAL': 'AAFC-AAC',
   'PHAC-ASPC': 'HC-SC',
   'CFHA-ALFC': 'DND-MDN',
   'DCC-CDC': 'DND-MDN',

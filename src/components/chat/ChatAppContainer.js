@@ -588,6 +588,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
+          clearInput();
           setIsLoading(false);
           return;
         } else {
