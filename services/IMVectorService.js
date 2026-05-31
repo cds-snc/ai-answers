@@ -523,24 +523,27 @@ class IMVectorService {
         });
       }
 
-      // Promote the first expert-feedback-backed item, preserving the remaining order
-      const withEF = filtered.find(s => s.expertFeedbackId);
-      if (withEF) {
-        const rest = filtered.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
-        ServerLoggingService.info('matchQuestions final result', 'IMVectorService', {
+      // Apply the similarity threshold when one was requested, then return hits
+      // in similarity order. No expert-feedback promotion: relevance decides
+      // order (a below-threshold rated hit must not be hoisted into the result).
+      let result = filtered;
+      if (threshold !== null) {
+        const beforeThreshold = result.length;
+        result = result.filter(m => typeof m.similarity === 'number' && m.similarity >= threshold);
+        ServerLoggingService.info('matchQuestions threshold filter', 'IMVectorService', {
           questionIndex,
-          promotedExpertFeedbackId: withEF.expertFeedbackId,
-          finalCount: [withEF, ...rest].length,
+          threshold,
+          beforeCount: beforeThreshold,
+          afterCount: result.length,
         });
-        resultsPerQuestion.push([withEF, ...rest]);
-      } else {
-        ServerLoggingService.info('matchQuestions final result', 'IMVectorService', {
-          questionIndex,
-          promotedExpertFeedbackId: null,
-          finalCount: filtered.slice(0, k).length,
-        });
-        resultsPerQuestion.push(filtered.slice(0, k));
       }
+      result = result.slice().sort((a, b) => b.similarity - a.similarity).slice(0, k);
+      ServerLoggingService.info('matchQuestions final result', 'IMVectorService', {
+        questionIndex,
+        finalCount: result.length,
+        threshold,
+      });
+      resultsPerQuestion.push(result);
     }
     return resultsPerQuestion;
   }
