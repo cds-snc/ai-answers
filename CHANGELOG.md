@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.131.1](https://github.com/cds-snc/ai-answers/compare/v1.131.0...v1.131.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* add recency to expert eval use ([994d443](https://github.com/cds-snc/ai-answers/commit/994d4432844506f2a63a95641f3de2c829667293))
+* apply threshold ([bb4e258](https://github.com/cds-snc/ai-answers/commit/bb4e2582570cc03793a5e87054421496f585cf67))
+
+
+### Miscellaneous Chores
+
+* remove peer flag from several dependencies and add @emnapi/core and @emnapi/runtime ([e9e5726](https://github.com/cds-snc/ai-answers/commit/e9e57260802072d1b9d5231b13d03b18653da313))
+
 ## [1.131.0](https://github.com/cds-snc/ai-answers/compare/v1.130.0...v1.131.0) (2026-05-28)
 
 
