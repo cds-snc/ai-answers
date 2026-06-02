@@ -9,6 +9,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
 
 const EXPERT_EVAL_CHATS_EXPORT = 'ExpertEvalChats';
+const ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT = 'AllButLogsAndEmbeddings';
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
@@ -93,6 +94,11 @@ const DatabasePage = ({ lang }) => {
           'sessionstate',
           'user'
         ].filter(col => (collections || []).includes(col));
+      } else if (selectedCollection === ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT) {
+        collectionsToExport = (collections || []).filter(col => {
+          const n = String(col || '').toLowerCase();
+          return !(n.endsWith('log') || n.endsWith('logs') || n === 'embedding' || n === 'sentenceembedding');
+        });
       } else if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
         collectionsToExport = [selectedCollection];
       } else if (selectedCollection === 'AllButLogs') {
@@ -109,9 +115,11 @@ const DatabasePage = ({ lang }) => {
       // Step 2: Stream each collection as it is fetched (JSONL format)
       const collectionTag = selectedCollection === 'AllButLogs'
         ? 'all-but-logs-'
-        : (selectedCollection === EXPERT_EVAL_CHATS_EXPORT
-          ? 'expert-eval-chats-'
-          : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : ''));
+        : (selectedCollection === ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT
+          ? 'all-but-logs-and-embeddings-'
+          : (selectedCollection === EXPERT_EVAL_CHATS_EXPORT
+            ? 'expert-eval-chats-'
+            : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : '')));
       const filename = `database-backup-${collectionTag}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
@@ -535,6 +543,7 @@ const DatabasePage = ({ lang }) => {
           >
             <option value="All">{t('admin.database.collections.all')}</option>
             <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
+            <option value={ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT}>{t('admin.database.collections.allButLogsAndEmbeddings')}</option>
             <option value={EXPERT_EVAL_CHATS_EXPORT}>{t('admin.database.collections.expertEvalChats')}</option>
             {collections.map((col) => (
               <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
