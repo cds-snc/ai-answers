@@ -7,6 +7,7 @@ import { Question } from '../../../models/question.js';
 import { Answer } from '../../../models/answer.js';
 import { ExpertFeedback } from '../../../models/expertFeedback.js';
 import { Logs } from '../../../models/logs.js';
+import { Eval } from '../../../models/eval.js';
 
 function createReq(query) {
   return {
@@ -45,12 +46,15 @@ describe('db-database-management expert evaluation chat export', () => {
     await dbConnect();
 
     const expertFeedback = await ExpertFeedback.create({ totalScore: 75, type: 'expert' });
+    const evalExpertFeedback = await ExpertFeedback.create({ totalScore: 60, type: 'expert' });
+    const autoEval = await Eval.create({ expertFeedback: evalExpertFeedback._id });
     const includedQuestion = await Question.create({ redactedQuestion: 'Included expert question' });
     const includedAnswer = await Answer.create({ content: 'Included expert answer' });
     const includedInteraction = await Interaction.create({
       question: includedQuestion._id,
       answer: includedAnswer._id,
-      expertFeedback: expertFeedback._id
+      expertFeedback: expertFeedback._id,
+      autoEval: autoEval._id
     });
 
     const includedFollowupQuestion = await Question.create({ redactedQuestion: 'Included follow-up question' });
@@ -99,5 +103,13 @@ describe('db-database-management expert evaluation chat export', () => {
     });
     expect(logRes.statusCode).toBe(200);
     expect(logRes.payload.data.map(log => log.message)).toEqual(['Included log']);
+
+    const expertFeedbackRes = await runGet({
+      collection: 'expertfeedback',
+      exportScope: 'expertEvalChats',
+      limit: '100'
+    });
+    expect(expertFeedbackRes.statusCode).toBe(200);
+    expect(expertFeedbackRes.payload.data.map(feedback => feedback.totalScore).sort()).toEqual([60, 75]);
   });
 });

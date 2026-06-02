@@ -91,7 +91,6 @@ const DatabasePage = ({ lang }) => {
           'embedding',
           'sentenceembedding',
           'logs',
-          'sessionstate',
           'user'
         ].filter(col => (collections || []).includes(col));
       } else if (selectedCollection === ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT) {
