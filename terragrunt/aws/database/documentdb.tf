@@ -112,3 +112,64 @@ resource "aws_ssm_parameter" "docdb_uri" {
   value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb-cluster.endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
   depends_on = [aws_docdb_cluster_instance.ai-answers-docdb-instance]
 }
+
+# Side-by-side DocumentDB 8 cluster for upgrade testing.
+resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb8-cluster-parameter-group" {
+  count       = var.docdb8_enabled ? 1 : 0
+  name        = "${var.product_name}-docdb8-cluster-parameter-group"
+  family      = "docdb8.0"
+  description = "Parameter group for ${var.product_name} ${var.env} DocumentDB 8"
+
+  parameter {
+    name  = "tls"
+    value = "enabled"
+  }
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
+  count                           = var.docdb8_enabled ? 1 : 0
+  cluster_identifier              = "${var.product_name}-docdb8-cluster"
+  engine                          = "docdb"
+  engine_version                  = "8.0.0"
+  master_username                 = data.aws_ssm_parameter.docdb_username.value
+  master_password                 = data.aws_ssm_parameter.docdb_password.value
+  db_subnet_group_name            = aws_docdb_subnet_group.ai-answers-docdb-subnet-group.name
+  vpc_security_group_ids          = [aws_security_group.ai-answers-docdb-sg.id]
+  storage_encrypted               = true
+  apply_immediately               = true
+  skip_final_snapshot             = true
+  port                            = 27017
+  db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group[0].name
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_docdb_cluster_instance" "ai-answers-docdb8-instance" {
+  count              = var.docdb8_enabled ? var.docdb_instance_count : 0
+  identifier         = "${var.product_name}-docdb8-instance-${count.index}"
+  cluster_identifier = aws_docdb_cluster.ai-answers-docdb8-cluster[0].id
+  instance_class     = "db.t3.medium"
+  engine             = "docdb"
+  apply_immediately  = true
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_ssm_parameter" "docdb8_uri" {
+  count      = var.docdb8_enabled ? 1 : 0
+  name       = "docdb8_uri"
+  type       = "SecureString"
+  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb8-cluster[0].endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb8-instance]
+}

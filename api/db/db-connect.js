@@ -23,25 +23,45 @@ import "../../models/sentenceEmbedding.js";
 // Cache the connection and promise at the module level. This is safe for
 // worker threads, as each thread gets its own module instance.
 let cached = { conn: null, promise: null };
+let activeDocumentDbVersion = normalizeDocumentDbVersion(process.env.DOCDB_ACTIVE_VERSION);
 
-async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
+function normalizeDocumentDbVersion(value) {
+  return String(value || '5').trim() === '8' ? '8' : '5';
+}
+
+function getDocumentDbUri(version = activeDocumentDbVersion) {
+  const normalizedVersion = normalizeDocumentDbVersion(version);
+  if (normalizedVersion === '8') {
+    return process.env.DOCDB_8_URI || process.env.DOCDB_URI;
+  }
+  return process.env.DOCDB_5_URI || process.env.DOCDB_URI;
+}
+
+function getConnectionConfig() {
+  if (process.env.MONGODB_URI) {
+    return {
+      connectionString: process.env.MONGODB_URI,
+      targetKey: `mongo:${process.env.MONGODB_URI}`,
+      opts: {
+        bufferCommands: false,
+        connectTimeoutMS: 60000, // 60 seconds timeout
+        socketTimeoutMS: 300000, // 5 minutes timeout for operations
+        serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
+        heartbeatFrequencyMS: 10000, // How often to check the connection
+        maxPoolSize: 100, // Maximum number of connections
+        minPoolSize: 1, // Minimum number of connections
+        directConnection: true,
+      },
+    };
   }
 
-  if (!cached.promise) {
-    const mongoDbOpts = {
-      bufferCommands: false,
-      connectTimeoutMS: 60000, // 60 seconds timeout
-      socketTimeoutMS: 300000, // 5 minutes timeout for operations
-      serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
-      heartbeatFrequencyMS: 10000, // How often to check the connection
-      maxPoolSize: 100, // Maximum number of connections
-      minPoolSize: 1, // Minimum number of connections
-      directConnection: true,
-    };
+  const version = activeDocumentDbVersion;
+  const connectionString = getDocumentDbUri(version);
 
-    const docDbOpts = {
+  return {
+    connectionString,
+    targetKey: `docdb${version}:${connectionString}`,
+    opts: {
       tls: true,
       tlsCAFile: "/app/global-bundle.pem",
       retryWrites: false,
@@ -52,11 +72,39 @@ async function dbConnect() {
       heartbeatFrequencyMS: 10000, // How often to check the connection
       minPoolSize: 10, // Keep 20 connections ready
       maxPoolSize: 1000, // Allow up to 1000 connections
-    };
+    },
+  };
+}
 
-    const connectionString = process.env.MONGODB_URI || process.env.DOCDB_URI;
-    const opts = process.env.MONGODB_URI ? mongoDbOpts : docDbOpts;
+async function switchDocumentDbVersion(version) {
+  const nextVersion = normalizeDocumentDbVersion(version);
+  if (process.env.MONGODB_URI) {
+    activeDocumentDbVersion = nextVersion;
+    return;
+  }
 
+  const previousTarget = cached.targetKey;
+  activeDocumentDbVersion = nextVersion;
+  const nextTarget = getConnectionConfig().targetKey;
+
+  if (previousTarget && previousTarget !== nextTarget) {
+    cached = { conn: null, promise: null, targetKey: null };
+    await mongoose.disconnect();
+  }
+}
+
+function getActiveDocumentDbVersion() {
+  return activeDocumentDbVersion;
+}
+
+async function dbConnect() {
+  const { connectionString, opts, targetKey } = getConnectionConfig();
+
+  if (cached.conn && cached.targetKey === targetKey) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
     console.log("DB Connection Options:", opts);
 
     cached.promise = mongoose
@@ -64,6 +112,7 @@ async function dbConnect() {
       .then((mongoose) => {
         return mongoose;
       });
+    cached.targetKey = targetKey;
   }
 
   try {
@@ -77,3 +126,9 @@ async function dbConnect() {
 }
 
 export default dbConnect;
+export {
+  getActiveDocumentDbVersion,
+  getDocumentDbUri,
+  normalizeDocumentDbVersion,
+  switchDocumentDbVersion,
+};

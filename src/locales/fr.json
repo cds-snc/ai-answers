@@ -985,6 +985,13 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
+    "documentDbVersion": {
+      "label": "Version de DocumentDB",
+      "options": {
+        "docdb5": "DocumentDB 5",
+        "docdb8": "DocumentDB 8"
+      }
+    },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",

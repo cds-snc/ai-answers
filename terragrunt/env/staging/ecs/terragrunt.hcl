@@ -58,6 +58,8 @@ dependency "database" {
   mock_outputs = {
     aws_docdb_security_group_id = ""
     docdb_uri_arn               = "mock_docdb_uri_arn"
+    docdb5_uri_arn              = "mock_docdb5_uri_arn"
+    docdb8_uri_arn              = "mock_docdb8_uri_arn"
   }
 }
 
@@ -117,6 +119,8 @@ inputs = {
   ai_answers_load_balancer_sg        = dependency.load_balancer.outputs.ai_answers_load_balancer_sg
   aws_docdb_security_group_id        = dependency.database.outputs.aws_docdb_security_group_id
   docdb_uri_arn                      = dependency.database.outputs.docdb_uri_arn
+  docdb5_uri_arn                     = dependency.database.outputs.docdb5_uri_arn
+  docdb8_uri_arn                     = dependency.database.outputs.docdb8_uri_arn
   azure_openai_api_key_arn           = dependency.ssm.outputs.azure_openai_api_key_arn
   azure_openai_endpoint_arn          = dependency.ssm.outputs.azure_openai_endpoint_arn
   azure_openai_api_version_arn       = dependency.ssm.outputs.azure_openai_api_version_arn

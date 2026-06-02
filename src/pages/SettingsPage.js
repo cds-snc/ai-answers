@@ -18,6 +18,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingDeployment, setSavingDeployment] = useState(false);
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
+  const [documentDbVersion, setDocumentDbVersion] = useState('5');
+  const [savingDocumentDbVersion, setSavingDocumentDbVersion] = useState(false);
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
@@ -78,6 +80,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDeploymentMode(mode);
       const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
       setVectorServiceType(type);
+      const dbVersion = await DataStoreService.getSetting('database.documentdbVersion', '5');
+      setDocumentDbVersion(dbVersion === '8' ? '8' : '5');
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
       // Load default workflow setting
@@ -308,6 +312,18 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleDocumentDbVersionChange = async (e) => {
+    const newVersion = e.target.value === '8' ? '8' : '5';
+    setDocumentDbVersion(newVersion);
+    setSavingDocumentDbVersion(true);
+    try {
+      const current = await saveAndVerify('database.documentdbVersion', newVersion, (v) => (v === '8' ? '8' : '5'));
+      setDocumentDbVersion(current);
+    } finally {
+      setSavingDocumentDbVersion(false);
+    }
+  };
+
 
 
   const handleBaseUrlChange = (e) => {
@@ -399,6 +415,19 @@ const SettingsPage = ({ lang = 'en' }) => {
           <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
             <option value="CDS">{t('settings.deploymentMode.cds')}</option>
             <option value="Vercel">{t('settings.deploymentMode.serverless')}</option>
+          </select>
+
+          <label htmlFor="documentdb-version" className="mb-200 display-block mt-400">
+            {t('settings.documentDbVersion.label')}
+          </label>
+          <select
+            id="documentdb-version"
+            value={documentDbVersion}
+            onChange={handleDocumentDbVersionChange}
+            disabled={savingDocumentDbVersion}
+          >
+            <option value="5">{t('settings.documentDbVersion.options.docdb5')}</option>
+            <option value="8">{t('settings.documentDbVersion.options.docdb8')}</option>
           </select>
 
           <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
