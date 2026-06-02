@@ -8,6 +8,29 @@ const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const COLLECTION_RULES_BY_MODE = {
+  'expert-eval-chats': {
+    required: [
+      'answer',
+      'chat',
+      'citation',
+      'context',
+      'expertfeedback',
+      'interaction',
+      'question'
+    ],
+    optional: [
+      'embedding',
+      'eval',
+      'logs',
+      'publicfeedback',
+      'sentenceembedding',
+      'tool',
+      'user'
+    ]
+  }
+};
+
 const EXPECTED_COLLECTIONS_BY_MODE = {
   'expert-eval-chats': [
     'answer',
@@ -175,7 +198,10 @@ function knownModelCollections() {
 }
 
 function expectedCollectionsForMode(mode) {
-  if (mode === 'expert-eval-chats') return [...EXPECTED_COLLECTIONS_BY_MODE['expert-eval-chats']];
+  if (mode === 'expert-eval-chats') {
+    const rules = COLLECTION_RULES_BY_MODE['expert-eval-chats'];
+    return [...rules.required, ...rules.optional].sort((a, b) => a.localeCompare(b));
+  }
 
   const allCollections = knownModelCollections();
   if (mode === 'all-but-logs') {
@@ -191,6 +217,11 @@ function expectedCollectionsForMode(mode) {
     });
   }
   return allCollections;
+}
+
+function requiredCollectionsForMode(mode) {
+  if (mode === 'expert-eval-chats') return COLLECTION_RULES_BY_MODE['expert-eval-chats'].required;
+  return expectedCollectionsForMode(mode);
 }
 
 function idString(value) {
@@ -354,7 +385,8 @@ function validateRelationships(index, report, maxSamples) {
 
 function validateCollectionCoverage(index, expectedMode, report, maxSamples) {
   const expectedCollections = expectedCollectionsForMode(expectedMode);
-  if (!expectedCollections.length) {
+  const requiredCollections = requiredCollectionsForMode(expectedMode);
+  if (!expectedCollections.length || !requiredCollections.length) {
     addIssue(report, 'warnings', 'expected_collections_unknown', 'Could not determine expected collections from the models directory.', {
       expectedMode
     }, maxSamples);
@@ -362,7 +394,7 @@ function validateCollectionCoverage(index, expectedMode, report, maxSamples) {
   }
 
   const exportedCollections = new Set(index.counts.keys());
-  for (const collection of expectedCollections) {
+  for (const collection of requiredCollections) {
     if (!exportedCollections.has(collection)) {
       addIssue(report, 'warnings', 'expected_collection_missing', 'An expected collection is not present in the export.', {
         expectedMode,
