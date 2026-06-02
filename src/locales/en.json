@@ -405,6 +405,7 @@
       "collections": {
         "all": "All",
         "allButLogs": "All but logs",
+        "expertEvalChats": "Chats with expert evaluations",
         "interaction": "Interaction",
         "question": "Question",
         "answer": "Answer",

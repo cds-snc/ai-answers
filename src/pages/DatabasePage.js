@@ -8,6 +8,8 @@ import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
 
+const EXPERT_EVAL_CHATS_EXPORT = 'ExpertEvalChats';
+
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
   const [isExporting, setIsExporting] = useState(false);
@@ -73,7 +75,25 @@ const DatabasePage = ({ lang }) => {
 
       // Use selectedCollection for export
       let collectionsToExport = collections;
-      if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
+      if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) {
+        collectionsToExport = [
+          'chat',
+          'interaction',
+          'question',
+          'answer',
+          'citation',
+          'tool',
+          'expertfeedback',
+          'publicfeedback',
+          'eval',
+          'context',
+          'embedding',
+          'sentenceembedding',
+          'logs',
+          'sessionstate',
+          'user'
+        ].filter(col => (collections || []).includes(col));
+      } else if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
         collectionsToExport = [selectedCollection];
       } else if (selectedCollection === 'AllButLogs') {
         // filter out collections whose names end with 'log' or 'logs'
@@ -89,7 +109,9 @@ const DatabasePage = ({ lang }) => {
       // Step 2: Stream each collection as it is fetched (JSONL format)
       const collectionTag = selectedCollection === 'AllButLogs'
         ? 'all-but-logs-'
-        : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : '');
+        : (selectedCollection === EXPERT_EVAL_CHATS_EXPORT
+          ? 'expert-eval-chats-'
+          : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : ''));
       const filename = `database-backup-${collectionTag}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
@@ -113,6 +135,7 @@ const DatabasePage = ({ lang }) => {
               if (lastId) url += `&lastId=${encodeURIComponent(lastId)}`;
               if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
               if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+              if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) url += '&exportScope=expertEvalChats';
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
               const timeout = setTimeout(() => controller.abort(), 300000); // 5 minutes
@@ -512,6 +535,7 @@ const DatabasePage = ({ lang }) => {
           >
             <option value="All">{t('admin.database.collections.all')}</option>
             <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
+            <option value={EXPERT_EVAL_CHATS_EXPORT}>{t('admin.database.collections.expertEvalChats')}</option>
             {collections.map((col) => (
               <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
             ))}

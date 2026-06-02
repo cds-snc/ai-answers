@@ -405,6 +405,7 @@
       "collections": {
         "all": "Tout",
         "allButLogs": "Tout sauf les journaux",
+        "expertEvalChats": "Clavardages avec \u00e9valuations d'experts",
         "interaction": "Interaction",
         "question": "Question",
         "answer": "Réponse",
