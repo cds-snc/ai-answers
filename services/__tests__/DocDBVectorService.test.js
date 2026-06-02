@@ -100,4 +100,33 @@ describe('DocDBVectorService', () => {
     expect(stats.answerEmbeddings).toBe(25);
     expect(stats.sentences).toBe(69);
   });
+
+  it('re-scores candidates, returns them in similarity order, and does not promote expert-feedback hits', async () => {
+    mockEmbedDocuments.mockResolvedValue([[1, 0]]);
+    const docs = [
+      { _id: 'a', interactionId: 'ia', expertFeedbackId: null, questionsEmbedding: [1, 0] },
+      { _id: 'b', interactionId: 'ib', expertFeedbackId: 'ef-b', questionsEmbedding: [0.7071067811865476, 0.7071067811865476] },
+      { _id: 'c', interactionId: 'ic', expertFeedbackId: null, questionsEmbedding: [0, 1] },
+    ];
+    service.collection = { aggregate: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue(docs) })) };
+
+    const out = await service.matchQuestions(['q'], { k: 3 });
+    // similarity desc: a (1.0), b (~0.707), c (0). Rated hit 'b' is NOT hoisted to the front.
+    expect(out[0].map((r) => r.id)).toEqual(['a', 'b', 'c']);
+    expect(out[0][0].similarity).toBeCloseTo(1, 5);
+  });
+
+  it('drops candidates below the similarity threshold', async () => {
+    mockEmbedDocuments.mockResolvedValue([[1, 0]]);
+    const docs = [
+      { _id: 'a', interactionId: 'ia', expertFeedbackId: null, questionsEmbedding: [1, 0] },
+      { _id: 'b', interactionId: 'ib', expertFeedbackId: null, questionsEmbedding: [0.7071067811865476, 0.7071067811865476] },
+      { _id: 'c', interactionId: 'ic', expertFeedbackId: null, questionsEmbedding: [0, 1] },
+    ];
+    service.collection = { aggregate: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue(docs) })) };
+
+    const out = await service.matchQuestions(['q'], { k: 3, threshold: 0.5 });
+    // a (1.0) and b (~0.707) clear the 0.5 floor; c (0) is dropped.
+    expect(out[0].map((r) => r.id)).toEqual(['a', 'b']);
+  });
 });

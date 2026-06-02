@@ -152,11 +152,12 @@ graph.addNode('similarQuestions', async (state) => {
   try {
     similarQuestions = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
-      threshold: 0.6,
+      threshold: 0.75,
       expertFeedbackRating: 100,
       expertFeedbackComparison: 'lte',
       language: state.lang,
       includeQuestionFlow: true,
+      recencyDays: 365,
     });
   } catch (err) {
     await ServerLoggingService.warn('similarQuestions node failed', state.chatId, err);

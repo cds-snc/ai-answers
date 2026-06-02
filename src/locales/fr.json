@@ -317,6 +317,7 @@
     "title": "Visualiseur de chat",
     "refresh": "Actualiser",
     "refreshPending": "Patientez...",
+    "download": "Télécharger les journaux (JSON)",
     "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",
     "level": "Niveau",

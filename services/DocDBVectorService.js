@@ -368,47 +368,48 @@ class DocDBVectorService {
       docsPerQuestion: allDocs.map((docs) => (Array.isArray(docs) ? docs.length : 0)),
     });
 
-    // Map each pipeline result to the simplified output shape
+    // Map each pipeline result to the simplified output shape. The
+    // $search.vectorSearch stage does not surface a similarity score, so we
+    // re-score every candidate against the query embedding (the question vector
+    // is already projected as questionsEmbedding). This lets us (a) enforce the
+    // similarity threshold when one is requested and (b) return hits in true
+    // similarity order. No expert-feedback promotion: relevance decides order.
     const resultsPerQuestion = allDocs.map((docs, idx) => {
-      ServerLoggingService.info('matchQuestions candidate counts', 'DocDBVectorService', {
-        questionIndex: idx,
-        beforeSlice: Array.isArray(docs) ? docs.length : 0,
-        afterSlice: Array.isArray(docs) ? docs.slice(0, k).length : 0,
-      });
-      const topDocs = Array.isArray(docs) ? docs.slice(0, k) : [];
-      const mapped = topDocs.map((r) => {
+      const queryEmb = embeddings[idx];
+      const candidates = Array.isArray(docs) ? docs : [];
+      const mapped = [];
+      for (const r of candidates) {
+        let sim = 0;
+        try {
+          sim = cosineSimilarity(queryEmb, r.questionsEmbedding) ?? 0;
+        } catch (err) {
+          ServerLoggingService.error('Error computing cosine similarity (matchQuestions)', 'DocDBVectorService', err);
+        }
+        if (threshold !== null && sim < threshold) continue;
         const expertFeedbackId = r.expertFeedbackId || null;
-        return {
+        mapped.push({
           id: r._id?.toString?.() || null,
           interactionId: r.interactionId?.toString?.() || r.interactionId,
           expertFeedbackId,
           expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
-          similarity: null,
+          similarity: sim,
           citation: {
             providedCitationUrl: r.providedCitationUrl || null,
             aiCitationUrl: r.aiCitationUrl || null,
             citationHead: r.citationHead || null,
           },
-        };
-      });
-
-      const withEF = mapped.find((s) => s.expertFeedbackId);
-      if (withEF) {
-        const rest = mapped.filter((s) => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
-        ServerLoggingService.info('matchQuestions final result', 'DocDBVectorService', {
-          questionIndex: idx,
-          promotedExpertFeedbackId: withEF.expertFeedbackId,
-          finalCount: [withEF, ...rest].length,
         });
-        return [withEF, ...rest];
       }
-
+      mapped.sort((a, b) => b.similarity - a.similarity);
+      const top = mapped.slice(0, k);
       ServerLoggingService.info('matchQuestions final result', 'DocDBVectorService', {
         questionIndex: idx,
-        promotedExpertFeedbackId: null,
-        finalCount: mapped.slice(0, k).length,
+        candidateCount: candidates.length,
+        afterThreshold: mapped.length,
+        finalCount: top.length,
+        threshold,
       });
-      return mapped.slice(0, k);
+      return top;
     });
 
     return resultsPerQuestion;

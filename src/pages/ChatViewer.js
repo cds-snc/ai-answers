@@ -58,6 +58,31 @@ const ChatViewer = ({ lang = 'en' }) => {
     await refreshLogs();
   };
 
+  const handleDownloadLogs = () => {
+    if (!chatId || !logs || logs.length === 0) {
+      return;
+    }
+
+    const payload = {
+      chatId,
+      exportedAt: new Date().toISOString(),
+      logCount: logs.length,
+      logs,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `chat-logs-${chatId}-${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <GcdsContainer layout="page" tag="main" className="mb-600">
@@ -223,6 +248,17 @@ const ChatViewer = ({ lang = 'en' }) => {
               <div className="bg-white shadow rounded-lg">
                 {logs.length > 0 ? (
                   <div className="p-4">
+                    <div className="mb-3">
+                      <GcdsButton
+                        id="download-logs-button"
+                        type="button"
+                        buttonRole="secondary"
+                        onClick={handleDownloadLogs}
+                        className="whitespace-nowrap shrink-0"
+                      >
+                        {t('logging.download')}
+                      </GcdsButton>
+                    </div>
                     <table ref={tableRef} className="display">
                       <thead>
                         <tr>

@@ -28,6 +28,20 @@ node scripts/generate-system-prompt-documentation.js
 
 This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the actual prompts.
 
+## Inspecting a chat run (debugging)
+
+The ChatViewer page (`/en/chat-viewer`, `/fr/visualiseur-de-clavardage`, admin/partner only) has a **"Download logs (JSON)"** button that exports the full graph event stream for any chatId — local, staging, or prod — as a self-describing JSON file: `{ chatId, exportedAt, logCount, logs[] }`.
+
+If the user hands you one of these files (e.g. to diagnose a bad answer or see what evals were injected), parse it with:
+
+```bash
+node scripts/check-chat-logs.js <file.json>                          # full timeline
+node scripts/check-chat-logs.js <file.json> --summary                # message-type counts only
+node scripts/check-chat-logs.js <file.json> --filter similarQuestions # injected evals only
+```
+
+What lives in which event: see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md#inspecting-what-was-injected-manual-testing). Key ones: `node:context output` (matched department/topic), `node:similarQuestions output` (injected eval text in `metadata.similarQuestionsText`), `node:answer input/output` (what reached the LLM, what came back), `node:shortCircuit output` (whether the instant-answer path fired).
+
 ## Official languages
 **English users and admins and partners must be served in English. French users and admins and partners must be served in French.** This applies to all pages and tools — public-facing, admin, and partner.
 

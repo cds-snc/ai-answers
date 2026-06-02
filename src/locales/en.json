@@ -317,6 +317,7 @@
     "title": "Chat viewer",
     "refresh": "Refresh",
     "refreshPending": "Please wait...",
+    "download": "Download logs (JSON)",
     "backToAdmin": "Back to admin",
     "createdAt": "Created at",
     "level": "Level",
