@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import { RoleProtectedRoute } from '../components/RoleProtectedRoute.js';
 import ExecDashboard from '../components/admin/ExecDashboard.js';
 
