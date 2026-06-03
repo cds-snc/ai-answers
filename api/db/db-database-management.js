@@ -72,10 +72,19 @@ async function buildExpertEvalChatsExportScope(collections, { startDate, endDate
 
   const questionIds = uniqueObjectIds(interactions.map(interaction => interaction.question));
   const answerIds = uniqueObjectIds(interactions.map(interaction => interaction.answer));
-  const expertFeedbackIds = uniqueObjectIds(interactions.map(interaction => interaction.expertFeedback));
   const publicFeedbackIds = uniqueObjectIds(interactions.map(interaction => interaction.publicFeedback));
   const autoEvalIds = uniqueObjectIds(interactions.map(interaction => interaction.autoEval));
   const contextIds = uniqueObjectIds(interactions.map(interaction => interaction.context));
+
+  const evals = autoEvalIds.length && collections.eval
+    ? await collections.eval.find({ _id: { $in: autoEvalIds } })
+      .select('_id expertFeedback')
+      .lean()
+    : [];
+  const expertFeedbackIds = uniqueObjectIds([
+    ...interactions.map(interaction => interaction.expertFeedback),
+    ...evals.map(autoEval => autoEval.expertFeedback)
+  ]);
 
   const answers = answerIds.length && collections.answer
     ? await collections.answer.find({ _id: { $in: answerIds } })
@@ -109,7 +118,6 @@ async function buildExpertEvalChatsExportScope(collections, { startDate, endDate
     embedding: { _id: { $in: embeddingIds } },
     sentenceembedding: { parentEmbeddingId: { $in: embeddingIds } },
     logs: { chatId: { $in: chatIdStrings } },
-    sessionstate: { chatIds: { $in: chatIdStrings } },
     user: { _id: { $in: chatUserIds } }
   };
 
