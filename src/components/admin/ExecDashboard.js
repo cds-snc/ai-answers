@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import MetricsService from '../../services/MetricsService.js';
-import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
+import { buildQualityData, buildSatisfactionData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
-import enLocale from '../../locales/en.json';
-import frLocale from '../../locales/fr.json';
 
 // Colours
 const COLOURS = {
@@ -29,45 +27,6 @@ const QUALITY_COLOURS = [
   COLOURS.hasCitationError,
   COLOURS.harmful,
 ];
-
-// Reverse map: known label string → score (for legacy records)
-const LABEL_TO_SCORE = (() => {
-  const map = {};
-  ['YES', 'NO'].forEach(type => {
-    const feedbackType = type.toLowerCase();
-    FEEDBACK_OPTIONS[type].forEach(opt => {
-      const enLabel = enLocale.homepage?.publicFeedback?.[feedbackType]?.options?.[opt.id];
-      const frLabel = frLocale.homepage?.publicFeedback?.[feedbackType]?.options?.[opt.id];
-      if (enLabel) map[enLabel] = opt.score;
-      if (frLabel) map[frLabel] = opt.score;
-    });
-  });
-  return map;
-})();
-
-const YES_OTHER_SCORE = FEEDBACK_OPTIONS.YES.find(o => o.id === 'other').score;
-
-const groupByScore = (reasons, otherScore) => {
-  const grouped = {};
-  Object.entries(reasons).forEach(([key, counts]) => {
-    const numericScore = parseInt(key, 10);
-    let scoreKey;
-    if (!isNaN(numericScore) && SCORE_TO_KEY[numericScore]) {
-      scoreKey = String(numericScore);
-    } else if (/^(other|autre)\b/i.test(key)) {
-      scoreKey = String(otherScore);
-    } else if (LABEL_TO_SCORE[key]) {
-      scoreKey = String(LABEL_TO_SCORE[key]);
-    } else {
-      scoreKey = 'unknown';
-    }
-    if (!grouped[scoreKey]) grouped[scoreKey] = { en: 0, fr: 0, total: 0 };
-    grouped[scoreKey].en += counts.en;
-    grouped[scoreKey].fr += counts.fr;
-    grouped[scoreKey].total += counts.total;
-  });
-  return grouped;
-};
 
 // KPI stat card
 const StatCard = ({ label, value, sub }) => (
@@ -161,63 +120,9 @@ const HBarCard = ({ title, data, height, colour = COLOURS.bar }) => (
   </div>
 );
 
-const initialState = {
-  totalQuestions: 0,
-  totalQuestionsEn: 0,
-  totalQuestionsFr: 0,
-  totalConversations: 0,
-  sessionsByQuestionCount: {
-    singleQuestion: { total: 0 },
-    twoQuestions: { total: 0 },
-    threeQuestions: { total: 0 },
-  },
-  expertScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 } },
-  publicFeedbackTotals: { totalQuestionsWithFeedback: 0, yes: 0, no: 0 },
-  publicFeedbackReasons: { yes: {}, no: {} },
-  byDepartment: {},
-};
-
 const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [metrics, setMetrics] = useState(initialState);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const abortRef = useRef(null);
-
-  // Clean up any in-flight request on unmount.
-  useEffect(() => () => { if (abortRef.current) abortRef.current.abort(); }, []);
-
-  const fetchAll = useCallback(async ({ startDate, endDate, department }) => {
-    if (!startDate || !endDate) return;
-
-    if (abortRef.current) abortRef.current.abort();
-    abortRef.current = new AbortController();
-    const { signal } = abortRef.current;
-
-    setLoading(true);
-    setError(null);
-    const filters = { startDate, endDate };
-    if (department) filters.department = department;
-
-    try {
-      const [usage, session, expert, publicFb, dept] = await Promise.all([
-        MetricsService.getUsageMetrics(filters, signal),
-        MetricsService.getSessionMetrics(filters, signal),
-        MetricsService.getExpertMetrics(filters, signal),
-        MetricsService.getPublicFeedbackMetrics(filters, signal),
-        MetricsService.getDepartmentMetrics(filters, signal),
-      ]);
-      if (!signal.aborted) {
-        setMetrics({ ...initialState, ...usage, ...session, ...expert, ...publicFb, ...dept });
-      }
-    } catch (err) {
-      if (!signal.aborted) {
-        setError(err.message || t('execDashboard.error'));
-      }
-    } finally {
-      if (!signal.aborted) setLoading(false);
-    }
-  }, [t]);
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
   // --- Derived data ---
 
@@ -241,43 +146,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const expertTotal = metrics.expertScored?.total?.total || 0;
   const expertCorrect = metrics.expertScored?.correct?.total || 0;
   const accuracyPct = expertTotal > 0 ? Math.round((expertCorrect / expertTotal) * 100) : null;
-
-  const qualityData = expertTotal > 0 ? [
-    { name: t('metrics.dashboard.expertScored.correct'), value: metrics.expertScored.correct.total },
-    { name: t('metrics.dashboard.expertScored.needsImprovement'), value: metrics.expertScored.needsImprovement.total },
-    { name: t('metrics.dashboard.expertScored.hasError'), value: metrics.expertScored.hasError.total },
-    { name: t('metrics.dashboard.expertScored.hasCitationError'), value: metrics.expertScored.hasCitationError.total },
-    { name: t('metrics.dashboard.expertScored.harmful'), value: metrics.expertScored.harmful.total },
-  ].filter(d => d.value > 0) : [];
+  const qualityData = useMemo(() => buildQualityData(metrics.expertScored, t), [metrics.expertScored, t]);
 
   const pfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
   const pfYes = metrics.publicFeedbackTotals?.yes || 0;
-  const pfNo = metrics.publicFeedbackTotals?.no || 0;
   const satisfactionPct = pfTotal > 0 ? Math.round((pfYes / pfTotal) * 100) : null;
+  const satisfactionData = useMemo(() => buildSatisfactionData(metrics.publicFeedbackTotals, t), [metrics.publicFeedbackTotals, t]);
 
-  const satisfactionData = pfTotal > 0 ? [
-    { name: t('metrics.dashboard.userScored.helpful'), value: pfYes },
-    { name: t('metrics.dashboard.userScored.unhelpful'), value: pfNo },
-  ] : [];
-
-  const yesReasons = useMemo(() => {
-    const raw = metrics.publicFeedbackReasons?.yes || {};
-    return groupByScore(raw, YES_OTHER_SCORE);
-  }, [metrics.publicFeedbackReasons]);
-
-  const yesReasonsData = useMemo(() => {
-    const localeFile = lang === 'fr' ? frLocale : enLocale;
-    return Object.entries(yesReasons)
-      .map(([scoreKey, counts]) => {
-        const id = SCORE_TO_KEY[parseInt(scoreKey, 10)];
-        const label = id
-          ? (localeFile.homepage?.publicFeedback?.yes?.options?.[id] || id)
-          : scoreKey;
-        return { name: label, value: counts.total };
-      })
-      .filter(d => d.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [yesReasons, lang]);
+  const yesReasonsData = useMemo(() => buildYesReasonsData(metrics.publicFeedbackReasons, lang), [metrics.publicFeedbackReasons, lang]);
 
   const departmentData = useMemo(() => {
     return Object.entries(metrics.byDepartment || {})
@@ -288,11 +164,11 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
-      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchAll} />
+      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
 
       {error && (
         <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
-          {error}
+          {t('execDashboard.error')}
         </div>
       )}
 
