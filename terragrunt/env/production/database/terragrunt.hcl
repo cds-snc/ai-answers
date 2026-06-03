@@ -33,7 +33,6 @@ inputs = {
   vpc_cidr_block         = dependency.network.outputs.vpc_cidr_block
   docdb_password_name    = dependency.ssm.outputs.docdb_password_name
   docdb_username_name    = dependency.ssm.outputs.docdb_username_name
-  docdb8_enabled         = true
 }
 
 include {
