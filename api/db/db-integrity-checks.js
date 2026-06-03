@@ -297,6 +297,17 @@ async function countInteractionMissingChildren(limit = 0) {
   const Interaction = mongoose.models.Interaction;
   if (!Interaction) return { count: 0, samples: [] };
 
+  const requiredMissingLookups = [
+    { field: 'answer', docField: 'answerDoc' },
+    { field: 'question', docField: 'questionDoc' },
+    { field: 'context', docField: 'contextDoc' }
+  ];
+  const optionalMissingLookups = [
+    { field: 'expertFeedback', docField: 'expertFeedbackDoc' },
+    { field: 'publicFeedback', docField: 'publicFeedbackDoc' },
+    { field: 'autoEval', docField: 'evalDoc' }
+  ];
+
   const pipeline = [];
   pipeline.push({ $lookup: { from: 'answers', localField: 'answer', foreignField: '_id', as: 'answerDoc' } });
   pipeline.push({ $lookup: { from: 'questions', localField: 'question', foreignField: '_id', as: 'questionDoc' } });
@@ -305,16 +316,24 @@ async function countInteractionMissingChildren(limit = 0) {
   pipeline.push({ $lookup: { from: 'evals', localField: 'autoEval', foreignField: '_id', as: 'evalDoc' } });
   pipeline.push({ $lookup: { from: 'contexts', localField: 'context', foreignField: '_id', as: 'contextDoc' } });
 
+  const missingChildrenConditions = [
+    ...requiredMissingLookups.map(({ field, docField }) => ({
+      $and: [
+        { [field]: { $exists: true } },
+        { $expr: { $eq: [{ $size: `$${docField}` }, 0] } }
+      ]
+    })),
+    ...optionalMissingLookups.map(({ field, docField }) => ({
+      $and: [
+        { [field]: { $exists: true, $ne: null } },
+        { $expr: { $eq: [{ $size: `$${docField}` }, 0] } }
+      ]
+    }))
+  ];
+
   pipeline.push({
     $match: {
-      $or: [
-        { $and: [{ answer: { $exists: true } }, { $expr: { $eq: [{ $size: '$answerDoc' }, 0] } }] },
-        { $and: [{ question: { $exists: true } }, { $expr: { $eq: [{ $size: '$questionDoc' }, 0] } }] },
-        { $and: [{ expertFeedback: { $exists: true } }, { $expr: { $eq: [{ $size: '$expertFeedbackDoc' }, 0] } }] },
-        { $and: [{ publicFeedback: { $exists: true } }, { $expr: { $eq: [{ $size: '$publicFeedbackDoc' }, 0] } }] },
-        { $and: [{ autoEval: { $exists: true } }, { $expr: { $eq: [{ $size: '$evalDoc' }, 0] } }] },
-        { $and: [{ context: { $exists: true } }, { $expr: { $eq: [{ $size: '$contextDoc' }, 0] } }] }
-      ]
+      $or: missingChildrenConditions
     }
   });
 

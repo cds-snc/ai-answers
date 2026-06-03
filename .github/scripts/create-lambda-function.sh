@@ -15,7 +15,7 @@ echo "Deploying AI Answers function: $FULL_FUNCTION_NAME"
 # Fetch environment variables from SSM Parameter Store
 echo "Fetching environment variables from SSM Parameter Store..."
 # The parameter names to fetch
-PARAMETER_NAMES1="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key"
+PARAMETER_NAMES1="docdb_uri docdb8_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key"
 PARAMETER_NAMES2="gc_notify_api_key google_search_engine_id cross_account_bedrock_role bedrock_region conversation_integrity_secret s3_bucket_name"
 
 # Fetch all parameters in two batches due to AWS limit of 10 per request
@@ -33,6 +33,8 @@ fi
 
 # Extract each parameter value using jq
 DOCDB_URI=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="docdb_uri") | .Value')
+DOCDB_5_URI="$DOCDB_URI"
+DOCDB_8_URI=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="docdb8_uri") | .Value')
 AZURE_OPENAI_API_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="azure_openai_api_key") | .Value')
 AZURE_OPENAI_ENDPOINT=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="azure_openai_endpoint") | .Value')
 AZURE_OPENAI_API_VERSION=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="azure_openai_api_version") | .Value')
@@ -52,7 +54,7 @@ S3_BUCKET_NAME=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="s3_bucket
 REDIS_URL=$(aws ssm get-parameter --name redis_url --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || echo "")
 
 # Build base environment variables
-ENV_VARS="NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID,BEDROCK_ROLE_ARN=$CROSS_ACCOUNT_BEDROCK_ROLE,BEDROCK_REGION=$BEDROCK_REGION,CONVERSATION_INTEGRITY_SECRET=$CONVERSATION_INTEGRITY_SECRET,S3_BUCKET_NAME=$S3_BUCKET_NAME"
+ENV_VARS="NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,DOCDB_5_URI=$DOCDB_5_URI,DOCDB_8_URI=$DOCDB_8_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID,BEDROCK_ROLE_ARN=$CROSS_ACCOUNT_BEDROCK_ROLE,BEDROCK_REGION=$BEDROCK_REGION,CONVERSATION_INTEGRITY_SECRET=$CONVERSATION_INTEGRITY_SECRET,S3_BUCKET_NAME=$S3_BUCKET_NAME"
 
 # Add REDIS_URL only if it has a value (parameter exists in SSM)
 if [ -n "$REDIS_URL" ]; then
@@ -60,9 +62,11 @@ if [ -n "$REDIS_URL" ]; then
 fi
 
 # Validate that all required parameters were extracted
-if [ -z "$DOCDB_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$JWT_SECRET_KEY" ]; then
+if [ -z "$DOCDB_URI" ] || [ -z "$DOCDB_5_URI" ] || [ -z "$DOCDB_8_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$JWT_SECRET_KEY" ]; then
   echo "Error: One or more required parameters are empty after extraction"
   echo "DOCDB_URI: ${DOCDB_URI:+SET}"
+  echo "DOCDB_5_URI: ${DOCDB_5_URI:+SET}"
+  echo "DOCDB_8_URI: ${DOCDB_8_URI:+SET}"
   echo "AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:+SET}"
   echo "AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:+SET}"
   echo "JWT_SECRET_KEY: ${JWT_SECRET_KEY:+SET}"

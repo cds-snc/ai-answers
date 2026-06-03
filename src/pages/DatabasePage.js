@@ -7,9 +7,12 @@ import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
-
-const EXPERT_EVAL_CHATS_EXPORT = 'ExpertEvalChats';
-const ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT = 'AllButLogsAndEmbeddings';
+import {
+  ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
+  EXPERT_EVAL_CHATS_EXPORT,
+  getDatabaseExportCollections,
+  getDatabaseExportFilenameTag
+} from '../utils/database/exportCollections.js';
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
@@ -75,50 +78,13 @@ const DatabasePage = ({ lang }) => {
       setMessage('');
 
       // Use selectedCollection for export
-      let collectionsToExport = collections;
-      if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) {
-        collectionsToExport = [
-          'chat',
-          'interaction',
-          'question',
-          'answer',
-          'citation',
-          'tool',
-          'expertfeedback',
-          'publicfeedback',
-          'eval',
-          'context',
-          'embedding',
-          'sentenceembedding',
-          'logs',
-          'user'
-        ].filter(col => (collections || []).includes(col));
-      } else if (selectedCollection === ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT) {
-        collectionsToExport = (collections || []).filter(col => {
-          const n = String(col || '').toLowerCase();
-          return !(n.endsWith('log') || n.endsWith('logs') || n === 'embedding' || n === 'sentenceembedding');
-        });
-      } else if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
-        collectionsToExport = [selectedCollection];
-      } else if (selectedCollection === 'AllButLogs') {
-        // filter out collections whose names end with 'log' or 'logs'
-        collectionsToExport = (collections || []).filter(col => {
-          const n = String(col || '').toLowerCase();
-          return !(n.endsWith('log') || n.endsWith('logs'));
-        });
-      }
+      const collectionsToExport = getDatabaseExportCollections(selectedCollection, collections);
       if (!collectionsToExport || !Array.isArray(collectionsToExport) || collectionsToExport.length === 0) {
         throw new Error('No collections found');
       }
 
       // Step 2: Stream each collection as it is fetched (JSONL format)
-      const collectionTag = selectedCollection === 'AllButLogs'
-        ? 'all-but-logs-'
-        : (selectedCollection === ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT
-          ? 'all-but-logs-and-embeddings-'
-          : (selectedCollection === EXPERT_EVAL_CHATS_EXPORT
-            ? 'expert-eval-chats-'
-            : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : '')));
+      const collectionTag = getDatabaseExportFilenameTag(selectedCollection);
       const filename = `database-backup-${collectionTag}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
