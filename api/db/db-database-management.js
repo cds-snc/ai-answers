@@ -9,6 +9,113 @@ import mongoose from 'mongoose';
 import fs from 'fs';
 import crypto from 'crypto'; // Import crypto for generating UUIDs
 
+const EXPERT_EVAL_CHATS_SCOPE = 'expertEvalChats';
+
+function addIdPaginationFilter(queryFilter, lastId) {
+  if (!lastId) return queryFilter;
+  const existingIdFilter = queryFilter._id;
+  if (existingIdFilter && typeof existingIdFilter === 'object') {
+    queryFilter._id = { ...existingIdFilter, $gt: lastId };
+  } else {
+    queryFilter._id = { $gt: lastId };
+  }
+  return queryFilter;
+}
+
+function uniqueObjectIds(values = []) {
+  const seen = new Set();
+  const ids = [];
+  for (const value of values) {
+    if (!value) continue;
+    const stringValue = String(value);
+    if (seen.has(stringValue)) continue;
+    seen.add(stringValue);
+    ids.push(value);
+  }
+  return ids;
+}
+
+async function buildExpertEvalChatsExportScope(collections, { startDate, endDate }) {
+  const Chat = collections.chat;
+  const Interaction = collections.interaction;
+  if (!Chat || !Interaction) {
+    throw new Error('Chat and Interaction collections are required for expert evaluation chat export');
+  }
+
+  const chatMatch = {};
+  if (startDate || endDate) {
+    chatMatch.updatedAt = {};
+    if (startDate) chatMatch.updatedAt.$gte = new Date(startDate);
+    if (endDate) chatMatch.updatedAt.$lte = new Date(endDate);
+  }
+
+  const expertInteractionIds = await Interaction.distinct('_id', {
+    expertFeedback: { $exists: true, $ne: null }
+  });
+  const qualifyingChats = expertInteractionIds.length
+    ? await Chat.find({
+      ...chatMatch,
+      interactions: { $in: expertInteractionIds }
+    }).select('_id chatId interactions user').lean()
+    : [];
+
+  const chatIds = uniqueObjectIds(qualifyingChats.map(chat => chat._id));
+  const chatIdStrings = [...new Set(qualifyingChats.map(chat => chat.chatId).filter(Boolean))];
+  const chatUserIds = uniqueObjectIds(qualifyingChats.map(chat => chat.user));
+  const chatInteractionIds = uniqueObjectIds(qualifyingChats.flatMap(chat => chat.interactions || []));
+
+  const interactions = chatInteractionIds.length
+    ? await Interaction.find({ _id: { $in: chatInteractionIds } })
+      .select('_id question answer expertFeedback publicFeedback autoEval context')
+      .lean()
+    : [];
+
+  const questionIds = uniqueObjectIds(interactions.map(interaction => interaction.question));
+  const answerIds = uniqueObjectIds(interactions.map(interaction => interaction.answer));
+  const expertFeedbackIds = uniqueObjectIds(interactions.map(interaction => interaction.expertFeedback));
+  const publicFeedbackIds = uniqueObjectIds(interactions.map(interaction => interaction.publicFeedback));
+  const autoEvalIds = uniqueObjectIds(interactions.map(interaction => interaction.autoEval));
+  const contextIds = uniqueObjectIds(interactions.map(interaction => interaction.context));
+
+  const answers = answerIds.length && collections.answer
+    ? await collections.answer.find({ _id: { $in: answerIds } })
+      .select('_id citation tools')
+      .lean()
+    : [];
+  const citationIds = uniqueObjectIds(answers.map(answer => answer.citation));
+  const toolIds = uniqueObjectIds(answers.flatMap(answer => answer.tools || []));
+
+  const embeddings = collections.embedding && (chatIds.length || chatInteractionIds.length)
+    ? await collections.embedding.find({
+      $or: [
+        { chatId: { $in: chatIds } },
+        { interactionId: { $in: chatInteractionIds } }
+      ]
+    }).select('_id').lean()
+    : [];
+  const embeddingIds = uniqueObjectIds(embeddings.map(embedding => embedding._id));
+
+  const byCollection = {
+    chat: { _id: { $in: chatIds } },
+    interaction: { _id: { $in: chatInteractionIds } },
+    question: { _id: { $in: questionIds } },
+    answer: { _id: { $in: answerIds } },
+    expertfeedback: { _id: { $in: expertFeedbackIds } },
+    publicfeedback: { _id: { $in: publicFeedbackIds } },
+    eval: { _id: { $in: autoEvalIds } },
+    context: { _id: { $in: contextIds } },
+    citation: { _id: { $in: citationIds } },
+    tool: { _id: { $in: toolIds } },
+    embedding: { _id: { $in: embeddingIds } },
+    sentenceembedding: { parentEmbeddingId: { $in: embeddingIds } },
+    logs: { chatId: { $in: chatIdStrings } },
+    sessionstate: { chatIds: { $in: chatIdStrings } },
+    user: { _id: { $in: chatUserIds } }
+  };
+
+  return { byCollection };
+}
+
 async function databaseManagementHandler(req, res) {
   if (!['GET', 'POST', 'DELETE', 'PUT', 'PATCH'].includes(req.method)) {
     res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']);
@@ -27,8 +134,8 @@ async function databaseManagementHandler(req, res) {
     if (req.method === 'GET') {
       // Efficient chunked export using lastId (id-based pagination)
       // Treat collection=All as no collection filter (return list of collections)
-      const { collection, limit = 1000, startDate, endDate, lastId } = req.query;
-      console.log(`Exporting collection: ${collection}, limit: ${limit}, startDate: ${startDate}, endDate: ${endDate}, lastId: ${lastId}`);
+      const { collection, limit = 1000, startDate, endDate, lastId, exportScope } = req.query;
+      console.log(`Exporting collection: ${collection}, limit: ${limit}, startDate: ${startDate}, endDate: ${endDate}, lastId: ${lastId}, exportScope: ${exportScope}`);
       const dateField = 'updatedAt';
       if (!collection || collection === 'All') {
         // Return list of available collections
@@ -42,17 +149,24 @@ async function databaseManagementHandler(req, res) {
       }
       // Build date filter if provided
       let queryFilter = {};
-      // Only apply date filter if the model schema has updatedAt
-      const hasUpdatedAt = model.schema && model.schema.paths && model.schema.paths.updatedAt;
-      if ((startDate || endDate) && hasUpdatedAt) {
-        queryFilter[dateField] = {};
-        if (startDate) queryFilter[dateField].$gte = new Date(startDate);
-        if (endDate) queryFilter[dateField].$lte = new Date(endDate);
+      if (exportScope === EXPERT_EVAL_CHATS_SCOPE) {
+        const scope = await buildExpertEvalChatsExportScope(collections, { startDate, endDate });
+        const scopedFilter = scope.byCollection[collection.toLowerCase()];
+        if (!scopedFilter) {
+          return res.status(400).json({ message: `Collection '${collection}' is not part of expert evaluation chat export` });
+        }
+        queryFilter = { ...scopedFilter };
+      } else {
+        // Only apply date filter if the model schema has updatedAt
+        const hasUpdatedAt = model.schema && model.schema.paths && model.schema.paths.updatedAt;
+        if ((startDate || endDate) && hasUpdatedAt) {
+          queryFilter[dateField] = {};
+          if (startDate) queryFilter[dateField].$gte = new Date(startDate);
+          if (endDate) queryFilter[dateField].$lte = new Date(endDate);
+        }
       }
       // Efficient id-based pagination
-      if (lastId) {
-        queryFilter._id = { $gt: lastId };
-      }
+      addIdPaginationFilter(queryFilter, lastId);
       // Paginated export for a single collection with optional date filter
       const docs = await model.find(queryFilter)
         .sort({ _id: 1 }) // Ensure consistent ordering between chunks

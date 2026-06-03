@@ -405,6 +405,8 @@
       "collections": {
         "all": "Tout",
         "allButLogs": "Tout sauf les journaux",
+        "allButLogsAndEmbeddings": "Tout sauf les journaux et les embeddings",
+        "expertEvalChats": "Clavardages avec \u00e9valuations d'experts",
         "interaction": "Interaction",
         "question": "Question",
         "answer": "Réponse",
@@ -983,6 +985,13 @@
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
+    },
+    "documentDbVersion": {
+      "label": "Version de DocumentDB",
+      "options": {
+        "docdb5": "DocumentDB 5",
+        "docdb8": "DocumentDB 8"
+      }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
