@@ -1235,6 +1235,8 @@
       "questionsSub": "EN : {en} · FR : {fr}",
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
+      "accuracyRate": "Taux d'exactitude",
+      "accuracySub": "Expert {expert} · IA {ai}",
       "feedbackReceived": "Rétroactions reçues"
     },
     "charts": {

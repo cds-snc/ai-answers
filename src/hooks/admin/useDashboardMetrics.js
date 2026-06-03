@@ -11,7 +11,8 @@ const INITIAL_METRICS = {
     twoQuestions: { total: 0 },
     threeQuestions: { total: 0 },
   },
-  expertScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 } },
+  expertScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 }, hasContentIssue: { total: 0 } },
+  aiScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 } },
   publicFeedbackTotals: { totalQuestionsWithFeedback: 0, yes: 0, no: 0 },
   publicFeedbackReasons: { yes: {}, no: {} },
   byDepartment: {},
@@ -47,15 +48,16 @@ export function useDashboardMetrics() {
     if (department) filters.department = department;
 
     try {
-      const [usage, session, expert, publicFb, dept] = await Promise.all([
+      const [usage, session, expert, ai, publicFb, dept] = await Promise.all([
         MetricsService.getUsageMetrics(filters, signal),
         MetricsService.getSessionMetrics(filters, signal),
         MetricsService.getExpertMetrics(filters, signal),
+        MetricsService.getAiEvalMetrics(filters, signal),
         MetricsService.getPublicFeedbackMetrics(filters, signal),
         MetricsService.getDepartmentMetrics(filters, signal),
       ]);
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...publicFb, ...dept });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);

@@ -13,6 +13,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
+  const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
   // --- Derived data ---
@@ -21,6 +22,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const expertCorrect = metrics.expertScored?.correct?.total || 0;
   const accuracyPct = expertTotal > 0 ? Math.round((expertCorrect / expertTotal) * 100) : null;
   const qualityData = useMemo(() => buildQualityData(metrics.expertScored, t), [metrics.expertScored, t]);
+
+  // Accuracy rate (MetricsDashboard definition): only "has answer error" counts
+  // against accuracy — citation issues / needs-improvement scores do not.
+  // Total accuracy combines expert + AI evals; the two are also broken out.
+  const accuracyOf = (total, hasError) => (total > 0 ? 100 - Math.round((hasError / total) * 100) : null);
+  const expertHasError = metrics.expertScored?.hasError?.total || 0;
+  const aiTotal = metrics.aiScored?.total?.total || 0;
+  const aiHasError = metrics.aiScored?.hasError?.total || 0;
+  const expertAccuracy = accuracyOf(expertTotal, expertHasError);
+  const aiAccuracy = accuracyOf(aiTotal, aiHasError);
+  const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
 
   const pfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
   const pfYes = metrics.publicFeedbackTotals?.yes || 0;
@@ -55,6 +67,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           value={fmtN(expertTotal)}
           sub={t('partnerDashboard.kpi.evaluatedSub')
             .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
+        />
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.accuracyRate')}
+          value={pctOrDash(totalAccuracy)}
+          sub={t('partnerDashboard.kpi.accuracySub')
+            .replace('{expert}', pctOrDash(expertAccuracy))
+            .replace('{ai}', pctOrDash(aiAccuracy))}
         />
         <StatCard
           uppercase
