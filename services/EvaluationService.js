@@ -11,6 +11,7 @@ import Piscina from 'piscina';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { requireObjectIdString, requireString } from '../api/util/db-query.js';
 
 
 let pool;
@@ -82,6 +83,7 @@ class EvaluationService {
             if (!chatId) {
                 return { error: 'chatId is required', status: 400 };
             }
+            chatId = requireString(chatId, 'chatId');
             const chat = await Chat.findOne({ chatId }).populate('interactions');
             if (!chat) {
                 return { error: 'Chat not found', status: 404 };
@@ -173,14 +175,7 @@ class EvaluationService {
             // Fetch deploymentMode and vectorServiceType from SettingsService
             const deploymentMode = SettingsService.get('deploymentMode') || 'CDS';
             const vectorServiceType = SettingsService.get('vectorServiceType') || 'imvectordb';
-            // Resolve the ai provider from SettingsService (single source of truth)
-            let providerSetting = null;
-            try {
-                providerSetting = SettingsService.get('provider');
-            } catch (e) {
-                providerSetting = null;
-            }
-            const aiProviderToUse = providerSetting || 'openai';
+            const aiProviderToUse = SettingsService.get('model.default') || 'openai-gpt51';
             if (deploymentMode === 'CDS') {
                 // Ensure only one concurrent initialization creates the Piscina pool
                 if (!pool) {
@@ -277,25 +272,25 @@ class EvaluationService {
 
     // Check if an interaction already has an evaluation
     async hasExistingEvaluation(interactionId) {
-        await dbConnect();
         try {
-            const interaction = await Interaction.findById(interactionId).populate('autoEval');
+            await dbConnect();
+            const interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId')).populate('autoEval');
             ServerLoggingService.debug(`Checked for existing evaluation`, interactionId.toString(), {
                 exists: !!interaction?.autoEval
             });
             return !!interaction?.autoEval;
         } catch (error) {
-            ServerLoggingService.error('Error checking for existing evaluation', interactionId.toString(), error);
+            ServerLoggingService.error('Error checking for existing evaluation', interactionId?.toString?.() || String(interactionId), error);
             return false;
         }
     }
 
     // Get evaluation for a specific interaction
     async getEvaluationForInteraction(interactionId) {
-        await dbConnect();
         try {
+            await dbConnect();
             // Populate nested expertFeedback so clients can access totalScore and other fields
-            const interaction = await Interaction.findById(interactionId).populate({
+            const interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId')).populate({
                 path: 'autoEval',
                 populate: { path: 'expertFeedback' }
             });
@@ -324,7 +319,7 @@ class EvaluationService {
             }
             return evalObj;
         } catch (error) {
-            ServerLoggingService.error('Error retrieving evaluation', interactionId.toString(), error);
+            ServerLoggingService.error('Error retrieving evaluation', interactionId?.toString?.() || String(interactionId), error);
             return null;
         }
     }
@@ -340,14 +335,7 @@ class EvaluationService {
         const deploymentMode = SettingsService.get('deploymentMode') || 'CDS';
 
 
-        // Resolve global ai provider from settings once (single source of truth)
-        let globalProvider = 'openai';
-        try {
-            const p = SettingsService.get('provider');
-            if (p) globalProvider = p;
-        } catch (e) {
-            globalProvider = 'openai';
-        }
+        const globalProvider = SettingsService.get('model.default') || 'openai-gpt51';
 
         // Compute the batch concurrency from the configured concurrency so the
         // same value is used for slicing batches and for the worker pool.

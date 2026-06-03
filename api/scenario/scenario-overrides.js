@@ -1,7 +1,16 @@
 import { ScenarioOverrideService } from '../../services/ScenarioOverrideService.js';
+import { requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const SUPPORTED_DEPARTMENTS = {
+  'AAFC-AAC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-aafc-aac/aafc-aac-scenarios.js');
+    return mod.AAFC_AAC_SCENARIOS || '';
+  },
+  'BAC-LAC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-bac-lac/bac-lac-scenarios.js');
+    return mod.BAC_LAC_SCENARIOS || '';
+  },
   'CBSA-ASFC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
     return mod.CBSA_ASFC_SCENARIOS || '';
@@ -17,6 +26,10 @@ const SUPPORTED_DEPARTMENTS = {
   'CRA-ARC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-cra-arc/cra-arc-scenarios.js');
     return mod.CRA_ARC_SCENARIOS || '';
+  },
+  'DND-MDN': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-dnd-mdn/dnd-mdn-scenarios.js');
+    return mod.DND_MDN_SCENARIOS || '';
   },
   'ECCC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-eccc/eccc-scenarios.js');
@@ -66,6 +79,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');
     return mod.TBS_SCT_SCENARIOS || '';
   },
+  'VAC-ACC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-vac-acc/vac-acc-scenarios.js');
+    return mod.VAC_ACC_SCENARIOS || '';
+  },
 };
 
 async function loadDefaultScenarios(departmentKey) {
@@ -95,7 +112,17 @@ async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const { departmentKey } = req.query || {};
+      let { departmentKey } = req.query || {};
+      if (departmentKey != null) {
+        try {
+          departmentKey = requireLiteralString(departmentKey, 'department key');
+        } catch (error) {
+          return res.status(400).json({ message: 'Invalid department key' });
+        }
+        if (!SUPPORTED_DEPARTMENTS[departmentKey]) {
+          return res.status(400).json({ message: 'Invalid department key' });
+        }
+      }
       const defaults = await loadDefaultScenarios(departmentKey);
 
       if (departmentKey) {
@@ -137,8 +164,13 @@ async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { departmentKey, overrideText, enabled = true } = req.body || {};
-      if (!departmentKey || !SUPPORTED_DEPARTMENTS[departmentKey]) {
+      let { departmentKey, overrideText, enabled = true } = req.body || {};
+      try {
+        departmentKey = requireLiteralString(departmentKey, 'department key');
+      } catch (error) {
+        return res.status(400).json({ message: 'Invalid department key' });
+      }
+      if (!SUPPORTED_DEPARTMENTS[departmentKey]) {
         return res.status(400).json({ message: 'Invalid department key' });
       }
       if (typeof overrideText !== 'string' || !overrideText.trim()) {
@@ -167,8 +199,13 @@ async function handler(req, res) {
 
   if (req.method === 'DELETE') {
     try {
-      const { departmentKey } = req.query || {};
-      if (!departmentKey || !SUPPORTED_DEPARTMENTS[departmentKey]) {
+      let { departmentKey } = req.query || {};
+      try {
+        departmentKey = requireLiteralString(departmentKey, 'department key');
+      } catch (error) {
+        return res.status(400).json({ message: 'Invalid department key' });
+      }
+      if (!SUPPORTED_DEPARTMENTS[departmentKey]) {
         return res.status(400).json({ message: 'Invalid department key' });
       }
       await ScenarioOverrideService.deleteOverride(userId, departmentKey);

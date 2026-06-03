@@ -34,7 +34,7 @@
         },
         {
             "key": "workflow.default",
-            "value": "DefaultGraph"
+            "value": "GenericGraph"
         }
     ],
     "chats": [

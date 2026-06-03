@@ -20,6 +20,7 @@ export const ROUTE_SLUGS = {
   metrics:                 { en: 'metrics',                      fr: 'metriques' },
   'exec-dashboard':        { en: 'exec-dashboard',               fr: 'tableau-de-bord-executif' },
   'partner-dashboard':     { en: 'partner-dashboard',            fr: 'tableau-de-bord-partenaire' },
+  'technical-metrics':     { en: 'technical-metrics',            fr: 'metriques-techniques' },
   sessions:                { en: 'sessions',                     fr: 'sessions' },
   'scenario-overrides':    { en: 'scenario-overrides',           fr: 'derogation-scenarios' },
   settings:                { en: 'settings',                     fr: 'parametres' },

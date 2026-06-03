@@ -25,9 +25,9 @@ const AI_MODELS = {
       },
       "openai-gpt5-mini": {
         model: "gpt-5-mini",
-        maxTokens: 10024,
+        maxTokens: 4096,
         temperature: 0.0,
-        timeoutMs: 60000,
+        timeoutMs: 120000,
         reasoning: {
           effort: "low"
         }
@@ -42,18 +42,18 @@ const AI_MODELS = {
       },
       "openai-gpt51-chat": {
         model: "gpt-5.1",
-        maxTokens: 10024,
+        maxTokens: 4096,
         temperature: 0.0,
-        timeoutMs: 60000,
+        timeoutMs: 180000,
         reasoning: {
           effort: "low"
         }
       },
       "openai-gpt51": {
         model: "gpt-5.1",
-        maxTokens: 10024,
+        maxTokens: 4096,
         temperature: 0.0,
-        timeoutMs: 60000,
+        timeoutMs: 180000,
         reasoning: {
           effort: "low"
         }

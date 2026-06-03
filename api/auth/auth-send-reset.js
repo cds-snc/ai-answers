@@ -12,30 +12,24 @@ const sendResetHandler = async (req, res) => {
       return res.status(400).json({ success: false, message: 'email required' });
     }
 
-    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request for: ${email}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Processing reset request`);
 
     await dbConnect();
 
-    // Find user and ensure they have a resetPasswordSecret
+    // Find user — generic response regardless to prevent enumeration
     let user = await User.findOne({ email: String(email).toLowerCase().trim() });
 
     if (!user) {
-      // Generic response for security - don't reveal if user exists
-      console.warn(`[auth-send-reset][${os.hostname()}] No user found with email: ${email}`);
+      console.warn(`[auth-send-reset][${os.hostname()}] Reset requested for unknown account`);
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
-    // Generate or use existing resetPasswordSecret
-    if (!user.resetPasswordSecret) {
-      const secret = speakeasy.generateSecret({ length: 32 });
-      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-
-      user.resetPasswordSecret = secret.base32;
-      console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-      await user.save();
-    } else {
-      console.debug(`[auth-send-reset][${os.hostname()}] Using existing resetPasswordSecret for user`);
-    }
+    // Always generate a fresh secret on each reset request to invalidate prior codes.
+    // Do not reset attempt count — preserves lockout across requests to prevent cycling attacks.
+    const secret = speakeasy.generateSecret({ length: 32 });
+    console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
+    user.resetPasswordSecret = secret.base32;
+    await user.save();
 
     // Generate TOTP code from the secret (in-memory, no DB read!)
     const code = speakeasy.totp({
@@ -52,7 +46,7 @@ const sendResetHandler = async (req, res) => {
     const lang = req.body.lang || (req.headers['accept-language']?.includes('fr') ? 'fr' : 'en');
     const resetLink = `${frontendUrl}/${lang}/reset-complete?email=${encodeURIComponent(email)}&code=${code}`;
 
-    console.debug(`[auth-send-reset][${os.hostname()}] Final Reset Link: ${resetLink}`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Reset link generated`);
 
     // Send email via GC Notify
     const templateId = SettingsService.get('notify.resetTemplateId') || process.env.GC_NOTIFY_RESET_TEMPLATE_ID;

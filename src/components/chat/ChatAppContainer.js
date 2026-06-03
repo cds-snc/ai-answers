@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
@@ -9,6 +8,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../..
 import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
+import { AVAILABLE_MODELS } from '../../config/workflows.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -58,15 +58,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
-  // selectedAI: prefer localStorage override; if absent, we'll load the persisted provider
-  const [selectedAI, setSelectedAI] = useState(() => {
-    try {
-      const val = localStorage.getItem(storageKey('selectedAI'));
-      return val !== null ? val : null;
-    } catch (e) {
-      return null;
-    }
-  }); // comment to cause change
+  // selectedAI: always start null so we fetch the current model.default from Settings.
+  // Only persist to localStorage when the admin explicitly picks a model in the UI.
+  const [selectedAI, setSelectedAI] = useState(null);
+  const userSetModel = useRef(false);
   const [selectedSearch, setSelectedSearch] = useState(() => {
     try {
       return localStorage.getItem(storageKey('selectedSearch')) || 'google';
@@ -299,8 +294,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   };
 
   const handleAIToggle = (e) => {
+    userSetModel.current = true;
     setSelectedAI(e.target.value);
-    console.log('AI toggled to:', e.target.value); // Add this line for debugging
+    console.log('AI toggled to:', e.target.value);
   };
 
   const handleSearchToggle = (e) => {
@@ -311,8 +307,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Persist selection changes to localStorage
   useEffect(() => {
     try {
-      // Only persist when we have a concrete value (avoid storing null)
-      if (selectedAI !== null && selectedAI !== undefined) {
+      // Only persist when the admin explicitly changed the model in the UI
+      if (userSetModel.current && selectedAI !== null && selectedAI !== undefined) {
         localStorage.setItem(storageKey('selectedAI'), selectedAI);
       }
     } catch (e) {
@@ -320,25 +316,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [selectedAI]);
 
-  // If there's no localStorage value for selectedAI, load provider from DataStoreService
+  // Fetch the configured default model family from Settings on mount.
+  // AVAILABLE_MODELS[0] is the canonical fallback when model.default has never
+  // been saved (e.g. first deploy with the new setting).
   useEffect(() => {
     let mounted = true;
     const loadProvider = async () => {
       if (selectedAI === null) {
         try {
-          // Use the public setting endpoint so unauthenticated clients can read the provider
-          const provider = await DataStoreService.getPublicSetting('provider', 'azure');
-          if (mounted && provider) {
-            setSelectedAI(provider);
-            try {
-              localStorage.setItem(storageKey('selectedAI'), provider);
-            } catch (e) {
-              // ignore storage errors
-            }
+          const model = await DataStoreService.getPublicSetting('model.default', null);
+          if (mounted) {
+            setSelectedAI(model || AVAILABLE_MODELS[0].value);
           }
         } catch (err) {
-          // fallback to openai if datastore call fails
-          if (mounted) setSelectedAI('azure');
+          if (mounted) setSelectedAI(AVAILABLE_MODELS[0].value);
         }
       }
     };
@@ -597,6 +588,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
+          clearInput();
           setIsLoading(false);
           return;
         } else {

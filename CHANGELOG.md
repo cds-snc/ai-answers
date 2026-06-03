@@ -1,5 +1,579 @@
 # Changelog
 
+## [1.131.0](https://github.com/cds-snc/ai-answers/compare/v1.130.0...v1.131.0) (2026-05-28)
+
+
+### Features
+
+* add AAFC as partner ([497d5ca](https://github.com/cds-snc/ai-answers/commit/497d5ca05f86960c8d08313f5deb2f910f627737))
+* add AAFC as partner - tested ([1fce636](https://github.com/cds-snc/ai-answers/commit/1fce636ec644d93a74f8a2791eb7628d19340ea8))
+* combine decimals in file ([461cf51](https://github.com/cds-snc/ai-answers/commit/461cf51861c3d50714a6afe08993e8374c08f754))
+* fix table sorting ([2954f49](https://github.com/cds-snc/ai-answers/commit/2954f49fe9cf4de2c3aa6133fb1f63a808e31b11))
+* number format refinement ([b147ff5](https://github.com/cds-snc/ai-answers/commit/b147ff5d209daae463f1c90828e41141cea1b3ed))
+
+
+### Bug Fixes
+
+* add ebola url to temporary measures ([93c3e97](https://github.com/cds-snc/ai-answers/commit/93c3e97469ff80cef6aaee7d5f97c8769e002336))
+* add ebola url to temporary measures ([b692a70](https://github.com/cds-snc/ai-answers/commit/b692a702518497147ee473dc8e13b6307d7c1b9b))
+* clear text input on search ([aaaeef2](https://github.com/cds-snc/ai-answers/commit/aaaeef26203cdd5a7d0d194ee603a47c9830247a))
+* clear text input on search ([9560309](https://github.com/cds-snc/ai-answers/commit/956030940373da6b869430e41d92e007e7a1afce))
+* french number formatting ([14c5a9c](https://github.com/cds-snc/ai-answers/commit/14c5a9cde711f4dc12d43429c84b2843938f9d06))
+* french number formatting ([1a9bf58](https://github.com/cds-snc/ai-answers/commit/1a9bf58624c5b5ed83db6dcda8cd25a2a94d0fe0))
+* french number formatting ([c3317c3](https://github.com/cds-snc/ai-answers/commit/c3317c3d83c602f4c42e1fe3a70ed2f9b334c9fd))
+* handle percentage ([f2b4d47](https://github.com/cds-snc/ai-answers/commit/f2b4d47f3993d1443d0ada0fc8ae0a33f068236a))
+* update agents for number formatting ([bdd92ac](https://github.com/cds-snc/ai-answers/commit/bdd92acad7f1743b24b6213397f5f58b807c5e09))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump vite from 5.4.21 to 8.0.14 ([586bb10](https://github.com/cds-snc/ai-answers/commit/586bb104f49a490c5aa71e4eb03bd27a919b1ba8))
+* **deps-dev:** bump vite from 5.4.21 to 8.0.14 ([620ead3](https://github.com/cds-snc/ai-answers/commit/620ead39c01379d823ba236c94874a6de334f2cb))
+* **deps:** bump postcss from 8.5.6 to 8.5.15 ([c66a43c](https://github.com/cds-snc/ai-answers/commit/c66a43c2d34a139cf0709b330115ebf2533775b4))
+* **deps:** bump postcss from 8.5.6 to 8.5.15 ([278d2bc](https://github.com/cds-snc/ai-answers/commit/278d2bc2812b69631eda74e37c4eddacd9656977))
+* **deps:** bump tmp from 0.2.5 to 0.2.7 ([cb46503](https://github.com/cds-snc/ai-answers/commit/cb465037a3be74c90377a497f7302b885842a7c3))
+* format dependencies section in package.json ([865a99c](https://github.com/cds-snc/ai-answers/commit/865a99c2f0e4e6b553505801e80f3ea4d75f6ab8))
+* remove peer flag from several dependencies and add @emnapi/core and @emnapi/runtime ([4df747e](https://github.com/cds-snc/ai-answers/commit/4df747ead70db4e4468f55729418df7fe1312d13))
+* update @vitejs/plugin-react to v5.0.0 and add esbuild as a dependency ([9900f1c](https://github.com/cds-snc/ai-answers/commit/9900f1ca2242e4378526d745e1c70ff7d792bd89))
+
+## [1.130.0](https://github.com/cds-snc/ai-answers/compare/v1.129.1...v1.130.0) (2026-05-27)
+
+
+### Features
+
+* refactor FilterPanel to use custom moment setup and add tests ([016aded](https://github.com/cds-snc/ai-answers/commit/016adedda1b765207e0af33cf1c7fe4c2978ed32))
+* update VSCode configurations and add nodemon for server watching ([414ad19](https://github.com/cds-snc/ai-answers/commit/414ad1985d5a40c4a50ab41b3c456910838a782f))
+
+
+### Bug Fixes
+
+* add otherlanguages batch ([76234c1](https://github.com/cds-snc/ai-answers/commit/76234c1f1751eb23a6ed9c91438fa929f0a58bd1))
+* block indigenous languages ([f6ec538](https://github.com/cds-snc/ai-answers/commit/f6ec538a408fc66a8bc0c590dcbbe4bd5aae8324))
+* blocking set was malformed ([5da4b2a](https://github.com/cds-snc/ai-answers/commit/5da4b2aa00af13714eae122f3fba4368141148c7))
+* button location ([b1d1f9e](https://github.com/cds-snc/ai-answers/commit/b1d1f9ecf23c3d0237e80cd4b2c21a35ac12f51e))
+* catch FR obfuscations ([a11545e](https://github.com/cds-snc/ai-answers/commit/a11545e8d8b64fc85faa90feeda9fc850f4c297b))
+* correct GcdsContainer formatting in DatabasePage and EvalPage ([15fb45b](https://github.com/cds-snc/ai-answers/commit/15fb45b74a9985fcb0ab76946eef1a6fbf6b890f))
+* prompts ([6a1d864](https://github.com/cds-snc/ai-answers/commit/6a1d8644a1152dfc080b110b6200f28cda3fbe80))
+* remove old PI file ([9b3bcb8](https://github.com/cds-snc/ai-answers/commit/9b3bcb87f2cd70c21679d369d4903a5982f3f5b1))
+* remove VITE_API_URL from environment variables in mem-mongo.js ([fcd21d8](https://github.com/cds-snc/ai-answers/commit/fcd21d89f6c7126bfb42aa5a6df202b737252b8f))
+* rename and edit blocking file ([0f2371e](https://github.com/cds-snc/ai-answers/commit/0f2371e40d99016cc1b29957f70ba8b76a411005))
+* safety instructions ([00a22f7](https://github.com/cds-snc/ai-answers/commit/00a22f7b11f9770ff88d9645793b276379ced015))
+* search ([4f489fb](https://github.com/cds-snc/ai-answers/commit/4f489fbca4e5cf23380bb7c5bc8a04bcecdaf7b9))
+* translation prompt and catch morse code ([588270c](https://github.com/cds-snc/ai-answers/commit/588270c937a0a2b753f7bf39526be9532ea97019))
+* translation prompt and catch morse code ([24ebca1](https://github.com/cds-snc/ai-answers/commit/24ebca10d645ca3c5493976c45133bddd23d3d76))
+* try again on indigenous language ([07657bc](https://github.com/cds-snc/ai-answers/commit/07657bc5516a8c07ae9777685c787e2108830d95))
+* update redact.csv ([0b58089](https://github.com/cds-snc/ai-answers/commit/0b580899141fae3bd24455e5965b945505fb0a87))
+* update svgo version and add overrides in package.json ([32ff2d7](https://github.com/cds-snc/ai-answers/commit/32ff2d7ab3af77de8c5dd4c123095aaaa0fe8225))
+* update svgo version and add overrides in package.json ([7fd5001](https://github.com/cds-snc/ai-answers/commit/7fd5001060fd266d648bf7ea7e1e17f294c57175))
+* wasn't catching FR obfuscations ([cc216d5](https://github.com/cds-snc/ai-answers/commit/cc216d5b7344dda82df4909aec7a00f194513be3))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump qs and cohere-ai in /server ([c5cf8b8](https://github.com/cds-snc/ai-answers/commit/c5cf8b845c55c5d234acc9041a5bc8a721fbe4c3))
+* **deps:** bump qs and express ([69a6d9a](https://github.com/cds-snc/ai-answers/commit/69a6d9af7ea9648119c1610d44c439148c00044f))
+* migrate s3-backup to OIDC auth, upgrade actions, simplify upload ([04181b4](https://github.com/cds-snc/ai-answers/commit/04181b413fbf0a53e3cdb91bbcadb12e874ba9fc))
+* update actions/checkout to v4 and add @tktco/node-actionlint d… ([1df5262](https://github.com/cds-snc/ai-answers/commit/1df52629ea43344c27cf4dec7302f63b23732bd9))
+* update actions/checkout to v4 and add @tktco/node-actionlint dependency ([544ff5e](https://github.com/cds-snc/ai-answers/commit/544ff5e4198d6ab2d282b8933a8d6ce4def1cefe))
+
+## [1.129.1](https://github.com/cds-snc/ai-answers/compare/v1.129.0...v1.129.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* add helpers to database calls to stop the ability for user to tamper with database queries. ([9e5088f](https://github.com/cds-snc/ai-answers/commit/9e5088fb6ece971a8e050529ab9c99dedf866bce))
+* citation for FR and scenario issues ([78fcf93](https://github.com/cds-snc/ai-answers/commit/78fcf93dec313b95e56dbf76ac9a0921cfc4fa6b))
+* enhance string validation for setting values in database operations ([e7b4a0c](https://github.com/cds-snc/ai-answers/commit/e7b4a0c65dc577d9afd7a7ef2cbe7da9bcbff5e0))
+* FR page respond in question language ([9d2731d](https://github.com/cds-snc/ai-answers/commit/9d2731d2a3a3fed777be73ec3dcd3fb119d734dc))
+* FR page respond in question language - tested in preview ([1d7e107](https://github.com/cds-snc/ai-answers/commit/1d7e107525718ce9306657892c7c9d1bafde8007))
+* normalize string handling for chatId and batchId across various … ([2c44d36](https://github.com/cds-snc/ai-answers/commit/2c44d36717326518d85dafa72901584e3c522201))
+* normalize string handling for chatId and batchId across various endpoints ([12c5506](https://github.com/cds-snc/ai-answers/commit/12c550687b36835083ffdca41b7016ec2998ff17))
+* update system card to reflect language change ([878e322](https://github.com/cds-snc/ai-answers/commit/878e3221ac3fb73fb95b7148b594afc75a5136a5))
+* update userId handling to require ObjectId format in feedback and scenario services ([91b3318](https://github.com/cds-snc/ai-answers/commit/91b33184735e4308eb6cd7beec0bc6b7d23f43a3))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump jsonpath from 1.2.1 to 1.3.0 ([f2853f1](https://github.com/cds-snc/ai-answers/commit/f2853f1ef8eba8095d4e419d161dd30660f172a5))
+* **deps:** bump jsonpath from 1.2.1 to 1.3.0 ([dbb3d11](https://github.com/cds-snc/ai-answers/commit/dbb3d1108b1d48a3555e86da09b707765d3cfc92))
+* **deps:** bump mongoose from 8.12.1 to 8.22.1 in /server ([58ed5d7](https://github.com/cds-snc/ai-answers/commit/58ed5d785f99fe95840aa51f9f1fb07917a48a2e))
+* **deps:** bump mongoose from 8.12.1 to 8.22.1 in /server ([209b7be](https://github.com/cds-snc/ai-answers/commit/209b7bef273722f61a0de8b9ae79955005188d8d))
+* **deps:** bump ws from 8.19.0 to 8.20.1 ([5766421](https://github.com/cds-snc/ai-answers/commit/5766421a2652c8472945d0c4ea9485c1a498646f))
+
+## [1.129.0](https://github.com/cds-snc/ai-answers/compare/v1.128.1...v1.129.0) (2026-05-20)
+
+
+### Features
+
+* add plan for stats can API tool ([b57fcfd](https://github.com/cds-snc/ai-answers/commit/b57fcfd1056c4a89aae6f2c2273ab7ab2f0d9d71))
+
+
+### Bug Fixes
+
+* add VAC and LAC as partners ([327617f](https://github.com/cds-snc/ai-answers/commit/327617f7a37e98a4fd53d624e132493b359ed839))
+* enhance feedback formatting to include citation details and overall feedback ([7d3dab6](https://github.com/cds-snc/ai-answers/commit/7d3dab624a99f7571f2536c69fef30ab13740eb3))
+* enhance logging in answer and similarQuestions nodes to include context topic, department, and search results count ([09119b5](https://github.com/cds-snc/ai-answers/commit/09119b50cfae1af3c8d6be4d9aa9191f8a9ab5a2))
+* enhance logging in matchQuestions method for better traceability and debugging ([2e31724](https://github.com/cds-snc/ai-answers/commit/2e3172434fe43d741eeb5a8ceb80a28787ea513e))
+* enhance logging in matchQuestions method for better tracking of question processing and filtering ([7ec0839](https://github.com/cds-snc/ai-answers/commit/7ec08390df2953b58a0e1e30b74011c86360db7b))
+* get scenarios started ([c4a0e57](https://github.com/cds-snc/ai-answers/commit/c4a0e578726f6d047e35027a76a57688c9e131c4))
+* phac not mapped properly - bug ([a561221](https://github.com/cds-snc/ai-answers/commit/a561221446721c0abd6bfe25c0c3261deeb76c20))
+* prevent citations of demo pages ([de1ca46](https://github.com/cds-snc/ai-answers/commit/de1ca461e065a61af997644c030a4559fd588e66))
+* refactor EmbeddingService methods for better question and answer embedding handling ([ac49b3f](https://github.com/cds-snc/ai-answers/commit/ac49b3fd6d0e6669c8f9630e839b389e551b2796))
+* remove unused provider parameter from similarQuestions node and update embedding client creation logic ([2cb7260](https://github.com/cds-snc/ai-answers/commit/2cb72609fa8d1e223896765fee6b75ced7dc6138))
+* start DND scenario ([98a9f6b](https://github.com/cds-snc/ai-answers/commit/98a9f6ba7920ae28e52a95a61a78b2f47591f300))
+* update DocDBVectorService to handle language filters and enhance embedding statistics ([742c3c5](https://github.com/cds-snc/ai-answers/commit/742c3c5dea3dd04265b881732f5e23bf5f58a97d))
+* update DocDBVectorService to handle language filters and enhance… ([005573a](https://github.com/cds-snc/ai-answers/commit/005573a1694ab1193be5eaf8a0f488c6c5dd9434))
+
+## [1.128.1](https://github.com/cds-snc/ai-answers/compare/v1.128.0...v1.128.1) (2026-05-19)
+
+
+### Miscellaneous Chores
+
+* add 'Accept-Encoding' header with 'identity' for response hand… ([4137671](https://github.com/cds-snc/ai-answers/commit/41376712e75d224f3cafd55f801e0157659e43b5))
+* add 'Accept-Encoding' header with 'identity' for response handling ([2ec7e1e](https://github.com/cds-snc/ai-answers/commit/2ec7e1ec39684d4c4e79b3bb49e8bb5351d9cb05))
+
+## [1.128.0](https://github.com/cds-snc/ai-answers/compare/v1.127.0...v1.128.0) (2026-05-19)
+
+
+### Features
+
+* optional use ndjson events instead of SSE, might work with Akamai ([6003c2a](https://github.com/cds-snc/ai-answers/commit/6003c2a9b3294a0e8383f086f9828caf28583ed1))
+* optional use ndjson events instead of SSE, might work with Akamai ([12dcbfb](https://github.com/cds-snc/ai-answers/commit/12dcbfbf23d5f266913ff7f75239c48da9dd514c))
+* refactor chat transport handling to support NDJSON and remove deprecated config ([b4d3003](https://github.com/cds-snc/ai-answers/commit/b4d30036f8d50a98ef8caa09e5272dae0580dbcd))
+
+
+### Bug Fixes
+
+* maybe-work-on-Akamai ([3385cd3](https://github.com/cds-snc/ai-answers/commit/3385cd311713e0440b1a74c1224db118c84540e8))
+
+## [1.127.0](https://github.com/cds-snc/ai-answers/compare/v1.126.1...v1.127.0) (2026-05-15)
+
+
+### Features
+
+* implement workflow-scoped model templates refactor plan ([797ef6e](https://github.com/cds-snc/ai-answers/commit/797ef6eaebdea0e2ea32809e4f4fe1ee892bd622))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @babel/plugin-transform-modules-systemjs from 7.28.5 to 7.29.4 ([4bf2e6d](https://github.com/cds-snc/ai-answers/commit/4bf2e6d09e686d26d7996dcb09c8a876a1c73da5))
+* **deps:** bump fast-uri from 3.1.0 to 3.1.2 ([2fbef9f](https://github.com/cds-snc/ai-answers/commit/2fbef9fe39066d4898afe5d22dc17fabd8e76366))
+* **deps:** bump fast-xml-builder from 1.1.4 to 1.2.0 ([c37d4c1](https://github.com/cds-snc/ai-answers/commit/c37d4c16c0dffeb82492b75236ad3cdc82f5cb4b))
+* **deps:** bump fast-xml-builder from 1.1.5 to 1.2.0 in /server ([1b15972](https://github.com/cds-snc/ai-answers/commit/1b15972b0935f3cfc7dc0513256b80e4099c0504))
+* **deps:** bump fast-xml-builder from 1.1.5 to 1.2.0 in /server ([4443e08](https://github.com/cds-snc/ai-answers/commit/4443e08c26e31e75defa6d894e22c306d48601a1))
+* **deps:** bump langsmith from 0.5.20 to 0.7.0 ([73b21ac](https://github.com/cds-snc/ai-answers/commit/73b21acf1942fb5d36920b4a770340597ed7d36b))
+
+## [1.126.1](https://github.com/cds-snc/ai-answers/compare/v1.126.0...v1.126.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* bugs in storing times and in displaying ([f245b10](https://github.com/cds-snc/ai-answers/commit/f245b103e9f1cfdf0b20cd3e28ce19c3b540a90f))
+* bugs in storing times and in displaying ([1dc9009](https://github.com/cds-snc/ai-answers/commit/1dc9009624ea8b9f97460dc371e2f0c1ad24174f))
+
+## [1.126.0](https://github.com/cds-snc/ai-answers/compare/v1.125.0...v1.126.0) (2026-05-12)
+
+
+### Features
+
+* add opengov tool ([b201e71](https://github.com/cds-snc/ai-answers/commit/b201e715aa62992120632d1eaa55d6d4cdbeae36))
+* add opengov tool ([2e4b9e5](https://github.com/cds-snc/ai-answers/commit/2e4b9e51c0056eddd346e81d4cecdd8a44be761f))
+
+
+### Bug Fixes
+
+* cookie handling for Lambda preview URLs and add tests ([8a2c4a1](https://github.com/cds-snc/ai-answers/commit/8a2c4a13a0ed55997e2a69b36dbd2215b5dcd59c))
+* cookie handling for Lambda preview URLs and add tests ([a644419](https://github.com/cds-snc/ai-answers/commit/a644419f3b1dd4c179da2300d81648f9db4e32f6))
+
+## [1.125.0](https://github.com/cds-snc/ai-answers/compare/v1.124.0...v1.125.0) (2026-05-08)
+
+
+### Features
+
+* comment so it will push ([67d0a6d](https://github.com/cds-snc/ai-answers/commit/67d0a6d6cc82f6b546d1a5d2e6ebd3c7dda7ad52))
+
+## [1.124.0](https://github.com/cds-snc/ai-answers/compare/v1.123.0...v1.124.0) (2026-05-08)
+
+
+### Features
+
+* add more clear comment (and force deployment for main) ([f6bab19](https://github.com/cds-snc/ai-answers/commit/f6bab19701cbc300a19119bcd99a9d2831c7eb77))
+* add more clear comment (and force deployment for main) ([168c03b](https://github.com/cds-snc/ai-answers/commit/168c03b2bf23304bc4da6d0aa93b6809f078b26b))
+
+## [1.123.0](https://github.com/cds-snc/ai-answers/compare/v1.122.2...v1.123.0) (2026-05-07)
+
+
+### Features
+
+* **ChatViewer:** implement chat logs functionality with metadata modal ([0b95ce4](https://github.com/cds-snc/ai-answers/commit/0b95ce451687fa1afbe96efd9c1ef99cfe208e8c))
+* make technical metrics page ([ec8513e](https://github.com/cds-snc/ai-answers/commit/ec8513ed390b15a552b507b15552d3b95ef60b32))
+* make technical metrics page ([f8b939b](https://github.com/cds-snc/ai-answers/commit/f8b939b0faae66945e817af6d527dbfd43e20a88))
+* **MetricsService:** implement getTechnicalMetrics function and add tests ([f9324ef](https://github.com/cds-snc/ai-answers/commit/f9324ef3021bd1b6fc3b9338776f10b3699cee24))
+* remove commented out css ([7af88d4](https://github.com/cds-snc/ai-answers/commit/7af88d423fe70209a25a62ccc09ed36588018c1b))
+* route slug instructions ([4450ab2](https://github.com/cds-snc/ai-answers/commit/4450ab23cc088f1ddbb043d4a34f5021d3dacfee))
+
+
+### Bug Fixes
+
+* add debug ([b8dbfb6](https://github.com/cds-snc/ai-answers/commit/b8dbfb612124b6ecfc18920abbd4519804cf6abf))
+* add notes and time ([6f24681](https://github.com/cds-snc/ai-answers/commit/6f24681993f736cccd7c9ddd78a503ce4f713913))
+* add time breakdown table ([b15a960](https://github.com/cds-snc/ai-answers/commit/b15a9603664013b91699bd4695ceb052cfca9699))
+* **auth:** add middleware to withProtection for enhanced security ([fbcbb33](https://github.com/cds-snc/ai-answers/commit/fbcbb336e48c58f2ed99a84f4247546eb33017b4))
+* break down the answer into downloads and generation ([793ea97](https://github.com/cds-snc/ai-answers/commit/793ea9704066f88566bb3fd91244faeb73d627c9))
+* **ChatViewer:** improve layout and styling of log level filter ([7fec5e8](https://github.com/cds-snc/ai-answers/commit/7fec5e86fc865845f9e173925a1a98c8588b1063))
+* code review and length tweak ([d9a93ec](https://github.com/cds-snc/ai-answers/commit/d9a93ecaed8d5692d2ca9fb46250f1d45b2e1275))
+* facets ([4d3f251](https://github.com/cds-snc/ai-answers/commit/4d3f2519182774551bff77d767fac4bac3d24758))
+* fix fr pass lang ([7e1439f](https://github.com/cds-snc/ai-answers/commit/7e1439fa589a6698ea9d69f07eeca11c7652eadb))
+* follow same pattern as perf metrics ([4166561](https://github.com/cds-snc/ai-answers/commit/4166561353fef4175e69439894107c4c500a59c2))
+* longest chat id link is to chat view not trace ([073fecd](https://github.com/cds-snc/ai-answers/commit/073fecdcd8c20141864924f8d6ad58046eae02ba))
+* **MetadataModal:** simplify metadata display logic in code block ([c9aa3f6](https://github.com/cds-snc/ai-answers/commit/c9aa3f6b032409e1dfd5fdd56a6271d1ca402c71))
+* prompt to address download timeouts scenario ([0b7bcf1](https://github.com/cds-snc/ai-answers/commit/0b7bcf11ddb3923f05c4c23679951ab4d480437c))
+* remove app.css ([bb582d8](https://github.com/cds-snc/ai-answers/commit/bb582d8f20c400f2c193a188b5e7cc9e382f919e))
+* remove dead line ([eb24499](https://github.com/cds-snc/ai-answers/commit/eb244991c1aafe031ec532df43a3a547ed6aab91))
+* remove facet ([877d6b2](https://github.com/cds-snc/ai-answers/commit/877d6b29c1ff73681cb3de2d2927d83592db9f29))
+* remove total time, fix spacing ([04fcc67](https://github.com/cds-snc/ai-answers/commit/04fcc67906a99aa045cd711280dc4244d977b59d))
+* scrollbars and buttons ([fedd3e1](https://github.com/cds-snc/ai-answers/commit/fedd3e17ce4674300318fe250c0750f5502ffe35))
+
+
+### Miscellaneous Chores
+
+* Cleanup workflow/graph names all that crap ([77d6cdf](https://github.com/cds-snc/ai-answers/commit/77d6cdf34ce0be719e783973d7e8359e5e95ed97))
+* Cleanup workflow/graph names all that crap ([fd06fc7](https://github.com/cds-snc/ai-answers/commit/fd06fc71b717b01334996a38cab79474409adb40))
+* **deps:** bump axios from 1.15.0 to 1.16.0 ([0a223dd](https://github.com/cds-snc/ai-answers/commit/0a223ddf1b163e13b68a34fe9e11105a783dd5dc))
+* **deps:** bump mongoose from 8.21.0 to 8.22.1 ([e288cfc](https://github.com/cds-snc/ai-answers/commit/e288cfcc344b6f8d302ad3a418a9eb8144a863cc))
+* **deps:** bump mongoose from 8.21.0 to 8.22.1 ([540419b](https://github.com/cds-snc/ai-answers/commit/540419b54603a45ae8d32853f4ab5155bfecbd0b))
+
+
+### Code Refactoring
+
+* **TechnicalMetricsDashboard:** integrate useTechnicalMetrics hook and clean up code ([624b4f9](https://github.com/cds-snc/ai-answers/commit/624b4f9d24257916d982ab1123a7d5740e91871b))
+
+## [1.122.2](https://github.com/cds-snc/ai-answers/compare/v1.122.1...v1.122.2) (2026-05-05)
+
+
+### Bug Fixes
+
+* add more batch files ([2bd3dc4](https://github.com/cds-snc/ai-answers/commit/2bd3dc4a717acccbac0e93f3261482dffd3f5c6d))
+* prompts length and tools ([1db2fda](https://github.com/cds-snc/ai-answers/commit/1db2fdadfad41f5f9b8ddf0baa146d85ed2d79c9))
+* prompts length and tools ([95b7b56](https://github.com/cds-snc/ai-answers/commit/95b7b56730ec24b3b15d3b4f6540e3ab0e26976b))
+
+
+### Miscellaneous Chores
+
+* adding test shuffling to Vitest config for test hardening ([a9a48a9](https://github.com/cds-snc/ai-answers/commit/a9a48a93fb8c9fa645b0aa032e8bb30501f604ee))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder in /server ([3d887f3](https://github.com/cds-snc/ai-answers/commit/3d887f38171b43093691fa1d8c9a53d44ff34f44))
+* **tests:** follow-up to [#1303](https://github.com/cds-snc/ai-answers/issues/1303) - Vitest shuffle configuration ([e735c1b](https://github.com/cds-snc/ai-answers/commit/e735c1bb082e8a5ce9ad37a44b9a30cb416d2d3d))
+
+## [1.122.1](https://github.com/cds-snc/ai-answers/compare/v1.122.0...v1.122.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* bug in page-language passing ([14b9f5e](https://github.com/cds-snc/ai-answers/commit/14b9f5ee676265141bcb67af066fe0afa63e6c7e))
+* bug in page-language passing ([920b410](https://github.com/cds-snc/ai-answers/commit/920b410c8844824030593cc98db0e7798510d185))
+* docs and minor fix ([c6572ba](https://github.com/cds-snc/ai-answers/commit/c6572ba81aaa537fc83e1e98fefd7c8435a386d7))
+* got en citation for ai answers itself ([30b5f07](https://github.com/cds-snc/ai-answers/commit/30b5f07655890cf637f8aa603d2729b2412d53df))
+* **tests:** cleanup isolation and mock stability ([0a24c27](https://github.com/cds-snc/ai-answers/commit/0a24c272e3eb60fb26cf0918b5848e8be523d7ec))
+
+## [1.122.0](https://github.com/cds-snc/ai-answers/compare/v1.121.1...v1.122.0) (2026-04-30)
+
+
+### Features
+
+* add WAFv2 IP allowlist for staging ALB ([b57e09c](https://github.com/cds-snc/ai-answers/commit/b57e09c4b754295c15a6ef9449a0b7b43c433533))
+
+
+### Bug Fixes
+
+* add tariff ([d8905ec](https://github.com/cds-snc/ai-answers/commit/d8905ec2c37431b5ff8b660a669ffdeb07f22f40))
+* bug in label normalization ([88e2e79](https://github.com/cds-snc/ai-answers/commit/88e2e7943d1c3ba85c9db85e49031d29ad661c8d))
+* bug in label normalization ([39fecaf](https://github.com/cds-snc/ai-answers/commit/39fecaff137d0b5e2c7c7f0f151e5430f5712147))
+* change order of rows ([472d7bd](https://github.com/cds-snc/ai-answers/commit/472d7bd68e4a3c6529ccc1ddab84ea19ea244d5e))
+* doc ([aa7f7a1](https://github.com/cds-snc/ai-answers/commit/aa7f7a148dd416fa48ffc57df779cec37270a0d2))
+* docs ([25b98aa](https://github.com/cds-snc/ai-answers/commit/25b98aae8b92d6665fad066755be7ba3657eb58d))
+* filter panel changes ([fe98e6f](https://github.com/cds-snc/ai-answers/commit/fe98e6f6a68bdb8d69af35ca221cbd1aea5431e9))
+* finesse ([9a4eb73](https://github.com/cds-snc/ai-answers/commit/9a4eb73013e8b065d10d1ae8e2aeffc4bbe76cfb))
+* format the token counts ([c397e83](https://github.com/cds-snc/ai-answers/commit/c397e83c385c673d3b9e03e48f47b36307fee91c))
+* label names add rows ([4157655](https://github.com/cds-snc/ai-answers/commit/41576559887c6052453f5c62f8c3ae5df4ab2d40))
+* mark waf_allowed_cidrs as sensitive to prevent IP leak in logs ([f838ad0](https://github.com/cds-snc/ai-answers/commit/f838ad0f94bd66567116e6fb7b6ae98626720067))
+* redesign of tables ([2efee51](https://github.com/cds-snc/ai-answers/commit/2efee51bb511bd53df421cc6c0d9b5c1f29ee375))
+* remove extra dnd depts from filter panel ([34691ea](https://github.com/cds-snc/ai-answers/commit/34691ea1661e1db308c75bfbbf565665ae6c1032))
+* remove extra dnd depts from filter panel ([d58eb56](https://github.com/cds-snc/ai-answers/commit/d58eb560f373d2192c2ce826b32359565cef4d37))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([d0f2ddf](https://github.com/cds-snc/ai-answers/commit/d0f2ddfa730a790d913662dab3db3a3b7f73c32c))
+* remove parentheses from WAFv2 descriptions to satisfy AWS regex ([fcc864a](https://github.com/cds-snc/ai-answers/commit/fcc864a6bec0f338d172b118899521f8fddd6a2f))
+* size tweaks ([9c61059](https://github.com/cds-snc/ai-answers/commit/9c61059d2ef532e38c1eaff9dd4f03765edcb145))
+* validate CIDR format at plan time to prevent bare IPs reaching A… ([3ccdfff](https://github.com/cds-snc/ai-answers/commit/3ccdffff4f49ad907e0e74f1391aeea9f9e3f766))
+* validate CIDR format at plan time to prevent bare IPs reaching AWS API ([4ded198](https://github.com/cds-snc/ai-answers/commit/4ded198d093414baab61e51e51f48d51c092120d))
+
+## [1.121.1](https://github.com/cds-snc/ai-answers/compare/v1.121.0...v1.121.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* add historical pm names ([b7f7792](https://github.com/cds-snc/ai-answers/commit/b7f77924f596198b8d9bf1c6345151f2ab524716))
+* blocked current pm name ([56490cc](https://github.com/cds-snc/ai-answers/commit/56490ccc75953c3ff9889a9c4051b3f2880df61d))
+* PII prompt to not block question numbers ([1773949](https://github.com/cds-snc/ai-answers/commit/177394943fa7d2ecececb0d5f278d42fc69838b4))
+* refine/clarify for mini model ([8e29a98](https://github.com/cds-snc/ai-answers/commit/8e29a98716e156619119dd0b620a83efe346a6ac))
+* search query issue ([8f26993](https://github.com/cds-snc/ai-answers/commit/8f26993ce9f9a4b3b1fcf1484bb49cdf71b5390c))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump uuid from 11.1.0 to 14.0.0 ([cddb6de](https://github.com/cds-snc/ai-answers/commit/cddb6de4be0fca1eb5b3692788d1890ab536522e))
+
+## [1.121.0](https://github.com/cds-snc/ai-answers/compare/v1.120.2...v1.121.0) (2026-04-23)
+
+
+### Features
+
+* add dnd partner scenario file ([7d89f89](https://github.com/cds-snc/ai-answers/commit/7d89f89f2df0ca006d3b81c36beb0dcde271e5b7))
+* add dnd partner scenario file ([89b6794](https://github.com/cds-snc/ai-answers/commit/89b6794609d8b863f5aae05018e9c35f04809e10))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump follow-redirects from 1.15.11 to 1.16.0 ([dc9e6b6](https://github.com/cds-snc/ai-answers/commit/dc9e6b609c898b981714fd76938d3db875e7f361))
+* **deps:** bump langsmith from 0.5.18 to 0.5.20 ([afb5c54](https://github.com/cds-snc/ai-answers/commit/afb5c5434a407775b4a09fd58a8a9073024be37f))
+
+## [1.120.2](https://github.com/cds-snc/ai-answers/compare/v1.120.1...v1.120.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* add 3c back in ([8e60f0b](https://github.com/cds-snc/ai-answers/commit/8e60f0b2e3da944bc3492e548365de8eb7b08e79))
+* add error message for csv read failure ([684085b](https://github.com/cds-snc/ai-answers/commit/684085bed8f749b76bebf4e8dbc79e31085e296f))
+* add example ([936f79a](https://github.com/cds-snc/ai-answers/commit/936f79aa088bd7307cc453834101f7bd9ce7df66))
+* add historical urls ([7948296](https://github.com/cds-snc/ai-answers/commit/7948296aa0ce935b52863c826e67d5959a57c157))
+* add payroll deduction back in ([1a16b9b](https://github.com/cds-snc/ai-answers/commit/1a16b9b13a88dda1e5cce2e13ebc716c6448589a))
+* batch bug ([e7e41cd](https://github.com/cds-snc/ai-answers/commit/e7e41cdbc4c0ad7cf66ecf674554975c23bff42c))
+* context issue ([94dcaca](https://github.com/cds-snc/ai-answers/commit/94dcaca4716586b01de67932e6ca1474c254575e))
+* docs ([69023ab](https://github.com/cds-snc/ai-answers/commit/69023abe3675564f0e19094a946153057598f872))
+* move due date comment ([301d06d](https://github.com/cds-snc/ai-answers/commit/301d06d4a0f5f42e3343f4eee67caabb0fc66617))
+* not computing the date so need to expand ([7329425](https://github.com/cds-snc/ai-answers/commit/73294258379653e19388524fb3ec62511be198c1))
+* payroll line ([fa54baf](https://github.com/cds-snc/ai-answers/commit/fa54baf40c6d3c20efac3b10f81a01306df9c0c5))
+* prompt tweaks ([7becf21](https://github.com/cds-snc/ai-answers/commit/7becf21de14c03b8a75ae1de821d91790a3724fc))
+* revert context prompt ([e54b39c](https://github.com/cds-snc/ai-answers/commit/e54b39cd38c1a9f723f5bd341dc83be132e9e934))
+* try again ([a548e6d](https://github.com/cds-snc/ai-answers/commit/a548e6dcbf445b429db44dace583709941d5dcdd))
+* try different approach ([12b2df7](https://github.com/cds-snc/ai-answers/commit/12b2df7180a609eba774889ebc18d3a3323ea994))
+* update prompt to not put full text in PII tags, also guard again… ([a10ed26](https://github.com/cds-snc/ai-answers/commit/a10ed26bbe95425cea2cdbb9c4ce61cff59e94df))
+* update prompt to not put full text in PII tags, also guard against this in code ([fbd8a5e](https://github.com/cds-snc/ai-answers/commit/fbd8a5e57be5d0b17c0315e81151776578c95cf3))
+* writeEvent was still failing ([e2703f6](https://github.com/cds-snc/ai-answers/commit/e2703f6ab22052319f383340721f1854ebac07a9))
+
+## [1.120.1](https://github.com/cds-snc/ai-answers/compare/v1.120.0...v1.120.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* add FR link ([e100fd7](https://github.com/cds-snc/ai-answers/commit/e100fd7fcaeeeb2b59c0c5cbe68cc28bb189c881))
+* add tools to default export ([07723bf](https://github.com/cds-snc/ai-answers/commit/07723bf951f1475a7d2ab464fad9d0b9fe566fce))
+* add warning ([dc72566](https://github.com/cds-snc/ai-answers/commit/dc725663ddbc00f3c616103e28f6e1ff34e66b92))
+* address change redirect to main ([08d84d7](https://github.com/cds-snc/ai-answers/commit/08d84d7bf3a855245ffcaf36188ba2019357743a))
+* clean up scenarios ([992eebf](https://github.com/cds-snc/ai-answers/commit/992eebff895890465539794b6d4044a6adbbc06a))
+* failed at dental care question ([e26ae24](https://github.com/cds-snc/ai-answers/commit/e26ae243b7d276652bde37a6efd716436d60e487))
+* improve sign-in download ([1489e78](https://github.com/cds-snc/ai-answers/commit/1489e7809df707fad4205668f2d51d0f540f51b0))
+* move columns break out status ([d4f965c](https://github.com/cds-snc/ai-answers/commit/d4f965c15ce3060b9b8b9dd7a03ee64b0606d5cc))
+* remove accounts file, wasn't using it ([dfa9293](https://github.com/cds-snc/ai-answers/commit/dfa92932ecec04f23023fa3d6ab4e419983127b2))
+* try again on clarifying question ([c6b7fca](https://github.com/cds-snc/ai-answers/commit/c6b7fca31f565569452903ce980cbab077ad3ed4))
+* tweak answer tools content ([c69c763](https://github.com/cds-snc/ai-answers/commit/c69c763112b6fb3b5fe8c6a88e6b199738581386))
+
+## [1.120.0](https://github.com/cds-snc/ai-answers/compare/v1.119.0...v1.120.0) (2026-04-15)
+
+
+### Features
+
+* break manipulation out ([025ac2f](https://github.com/cds-snc/ai-answers/commit/025ac2f82ef179def279f19fc9eb8bd2e9155b23))
+* break manipulation out - extensive testing ([7ed5f7e](https://github.com/cds-snc/ai-answers/commit/7ed5f7ec48633198432535f72eeb9670d6ee035e))
+* fix focus handling ([f967ff4](https://github.com/cds-snc/ai-answers/commit/f967ff4c0bba73c0e6899d3725f8f60ca66515bb))
+* fix icon focus ([fbb1f7f](https://github.com/cds-snc/ai-answers/commit/fbb1f7f38b38af473a5b86ca473939f3974f9852))
+
+
+### Bug Fixes
+
+* add another example ([a434574](https://github.com/cds-snc/ai-answers/commit/a434574fe2d8ba6e2acfbc2b4988535079c8fbc0))
+* add AWS deploy side steps to plan ([3a2a241](https://github.com/cds-snc/ai-answers/commit/3a2a24134ec48873fd8556d6fcd9b588221364c9))
+* add AWS deploy side steps to plan ([ed4c997](https://github.com/cds-snc/ai-answers/commit/ed4c99736470912b6cb547767bb82a65f94b524e))
+* add to system prompt doc ([7d63bf9](https://github.com/cds-snc/ai-answers/commit/7d63bf9740b01e9f166c0febe309e2d1cc4c8765))
+* final tweaks to get rid of "not x" problem ([b2c039a](https://github.com/cds-snc/ai-answers/commit/b2c039adc1aea5fd94c5eb51e9166d030ec5ea75))
+* hardcoded abbreviation - expand ([90b7fe6](https://github.com/cds-snc/ai-answers/commit/90b7fe643eb7d66c89e984b08c2a04feb3572b40))
+* rename, add ([2a7dc70](https://github.com/cds-snc/ai-answers/commit/2a7dc70b9d9b154155fb1385b56b6b2cc9028727))
+* tweak answer, revise search ([90f0eaa](https://github.com/cds-snc/ai-answers/commit/90f0eaa2d2cc52136be6d8b6c5f06dbe27fa4041))
+* update system prompt doc ([641e4a7](https://github.com/cds-snc/ai-answers/commit/641e4a74a8692811c5d882490b44140d03af25b2))
+
+## [1.119.0](https://github.com/cds-snc/ai-answers/compare/v1.118.1...v1.119.0) (2026-04-13)
+
+
+### Features
+
+* cohere plan ([ce3398b](https://github.com/cds-snc/ai-answers/commit/ce3398ba46340a74507810519cc5ba6533d13ed7))
+* run search query again if failed ([b3f4065](https://github.com/cds-snc/ai-answers/commit/b3f4065fac69e4409dfe4b6bd5593e5a2d8befdf))
+* run search query again if failed ([e7b3d0b](https://github.com/cds-snc/ai-answers/commit/e7b3d0b5f7074bb40c4d49dcef571b2d15f743bb))
+
+
+### Bug Fixes
+
+* account lockout, secret rotation, enumeration prevention on password reset ([84ad7ac](https://github.com/cds-snc/ai-answers/commit/84ad7ac93b9fd81ca15f93e16e89a725c62f339b))
+* add groceries and one-time to cra ([b5251eb](https://github.com/cds-snc/ai-answers/commit/b5251eb350bff40d18e5ba952123b0862ea29bd0))
+* add groceries and one-time to cra ([7de16d1](https://github.com/cds-snc/ai-answers/commit/7de16d11bdc608d6e288919264bc7dec296de657))
+* address Copilot review — persistent lockout, secret-specific counter, comment fix ([b809020](https://github.com/cds-snc/ai-answers/commit/b809020c90627f402baf80078c0c28e0485ca0a1))
+* better example of shortening long rambly question ([0312a95](https://github.com/cds-snc/ai-answers/commit/0312a95be73d5aba1821e6ed38e41001a797010f))
+* consistent 500 error shape and accurate comment in reset flow ([43fd49c](https://github.com/cds-snc/ai-answers/commit/43fd49c69bb408112f974dbbb63e619166ea90ea))
+* refine prompt ([9f2e9b7](https://github.com/cds-snc/ai-answers/commit/9f2e9b7675084269874753833adf5385fc413ebd))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump axios from 1.13.5 to 1.15.0 ([55c54cb](https://github.com/cds-snc/ai-answers/commit/55c54cbf4581d2c9926dc1aa4b1f7b0990f23cc8))
+* **deps:** bump axios from 1.13.5 to 1.15.0 ([6a0c237](https://github.com/cds-snc/ai-answers/commit/6a0c2374614360d6aed6c918b9ebadfb59d2d259))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder in /server ([37b6f31](https://github.com/cds-snc/ai-answers/commit/37b6f31667ba6d656cd692f35ee2aae43de7c8b4))
+* **deps:** bump fast-xml-parser and @aws-sdk/xml-builder in /server ([cceb1af](https://github.com/cds-snc/ai-answers/commit/cceb1af523190993759fc76414b9c8614f6afaf6))
+* **deps:** bump langsmith from 0.4.12 to 0.5.18 ([c333d38](https://github.com/cds-snc/ai-answers/commit/c333d38f5f163d8f9dc86947631b329911ed74d2))
+* **deps:** bump langsmith from 0.4.12 to 0.5.18 ([c4407f6](https://github.com/cds-snc/ai-answers/commit/c4407f6e35625ca86d432b3245e929ccd9444181))
+* **deps:** bump lodash from 4.17.21 to 4.18.1 ([1d64261](https://github.com/cds-snc/ai-answers/commit/1d64261438e2bbea39dddb8d52819687388570cd))
+* **deps:** bump lodash from 4.17.21 to 4.18.1 ([79663e8](https://github.com/cds-snc/ai-answers/commit/79663e83488332b342ed17e21d7c9f80a5a45e9e))
+* **deps:** bump vite from 7.3.1 to 7.3.2 ([171049d](https://github.com/cds-snc/ai-answers/commit/171049d879e77aebbf65a60e2f564bf0484d8208))
+* **deps:** bump vite from 7.3.1 to 7.3.2 ([91abb0b](https://github.com/cds-snc/ai-answers/commit/91abb0b32f0a9af282069b3861cee7e87d4f46c7))
+* remove hackerone pilot security.txt listener rule ([b4015c0](https://github.com/cds-snc/ai-answers/commit/b4015c0409d0b621f3897f33a02859a6783fcec8))
+* remove hackerone pilot security.txt listener rule ([94f5fc2](https://github.com/cds-snc/ai-answers/commit/94f5fc299ca3e790f461d8bdca7a61a54e50199b))
+
+## [1.118.1](https://github.com/cds-snc/ai-answers/compare/v1.118.0...v1.118.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* remove duplicates, fix keys ([3edf273](https://github.com/cds-snc/ai-answers/commit/3edf273830f0645768ce79acfbceae8c8de18081))
+* remove duplicates, fix keys ([2f3f209](https://github.com/cds-snc/ai-answers/commit/2f3f2098ce009421ef5db918c3182b803da0ba54))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump brace-expansion from 1.1.12 to 1.1.13 ([e75dd62](https://github.com/cds-snc/ai-answers/commit/e75dd62ee3ec673e1afb0d4fe8bfcfac49acacb1))
+* **deps:** bump node-forge from 1.3.3 to 1.4.0 ([a98cca6](https://github.com/cds-snc/ai-answers/commit/a98cca6937a0c455cb6447886fefa1935874c683))
+* **deps:** bump path-to-regexp from 0.1.12 to 0.1.13 ([0e73a61](https://github.com/cds-snc/ai-answers/commit/0e73a616050afb99c62abcc06514e7c5876b314d))
+* **deps:** bump path-to-regexp from 8.3.0 to 8.4.0 in /server ([8b02ea4](https://github.com/cds-snc/ai-answers/commit/8b02ea43c0c55c5f157e678571815e4d9b1ecaa9))
+
+## [1.118.0](https://github.com/cds-snc/ai-answers/compare/v1.117.1...v1.118.0) (2026-03-31)
+
+
+### Features
+
+* upgrade and enable batch to partners ([8401248](https://github.com/cds-snc/ai-answers/commit/8401248b4457af9812e311cb4908a11af35a69ed))
+* upgrade and enable batch to partners ([55bc571](https://github.com/cds-snc/ai-answers/commit/55bc571080ef0605fa27fefbdb31fa82df5af3bf))
+
+
+### Bug Fixes
+
+* add formatting for instructions ([1b43e06](https://github.com/cds-snc/ai-answers/commit/1b43e065bce1120a6a3fc01f44cdd7af53041587))
+
+## [1.117.1](https://github.com/cds-snc/ai-answers/compare/v1.117.0...v1.117.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* update tbs scenario prior to batch ([e2964db](https://github.com/cds-snc/ai-answers/commit/e2964db9007a0a2f41124e456424426cf0ce8711))
+* update tbs scenario prior to batch ([59bc58d](https://github.com/cds-snc/ai-answers/commit/59bc58de5c1479e550e43cf3e115839c94ae3a3b))
+
+## [1.117.0](https://github.com/cds-snc/ai-answers/compare/v1.116.5...v1.117.0) (2026-03-31)
+
+
+### Features
+
+* add AGENTS.md file ([67e48e3](https://github.com/cds-snc/ai-answers/commit/67e48e32c3b30ef4530683e99620f456c8dd1f9d))
+* model upgrade process refactor ([e33cde4](https://github.com/cds-snc/ai-answers/commit/e33cde4ee33010def132236fb3c6acca4a54b8f1))
+
+
+### Bug Fixes
+
+* add model selection in batch and chat ([b864d37](https://github.com/cds-snc/ai-answers/commit/b864d3746baea42109e788f79eef1238c0bb55e6))
+* fix default on chat change labels ([e0ed2c5](https://github.com/cds-snc/ai-answers/commit/e0ed2c542f96b0126d3740425520ca463d5538a6))
+* ISC contact scenario - emphasize FR citations ([6c962eb](https://github.com/cds-snc/ai-answers/commit/6c962eb984673bb74836c953682d7a8f59639710))
+* ISC contact scenario - emphasize FR citations ([acf019a](https://github.com/cds-snc/ai-answers/commit/acf019a46ddda1cf771ab95073fff61827aae31e))
+* more language ([5eb6e0f](https://github.com/cds-snc/ai-answers/commit/5eb6e0fc1acf8af4f605b708b1811e6219748785))
+* prioritize contacts file ([1830f90](https://github.com/cds-snc/ai-answers/commit/1830f90f12cd455f650fec1602c05d1f96292f01))
+* relabel and remove mini as an option in models ([dbdcc3c](https://github.com/cds-snc/ai-answers/commit/dbdcc3c305d2b9d6b3223a7f455fa26360db5b64))
+* remove dead ai service options from batch page ([2b7b783](https://github.com/cds-snc/ai-answers/commit/2b7b783a3f55102cc5b554b78e2d1698428d74e8))
+* settingService as master ([0333c90](https://github.com/cds-snc/ai-answers/commit/0333c90e09c7108704e98d36b1d69708cc2494ff))
+* try again re offices ([e5de01f](https://github.com/cds-snc/ai-answers/commit/e5de01f276c6979d5c2d8c05c4f82cc4acea1950))
+* where files are ([6322c82](https://github.com/cds-snc/ai-answers/commit/6322c829ee0fbd30b0a08168eae66f01390e4e0c))
+
+## [1.116.5](https://github.com/cds-snc/ai-answers/compare/v1.116.4...v1.116.5) (2026-03-26)
+
+
+### Bug Fixes
+
+* add VDP ([67989e3](https://github.com/cds-snc/ai-answers/commit/67989e3d43cb16fc91d963aaddef4f083adc725c))
+* add VDP ([044b1a5](https://github.com/cds-snc/ai-answers/commit/044b1a51eaf0044b5b55cc54f064bd9f7d6d5780))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump convict from 6.2.4 to 6.2.5 ([03a8de5](https://github.com/cds-snc/ai-answers/commit/03a8de58b47be12906a7632553afac5580c71ac9))
+
+## [1.116.4](https://github.com/cds-snc/ai-answers/compare/v1.116.3...v1.116.4) (2026-03-26)
+
+
+### Bug Fixes
+
+* update cra scenario ([6e3c142](https://github.com/cds-snc/ai-answers/commit/6e3c14297b17d3b72181be0daab13bdbbc5dd76d))
+* update cra scenario ([65a648b](https://github.com/cds-snc/ai-answers/commit/65a648be8aa129b008987c993f5dbdc6f3e6c4a5))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump convict from 6.2.4 to 6.2.5 in /server ([f10d6bb](https://github.com/cds-snc/ai-answers/commit/f10d6bbfc540a910ab14ee65952ed16d6b650f61))
+* **deps:** bump convict from 6.2.4 to 6.2.5 in /server ([33fe8e9](https://github.com/cds-snc/ai-answers/commit/33fe8e90a475c947bb0da3b9ba4ca4c5ac57336c))
+
+## [1.116.3](https://github.com/cds-snc/ai-answers/compare/v1.116.2...v1.116.3) (2026-03-26)
+
+
+### Miscellaneous Chores
+
+* **deps:** bump picomatch from 2.3.1 to 2.3.2 ([1131fda](https://github.com/cds-snc/ai-answers/commit/1131fdaad39cde0571dfd00e8d0d27cae8fc45e1))
+* **deps:** bump picomatch from 2.3.1 to 2.3.2 ([6160480](https://github.com/cds-snc/ai-answers/commit/6160480d45597dbddb16885f49bd52f7f76dd70f))
+
+## [1.116.2](https://github.com/cds-snc/ai-answers/compare/v1.116.1...v1.116.2) (2026-03-25)
+
+
+### Bug Fixes
+
+* scope batch-list to logged-in user and inline stats to eliminate N+1 requests ([79d0f0c](https://github.com/cds-snc/ai-answers/commit/79d0f0c8603cab16f400ff1ebbf8246be7975ea6))
+* scope batch-list to logged-in user and inline stats to eliminate… ([8778c6d](https://github.com/cds-snc/ai-answers/commit/8778c6d09b0c8d1a3525d2ee98e71b70b61855b0))
+
+## [1.116.1](https://github.com/cds-snc/ai-answers/compare/v1.116.0...v1.116.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* update to require auth ([4b37e06](https://github.com/cds-snc/ai-answers/commit/4b37e067034a97ef114da83621dcf823b8eba55b))
+
+
+### Performance Improvements
+
+* optimize batch-stats endpoint with indexed queries and timeout … ([cc5528f](https://github.com/cds-snc/ai-answers/commit/cc5528f1370cb695945331b07f7e56ff0cf6033e))
+* optimize batch-stats endpoint with indexed queries and timeout guards ([7bb4e79](https://github.com/cds-snc/ai-answers/commit/7bb4e79bbbf6bd0f97703936e31f094830acced9))
+
+## [1.116.0](https://github.com/cds-snc/ai-answers/compare/v1.115.1...v1.116.0) (2026-03-25)
+
+
+### Features
+
+* missing locale ([45d896b](https://github.com/cds-snc/ai-answers/commit/45d896bcc2cc1a7542f6ae5988b92fcc865f83b8))
+* missing locale ([15dc16d](https://github.com/cds-snc/ai-answers/commit/15dc16dbc8a0451a7eaeb3f4b20e8c24724b309d))
+
+
+### Bug Fixes
+
+* pass userId as query param on DELETE user to fix Akamai 400s ([06c052c](https://github.com/cds-snc/ai-answers/commit/06c052c07e3a40024bf7ad7df42c9397ee248d70))
+* pass userId as query param on DELETE user to fix Akamai 400s ([fe7c7cd](https://github.com/cds-snc/ai-answers/commit/fe7c7cdbe86c7bb5754e6fc6a7d114e955b851ce))
+
+## [1.115.1](https://github.com/cds-snc/ai-answers/compare/v1.115.0...v1.115.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* more reasoning model fixes ([407d572](https://github.com/cds-snc/ai-answers/commit/407d5729753da5069596e9e566213e5028351f95))
+* more reasoning model fixes ([e4c332e](https://github.com/cds-snc/ai-answers/commit/e4c332e50d3a834d90c3a3d155ceef8a9a67c3ce))
+* remove ERI groups from tbs ([04e28ed](https://github.com/cds-snc/ai-answers/commit/04e28ed2b4adffef2c591a5dbb14c9b14060ae59))
+
 ## [1.115.0](https://github.com/cds-snc/ai-answers/compare/v1.114.1...v1.115.0) (2026-03-23)
 
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll, beforeAll, afterEach } from 'vitest';
 import { setup, teardown, reset } from '../../test/setup.js';
 import mongoose from 'mongoose';
 
@@ -47,6 +47,17 @@ process.on('unhandledRejection', (err) => {
 // (mocks declared above before imports)
 
 describe('SimilarAnswerService', () => {
+    let AnswerModel, QuestionModel, InteractionModel, ChatModel;
+    const createdAnswerIDs = [];
+    const createdQuestionIDs = [];
+    const createdInteractionIDs = [];
+    const createdChatIDs = [];
+
+    const fixedInteractionIds = [
+        new mongoose.Types.ObjectId('64fec1000000000000000001'),
+        new mongoose.Types.ObjectId('64fec1000000000000000002'),
+    ];
+
     beforeAll(async () => {
         if (!process.env.MONGODB_URI) {
             await setup();
@@ -54,6 +65,12 @@ describe('SimilarAnswerService', () => {
         // Ensure in-memory DB is available and connect
         const dbConnect = (await import('../../api/db/db-connect.js')).default;
         await dbConnect();
+
+        // Ensure models are registered (db-connect imports them, but just to be safe/clear)
+        AnswerModel = mongoose.model('Answer');
+        QuestionModel = mongoose.model('Question');
+        InteractionModel = mongoose.model('Interaction');
+        ChatModel = mongoose.model('Chat');
     });
 
     beforeEach(async () => {
@@ -71,40 +88,40 @@ describe('SimilarAnswerService', () => {
             results: [{ index: 0, checks: { numbers: 'pass', dates_times: 'pass' } }]
         });
 
-        try {
-            await reset();
-        } catch (_) { }
-
-        // Ensure models are registered (db-connect imports them, but just to be safe/clear)
-        const AnswerModel = mongoose.model('Answer');
-        const QuestionModel = mongoose.model('Question');
-        const InteractionModel = mongoose.model('Interaction');
-        const ChatModel = mongoose.model('Chat');
-
         const [answer1, answer2] = await AnswerModel.create([
             { englishAnswer: 'Answer 1' },
             { englishAnswer: 'Answer 2' },
         ]);
-
+        createdAnswerIDs.push(answer1._id, answer2._id);
+        
         const [question1, question2] = await QuestionModel.create([
             { englishQuestion: 'Q1', redactedQuestion: 'Q1' },
             { englishQuestion: 'Q2', redactedQuestion: 'Q2' },
         ]);
+        createdQuestionIDs.push(question1._id, question2._id);
 
         const now = Date.now();
         await InteractionModel.create([
-            { _id: new mongoose.Types.ObjectId('64fec1000000000000000001'), answer: answer1._id, question: question1._id, createdAt: new Date(now) },        // Newer (index 0)
-            { _id: new mongoose.Types.ObjectId('64fec1000000000000000002'), answer: answer2._id, question: question2._id, createdAt: new Date(now - 10000) }, // Older (index 1)
+            { _id: fixedInteractionIds[0], answer: answer1._id, question: question1._id, createdAt: new Date(now) },        // Newer (index 0)
+            { _id: fixedInteractionIds[1], answer: answer2._id, question: question2._id, createdAt: new Date(now - 10000) }, // Older (index 1)
         ]);
-
         const interactions = await mongoose.model('Interaction').find().sort({ _id: 1 }).lean();
+        createdInteractionIDs.push(...fixedInteractionIds);
+
         await ChatModel.create({ chatId: 'test-chat', interactions: interactions.map(i => i._id) });
+        createdChatIDs.push('test-chat');
     });
 
     afterAll(async () => {
         // Shared teardown handled globally
     });
 
+    afterEach(async () => {
+        await AnswerModel.deleteMany({ _id: { $in: createdAnswerIDs } });
+        await QuestionModel.deleteMany({ _id: { $in: createdQuestionIDs } });
+        await InteractionModel.deleteMany({ _id: { $in: createdInteractionIDs } });
+        await ChatModel.deleteMany({ chatId: { $in: createdChatIDs } });
+    });
 
     it('uses questions array (conversation history) when provided', async () => {
         const questions = ['How do I apply?', 'What documents are required?'];

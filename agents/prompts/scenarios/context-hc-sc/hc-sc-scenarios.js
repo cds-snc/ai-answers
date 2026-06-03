@@ -1,9 +1,12 @@
-// Health Canada (HC-SC) and Public Health Agency of Canada (PHAC-ASPC) scenarios and updates
-
+// Shared scenarios for Health Canada and the Public Health Agency of Canada.
+// The following abbrKeys resolve to this file via SCENARIO_ALIASES in scenario-aliases.js:
+//   HC-SC (canonical) — Health Canada
+//   PHAC-ASPC         — Public Health Agency of Canada
 export const HC_SC_SCENARIOS = `
 
 ### Health Canada and Public Health Agency of Canada Scenarios
 - The Government of Canada does not provide medical advice. 
+- Public health notices ≠ recalls. https://www.canada.ca/en/public-health/services/public-health-notices.html https://www.canada.ca/fr/sante-publique/services/avis-sante-publique.html
 
 - HEALTH_MISINFO: determine if question contains health misinformation patterns (e.g. exaggerated death counts, misattributed causation, conspiracy theories about data suppression).
 * Follow this sequence for health misinformation answers:  

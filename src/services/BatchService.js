@@ -13,7 +13,7 @@ import SessionService from './SessionService.js';
  */
 
 const DEFAULT_RETRIES = 2;
-const DEFAULT_CONCURRENCY = 8; // default sequential to avoid provider rate limits
+const DEFAULT_CONCURRENCY = 3; // keep low to avoid Akamai connection timeouts on long-lived SSE streams
 
 class BatchService {
   constructor() {
@@ -52,7 +52,7 @@ class BatchService {
    * Start a batch: decide whether to derive context or send batch messages.
    * Returns whatever the underlying service returns (usually an object with batchId).
    */
-  async startBatch({ entries = [], selectedAI = 'openai', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
+  async startBatch({ entries = [], selectedAI = 'openai-gpt51', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
     if (!entries || !entries.length) throw new Error('No entries provided to startBatch');
     if (!batchId) throw new Error('startBatch requires a server-persisted batchId; call persistBatch first');
 
@@ -207,41 +207,31 @@ class BatchService {
     }
   }
 
-  // Given an array of batches, fetch their latest statuses from server (mirrors DataStoreService logic)
+  // Given an array of batches (already containing inline stats from batch-list),
+  // derive status from the embedded stats without making additional API calls.
   async getBatchStatuses(batches) {
     try {
-
-      const statusPromises = batches.map(async (batch) => {
-        try {
-          // Always fetch the latest server-side stats for this batch. Use
-          // the document _id which the server expects for `batch-stats`.
-          const statusResult = await this.getBatchStatus(batch._id, batch.aiProvider);
-          return statusResult;
-        } catch (err) {
-          // Preserve the client-side values as a fallback so a single failing
-          // batch doesn't break the whole list rendering.
-          const fallbackStats = batch.stats || {};
-          const fallbackProcessed = Number(fallbackStats?.processed || 0);
-          const fallbackFailed = Number(fallbackStats?.failed || 0);
-          const fallbackFinished = Number(fallbackStats?.finished ?? fallbackProcessed + fallbackFailed);
-          return { batchId: String(batch._id), status: batch.status || 'unknown', stats: { ...fallbackStats, finished: fallbackFinished } };
-        }
-      });
-      const statusResults = await Promise.all(statusPromises);
       return batches.map((batch) => {
-        const statusResult = statusResults.find((status) => status && status.batchId === String(batch._id));
-        const sourceStats = statusResult ? statusResult.stats || {} : batch.stats || {};
-        const processed = Number(sourceStats?.processed || 0);
-        const failed = Number(sourceStats?.failed || 0);
-        const finished = Number(sourceStats?.finished ?? processed + failed);
+        const stats = batch.stats || {};
+        const total = Number(stats.total || 0);
+        const processed = Number(stats.processed || 0);
+        const failed = Number(stats.failed || 0);
+        const finished = Number(stats.finished ?? processed + failed);
+
+        let status = 'unknown';
+        if (total === 0) status = 'unknown';
+        else if (finished === 0) status = 'uploaded';
+        else if (finished >= total) status = 'processed';
+        else status = 'processing';
+
         return {
           ...batch,
-          status: statusResult ? statusResult.status : (batch.status || 'Unknown'),
-          stats: { ...sourceStats, finished },
+          status,
+          stats: { ...stats, finished },
         };
       });
     } catch (error) {
-      console.error('Error fetching statuses:', error);
+      console.error('Error deriving statuses:', error);
       return batches || [];
     }
   }
@@ -254,7 +244,7 @@ class BatchService {
   async runBatch({
     entries = [],
     // batchName = `client-batch-${Date.now()}`,
-    selectedAI = 'openai',
+    selectedAI = 'openai-gpt51',
     lang = 'en',
     searchProvider = '',
     workflow = 'Default',
@@ -491,9 +481,11 @@ class BatchService {
     if (!err) return false;
     const m = (err.status || err.code || '').toString().toLowerCase();
     const msg = (err.message || '').toLowerCase();
-    // treat network and 5xx/429 as transient
+    // treat network, 5xx/429, and dropped SSE connections as transient
     if (msg.includes('timeout') || msg.includes('network') || msg.includes('502') || msg.includes('503') || msg.includes('504')) return true;
     if (m === '429' || msg.includes('rate limit') || msg.includes('too many requests')) return true;
+    // SSE stream closed before result (e.g. proxy dropped idle connection during long LLM call)
+    if (msg.includes('stream ended') || msg.includes('aborted')) return true;
     return false;
   }
 

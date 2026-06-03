@@ -1,7 +1,8 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchPersistHandler(req, res) {
   if (req.method !== 'POST') {
@@ -13,15 +14,44 @@ async function batchPersistHandler(req, res) {
     console.log(`[batch-persist] called with:`, batchData);
     if (!batchData) return res.status(400).json({ message: 'Missing batch data' });
 
+    let batchId = null;
+    if (batchData._id) {
+      batchId = requireObjectIdString(batchData._id, 'batch ID');
+    }
+
     await dbConnect();
 
     // If a batchId is provided, update the existing batch (or upsert when not found).
-    if (batchData._id) {
-      console.log(`[batch-persist] updating existing batch ${batchData._id}`);
-     
+    if (batchId) {
+      console.log(`[batch-persist] updating existing batch ${batchId}`);
+
+      // Whitelist and sanitize updatable fields to avoid operator injection
+      const allowedFields = [
+        'status',
+        'type',
+        'workflow',
+        'name',
+        'aiProvider',
+        'searchProvider',
+        'pageLanguage',
+      ];
+
+      const safeSet = {};
+      for (const key of allowedFields) {
+        if (Object.prototype.hasOwnProperty.call(batchData, key) && batchData[key] != null) {
+          // Use requireLiteralString to enforce a safe pattern and length
+          try {
+            safeSet[key] = requireLiteralString(batchData[key], key);
+          } catch (err) {
+            return res.status(400).json({ message: `Invalid value for ${key}` });
+          }
+        }
+      }
+
+      // Prevent updating createdBy or _id via this endpoint
       const updated = await Batch.findOneAndUpdate(
-        { _id: batchData._id },
-        { $set: batchData },
+        { _id: batchId },
+        { $set: safeSet },
         { new: true, upsert: true }
       );
       console.log(`[batch-persist] updated result:`, updated ? { _id: updated._id } : null);
@@ -36,7 +66,7 @@ async function batchPersistHandler(req, res) {
     // No batchId provided: create a new batch and generate a batchId if missing
     if (!batchData._id) {
       console.log(`[batch-persist] creating new batch (batchId will be set to _id) with ${batchData.items?.length || 0} items`);
-      const batch = new Batch(batchData);
+      const batch = new Batch({ ...batchData, createdBy: req.user?.userId || '' });
       await batch.save();
 
       // For compatibility and to avoid confusion, set the batchId field to the
@@ -72,5 +102,5 @@ async function batchPersistHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  return withProtection(batchPersistHandler, authMiddleware, adminMiddleware)(req, res);
+  return withProtection(batchPersistHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

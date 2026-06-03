@@ -45,14 +45,15 @@ const graph = new StateGraph(GraphState);
 
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
-  // Emit node input log (fire-and-forget)
-  logGraphEvent('info', 'node:init input', state.chatId, {
+  // 'Starting <Graph>' must be logged before 'node:init input' — ChatViewer uses it as the timeline anchor.
+  await ServerLoggingService.info('Starting DefaultWithVectorGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
   });
 
-  await ServerLoggingService.info('Starting DefaultWithVectorGraph', state.chatId, {
+  // Emit node input log (fire-and-forget)
+  logGraphEvent('info', 'node:init input', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
@@ -117,6 +118,7 @@ graph.addNode('translate', async (state) => {
   });
 
   const translationData = await workflow.translateQuestion(state.redactedText, "en", state.selectedAI, translationContext);
+  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
   const out = { translationData };
   // Emit output log for translate node
@@ -247,7 +249,9 @@ graph.addNode('answerNode', async (state) => {
   // Emit input log for answer node
   logGraphEvent('info', 'node:answer input', state.chatId, {
     selectedAI: state.selectedAI,
-    contextSummary: state.context?.summary || null,
+    contextTopic: state.context?.topic || null,
+    contextDepartment: state.context?.department || null,
+    searchResultsCount: Array.isArray(state.context?.searchResults) ? state.context.searchResults.length : 0,
   });
 
   const answer = await workflow.sendAnswerRequest({
@@ -388,7 +392,6 @@ export const defaultWithVectorGraphApp = graph.compile();
 export async function runDefaultWithVectorGraph(input) {
   return defaultWithVectorGraphApp.invoke(input);
 }
-
 
 
 

@@ -3,7 +3,7 @@ import { createTranslationAgent } from '../agents/AgentFactory.js';
 import { translationStrategy } from '../agents/strategies/translationStrategy.js';
 import ServerLoggingService from './ServerLoggingService.js';
 
-export async function translateQuestion({ text, desiredLanguage, selectedAI = 'openai', chatId = 'translate', translationContext = [] }) {
+export async function translateQuestion({ text, desiredLanguage, selectedAI = 'openai-gpt51', chatId = 'translate', translationContext = [] }) {
   try {
     const createAgentFn = async (agentType, id) => {
       return createTranslationAgent(agentType, id);

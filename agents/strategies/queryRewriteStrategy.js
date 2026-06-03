@@ -1,9 +1,24 @@
-import { PROMPT as QUERY_REWRITE_PROMPT } from '../prompts/queryRewriteAgentPrompt.js';
+import { PROMPT as QUERY_REWRITE_PROMPT, RETRY_PROMPT } from '../prompts/queryRewriteAgentPrompt.js';
 
 export const queryRewriteStrategy = {
   // request: { translationData: { translatedText, translatedLanguage, originalText, noTranslation, translationContext }, referringUrl, pageLanguage }
+  // Retry mode: when request.failedQuery is set, uses RETRY_PROMPT to generate a simpler query
   buildMessages: (request = {}) => {
-    const { translationData = {}, referringUrl = '', pageLanguage: pageLanguage = '' } = request;
+    const { translationData = {}, referringUrl = '', pageLanguage: pageLanguage = '', failedQuery } = request;
+
+    // Retry mode: use simplified prompt with the failed query
+    if (failedQuery) {
+      const translatedText = translationData.translatedText || translationData.originalText || '';
+      const system = { role: 'system', content: RETRY_PROMPT };
+      const userPayload = {
+        translatedText,
+        failedQuery,
+        pageLanguage,
+        referringUrl: referringUrl || null,
+      };
+      return [system, { role: 'user', content: JSON.stringify(userPayload) }];
+    }
+
     const system = { role: 'system', content: QUERY_REWRITE_PROMPT };
     // Provide a JSON blob to the user part so the agent can use structured inputs.
     // The prompt expects a top-level object: { translatedText, pageLanguage, referringUrl }

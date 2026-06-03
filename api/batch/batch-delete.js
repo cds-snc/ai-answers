@@ -2,18 +2,20 @@ import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { Chat } from '../../models/chat.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { requireObjectIdString, normalizeObjectId } from '../util/db-query.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchDeleteHandler(req, res) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { batchId } = req.query;
+  let { batchId } = req.query;
   if (!batchId) return res.status(400).json({ message: 'Batch ID is required' });
 
   try {
     await dbConnect();
+    batchId = requireObjectIdString(batchId, 'batch ID');
 
     const batch = await Batch.findById(batchId);
     if (!batch) return res.status(404).json({ message: 'Batch not found' });
@@ -23,9 +25,10 @@ async function batchDeleteHandler(req, res) {
 
     // For each batch item, if it references a chat, delete the chat (triggers Chat pre-delete to remove interactions)
     for (const item of items) {
-      if (item.chat) {
+      const chatId = normalizeObjectId(item.chat);
+      if (chatId) {
         try {
-          const chat = await Chat.findById(item.chat);
+          const chat = await Chat.findById(chatId);
           if (chat) {
             // Use document.deleteOne to ensure document middleware runs
             await chat.deleteOne();
@@ -50,5 +53,5 @@ async function batchDeleteHandler(req, res) {
 }
 
 export default function handler(req, res) {
-  return withProtection(batchDeleteHandler, authMiddleware, adminMiddleware)(req, res);
+  return withProtection(batchDeleteHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

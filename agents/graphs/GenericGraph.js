@@ -44,13 +44,14 @@ const graph = new StateGraph(GraphState);
 
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
-  logGraphEvent('info', 'node:init input', state.chatId, {
+  // 'Starting <Graph>' must be logged before 'node:init input' — ChatViewer uses it as the timeline anchor.
+  await ServerLoggingService.info('Starting GenericGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
   });
 
-  await ServerLoggingService.info('Starting DefaultGraph', state.chatId, {
+  logGraphEvent('info', 'node:init input', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
@@ -103,6 +104,7 @@ graph.addNode('translate', async (state) => {
   });
 
   const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
+  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
   const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
   logGraphEvent('info', 'node:translate output', state.chatId, out);
@@ -145,7 +147,9 @@ graph.addNode('contextNode', async (state) => {
 graph.addNode('answerNode', async (state) => {
   logGraphEvent('info', 'node:answer input', state.chatId, {
     selectedAI: state.selectedAI,
-    contextSummary: state.context?.summary || null,
+    contextTopic: state.context?.topic || null,
+    contextDepartment: state.context?.department || null,
+    searchResultsCount: Array.isArray(state.context?.searchResults) ? state.context.searchResults.length : 0,
   });
 
   const answer = await workflow.sendAnswerRequest({
@@ -223,7 +227,7 @@ graph.addNode('persistNode', async (state) => {
     finalCitationUrl,
     context: contextData,
     chatId: state.chatId,
-    workflow: 'DefaultGraph',
+    workflow: 'GenericGraph',
     pageLanguage: state.lang,
     responseTime: totalResponseTime,
     searchProvider: state.searchProvider,
@@ -250,10 +254,10 @@ graph.addEdge('answerNode', 'verifyNode');
 graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
-export const defaultGraphApp = graph.compile();
+export const genericGraphApp = graph.compile();
 
-export async function runDefaultGraph(input) {
-  return defaultGraphApp.invoke(input);
+export async function runGenericGraph(input) {
+  return genericGraphApp.invoke(input);
 }
 
-export default defaultGraphApp;
+export default genericGraphApp;

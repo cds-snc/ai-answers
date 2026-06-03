@@ -1,4 +1,4 @@
-# Architecture Quick Reference
+﻿# Architecture Quick Reference
 
 Read this before backend, pipeline, agent, or service work.
 
@@ -43,13 +43,15 @@ START → init → validate → redact → translate → contextNode → answerN
 
 ### Graph Variants (in `agents/graphs/`)
 
-| File | Difference from DefaultGraph |
-|------|------------------------------|
-| `DefaultGraph.js` | Primary graph |
-| `DefaultWithVectorGraph.js` | Adds vector similarity short-circuit before full run |
-| `InstantAndQAGraph.js` | Optimised for quick QA lookups via QuestionAnswerService |
-| `GPT5MiniDefaultGraph.js` | Forces `azure-gpt5-mini` (reasoning model) |
-| `registry.js` | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
+| File | UI label | How it works |
+|------|----------|-------------|
+| `GenericGraph.js` | Generic | Full pipeline: redact → translate → context → answer → verify → persist. No short-circuit. |
+| `DefaultWithVectorGraph.js` | Instant answer ON | Same as GenericGraph, but after translation checks `SimilarAnswerService.findSimilarAnswer()` for a vector-similarity match against previously answered questions **with an expert score of 100**. If a perfect-score match is reranker-certified, **reuses the previous answer verbatim** and skips the full context → answer pipeline. Falls through to the full pipeline if no match. |
+| `InstantAndQAGraph.js` | Instant answer with context ON | Same score-100 short-circuit check, and also runs `QuestionAnswerService.getSimilarQuestionsContext()` (score < 100) to inject **rich context** from expert-reviewed interactions: matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer when the short-circuit doesn't fire. |
+| `GenericWithQAGraph.js` | Past Q&A context ON | Like GenericGraph (no short-circuit) but inserts a `similarQuestions` node between context and answer that injects past imperfect (score < 100) Q&A as context via `QuestionAnswerService.getSimilarQuestionsContext()`. Lets you test the "learn from past mistakes" idea without any risk of serving a past answer verbatim. |
+| `registry.js` | — | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
+
+Model selection is decoupled from workflow — the `model.default` setting controls which model family is used. `SettingsService` (`services/SettingsService.js`) is the single source of truth: it loads all settings from the database on startup and seeds required defaults (defined in `SETTING_DEFAULTS`) if missing. The server injects the model into the graph input at request time (`chat-graph-run.js`). All UI pages fetch the default from the Settings API — never hardcode model defaults in components. See [Model family routing](#model-family-routing-agentfactoryjs) for how each pipeline step maps to a specific model within the family.
 
 ## Prompt Assembly (`agents/prompts/systemPrompt.js`)
 
@@ -84,7 +86,22 @@ const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenar
 
 Key exports: `getModelConfig(provider, modelName)`, `getEmbeddingModelConfig(provider, modelName)`
 
-Providers: Azure OpenAI (GPT-4.1, GPT-5-mini), OpenAI, Anthropic Claude. Defaults: temperature 0.0, maxTokens 1024, timeout 60s.
+Providers: Azure OpenAI (GPT-5.1, GPT-5-mini). Initial configuration only (no graph workflow): Anthropic Claude via Bedrock, Cohere via Bedrock. Defaults: temperature 0.0, maxTokens 1024, timeout 60s.
+
+### Model family routing (`AgentFactory.js`)
+
+The "Default model family" setting selects a model **family**, not a single model. `AgentFactory` automatically routes each pipeline step to the appropriate model within that family:
+
+| Pipeline step | Model used |
+|---------------|-----------|
+| PII redaction | Mini (e.g. GPT-5-mini) |
+| Translation | Mini |
+| Query rewrite | Mini |
+| Context / search | Full model (e.g. GPT-5.1) |
+| Answer generation | Full model |
+| Evaluation | Separate — `gpt-4.1-mini`, not affected by the model family setting |
+
+This means selecting "Azure GPT-5.1" uses GPT-5.1 for context and answer generation, while supporting steps automatically use GPT-5-mini for cost and speed. The admin does not need to configure this — it is handled internally by `AgentFactory`.
 
 ## Data Models (`models/`)
 
@@ -126,3 +143,6 @@ Each file exports `async function handler(req, res)`. Organised by domain:
 | `api/user/` | User management |
 | `api/vector/` | Vector reinitialise, similar chats, stats |
 | `api/util/` | Shared utilities (backoff, cookies, connectivity, URL check) |
+
+
+

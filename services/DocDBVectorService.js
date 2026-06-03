@@ -300,7 +300,7 @@ class DocDBVectorService {
     if (!this.isInitialized) await this.initialize();
 
     // Use top-level EmbeddingService import to format and embed the questions
-    const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
+    const formatted = EmbeddingService.buildQuestionsEmbeddingText(questions);
     if (!formatted || !formatted.length) return [];
 
     const embeddingClient = EmbeddingService.createEmbeddingClient(provider, modelName);
@@ -309,11 +309,28 @@ class DocDBVectorService {
     const embeddings = await embeddingClient.embedDocuments([formatted]);
 
     // Build aggregation pipelines for each embedding (do not run them yet)
-    const pageLang = desiredPageLang(language);
+    const pageLang = language ? desiredPageLang(language) : null;
+    ServerLoggingService.info('matchQuestions start', 'DocDBVectorService', {
+      questionCount: questions.length,
+      provider,
+      modelName: modelName || null,
+      k,
+      threshold,
+      expertFeedbackRating,
+      expertFeedbackComparison,
+      language,
+      pageLang,
+    });
+    const hasPostSearchFilters = Boolean(pageLang) || typeof expertFeedbackRating === 'number';
+    const engineK = hasPostSearchFilters ? Math.max(k * 20, 100) : k * 2;
+    ServerLoggingService.info('matchQuestions search config', 'DocDBVectorService', {
+      hasPostSearchFilters,
+      engineK,
+    });
     const pipelines = embeddings.map((emb) => {
       const pipeline = [];
-      pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } });
-      pipeline.push({ $limit: k * 2 });
+      pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: engineK, efSearch: 200 } } });
+      pipeline.push({ $limit: engineK });
       if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
       pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
       pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
@@ -347,33 +364,52 @@ class DocDBVectorService {
     }));
 
     const allDocs = await Promise.all(aggPromises);
+    ServerLoggingService.info('matchQuestions pipeline complete', 'DocDBVectorService', {
+      docsPerQuestion: allDocs.map((docs) => (Array.isArray(docs) ? docs.length : 0)),
+    });
 
-    // Map each pipeline result to the simplified output shape
-    const resultsPerQuestion = allDocs.map((docs) => {
-      const topDocs = Array.isArray(docs) ? docs.slice(0, k) : [];
-      const mapped = topDocs.map((r) => {
+    // Map each pipeline result to the simplified output shape. The
+    // $search.vectorSearch stage does not surface a similarity score, so we
+    // re-score every candidate against the query embedding (the question vector
+    // is already projected as questionsEmbedding). This lets us (a) enforce the
+    // similarity threshold when one is requested and (b) return hits in true
+    // similarity order. No expert-feedback promotion: relevance decides order.
+    const resultsPerQuestion = allDocs.map((docs, idx) => {
+      const queryEmb = embeddings[idx];
+      const candidates = Array.isArray(docs) ? docs : [];
+      const mapped = [];
+      for (const r of candidates) {
+        let sim = 0;
+        try {
+          sim = cosineSimilarity(queryEmb, r.questionsEmbedding) ?? 0;
+        } catch (err) {
+          ServerLoggingService.error('Error computing cosine similarity (matchQuestions)', 'DocDBVectorService', err);
+        }
+        if (threshold !== null && sim < threshold) continue;
         const expertFeedbackId = r.expertFeedbackId || null;
-        return {
+        mapped.push({
           id: r._id?.toString?.() || null,
           interactionId: r.interactionId?.toString?.() || r.interactionId,
           expertFeedbackId,
           expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
-          similarity: null,
+          similarity: sim,
           citation: {
             providedCitationUrl: r.providedCitationUrl || null,
             aiCitationUrl: r.aiCitationUrl || null,
             citationHead: r.citationHead || null,
           },
-        };
-      });
-
-      const withEF = mapped.find((s) => s.expertFeedbackId);
-      if (withEF) {
-        const rest = mapped.filter((s) => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
-        return [withEF, ...rest];
+        });
       }
-
-      return mapped.slice(0, k);
+      mapped.sort((a, b) => b.similarity - a.similarity);
+      const top = mapped.slice(0, k);
+      ServerLoggingService.info('matchQuestions final result', 'DocDBVectorService', {
+        questionIndex: idx,
+        candidateCount: candidates.length,
+        afterThreshold: mapped.length,
+        finalCount: top.length,
+        threshold,
+      });
+      return top;
     });
 
     return resultsPerQuestion;
@@ -394,6 +430,24 @@ class DocDBVectorService {
       ...this.filterQuery,
     });
 
+    const questionEmbeddings = await this.collection.countDocuments({
+      questionEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
+    const questionsEmbeddings = await this.collection.countDocuments({
+      questionsEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
+    const answerEmbeddings = await this.collection.countDocuments({
+      answerEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
     const parentIds = (await this.collection.find({ interactionId: { $in: validInteractionIds } })
       .project({ _id: 1 }).toArray()).map(e => e._id);
 
@@ -406,6 +460,9 @@ class DocDBVectorService {
     ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
       isInitialized: this.isInitialized,
       embeddings,
+      questionEmbeddings,
+      questionsEmbeddings,
+      answerEmbeddings,
       sentences,
       searches,
       qaSearches,
@@ -416,6 +473,9 @@ class DocDBVectorService {
     return {
       isInitialized: this.isInitialized,
       embeddings,
+      questionEmbeddings,
+      questionsEmbeddings,
+      answerEmbeddings,
       sentences,
       searches,
       qaSearches,

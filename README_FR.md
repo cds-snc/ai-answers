@@ -4,6 +4,7 @@ Réponses IA est un agent de clavardage IA spécialisé conçu pour les sites We
 
 ### Documentation du système
 - **[SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)** - Fiche système complète avec architecture technique, mesures de sécurité, cadre d'évaluation et détails de gouvernance
+- **[Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)**
 
 ### Documentation pour développeurs
 - **[docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)** - Architecture LangGraph complète et implémentation étape par étape du pipeline

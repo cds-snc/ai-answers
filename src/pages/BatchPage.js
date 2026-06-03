@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsContainer, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -70,13 +70,12 @@ const BatchPage = ({ lang = 'en' }) => {
       BatchService.runBatch({
         entries,
         batchName: persisted?.name || batchId,
-        selectedAI: persisted?.aiProvider || 'openai',
+        selectedAI: persisted?.aiProvider || 'openai-gpt51',
         lang: persisted?.pageLanguage || language || 'en',
         searchProvider: persisted?.searchProvider || '',
         // Prefer the workflow explicitly provided by the caller (restart), fall back to the persisted value
         workflow: workflowParam || persisted?.workflow || 'Default',
         batchId,
-        concurrency: 8, 
       }).then(async ({ summary }) => {
         try {
           // Preserve batch metadata when updating final status, exclude items and _id
@@ -114,7 +113,7 @@ const BatchPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('batch.title')}</h1>
 
       <nav className="mb-400">
@@ -147,6 +146,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
       <section id="processed-evaluation" className="mb-600">
         <h2 className="mt-400 mb-400">{t('batch.sections.processed.title')}</h2>
+        <p className="mb-400">{t('batch.sections.processed.description')}</p>
         <BatchList
           onProcess={onProcess}
           onCancel={onCancel}
@@ -164,4 +164,3 @@ const BatchPage = ({ lang = 'en' }) => {
 };
 
 export default BatchPage;
-

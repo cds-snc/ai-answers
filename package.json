@@ -3,16 +3,15 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "proxy": "http://localhost:3001",
-  "dependencies": {
+  "dependencies": {   
     "@anthropic-ai/sdk": "^0.33.1",
     "@aws-sdk/client-bedrock-runtime": "^3.981.0",
     "@aws-sdk/client-s3": "^3.981.0",
     "@aws-sdk/client-sts": "^3.981.0",
     "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@cdssnc/gcds-components": "^0.26.1",
-    "@cdssnc/gcds-components-react": "^0.34.3",
+    "@gcds-core/components": "^1.2.0",
+    "@gcds-core/components-react": "^1.2.0",
     "@cdssnc/gcds-utility": "^1.4.0",
     "@fingerprintjs/fingerprintjs": "^3.4.2",
     "@fortawesome/fontawesome-free": "^6.7.2",
@@ -21,7 +20,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@langchain/anthropic": "^1.3.14",
-    "@langchain/cohere": "^1.0.2",
+    "@langchain/cohere": "1.0.2",
     "@langchain/core": "^1.1.19",
     "@langchain/langgraph": "^1.1.3",
     "@langchain/openai": "^1.2.4",
@@ -31,7 +30,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "aws4fetch": "^1.0.20",
-    "axios": "^1.13.5",
+    "axios": "^1.16.0",
     "bcryptjs": "^3.0.2",
     "bot-detector": "^1.0.5",
     "buffer": "^6.0.3",
@@ -52,7 +51,7 @@
     "dotenv": "^16.5.0",
     "duck-duck-scrape": "^2.2.6",
     "exceljs": "^4.4.0",
-    "express": "^4.22.1",
+    "express": "^4.22.2",
     "express-session": "^1.18.2",
     "fast-csv": "^5.0.5",
     "flat": "^6.0.1",
@@ -70,7 +69,8 @@
     "lucide-react": "^0.454.0",
     "moment": "^2.30.1",
     "mongodb": "^6.9.0",
-    "mongoose": "^8.17.1",
+    "mongoose": "^8.22.1",
+    "nodemon": "^3.1.11",
     "notifications-node-client": "^8.2.1",
     "openai": "^4.73.1",
     "otplib": "^12.0.1",
@@ -86,7 +86,6 @@
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.1.5",
-    "react-scripts": "^5.0.1",
     "recharts": "^2.15.3",
     "redis": "^5.10.0",
     "similarity": "^1.2.1",
@@ -94,18 +93,17 @@
     "streamsaver": "^2.0.6",
     "turndown": "^7.2.1",
     "undici": "^7.24.3",
-    "uuid": "^11.0.5",
+    "uuid": "^14.0.0",
     "vitest": "^3.1.4",
-    "web-vitals": "^2.1.4",
-    "xlsx": "^0.18.5"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "vite --host 0.0.0.0",
+    "build": "vite build",
     "test": "vitest run",
     "test:services": "vitest run services/__tests__ --reporter verbose",
-    "eject": "react-scripts eject",
     "start-server": "node server/server.js",
+    "start-server:watch": "nodemon --watch server --watch api --watch agents --watch services --watch models --watch middleware --ext js,json --exec node server/server.js",
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
     "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
@@ -115,11 +113,6 @@
     "test:e2e:production": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment production",
     "test:e2e:headed:sandbox": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment sandbox",
     "test:e2e:headed:production": "cross-env NODE_ENV=test TEST_HEADED=true dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1 -Environment production"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
   },
   "browserslist": {
     "production": [
@@ -133,15 +126,32 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "postcss-svgo": {
+      "svgo": "2.8.1"
+    },
+    "uuid": "$uuid",
+    "storybook": "8.6.17",
+    "@storybook/core": "8.6.17",
+    "@storybook/instrumenter": "8.6.17",
+    "@storybook/test": "8.6.17",
+    "@storybook/addon-a11y": "8.6.17",
+    "@storybook/addon-highlight": "8.6.17",
+    "@storybook/theming": "8.6.17"
+  },
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.9",
     "@babel/preset-env": "^7.25.4",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@tktco/node-actionlint": "^1.6.0",
     "concurrently": "^9.0.1",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^7.4.4",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
+    "esbuild": "^0.28.0",
     "get-port": "^7.1.0",
-    "mongodb-memory-server": "^10.1.4"
+    "mongodb-memory-server": "^10.1.4",
+    "vite": "^8.0.14"
   }
 }

@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
+
+const normalizeChatTransport = (value) => (
+  ['sse', 'ndjson'].includes(value) ? value : 'sse'
+);
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -16,13 +21,15 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
-  // New state for provider (openai | azure)
-  const [provider, setProvider] = useState('openai');
-  const [savingProvider, setSavingProvider] = useState(false);
-
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
+  const [defaultWorkflow, setDefaultWorkflow] = useState('GenericGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
+
+  // Default model setting — decoupled from workflow so model upgrades are a Settings change
+  const [defaultModel, setDefaultModel] = useState('openai-gpt51');
+  const [savingDefaultModel, setSavingDefaultModel] = useState(false);
+  const [chatTransport, setChatTransport] = useState('sse');
+  const [savingChatTransport, setSavingChatTransport] = useState(false);
 
 
 
@@ -73,14 +80,16 @@ const SettingsPage = ({ lang = 'en' }) => {
       setVectorServiceType(type);
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
-      // Load provider setting
-      const providerSetting = await DataStoreService.getSetting('provider', 'openai');
-      setProvider(providerSetting);
       // Load default workflow setting
-      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
+      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'GenericGraph');
       // Validate default workflow against known options
-      const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5OneDefaultGraph'];
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
+      const allowedWorkflows = WORKFLOW_VALUES;
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'GenericGraph');
+      // Load default model setting (seeded server-side on startup if missing)
+      const defaultModelSetting = await DataStoreService.getSetting('model.default', AVAILABLE_MODELS[0].value);
+      setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
+      const chatTransportSetting = await DataStoreService.getSetting('chat.transport', 'sse');
+      setChatTransport(normalizeChatTransport(chatTransportSetting));
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
@@ -287,19 +296,6 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  // Handler for provider setting
-  const handleProviderChange = async (e) => {
-    const newValue = e.target.value;
-    setProvider(newValue);
-    setSavingProvider(true);
-    try {
-      const current = await saveAndVerify('provider', newValue);
-      setProvider(current);
-    } finally {
-      setSavingProvider(false);
-    }
-  };
-
   const handleDeploymentModeChange = async (e) => {
     const newMode = e.target.value;
     setDeploymentMode(newMode);
@@ -369,7 +365,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title')}</h1>
       <nav className="mb-400">
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
@@ -428,19 +424,6 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="documentdb">{t('settings.vectorServiceType.documentdb')}</option>
           </select>
 
-          <label htmlFor="provider" className="mb-200 display-block mt-400">
-            {t('settings.providerLabel')}
-          </label>
-          <select
-            id="provider"
-            value={provider}
-            onChange={handleProviderChange}
-            disabled={savingProvider}
-          >
-            <option value="openai">{t('settings.provider.openai')}</option>
-            <option value="azure">{t('settings.provider.azure')}</option>
-          </select>
-
           <label htmlFor="default-workflow" className="mb-200 display-block mt-400">
             {t('settings.defaultWorkflow.label')}
           </label>
@@ -452,19 +435,65 @@ const SettingsPage = ({ lang = 'en' }) => {
               setDefaultWorkflow(v);
               setSavingDefaultWorkflow(true);
               try {
-                const allowedWorkflows = ['DefaultWithVectorGraph', 'InstantAndQAGraph', 'DefaultGraph', 'GPT5OneDefaultGraph'];
+                const allowedWorkflows = WORKFLOW_VALUES;
                 const current = await saveAndVerify('workflow.default', v);
-                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
+                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'GenericGraph');
               } finally {
                 setSavingDefaultWorkflow(false);
               }
             }}
             disabled={savingDefaultWorkflow}
           >
-            <option value="DefaultGraph">DefaultGraph</option>
-            <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
-            <option value="InstantAndQAGraph">InstantAndQAGraph</option>
-            <option value="GPT5OneDefaultGraph">GPT5OneDefaultGraph</option>
+            {WORKFLOWS.map(w => (
+              <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
+            ))}
+          </select>
+
+          <label htmlFor="chat-transport" className="mb-200 display-block mt-400">
+            {t('settings.chatTransport.label')}
+          </label>
+          <select
+            id="chat-transport"
+            value={chatTransport}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setChatTransport(v);
+              setSavingChatTransport(true);
+              try {
+                const current = await saveAndVerify('chat.transport', v);
+                setChatTransport(normalizeChatTransport(current));
+              } finally {
+                setSavingChatTransport(false);
+              }
+            }}
+            disabled={savingChatTransport}
+          >
+            <option value="sse">{t('settings.chatTransport.options.sse')}</option>
+            <option value="ndjson">{t('settings.chatTransport.options.ndjson')}</option>
+          </select>
+
+          <label htmlFor="default-model" className="mb-200 display-block mt-400">
+            {t('settings.defaultModel.label')}
+          </label>
+          <select
+            id="default-model"
+            value={defaultModel}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setDefaultModel(v);
+              setSavingDefaultModel(true);
+              try {
+                const current = await saveAndVerify('model.default', v);
+                setDefaultModel(current || 'openai-gpt51');
+              } finally {
+                setSavingDefaultModel(false);
+              }
+            }}
+            disabled={savingDefaultModel}
+          >
+            {AVAILABLE_MODELS.map(m => (
+              <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+            ))}
           </select>
 
         </div>

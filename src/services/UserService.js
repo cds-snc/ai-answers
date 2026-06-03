@@ -52,9 +52,9 @@ const UserService = {
      * @returns {Promise<Object>}
      */
     async delete(userId) {
-        const response = await AuthService.fetch(getApiUrl('user-users'), {
-            method: 'DELETE',
-            body: JSON.stringify({ userId })
+        const url = `${getApiUrl('user-users')}?userId=${encodeURIComponent(userId)}`;
+        const response = await AuthService.fetch(url, {
+            method: 'DELETE'
         });
         if (!response.ok) {
             throw new Error('Failed to delete user');

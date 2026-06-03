@@ -30,6 +30,25 @@ describe('api/eval handlers', () => {
     }
   });
 
+  it('eval-get uses the existing error contract for invalid interaction ids', async () => {
+    const req = {
+      method: 'POST',
+      body: { interactionId: { $ne: 'anything' } },
+      isAuthenticated: vi.fn(() => true),
+      user: { role: 'partner', userId: 'test-partner' },
+      path: '/api/eval/eval-get'
+    };
+    const res = makeRes();
+
+    await evalGet(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Failed to retrieve evaluation',
+      error: 'Invalid interactionId'
+    });
+  });
+
   it('eval-delete responds or throws with minimal req/res', async () => {
     const req = { method: 'POST', body: { interactionId: 'deadbeefdeadbeefdeadbeef' } };
     const res = makeRes();
@@ -52,4 +71,3 @@ describe('api/eval handlers', () => {
     }
   });
 });
-

@@ -115,6 +115,7 @@ const ChatInterface = ({
   //                    (skipped if user navigated away — ChatAppContainer handles notification)
   useEffect(() => {
     if (!prevIsLoadingRef.current && isLoading) {
+      setIsTextareaFocused(false);
       if (loadingContainerRef.current) {
         loadingContainerRef.current.focus();
       }
@@ -601,7 +602,7 @@ const ChatInterface = ({
                           t={t}
                         />
                         <DownloadPanel message={message} t={t} />
-                        <EvalPanel message={message} t={t} />
+                        <EvalPanel message={message} t={t} lang={lang} />
                       </div>
                     </>
                   )}

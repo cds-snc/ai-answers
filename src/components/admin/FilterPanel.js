@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import $ from 'jquery';
-import moment from 'moment';
+import moment from '../../utils/momentSetup.js';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 
@@ -13,7 +13,8 @@ const FilterPanel = ({
   isVisible = false,
   autoApply = false,
   applyButtonText = null,
-  applyDisabled = false
+  applyDisabled = false,
+  defaultUserType = 'all'
 }) => {
   const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
@@ -65,7 +66,7 @@ const FilterPanel = ({
   const [department, setDepartment] = useState('');
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
-  const [userType, setUserType] = useState('all');
+  const [userType, setUserType] = useState(defaultUserType);
   const [answerType, setAnswerType] = useState([]);
   const [partnerEval, setPartnerEval] = useState([]);
   const [aiEval, setAiEval] = useState([]);
@@ -82,7 +83,7 @@ const FilterPanel = ({
         department: '',
         urlEn: '',
         urlFr: '',
-        userType: 'all',
+        userType: defaultUserType,
         answerType: 'all',
         partnerEval: 'all',
         aiEval: 'all'
@@ -95,6 +96,12 @@ const FilterPanel = ({
   // Initialize daterangepicker
   useEffect(() => {
     if (!dateRangePickerRef.current || dateRangePickerInstance.current) return;
+    if (typeof window !== 'undefined') {
+      window.moment = moment;
+    }
+    if (typeof globalThis !== 'undefined') {
+      globalThis.moment = moment;
+    }
 
     const locale = t('locale') === 'fr' ? 'fr' : 'en';
     const isFrench = locale === 'fr';
@@ -198,10 +205,13 @@ const FilterPanel = ({
   // Department options
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
+    { value: 'AAFC-AAC', label: 'AAFC-AAC' },
+    { value: 'BAC-LAC', label: 'BAC-LAC' },
     { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
     { value: 'CEO-BEC', label: 'CEO-BEC' },
     { value: 'CDS-SNC', label: 'CDS-SNC' },
     { value: 'CRA-ARC', label: 'CRA-ARC' },
+    { value: 'DND-MDN', label: 'DND-MDN' },
     { value: 'ECCC', label: 'ECCC' },
     { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
     { value: 'FIN', label: 'FIN' },
@@ -215,7 +225,8 @@ const FilterPanel = ({
     { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
     { value: 'SAC-ISC', label: 'SAC-ISC' },
     { value: 'StatCan', label: 'StatCan' },
-    { value: 'TBS-SCT', label: 'TBS-SCT' }
+    { value: 'TBS-SCT', label: 'TBS-SCT' },
+    { value: 'VAC-ACC', label: 'VAC-ACC' }
   ];
 
   // User type options
@@ -282,7 +293,7 @@ const FilterPanel = ({
     setDepartment('');
     setUrlEn('');
     setUrlFr('');
-    setUserType('all');
+    setUserType(defaultUserType);
     setAnswerType([]);
     setPartnerEval([]);
     setAiEval([]);
@@ -328,7 +339,7 @@ const FilterPanel = ({
       </summary>
       <div className="filter-panel-content">
         <div className="filter-grid">
-          {/* Left column - Date Range and URL Filters */}
+          {/* Left column - Date Range and Users */}
           <div className="filter-column">
             <div className="filter-row">
               <label htmlFor="dateRangePicker" className="filter-label">
@@ -345,31 +356,21 @@ const FilterPanel = ({
             </div>
 
             <div className="filter-row">
-              <label htmlFor="url-en" className="filter-label">
-                {t('admin.filters.urlEn') || 'URL (EN)'}
+              <label htmlFor="user-type" className="filter-label">
+                {t('admin.filters.users') || 'User Type'}
               </label>
-              <input
-                type="text"
-                id="url-en"
-                value={urlEn}
-                onChange={(e) => setUrlEn(e.target.value)}
-                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                className="filter-input"
-              />
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="url-fr" className="filter-label">
-                {t('admin.filters.urlFr') || 'URL (FR)'}
-              </label>
-              <input
-                type="text"
-                id="url-fr"
-                value={urlFr}
-                onChange={(e) => setUrlFr(e.target.value)}
-                placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                className="filter-input"
-              />
+              <select
+                id="user-type"
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                className="filter-select"
+              >
+                {userTypeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -393,25 +394,8 @@ const FilterPanel = ({
               </select>
             </div>
 
-            <div className="filter-row">
-              <label htmlFor="user-type" className="filter-label">
-                {t('admin.filters.users') || 'User Type'}
-              </label>
-              <select
-                id="user-type"
-                value={userType}
-                onChange={(e) => setUserType(e.target.value)}
-                className="filter-select"
-              >
-                {userTypeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Advanced Filters - Collapsible (Closed by default) */}
+            <div className="filter-label">{t('admin.filters.filterOptions')}</div>
             <details
               className="filter-advanced-details"
               open={showAdvancedFilters}
@@ -421,6 +405,32 @@ const FilterPanel = ({
                 {t('admin.filters.showAdvanced')}
               </summary>
               <div className="filter-advanced-section mt-100">
+                <div className="filter-row">
+                  <label htmlFor="url-en" className="filter-label">
+                    {t('admin.filters.urlEn') || 'URL (EN)'}
+                  </label>
+                  <input
+                    type="text"
+                    id="url-en"
+                    value={urlEn}
+                    onChange={(e) => setUrlEn(e.target.value)}
+                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                    className="filter-input"
+                  />
+                </div>
+                <div className="filter-row">
+                  <label htmlFor="url-fr" className="filter-label">
+                    {t('admin.filters.urlFr') || 'URL (FR)'}
+                  </label>
+                  <input
+                    type="text"
+                    id="url-fr"
+                    value={urlFr}
+                    onChange={(e) => setUrlFr(e.target.value)}
+                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                    className="filter-input"
+                  />
+                </div>
                 <div className="filter-row">
                   <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
                     <summary className="filter-label">

@@ -1,14 +1,15 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { requireObjectIdString } from '../util/db-query.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchRetrieveHandler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { batchId } = req.query;
+    let { batchId } = req.query;
 
     if (!batchId) {
         return res.status(400).json({ message: 'Batch ID is required' });
@@ -16,6 +17,7 @@ async function batchRetrieveHandler(req, res) {
 
     try {
         await dbConnect();
+        batchId = requireObjectIdString(batchId, 'batch ID');
 
         const batch = await Batch.findById(batchId);
         if (!batch) {
@@ -37,5 +39,5 @@ async function batchRetrieveHandler(req, res) {
 }
 
 export default function handler(req, res) {
-    return withProtection(batchRetrieveHandler, authMiddleware, adminMiddleware)(req, res);
+    return withProtection(batchRetrieveHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

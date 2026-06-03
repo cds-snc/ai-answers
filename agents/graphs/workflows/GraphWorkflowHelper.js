@@ -62,6 +62,78 @@ export class GraphWorkflowHelper {
     return resp;
   }
 
+  // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on
+  // the translated English text so manipulation/threats/PII written in languages
+  // other than EN/FR are still caught. AI PII check only runs when the source
+  // language is not EN/FR (cost gate); it fails open on errors so a flaky PII
+  // agent can't take down the pipeline — stage 1 already ran on the original.
+  // Two source-language signals are hard-blocked here:
+  //   - 'zxx' = encoded/obfuscated input (Morse/Base64/leetspeak/etc). Working
+  //     assumption: legitimate users don't submit coded text, so the label is
+  //     the signal.
+  //   - 'und' = unsupported language (currently Canadian Indigenous languages).
+  //     Translation quality is too poor to proceed safely until approved
+  //     mechanisms are in place. Logged separately so we can monitor false
+  //     positives independently from the zxx case.
+  // Both blocks are only as good as the translator's labeling — false positives
+  // will reject legit users, which is why we log every trigger for auditing.
+  async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
+    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
+    if (sourceLang === 'zxx') {
+      await ServerLoggingService.info('postTranslateGuard zxx hard-block', chatId, {
+        originalText: translationData?.originalText,
+        translatedText: translationData?.translatedText,
+        translatedLanguage: translationData?.translatedLanguage,
+      });
+      throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null);
+    }
+    if (sourceLang === 'und') {
+      await ServerLoggingService.info('postTranslateGuard und hard-block (unsupported language)', chatId, {
+        originalText: translationData?.originalText,
+        translatedText: translationData?.translatedText,
+        translatedLanguage: translationData?.translatedLanguage,
+      });
+      throw new RedactionError('Blocked unsupported language after translation', '#############', null);
+    }
+
+    const translatedText = translationData?.translatedText;
+    if (!translatedText) return;
+
+    const previousLang = redactionService.currentLang;
+    try {
+      await redactionService.ensureInitialized('en');
+      const { redactedItems } = redactionService.redactText(translatedText, 'en');
+      const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
+      if (redactedItems.some(item => blockingTypes.includes(item.type))) {
+        throw new RedactionError('Blocked content detected after translation', '#############', redactedItems);
+      }
+    } finally {
+      if (previousLang && previousLang !== 'en') {
+        await redactionService.ensureInitialized(previousLang);
+      }
+    }
+
+    const isEnOrFr = ['en', 'eng', 'fr', 'fra'].includes(sourceLang);
+    if (isEnOrFr) return;
+
+    let piiResult;
+    try {
+      piiResult = await checkPII({ chatId, message: translatedText, agentType: selectedAI });
+    } catch (error) {
+      await ServerLoggingService.warn('postTranslateGuard checkPII failed - failing open', chatId, {
+        error: error?.message || String(error),
+      });
+      return;
+    }
+
+    if (piiResult?.blocked) {
+      throw new RedactionError('Blocked content detected after translation', '#############', null);
+    }
+    if (typeof piiResult?.pii === 'string' && piiResult.pii.length > 0) {
+      throw new RedactionError('PII detected in user message', piiResult.pii, null);
+    }
+  }
+
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent
   buildTranslationContext(conversationHistory = []) {
     if (!Array.isArray(conversationHistory)) return [];
@@ -70,9 +142,8 @@ export class GraphWorkflowHelper {
       .map(m => m.text || '');
   }
 
-  determineOutputLang(pageLang, translationData) {
-    const originalLang = translationData?.originalLanguage || 'eng';
-    return pageLang === 'fr' ? 'fra' : originalLang;
+  determineOutputLang(translationData) {
+    return translationData?.originalLanguage || 'eng';
   }
 
   async applyScenarioOverride({ context, departmentKey, overrideUserId, chatId }) {
@@ -140,7 +211,7 @@ export class GraphWorkflowHelper {
       searchQuery: searchResult.query || searchResult.searchQuery || contextPayload.searchResults?.query || '',
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
-      outputLang: this.determineOutputLang(lang, translationData),
+      outputLang: this.determineOutputLang(translationData),
       originalLang: translationData?.originalLanguage || lang,
       originalUserMessage: userMessage,
     };
@@ -175,7 +246,7 @@ export class GraphWorkflowHelper {
       const context = { ...lastMessage.interaction.context };
       context.translatedQuestion = translationData?.translatedText || userMessage;
       context.originalLang = translationData?.originalLanguage || lang;
-      context.outputLang = this.determineOutputLang(lang, translationData);
+      context.outputLang = this.determineOutputLang(translationData);
       const departmentKey = department || context.department;
       const updatedContext = await this.applyScenarioOverride({
         context,
@@ -263,9 +334,10 @@ export class GraphWorkflowHelper {
       selectedAI,
       pageLanguage: lang || null,
       detectedLanguage: detectedLang || null,
-    }); // removed searchProvider arg as service didn't seem to take it, or it was implicit? original helper passed it.
-    // Checked service: findSimilarAnswer({ chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage })
-    // It does NOT take searchProvider. So that's fine.
+      // Short-circuit must only fire on perfect-score (100) past answers. The vector layer
+      // defaults to expertFeedbackComparison='eq', so this is an exact-match filter.
+      requestedRating: 100,
+    });
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
@@ -326,8 +398,7 @@ export class GraphWorkflowHelper {
       provider: selectedAI,
       message: message,
       conversationHistory,
-      // Ensure the generator receives the normalized desired output language
-      lang: context.outputLang || context.originalLang || lang,
+      lang,
       department: context.department,
       topic: context.topic,
       topicUrl: context.topicUrl,

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
 import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
 import { useHasAnyRole } from "../RoleBasedUI.js";
-import "../../styles/App.css";
 import { useTranslations } from "../../hooks/useTranslations.js";
 import FeedbackService from "../../services/FeedbackService.js";
 

@@ -85,8 +85,9 @@ Paused or temporarily open - ⚠️DOWNLOAD to check for specific q
 - paused https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/self-employed.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/travailleurs-autonomes.html
 - paused https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/start-visa.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/immigrer-canada/visa-demarrage.html
 
-### Temporary measures - supports for urgent needs of people facing extraordinary circumstances (conflicts, disasters, crises) in specific countries
+### Temporary measures - supports for urgent needs of people facing extraordinary circumstances (conflicts, disasters, crises, disease) in specific countries
 https://www.canada.ca/en/immigration-refugees-citizenship/services/special-measures/situations-abroad.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/mesures-speciales/situation-endroits-suivants.html
+- Ebola Democratic Republic of Congo (DRC), South Sudan and Uganda https://www.canada.ca/en/immigration-refugees-citizenship/services/special-measures/ebola-2026.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/mesures-speciales/ebola-2026.html
 
 ### Immigration levels
 * Q on immigration levels in Canada (foreign students, temporary workers, new PR, etc.) ⚠️DOWNLOAD https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html

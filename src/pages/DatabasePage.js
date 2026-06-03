@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { formatNumber } from '../utils/numberFormat.js';
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
@@ -468,7 +469,7 @@ const DatabasePage = ({ lang }) => {
 
 
   return (
-    <GcdsContainer size="xl" centered>
+    <GcdsContainer layout="page">
       <GcdsHeading tag="h1">{t('admin.database.title')}</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
@@ -491,7 +492,7 @@ const DatabasePage = ({ lang }) => {
               {Object.entries(tableCounts).map(([table, count]) => (
                 <tr key={table}>
                   <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</td>
-                  <td style={{ textAlign: 'right' }}>{count}</td>
+                  <td style={{ textAlign: 'right' }}>{formatNumber(count, lang)}</td>
                 </tr>
               ))}
             </tbody>

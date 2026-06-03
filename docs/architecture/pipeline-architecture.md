@@ -249,6 +249,15 @@ The graph maintains state across all nodes with these key fields:
 
 **File:** [`agents/graphs/services/translationService.js`](../../agents/graphs/services/translationService.js)
 
+#### Post-translation guardrail (non-EN/FR only)
+
+After translation, `GraphWorkflowHelper.postTranslateGuard()` runs a second-stage check on the translated English text:
+
+- **All languages:** word-list/regex redaction re-runs on the translated text to catch manipulation, threats, or profanity that the EN/FR word lists couldn't catch in the original
+- **Non-EN/FR source languages only:** AI PI detection runs again on the translated text — threats or personal information written in another language may only be recognizable once rendered in English
+
+This is a second-stage guardrail, not a replacement for the `redact` node. The `redact` node always runs first (on the original text, in the original language); `postTranslateGuard` adds an extra pass for languages where the first-pass word lists have limited coverage.
+
 ---
 
 ### 5. Short-Circuit Check (`shortCircuit` node)
@@ -256,22 +265,26 @@ The graph maintains state across all nodes with these key fields:
 **Type:** AI-powered (vector similarity + reranking)
 **Status:** `generatingAnswer`
 
-**Purpose:** Detect if a similar question was already answered (runs BEFORE context derivation)
+**Purpose:** Detect if a similar question was already answered **perfectly** (runs BEFORE context derivation)
 
 **Process:**
 1. Skip short-circuit if conversation already has prior AI replies
 2. Generate embedding for current question
-3. Search embeddings database for similar questions
-4. Use reranker agent (GPT-4 mini) to score candidates
-5. If high similarity match found (threshold met):
-   - Set `shortCircuitPayload` with existing answer
+3. Search embeddings database for similar questions **filtered to `expertFeedback.totalScore === 100`** (perfect-score past answers only)
+4. Use reranker agent to validate candidates against the current question
+5. If a perfect-score candidate passes the reranker's `allPass(checks)` verdict:
+   - Set `shortCircuitPayload` with the existing answer
    - Skip directly to `verifyNode` (bypass context and answer generation)
 6. Otherwise: proceed to `contextNode`
+
+**Why score=100 only:** Short-circuit serves a past answer verbatim with no opportunity for correction. Anything less than a perfect expert score means there is at least one flagged issue in that answer, so it must not be served as-is. The expert-score filter is enforced at the vector retrieval layer (`requestedRating: 100` in `GraphWorkflowHelper.checkSimilarAnswer`).
 
 **Benefits:**
 - Faster responses (no context derivation or answer generation needed)
 - Lower AI costs
-- Consistent answers to similar questions
+- Consistent, high-quality answers to similar questions
+
+**Note:** `GenericWithQAGraph` and `InstantAndQAGraph` separately surface score-<100 past answers as **context** for the answer node (via a `similarQuestions` node, not via short-circuit) so the model can see "here's what was wrong last time." See `QuestionAnswerService.getSimilarQuestionsContext()`.
 
 **File:** [`api/chat/chat-similar-answer.js`](../../api/chat/chat-similar-answer.js)
 

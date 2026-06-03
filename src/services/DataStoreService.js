@@ -43,7 +43,7 @@ class DataStoreService {
     }
   }
   static async checkDatabaseConnection() {
-    if (process.env.REACT_APP_ENV !== 'production') {
+    if (!import.meta.env.PROD) {
       console.log('Skipping database connection check in development environment');
       return true;
     }
@@ -233,5 +233,4 @@ class DataStoreService {
 }
 
 export default DataStoreService;
-
 

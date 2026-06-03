@@ -36,7 +36,13 @@ import EvaluationService from '../EvaluationService.js';
 describe('InteractionPersistenceService', () => {
     let initialPayload;
     let user;
-    let mongoServer;
+    let createdChatIDs = [];
+    let createdInteractionIDs = [];
+    let createdContextIDs = [];
+    let createdQuestionIDs = [];
+    let createdCitationIDs = [];
+    let createdAnswerIDs = [];
+    let createdToolIDs = [];
 
     beforeAll(async () => {
         const dbConnect = (await import('../../api/db/db-connect.js')).default;
@@ -93,21 +99,61 @@ describe('InteractionPersistenceService', () => {
     });
 
     afterEach(async () => {
-        await Chat.deleteMany({});
-        await Interaction.deleteMany({});
-        await Context.deleteMany({});
-        await Question.deleteMany({});
-        await Citation.deleteMany({});
-        await Answer.deleteMany({});
-        await Tool.deleteMany({});
+        // Delete in reverse dependency order: tools/citations before answers,
+        // answers/contexts/questions before interactions, interactions before chats
+        if (createdToolIDs.length)        await Tool.deleteMany({ _id: { $in: createdToolIDs } });
+        if (createdCitationIDs.length)    await Citation.deleteMany({ _id: { $in: createdCitationIDs } });
+        if (createdAnswerIDs.length)      await Answer.deleteMany({ _id: { $in: createdAnswerIDs } });
+        if (createdQuestionIDs.length)    await Question.deleteMany({ _id: { $in: createdQuestionIDs } });
+        if (createdContextIDs.length)     await Context.deleteMany({ _id: { $in: createdContextIDs } });
+        if (createdInteractionIDs.length) await Interaction.deleteMany({ _id: { $in: createdInteractionIDs } });
+        if (createdChatIDs.length)        await Chat.deleteMany({ _id: { $in: createdChatIDs } });
+ 
+        createdToolIDs        = [];
+        createdCitationIDs    = [];
+        createdAnswerIDs      = [];
+        createdQuestionIDs    = [];
+        createdContextIDs     = [];
+        createdInteractionIDs = [];
+        createdChatIDs        = [];
+ 
         vi.clearAllMocks();
     });
+ 
+    // PersistInteraction creates multiple documents, fetch the full interaction tree
+    // and push every created ID into tracking arrays for cleanup
+    // Returns the fetched chat and interaction for test assertions
+    async function trackCreatedDocuments(chatId, userMessageId) {
+        const chat = await Chat.findOne({ chatId });
+        if (chat?._id) createdChatIDs.push(chat._id);
+ 
+        const interaction = await Interaction.findOne({ interactionId: userMessageId })
+            .populate('context')
+            .populate('question')
+            .populate({ path: 'answer', populate: ['citation', 'tools'] });
+ 
+        if (interaction?._id)                        createdInteractionIDs.push(interaction._id);
+        if (interaction?.context?._id)               createdContextIDs.push(interaction.context._id);
+        if (interaction?.question?._id)              createdQuestionIDs.push(interaction.question._id);
+        if (interaction?.answer?._id)                createdAnswerIDs.push(interaction.answer._id);
+        if (interaction?.answer?.citation?._id)      createdCitationIDs.push(interaction.answer.citation._id);
+        if (Array.isArray(interaction?.answer?.tools)) {
+            interaction.answer.tools.forEach(t => { if (t._id) createdToolIDs.push(t._id); });
+        }
+ 
+        return { chat, interaction };
+    }
 
     it('should successfully persist interaction with embeddings', async () => {
         await InteractionPersistenceService.persistInteraction(initialPayload, user);
 
+        // Fetch persisted chat/interaction documents and track related IDs for cleanup
+        const { chat, interaction } = await trackCreatedDocuments(
+            initialPayload.chatId,
+            initialPayload.userMessageId,
+        );
+
         // Verify chat was created
-        const chat = await Chat.findOne({ chatId: initialPayload.chatId });
         expect(chat).toBeTruthy();
         expect(chat.aiProvider).toBe(initialPayload.selectedAI);
         expect(chat.searchProvider).toBe(initialPayload.searchProvider);
@@ -116,20 +162,12 @@ describe('InteractionPersistenceService', () => {
         // (If service logic uses user to set user field on Interaction/Chat, we should check it)
 
         // Verify interaction
-        const interaction = await Interaction.findOne({ interactionId: initialPayload.userMessageId })
-            .populate('context')
-            .populate('question')
-            .populate({
-                path: 'answer',
-                populate: ['citation', 'tools']
-            });
-
         expect(interaction).toBeTruthy();
         expect(String(interaction.responseTime)).toBe(String(initialPayload.responseTime));
         expect(interaction.referringUrl).toBe(initialPayload.referringUrl);
 
         // Verify context via the interaction reference to avoid flaky topic-based lookup.
-        const contextId = interaction?.context?._id || interaction?.context;
+        const contextId = interaction?.context?._id ?? interaction?.context;
         expect(contextId).toBeTruthy();
         const ctx = await Context.findById(contextId);
         expect(ctx).toBeTruthy();
@@ -151,6 +189,9 @@ describe('InteractionPersistenceService', () => {
         await expect(InteractionPersistenceService.persistInteraction(initialPayload, user))
             .resolves.toEqual({ success: true });
 
+        // track the created documents from payload to ensure cleanup and verify that persistence still occurred
+        await trackCreatedDocuments(initialPayload.chatId, initialPayload.userMessageId);
+
         expect(ServerLoggingService.error).toHaveBeenCalledWith(
             expect.stringContaining('Embedding creation failed'),
             initialPayload.chatId,
@@ -164,10 +205,12 @@ describe('InteractionPersistenceService', () => {
 
         await InteractionPersistenceService.persistInteraction(initialPayload, user);
 
-        const interaction = await Interaction.findOne({ interactionId: initialPayload.userMessageId })
-            .populate('context');
+        const { interaction } = await trackCreatedDocuments(
+            initialPayload.chatId,
+            initialPayload.userMessageId,
+        );
 
-        const contextId = interaction?.context?._id || interaction?.context;
+        const contextId = interaction?.context?._id ?? interaction?.context;
         expect(contextId).toBeTruthy();
         const ctx = await Context.findById(contextId);
         expect(ctx).toBeTruthy();
@@ -183,11 +226,10 @@ describe('InteractionPersistenceService', () => {
 
         await InteractionPersistenceService.persistInteraction(initialPayload, user);
 
-        const interaction = await Interaction.findOne({ interactionId: initialPayload.userMessageId })
-            .populate({
-                path: 'answer',
-                populate: ['citation', 'tools']
-            });
+        const { interaction } = await trackCreatedDocuments(
+            initialPayload.chatId,
+            initialPayload.userMessageId,
+        );
 
         expect(interaction).toBeTruthy();
         expect(interaction?.answer?.tools).toHaveLength(0);

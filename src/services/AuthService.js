@@ -224,7 +224,9 @@ class AuthService {
     });
     if (!resp.ok) {
       const json = await resp.json().catch(() => ({}));
-      throw new Error(json.message || 'Failed to reset password');
+      const err = new Error(json.message || 'Failed to reset password');
+      err.code = json.code || null;
+      throw err;
     }
     return await resp.json();
   }

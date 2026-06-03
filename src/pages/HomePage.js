@@ -8,7 +8,7 @@ import {
   GcdsText,
   GcdsLink,
   GcdsNotice,
-} from "@cdssnc/gcds-components-react";
+} from "@gcds-core/components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
@@ -35,7 +35,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const { t } = this.props;
       return (
-        <GcdsContainer size="xl" mainContainer centered>
+        <GcdsContainer layout="page">
           <h2>{t("homepage.errors.timeout.title")}</h2>
           <GcdsText>{t("homepage.errors.timeout.message")}</GcdsText>
           <button

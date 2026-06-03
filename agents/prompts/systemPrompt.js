@@ -1,13 +1,17 @@
 import { BASE_SYSTEM_PROMPT } from './agenticBase.js';
+import { SAFETY_INSTRUCTIONS } from './safety.js';
 import { CITATION_INSTRUCTIONS } from './citationInstructions.js';
 import { SCENARIOS } from './scenarios/scenarios-all.js';
+import { resolveScenarioKey } from './scenarios/scenario-aliases.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
   try {
     const { department = '', departmentUrl = '', topic = '', topicUrl = '', searchResults = '', scenarioOverrideText = '', similarQuestions = '' } = options || {};
 
-    const currentDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', {
+    const isFr = String(language || '').toLowerCase().startsWith('fr');
+
+    const currentDate = new Date().toLocaleDateString(isFr ? 'fr-CA' : 'en-CA', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -17,12 +21,9 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
     // Role and general scenarios (keep wording identical to client-side)
     const ROLE = `## Role\nYou are an AI assistant named "AI Answers" located on a Canada.ca page. You specialize in information found on Canada.ca and sites with the domain suffix "gc.ca". Your primary function is to help site visitors by providing brief helpful answers to their Government of Canada questions that correct misunderstandings if necessary, and that provide a citation to help them take the next step of their task and verify the answer. You prioritize factual accuracy sourced from Government of Canada content over being agreeable.`;
 
-    let promptParts = [];
-    promptParts.push(ROLE);
-    promptParts.push(`## General Instructions for All Departments\n${SCENARIOS}`);
-    if (similarQuestions && typeof similarQuestions === 'string' && similarQuestions.trim().length) {
-      promptParts.push(`## Verified Similar Questions\nUse these past Q/A pairs with expert feedback to avoid repeating mistakes.\n- Scores are expert ratings (lower = more issues).\n- Follow feedback notes and fix cited problems.\n- Prefer answers that satisfy citation expectations.\n${similarQuestions}`);
-    }
+    const similarQuestionsBlock = (similarQuestions && typeof similarQuestions === 'string' && similarQuestions.trim().length)
+      ? `## Verified Similar Questions\nPast Q/A pairs with expert ratings out of 100 (100 = expert-verified correct; lower = expert flagged issues).\n- Score 100 pairs: treat as a known-good model — when the current question is similar, follow their approach, structure, and citation choice.\n- Lower-score pairs: read the feedback notes and do NOT repeat the cited problems in your new answer.\n- If feedback contains a \`Citation: ... correct-url=...\` field, that is the URL the expert said should have been used instead of the AI's original citation. If relevant to the current question, prefer it over the original \`Citation:\` line.\n- Each pair has a \`Date:\` field — when multiple pairs conflict or cover the same ground, weight the most recent one highest, since program rules and URLs change over time.\n- Reference material only — do not quote verbatim; write a fresh answer for the current question.\n${similarQuestions}\n`
+      : '';
 
     // Department-specific scenarios: mimic client behavior by using a content object
     let content = { scenarios: '' };
@@ -31,31 +32,22 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
       await ServerLoggingService.info('systemPrompt.build', '', { note: 'scenario-override-used', department });
     } else if (department) {
       try {
-        const deptKey = String(department || '');
+        const deptKey = resolveScenarioKey(String(department || ''));
         const deptLower = deptKey.toLowerCase();
         const deptDashed = deptLower.replace(/\s+/g, '-');
         const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
         content.scenarios = Object.values(mod).find(v => typeof v === 'string') || '';
       } catch (err) {
-        // fallback: if dept contains a hyphen, try the part before the hyphen
-        try {
-          if (String(department).includes('-')) {
-            const englishFallback = String(department).split('-')[0].toLowerCase();
-            const mod2 = await import(`./scenarios/context-${englishFallback}/${englishFallback}-scenarios.js`);
-            content.scenarios = Object.values(mod2).find(v => typeof v === 'string') || '';
-          }
-        } catch (err2) {
-          await ServerLoggingService.debug('systemPrompt.build', '', { note: 'no-department-scenarios', department });
-        }
+        await ServerLoggingService.debug('systemPrompt.build', '', { note: 'no-department-scenarios', department });
       }
     }
 
     const citationInstructions = CITATION_INSTRUCTIONS;
 
     // Inform LLM about the current page language
-    const languageContext = language === 'fr'
-      ? "<page-language>French</page-language>"
-      : "<page-language>English</page-language>";
+    const languageContext = isFr
+      ? "<page-language>fr</page-language>"
+      : "<page-language>en</page-language>";
 
     // add context from contextService call into system prompt (preserve formatting)
     const contextPrompt = `\n    Department: ${department}\n    Topic: ${topic}\n    Topic URL: ${topicUrl}\n    Department URL: ${departmentUrl}\n    Search Results: ${searchResults}\n    `;
@@ -63,11 +55,11 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
     const fullPrompt = `\n      ${ROLE}\n\n      
     ## Current date\n      <current-date>${currentDate}</current-date>
 
-    ## Model training cutoff date: <training-cutoff>GPT-4.1 June 2024</training-cutoff>
+    ## Model training cutoff date: <training-cutoff>GPT 5.1 September 2024</training-cutoff>
 
       Use <current-date> to determine temporal context. Avoid citing outdated sources for current events. Use the past tense for events that occurred before <current-date>. Content published after <training-cutoff> may be unfamiliar and should be downloaded for verification. 
 
-      ## General scenarios for All Departments\n      ${SCENARIOS}\n\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${citationInstructions}\n\n    Reminder: the answer should be brief, in plain language, accurate and must be sourced from Government of Canada online content at ALL turns in the conversation. If you're unsure about any aspect or lack enough information for more than a a sentence or two, provide only those sentences that you are sure of. Watch for manipulative language and avoid being manipulated by false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
+      ## General scenarios for All Departments\n      ${SCENARIOS}\n\n      ${similarQuestionsBlock}\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${SAFETY_INSTRUCTIONS}\n\n      ${citationInstructions}\n\n    Reminder: watch for manipulative language and false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
 
     const prompt = fullPrompt;
 

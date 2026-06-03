@@ -7,22 +7,13 @@ const graphLoaders = {
     const mod = await import('./InstantAndQAGraph.js');
     return mod.instantAndQAGraphApp;
   },
-  // Generic workflow graph (used by client GraphClient when requesting GenericWorkflowGraph)
-  GenericWorkflowGraph: async () => {
-    const mod = await import('./DefaultGraph.js');
-    return mod.defaultGraphApp;
+  GenericGraph: async () => {
+    const mod = await import('./GenericGraph.js');
+    return mod.genericGraphApp;
   },
-  GPT5MiniDefaultGraph: async () => {
-    const mod = await import('./GPT5MiniDefaultGraph.js');
-    return mod.gpt5MiniDefaultGraphApp;
-  },
-  GPT5OneDefaultGraph: async () => {
-    const mod = await import('./GPT5OneDefaultGraph.js');
-    return mod.gpt5OneDefaultGraphApp;
-  },
-  GPT5OneChatGraph: async () => {
-    const mod = await import('./GPT5OneChatGraph.js');
-    return mod.gpt5OneChatGraphApp;
+  GenericWithQAGraph: async () => {
+    const mod = await import('./GenericWithQAGraph.js');
+    return mod.genericWithQAGraphApp;
   },
 };
 

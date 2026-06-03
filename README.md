@@ -11,6 +11,7 @@ AI Answers is a specialized AI chat agent designed for Government of Canada webs
 
 ### Current Status
 - **Environment**: Preparing for public pilot
+- **Trial report**: [blog post](https://digital.canada.ca/2025/12/17/ai-answers-enterprise-scale-trial-for-canada.ca/)
 - **Production**: https://ai-answers.alpha.canada.ca
 
 

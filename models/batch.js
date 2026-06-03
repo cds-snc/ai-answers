@@ -11,6 +11,9 @@ const BatchSchema = new mongoose.Schema({
   searchProvider: { type: String, required: false, default: '' },
   pageLanguage: { type: String, required: true, default: '' },
 
+  // The userId of the admin/partner who created this batch.
+  createdBy: { type: String, required: false, default: '' },
+
   
 },{
   timestamps: true, versionKey: false,

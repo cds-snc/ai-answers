@@ -23,7 +23,7 @@ const convertInteractionsToMessages = (interactions) => {
 
 
 async function invokeAgent({
-    provider = 'openai',
+    provider = 'openai-gpt51',
     message,
     conversationHistory = [],
     lang,

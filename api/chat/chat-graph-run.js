@@ -4,12 +4,69 @@ import ConversationIntegrityService from '../../services/ConversationIntegritySe
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
+import { MODEL_VALUES } from '../../src/config/workflows.js';
 
 const REQUIRED_METHOD = 'POST';
+const DEFAULT_CHAT_TRANSPORT = 'sse';
+const NDJSON_CHAT_TRANSPORT = 'ndjson';
+
+function normalizeChatTransport(value) {
+  return value === NDJSON_CHAT_TRANSPORT ? NDJSON_CHAT_TRANSPORT : DEFAULT_CHAT_TRANSPORT;
+}
 
 function writeEvent(res, event, data) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  } catch (_e) {
+    // Client may have disconnected after receiving the result; ignore write
+    // failures so the graph can finish running (notably persistNode).
+  }
+}
+
+export function setStreamingHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+
+  // Make sure Node pushes small SSE frames immediately.
+  res.socket?.setNoDelay?.(true);
+  res.flushHeaders?.();
+}
+
+export function setNdjsonHeaders(res) {
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+
+  res.socket?.setNoDelay?.(true);
+  res.flushHeaders?.();
+}
+
+function createGraphEventWriter(res, transport) {
+  if (transport === NDJSON_CHAT_TRANSPORT) {
+    setNdjsonHeaders(res);
+    return (event, data) => {
+      try {
+        res.write(`${JSON.stringify({ event, data })}\n`);
+      } catch (_e) {
+        // Client may have disconnected after receiving the result.
+      }
+    };
+  }
+
+  setStreamingHeaders(res);
+  return (event, data) => writeEvent(res, event, data);
 }
 
 function buildGraphErrorPayload(error) {
@@ -95,7 +152,7 @@ async function handler(req, res) {
 
   // Server-side Workflow Resolution
   let graphName;
-  const defaultWorkflow = SettingsService.get('workflow.default') || 'DefaultGraph';
+  const defaultWorkflow = SettingsService.get('workflow.default') || 'GenericGraph';
 
   if (req.user) {
     // Authenticated users can choose their workflow, fallback to default if not provided
@@ -108,42 +165,59 @@ async function handler(req, res) {
     graphName = defaultWorkflow;
   }
 
-  // Map the configuration name (e.g. 'DefaultGraph') to the internal registry name if needed
-  // (The registry uses keys like 'GenericWorkflowGraph', 'InstantAndQAGraph', etc. matching the setting values)
-  // We need to ensure the setting value maps correctly to registry keys.
-  // The SettingsService returns values like 'DefaultGraph', 'InstantAndQAGraph'.
-  // The registry expects:
-  // 'DefaultGraph' -> 'GenericWorkflowGraph' (special mapping from ChatWorkflowService legacy)
-  // 'InstantAndQAGraph' -> 'InstantAndQAGraph'
-  // 'GPT5MiniDefaultGraph' -> 'GPT5MiniDefaultGraph'
-  // 'DefaultWithVectorGraph' -> 'DefaultWithVectorGraph'
-
-  let registryName = graphName;
-  if (graphName === 'DefaultGraph') {
-    registryName = 'GenericWorkflowGraph';
+  // Server-side Model Resolution
+  // The model.default setting decouples model choice from workflow choice.
+  // Workflows no longer need to hardcode a model — the server injects it here.
+  // Falls back to the first MODEL_VALUES entry when model.default hasn't been
+  // saved yet (e.g. first deploy before an admin visits Settings).
+  const defaultModel = SettingsService.get('model.default') || MODEL_VALUES[0];
+  if (!req.user) {
+    // Unauthenticated users: forced to use the system default model
+    input.selectedAI = defaultModel;
+  } else if (!input.selectedAI) {
+    // Authenticated users: use default model when client didn't explicitly set one
+    input.selectedAI = defaultModel;
   }
 
-  const graphApp = await getGraphApp(registryName);
+  const graphApp = await getGraphApp(graphName);
   if (!graphApp) {
     // Fallback to DefaultWithVectorGraph if the resolved name is invalid/missing
     const fallbackApp = await getGraphApp('DefaultWithVectorGraph');
     if (fallbackApp) {
       // Log warning but proceed with fallback
-      if (console && console.warn) console.warn(`Unknown graph '${registryName}', falling back to DefaultWithVectorGraph`);
+      if (console && console.warn) console.warn(`Unknown graph '${graphName}', falling back to DefaultWithVectorGraph`);
     } else {
-      return res.status(404).json({ message: `Unknown graph: ${registryName}` });
+      return res.status(404).json({ message: `Unknown graph: ${graphName}` });
     }
   }
   const appToRun = graphApp || await getGraphApp('DefaultWithVectorGraph');
 
   const forwardedHeaders = buildForwardedHeaders(req.headers || {});
+  let eventSequence = 0;
+  const transport = normalizeChatTransport(SettingsService.get('chat.transport'));
+  const writeGraphEvent = createGraphEventWriter(res, transport);
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
+  if (transport === NDJSON_CHAT_TRANSPORT) {
+    writeGraphEvent('connected', { graph: graphName, serverSentAt: Date.now() });
+  } else {
+    res.write(': connected\n\n');
+  }
 
-  res.write(': connected\n\n');
+  // Send periodic status events to prevent proxies (e.g. Akamai) from dropping
+  // idle stream connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
+  let keepAliveTimer = setInterval(() => {
+    try {
+      writeGraphEvent('status', {
+        status: 'keepalive',
+        graph: graphName,
+        heartbeat: true,
+        serverSentAt: Date.now(),
+        sequence: ++eventSequence,
+      });
+    } catch (_e) {
+      clearInterval(keepAliveTimer);
+    }
+  }, 15000);
 
   let resultSent = false;
   let streamError = null;
@@ -151,14 +225,19 @@ async function handler(req, res) {
   const handlers = {
     onStatus: (status) => {
       if (status) {
-        writeEvent(res, 'status', { status, graph: graphName });
+        writeGraphEvent('status', {
+          status,
+          graph: graphName,
+          serverSentAt: Date.now(),
+          sequence: ++eventSequence,
+        });
       }
     },
     onResult: (result) => {
       if (!resultSent && result && result.answer && result.answer.answerType) {
         resultSent = true;
         // Include server-generated chatId so client can store it
-        writeEvent(res, 'result', { ...result, chatId: req.chatId });
+        writeGraphEvent('result', { ...result, chatId: req.chatId });
       }
     },
   };
@@ -169,7 +248,7 @@ async function handler(req, res) {
     if (req.user) {
       store.graphEventWriter = (eventName, data) => {
         try {
-          writeEvent(res, eventName, data);
+          writeGraphEvent(eventName, data);
         } catch (_err) {
           // ignore writer errors
         }
@@ -178,11 +257,13 @@ async function handler(req, res) {
 
     await graphRequestContext.run(store, async () => {
       const stream = await appToRun.stream(input, { streamMode: 'updates' });
+      // Drain the full stream — do NOT break after emitting the result.
+      // The `result` is emitted by verifyNode, but persistNode runs after and
+      // saves the Chat to MongoDB. Breaking early cancels the async iterator
+      // and can leave persistNode unfinished, causing items to be silently
+      // dropped from the DB.
       for await (const update of stream) {
         traverseForUpdates(update, handlers);
-        if (resultSent) {
-          break;
-        }
       }
     });
   } catch (err) {
@@ -202,16 +283,17 @@ async function handler(req, res) {
             // ignore signature generation failures
           }
         }
-        writeEvent(res, 'error', buildGraphErrorPayload(err));
+        writeGraphEvent('error', buildGraphErrorPayload(err));
       } catch (_e) {
         // fallback to minimal message if serialization fails
-        writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+        writeGraphEvent('error', { message: err?.message || 'Graph execution failed' });
       }
       resultSent = true;
     }
   } finally {
+    clearInterval(keepAliveTimer);
     if (!resultSent && !streamError) {
-      writeEvent(res, 'error', { message: 'Graph completed without result payload' });
+      writeGraphEvent('error', { message: 'Graph completed without result payload' });
     }
     res.end();
   }

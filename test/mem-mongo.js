@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { spawn } from "child_process";
 import getPort from "get-port";
-import { existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -36,7 +35,6 @@ async function start() {
           stdio: "inherit",
           env: {
             ...process.env,
-            REACT_APP_API_URL: `${apiUrl}/api`,
           },
           shell: true, // Fix for Windows
         });
@@ -60,7 +58,6 @@ async function start() {
       ...process.env,
       MONGODB_URI: uri,
       PORT: port,
-      REACT_APP_API_URL: `${apiUrl}/api`,
     },
     shell: true, // Fix for Windows
   });

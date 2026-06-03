@@ -40,7 +40,12 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       setMessage(t('reset.complete.success'));
       setTimeout(() => navigate(getPath('signin', lang)), 2500);
     } catch (err) {
-      setMessage(err.message || t('reset.complete.error'));
+      const errorKeys = {
+        RESET_LOCKED_OUT: 'reset.complete.lockedOut',
+        RESET_INVALID_CODE: 'reset.complete.invalidCode',
+      };
+      const key = err.code && errorKeys[err.code];
+      setMessage(key ? t(key) : t('reset.complete.error'));
     } finally {
       setIsLoading(false);
     }

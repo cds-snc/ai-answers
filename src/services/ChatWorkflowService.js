@@ -1,4 +1,5 @@
 import DataStoreService from './DataStoreService.js';
+import { WORKFLOW_VALUES } from '../config/workflows.js';
 
 export const WorkflowStatus = {
   REDACTING: 'redacting',
@@ -56,28 +57,8 @@ export const ChatWorkflowService = {
     // The server will then assign the configured 'workflow.default' for valid requests.
     let resolvedWorkflow = workflow;
 
-    // Select workflow implementation based on the resolved workflow.
-    // We only support Graph-based workflows now.
-    // Use the single GraphClient for graph-based client workflows to avoid duplicated code.
     const { default: GraphClient } = await import('../workflows/GraphClient.js');
-    let graphName;
-
-    if (!resolvedWorkflow) {
-      graphName = null;
-    } else if (resolvedWorkflow === 'DefaultGraph') {
-      graphName = 'GenericWorkflowGraph';
-    } else if (resolvedWorkflow === 'InstantAndQAGraph') {
-      graphName = 'InstantAndQAGraph';
-    } else if (resolvedWorkflow === 'GPT5OneDefaultGraph') {
-      graphName = 'GPT5OneDefaultGraph';
-    } else if (resolvedWorkflow === 'GPT5OneChatGraph') {
-      graphName = 'GPT5OneChatGraph';
-    } else if (resolvedWorkflow === 'DefaultWithVectorGraph') {
-      graphName = 'DefaultWithVectorGraph';
-    } else {
-      // Fallback for any other legacy string values
-      graphName = 'DefaultGraph';
-    }
+    const graphName = WORKFLOW_VALUES.includes(resolvedWorkflow) ? resolvedWorkflow : null;
 
     const implInstance = new GraphClient(graphName);
     return implInstance.processResponse(

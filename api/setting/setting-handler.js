@@ -1,19 +1,22 @@
 import { SettingsService } from '../../services/SettingsService.js';
+import { requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function settingsHandler(req, res) {
   if (req.method === 'GET') {
-    const { key } = req.query;
+    let { key } = req.query;
     if (!key) {
       return res.status(400).json({ message: 'Key required' });
     }
+    key = requireLiteralString(key, 'setting key');
     const value = SettingsService.get(key);
     return res.status(200).json({ key, value });
   } else if (req.method === 'POST') {
-    const { key, value } = req.body;
+    let { key, value } = req.body;
     if (!key) {
       return res.status(400).json({ message: 'Key required' });
     }
+    key = requireLiteralString(key, 'setting key');
     await SettingsService.set(key, value);
     return res.status(200).json({ message: 'Setting updated' });
   } else {

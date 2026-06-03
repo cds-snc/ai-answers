@@ -1,19 +1,13 @@
 const getApiUrl = (endpoint) => {
-  // Prefer an explicit override via REACT_APP_API_URL (useful for testing against
-  // a remote backend). Otherwise default to a relative `/api` URL so the CRA
-  // dev server proxy (`src/setupProxy.js`) can intercept requests during
-  // development. Avoid hard-coding localhost:3001 here because that bypasses
-  // the proxy and prevents dev-time cookie forwarding.
-  const serverUrl = process.env.REACT_APP_API_URL || '/api';
+  // Keep a relative API base so local proxying and deployed routing work the same.
+  const serverUrl = '/api';
   const prefix = endpoint.split("-")[0];
   //console.log("getApiUrl called with endpoint:", endpoint, "=> serverUrl:", serverUrl, "prefix:", prefix);
   return `${serverUrl}/${prefix}/${endpoint}`;
 };
 
 const getProviderApiUrl = (provider, endpoint) => {
-  // Same logic for provider URLs: default to relative `/api` so the dev proxy
-  // can forward requests. Override with REACT_APP_API_URL when needed.
-  const serverUrl = process.env.REACT_APP_API_URL || '/api';
+  const serverUrl = '/api';
   // Map provider aliases to their actual service names
   if (provider === "claude") {
     provider = "anthropic";

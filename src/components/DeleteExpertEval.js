@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../services/EvaluationService.js';
 
 const DeleteExpertEval = ({ lang = 'en' }) => {
