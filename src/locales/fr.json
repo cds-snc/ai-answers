@@ -1203,7 +1203,7 @@
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
     "kpi": {
       "evaluated": "Évaluées par des experts",
-      "evaluatedSub": "{pct}% des questions",
+      "evaluatedSub": "{pct} des questions",
       "feedbackReceived": "Rétroactions reçues",
       "partnerCount": "Partenaires ministériels",
       "partnerCountSub": "ministères collaborant avec des évaluations expertes"
@@ -1234,7 +1234,7 @@
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
       "evaluated": "Évaluées par des experts",
-      "evaluatedSub": "{pct}% des questions",
+      "evaluatedSub": "{pct} des questions",
       "feedbackReceived": "Rétroactions reçues"
     },
     "charts": {

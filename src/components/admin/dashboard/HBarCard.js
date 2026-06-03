@@ -1,10 +1,12 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { COLOURS } from '../../../constants/dashboardColours.js';
+import { formatNumber } from '../../../utils/numberFormat.js';
 
 // Horizontal bar chart in a card, for ranked lists. `height` is optional and
-// defaults to a height that grows with the number of rows.
-const HBarCard = ({ title, data, height, colour = COLOURS.brand }) => (
+// defaults to a height that grows with the number of rows. `lang` drives
+// locale-aware number formatting in the tooltip.
+const HBarCard = ({ title, data, height, colour = COLOURS.brand, lang = 'en' }) => (
   <div style={{
     background: '#fff',
     border: '1px solid #e0e0e0',
@@ -18,7 +20,7 @@ const HBarCard = ({ title, data, height, colour = COLOURS.brand }) => (
         <CartesianGrid strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" tick={{ fontSize: 12 }} />
         <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
-        <Tooltip formatter={(value) => value.toLocaleString()} />
+        <Tooltip formatter={(value) => formatNumber(value, lang)} />
         <Bar dataKey="value" fill={colour} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>

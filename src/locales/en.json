@@ -1203,7 +1203,7 @@
     "noData": "No data found for the selected date range.",
     "kpi": {
       "evaluated": "Expert evaluated",
-      "evaluatedSub": "{pct}% of questions",
+      "evaluatedSub": "{pct} of questions",
       "feedbackReceived": "Feedback received",
       "partnerCount": "Departmental partners",
       "partnerCountSub": "departments collaborating with expert evaluations"
@@ -1234,7 +1234,7 @@
       "questionsAsked": "Questions asked",
       "questionsSub": "EN: {en} · FR: {fr}",
       "evaluated": "Expert evaluated",
-      "evaluatedSub": "{pct}% of questions",
+      "evaluatedSub": "{pct} of questions",
       "feedbackReceived": "Feedback received"
     },
     "charts": {

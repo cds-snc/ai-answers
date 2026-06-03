@@ -1,10 +1,12 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { COLOURS } from '../../../constants/dashboardColours.js';
+import { formatNumber } from '../../../utils/numberFormat.js';
 
 // Donut (hollow pie) chart in a card, with a big figure floated in the centre.
 // `subtitle` and `footer` are optional; omit them for the plain variant.
-const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, footer, height = 260 }) => (
+// `lang` drives locale-aware number formatting in the tooltip.
+const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, footer, height = 260, lang = 'en' }) => (
   <div style={{
     background: '#fff',
     border: '1px solid #e0e0e0',
@@ -32,7 +34,7 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, f
               <Cell key={entry.name} fill={colours[i % colours.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
+          <Tooltip formatter={(value, name) => [formatNumber(value, lang), name]} />
           <Legend iconType="circle" iconSize={10} />
         </PieChart>
       </ResponsiveContainer>
