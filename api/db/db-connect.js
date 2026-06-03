@@ -105,6 +105,11 @@ async function dbConnect() {
   }
 
   if (!cached.promise) {
+    if (process.env.MONGODB_URI) {
+      console.log('Connecting to MongoDB via MONGODB_URI');
+    } else {
+      console.log(`Connecting to DocumentDB version ${activeDocumentDbVersion}`);
+    }
     console.log("DB Connection Options:", opts);
 
     cached.promise = mongoose
