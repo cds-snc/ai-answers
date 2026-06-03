@@ -6,6 +6,7 @@ import {
 import { useTranslations } from '../../hooks/useTranslations.js';
 import MetricsService from '../../services/MetricsService.js';
 import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+import DashboardFilterBar from './DashboardFilterBar.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
@@ -60,16 +61,6 @@ const groupByScore = (reasons, otherScore) => {
   });
   return grouped;
 };
-
-const today = () => new Date().toISOString().split('T')[0];
-
-// Update trial dates here when confirmed
-const TRIAL_PERIODS = [
-  { id: 'trial1', startDate: '2024-01-01', endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'trial2', startDate: '2024-01-01', endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'trial3', startDate: '2024-01-01', endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'custom', startDate: null, endDate: null },
-];
 
 const StatCard = ({ label, value, sub }) => (
   <div style={{
@@ -153,38 +144,16 @@ const initialState = {
 
 const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [periodId, setPeriodId] = useState('trial1');
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState(today());
-  const [department, setDepartment] = useState('');
-  const [departments, setDepartments] = useState([]);
   const [metrics, setMetrics] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
-  // Fetch department list on mount using a wide range
-  useEffect(() => {
-    MetricsService.getDepartmentMetrics({ startDate: '2024-01-01', endDate: today() })
-      .then(data => {
-        const depts = Object.keys(data?.byDepartment || {})
-          .filter(d => d)
-          .sort();
-        setDepartments(depts);
-        if (depts.length > 0) setDepartment(depts[0]);
-      })
-      .catch(() => {});
-  }, []);
+  // Clean up any in-flight request on unmount.
+  useEffect(() => () => { if (abortRef.current) abortRef.current.abort(); }, []);
 
-  const getDateRange = useCallback((pid) => {
-    if (pid === 'custom') return { startDate: customStart, endDate: customEnd };
-    const period = TRIAL_PERIODS.find(p => p.id === pid);
-    return { startDate: period.startDate, endDate: period.endDate };
-  }, [customStart, customEnd]);
-
-  const fetchAll = useCallback(async (pid, dept) => {
-    const { startDate, endDate } = getDateRange(pid);
-    if (!startDate || !endDate || !dept) return;
+  const fetchAll = useCallback(async ({ startDate, endDate, department }) => {
+    if (!startDate || !endDate) return;
 
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -192,7 +161,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
     setLoading(true);
     setError(null);
-    const filters = { startDate, endDate, department: dept };
+    const filters = { startDate, endDate };
+    if (department) filters.department = department;
 
     try {
       const [usage, session, expert, publicFb] = await Promise.all([
@@ -209,16 +179,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [getDateRange, t]);
-
-  useEffect(() => {
-    if (department) fetchAll(periodId, department);
-    return () => { if (abortRef.current) abortRef.current.abort(); };
-  }, [periodId, department, fetchAll]);
-
-  const handleApplyCustom = () => {
-    if (customStart && customEnd) fetchAll('custom', department);
-  };
+  }, [t]);
 
   // --- Derived data ---
 
@@ -258,101 +219,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       .sort((a, b) => b.value - a.value);
   }, [yesReasons, lang]);
 
-  const isCustom = periodId === 'custom';
-
   return (
     <div style={{ fontFamily: 'inherit' }}>
-      {/* Filters */}
-      <div style={{
-        background: '#f5f7fa',
-        border: '1px solid #e0e0e0',
-        borderRadius: 8,
-        padding: '16px 20px',
-        marginBottom: 28,
-        display: 'flex',
-        alignItems: 'flex-end',
-        gap: 20,
-        flexWrap: 'wrap',
-      }}>
-        {/* Department */}
-        <div>
-          <label htmlFor="partner-dept" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-            {t('partnerDashboard.filter.department')}
-          </label>
-          <select
-            id="partner-dept"
-            value={department}
-            onChange={e => setDepartment(e.target.value)}
-            disabled={loading}
-            style={{ padding: '7px 12px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14, minWidth: 180 }}
-          >
-            {departments.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-
-        {/* Period */}
-        <div>
-          <label htmlFor="partner-period" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-            {t('partnerDashboard.filter.period')}
-          </label>
-          <select
-            id="partner-period"
-            value={periodId}
-            onChange={e => setPeriodId(e.target.value)}
-            disabled={loading}
-            style={{ padding: '7px 12px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14, minWidth: 160 }}
-          >
-            {TRIAL_PERIODS.map(p => (
-              <option key={p.id} value={p.id}>{t(`partnerDashboard.filter.periods.${p.id}`)}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Custom date inputs */}
-        {isCustom && (
-          <>
-            <div>
-              <label htmlFor="partner-start" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                {t('partnerDashboard.filter.startDate')}
-              </label>
-              <input
-                id="partner-start"
-                type="date"
-                value={customStart}
-                max={customEnd}
-                onChange={e => setCustomStart(e.target.value)}
-                style={{ padding: '6px 10px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14 }}
-              />
-            </div>
-            <div>
-              <label htmlFor="partner-end" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                {t('partnerDashboard.filter.endDate')}
-              </label>
-              <input
-                id="partner-end"
-                type="date"
-                value={customEnd}
-                min={customStart}
-                onChange={e => setCustomEnd(e.target.value)}
-                style={{ padding: '6px 10px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14 }}
-              />
-            </div>
-            <button
-              onClick={handleApplyCustom}
-              disabled={loading || !customStart || !customEnd}
-              style={{
-                padding: '7px 20px', background: '#1565c0', color: '#fff',
-                border: 'none', borderRadius: 4, fontSize: 14, fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
-              }}
-            >
-              {t('partnerDashboard.filter.apply')}
-            </button>
-          </>
-        )}
-
-        {loading && <span style={{ fontSize: 13, color: '#888', alignSelf: 'center' }}>{t('partnerDashboard.filter.loading')}</span>}
-      </div>
+      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchAll} />
 
       {error && (
         <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>

@@ -5,6 +5,7 @@ import $ from 'jquery';
 import moment from '../../utils/momentSetup.js';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
+import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const FilterPanel = ({
   lang,
@@ -202,31 +203,10 @@ const FilterPanel = ({
     }
   };
 
-  // Department options
+  // Department options — partner list is shared across the app
   const departmentOptions = [
     { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
-    { value: 'AAFC-AAC', label: 'AAFC-AAC' },
-    { value: 'BAC-LAC', label: 'BAC-LAC' },
-    { value: 'CBSA-ASFC', label: 'CBSA-ASFC' },
-    { value: 'CEO-BEC', label: 'CEO-BEC' },
-    { value: 'CDS-SNC', label: 'CDS-SNC' },
-    { value: 'CRA-ARC', label: 'CRA-ARC' },
-    { value: 'DND-MDN', label: 'DND-MDN' },
-    { value: 'ECCC', label: 'ECCC' },
-    { value: 'EDSC-ESDC', label: 'EDSC-ESDC' },
-    { value: 'FIN', label: 'FIN' },
-    { value: 'HC-SC', label: 'HC-SC' },
-    { value: 'IRCC', label: 'IRCC' },
-    { value: 'ISED-ISDE', label: 'ISED-ISDE' },
-    { value: 'JUS', label: 'JUS' },
-    { value: 'NRCan-RNCan', label: 'NRCan-RNCan' },
-    { value: 'PHAC-ASPC', label: 'PHAC-ASPC' },
-    { value: 'PSPC-SPAC', label: 'PSPC-SPAC' },
-    { value: 'RCAANC-CIRNAC', label: 'RCAANC-CIRNAC' },
-    { value: 'SAC-ISC', label: 'SAC-ISC' },
-    { value: 'StatCan', label: 'StatCan' },
-    { value: 'TBS-SCT', label: 'TBS-SCT' },
-    { value: 'VAC-ACC', label: 'VAC-ACC' }
+    ...PARTNER_DEPARTMENTS.map(d => ({ value: d, label: d })),
   ];
 
   // User type options

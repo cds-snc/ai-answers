@@ -6,6 +6,7 @@ import {
 import { useTranslations } from '../../hooks/useTranslations.js';
 import MetricsService from '../../services/MetricsService.js';
 import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+import DashboardFilterBar from './DashboardFilterBar.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
@@ -67,16 +68,6 @@ const groupByScore = (reasons, otherScore) => {
   });
   return grouped;
 };
-
-const today = () => new Date().toISOString().split('T')[0];
-
-// Update trial dates here when confirmed
-const DATE_PERIODS = [
-  { id: 'allTime',  startDate: '2024-01-01',   endDate: today() },
-  { id: 'trial1',   startDate: '2024-01-01',   endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'trial2',   startDate: '2024-01-01',   endDate: '2024-01-01' }, // TODO: update dates
-  { id: 'trial3',   startDate: '2024-01-01',   endDate: '2024-01-01' }, // TODO: update dates
-];
 
 // KPI stat card
 const StatCard = ({ label, value, sub }) => (
@@ -188,20 +179,25 @@ const initialState = {
 
 const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [periodId, setPeriodId] = useState('allTime');
   const [metrics, setMetrics] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
-  const fetchAll = useCallback(async (start, end) => {
+  // Clean up any in-flight request on unmount.
+  useEffect(() => () => { if (abortRef.current) abortRef.current.abort(); }, []);
+
+  const fetchAll = useCallback(async ({ startDate, endDate, department }) => {
+    if (!startDate || !endDate) return;
+
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
 
     setLoading(true);
     setError(null);
-    const filters = { startDate: start, endDate: end };
+    const filters = { startDate, endDate };
+    if (department) filters.department = department;
 
     try {
       const [usage, session, expert, publicFb, dept] = await Promise.all([
@@ -222,14 +218,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
       if (!signal.aborted) setLoading(false);
     }
   }, [t]);
-
-  useEffect(() => {
-    const period = DATE_PERIODS.find(p => p.id === periodId) || DATE_PERIODS[0];
-    fetchAll(period.startDate, period.endDate);
-    return () => { if (abortRef.current) abortRef.current.abort(); };
-  }, [periodId, fetchAll]);
-
-  const handlePeriodChange = (e) => setPeriodId(e.target.value);
 
   // --- Derived data ---
 
@@ -300,24 +288,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
-      {/* Period selector */}
-      <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label htmlFor="exec-period" style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-          {t('execDashboard.filter.period')}
-        </label>
-        <select
-          id="exec-period"
-          value={periodId}
-          onChange={handlePeriodChange}
-          disabled={loading}
-          style={{ padding: '7px 12px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14, minWidth: 200 }}
-        >
-          {DATE_PERIODS.map(p => (
-            <option key={p.id} value={p.id}>{t(`execDashboard.filter.periods.${p.id}`)}</option>
-          ))}
-        </select>
-        {loading && <span style={{ fontSize: 13, color: '#888' }}>{t('execDashboard.filter.loading')}</span>}
-      </div>
+      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchAll} />
 
       {error && (
         <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
