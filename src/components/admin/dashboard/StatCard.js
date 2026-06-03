@@ -1,4 +1,5 @@
 import React from 'react';
+import { COLOURS } from '../../../constants/dashboardColours.js';
 
 // KPI stat card: a label, one big number, and an optional sub-line.
 // `uppercase` renders the label in caps with wider tracking (partner dashboard
@@ -20,7 +21,7 @@ const StatCard = ({ label, value, sub, uppercase = false }) => (
       textTransform: uppercase ? 'uppercase' : 'none',
       letterSpacing: uppercase ? '0.05em' : '0.02em',
     }}>{label}</div>
-    <div style={{ fontSize: 42, fontWeight: 700, color: '#1565c0', lineHeight: 1 }}>{value}</div>
+    <div style={{ fontSize: 42, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>{value}</div>
     {sub && <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>{sub}</div>}
   </div>
 );

@@ -6,26 +6,7 @@ import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
-
-// Colours
-const COLOURS = {
-  correct: '#2e7d32',
-  needsImprovement: '#f9a825',
-  hasError: '#e65100',
-  hasCitationError: '#bf360c',
-  harmful: '#b71c1c',
-  yes: '#1565c0',
-  no: '#b0bec5',
-  bar: '#1565c0',
-};
-
-const QUALITY_COLOURS = [
-  COLOURS.correct,
-  COLOURS.needsImprovement,
-  COLOURS.hasError,
-  COLOURS.hasCitationError,
-  COLOURS.harmful,
-];
+import { COLOURS, QUALITY_COLOURS } from '../../constants/dashboardColours.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -87,7 +68,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             title={t('execDashboard.charts.engagementTitle')}
             subtitle={t('execDashboard.charts.engagementSubtitle')}
             data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-            colours={sessionDepthData.length > 0 ? ['#b0bec5', '#1565c0', '#0d47a1'] : ['#e0e0e0']}
+            colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
             centreValue={avgPerConversation !== null ? `${avgPerConversation}×` : '—'}
             centreLabel={t('execDashboard.charts.engagementCentre')}
             footer={`${totalQuestions.toLocaleString()} ${t('execDashboard.charts.questions')} · ${totalConversations.toLocaleString()} ${t('execDashboard.charts.conversations')}`}
@@ -110,7 +91,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
           <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
             {t('execDashboard.kpi.partnerCount')}
           </div>
-          <div style={{ fontSize: 56, fontWeight: 700, color: '#1565c0', lineHeight: 1 }}>
+          <div style={{ fontSize: 56, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>
             {partnerCount}
           </div>
           <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
@@ -137,14 +118,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
         <DonutCard
           title={t('execDashboard.charts.accuracyTitle')}
           data={qualityData.length > 0 ? qualityData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-          colours={qualityData.length > 0 ? QUALITY_COLOURS : ['#e0e0e0']}
+          colours={qualityData.length > 0 ? QUALITY_COLOURS : [COLOURS.empty]}
           centreValue={accuracyPct !== null ? `${accuracyPct}%` : '—'}
           centreLabel={t('execDashboard.charts.accuracyCentre', { total: expertTotal.toLocaleString() })}
         />
         <DonutCard
           title={t('execDashboard.charts.satisfactionTitle')}
           data={satisfactionData.length > 0 ? satisfactionData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-          colours={satisfactionData.length > 0 ? [COLOURS.yes, COLOURS.no] : ['#e0e0e0']}
+          colours={satisfactionData.length > 0 ? [COLOURS.yes, COLOURS.no] : [COLOURS.empty]}
           centreValue={satisfactionPct !== null ? `${satisfactionPct}%` : '—'}
           centreLabel={t('execDashboard.charts.satisfactionCentre', { total: pfTotal.toLocaleString() })}
         />
@@ -156,7 +137,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
           <HBarCard
             title={t('execDashboard.charts.yesReasonsTitle')}
             data={yesReasonsData}
-            colour='#2e7d32'
+            colour={COLOURS.correct}
           />
         </div>
       )}
@@ -167,7 +148,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
           <HBarCard
             title={t('execDashboard.charts.departmentsTitle')}
             data={departmentData}
-            colour={COLOURS.bar}
+            colour={COLOURS.brand}
           />
         </div>
       )}

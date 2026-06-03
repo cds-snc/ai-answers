@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { COLOURS } from '../../../constants/dashboardColours.js';
 
 // Donut (hollow pie) chart in a card, with a big figure floated in the centre.
 // `subtitle` and `footer` are optional; omit them for the plain variant.
@@ -43,7 +44,7 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, f
         textAlign: 'center',
         pointerEvents: 'none',
       }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: '#1565c0', lineHeight: 1 }}>{centreValue}</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>{centreValue}</div>
         <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{centreLabel}</div>
       </div>
     </div>

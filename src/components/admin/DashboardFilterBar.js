@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
+import { COLOURS } from '../../constants/dashboardColours.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 const today = () => toISODate(new Date());
@@ -103,7 +104,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply }) => {
         onClick={handleApply}
         disabled={loading || !startDate || !endDate}
         style={{
-          padding: '7px 20px', background: '#1565c0', color: '#fff',
+          padding: '7px 20px', background: COLOURS.brand, color: '#fff',
           border: 'none', borderRadius: 4, fontSize: 14, fontWeight: 600,
           cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
         }}

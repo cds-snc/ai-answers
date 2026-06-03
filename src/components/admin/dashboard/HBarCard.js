@@ -1,9 +1,10 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { COLOURS } from '../../../constants/dashboardColours.js';
 
 // Horizontal bar chart in a card, for ranked lists. `height` is optional and
 // defaults to a height that grows with the number of rows.
-const HBarCard = ({ title, data, height, colour = '#1565c0' }) => (
+const HBarCard = ({ title, data, height, colour = COLOURS.brand }) => (
   <div style={{
     background: '#fff',
     border: '1px solid #e0e0e0',
