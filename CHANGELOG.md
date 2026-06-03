@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.132.0](https://github.com/cds-snc/ai-answers/compare/v1.131.1...v1.132.0) (2026-06-03)
+
+
+### Features
+
+* add expert evaluation chat export functionality and update locales ([6619226](https://github.com/cds-snc/ai-answers/commit/6619226ca74f9b1842dbaf5764be240a7b061b6b))
+* add logging for database connection details in dbConnect function ([e5d642c](https://github.com/cds-snc/ai-answers/commit/e5d642c7afe2b1182dc30ef704ce32a4840abad0))
+* add support for DocumentDB 8 configuration in terragrunt ([e76be91](https://github.com/cds-snc/ai-answers/commit/e76be9181a151c61c8c5418df4098e393b95f644))
+* add toggle to ensure prod does not get deploy for docdb8 until tested. ([c90b72f](https://github.com/cds-snc/ai-answers/commit/c90b72f7b832199f5d67efd26737e068228067af))
+* refactor countInteractionMissingChildren to use dynamic lookup conditions for missing children ([8d0d7ba](https://github.com/cds-snc/ai-answers/commit/8d0d7ba61998062dd42ac3ed998459592df3a60e))
+* simplify DocumentDB 8 resource configurations by removing count conditions ([9ca73d8](https://github.com/cds-snc/ai-answers/commit/9ca73d8c3e28b23401afe36f45e0d9363b7a16fe))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump vitest from 3.2.4 to 4.1.0 ([bba946f](https://github.com/cds-snc/ai-answers/commit/bba946ffa23b502fd90442f293216716879f8387))
+
 ## [1.131.1](https://github.com/cds-snc/ai-answers/compare/v1.131.0...v1.131.1) (2026-06-02)
 
 
