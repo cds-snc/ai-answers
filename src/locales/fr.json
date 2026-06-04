@@ -1204,7 +1204,6 @@
     "kpi": {
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
-      "feedbackReceived": "Rétroactions reçues",
       "partnerCount": "Partenaires ministériels",
       "partnerCountSub": "ministères collaborant avec des évaluations expertes"
     },
@@ -1236,8 +1235,7 @@
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
       "accuracyRate": "Taux d'exactitude",
-      "accuracySub": "Expert {expert} · IA {ai}",
-      "feedbackReceived": "Rétroactions reçues"
+      "accuracySub": "Expert {expert} · IA {ai}"
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
@@ -1295,6 +1293,8 @@
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
         "unhelpful": "Problème (non)",
+        "positive": "Utile",
+        "negative": "Non utile",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
         "reason": "Raison",
         "otherYes": "Autre (oui)",

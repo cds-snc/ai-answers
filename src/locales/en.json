@@ -1204,7 +1204,6 @@
     "kpi": {
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
-      "feedbackReceived": "Feedback received",
       "partnerCount": "Departmental partners",
       "partnerCountSub": "departments collaborating with expert evaluations"
     },
@@ -1236,8 +1235,7 @@
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
       "accuracyRate": "Accuracy rate",
-      "accuracySub": "Expert {expert} · AI {ai}",
-      "feedbackReceived": "Feedback received"
+      "accuracySub": "Expert {expert} · AI {ai}"
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
@@ -1295,6 +1293,8 @@
         "total": "Total questions with feedback",
         "helpful": "Helpful (yes)",
         "unhelpful": "Issue (no)",
+        "positive": "Helpful",
+        "negative": "Not helpful",
         "reasonTableTitle": "Public feedback reasons breakdown",
         "reason": "Reason",
         "otherYes": "Other (yes)",

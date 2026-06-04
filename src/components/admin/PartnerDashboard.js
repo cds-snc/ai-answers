@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildQualityBarData, buildSatisfactionData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
+import { buildQualityBarData, buildFeedbackSplitData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
@@ -35,10 +35,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const aiAccuracy = accuracyOf(aiTotal, aiHasError);
   const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
 
+  // User feedback split into helpful / not helpful, classified by score (not
+  // the raw yes/no click) so notWanted counts as helpful.
   const pfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
-  const pfYes = metrics.publicFeedbackTotals?.yes || 0;
-  const satisfactionPct = pfTotal > 0 ? Math.round((pfYes / pfTotal) * 100) : null;
-  const satisfactionData = useMemo(() => buildSatisfactionData(metrics.publicFeedbackTotals, t), [metrics.publicFeedbackTotals, t]);
+  const feedbackData = useMemo(
+    () => buildFeedbackSplitData(metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t),
+    [metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t],
+  );
+  const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
   const yesReasonsData = useMemo(() => buildYesReasonsData(metrics.publicFeedbackReasons, lang), [metrics.publicFeedbackReasons, lang]);
 
@@ -77,14 +81,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{expert}', pctOrDash(expertAccuracy))
             .replace('{ai}', pctOrDash(aiAccuracy))}
         />
-        <StatCard
-          uppercase
-          label={t('partnerDashboard.kpi.feedbackReceived')}
-          value={fmtN(pfTotal)}
-        />
       </div>
 
-      {/* Answer-quality bar + satisfaction donut */}
+      {/* Answer-quality bar + user-feedback donut */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ flex: 2, minWidth: 320 }}>
           <HBarCard
@@ -99,8 +98,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
         <DonutCard
           title={t('partnerDashboard.charts.satisfactionTitle')}
-          data={satisfactionData.length > 0 ? satisfactionData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-          colours={satisfactionData.length > 0 ? [COLOURS.yes, COLOURS.no] : [COLOURS.empty]}
+          data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+          colours={feedbackData.length > 0 ? [COLOURS.correct, COLOURS.no] : [COLOURS.empty]}
           centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
           centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
           lang={lang}

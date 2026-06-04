@@ -105,14 +105,19 @@ export const splitPublicFeedbackTotals = (totals = {}, noReasonsByScore = {}) =>
   };
 };
 
-// Public yes/no satisfaction -> chart rows (translated labels).
-// Returns [] when there is no public feedback.
-export const buildSatisfactionData = (publicFeedbackTotals, t) => {
+const NO_OTHER_SCORE = FEEDBACK_OPTIONS.NO.find(o => o.id === 'other').score;
+
+// Corrected public feedback -> two donut rows (helpful / not helpful),
+// classified by score so notWanted counts as helpful (see
+// splitPublicFeedbackTotals). Returns [] when there is no public feedback.
+export const buildFeedbackSplitData = (publicFeedbackTotals, publicFeedbackReasons, t) => {
   const total = publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
   if (total <= 0) return [];
+  const noByScore = groupByScore(publicFeedbackReasons?.no || {}, NO_OTHER_SCORE);
+  const { positive, negative } = splitPublicFeedbackTotals(publicFeedbackTotals, noByScore);
   return [
-    { name: t('metrics.dashboard.userScored.helpful'), value: publicFeedbackTotals.yes || 0 },
-    { name: t('metrics.dashboard.userScored.unhelpful'), value: publicFeedbackTotals.no || 0 },
+    { name: t('metrics.dashboard.userScored.positive'), value: positive.total },
+    { name: t('metrics.dashboard.userScored.negative'), value: negative.total },
   ];
 };
 

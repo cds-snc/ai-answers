@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildQualityBarData, buildSatisfactionData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
+import { buildQualityBarData, buildFeedbackSplitData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
@@ -41,10 +41,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
     [metrics.expertScored, metrics.aiScored, t],
   );
 
+  // User feedback split into helpful / not helpful, classified by score (not
+  // the raw yes/no click) so notWanted counts as helpful.
   const pfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
-  const pfYes = metrics.publicFeedbackTotals?.yes || 0;
-  const satisfactionPct = pfTotal > 0 ? Math.round((pfYes / pfTotal) * 100) : null;
-  const satisfactionData = useMemo(() => buildSatisfactionData(metrics.publicFeedbackTotals, t), [metrics.publicFeedbackTotals, t]);
+  const feedbackData = useMemo(
+    () => buildFeedbackSplitData(metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t),
+    [metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t],
+  );
+  const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
   const yesReasonsData = useMemo(() => buildYesReasonsData(metrics.publicFeedbackReasons, lang), [metrics.publicFeedbackReasons, lang]);
 
@@ -105,7 +109,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
           </div>
         </div>
 
-        {/* Evaluated + feedback stat cards */}
+        {/* Evaluated stat card */}
         <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <StatCard
             label={t('execDashboard.kpi.evaluated')}
@@ -113,14 +117,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
             sub={t('execDashboard.kpi.evaluatedSub')
               .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
           />
-          <StatCard
-            label={t('execDashboard.kpi.feedbackReceived')}
-            value={fmtN(pfTotal)}
-          />
         </div>
       </div>
 
-      {/* Row 2: Answer-quality bar + Satisfaction donut */}
+      {/* Row 2: Answer-quality bar + user-feedback donut */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ flex: 2, minWidth: 320 }}>
           <HBarCard
@@ -135,8 +135,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
         <DonutCard
           title={t('execDashboard.charts.satisfactionTitle')}
-          data={satisfactionData.length > 0 ? satisfactionData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-          colours={satisfactionData.length > 0 ? [COLOURS.yes, COLOURS.no] : [COLOURS.empty]}
+          data={feedbackData.length > 0 ? feedbackData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+          colours={feedbackData.length > 0 ? [COLOURS.correct, COLOURS.no] : [COLOURS.empty]}
           centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
           centreLabel={t('execDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
           lang={lang}
