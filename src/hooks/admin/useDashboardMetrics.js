@@ -23,8 +23,9 @@ const INITIAL_METRICS = {
 // underlying figures are computed server-side by the metrics endpoints — this
 // hook only orchestrates the parallel fetch, abort, and loading/error state.
 //
-// Call fetchMetrics({ startDate, endDate, department? }); omit department for
-// "all partners". The returned `metrics` is always the full shape above, so
+// Call fetchMetrics(filters) with at least { startDate, endDate }; any other
+// filter keys (department, userType, answerType, …) are passed straight through
+// to the endpoints. The returned `metrics` is always the full shape above, so
 // consumers can read fields without guarding for undefined.
 export function useDashboardMetrics() {
   const [metrics, setMetrics] = useState(INITIAL_METRICS);
@@ -35,8 +36,13 @@ export function useDashboardMetrics() {
   // Abort any in-flight request on unmount.
   useEffect(() => () => { if (abortRef.current) abortRef.current.abort(); }, []);
 
-  const fetchMetrics = useCallback(async ({ startDate, endDate, department } = {}) => {
-    if (!startDate || !endDate) return;
+  // Accepts a filters object and passes it straight through to the metrics
+  // endpoints. The exec dashboard's minimal bar supplies { startDate, endDate,
+  // department }; the partner dashboard's full FilterPanel supplies the richer
+  // set (userType, answerType, partnerEval, aiEval, urlEn/urlFr, …). Both are
+  // serialized as query params and read by the shared parseRequestFilters.
+  const fetchMetrics = useCallback(async (filters = {}) => {
+    if (!filters.startDate || !filters.endDate) return;
 
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -44,8 +50,6 @@ export function useDashboardMetrics() {
 
     setLoading(true);
     setError(null);
-    const filters = { startDate, endDate };
-    if (department) filters.department = department;
 
     try {
       const [usage, session, expert, ai, publicFb, dept] = await Promise.all([

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
-import DashboardFilterBar from './DashboardFilterBar.js';
+import FilterPanel from './FilterPanel.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
@@ -52,7 +52,15 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
-      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
+      <FilterPanel
+        lang={lang}
+        onApplyFilters={fetchMetrics}
+        onClearFilters={fetchMetrics}
+        isVisible={true}
+        autoApply={true}
+        applyDisabled={loading}
+        defaultUserType="all"
+      />
 
       {error && (
         <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
