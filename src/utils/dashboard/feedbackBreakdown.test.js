@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildQualityBarData, splitPublicFeedbackTotals } from './feedbackBreakdown.js';
+import { buildQualityBarData, splitPublicFeedbackTotals, buildFeedbackReasonsData } from './feedbackBreakdown.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { isPositiveScore } from '../../constants/UserFeedbackOptions.js';
 
@@ -85,5 +85,36 @@ describe('splitPublicFeedbackTotals', () => {
       positive: { en: 0, fr: 0, total: 0 },
       negative: { en: 0, fr: 0, total: 0 },
     });
+  });
+});
+
+describe('buildFeedbackReasonsData', () => {
+  const reasons = {
+    // yes reasons by score (1 savedTime higher count to prove no count-sorting)
+    yes: { '1': { en: 5, fr: 1, total: 6 }, '3': { en: 85, fr: 13, total: 98 } },
+    // no reasons by score: notWanted (5, positive) + negatives 6/7
+    no: { '5': { en: 15, fr: 6, total: 21 }, '6': { en: 33, fr: 4, total: 37 }, '7': { en: 27, fr: 2, total: 29 } },
+  };
+
+  it('returns [] when there is no feedback', () => {
+    expect(buildFeedbackReasonsData({}, t)).toEqual([]);
+    expect(buildFeedbackReasonsData(undefined, t)).toEqual([]);
+  });
+
+  it('orders all positives (green) first then negatives (red), not by count, and colours by score', () => {
+    const rows = buildFeedbackReasonsData(reasons, t);
+    // option order: noCall(1), savedTime(3), notWanted(5) | other-no(6), notDetailed(7)
+    // ('other' in the 'no' direction resolves via the otherNo label key)
+    expect(rows.map(r => r.name)).toEqual(['noCall', 'savedTime', 'notWanted', 'otherNo', 'notDetailed']);
+    expect(rows.map(r => r.value)).toEqual([6, 98, 21, 37, 29]);
+    expect(rows.map(r => r.colour)).toEqual([
+      COLOURS.feedbackPositive, COLOURS.feedbackPositive, COLOURS.feedbackPositive,
+      COLOURS.feedbackNegative, COLOURS.feedbackNegative,
+    ]);
+  });
+
+  it('drops zero-count reasons', () => {
+    const rows = buildFeedbackReasonsData({ yes: { '1': { en: 0, fr: 0, total: 0 } }, no: { '6': { en: 1, fr: 0, total: 1 } } }, t);
+    expect(rows.map(r => r.name)).toEqual(['otherNo']);
   });
 });

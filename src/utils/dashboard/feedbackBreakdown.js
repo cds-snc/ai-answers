@@ -121,17 +121,39 @@ export const buildFeedbackSplitData = (publicFeedbackTotals, publicFeedbackReaso
   ];
 };
 
-// "Why users found it helpful" reasons -> sorted chart rows with localized
-// labels (descending by count, zero rows dropped).
-export const buildYesReasonsData = (publicFeedbackReasons, lang) => {
-  const grouped = groupByScore(publicFeedbackReasons?.yes || {});
-  const localeFile = lang === 'fr' ? frLocale : enLocale;
-  return Object.entries(grouped)
-    .map(([scoreKey, counts]) => {
-      const id = SCORE_TO_KEY[parseInt(scoreKey, 10)];
-      const label = id ? (localeFile.homepage?.publicFeedback?.yes?.options?.[id] || id) : scoreKey;
-      return { name: label, value: counts.total };
-    })
-    .filter(d => d.value > 0)
-    .sort((a, b) => b.value - a.value);
+// Full public-feedback breakdown -> bar rows (one per reason). Ordered positives
+// first (green) then negatives (red); within each group the option order is
+// preserved — NOT sorted by count, so the order is stable across date ranges.
+// notWanted ("answer is clear, but not what I wanted to hear") is a 'no' reason
+// but counts as positive (green). Zero-count reasons are dropped. Returns []
+// when there is no public feedback.
+export const buildFeedbackReasonsData = (publicFeedbackReasons, t) => {
+  const yesByScore = groupByScore(publicFeedbackReasons?.yes || {}, YES_OTHER_SCORE);
+  const noByScore = groupByScore(publicFeedbackReasons?.no || {}, NO_OTHER_SCORE);
+
+  const labelFor = (id, dir) => {
+    if (id === 'other') {
+      return dir === 'yes'
+        ? t('metrics.dashboard.userScored.otherYes')
+        : t('metrics.dashboard.userScored.otherNo');
+    }
+    return t(`homepage.publicFeedback.${dir}.options.${id}`);
+  };
+
+  const rows = [];
+  [['yes', FEEDBACK_OPTIONS.YES, yesByScore], ['no', FEEDBACK_OPTIONS.NO, noByScore]].forEach(([dir, options, byScore]) => {
+    options.forEach((opt) => {
+      const value = byScore[String(opt.score)]?.total || 0;
+      if (value <= 0) return;
+      rows.push({ name: labelFor(opt.id, dir), value, positive: isPositiveScore(opt.score) });
+    });
+  });
+
+  // Positives first, then negatives; stable within each group.
+  return [...rows.filter(r => r.positive), ...rows.filter(r => !r.positive)]
+    .map(({ name, value, positive }) => ({
+      name,
+      value,
+      colour: positive ? COLOURS.feedbackPositive : COLOURS.feedbackNegative,
+    }));
 };

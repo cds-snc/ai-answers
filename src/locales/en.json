@@ -1220,7 +1220,7 @@
       "accuracySubtitle": "{total} evaluated · expert + AI",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
-      "yesReasonsTitle": "Why users found it helpful",
+      "feedbackBreakdownTitle": "Feedback breakdown",
       "departmentsTitle": "Top departments by question volume",
       "noData": "No data"
     }
@@ -1242,7 +1242,7 @@
       "accuracySubtitle": "{total} evaluated · expert + AI",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
-      "yesReasonsTitle": "Why users found it helpful",
+      "feedbackBreakdownTitle": "Feedback breakdown",
       "noData": "No data"
     }
   },

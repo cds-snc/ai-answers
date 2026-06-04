@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildQualityBarData, buildFeedbackSplitData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
+import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
@@ -44,7 +44,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   );
   const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
-  const yesReasonsData = useMemo(() => buildYesReasonsData(metrics.publicFeedbackReasons, lang), [metrics.publicFeedbackReasons, lang]);
+  const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
@@ -99,20 +99,19 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <DonutCard
           title={t('partnerDashboard.charts.satisfactionTitle')}
           data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-          colours={feedbackData.length > 0 ? [COLOURS.correct, COLOURS.no] : [COLOURS.empty]}
+          colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
           centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
           centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
           lang={lang}
         />
       </div>
 
-      {/* Yes reasons */}
-      {yesReasonsData.length > 0 && (
+      {/* Feedback reasons breakdown (positives green, negatives red) */}
+      {feedbackReasonsData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <HBarCard
-            title={t('partnerDashboard.charts.yesReasonsTitle')}
-            data={yesReasonsData}
-            colour={COLOURS.correct}
+            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+            data={feedbackReasonsData}
             lang={lang}
           />
         </div>

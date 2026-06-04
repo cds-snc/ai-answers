@@ -18,6 +18,9 @@ export const COLOURS = {
   // Public yes/no feedback
   yes: BRAND,
   no: '#b0bec5',
+  // User-feedback sentiment (helpful / not helpful), classified by score
+  feedbackPositive: '#2e7d32', // green
+  feedbackNegative: '#c62828', // red
   // Neutral fill for empty / no-data states
   empty: '#e0e0e0',
 };

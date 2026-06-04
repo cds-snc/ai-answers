@@ -1220,7 +1220,7 @@
       "accuracySubtitle": "{total} évaluées · expert et IA",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
-      "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",
+      "feedbackBreakdownTitle": "Répartition de la rétroaction",
       "departmentsTitle": "Principaux ministères par volume de questions",
       "noData": "Aucune donnée"
     }
@@ -1242,7 +1242,7 @@
       "accuracySubtitle": "{total} évaluées · expert et IA",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
-      "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",
+      "feedbackBreakdownTitle": "Répartition de la rétroaction",
       "noData": "Aucune donnée"
     }
   },
