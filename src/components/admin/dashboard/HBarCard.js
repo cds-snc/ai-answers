@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { COLOURS } from '../../../constants/dashboardColours.js';
 import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 
@@ -27,7 +27,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * 40)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 12 }} />
             <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
@@ -36,6 +36,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
               {data.map((entry) => (
                 <Cell key={entry.name} fill={entry.colour || colour} />
               ))}
+              <LabelList dataKey="value" position="right" formatter={fmtVal} style={{ fontSize: 12, fill: '#333' }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
