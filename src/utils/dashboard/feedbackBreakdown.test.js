@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildQualityBarData } from './feedbackBreakdown.js';
+import { buildQualityBarData, splitPublicFeedbackTotals } from './feedbackBreakdown.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
+import { isPositiveScore } from '../../constants/UserFeedbackOptions.js';
 
 // Stub translator: echoes the key's last segment so rows are identifiable.
 const t = (key) => key.split('.').pop();
@@ -42,5 +43,47 @@ describe('buildQualityBarData', () => {
     expect(names).not.toContain('needsImprovement');
     const harmful = rows.find((r) => r.name === 'harmful');
     expect(harmful).toMatchObject({ value: 0, count: 1, colour: COLOURS.harmful });
+  });
+});
+
+describe('isPositiveScore', () => {
+  it('treats all YES scores (1–4) and notWanted (5) as positive', () => {
+    expect([1, 2, 3, 4, 5].every(isPositiveScore)).toBe(true);
+  });
+  it('treats the other NO scores (6–10) as negative', () => {
+    expect([6, 7, 8, 9, 10].some(isPositiveScore)).toBe(false);
+  });
+  it('accepts numeric strings', () => {
+    expect(isPositiveScore('5')).toBe(true);
+    expect(isPositiveScore('6')).toBe(false);
+  });
+});
+
+describe('splitPublicFeedbackTotals', () => {
+  it('moves notWanted (score 5) from negative to positive, by language', () => {
+    // Matches the sample dashboard data: yes 136, no 105, notWanted = 21 (EN 15 / FR 6)
+    const totals = { totalQuestionsWithFeedback: 241, yes: 136, no: 105, enYes: 115, enNo: 90, frYes: 21, frNo: 15 };
+    const noReasonsByScore = {
+      '5': { en: 15, fr: 6, total: 21 }, // notWanted -> positive
+      '6': { en: 33, fr: 4, total: 37 },
+      '7': { en: 27, fr: 2, total: 29 },
+    };
+    const { positive, negative } = splitPublicFeedbackTotals(totals, noReasonsByScore);
+    expect(positive).toEqual({ en: 130, fr: 27, total: 157 });
+    expect(negative).toEqual({ en: 75, fr: 9, total: 84 });
+  });
+
+  it('leaves totals unchanged when there are no positive-about-AI no reasons', () => {
+    const totals = { yes: 10, no: 5, enYes: 8, enNo: 4, frYes: 2, frNo: 1 };
+    const { positive, negative } = splitPublicFeedbackTotals(totals, { '6': { en: 4, fr: 1, total: 5 } });
+    expect(positive).toEqual({ en: 8, fr: 2, total: 10 });
+    expect(negative).toEqual({ en: 4, fr: 1, total: 5 });
+  });
+
+  it('is safe with empty inputs', () => {
+    expect(splitPublicFeedbackTotals()).toEqual({
+      positive: { en: 0, fr: 0, total: 0 },
+      negative: { en: 0, fr: 0, total: 0 },
+    });
   });
 });

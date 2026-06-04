@@ -1,7 +1,7 @@
 // Pure helpers for turning the shared metric bundle into chart-ready data.
 // Used by the exec and partner dashboards. No React / no state — pass a
 // translation function (`t`) where translated labels are needed.
-import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+import { FEEDBACK_OPTIONS, SCORE_TO_KEY, isPositiveScore } from '../../constants/UserFeedbackOptions.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
@@ -73,6 +73,36 @@ export const buildQualityBarData = (expertScored, aiScored, t) => {
       count: sum(key),
     }))
     .filter(d => d.count > 0);
+};
+
+// Split public-feedback totals into "positive about AI" vs "negative about AI"
+// using the SCORE, not the raw yes/no click. Most 'no' clicks are negative,
+// but notWanted ("answer is clear, but not what I wanted to hear") is positive
+// feedback about the answer — so we move those buckets from negative to
+// positive. Records with no reason stay in their clicked bucket (we have no
+// signal to reclassify them). `noReasonsByScore` is the no-direction reason map
+// already grouped by score (e.g. from groupByScore). Returns { positive,
+// negative } each as { en, fr, total }.
+export const splitPublicFeedbackTotals = (totals = {}, noReasonsByScore = {}) => {
+  let moveEn = 0, moveFr = 0, moveTotal = 0;
+  Object.entries(noReasonsByScore).forEach(([scoreKey, counts]) => {
+    if (!isPositiveScore(scoreKey)) return;
+    moveEn += counts.en || 0;
+    moveFr += counts.fr || 0;
+    moveTotal += counts.total || 0;
+  });
+  return {
+    positive: {
+      en: (totals.enYes || 0) + moveEn,
+      fr: (totals.frYes || 0) + moveFr,
+      total: (totals.yes || 0) + moveTotal,
+    },
+    negative: {
+      en: (totals.enNo || 0) - moveEn,
+      fr: (totals.frNo || 0) - moveFr,
+      total: (totals.no || 0) - moveTotal,
+    },
+  };
 };
 
 // Public yes/no satisfaction -> chart rows (translated labels).

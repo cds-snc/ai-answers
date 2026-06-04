@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
-import { SCORE_TO_KEY, FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
+import { SCORE_TO_KEY, FEEDBACK_OPTIONS, isPositiveScore } from '../../constants/UserFeedbackOptions.js';
+import { splitPublicFeedbackTotals } from '../../utils/dashboard/feedbackBreakdown.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import enLocale from '../../locales/en.json';
@@ -80,21 +81,32 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
   const yesReasons = useMemo(() => groupByScore(rawYesReasons, YES_OTHER_SCORE), [rawYesReasons]);
   const noReasons = useMemo(() => groupByScore(rawNoReasons, NO_OTHER_SCORE), [rawNoReasons]);
 
-  // Table rows: one row per score key with yes EN/FR and no EN/FR counts.
-  // YES scores (1–4) and NO scores (5–10) are non-overlapping, so a key
-  // only ever appears in one direction — isPositive is unambiguous.
+  // Helpful / unhelpful split, classified by score (not the raw yes/no click)
+  // so notWanted ("answer is clear, but not what I wanted to hear") counts as
+  // positive about AI. See splitPublicFeedbackTotals.
+  const totalsSplit = useMemo(
+    () => splitPublicFeedbackTotals(metrics.publicFeedbackTotals, noReasons),
+    [metrics.publicFeedbackTotals, noReasons],
+  );
+
+  // Table rows: one row per score key with helpful EN/FR and unhelpful EN/FR
+  // counts. YES scores (1–4) and NO scores (5–10) are non-overlapping, so a key
+  // only ever appears in one direction. The label uses that natural direction,
+  // but positive-about-AI 'no' reasons (notWanted) are shown in the helpful
+  // columns so the column sums match the corrected totals above.
   const tableData = useMemo(() => {
     const allKeys = Array.from(new Set([...Object.keys(yesReasons), ...Object.keys(noReasons)]));
     return allKeys.map((key) => {
       const yes = yesReasons[key] || { en: 0, fr: 0, total: 0 };
       const no = noReasons[key] || { en: 0, fr: 0, total: 0 };
-      const isPositive = yes.total > 0;
+      const dataIsYes = yes.total > 0;
+      const moveToHelpful = !dataIsYes && isPositiveScore(key);
       return {
-        label: getReasonLabel(key, t, isPositive),
-        yesEn: yes.en,
-        yesFr: yes.fr,
-        noEn: no.en,
-        noFr: no.fr,
+        label: getReasonLabel(key, t, dataIsYes),
+        yesEn: yes.en + (moveToHelpful ? no.en : 0),
+        yesFr: yes.fr + (moveToHelpful ? no.fr : 0),
+        noEn: moveToHelpful ? 0 : no.en,
+        noFr: moveToHelpful ? 0 : no.fr,
         total: yes.total + no.total,
       };
     }).filter(row => row.total > 0);
@@ -107,35 +119,39 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
       <div className="bg-gray-50 p-4 rounded-lg">
         {/* Totals Table (unchanged) */}
         <DataTable
-          data={[
-            {
-              metric: t('metrics.dashboard.userScored.total'),
-              count: fmtN(metrics.publicFeedbackTotals.totalQuestionsWithFeedback),
-              percentage: fmtPct(100),
-              enCount: fmtN(metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo),
-              enPercentage: fmtPct(100),
-              frCount: fmtN(metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo),
-              frPercentage: fmtPct(100)
-            },
-            {
-              metric: t('metrics.dashboard.userScored.helpful'),
-              count: fmtN(metrics.publicFeedbackTotals.yes),
-              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.yes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
-              enCount: fmtN(metrics.publicFeedbackTotals.enYes),
-              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.enYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
-              frCount: fmtN(metrics.publicFeedbackTotals.frYes),
-              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.frYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0)
-            },
-            {
-              metric: t('metrics.dashboard.userScored.unhelpful'),
-              count: fmtN(metrics.publicFeedbackTotals.no),
-              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.no / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
-              enCount: fmtN(metrics.publicFeedbackTotals.enNo),
-              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.enNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0),
-              frCount: fmtN(metrics.publicFeedbackTotals.frNo),
-              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? fmtPct(Math.round((metrics.publicFeedbackTotals.frNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100)) : fmtPct(0)
-            }
-          ]}
+          data={(() => {
+            const total = metrics.publicFeedbackTotals.totalQuestionsWithFeedback;
+            const pctOf = (n) => (total ? fmtPct(Math.round((n / total) * 100)) : fmtPct(0));
+            return [
+              {
+                metric: t('metrics.dashboard.userScored.total'),
+                count: fmtN(total),
+                percentage: fmtPct(100),
+                enCount: fmtN(metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo),
+                enPercentage: fmtPct(100),
+                frCount: fmtN(metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo),
+                frPercentage: fmtPct(100)
+              },
+              {
+                metric: t('metrics.dashboard.userScored.helpful'),
+                count: fmtN(totalsSplit.positive.total),
+                percentage: pctOf(totalsSplit.positive.total),
+                enCount: fmtN(totalsSplit.positive.en),
+                enPercentage: pctOf(totalsSplit.positive.en),
+                frCount: fmtN(totalsSplit.positive.fr),
+                frPercentage: pctOf(totalsSplit.positive.fr)
+              },
+              {
+                metric: t('metrics.dashboard.userScored.unhelpful'),
+                count: fmtN(totalsSplit.negative.total),
+                percentage: pctOf(totalsSplit.negative.total),
+                enCount: fmtN(totalsSplit.negative.en),
+                enPercentage: pctOf(totalsSplit.negative.en),
+                frCount: fmtN(totalsSplit.negative.fr),
+                frPercentage: pctOf(totalsSplit.negative.fr)
+              }
+            ];
+          })()}
           columns={[
             { title: t('metrics.dashboard.metric'), data: 'metric' },
             { title: t('metrics.dashboard.count'), data: 'count' },
