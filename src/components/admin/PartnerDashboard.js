@@ -26,14 +26,21 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   // Accuracy rate (MetricsDashboard definition): only "has answer error" counts
   // against accuracy — citation issues / needs-improvement scores do not.
-  // Total accuracy combines expert + AI evals; the two are also broken out.
+  // Total accuracy combines expert + AI evals; the breakdown is by language.
   const accuracyOf = (total, hasError) => (total > 0 ? 100 - Math.round((hasError / total) * 100) : null);
   const expertHasError = metrics.expertScored?.hasError?.total || 0;
   const aiTotal = metrics.aiScored?.total?.total || 0;
   const aiHasError = metrics.aiScored?.hasError?.total || 0;
-  const expertAccuracy = accuracyOf(expertTotal, expertHasError);
-  const aiAccuracy = accuracyOf(aiTotal, aiHasError);
   const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
+
+  // EN/FR accuracy breakdown (expert + AI per language), shown only when each
+  // language has more than 10 evaluations — a percentage from a tiny sample is
+  // misleading, so below the threshold both are left blank.
+  const enEvalTotal = (metrics.expertScored?.total?.en || 0) + (metrics.aiScored?.total?.en || 0);
+  const frEvalTotal = (metrics.expertScored?.total?.fr || 0) + (metrics.aiScored?.total?.fr || 0);
+  const enAccuracy = accuracyOf(enEvalTotal, (metrics.expertScored?.hasError?.en || 0) + (metrics.aiScored?.hasError?.en || 0));
+  const frAccuracy = accuracyOf(frEvalTotal, (metrics.expertScored?.hasError?.fr || 0) + (metrics.aiScored?.hasError?.fr || 0));
+  const showAccuracyByLang = enEvalTotal > 10 && frEvalTotal > 10;
 
   // Harmful + content issues (expert evaluations only). Always shown, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
@@ -89,9 +96,11 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           uppercase
           label={t('partnerDashboard.kpi.accuracyRate')}
           value={pctOrDash(totalAccuracy)}
-          sub={t('partnerDashboard.kpi.accuracySub')
-            .replace('{expert}', pctOrDash(expertAccuracy))
-            .replace('{ai}', pctOrDash(aiAccuracy))}
+          sub={showAccuracyByLang
+            ? t('partnerDashboard.kpi.accuracySub')
+                .replace('{en}', fmtPct(enAccuracy))
+                .replace('{fr}', fmtPct(frAccuracy))
+            : undefined}
         />
       </div>
 

@@ -1239,7 +1239,7 @@
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
       "accuracyRate": "Accuracy rate",
-      "accuracySub": "Expert {expert} · AI {ai}",
+      "accuracySub": "EN: {en} · FR: {fr}",
       "harmful": "Harmful",
       "harmfulSub": "EN: {en} · FR: {fr}",
       "contentIssues": "Content issues",
