@@ -1198,7 +1198,9 @@
     "loading": "Loading..."
   },
   "execDashboard": {
-    "title": "Executive dashboard",
+    "title": "AI Answers Executive dashboard",
+    "description": "Data includes questions from all users - including from partner organizations signed in to test and evaluate.",
+    "last12Months": "Last 12 months",
     "error": "Failed to load data. Please try again.",
     "noData": "No data found for the selected date range.",
     "kpi": {

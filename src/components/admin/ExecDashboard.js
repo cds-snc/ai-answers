@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
+import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
@@ -13,8 +14,18 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
-  const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+
+  // Separate, fixed last-12-months summary, independent of the filter below.
+  // Fetched once on mount; the database only goes back to Oct 2025, which is
+  // within the window, so the query simply returns everything since then.
+  const { metrics: yearMetrics, fetchMetrics: fetchYearMetrics } = useDashboardMetrics();
+  useEffect(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(start.getFullYear() - 1);
+    fetchYearMetrics({ startDate: start.toISOString(), endDate: end.toISOString() });
+  }, [fetchYearMetrics]);
 
   // --- Derived data ---
 
@@ -37,19 +48,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   const expertTotal = metrics.expertScored?.total?.total || 0;
   const aiTotal = metrics.aiScored?.total?.total || 0;
-
-  // Accuracy rate: only "has answer error" counts against accuracy. Total
-  // combines expert + AI evals; the breakdown is by language, shown only when
-  // each language has more than 10 evaluations (a tiny sample is misleading).
-  const accuracyOf = (total, hasError) => (total > 0 ? 100 - Math.round((hasError / total) * 100) : null);
-  const expertHasError = metrics.expertScored?.hasError?.total || 0;
-  const aiHasError = metrics.aiScored?.hasError?.total || 0;
-  const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
-  const enEvalTotal = (metrics.expertScored?.total?.en || 0) + (metrics.aiScored?.total?.en || 0);
-  const frEvalTotal = (metrics.expertScored?.total?.fr || 0) + (metrics.aiScored?.total?.fr || 0);
-  const enAccuracy = accuracyOf(enEvalTotal, (metrics.expertScored?.hasError?.en || 0) + (metrics.aiScored?.hasError?.en || 0));
-  const frAccuracy = accuracyOf(frEvalTotal, (metrics.expertScored?.hasError?.fr || 0) + (metrics.aiScored?.hasError?.fr || 0));
-  const showAccuracyByLang = enEvalTotal > 10 && frEvalTotal > 10;
 
   // Harmful + content issues (expert evaluations only). Always shown, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
@@ -79,6 +77,12 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
+      {/* Last 12 months summary — fixed window, independent of the filter below */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('execDashboard.last12Months')}
+      </h2>
+      <KpiRow metrics={yearMetrics} t={t} lang={lang} />
+
       <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
 
       {error && (
@@ -87,31 +91,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Row 1: KPI cards (mirrors the partner dashboard) */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <StatCard
-          label={t('execDashboard.kpi.questionsAsked')}
-          value={fmtN(totalQuestions)}
-          sub={t('execDashboard.kpi.questionsSub')
-            .replace('{en}', fmtN(metrics.totalQuestionsEn))
-            .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
-        />
-        <StatCard
-          label={t('execDashboard.kpi.evaluated')}
-          value={fmtN(expertTotal)}
-          sub={t('execDashboard.kpi.evaluatedSub')
-            .replace('{pct}', fmtPct(expertTotal > 0 && totalQuestions > 0 ? Math.round((expertTotal / totalQuestions) * 100) : 0))}
-        />
-        <StatCard
-          label={t('execDashboard.kpi.accuracyRate')}
-          value={pctOrDash(totalAccuracy)}
-          sub={showAccuracyByLang
-            ? t('execDashboard.kpi.accuracySub')
-                .replace('{en}', fmtPct(enAccuracy))
-                .replace('{fr}', fmtPct(frAccuracy))
-            : undefined}
-        />
-      </div>
+      {/* Row 1: KPI cards for the selected date range (mirrors the partner dashboard) */}
+      <KpiRow metrics={metrics} t={t} lang={lang} />
 
       {/* Harmful + content issues (expert evaluations) */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>

@@ -1198,7 +1198,9 @@
     "loading": "Chargement..."
   },
   "execDashboard": {
-    "title": "Tableau de bord exécutif",
+    "title": "Tableau de bord exécutif Réponses IA",
+    "description": "Les données comprennent les questions de tous les utilisateurs, y compris celles des organisations partenaires connectées pour tester et évaluer.",
+    "last12Months": "12 derniers mois",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
     "kpi": {
