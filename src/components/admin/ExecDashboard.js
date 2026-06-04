@@ -13,6 +13,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
+  const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
   // --- Derived data ---
@@ -36,6 +37,20 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   const expertTotal = metrics.expertScored?.total?.total || 0;
   const aiTotal = metrics.aiScored?.total?.total || 0;
+
+  // Accuracy rate: only "has answer error" counts against accuracy. Total
+  // combines expert + AI evals; the breakdown is by language, shown only when
+  // each language has more than 10 evaluations (a tiny sample is misleading).
+  const accuracyOf = (total, hasError) => (total > 0 ? 100 - Math.round((hasError / total) * 100) : null);
+  const expertHasError = metrics.expertScored?.hasError?.total || 0;
+  const aiHasError = metrics.aiScored?.hasError?.total || 0;
+  const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
+  const enEvalTotal = (metrics.expertScored?.total?.en || 0) + (metrics.aiScored?.total?.en || 0);
+  const frEvalTotal = (metrics.expertScored?.total?.fr || 0) + (metrics.aiScored?.total?.fr || 0);
+  const enAccuracy = accuracyOf(enEvalTotal, (metrics.expertScored?.hasError?.en || 0) + (metrics.aiScored?.hasError?.en || 0));
+  const frAccuracy = accuracyOf(frEvalTotal, (metrics.expertScored?.hasError?.fr || 0) + (metrics.aiScored?.hasError?.fr || 0));
+  const showAccuracyByLang = enEvalTotal > 10 && frEvalTotal > 10;
+
   // Harmful + content issues (expert evaluations only). Always shown, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
   const contentIssue = metrics.expertScored?.hasContentIssue || {};
@@ -72,55 +87,30 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Row 1: Engagement donut + partner count */}
+      {/* Row 1: KPI cards (mirrors the partner dashboard) */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        {/* Engagement donut */}
-        <div style={{ flex: 2, minWidth: 280 }}>
-          <DonutCard
-            title={t('execDashboard.charts.engagementTitle')}
-            subtitle={t('execDashboard.charts.engagementSubtitle')}
-            data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-            colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-            centreValue={avgPerConversation !== null ? `${formatDecimal(avgPerConversation, lang, 1)}×` : '—'}
-            centreLabel={t('execDashboard.charts.engagementCentre')}
-            footer={`${fmtN(totalQuestions)} ${t('execDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('execDashboard.charts.conversations')}`}
-            lang={lang}
-          />
-        </div>
-
-        {/* Partner count card */}
-        <div style={{
-          flex: 1,
-          minWidth: 180,
-          background: '#fff',
-          border: '1px solid #e0e0e0',
-          borderRadius: 8,
-          padding: '28px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}>
-          <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-            {t('execDashboard.kpi.partnerCount')}
-          </div>
-          <div style={{ fontSize: 56, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>
-            {fmtN(partnerCount)}
-          </div>
-          <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
-            {t('execDashboard.kpi.partnerCountSub')}
-          </div>
-        </div>
-
-        {/* Evaluated stat card */}
-        <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <StatCard
-            label={t('execDashboard.kpi.evaluated')}
-            value={fmtN(expertTotal)}
-            sub={t('execDashboard.kpi.evaluatedSub')
-              .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
-          />
-        </div>
+        <StatCard
+          label={t('execDashboard.kpi.questionsAsked')}
+          value={fmtN(totalQuestions)}
+          sub={t('execDashboard.kpi.questionsSub')
+            .replace('{en}', fmtN(metrics.totalQuestionsEn))
+            .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
+        />
+        <StatCard
+          label={t('execDashboard.kpi.evaluated')}
+          value={fmtN(expertTotal)}
+          sub={t('execDashboard.kpi.evaluatedSub')
+            .replace('{pct}', fmtPct(expertTotal > 0 && totalQuestions > 0 ? Math.round((expertTotal / totalQuestions) * 100) : 0))}
+        />
+        <StatCard
+          label={t('execDashboard.kpi.accuracyRate')}
+          value={pctOrDash(totalAccuracy)}
+          sub={showAccuracyByLang
+            ? t('execDashboard.kpi.accuracySub')
+                .replace('{en}', fmtPct(enAccuracy))
+                .replace('{fr}', fmtPct(frAccuracy))
+            : undefined}
+        />
       </div>
 
       {/* Harmful + content issues (expert evaluations) */}
@@ -189,6 +179,46 @@ const ExecDashboard = ({ lang = 'en' }) => {
           />
         </div>
       )}
+
+      {/* Engagement donut + partner count (moved below the charts) */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ flex: 2, minWidth: 280 }}>
+          <DonutCard
+            title={t('execDashboard.charts.engagementTitle')}
+            subtitle={t('execDashboard.charts.engagementSubtitle')}
+            data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+            colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+            centreValue={avgPerConversation !== null ? `${formatDecimal(avgPerConversation, lang, 1)}×` : '—'}
+            centreLabel={t('execDashboard.charts.engagementCentre')}
+            footer={`${fmtN(totalQuestions)} ${t('execDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('execDashboard.charts.conversations')}`}
+            lang={lang}
+          />
+        </div>
+
+        {/* Partner count card */}
+        <div style={{
+          flex: 1,
+          minWidth: 180,
+          background: '#fff',
+          border: '1px solid #e0e0e0',
+          borderRadius: 8,
+          padding: '28px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}>
+          <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+            {t('execDashboard.kpi.partnerCount')}
+          </div>
+          <div style={{ fontSize: 56, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>
+            {fmtN(partnerCount)}
+          </div>
+          <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
+            {t('execDashboard.kpi.partnerCountSub')}
+          </div>
+        </div>
+      </div>
 
       {!loading && metrics.totalQuestions === 0 && !error && (
         <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>

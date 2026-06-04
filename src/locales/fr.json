@@ -1204,6 +1204,10 @@
     "kpi": {
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
+      "questionsAsked": "Questions posées",
+      "questionsSub": "EN : {en} · FR : {fr}",
+      "accuracyRate": "Taux d'exactitude",
+      "accuracySub": "EN : {en} · FR : {fr}",
       "partnerCount": "Partenaires ministériels",
       "partnerCountSub": "ministères collaborant avec des évaluations expertes",
       "harmful": "Nuisible",

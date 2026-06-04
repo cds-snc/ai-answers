@@ -1204,6 +1204,10 @@
     "kpi": {
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
+      "questionsAsked": "Questions asked",
+      "questionsSub": "EN: {en} · FR: {fr}",
+      "accuracyRate": "Accuracy rate",
+      "accuracySub": "EN: {en} · FR: {fr}",
       "partnerCount": "Departmental partners",
       "partnerCountSub": "departments collaborating with expert evaluations",
       "harmful": "Harmful",
