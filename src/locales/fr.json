@@ -1217,8 +1217,8 @@
       "singleQuestion": "1 question",
       "twoQuestions": "2 questions",
       "threeQuestions": "3 questions et plus",
-      "accuracyTitle": "Qualité des réponses (évaluation experte)",
-      "accuracyCentre": "sur {total} évaluées",
+      "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
+      "accuracySubtitle": "{total} évaluées · expert et IA",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",
@@ -1240,8 +1240,8 @@
       "feedbackReceived": "Rétroactions reçues"
     },
     "charts": {
-      "accuracyTitle": "Qualité des réponses (évaluation experte)",
-      "accuracyCentre": "sur {total} évaluées",
+      "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
+      "accuracySubtitle": "{total} évaluées · expert et IA",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "yesReasonsTitle": "Pourquoi les utilisateurs trouvaient cela utile",

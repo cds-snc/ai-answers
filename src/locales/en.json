@@ -1217,8 +1217,8 @@
       "singleQuestion": "1 question",
       "twoQuestions": "2 questions",
       "threeQuestions": "3+ questions",
-      "accuracyTitle": "Answer quality (expert evaluation)",
-      "accuracyCentre": "of {total} evaluated",
+      "accuracyTitle": "Answer quality (expert + AI evaluation)",
+      "accuracySubtitle": "{total} evaluated · expert + AI",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
       "yesReasonsTitle": "Why users found it helpful",
@@ -1240,8 +1240,8 @@
       "feedbackReceived": "Feedback received"
     },
     "charts": {
-      "accuracyTitle": "Answer quality (expert evaluation)",
-      "accuracyCentre": "of {total} evaluated",
+      "accuracyTitle": "Answer quality (expert + AI evaluation)",
+      "accuracySubtitle": "{total} evaluated · expert + AI",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
       "yesReasonsTitle": "Why users found it helpful",

@@ -2,6 +2,7 @@
 // Used by the exec and partner dashboards. No React / no state — pass a
 // translation function (`t`) where translated labels are needed.
 import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../constants/UserFeedbackOptions.js';
+import { COLOURS } from '../../constants/dashboardColours.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
@@ -47,18 +48,31 @@ export const groupByScore = (reasons = {}, otherScore = YES_OTHER_SCORE) => {
   return grouped;
 };
 
-// Expert quality breakdown -> chart rows (translated labels), zero rows dropped.
-// Returns [] when nothing has been expert-evaluated.
-export const buildQualityData = (expertScored, t) => {
-  const total = expertScored?.total?.total || 0;
+// Combined expert + AI quality breakdown -> bar-chart rows, each value a
+// PERCENTAGE of all evaluations (expert + AI) and each row carrying its own
+// semantic colour (best -> worst). Categories with zero evaluations are
+// dropped; rare categories that round below 1% still appear (filtered on the
+// raw count, not the percentage) so safety signals stay visible. Returns []
+// when nothing has been evaluated.
+export const buildQualityBarData = (expertScored, aiScored, t) => {
+  const sum = (key) => (expertScored?.[key]?.total || 0) + (aiScored?.[key]?.total || 0);
+  const total = sum('total');
   if (total <= 0) return [];
+  const pct = (n) => Math.round((n / total) * 100);
   return [
-    { name: t('metrics.dashboard.expertScored.correct'), value: expertScored.correct.total },
-    { name: t('metrics.dashboard.expertScored.needsImprovement'), value: expertScored.needsImprovement.total },
-    { name: t('metrics.dashboard.expertScored.hasError'), value: expertScored.hasError.total },
-    { name: t('metrics.dashboard.expertScored.hasCitationError'), value: expertScored.hasCitationError.total },
-    { name: t('metrics.dashboard.expertScored.harmful'), value: expertScored.harmful.total },
-  ].filter(d => d.value > 0);
+    { key: 'correct', colour: COLOURS.correct },
+    { key: 'needsImprovement', colour: COLOURS.needsImprovement },
+    { key: 'hasError', colour: COLOURS.hasError },
+    { key: 'hasCitationError', colour: COLOURS.hasCitationError },
+    { key: 'harmful', colour: COLOURS.harmful },
+  ]
+    .map(({ key, colour }) => ({
+      name: t(`metrics.dashboard.expertScored.${key}`),
+      value: pct(sum(key)),
+      colour,
+      count: sum(key),
+    }))
+    .filter(d => d.count > 0);
 };
 
 // Public yes/no satisfaction -> chart rows (translated labels).

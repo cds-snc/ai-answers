@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildQualityData, buildSatisfactionData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
+import { buildQualityBarData, buildSatisfactionData, buildYesReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
-import { COLOURS, QUALITY_COLOURS } from '../../constants/dashboardColours.js';
+import { COLOURS } from '../../constants/dashboardColours.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 
 const PartnerDashboard = ({ lang = 'en' }) => {
@@ -19,9 +19,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // --- Derived data ---
 
   const expertTotal = metrics.expertScored?.total?.total || 0;
-  const expertCorrect = metrics.expertScored?.correct?.total || 0;
-  const accuracyPct = expertTotal > 0 ? Math.round((expertCorrect / expertTotal) * 100) : null;
-  const qualityData = useMemo(() => buildQualityData(metrics.expertScored, t), [metrics.expertScored, t]);
+  const qualityData = useMemo(
+    () => buildQualityBarData(metrics.expertScored, metrics.aiScored, t),
+    [metrics.expertScored, metrics.aiScored, t],
+  );
 
   // Accuracy rate (MetricsDashboard definition): only "has answer error" counts
   // against accuracy — citation issues / needs-improvement scores do not.
@@ -83,16 +84,19 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Donuts */}
+      {/* Answer-quality bar + satisfaction donut */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <DonutCard
-          title={t('partnerDashboard.charts.accuracyTitle')}
-          data={qualityData.length > 0 ? qualityData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-          colours={qualityData.length > 0 ? QUALITY_COLOURS : [COLOURS.empty]}
-          centreValue={accuracyPct !== null ? fmtPct(accuracyPct) : '—'}
-          centreLabel={t('partnerDashboard.charts.accuracyCentre').replace('{total}', fmtN(expertTotal))}
-          lang={lang}
-        />
+        <div style={{ flex: 2, minWidth: 320 }}>
+          <HBarCard
+            title={t('partnerDashboard.charts.accuracyTitle')}
+            subtitle={t('partnerDashboard.charts.accuracySubtitle').replace('{total}', fmtN(expertTotal + aiTotal))}
+            data={qualityData}
+            percent
+            height={240}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            lang={lang}
+          />
+        </div>
         <DonutCard
           title={t('partnerDashboard.charts.satisfactionTitle')}
           data={satisfactionData.length > 0 ? satisfactionData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
