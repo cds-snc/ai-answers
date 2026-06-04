@@ -59,12 +59,15 @@ export const buildQualityBarData = (expertScored, aiScored, t) => {
   const total = sum('total');
   if (total <= 0) return [];
   const pct = (n) => Math.round((n / total) * 100);
+  // Fixed order = top→bottom in the horizontal bar (recharts renders the first
+  // row at the top). "Has answer error" is intentionally last so it always
+  // sits at the bottom of the chart. Harmful is excluded here — it's a subset
+  // of "has answer error" and lives on its own harmful/content-issues card.
   return [
     { key: 'correct', colour: COLOURS.correct },
     { key: 'needsImprovement', colour: COLOURS.needsImprovement },
-    { key: 'hasError', colour: COLOURS.hasError },
     { key: 'hasCitationError', colour: COLOURS.hasCitationError },
-    { key: 'harmful', colour: COLOURS.harmful },
+    { key: 'hasError', colour: COLOURS.hasError },
   ]
     .map(({ key, colour }) => ({
       name: t(`metrics.dashboard.expertScored.${key}`),

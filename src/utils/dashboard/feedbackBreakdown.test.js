@@ -34,15 +34,26 @@ describe('buildQualityBarData', () => {
     ]);
   });
 
-  it('drops categories with zero evaluations but keeps rare ones that round below 1%', () => {
-    // 1 harmful out of 500 = 0.2% → rounds to 0 but stays because count > 0
-    const expert = scored({ total: 500, correct: 499, harmful: 1 });
+  it('always orders "Has answer error" last (bottom of the bar) with citation above it', () => {
+    const expert = scored({ total: 100, correct: 60, needsImprovement: 10, hasCitationError: 20, hasError: 10 });
+    const rows = buildQualityBarData(expert, scored({ total: 0 }), t);
+    expect(rows.map((r) => r.name)).toEqual(['correct', 'needsImprovement', 'hasCitationError', 'hasError']);
+    expect(rows.map((r) => r.colour)).toEqual([
+      COLOURS.correct, COLOURS.needsImprovement, COLOURS.hasCitationError, COLOURS.hasError,
+    ]);
+  });
+
+  it('keeps rare categories that round below 1% (count > 0) and never includes harmful', () => {
+    // 1 citation issue out of 500 = 0.2% → rounds to 0 but stays because count > 0.
+    // harmful is a subset of "has answer error" and must not appear as its own bar.
+    const expert = scored({ total: 500, correct: 499, hasCitationError: 1, harmful: 5 });
     const rows = buildQualityBarData(expert, scored({ total: 0 }), t);
     const names = rows.map((r) => r.name);
-    expect(names).toContain('harmful');
+    expect(names).toContain('hasCitationError');
+    expect(names).not.toContain('harmful');
     expect(names).not.toContain('needsImprovement');
-    const harmful = rows.find((r) => r.name === 'harmful');
-    expect(harmful).toMatchObject({ value: 0, count: 1, colour: COLOURS.harmful });
+    const citation = rows.find((r) => r.name === 'hasCitationError');
+    expect(citation).toMatchObject({ value: 0, count: 1, colour: COLOURS.hasCitationError });
   });
 });
 

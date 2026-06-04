@@ -9,11 +9,13 @@ export const COLOURS = {
   // Brand / primary
   brand: BRAND,
   brandDark: BRAND_DARK,
-  // Expert-evaluation quality scale (best → worst)
+  // Answer-quality categories (keyed by category, not a strict scale):
+  // correct=green, needs improvement=yellow, citation issue=orange,
+  // has answer error=red, harmful=dark red.
   correct: '#2e7d32',
-  needsImprovement: '#f9a825',
-  hasError: '#e65100',
-  hasCitationError: '#bf360c',
+  needsImprovement: '#f2c200',
+  hasError: '#d32f2f',
+  hasCitationError: '#ed6c02',
   harmful: '#b71c1c',
   // Public yes/no feedback
   yes: BRAND,
@@ -24,12 +26,3 @@ export const COLOURS = {
   // Neutral fill for empty / no-data states
   empty: '#e0e0e0',
 };
-
-// Quality donut palette, in score order (correct → harmful).
-export const QUALITY_COLOURS = [
-  COLOURS.correct,
-  COLOURS.needsImprovement,
-  COLOURS.hasError,
-  COLOURS.hasCitationError,
-  COLOURS.harmful,
-];
