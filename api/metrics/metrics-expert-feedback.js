@@ -54,6 +54,22 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                             { $eq: ['$expertFeedback.sentence4ContentIssue', true] }
                         ]
                     }, 1, 0]
+                },
+                // Raw "answer error" signal (a sentence/total scored 0). Used to
+                // attribute content issues to error vs needs-improvement: harmful
+                // and citation-with-error answers are categorized away from
+                // 'hasError', but their underlying selection was Error, so they
+                // belong in the Error bucket. Content issues can only be flagged
+                // after selecting needs improvement or error, so "not an error
+                // signal" implies needs improvement.
+                hasErrorSignal: {
+                    $or: [
+                        { $eq: ['$expertFeedback.sentence1Score', 0] },
+                        { $eq: ['$expertFeedback.sentence2Score', 0] },
+                        { $eq: ['$expertFeedback.sentence3Score', 0] },
+                        { $eq: ['$expertFeedback.sentence4Score', 0] },
+                        { $eq: ['$expertFeedback.totalScore', 0] }
+                    ]
                 }
             }
         },
@@ -64,6 +80,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 department: 1,
                 category: 1,
                 hasContentIssue: 1,
+                hasErrorSignal: 1,
                 // Keep IDs for potential cross-filter lookups
                 answerId: '$interactions.answer',
                 autoEvalId: '$interactions.autoEval'
@@ -158,10 +175,12 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
             hasContentIssue: { $sum: '$hasContentIssue' },
             hasContentIssueEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$hasContentIssue', 0] } },
             hasContentIssueFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$hasContentIssue', 0] } },
-            // Content issues split by the answer's category: a content issue can
-            // sit on a needs-improvement or an answer-error response.
-            hasContentIssueNeedsImprovement: { $sum: { $cond: [{ $and: [{ $eq: ['$hasContentIssue', 1] }, { $eq: ['$category', 'needsImprovement'] }] }, 1, 0] } },
-            hasContentIssueError: { $sum: { $cond: [{ $and: [{ $eq: ['$hasContentIssue', 1] }, { $eq: ['$category', 'hasError'] }] }, 1, 0] } }
+            // Content issues split into error vs needs-improvement by the raw
+            // error signal (not the priority category), so harmful/citation
+            // answers that also carry an error land in the Error bucket and the
+            // two always sum to the content-issue total.
+            hasContentIssueError: { $sum: { $cond: [{ $and: [{ $eq: ['$hasContentIssue', 1] }, '$hasErrorSignal'] }, 1, 0] } },
+            hasContentIssueNeedsImprovement: { $sum: { $cond: [{ $and: [{ $eq: ['$hasContentIssue', 1] }, { $not: ['$hasErrorSignal'] }] }, 1, 0] } }
         }
     });
 
