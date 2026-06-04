@@ -88,7 +88,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <div style={{ flex: 2, minWidth: 320 }}>
           <HBarCard
             title={t('partnerDashboard.charts.accuracyTitle')}
-            subtitle={t('partnerDashboard.charts.accuracySubtitle').replace('{total}', fmtN(expertTotal + aiTotal))}
+            subtitle={t('partnerDashboard.charts.accuracySubtitle')
+              .replace('{total}', fmtN(expertTotal + aiTotal))
+              .replace('{expert}', fmtN(expertTotal))
+              .replace('{ai}', fmtN(aiTotal))}
             data={qualityData}
             percent
             height={240}

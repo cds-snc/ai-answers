@@ -1217,7 +1217,7 @@
       "twoQuestions": "2 questions",
       "threeQuestions": "3 questions et plus",
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
-      "accuracySubtitle": "{total} évaluées · expert et IA",
+      "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "feedbackBreakdownTitle": "Répartition de la rétroaction",
@@ -1239,7 +1239,7 @@
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
-      "accuracySubtitle": "{total} évaluées · expert et IA",
+      "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "feedbackBreakdownTitle": "Répartition de la rétroaction",

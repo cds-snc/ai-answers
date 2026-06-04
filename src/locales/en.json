@@ -1217,7 +1217,7 @@
       "twoQuestions": "2 questions",
       "threeQuestions": "3+ questions",
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
-      "accuracySubtitle": "{total} evaluated · expert + AI",
+      "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
       "feedbackBreakdownTitle": "Feedback breakdown",
@@ -1239,7 +1239,7 @@
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
-      "accuracySubtitle": "{total} evaluated · expert + AI",
+      "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
       "feedbackBreakdownTitle": "Feedback breakdown",

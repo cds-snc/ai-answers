@@ -125,7 +125,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
         <div style={{ flex: 2, minWidth: 320 }}>
           <HBarCard
             title={t('execDashboard.charts.accuracyTitle')}
-            subtitle={t('execDashboard.charts.accuracySubtitle').replace('{total}', fmtN(expertTotal + aiTotal))}
+            subtitle={t('execDashboard.charts.accuracySubtitle')
+              .replace('{total}', fmtN(expertTotal + aiTotal))
+              .replace('{expert}', fmtN(expertTotal))
+              .replace('{ai}', fmtN(aiTotal))}
             data={qualityData}
             percent
             height={240}
