@@ -1205,7 +1205,11 @@
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
       "partnerCount": "Partenaires ministériels",
-      "partnerCountSub": "ministères collaborant avec des évaluations expertes"
+      "partnerCountSub": "ministères collaborant avec des évaluations expertes",
+      "harmful": "Nuisible",
+      "harmfulSub": "EN : {en} · FR : {fr}",
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
     },
     "charts": {
       "engagementTitle": "Engagement de session",
@@ -1235,7 +1239,11 @@
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
       "accuracyRate": "Taux d'exactitude",
-      "accuracySub": "Expert {expert} · IA {ai}"
+      "accuracySub": "Expert {expert} · IA {ai}",
+      "harmful": "Nuisible",
+      "harmfulSub": "EN : {en} · FR : {fr}",
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",

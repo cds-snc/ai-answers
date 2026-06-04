@@ -11,7 +11,7 @@ const INITIAL_METRICS = {
     twoQuestions: { total: 0 },
     threeQuestions: { total: 0 },
   },
-  expertScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 }, hasContentIssue: { total: 0 } },
+  expertScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0, en: 0, fr: 0 }, hasContentIssue: { total: 0, en: 0, fr: 0, needsImprovement: 0, hasError: 0 } },
   aiScored: { total: { total: 0 }, correct: { total: 0 }, needsImprovement: { total: 0 }, hasError: { total: 0 }, hasCitationError: { total: 0 }, harmful: { total: 0 } },
   publicFeedbackTotals: { totalQuestionsWithFeedback: 0, yes: 0, no: 0 },
   publicFeedbackReasons: { yes: {}, no: {} },

@@ -35,6 +35,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const aiAccuracy = accuracyOf(aiTotal, aiHasError);
   const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
 
+  // Harmful + content issues (expert evaluations only). Always shown, even at 0.
+  const harmful = metrics.expertScored?.harmful || {};
+  const contentIssue = metrics.expertScored?.hasContentIssue || {};
+
   // User feedback split into helpful / not helpful, classified by score (not
   // the raw yes/no click) so notWanted counts as helpful.
   const pfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
@@ -80,6 +84,26 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           sub={t('partnerDashboard.kpi.accuracySub')
             .replace('{expert}', pctOrDash(expertAccuracy))
             .replace('{ai}', pctOrDash(aiAccuracy))}
+        />
+      </div>
+
+      {/* Harmful + content issues (expert evaluations) */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.harmful')}
+          value={fmtN(harmful.total)}
+          sub={t('partnerDashboard.kpi.harmfulSub')
+            .replace('{en}', fmtN(harmful.en))
+            .replace('{fr}', fmtN(harmful.fr))}
+        />
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.contentIssues')}
+          value={fmtN(contentIssue.total)}
+          sub={t('partnerDashboard.kpi.contentIssuesSub')
+            .replace('{ni}', fmtN(contentIssue.needsImprovement))
+            .replace('{error}', fmtN(contentIssue.hasError))}
         />
       </div>
 

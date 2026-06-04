@@ -36,6 +36,9 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   const expertTotal = metrics.expertScored?.total?.total || 0;
   const aiTotal = metrics.aiScored?.total?.total || 0;
+  // Harmful + content issues (expert evaluations only). Always shown, even at 0.
+  const harmful = metrics.expertScored?.harmful || {};
+  const contentIssue = metrics.expertScored?.hasContentIssue || {};
   const qualityData = useMemo(
     () => buildQualityBarData(metrics.expertScored, metrics.aiScored, t),
     [metrics.expertScored, metrics.aiScored, t],
@@ -118,6 +121,24 @@ const ExecDashboard = ({ lang = 'en' }) => {
               .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
           />
         </div>
+      </div>
+
+      {/* Harmful + content issues (expert evaluations) */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          label={t('execDashboard.kpi.harmful')}
+          value={fmtN(harmful.total)}
+          sub={t('execDashboard.kpi.harmfulSub')
+            .replace('{en}', fmtN(harmful.en))
+            .replace('{fr}', fmtN(harmful.fr))}
+        />
+        <StatCard
+          label={t('execDashboard.kpi.contentIssues')}
+          value={fmtN(contentIssue.total)}
+          sub={t('execDashboard.kpi.contentIssuesSub')
+            .replace('{ni}', fmtN(contentIssue.needsImprovement))
+            .replace('{error}', fmtN(contentIssue.hasError))}
+        />
       </div>
 
       {/* Row 2: Answer-quality bar + user-feedback donut */}

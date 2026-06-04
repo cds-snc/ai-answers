@@ -1205,7 +1205,11 @@
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
       "partnerCount": "Departmental partners",
-      "partnerCountSub": "departments collaborating with expert evaluations"
+      "partnerCountSub": "departments collaborating with expert evaluations",
+      "harmful": "Harmful",
+      "harmfulSub": "EN: {en} · FR: {fr}",
+      "contentIssues": "Content issues",
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
       "engagementTitle": "Session engagement",
@@ -1235,7 +1239,11 @@
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
       "accuracyRate": "Accuracy rate",
-      "accuracySub": "Expert {expert} · AI {ai}"
+      "accuracySub": "Expert {expert} · AI {ai}",
+      "harmful": "Harmful",
+      "harmfulSub": "EN: {en} · FR: {fr}",
+      "contentIssues": "Content issues",
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
