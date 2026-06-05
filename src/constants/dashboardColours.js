@@ -9,13 +9,14 @@ export const COLOURS = {
   // Brand / primary
   brand: BRAND,
   brandDark: BRAND_DARK,
-  // Answer-quality categories (keyed by category, not a strict scale):
-  // correct=green, needs improvement=yellow, citation issue=orange,
-  // has answer error=red, harmful=dark red.
+  // Answer-quality categories (keyed by category, not a strict scale).
+  // correct/needs-improvement/citation-issue are all "correct" outcomes, so
+  // they use a green gradient (dark → medium → light); has answer error=red,
+  // harmful=dark red.
   correct: '#2e7d32',
-  needsImprovement: '#f2c200',
+  needsImprovement: '#66bb6a',
   hasError: '#d32f2f',
-  hasCitationError: '#ed6c02',
+  hasCitationError: '#a5d6a7',
   harmful: '#b71c1c',
   // Public yes/no feedback
   yes: BRAND,

@@ -70,7 +70,7 @@ export const buildQualityBarData = (expertScored, aiScored, t) => {
     { key: 'hasError', colour: COLOURS.hasError },
   ]
     .map(({ key, colour }) => ({
-      name: t(`metrics.dashboard.expertScored.${key}`),
+      name: t(`metrics.dashboard.qualityBar.${key}`),
       value: pct(sum(key)),
       colour,
       count: sum(key),

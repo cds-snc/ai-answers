@@ -85,13 +85,54 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
 
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('execDashboard.filteredPeriod')}
+      </h2>
+
       {error && (
         <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
           {t('execDashboard.error')}
         </div>
       )}
 
-      {/* Row 1: KPI cards for the selected date range (mirrors the partner dashboard) */}
+      {/* Row 1: partner count + user-satisfaction donut — visually distinct from
+          the headline KPI cards below so the filtered range doesn't read as a
+          near-duplicate of the last-12-months row above. */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        {/* Partner count card */}
+        <div style={{
+          flex: 1,
+          minWidth: 180,
+          background: '#fff',
+          border: '1px solid #e0e0e0',
+          borderRadius: 8,
+          padding: '28px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}>
+          <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+            {t('execDashboard.kpi.partnerCount')}
+          </div>
+          <div style={{ fontSize: 56, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>
+            {fmtN(partnerCount)}
+          </div>
+          <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
+            {t('execDashboard.kpi.partnerCountSub')}
+          </div>
+        </div>
+        <DonutCard
+          title={t('execDashboard.charts.satisfactionTitle')}
+          data={feedbackData.length > 0 ? feedbackData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+          colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
+          centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
+          centreLabel={t('execDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
+          lang={lang}
+        />
+      </div>
+
+      {/* Row 2: KPI cards for the selected date range (mirrors the partner dashboard) */}
       <KpiRow metrics={metrics} t={t} lang={lang} />
 
       {/* Harmful + content issues (expert evaluations) */}
@@ -112,28 +153,18 @@ const ExecDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Row 2: Answer-quality bar + user-feedback donut */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 2, minWidth: 320 }}>
-          <HBarCard
-            title={t('execDashboard.charts.accuracyTitle')}
-            subtitle={t('execDashboard.charts.accuracySubtitle')
-              .replace('{total}', fmtN(expertTotal + aiTotal))
-              .replace('{expert}', fmtN(expertTotal))
-              .replace('{ai}', fmtN(aiTotal))}
-            data={qualityData}
-            percent
-            height={240}
-            noDataLabel={t('execDashboard.charts.noData')}
-            lang={lang}
-          />
-        </div>
-        <DonutCard
-          title={t('execDashboard.charts.satisfactionTitle')}
-          data={feedbackData.length > 0 ? feedbackData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-          colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
-          centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
-          centreLabel={t('execDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
+      {/* Answer-quality bar */}
+      <div style={{ marginBottom: 24 }}>
+        <HBarCard
+          title={t('execDashboard.charts.accuracyTitle')}
+          subtitle={t('execDashboard.charts.accuracySubtitle')
+            .replace('{total}', fmtN(expertTotal + aiTotal))
+            .replace('{expert}', fmtN(expertTotal))
+            .replace('{ai}', fmtN(aiTotal))}
+          data={qualityData}
+          percent
+          height={240}
+          noDataLabel={t('execDashboard.charts.noData')}
           lang={lang}
         />
       </div>
@@ -161,44 +192,18 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Engagement donut + partner count (moved below the charts) */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 2, minWidth: 280 }}>
-          <DonutCard
-            title={t('execDashboard.charts.engagementTitle')}
-            subtitle={t('execDashboard.charts.engagementSubtitle')}
-            data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-            colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-            centreValue={avgPerConversation !== null ? `${formatDecimal(avgPerConversation, lang, 1)}×` : '—'}
-            centreLabel={t('execDashboard.charts.engagementCentre')}
-            footer={`${fmtN(totalQuestions)} ${t('execDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('execDashboard.charts.conversations')}`}
-            lang={lang}
-          />
-        </div>
-
-        {/* Partner count card */}
-        <div style={{
-          flex: 1,
-          minWidth: 180,
-          background: '#fff',
-          border: '1px solid #e0e0e0',
-          borderRadius: 8,
-          padding: '28px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}>
-          <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-            {t('execDashboard.kpi.partnerCount')}
-          </div>
-          <div style={{ fontSize: 56, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>
-            {fmtN(partnerCount)}
-          </div>
-          <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
-            {t('execDashboard.kpi.partnerCountSub')}
-          </div>
-        </div>
+      {/* Engagement donut */}
+      <div style={{ marginBottom: 24 }}>
+        <DonutCard
+          title={t('execDashboard.charts.engagementTitle')}
+          subtitle={t('execDashboard.charts.engagementSubtitle')}
+          data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+          colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+          centreValue={avgPerConversation !== null ? `${formatDecimal(avgPerConversation, lang, 1)}×` : '—'}
+          centreLabel={t('execDashboard.charts.engagementCentre')}
+          footer={`${fmtN(totalQuestions)} ${t('execDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('execDashboard.charts.conversations')}`}
+          lang={lang}
+        />
       </div>
 
       {!loading && metrics.totalQuestions === 0 && !error && (

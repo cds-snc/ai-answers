@@ -1201,6 +1201,7 @@
     "title": "Tableau de bord exécutif Réponses IA",
     "description": "Les données comprennent les questions de tous les utilisateurs, y compris celles des organisations partenaires connectées pour tester et évaluer.",
     "last12Months": "12 derniers mois",
+    "filteredPeriod": "Période filtrée (30 derniers jours par défaut)",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
     "kpi": {
@@ -1210,7 +1211,7 @@
       "questionsSub": "EN : {en} · FR : {fr}",
       "accuracyRate": "Taux d'exactitude",
       "accuracySub": "EN : {en} · FR : {fr}",
-      "partnerCount": "Partenaires ministériels",
+      "partnerCount": "Institutions partenaires",
       "partnerCountSub": "ministères collaborant avec des évaluations expertes",
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}",
@@ -1231,7 +1232,7 @@
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "feedbackBreakdownTitle": "Répartition de la rétroaction",
-      "departmentsTitle": "Principaux ministères par volume de questions",
+      "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
     }
   },
@@ -1300,6 +1301,12 @@
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur de réponse",
         "hasCitationError": "Problème de citation"
+      },
+      "qualityBar": {
+        "correct": "Correct",
+        "needsImprovement": "Correct - nécessite une amélioration",
+        "hasCitationError": "Correct - problème de citation",
+        "hasError": "Contient une erreur de réponse"
       },
       "userScored": {
         "title": "Rétroaction des utilisateurs (publique)",
