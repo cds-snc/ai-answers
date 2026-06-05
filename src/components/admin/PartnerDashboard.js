@@ -58,6 +58,16 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
+  // Conversation length (sessions broken down by number of questions asked).
+  const totalConversations = metrics.totalConversations || 0;
+  const totalQuestions = metrics.totalQuestions || 0;
+  const sq = metrics.sessionsByQuestionCount || {};
+  const sessionDepthData = totalConversations > 0 ? [
+    { name: t('partnerDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
+    { name: t('partnerDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
+    { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+  ].filter(d => d.value > 0) : [];
+
   // Operations metrics. Median response time comes from the technical metrics
   // endpoint (milliseconds, shown in seconds); token totals come from usage.
   const responseTime = metrics.responseTime || {};
@@ -110,7 +120,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Harmful + content issues (expert evaluations) */}
+      {/* Harmful (expert evaluations) */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <StatCard
           uppercase
@@ -120,17 +130,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{en}', fmtN(harmful.en))
             .replace('{fr}', fmtN(harmful.fr))}
         />
-        <StatCard
-          uppercase
-          label={t('partnerDashboard.kpi.contentIssues')}
-          value={fmtN(contentIssue.total)}
-          sub={t('partnerDashboard.kpi.contentIssuesSub')
-            .replace('{ni}', fmtN(contentIssue.needsImprovement))
-            .replace('{error}', fmtN(contentIssue.hasError))}
-        />
       </div>
 
-      {/* Answer-quality bar + user-feedback donut */}
+      {/* Answer-quality bar + content issues card */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ flex: 2, minWidth: 320 }}>
           <HBarCard
@@ -146,6 +148,29 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             lang={lang}
           />
         </div>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.contentIssues')}
+          value={fmtN(contentIssue.total)}
+          sub={t('partnerDashboard.kpi.contentIssuesSub')
+            .replace('{ni}', fmtN(contentIssue.needsImprovement))
+            .replace('{error}', fmtN(contentIssue.hasError))}
+        />
+      </div>
+
+      {/* User-satisfaction donut + its helpful/not-helpful breakdown bar
+          (positives green, negatives red). The donut always shows; the bar
+          joins it on the same row when there are reasons to break down. */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        {feedbackReasonsData.length > 0 && (
+          <div style={{ flex: 2, minWidth: 320 }}>
+            <HBarCard
+              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+              data={feedbackReasonsData}
+              lang={lang}
+            />
+          </div>
+        )}
         <DonutCard
           title={t('partnerDashboard.charts.satisfactionTitle')}
           data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
@@ -156,16 +181,20 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Feedback reasons breakdown (positives green, negatives red) */}
-      {feedbackReasonsData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <HBarCard
-            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackReasonsData}
-            lang={lang}
-          />
-        </div>
-      )}
+      {/* Conversation length. Centre figure is the total conversation count;
+          the slices break those down by number of questions asked. */}
+      <div style={{ marginBottom: 24 }}>
+        <DonutCard
+          title={t('partnerDashboard.charts.engagementTitle')}
+          subtitle={t('partnerDashboard.charts.engagementSubtitle')}
+          data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+          colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+          centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+          centreLabel={t('partnerDashboard.charts.conversations')}
+          footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
+          lang={lang}
+        />
+      </div>
 
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from

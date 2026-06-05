@@ -1223,23 +1223,12 @@
       "partnerCount": "Institutions partenaires",
       "partnerCountSub": "ministères collaborant avec des évaluations expertes",
       "harmful": "Nuisible",
-      "harmfulSub": "EN : {en} · FR : {fr}",
-      "contentIssues": "Problèmes de contenu",
-      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
+      "harmfulSub": "EN : {en} · FR : {fr}"
     },
     "charts": {
-      "engagementTitle": "Longueur des conversations",
-      "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
-      "questions": "questions",
-      "conversations": "conversations",
-      "singleQuestion": "1 question",
-      "twoQuestions": "2 questions",
-      "threeQuestions": "3 questions et plus",
-      "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
-      "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
-      "feedbackBreakdownTitle": "Répartition de la rétroaction",
+      "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
       "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
     },
@@ -1251,6 +1240,9 @@
       "inputTokens": "Total des jetons d'entrée",
       "outputTokens": "Total des jetons de sortie",
       "tokensSub": "EN : {en} · FR : {fr}"
+    },
+    "safety": {
+      "title": "Mesures de sécurité"
     }
   },
   "partnerDashboard": {
@@ -1274,7 +1266,14 @@
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
       "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
-      "feedbackBreakdownTitle": "Répartition de la rétroaction",
+      "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
+      "engagementTitle": "Longueur des conversations",
+      "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3 questions et plus",
       "noData": "Aucune donnée"
     },
     "ops": {

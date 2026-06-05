@@ -1223,23 +1223,12 @@
       "partnerCount": "Partner institutions",
       "partnerCountSub": "departments collaborating with expert evaluations",
       "harmful": "Harmful",
-      "harmfulSub": "EN: {en} · FR: {fr}",
-      "contentIssues": "Content issues",
-      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
+      "harmfulSub": "EN: {en} · FR: {fr}"
     },
     "charts": {
-      "engagementTitle": "Conversation length",
-      "engagementSubtitle": "How many questions users ask per conversation",
-      "questions": "questions",
-      "conversations": "conversations",
-      "singleQuestion": "1 question",
-      "twoQuestions": "2 questions",
-      "threeQuestions": "3+ questions",
-      "accuracyTitle": "Answer quality (expert + AI evaluation)",
-      "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
-      "feedbackBreakdownTitle": "Feedback breakdown",
+      "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
       "departmentsTitle": "Top institutions by question volume",
       "noData": "No data"
     },
@@ -1251,6 +1240,9 @@
       "inputTokens": "Total input tokens",
       "outputTokens": "Total output tokens",
       "tokensSub": "EN: {en} · FR: {fr}"
+    },
+    "safety": {
+      "title": "Safety metrics"
     }
   },
   "partnerDashboard": {
@@ -1274,7 +1266,14 @@
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
       "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
-      "feedbackBreakdownTitle": "Feedback breakdown",
+      "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
+      "engagementTitle": "Conversation length",
+      "engagementSubtitle": "How many questions users ask per conversation",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3+ questions",
       "noData": "No data"
     },
     "ops": {
