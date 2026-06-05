@@ -28,20 +28,40 @@ const ExecDashboard = ({ lang = 'en' }) => {
     fetchYearMetrics({ startDate: start.toISOString(), endDate: end.toISOString() });
   }, [fetchYearMetrics]);
 
-  // --- Last-12-months derived data (partner count + user-satisfaction donut) ---
+  // --- Last-12-months derived data ---
 
+  // Row 1: questions, expert evaluated, partner count.
+  const yearQuestions = yearMetrics.totalQuestions || 0;
+  const yearExpertTotal = yearMetrics.expertScored?.total?.total || 0;
+  const yearEvaluatedPct = yearExpertTotal > 0 && yearQuestions > 0 ? Math.round((yearExpertTotal / yearQuestions) * 100) : 0;
   // Partner count — departments with at least 1 expert evaluation.
   const yearPartnerCount = Object.values(yearMetrics.byDepartment || {})
     .filter(d => (d.expertScored?.total || 0) > 0).length;
 
-  // User feedback split into helpful / not helpful, classified by score (not
-  // the raw yes/no click) so notWanted counts as helpful.
+  // Row 2 left: accuracy donut. Only "has answer error" counts against accuracy
+  // (citation issues / needs-improvement do not); combines expert + AI evals.
+  const yearAiTotal = yearMetrics.aiScored?.total?.total || 0;
+  const yearEvalTotal = yearExpertTotal + yearAiTotal;
+  const yearHasError = (yearMetrics.expertScored?.hasError?.total || 0) + (yearMetrics.aiScored?.hasError?.total || 0);
+  const yearAccuracyPct = yearEvalTotal > 0 ? 100 - Math.round((yearHasError / yearEvalTotal) * 100) : null;
+  const accuracyDonutData = yearEvalTotal > 0 ? [
+    { name: t('execDashboard.charts.accurate'), value: yearEvalTotal - yearHasError },
+    { name: t('execDashboard.charts.hasError'), value: yearHasError },
+  ] : [];
+
+  // Row 2 right: satisfaction breakdown bar. Positive rate (helpful / total) is
+  // surfaced in the subtitle; feedback is classified by score (not the raw
+  // yes/no click) so notWanted counts as helpful.
   const yearPfTotal = yearMetrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
   const yearFeedbackData = useMemo(
     () => buildFeedbackSplitData(yearMetrics.publicFeedbackTotals, yearMetrics.publicFeedbackReasons, t),
     [yearMetrics.publicFeedbackTotals, yearMetrics.publicFeedbackReasons, t],
   );
   const yearSatisfactionPct = yearPfTotal > 0 ? Math.round(((yearFeedbackData[0]?.value || 0) / yearPfTotal) * 100) : null;
+  const yearFeedbackReasonsData = useMemo(
+    () => buildFeedbackReasonsData(yearMetrics.publicFeedbackReasons, t),
+    [yearMetrics.publicFeedbackReasons, t],
+  );
 
   // --- Filtered-period derived data ---
 
@@ -77,39 +97,48 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       ) : (
         <>
-          <KpiRow metrics={yearMetrics} t={t} lang={lang} />
+          {/* Row 1: questions asked, expert evaluated, partner institutions */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-            {/* Partner count card */}
-            <div style={{
-              flex: 1,
-              minWidth: 180,
-              background: '#fff',
-              border: '1px solid #e0e0e0',
-              borderRadius: 8,
-              padding: '28px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}>
-              <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-                {t('execDashboard.kpi.partnerCount')}
-              </div>
-              <div style={{ fontSize: 56, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>
-                {fmtN(yearPartnerCount)}
-              </div>
-              <div style={{ fontSize: 13, color: '#555', marginTop: 10, lineHeight: 1.4 }}>
-                {t('execDashboard.kpi.partnerCountSub')}
-              </div>
-            </div>
+            <StatCard
+              label={t('execDashboard.kpi.questionsAsked')}
+              value={fmtN(yearQuestions)}
+              sub={t('execDashboard.kpi.questionsSub')
+                .replace('{en}', fmtN(yearMetrics.totalQuestionsEn))
+                .replace('{fr}', fmtN(yearMetrics.totalQuestionsFr))}
+            />
+            <StatCard
+              label={t('execDashboard.kpi.evaluated')}
+              value={fmtN(yearExpertTotal)}
+              sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(yearEvaluatedPct))}
+            />
+            <StatCard
+              label={t('execDashboard.kpi.partnerCount')}
+              value={fmtN(yearPartnerCount)}
+            />
+          </div>
+          {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right) */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
             <DonutCard
-              title={t('execDashboard.charts.satisfactionTitle')}
-              data={yearFeedbackData.length > 0 ? yearFeedbackData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-              colours={yearFeedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
-              centreValue={yearSatisfactionPct !== null ? fmtPct(yearSatisfactionPct) : '—'}
-              centreLabel={t('execDashboard.charts.satisfactionCentre').replace('{total}', fmtN(yearPfTotal))}
+              title={t('execDashboard.charts.accuracyDonutTitle')}
+              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+              colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+              centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
+              centreLabel={t('execDashboard.charts.accuracyCentre')}
               lang={lang}
             />
+            <div style={{ flex: 2, minWidth: 320 }}>
+              <HBarCard
+                title={t('execDashboard.charts.feedbackBreakdownTitle')}
+                subtitle={yearPfTotal > 0
+                  ? t('execDashboard.charts.satisfactionBreakdownSubtitle')
+                      .replace('{pct}', fmtPct(yearSatisfactionPct))
+                      .replace('{total}', fmtN(yearPfTotal))
+                  : undefined}
+                data={yearFeedbackReasonsData}
+                noDataLabel={t('execDashboard.charts.noData')}
+                lang={lang}
+              />
+            </div>
           </div>
         </>
       )}

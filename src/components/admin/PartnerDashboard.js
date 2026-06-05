@@ -120,18 +120,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Harmful (expert evaluations) */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <StatCard
-          uppercase
-          label={t('partnerDashboard.kpi.harmful')}
-          value={fmtN(harmful.total)}
-          sub={t('partnerDashboard.kpi.harmfulSub')
-            .replace('{en}', fmtN(harmful.en))
-            .replace('{fr}', fmtN(harmful.fr))}
-        />
-      </div>
-
       {/* Answer-quality bar + content issues card */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ flex: 2, minWidth: 320 }}>
@@ -228,6 +216,21 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           sub={t('partnerDashboard.ops.tokensSub')
             .replace('{en}', fmtN(metrics.totalOutputTokensEn))
             .replace('{fr}', fmtN(metrics.totalOutputTokensFr))}
+        />
+      </div>
+
+      {/* Safety metrics */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('partnerDashboard.safety.title')}
+      </h2>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.harmful')}
+          value={fmtN(harmful.total)}
+          sub={t('partnerDashboard.kpi.harmfulSub')
+            .replace('{en}', fmtN(harmful.en))
+            .replace('{fr}', fmtN(harmful.fr))}
         />
       </div>
 

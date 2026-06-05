@@ -1221,14 +1221,16 @@
       "accuracyRate": "Taux d'exactitude",
       "accuracySub": "EN : {en} · FR : {fr}",
       "partnerCount": "Institutions partenaires",
-      "partnerCountSub": "ministères collaborant avec des évaluations expertes",
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}"
     },
     "charts": {
-      "satisfactionTitle": "Satisfaction des utilisateurs",
-      "satisfactionCentre": "sur {total} réponses",
+      "accuracyDonutTitle": "Exactitude des réponses",
+      "accuracyCentre": "exactes",
+      "accurate": "Exactes",
+      "hasError": "Contient une erreur",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
+      "satisfactionBreakdownSubtitle": "{pct} utiles · {total} réponses",
       "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
     },
@@ -1284,6 +1286,9 @@
       "inputTokens": "Total des jetons d'entrée",
       "outputTokens": "Total des jetons de sortie",
       "tokensSub": "EN : {en} · FR : {fr}"
+    },
+    "safety": {
+      "title": "Mesures de sécurité"
     }
   },
   "metrics": {
