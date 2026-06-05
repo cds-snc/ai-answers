@@ -6,6 +6,13 @@ const INITIAL_METRICS = {
   totalQuestionsEn: 0,
   totalQuestionsFr: 0,
   totalConversations: 0,
+  totalInputTokens: 0,
+  totalInputTokensEn: 0,
+  totalInputTokensFr: 0,
+  totalOutputTokens: 0,
+  totalOutputTokensEn: 0,
+  totalOutputTokensFr: 0,
+  responseTime: { count: 0, median: 0, p90: 0, p95: 0, max: 0, maxChatId: '' },
   sessionsByQuestionCount: {
     singleQuestion: { total: 0 },
     twoQuestions: { total: 0 },
@@ -19,7 +26,8 @@ const INITIAL_METRICS = {
 };
 
 // Fetches the shared dashboard metric bundle (usage, sessions, expert feedback,
-// public feedback, departments) used by the exec and partner dashboards. The
+// public feedback, departments, technical) used by the exec and partner
+// dashboards. The
 // underlying figures are computed server-side by the metrics endpoints — this
 // hook only orchestrates the parallel fetch, abort, and loading/error state.
 //
@@ -52,16 +60,17 @@ export function useDashboardMetrics() {
     setError(null);
 
     try {
-      const [usage, session, expert, ai, publicFb, dept] = await Promise.all([
+      const [usage, session, expert, ai, publicFb, dept, technical] = await Promise.all([
         MetricsService.getUsageMetrics(filters, signal),
         MetricsService.getSessionMetrics(filters, signal),
         MetricsService.getExpertMetrics(filters, signal),
         MetricsService.getAiEvalMetrics(filters, signal),
         MetricsService.getPublicFeedbackMetrics(filters, signal),
         MetricsService.getDepartmentMetrics(filters, signal),
+        MetricsService.getTechnicalMetrics(filters, signal),
       ]);
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);

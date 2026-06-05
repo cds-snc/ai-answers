@@ -7,12 +7,13 @@ import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
-import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
+import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
+  const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
@@ -56,6 +57,21 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
+
+  // Conversation length (sessions broken down by number of questions asked).
+  const totalConversations = metrics.totalConversations || 0;
+  const totalQuestions = metrics.totalQuestions || 0;
+  const sq = metrics.sessionsByQuestionCount || {};
+  const sessionDepthData = totalConversations > 0 ? [
+    { name: t('partnerDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
+    { name: t('partnerDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
+    { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+  ].filter(d => d.value > 0) : [];
+
+  // Operations metrics. Median response time comes from the technical metrics
+  // endpoint (milliseconds, shown in seconds); token totals come from usage.
+  const responseTime = metrics.responseTime || {};
+  const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
@@ -104,27 +120,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Harmful + content issues (expert evaluations) */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <StatCard
-          uppercase
-          label={t('partnerDashboard.kpi.harmful')}
-          value={fmtN(harmful.total)}
-          sub={t('partnerDashboard.kpi.harmfulSub')
-            .replace('{en}', fmtN(harmful.en))
-            .replace('{fr}', fmtN(harmful.fr))}
-        />
-        <StatCard
-          uppercase
-          label={t('partnerDashboard.kpi.contentIssues')}
-          value={fmtN(contentIssue.total)}
-          sub={t('partnerDashboard.kpi.contentIssuesSub')
-            .replace('{ni}', fmtN(contentIssue.needsImprovement))
-            .replace('{error}', fmtN(contentIssue.hasError))}
-        />
-      </div>
-
-      {/* Answer-quality bar + user-feedback donut */}
+      {/* Answer-quality bar + content issues card */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ flex: 2, minWidth: 320 }}>
           <HBarCard
@@ -140,6 +136,29 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             lang={lang}
           />
         </div>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.contentIssues')}
+          value={fmtN(contentIssue.total)}
+          sub={t('partnerDashboard.kpi.contentIssuesSub')
+            .replace('{ni}', fmtN(contentIssue.needsImprovement))
+            .replace('{error}', fmtN(contentIssue.hasError))}
+        />
+      </div>
+
+      {/* User-satisfaction donut + its helpful/not-helpful breakdown bar
+          (positives green, negatives red). The donut always shows; the bar
+          joins it on the same row when there are reasons to break down. */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        {feedbackReasonsData.length > 0 && (
+          <div style={{ flex: 2, minWidth: 320 }}>
+            <HBarCard
+              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+              data={feedbackReasonsData}
+              lang={lang}
+            />
+          </div>
+        )}
         <DonutCard
           title={t('partnerDashboard.charts.satisfactionTitle')}
           data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
@@ -150,16 +169,70 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Feedback reasons breakdown (positives green, negatives red) */}
-      {feedbackReasonsData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <HBarCard
-            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackReasonsData}
-            lang={lang}
-          />
-        </div>
-      )}
+      {/* Conversation length. Centre figure is the total conversation count;
+          the slices break those down by number of questions asked. */}
+      <div style={{ marginBottom: 24 }}>
+        <DonutCard
+          title={t('partnerDashboard.charts.engagementTitle')}
+          subtitle={t('partnerDashboard.charts.engagementSubtitle')}
+          data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+          colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+          centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+          centreLabel={t('partnerDashboard.charts.conversations')}
+          footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
+          lang={lang}
+        />
+      </div>
+
+      {/* Operations metrics. Median response time is drawn from the technical
+          metrics endpoint (ms, displayed in seconds); token totals come from
+          the usage endpoint. */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('partnerDashboard.ops.title')}
+      </h2>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.ops.medianResponseTime')}
+          value={hasResponseTime
+            ? t('partnerDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
+            : '—'}
+          sub={hasResponseTime
+            ? t('partnerDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
+            : undefined}
+        />
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.ops.inputTokens')}
+          value={fmtN(metrics.totalInputTokens)}
+          sub={t('partnerDashboard.ops.tokensSub')
+            .replace('{en}', fmtN(metrics.totalInputTokensEn))
+            .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
+        />
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.ops.outputTokens')}
+          value={fmtN(metrics.totalOutputTokens)}
+          sub={t('partnerDashboard.ops.tokensSub')
+            .replace('{en}', fmtN(metrics.totalOutputTokensEn))
+            .replace('{fr}', fmtN(metrics.totalOutputTokensFr))}
+        />
+      </div>
+
+      {/* Safety metrics */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('partnerDashboard.safety.title')}
+      </h2>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.kpi.harmful')}
+          value={fmtN(harmful.total)}
+          sub={t('partnerDashboard.kpi.harmfulSub')
+            .replace('{en}', fmtN(harmful.en))
+            .replace('{fr}', fmtN(harmful.fr))}
+        />
+      </div>
 
       {!loading && metrics.totalQuestions === 0 && !error && (
         <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>

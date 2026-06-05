@@ -24,8 +24,9 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
                                           setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept })
 ```
 
-- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 6 parallel metric
-  fetches, abort, loading/error. `fetchMetrics(filters)` takes a **filters
+- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 7 parallel metric
+  fetches (usage, sessions, expert, ai, public feedback, departments, technical),
+  abort, loading/error. `fetchMetrics(filters)` takes a **filters
   object** and passes it through unchanged; both filter components supply a
   superset/subset of `{ startDate, endDate, department, userType, ... }`.
 - **`src/services/MetricsService.js`** — `_fetchMetric` serializes the whole
@@ -48,6 +49,9 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
 
 ```
 metrics.totalQuestions / totalQuestionsEn / totalQuestionsFr / totalConversations
+metrics.totalInputTokens / totalInputTokensEn / totalInputTokensFr   // from usage
+metrics.totalOutputTokens / totalOutputTokensEn / totalOutputTokensFr // from usage
+metrics.responseTime.{ count, median, p90, p95, max, maxChatId }    // ms, from technical
 metrics.sessionsByQuestionCount.{singleQuestion,twoQuestions,threeQuestions}.total
 metrics.byDepartment[dept].{ total, expertScored.total }
 metrics.expertScored.<cat>.{ total, en, fr }   // cat: total, correct, needsImprovement,
@@ -59,7 +63,10 @@ metrics.publicFeedbackReasons.{ yes, no }       // keyed by score (string) -> { 
 ```
 
 Expert metrics come from `api/metrics/metrics-expert-feedback.js`, AI from
-`metrics-ai-eval.js`, public feedback from `metrics-public-feedback.js`.
+`metrics-ai-eval.js`, public feedback from `metrics-public-feedback.js`. Token
+totals come from `metrics-usage.js`; `responseTime` (ms percentiles) from
+`metrics-technical.js`. The exec **and** partner **Operations metrics** rows
+read `responseTime.median`/`p95` (shown in seconds) and the token totals.
 
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 
