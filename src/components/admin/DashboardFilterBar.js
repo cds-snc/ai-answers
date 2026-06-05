@@ -10,6 +10,10 @@ const daysAgo = (n) => {
   d.setDate(d.getDate() - n);
   return toISODate(d);
 };
+// "Last N days" inclusive of today (today counts as day 1), matching the
+// FilterPanel date-range presets which use moment().subtract(N - 1, 'days').
+// So a 30-day window goes back 29 days, not 30.
+const lastNDaysStart = (n) => daysAgo(n - 1);
 
 const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 };
 const inputStyle = { padding: '6px 10px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14 };
@@ -21,7 +25,7 @@ const inputStyle = { padding: '6px 10px', border: '1px solid #bdbdbd', borderRad
 const DashboardFilterBar = ({ lang = 'en', loading = false, onApply }) => {
   const { t } = useTranslations(lang);
   const [department, setDepartment] = useState('');
-  const [startDate, setStartDate] = useState(daysAgo(30));
+  const [startDate, setStartDate] = useState(lastNDaysStart(30));
   const [endDate, setEndDate] = useState(today());
 
   // Keep the latest onApply without retriggering the mount-load effect.
