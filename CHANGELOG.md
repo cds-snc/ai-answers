@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.133.0](https://github.com/cds-snc/ai-answers/compare/v1.132.0...v1.133.0) (2026-06-04)
+
+
+### Features
+
+* enable DocumentDB 8 in production configuration ([a65b677](https://github.com/cds-snc/ai-answers/commit/a65b6775c6ad97bc332aff8c340c51dbd41e8390))
+* enable DocumentDB 8 in production configuration ([f670fe7](https://github.com/cds-snc/ai-answers/commit/f670fe7b052fc75cdc4d0d1557a92a6531f94b20))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump react-router and react-router-dom ([e571d07](https://github.com/cds-snc/ai-answers/commit/e571d073c2007ac2228a635139e0e946ba5fd7da))
+* **deps:** bump react-router and react-router-dom ([cd028ba](https://github.com/cds-snc/ai-answers/commit/cd028baefb4323544d72a2dc6b26d96db35b8f84))
+
 ## [1.132.0](https://github.com/cds-snc/ai-answers/compare/v1.131.1...v1.132.0) (2026-06-03)
 
 
