@@ -7,12 +7,13 @@ import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
-import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
+import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
+  const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
@@ -56,6 +57,11 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
+
+  // Operations metrics. Median response time comes from the technical metrics
+  // endpoint (milliseconds, shown in seconds); token totals come from usage.
+  const responseTime = metrics.responseTime || {};
+  const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
@@ -160,6 +166,41 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           />
         </div>
       )}
+
+      {/* Operations metrics. Median response time is drawn from the technical
+          metrics endpoint (ms, displayed in seconds); token totals come from
+          the usage endpoint. */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('partnerDashboard.ops.title')}
+      </h2>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.ops.medianResponseTime')}
+          value={hasResponseTime
+            ? t('partnerDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
+            : '—'}
+          sub={hasResponseTime
+            ? t('partnerDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
+            : undefined}
+        />
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.ops.inputTokens')}
+          value={fmtN(metrics.totalInputTokens)}
+          sub={t('partnerDashboard.ops.tokensSub')
+            .replace('{en}', fmtN(metrics.totalInputTokensEn))
+            .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
+        />
+        <StatCard
+          uppercase
+          label={t('partnerDashboard.ops.outputTokens')}
+          value={fmtN(metrics.totalOutputTokens)}
+          sub={t('partnerDashboard.ops.tokensSub')
+            .replace('{en}', fmtN(metrics.totalOutputTokensEn))
+            .replace('{fr}', fmtN(metrics.totalOutputTokensFr))}
+        />
+      </div>
 
       {!loading && metrics.totalQuestions === 0 && !error && (
         <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>

@@ -1276,6 +1276,15 @@
       "satisfactionCentre": "of {total} responses",
       "feedbackBreakdownTitle": "Feedback breakdown",
       "noData": "No data"
+    },
+    "ops": {
+      "title": "Operations metrics",
+      "medianResponseTime": "Median response time",
+      "responseTimeValue": "{n} s",
+      "responseTimeSub": "P95: {p95} s",
+      "inputTokens": "Total input tokens",
+      "outputTokens": "Total output tokens",
+      "tokensSub": "EN: {en} · FR: {fr}"
     }
   },
   "metrics": {

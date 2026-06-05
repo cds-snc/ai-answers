@@ -65,8 +65,8 @@ metrics.publicFeedbackReasons.{ yes, no }       // keyed by score (string) -> { 
 Expert metrics come from `api/metrics/metrics-expert-feedback.js`, AI from
 `metrics-ai-eval.js`, public feedback from `metrics-public-feedback.js`. Token
 totals come from `metrics-usage.js`; `responseTime` (ms percentiles) from
-`metrics-technical.js`. The exec **Operations metrics** row reads
-`responseTime.median`/`p95` (shown in seconds) and the token totals.
+`metrics-technical.js`. The exec **and** partner **Operations metrics** rows
+read `responseTime.median`/`p95` (shown in seconds) and the token totals.
 
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 

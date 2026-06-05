@@ -1276,6 +1276,15 @@
       "satisfactionCentre": "sur {total} réponses",
       "feedbackBreakdownTitle": "Répartition de la rétroaction",
       "noData": "Aucune donnée"
+    },
+    "ops": {
+      "title": "Mesures opérationnelles",
+      "medianResponseTime": "Temps de réponse médian",
+      "responseTimeValue": "{n} s",
+      "responseTimeSub": "P95 : {p95} s",
+      "inputTokens": "Total des jetons d'entrée",
+      "outputTokens": "Total des jetons de sortie",
+      "tokensSub": "EN : {en} · FR : {fr}"
     }
   },
   "metrics": {
