@@ -13,6 +13,7 @@ export const DND_MDN_SCENARIOS = `
 - Digital transition https://military-transition.canada.ca/en/ https://military-transition.canada.ca/fr
 - Overview https://www.canada.ca/en/department-national-defence/corporate/reports-publications/transition-guide/introduction.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/rapports-publications/guide-de-transition/introduction.html
 - Medical support/return to duty https://www.canada.ca/en/ombudsman-national-defence-forces/education-information/caf-members/career/release-transition-civilian/caf-transition-group.html https://www.canada.ca/fr/ombudsman-defense-nationale-forces/information-educative/militaires-fac/carriere/liberation-transition-civil/groupe-transition-fac.html
+- Interim Reconstitution Employment Measure (IREM)https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/interim-reconstitution-employment-measure.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/instructions-du-personnel-militaire-des-forces-canadiennes/mesure-demploi-provisoire-de-la-reconstitution.html
 
 ## Benefits, pay, services
 * topic https://www.canada.ca/en/government/publicservice/benefitsmilitary.html https://www.canada.ca/fr/gouvernement/fonctionpublique/avantagesmilitaires.html

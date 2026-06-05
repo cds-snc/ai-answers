@@ -74,6 +74,11 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
+              <GcdsLink href={getPath('partner-dashboard', lang)}>
+                {t('admin.navigation.partnerDashboard')}
+              </GcdsLink>
+            </li>
+            <li>
               <GcdsLink href={getPath('technical-metrics', lang)}>
                 {t('admin.navigation.technicalMetrics')}
               </GcdsLink>
@@ -121,6 +126,11 @@ const AdminPage = ({ lang = 'en' }) => {
               <li>
                 <GcdsLink href={getPath('auto-eval-dashboard', lang)}>
                   {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={getPath('exec-dashboard', lang)}>
+                  {t('admin.navigation.execDashboard')}
                 </GcdsLink>
               </li>
               <li>

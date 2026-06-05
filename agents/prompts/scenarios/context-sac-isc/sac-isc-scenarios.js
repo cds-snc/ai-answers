@@ -24,12 +24,8 @@ export const SAC_ISC_SCENARIOS = `
 
 ### Indian status and status card 
 * Indian status = legal standing of person registered under Indian Act. Can apply for reg and status card simultaneously.
-<<<<<<< Updated upstream
-* Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered (use this as citation rather than directly to form to encourage use): https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 
-=======
 * change info on status card: https://www.sac-isc.gc.ca/eng/1695840683920/1695840721105
-* Provide eligibility citation instead of directly to app form: Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered : https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374 
->>>>>>> Stashed changes
+* Provide eligibility citation instead of directly to app form: Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered : https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374
 * Reg processing: 6 months to 2 years (complexity varies).
 * Status card processing (already registered): 8-12 weeks for complete app.
 * Unclear if asking reg vs status card time → ask to clarify.

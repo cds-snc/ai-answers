@@ -39,6 +39,19 @@ This regenerates `docs/agents-prompts/system-prompt-documentation.md`.
 - `public/content/about-en.md`
 - `public/content/about-fr.md`
 
+## Building an Admin Dashboard
+
+Reuse the shared dashboard building blocks — don't recompute metrics or redefine cards/colours per page. All figures are computed server-side by the `metrics-*` endpoints; the frontend only fetches and formats.
+
+- **Data:** `useDashboardMetrics()` (`src/hooks/admin/useDashboardMetrics.js`) — fetches the metric bundle (usage/sessions/expert/public-feedback/departments) with abort + loading/error. Call `fetchMetrics({ startDate, endDate, department? })`; omit `department` for all partners.
+- **Derivations:** `src/utils/dashboard/feedbackBreakdown.js` — pure `buildQualityData(expertScored, t)`, `buildSatisfactionData(publicFeedbackTotals, t)`, `buildYesReasonsData(publicFeedbackReasons, lang)`, `groupByScore`.
+- **Filter UI:** `<DashboardFilterBar lang loading onApply={fetchMetrics} />` (`src/components/admin/DashboardFilterBar.js`) — partner dropdown + date range, defaults to last 30 days / all partners.
+- **Cards:** `StatCard` / `DonutCard` / `HBarCard` in `src/components/admin/dashboard/`.
+- **Colours:** import `{ COLOURS, QUALITY_COLOURS }` from `src/constants/dashboardColours.js` — never hardcode chart hexes (greys/borders may stay local).
+- **Partner list:** `PARTNER_DEPARTMENTS` from `src/constants/partnerDepartments.js` (the official 22, shared with `FilterPanel`).
+
+`ExecDashboard.js` / `PartnerDashboard.js` are reference consumers. `MetricsDashboard.js` predates these helpers and does its own thing.
+
 ## Upgrading the AI Model
 
 Model selection is decoupled from workflow logic. Workflows (GenericGraph, DefaultWithVectorGraph, InstantAndQAGraph) define the pipeline structure. The model (which LLM to call) is set independently via Settings.

@@ -119,6 +119,7 @@ Before starting work, read the relevant reference doc:
 - **Backend/pipeline/agent/service changes:** [docs/coding-agent-docs/architecture-quick-ref.md](docs/coding-agent-docs/architecture-quick-ref.md)
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
+- **Exec/Partner dashboards (cards, charts, metric bundle):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
 
 ## Database query safety
 

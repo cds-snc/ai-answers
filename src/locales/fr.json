@@ -366,6 +366,8 @@
       "eval": "Administration des évaluations",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
+      "execDashboard": "Tableau de bord exécutif",
+      "partnerDashboard": "Tableau de bord partenaire",
       "technicalMetrics": "Voir les métriques techniques",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
@@ -1196,6 +1198,84 @@
     "deleteEvaluation": "Supprimer l'évaluation",
     "runEvaluation": "Lancer l'évaluation"
   },
+  "dashboardFilter": {
+    "department": "Institution partenaire",
+    "allPartners": "Tous les partenaires",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "apply": "Appliquer",
+    "loading": "Chargement..."
+  },
+  "execDashboard": {
+    "title": "Tableau de bord exécutif Réponses IA",
+    "description": "Les données comprennent les questions de tous les utilisateurs, y compris celles des organisations partenaires connectées pour tester et évaluer.",
+    "last12Months": "12 derniers mois",
+    "filteredPeriod": "Période filtrée (30 derniers jours par défaut)",
+    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
+    "kpi": {
+      "evaluated": "Évaluées par des experts",
+      "evaluatedSub": "{pct} des questions",
+      "questionsAsked": "Questions posées",
+      "questionsSub": "EN : {en} · FR : {fr}",
+      "accuracyRate": "Taux d'exactitude",
+      "accuracySub": "EN : {en} · FR : {fr}",
+      "partnerCount": "Institutions partenaires",
+      "partnerCountSub": "ministères collaborant avec des évaluations expertes",
+      "harmful": "Nuisible",
+      "harmfulSub": "EN : {en} · FR : {fr}",
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
+    },
+    "charts": {
+      "engagementTitle": "Longueur des conversations",
+      "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3 questions et plus",
+      "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
+      "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
+      "satisfactionTitle": "Satisfaction des utilisateurs",
+      "satisfactionCentre": "sur {total} réponses",
+      "feedbackBreakdownTitle": "Répartition de la rétroaction",
+      "departmentsTitle": "Principales institutions par volume de questions",
+      "noData": "Aucune donnée"
+    },
+    "ops": {
+      "title": "Mesures opérationnelles",
+      "medianResponseTime": "Temps de réponse médian",
+      "inputTokens": "Total des jetons d'entrée",
+      "outputTokens": "Total des jetons de sortie",
+      "placeholder": "Mesure pas encore disponible"
+    }
+  },
+  "partnerDashboard": {
+    "title": "Tableau de bord partenaire",
+    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "noData": "Aucune donnée trouvée pour les filtres sélectionnés.",
+    "kpi": {
+      "questionsAsked": "Questions posées",
+      "questionsSub": "EN : {en} · FR : {fr}",
+      "evaluated": "Évaluées par des experts",
+      "evaluatedSub": "{pct} des questions",
+      "accuracyRate": "Taux d'exactitude",
+      "accuracySub": "EN : {en} · FR : {fr}",
+      "harmful": "Nuisible",
+      "harmfulSub": "EN : {en} · FR : {fr}",
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
+    },
+    "charts": {
+      "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
+      "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
+      "satisfactionTitle": "Satisfaction des utilisateurs",
+      "satisfactionCentre": "sur {total} réponses",
+      "feedbackBreakdownTitle": "Répartition de la rétroaction",
+      "noData": "Aucune donnée"
+    }
+  },
   "metrics": {
     "title": "Tableau de bord des métriques",
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
@@ -1237,12 +1317,20 @@
         "hasError": "Contient une erreur de réponse",
         "hasCitationError": "Problème de citation"
       },
+      "qualityBar": {
+        "correct": "Correct",
+        "needsImprovement": "Correct - nécessite une amélioration",
+        "hasCitationError": "Correct - problème de citation",
+        "hasError": "Contient une erreur de réponse"
+      },
       "userScored": {
         "title": "Rétroaction des utilisateurs (publique)",
         "description": "Rétroaction oui-non des utilisateurs finaux",
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
         "unhelpful": "Problème (non)",
+        "positive": "Utile",
+        "negative": "Non utile",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
         "reason": "Raison",
         "otherYes": "Autre (oui)",
