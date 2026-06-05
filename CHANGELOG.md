@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.134.0](https://github.com/cds-snc/ai-answers/compare/v1.133.0...v1.134.0) (2026-06-05)
+
+
+### Features
+
+* exec dashboard ([2a607db](https://github.com/cds-snc/ai-answers/commit/2a607dba7cffdb55b95bf01c74961027dd934b47))
+
+
+### Bug Fixes
+
+* add new operations panel but it's broken ([240c1a4](https://github.com/cds-snc/ai-answers/commit/240c1a4d762ba398ef2590dcbe040f28e252d913))
+* margins and code review ([421587f](https://github.com/cds-snc/ai-answers/commit/421587feda86eac83def52c4a2a8b0ed175af8ff))
+* margins were too wide ([83e4329](https://github.com/cds-snc/ai-answers/commit/83e43297eadfe286ec1eb3c0b1b1cacf02cb332c))
+* move stuff label stuff ([c9bfecd](https://github.com/cds-snc/ai-answers/commit/c9bfecdba2713e507dc5564156af430f389d9da0))
+
 ## [1.133.0](https://github.com/cds-snc/ai-answers/compare/v1.132.0...v1.133.0) (2026-06-04)
 
 
