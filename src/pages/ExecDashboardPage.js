@@ -8,7 +8,7 @@ const ExecDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-200">{t('execDashboard.title')}</h1>
 
       <GcdsText className="mb-400">{t('execDashboard.description')}</GcdsText>

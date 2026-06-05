@@ -58,7 +58,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
+    <div className="dashboard-wide" style={{ fontFamily: 'inherit' }}>
       <FilterPanel
         lang={lang}
         onApplyFilters={fetchMetrics}

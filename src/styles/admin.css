@@ -402,6 +402,15 @@
   padding: var(--gcds-spacing-200);
 }
 
+/* Exec/Partner dashboard cards + charts need more width than the standard
+   page column. Break the dashboard content out to 90vw centred (same as the
+   chat-dashboard table) while the page title/back link stay at page margin. */
+.dashboard-wide {
+  width: 90vw;
+  margin-left: calc(50% - 45vw);
+  margin-right: calc(50% - 45vw);
+}
+
 /* Zebra striping for table rows */
 .chat-dashboard-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-link-light);

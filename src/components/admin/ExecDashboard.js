@@ -74,7 +74,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   }, [metrics.byDepartment]);
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
+    <div className="dashboard-wide" style={{ fontFamily: 'inherit' }}>
       {/* Last 12 months summary — fixed window, independent of the filter below */}
       <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
         {t('execDashboard.last12Months')}
@@ -93,8 +93,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Row 1: partner count + user-satisfaction donut — visually distinct from
-          the headline KPI cards below so the filtered range doesn't read as a
+      {/* Partner count + user-satisfaction donut — visually distinct from the
+          headline KPI cards below so the filtered range doesn't read as a
           near-duplicate of the last-12-months row above. */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         {/* Partner count card */}
@@ -130,7 +130,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Row 2: KPI cards for the selected date range (mirrors the partner dashboard) */}
+      {/* Headline KPI cards for the selected date range (mirrors the partner dashboard) */}
       <KpiRow metrics={metrics} t={t} lang={lang} />
 
       {/* Harmful + content issues (expert evaluations) */}
@@ -167,7 +167,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Row 3: Feedback reasons breakdown (positives green, negatives red) */}
+      {/* Feedback reasons breakdown (positives green, negatives red) */}
       {feedbackReasonsData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <HBarCard
@@ -178,7 +178,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Row 4: Top departments horizontal bar */}
+      {/* Top institutions by question volume (all institutions, not just partners) */}
       {departmentData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <HBarCard
