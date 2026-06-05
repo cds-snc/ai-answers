@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.135.0](https://github.com/cds-snc/ai-answers/compare/v1.134.0...v1.135.0) (2026-06-05)
+
+
+### Features
+
+* wire in tech metrics - were stubs ([b152656](https://github.com/cds-snc/ai-answers/commit/b15265609845124a916e71e74df38dbb0ecf3a56))
+
+
+### Bug Fixes
+
+* add tech metrics to partner dashboard too ([f8f2701](https://github.com/cds-snc/ai-answers/commit/f8f270194595d9486ede9e4cb31a7a50ce219364))
+* labels for feedback chart ([f84c969](https://github.com/cds-snc/ai-answers/commit/f84c9699b18347ae5a35061f32fe9712988cea38))
+* last 30 days dates to match in different panels ([da483f4](https://github.com/cds-snc/ai-answers/commit/da483f441ece32556a54902719fc9b514ba232c0))
+* more moving ([77d450c](https://github.com/cds-snc/ai-answers/commit/77d450ca9ffe784f2c8681117b9ca15fbdb779c7))
+* move stuff around ([4d15200](https://github.com/cds-snc/ai-answers/commit/4d152003146e6b671463c214054b11eac2ad76a8))
+
 ## [1.134.0](https://github.com/cds-snc/ai-answers/compare/v1.133.0...v1.134.0) (2026-06-05)
 
 
