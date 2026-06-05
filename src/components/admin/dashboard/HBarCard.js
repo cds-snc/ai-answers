@@ -30,7 +30,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
           <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 12 }} />
-            <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
+            <YAxis type="category" dataKey="name" width={160} interval={0} tick={{ fontSize: 12 }} />
             <Tooltip formatter={(value) => fmtVal(value)} />
             <Bar dataKey="value" fill={colour} radius={[0, 4, 4, 0]}>
               {data.map((entry) => (
