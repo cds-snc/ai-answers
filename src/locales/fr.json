@@ -1219,9 +1219,8 @@
       "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
     },
     "charts": {
-      "engagementTitle": "Engagement de session",
+      "engagementTitle": "Longueur des conversations",
       "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
-      "engagementCentre": "moy. par session",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1234,6 +1233,13 @@
       "feedbackBreakdownTitle": "Répartition de la rétroaction",
       "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
+    },
+    "ops": {
+      "title": "Mesures opérationnelles",
+      "medianResponseTime": "Temps de réponse médian",
+      "inputTokens": "Total des jetons d'entrée",
+      "outputTokens": "Total des jetons de sortie",
+      "placeholder": "Mesure pas encore disponible"
     }
   },
   "partnerDashboard": {

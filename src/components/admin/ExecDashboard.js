@@ -8,7 +8,7 @@ import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
-import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -32,9 +32,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
   // Session engagement derived data
   const totalConversations = metrics.totalConversations || 0;
   const totalQuestions = metrics.totalQuestions || 0;
-  const avgPerConversation = totalConversations > 0
-    ? totalQuestions / totalConversations
-    : null;
   const sq = metrics.sessionsByQuestionCount || {};
   const sessionDepthData = totalConversations > 0 ? [
     { name: t('execDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
@@ -72,7 +69,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
     return Object.entries(metrics.byDepartment || {})
       .map(([dept, data]) => ({ name: dept, value: data.total || 0 }))
       .filter(d => d.value > 0 && d.name)
-      .sort((a, b) => b.value - a.value);
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
   }, [metrics.byDepartment]);
 
   return (
@@ -192,17 +190,45 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Engagement donut */}
+      {/* Conversation length donut. Centre figure is the total conversation
+          count; the slices break those down by number of questions asked.
+          TODO: consider excluding questions run as batches — each batch row is
+          a single-question conversation, so they inflate the "1 question"
+          slice and skew conversation length toward 1. */}
       <div style={{ marginBottom: 24 }}>
         <DonutCard
           title={t('execDashboard.charts.engagementTitle')}
           subtitle={t('execDashboard.charts.engagementSubtitle')}
           data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
           colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-          centreValue={avgPerConversation !== null ? `${formatDecimal(avgPerConversation, lang, 1)}×` : '—'}
-          centreLabel={t('execDashboard.charts.engagementCentre')}
+          centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+          centreLabel={t('execDashboard.charts.conversations')}
           footer={`${fmtN(totalQuestions)} ${t('execDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('execDashboard.charts.conversations')}`}
           lang={lang}
+        />
+      </div>
+
+      {/* Operations metrics — placeholder cards. The Technical metrics page
+          these would draw from is currently broken (likely the database
+          upgrade), so values are stubbed until that data source is wired up. */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+        {t('execDashboard.ops.title')}
+      </h2>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard
+          label={t('execDashboard.ops.medianResponseTime')}
+          value="—"
+          sub={t('execDashboard.ops.placeholder')}
+        />
+        <StatCard
+          label={t('execDashboard.ops.inputTokens')}
+          value="—"
+          sub={t('execDashboard.ops.placeholder')}
+        />
+        <StatCard
+          label={t('execDashboard.ops.outputTokens')}
+          value="—"
+          sub={t('execDashboard.ops.placeholder')}
         />
       </div>
 

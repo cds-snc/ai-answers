@@ -1219,9 +1219,8 @@
       "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
-      "engagementTitle": "Session engagement",
+      "engagementTitle": "Conversation length",
       "engagementSubtitle": "How many questions users ask per conversation",
-      "engagementCentre": "avg per session",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1234,6 +1233,13 @@
       "feedbackBreakdownTitle": "Feedback breakdown",
       "departmentsTitle": "Top institutions by question volume",
       "noData": "No data"
+    },
+    "ops": {
+      "title": "Operations metrics",
+      "medianResponseTime": "Median response time",
+      "inputTokens": "Total input tokens",
+      "outputTokens": "Total output tokens",
+      "placeholder": "Metric not yet available"
     }
   },
   "partnerDashboard": {
