@@ -1246,9 +1246,11 @@
     "ops": {
       "title": "Operations metrics",
       "medianResponseTime": "Median response time",
+      "responseTimeValue": "{n} s",
+      "responseTimeSub": "P95: {p95} s",
       "inputTokens": "Total input tokens",
       "outputTokens": "Total output tokens",
-      "placeholder": "Metric not yet available"
+      "tokensSub": "EN: {en} · FR: {fr}"
     }
   },
   "partnerDashboard": {

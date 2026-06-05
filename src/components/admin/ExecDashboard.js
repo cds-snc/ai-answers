@@ -8,12 +8,13 @@ import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
-import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
+import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
+  const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
   // Separate, fixed last-12-months summary, independent of the filter below.
@@ -72,6 +73,11 @@ const ExecDashboard = ({ lang = 'en' }) => {
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [metrics.byDepartment]);
+
+  // Operations metrics. Median response time comes from the technical metrics
+  // endpoint (milliseconds, shown in seconds); token totals come from usage.
+  const responseTime = metrics.responseTime || {};
+  const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
     <div style={{ fontFamily: 'inherit' }}>
@@ -208,27 +214,35 @@ const ExecDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Operations metrics — placeholder cards. The Technical metrics page
-          these would draw from is currently broken (likely the database
-          upgrade), so values are stubbed until that data source is wired up. */}
+      {/* Operations metrics. Median response time is drawn from the technical
+          metrics endpoint (ms, displayed in seconds); token totals come from
+          the usage endpoint. */}
       <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
         {t('execDashboard.ops.title')}
       </h2>
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <StatCard
           label={t('execDashboard.ops.medianResponseTime')}
-          value="—"
-          sub={t('execDashboard.ops.placeholder')}
+          value={hasResponseTime
+            ? t('execDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
+            : '—'}
+          sub={hasResponseTime
+            ? t('execDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
+            : undefined}
         />
         <StatCard
           label={t('execDashboard.ops.inputTokens')}
-          value="—"
-          sub={t('execDashboard.ops.placeholder')}
+          value={fmtN(metrics.totalInputTokens)}
+          sub={t('execDashboard.ops.tokensSub')
+            .replace('{en}', fmtN(metrics.totalInputTokensEn))
+            .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
           label={t('execDashboard.ops.outputTokens')}
-          value="—"
-          sub={t('execDashboard.ops.placeholder')}
+          value={fmtN(metrics.totalOutputTokens)}
+          sub={t('execDashboard.ops.tokensSub')
+            .replace('{en}', fmtN(metrics.totalOutputTokensEn))
+            .replace('{fr}', fmtN(metrics.totalOutputTokensFr))}
         />
       </div>
 

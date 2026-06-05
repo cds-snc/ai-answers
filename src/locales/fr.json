@@ -1246,9 +1246,11 @@
     "ops": {
       "title": "Mesures opérationnelles",
       "medianResponseTime": "Temps de réponse médian",
+      "responseTimeValue": "{n} s",
+      "responseTimeSub": "P95 : {p95} s",
       "inputTokens": "Total des jetons d'entrée",
       "outputTokens": "Total des jetons de sortie",
-      "placeholder": "Mesure pas encore disponible"
+      "tokensSub": "EN : {en} · FR : {fr}"
     }
   },
   "partnerDashboard": {
