@@ -74,7 +74,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   }, [metrics.byDepartment]);
 
   return (
-    <div className="dashboard-wide" style={{ fontFamily: 'inherit' }}>
+    <div style={{ fontFamily: 'inherit' }}>
       {/* Last 12 months summary — fixed window, independent of the filter below */}
       <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
         {t('execDashboard.last12Months')}
