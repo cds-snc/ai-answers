@@ -1208,6 +1208,8 @@
   },
   "blockedQueries": {
     "title": "Blocked queries",
+    "byTypeTitle": "Blocked queries by type",
+    "langSub": "EN: {en} · FR: {fr}",
     "note": "Questions stopped by the safety and security guardrails before reaching the answer step. The question text is never stored — only the count per type. Reported across all institutions (blocks happen before the institution is identified).",
     "deptNote": "Blocked queries can't be broken down by institution — blocks happen before the institution is identified. Clear the institution filter to see blocked-query counts.",
     "colType": "Block type",

@@ -3,12 +3,12 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
-import BlockedQueriesTable from './dashboard/BlockedQueriesTable.js';
 import StatCard from './dashboard/StatCard.js';
 import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
+import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
@@ -77,6 +77,31 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   // Harmful (expert evaluations only). Shown in the Safety metrics row, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
+
+  // Blocked queries (safety counter). Total card + ranked bar breakdown by type.
+  const blockedTotal = metrics.blockedQueries?.total || {};
+  const blockedBarData = useMemo(() => {
+    const bq = metrics.blockedQueries || {};
+    return BLOCK_QUERY_TYPES
+      .map((type) => {
+        const row = bq[type] || {};
+        return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
+      })
+      .sort((a, b) => b.value - a.value);
+  }, [metrics.blockedQueries, t]);
+
+  // Custom bar tooltip: total plus the EN/FR split for the hovered block type.
+  const BlockedBarTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0].payload;
+    return (
+      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 6, padding: '8px 10px', fontSize: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
+        <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.name}</div>
+        <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
+        <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
+      </div>
+    );
+  };
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
@@ -235,12 +260,17 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{en}', fmtN(harmful.en))
             .replace('{fr}', fmtN(harmful.fr))}
         />
+        <StatCard
+          label={t('blockedQueries.totalRow')}
+          value={fmtN(blockedTotal.total)}
+          sub={t('blockedQueries.langSub')
+            .replace('{en}', fmtN(blockedTotal.en))
+            .replace('{fr}', fmtN(blockedTotal.fr))}
+        />
       </div>
 
-      {/* Blocked queries — global safety counter, can't be department-scoped. */}
-      <h3 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 4px', color: '#333' }}>
-        {t('blockedQueries.title')}
-      </h3>
+      {/* Blocked queries by type — global safety counter, can't be
+          department-scoped, so it's hidden when a department filter is applied. */}
       <p style={{ fontSize: 12, color: '#666', margin: '0 0 12px' }}>
         {t('blockedQueries.note')}
       </p>
@@ -250,7 +280,12 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </p>
       ) : (
         <div style={{ marginBottom: 24 }}>
-          <BlockedQueriesTable blockedQueries={metrics.blockedQueries} lang={lang} t={t} />
+          <HBarCard
+            title={t('blockedQueries.byTypeTitle')}
+            data={blockedBarData}
+            lang={lang}
+            tooltipContent={BlockedBarTooltip}
+          />
         </div>
       )}
 
