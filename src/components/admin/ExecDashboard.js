@@ -87,8 +87,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         const row = bq[type] || {};
         return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
       })
-      .filter((d) => d.value > 0)
-      .sort((a, b) => b.value - a.value);
+      .filter((d) => d.value > 0);
   }, [metrics.blockedQueries, t]);
 
   // Custom bar tooltip: total plus the EN/FR split for the hovered block type.
@@ -262,7 +261,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(harmful.fr))}
         />
         <StatCard
-          label={t('blockedQueries.totalRow')}
+          label={t('blockedQueries.totalCardLabel')}
           value={fmtN(blockedTotal.total)}
           sub={t('blockedQueries.langSub')
             .replace('{en}', fmtN(blockedTotal.en))
@@ -272,9 +271,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Blocked queries by type — global safety counter, can't be
           department-scoped, so it's hidden when a department filter is applied. */}
-      <p style={{ fontSize: 12, color: '#666', margin: '0 0 12px' }}>
-        {t('blockedQueries.note')}
-      </p>
       {appliedDepartment ? (
         <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
           {t('blockedQueries.deptNote')}

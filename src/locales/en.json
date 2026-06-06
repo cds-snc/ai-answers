@@ -1209,6 +1209,7 @@
   "blockedQueries": {
     "title": "Blocked queries",
     "byTypeTitle": "Blocked queries by type",
+    "totalCardLabel": "Total blocked queries",
     "langSub": "EN: {en} · FR: {fr}",
     "noData": "No blocked queries in this date range.",
     "note": "Questions stopped by the safety and security guardrails before reaching the answer step. The question text is never stored — only the count per type. Reported across all institutions (blocks happen before the institution is identified).",
@@ -1222,7 +1223,7 @@
       "tooShort": "Too short (1–2 words)",
       "threat": "Threat words",
       "manipulation": "Manipulation words",
-      "profanity": "Profanity / bad words",
+      "profanity": "Profanity",
       "piStage1": "Private information – programmatic",
       "piStage2": "Private information – AI detection",
       "azureGuardrail": "Azure guardrails",

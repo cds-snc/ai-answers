@@ -1209,6 +1209,7 @@
   "blockedQueries": {
     "title": "Requêtes bloquées",
     "byTypeTitle": "Requêtes bloquées par type",
+    "totalCardLabel": "Total de requêtes bloquées",
     "langSub": "EN : {en} · FR : {fr}",
     "noData": "Aucune requête bloquée pour cette période.",
     "note": "Questions arrêtées par les mesures de sûreté et de sécurité avant d'atteindre l'étape de la réponse. Le texte de la question n'est jamais conservé — seul le nombre par type l'est. Données présentées pour l'ensemble des institutions (les blocages surviennent avant l'identification de l'institution).",
@@ -1222,7 +1223,7 @@
       "tooShort": "Trop courte (1–2 mots)",
       "threat": "Mots menaçants",
       "manipulation": "Mots de manipulation",
-      "profanity": "Grossièretés / mots injurieux",
+      "profanity": "Grossièretés",
       "piStage1": "Renseignements personnels – par programme",
       "piStage2": "Renseignements personnels – détection par IA",
       "azureGuardrail": "Mesures de protection Azure",
