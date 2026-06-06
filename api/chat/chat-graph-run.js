@@ -5,6 +5,7 @@ import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES } from '../../src/config/workflows.js';
+import BlockedQueryService from '../../services/BlockedQueryService.js';
 
 const REQUIRED_METHOD = 'POST';
 const DEFAULT_CHAT_TRANSPORT = 'sse';
@@ -268,6 +269,25 @@ async function handler(req, res) {
     });
   } catch (err) {
     streamError = err;
+
+    // Text-free safety counter: a blocked query never reaches persistence, so
+    // this is the only record of it. err.blockType is set at the guardrail throw
+    // sites (shortQuery.js / GraphWorkflowHelper.js). Fire-and-forget — record()
+    // never throws, and we don't await so the error response isn't delayed.
+    // WARNING: this relies on a long-running server (Express) where the write
+    // finishes on the event loop after res.end(). If this handler is ever moved
+    // to a serverless runtime (Vercel/Lambda), the function may freeze or be
+    // killed right after the response, dropping the un-awaited write — await it
+    // (or flush before responding) in that environment.
+    if (err?.blockType) {
+      BlockedQueryService.record({
+        blockType: err.blockType,
+        lang: input.lang,
+        user: req.user,
+        referringUrl: input.referringUrl,
+      });
+    }
+
     if (!resultSent) {
       try {
         // If the graph error did not include a server-signed historySignature,

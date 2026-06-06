@@ -539,6 +539,31 @@ Tracked per interaction:
 - Confidence rating
 - Short-circuit hit/miss
 
+### Blocked-query counter (safety/security)
+
+Queries blocked by the guardrails (`validate` and `redact` nodes, plus the
+post-translation guard) throw before `persistNode` and are **never persisted** —
+the question text is intentionally discarded. To still track guardrail volume, a
+**text-free** counter records one increment per blocked query, classified to a
+single primary bucket:
+
+- `tooShort`, `threat`, `manipulation` (incl. obfuscated `zxx` input),
+  `profanity`, `piStage1` (programmatic PI), `piStage2` (AI PI detection),
+  `azureGuardrail`, `unsupportedLanguage` (`und`).
+
+The block type is tagged on the thrown error (`blockType` on
+`ShortQueryValidation` / `RedactionError`) at the guardrail throw sites, and the
+single catch block in [`api/chat/chat-graph-run.js`](../../api/chat/chat-graph-run.js)
+fires a fire-and-forget `BlockedQueryService.record()`. Counts are day-bucketed
+by `{ date, type, lang, userType }` in the `BlockedQueryCounter` collection
+(no question text), surfaced via [`api/metrics/metrics-blocked.js`](../../api/metrics/metrics-blocked.js)
+in the Safety section of the executive and technical dashboards. Blocks happen
+before the department is known, so the table is global (hidden when a department
+filter is applied).
+
+**Files:** [`services/BlockedQueryService.js`](../../services/BlockedQueryService.js),
+[`models/blockedQueryCounter.js`](../../models/blockedQueryCounter.js)
+
 ---
 
 ## Related Documentation

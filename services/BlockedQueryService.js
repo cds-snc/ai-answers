@@ -1,0 +1,121 @@
+import dbConnect from '../api/db/db-connect.js';
+import { BlockedQueryCounter } from '../models/blockedQueryCounter.js';
+import { isReferredPublicUrl } from '../api/util/chat-filters.js';
+import ServerLoggingService from './ServerLoggingService.js';
+
+// The guardrail buckets surfaced on the safety dashboards. Order here is the
+// display order on the dashboard table. Keep in sync with the blockType values
+// tagged on errors in the graph (shortQuery.js / GraphWorkflowHelper.js).
+export const BLOCK_TYPES = [
+  'tooShort',            // 1–2 word questions (validate node)
+  'threat',              // threat word list
+  'manipulation',        // manipulation word list (+ obfuscated/zxx input)
+  'profanity',           // profanity / bad-word list + emoji
+  'piStage1',            // private info caught programmatically (regex)
+  'piStage2',            // private info caught by the AI PII stage
+  'azureGuardrail',      // caught by Azure content guardrails / blocked translation
+  'unsupportedLanguage', // unsupported source language (e.g. Indigenous languages)
+];
+
+const BLOCK_TYPE_SET = new Set(BLOCK_TYPES);
+
+function normalizeLang(lang) {
+  const l = String(lang || '').toLowerCase();
+  if (l === 'en' || l === 'eng') return 'en';
+  if (l === 'fr' || l === 'fra') return 'fr';
+  return 'other';
+}
+
+function startOfUtcDay(date) {
+  const d = new Date(date);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+// Coarse, mutually-exclusive user bucket. Mirrors the userType semantics in
+// getChatFilterConditions: authenticated => admin; anonymous from a public GC
+// page => referredPublic; any other anonymous => publicOther. The dashboard
+// 'public' filter sums referredPublic + publicOther.
+export function classifyUserType(user, referringUrl) {
+  if (user) return 'admin';
+  if (isReferredPublicUrl(referringUrl)) return 'referredPublic';
+  return 'publicOther';
+}
+
+class BlockedQueryService {
+  // Fire-and-forget. Records exactly one blocked query against its primary
+  // bucket. Never throws — a counter failure must not affect the user response.
+  static async record({ blockType, lang, user, referringUrl } = {}) {
+    try {
+      if (!BLOCK_TYPE_SET.has(blockType)) return;
+      await dbConnect();
+      await BlockedQueryCounter.updateOne(
+        {
+          date: startOfUtcDay(new Date()),
+          type: blockType,
+          lang: normalizeLang(lang),
+          userType: classifyUserType(user, referringUrl),
+        },
+        { $inc: { count: 1 } },
+        { upsert: true }
+      );
+    } catch (error) {
+      // Swallow — counters are best-effort and must never break the pipeline.
+      await ServerLoggingService.warn('BlockedQueryService.record failed', 'system', {
+        error: error?.message || String(error),
+        blockType,
+      });
+    }
+  }
+
+  // Aggregates blocked-query counts within [start, end] (Date objects), split by
+  // language, for each block type. `userType` is the dashboard filter value
+  // ('all' | 'public' | 'referredPublic' | 'admin'); department is intentionally
+  // not a dimension (blocks happen before department is known).
+  static async getBlockedMetrics({ start, end, userType } = {}) {
+    await dbConnect();
+
+    const match = {
+      date: { $gte: startOfUtcDay(start), $lte: new Date(end) },
+    };
+
+    if (userType === 'admin') {
+      match.userType = 'admin';
+    } else if (userType === 'referredPublic') {
+      match.userType = 'referredPublic';
+    } else if (userType === 'public') {
+      match.userType = { $in: ['referredPublic', 'publicOther'] };
+    }
+    // 'all' / undefined => no userType constraint
+
+    const rows = await BlockedQueryCounter.aggregate([
+      { $match: match },
+      { $group: { _id: { type: '$type', lang: '$lang' }, count: { $sum: '$count' } } },
+    ]);
+
+    const blockedQueries = {};
+    for (const type of BLOCK_TYPES) {
+      blockedQueries[type] = { total: 0, en: 0, fr: 0 };
+    }
+    blockedQueries.total = { total: 0, en: 0, fr: 0 };
+
+    for (const row of rows) {
+      const type = row?._id?.type;
+      const lang = row?._id?.lang;
+      const count = row?.count || 0;
+      if (!blockedQueries[type]) continue;
+      blockedQueries[type].total += count;
+      blockedQueries.total.total += count;
+      if (lang === 'en') {
+        blockedQueries[type].en += count;
+        blockedQueries.total.en += count;
+      } else if (lang === 'fr') {
+        blockedQueries[type].fr += count;
+        blockedQueries.total.fr += count;
+      }
+    }
+
+    return { blockedQueries };
+  }
+}
+
+export default BlockedQueryService;

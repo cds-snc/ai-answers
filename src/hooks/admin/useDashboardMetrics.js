@@ -23,6 +23,7 @@ const INITIAL_METRICS = {
   publicFeedbackTotals: { totalQuestionsWithFeedback: 0, yes: 0, no: 0 },
   publicFeedbackReasons: { yes: {}, no: {} },
   byDepartment: {},
+  blockedQueries: {},
 };
 
 // Fetches the shared dashboard metric bundle (usage, sessions, expert feedback,
@@ -60,7 +61,7 @@ export function useDashboardMetrics() {
     setError(null);
 
     try {
-      const [usage, session, expert, ai, publicFb, dept, technical] = await Promise.all([
+      const [usage, session, expert, ai, publicFb, dept, technical, blocked] = await Promise.all([
         MetricsService.getUsageMetrics(filters, signal),
         MetricsService.getSessionMetrics(filters, signal),
         MetricsService.getExpertMetrics(filters, signal),
@@ -68,9 +69,10 @@ export function useDashboardMetrics() {
         MetricsService.getPublicFeedbackMetrics(filters, signal),
         MetricsService.getDepartmentMetrics(filters, signal),
         MetricsService.getTechnicalMetrics(filters, signal),
+        MetricsService.getBlockedMetrics(filters, signal),
       ]);
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);

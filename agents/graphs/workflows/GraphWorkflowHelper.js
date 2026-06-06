@@ -18,12 +18,26 @@ import { exponentialBackoff } from '../../../api/util/backoff.js';
 
 // RedactionError class
 class RedactionError extends Error {
-  constructor(message, redactedText, redactedItems) {
+  constructor(message, redactedText, redactedItems, blockType = null) {
     super(message);
     this.name = 'RedactionError';
     this.redactedText = redactedText;
     this.redactedItems = redactedItems;
+    // Bucket for the blocked-query safety counter (see BlockedQueryService).
+    this.blockType = blockType;
   }
+}
+
+// A single blocked query may trip several word lists at once; classify it to one
+// primary bucket by priority so the dashboard counts total exactly one per block.
+function primaryBlockTypeFromItems(redactedItems) {
+  if (!Array.isArray(redactedItems)) return null;
+  const types = new Set(redactedItems.map(i => i?.type));
+  if (types.has('threat')) return 'threat';
+  if (types.has('manipulation')) return 'manipulation';
+  if (types.has('profanity')) return 'profanity';
+  if (types.has('private')) return 'piStage1';
+  return null;
 }
 
 export class GraphWorkflowHelper {
@@ -39,16 +53,16 @@ export class GraphWorkflowHelper {
     const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
     const hasBlockingRedaction = redactedItems.some(item => blockingTypes.includes(item.type));
     if (hasBlockingRedaction) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
+      throw new RedactionError('Blocked content detected', redactedText, redactedItems, primaryBlockTypeFromItems(redactedItems));
     }
 
     const piiResult = await checkPII({ chatId, message: userMessage, agentType: selectedAI });
     if (piiResult.blocked) {
-      throw new RedactionError('Blocked content detected in translation', '#############', redactedItems);
+      throw new RedactionError('Blocked content detected in translation', '#############', redactedItems, 'azureGuardrail');
     }
     if (piiResult.pii !== null) {
       // Use the PII-aware redaction string returned by the PII checker
-      throw new RedactionError('PII detected in user message', piiResult.pii, redactedItems);
+      throw new RedactionError('PII detected in user message', piiResult.pii, redactedItems, 'piStage2');
     }
     return { redactedText, redactedItems };
   }
@@ -57,7 +71,7 @@ export class GraphWorkflowHelper {
     const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
     if (resp && resp.blocked === true) {
       await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
-      throw new RedactionError('Blocked content detected in translation', '#############', null);
+      throw new RedactionError('Blocked content detected in translation', '#############', null, 'azureGuardrail');
     }
     return resp;
   }
@@ -85,7 +99,7 @@ export class GraphWorkflowHelper {
         translatedText: translationData?.translatedText,
         translatedLanguage: translationData?.translatedLanguage,
       });
-      throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null);
+      throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null, 'manipulation');
     }
     if (sourceLang === 'und') {
       await ServerLoggingService.info('postTranslateGuard und hard-block (unsupported language)', chatId, {
@@ -93,7 +107,7 @@ export class GraphWorkflowHelper {
         translatedText: translationData?.translatedText,
         translatedLanguage: translationData?.translatedLanguage,
       });
-      throw new RedactionError('Blocked unsupported language after translation', '#############', null);
+      throw new RedactionError('Blocked unsupported language after translation', '#############', null, 'unsupportedLanguage');
     }
 
     const translatedText = translationData?.translatedText;
@@ -105,7 +119,7 @@ export class GraphWorkflowHelper {
       const { redactedItems } = redactionService.redactText(translatedText, 'en');
       const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
       if (redactedItems.some(item => blockingTypes.includes(item.type))) {
-        throw new RedactionError('Blocked content detected after translation', '#############', redactedItems);
+        throw new RedactionError('Blocked content detected after translation', '#############', redactedItems, primaryBlockTypeFromItems(redactedItems));
       }
     } finally {
       if (previousLang && previousLang !== 'en') {
@@ -127,10 +141,10 @@ export class GraphWorkflowHelper {
     }
 
     if (piiResult?.blocked) {
-      throw new RedactionError('Blocked content detected after translation', '#############', null);
+      throw new RedactionError('Blocked content detected after translation', '#############', null, 'azureGuardrail');
     }
     if (typeof piiResult?.pii === 'string' && piiResult.pii.length > 0) {
-      throw new RedactionError('PII detected in user message', piiResult.pii, null);
+      throw new RedactionError('PII detected in user message', piiResult.pii, null, 'piStage2');
     }
   }
 

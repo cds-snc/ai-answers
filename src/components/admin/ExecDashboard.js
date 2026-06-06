@@ -1,8 +1,9 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
+import BlockedQueriesTable from './dashboard/BlockedQueriesTable.js';
 import StatCard from './dashboard/StatCard.js';
 import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
@@ -16,6 +17,15 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+
+  // Track the applied department so the blocked-query table (which can't be
+  // department-scoped — blocks happen before the department is known) is hidden
+  // when a specific department is filtered.
+  const [appliedDepartment, setAppliedDepartment] = useState('');
+  const handleApply = useCallback((filters) => {
+    setAppliedDepartment(filters?.department || '');
+    fetchMetrics(filters);
+  }, [fetchMetrics]);
 
   // Separate, fixed last-12-months summary, independent of the filter below.
   // Fetched once on mount; the database only goes back to Oct 2025, which is
@@ -143,7 +153,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </>
       )}
 
-      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
+      <DashboardFilterBar lang={lang} loading={loading} onApply={handleApply} />
 
       <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
         {t('execDashboard.filteredPeriod')}
@@ -226,6 +236,23 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(harmful.fr))}
         />
       </div>
+
+      {/* Blocked queries — global safety counter, can't be department-scoped. */}
+      <h3 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 4px', color: '#333' }}>
+        {t('blockedQueries.title')}
+      </h3>
+      <p style={{ fontSize: 12, color: '#666', margin: '0 0 12px' }}>
+        {t('blockedQueries.note')}
+      </p>
+      {appliedDepartment ? (
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
+          {t('blockedQueries.deptNote')}
+        </p>
+      ) : (
+        <div style={{ marginBottom: 24 }}>
+          <BlockedQueriesTable blockedQueries={metrics.blockedQueries} lang={lang} t={t} />
+        </div>
+      )}
 
       {!loading && metrics.totalQuestions === 0 && !error && (
         <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>

@@ -4,6 +4,8 @@ class ShortQueryValidation extends Error {
     this.name = 'ShortQueryValidation';
     this.userMessage = userMessage;
     this.fallbackUrl = fallbackUrl;
+    // Bucket for the blocked-query safety counter (see BlockedQueryService).
+    this.blockType = 'tooShort';
   }
 }
 
