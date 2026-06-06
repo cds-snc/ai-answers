@@ -31,7 +31,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
         <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * 40)}>
           <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 12 }} />
+            <XAxis type="number" domain={percent ? [0, 100] : undefined} allowDecimals={false} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 12 }} />
             <YAxis type="category" dataKey="name" width={160} interval={0} tick={{ fontSize: 12 }} />
             {tooltipContent
               ? <Tooltip content={tooltipContent} />

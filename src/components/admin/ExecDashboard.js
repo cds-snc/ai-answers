@@ -252,6 +252,38 @@ const ExecDashboard = ({ lang = 'en' }) => {
       <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
         {t('execDashboard.safety.title')}
       </h2>
+      {/* Blocked queries — total card beside the by-type chart. Global safety
+          counter, can't be department-scoped, so hidden when a department filter
+          is applied. */}
+      {appliedDepartment ? (
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
+          {t('blockedQueries.deptNote')}
+        </p>
+      ) : (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div style={{ flex: '0 0 240px', minWidth: 200, display: 'flex' }}>
+            <StatCard
+              label={t('blockedQueries.totalCardLabel')}
+              value={fmtN(blockedTotal.total)}
+              sub={t('blockedQueries.langSub')
+                .replace('{en}', fmtN(blockedTotal.en))
+                .replace('{fr}', fmtN(blockedTotal.fr))}
+            />
+          </div>
+          <div style={{ flex: '1 1 480px', minWidth: 320 }}>
+            <HBarCard
+              title={t('blockedQueries.byTypeTitle')}
+              data={blockedBarData}
+              lang={lang}
+              tooltipContent={BlockedBarTooltip}
+              noDataLabel={t('blockedQueries.noData')}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Harmful sits below the blocked-query counter (more KPI cards may be
+          added in front of it). */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <StatCard
           label={t('execDashboard.kpi.harmful')}
@@ -260,32 +292,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{en}', fmtN(harmful.en))
             .replace('{fr}', fmtN(harmful.fr))}
         />
-        <StatCard
-          label={t('blockedQueries.totalCardLabel')}
-          value={fmtN(blockedTotal.total)}
-          sub={t('blockedQueries.langSub')
-            .replace('{en}', fmtN(blockedTotal.en))
-            .replace('{fr}', fmtN(blockedTotal.fr))}
-        />
       </div>
-
-      {/* Blocked queries by type — global safety counter, can't be
-          department-scoped, so it's hidden when a department filter is applied. */}
-      {appliedDepartment ? (
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
-          {t('blockedQueries.deptNote')}
-        </p>
-      ) : (
-        <div style={{ marginBottom: 24 }}>
-          <HBarCard
-            title={t('blockedQueries.byTypeTitle')}
-            data={blockedBarData}
-            lang={lang}
-            tooltipContent={BlockedBarTooltip}
-            noDataLabel={t('blockedQueries.noData')}
-          />
-        </div>
-      )}
 
       {!loading && metrics.totalQuestions === 0 && !error && (
         <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
