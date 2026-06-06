@@ -87,6 +87,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         const row = bq[type] || {};
         return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
       })
+      .filter((d) => d.value > 0)
       .sort((a, b) => b.value - a.value);
   }, [metrics.blockedQueries, t]);
 
@@ -285,6 +286,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             data={blockedBarData}
             lang={lang}
             tooltipContent={BlockedBarTooltip}
+            noDataLabel={t('blockedQueries.noData')}
           />
         </div>
       )}

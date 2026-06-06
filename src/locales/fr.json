@@ -1210,6 +1210,7 @@
     "title": "Requêtes bloquées",
     "byTypeTitle": "Requêtes bloquées par type",
     "langSub": "EN : {en} · FR : {fr}",
+    "noData": "Aucune requête bloquée pour cette période.",
     "note": "Questions arrêtées par les mesures de sûreté et de sécurité avant d'atteindre l'étape de la réponse. Le texte de la question n'est jamais conservé — seul le nombre par type l'est. Données présentées pour l'ensemble des institutions (les blocages surviennent avant l'identification de l'institution).",
     "deptNote": "Les requêtes bloquées ne peuvent pas être ventilées par institution, car les blocages surviennent avant l'identification de l'institution. Retirez le filtre d'institution pour voir le nombre de requêtes bloquées.",
     "colType": "Type de blocage",
