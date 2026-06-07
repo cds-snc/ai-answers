@@ -21,12 +21,12 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
                                                               ▼
         MetricsService.getXxxMetrics(filters)  ──►  /api/metrics/* endpoints  ──►  parseRequestFilters()
                                                               │
-                                          setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept })
+                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked })
 ```
 
-- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 7 parallel metric
-  fetches (usage, sessions, expert, ai, public feedback, departments, technical),
-  abort, loading/error. `fetchMetrics(filters)` takes a **filters
+- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 8 parallel metric
+  fetches (usage, sessions, expert, ai, public feedback, departments, technical,
+  blocked), abort, loading/error. `fetchMetrics(filters)` takes a **filters
   object** and passes it through unchanged; both filter components supply a
   superset/subset of `{ startDate, endDate, department, userType, ... }`.
 - **`src/services/MetricsService.js`** — `_fetchMetric` serializes the whole
@@ -60,6 +60,10 @@ metrics.aiScored.<cat>.{ total, en, fr }        // same cats EXCEPT no hasConten
 metrics.expertScored.hasContentIssue.{ total, en, fr, needsImprovement, hasError }
 metrics.publicFeedbackTotals.{ totalQuestionsWithFeedback, yes, no, enYes, enNo, frYes, frNo }
 metrics.publicFeedbackReasons.{ yes, no }       // keyed by score (string) -> { en, fr, total }
+metrics.blockedQueries.<type>.{ total, en, fr } // from metrics-blocked; type: tooShort,
+                                                //   piStage1, piStage2, profanity, threat,
+                                                //   manipulation, azureGuardrail,
+                                                //   unsupportedLanguage, plus a `total` bucket
 ```
 
 Expert metrics come from `api/metrics/metrics-expert-feedback.js`, AI from
@@ -70,12 +74,19 @@ read `responseTime.median`/`p95` (shown in seconds) and the token totals.
 
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 
+All charts are **recharts** (`BarChart`/`PieChart`), wrapped in a shared white
+card chrome (border `#e0e0e0`, radius 8, soft shadow, 15px/600 title). Match this
+chrome when adding a new card — don't drop a bare `<table>`/chart in. Colours
+come from `src/constants/dashboardColours.js`.
+
 | File | Purpose |
 |------|---------|
 | `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = exec style. |
 | `KpiRow.js` | The 3 exec headline KPIs (questions / expert-evaluated / accuracy) derived from a metrics bundle. Reused for the filtered range **and** the last-12-months row. |
 | `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
-| `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); value labels via `<LabelList>`; `subtitle`/`noDataLabel`. |
+| `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
+| `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on both dashboards. |
+| `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the exec dashboard uses a `StatCard` + `HBarCard` instead. Row order from `src/constants/blockedQueryTypes.js`. |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 
@@ -85,8 +96,12 @@ read `responseTime.median`/`p95` (shown in seconds) and the token totals.
 - `splitPublicFeedbackTotals(totals, noReasonsByScore)` — reclassifies public
   feedback to positive/negative **by score, not the yes/no click** (see rules).
 - `buildFeedbackSplitData(totals, reasons, t)` — donut rows (helpful / not helpful).
-- `buildFeedbackReasonsData(reasons, t)` — full reason breakdown bar: positives
-  (green) first, negatives (red) after, fixed order, zero rows dropped.
+- `buildFeedbackReasonsData(reasons, t)` — full reason breakdown bar rows in the
+  fixed `FEEDBACK_REASON_ORDER` (positives green first, negatives red after — NOT
+  count-sorted, stable across date ranges), zero rows dropped. Each row carries
+  `positive` (for `DivergingBarCard`'s left/right) **and** `colour` (for plain
+  bars). To re-order the satisfaction breakdown, edit `FEEDBACK_REASON_ORDER` in
+  `feedbackBreakdown.js` — it drives both dashboards.
 - Score → positive/negative is defined in `src/constants/UserFeedbackOptions.js`
   (`isPositiveScore`, `POSITIVE_SCORES`, the `positiveAboutAI` flag).
 
@@ -112,6 +127,38 @@ Colours: `src/constants/dashboardColours.js` (single source of truth).
   hear") is a *no* click but counts as **positive** about AI. Classify by score,
   not the raw `feedback` field.
 
+## Safety: blocked-query counter
+
+Queries stopped by the guardrails (too short, profanity/threat/manipulation word
+lists, programmatic + AI privacy detection, Azure content filter, unsupported
+language) **throw before `persistNode`** and are never written as Chat/Interaction
+records — the question text is intentionally discarded. A **text-free** counter is
+the only record of them. End-to-end:
+
+- **Tagging:** each guardrail throw site (`agents/graphs/services/shortQuery.js`,
+  `agents/graphs/workflows/GraphWorkflowHelper.js`) sets a `blockType` on the
+  thrown error (`ShortQueryValidation` / `RedactionError`). A word-list block that
+  trips several lists is classified to one primary bucket by priority.
+- **Recording:** the single `catch` in `api/chat/chat-graph-run.js` fires
+  fire-and-forget `BlockedQueryService.record({ blockType, lang, user,
+  referringUrl })` — never awaited, never throws.
+- **Storage:** `models/blockedQueryCounter.js`, day-bucketed
+  `{ date, type, lang, userType, count }` with an atomic `$inc`/upsert. No text.
+  `userType` is `admin | referredPublic | publicOther` via
+  `classifyUserType` (reuses `isReferredPublicUrl` from `api/util/chat-filters.js`
+  so it matches the dashboard userType filter).
+- **Endpoint:** `api/metrics/metrics-blocked.js` → `metrics.blockedQueries`
+  (per-type `{ total, en, fr }`). It honours date range + `userType`, and
+  **ignores department on purpose** (blocks happen before the department is known).
+- **UI:** exec = `StatCard` (total) + `HBarCard` (by type, fixed pipeline order,
+  zero rows dropped); technical = `BlockedQueriesTable`. Both dashboards track the
+  applied department and **hide the blocked-query view when a department is
+  selected** (showing `blockedQueries.deptNote` instead) — it can't be
+  department-scoped. Type order/labels: `src/constants/blockedQueryTypes.js` +
+  `blockedQueries.types.*` locale keys.
+- **No backfill:** counts accrue from deploy forward; historical blocks were never
+  recorded. Tests: `__tests__/blockedQueryService.test.js`.
+
 ## Conventions
 
 - **Locales**: each dashboard has its own `partnerDashboard.*` / `execDashboard.*`
@@ -127,6 +174,9 @@ Colours: `src/constants/dashboardColours.js` (single source of truth).
 ## Tests
 
 `src/utils/dashboard/feedbackBreakdown.test.js` (vitest) covers the pure helpers
-— ordering, colours, score classification, the feedback split. Run:
+— ordering (incl. the fixed `FEEDBACK_REASON_ORDER`), colours, score
+classification, the feedback split. Run:
 `npx vitest run src/utils/dashboard/feedbackBreakdown.test.js`. The metrics
-endpoints are covered by `__tests__/*metrics-dashboard*.test.js`.
+endpoints are covered by `__tests__/*metrics-dashboard*.test.js`. The blocked-
+query counter (classification, day-bucketing, userType mapping, metric bundle
+shape) is covered by `__tests__/blockedQueryService.test.js`.
