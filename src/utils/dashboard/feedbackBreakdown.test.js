@@ -112,12 +112,13 @@ describe('buildFeedbackReasonsData', () => {
     expect(buildFeedbackReasonsData(undefined, t)).toEqual([]);
   });
 
-  it('orders all positives (green) first then negatives (red), not by count, and colours by score', () => {
+  it('uses the fixed display order (positives first, then negatives), not count order, and colours by score', () => {
     const rows = buildFeedbackReasonsData(reasons, t);
-    // option order: noCall(1), savedTime(3), notWanted(5) | other-no(6), notDetailed(7)
-    // ('other' in the 'no' direction resolves via the otherNo label key)
-    expect(rows.map(r => r.name)).toEqual(['noCall', 'savedTime', 'notWanted', 'otherNo', 'notDetailed']);
-    expect(rows.map(r => r.value)).toEqual([6, 98, 21, 37, 29]);
+    // Fixed order, zero rows dropped: savedTime(3), noCall(1), notWanted(5)
+    // | notDetailed(7), other-no(6). notWanted sits in the positive group;
+    // notDetailed precedes other-no per FEEDBACK_REASON_ORDER.
+    expect(rows.map(r => r.name)).toEqual(['savedTime', 'noCall', 'notWanted', 'notDetailed', 'otherNo']);
+    expect(rows.map(r => r.value)).toEqual([98, 6, 21, 29, 37]);
     expect(rows.map(r => r.colour)).toEqual([
       COLOURS.feedbackPositive, COLOURS.feedbackPositive, COLOURS.feedbackPositive,
       COLOURS.feedbackNegative, COLOURS.feedbackNegative,

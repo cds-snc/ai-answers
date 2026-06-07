@@ -7,6 +7,7 @@ import StatCard from './dashboard/StatCard.js';
 import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
@@ -162,7 +163,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
               lang={lang}
             />
             <div style={{ flex: 2, minWidth: 320 }}>
-              <HBarCard
+              <DivergingBarCard
                 title={t('execDashboard.charts.feedbackBreakdownTitle')}
                 subtitle={yearPfTotal > 0
                   ? t('execDashboard.charts.satisfactionBreakdownSubtitle')
@@ -193,10 +194,11 @@ const ExecDashboard = ({ lang = 'en' }) => {
       {/* Headline KPI cards for the selected date range */}
       <KpiRow metrics={metrics} t={t} lang={lang} />
 
-      {/* Satisfaction (helpful or not) breakdown — positives green, negatives red */}
+      {/* Satisfaction (helpful or not) breakdown — diverging: positives right
+          (green), negatives left (red), with negatives grouped at the bottom. */}
       {feedbackReasonsData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <HBarCard
+          <DivergingBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
             lang={lang}

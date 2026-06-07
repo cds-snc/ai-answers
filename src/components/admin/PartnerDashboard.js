@@ -6,6 +6,7 @@ import FilterPanel from './FilterPanel.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
@@ -152,7 +153,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         {feedbackReasonsData.length > 0 && (
           <div style={{ flex: 2, minWidth: 320 }}>
-            <HBarCard
+            <DivergingBarCard
               title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
               data={feedbackReasonsData}
               lang={lang}
