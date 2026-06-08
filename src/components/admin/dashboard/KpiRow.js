@@ -56,6 +56,16 @@ const KpiRow = ({ metrics, t, lang = 'en' }) => {
         value={fmtN(k.expertTotal)}
         sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(k.evaluatedPct))}
       />
+      <StatCard
+        label={t('execDashboard.kpi.accuracyRate')}
+        value={pctOrDash(k.totalAccuracy)}
+        valueColour={accuracyColour(k.totalAccuracy)}
+        sub={k.showAccuracyByLang
+          ? t('execDashboard.kpi.accuracySub')
+              .replace('{en}', fmtPct(k.enAccuracy))
+              .replace('{fr}', fmtPct(k.frAccuracy))
+          : undefined}
+      />
     </div>
   );
 };
