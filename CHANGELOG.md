@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.136.0](https://github.com/cds-snc/ai-answers/compare/v1.135.0...v1.136.0) (2026-06-08)
+
+
+### Features
+
+* fix cont. ([37222fb](https://github.com/cds-snc/ai-answers/commit/37222fb18622c963c1c678c03b057684885f1062))
+* fix error message appearance ([c298839](https://github.com/cds-snc/ai-answers/commit/c2988399c7ed974ad4fcac0e85e30f295b083ec7))
+* move filter under heading ([c1a6f08](https://github.com/cds-snc/ai-answers/commit/c1a6f08e22e792319492816a1499b8b90a2af20a))
+* refinements ([237f6f0](https://github.com/cds-snc/ai-answers/commit/237f6f0a7ca51cf831251e7de2dd8caa8f828516))
+* remove dead key ([a900d08](https://github.com/cds-snc/ai-answers/commit/a900d08d1737ce5b0a6601072baec67e4fb3b33d))
+* spacing ([e05e9a1](https://github.com/cds-snc/ai-answers/commit/e05e9a14ffa1046e1a42386f98c876de9c57ca19))
+* style fixes, text fixes ([c784622](https://github.com/cds-snc/ai-answers/commit/c784622fae5c25d78832031ed402a13ee2423f3d))
+* styling, structuring html ([23f5e68](https://github.com/cds-snc/ai-answers/commit/23f5e68db81a8d4a6b0d965b8a81a4084c73c841))
+* styling, structuring html ([5b10f2f](https://github.com/cds-snc/ai-answers/commit/5b10f2f8fe72d2eccdcbcc64761c9868736dc91b))
+* update ([23a7f3c](https://github.com/cds-snc/ai-answers/commit/23a7f3cd351e2307ea8f4f25d7d5966cd70ed9ba))
+
 ## [1.135.0](https://github.com/cds-snc/ai-answers/compare/v1.134.0...v1.135.0) (2026-06-05)
 
 

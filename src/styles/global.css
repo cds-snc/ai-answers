@@ -7,6 +7,17 @@
   outline: none;
 }
 
+/* Custom non-responsive font sizes */
+.font-size-text-xsm-nr {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.5em;
+}
+
+.font-size-text-xxs-nr {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.2em;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;

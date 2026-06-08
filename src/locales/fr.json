@@ -703,6 +703,7 @@
     "chatDashboard": {
       "title": "Tableau de bord de chat",
       "description": "Filtrez les interactions de chat et explorez les détails dans le tableau ci-dessous.",
+      "timeRangeTitle": "Obtenir les interactions de clavardage pour la période sélectionnée",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
@@ -759,6 +760,7 @@
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
       "description": "Filtrez les évaluations et explorez les détails dans le tableau ci-dessous.",
+      "timeRangeTitle": "Obtenir les évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
@@ -788,6 +790,7 @@
     "autoEvalDashboard": {
       "title": "Tableau de bord des évaluations automatiques",
       "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
+      "timeRangeTitle": "Obtenir les auto-évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
@@ -1060,7 +1063,8 @@
     "error": "Erreur",
     "yes": "Oui",
     "no": "Non",
-    "na": "S.O."
+    "na": "S.O.",
+    "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés."
   },
   "eval": {
     "metric": "Métrique",
@@ -1250,7 +1254,7 @@
     },
     "charts": {
       "accuracyDonutTitle": "Exactitude des réponses",
-      "accuracyCentre": "exactes",
+      "accuracyCentre": "précision",
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
@@ -1273,8 +1277,8 @@
   },
   "partnerDashboard": {
     "title": "Tableau de bord partenaire",
+    "overviewTitle": "Vue d'ensemble",
     "error": "Échec du chargement des données. Veuillez réessayer.",
-    "noData": "Aucune donnée trouvée pour les filtres sélectionnés.",
     "kpi": {
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
@@ -1290,7 +1294,6 @@
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
-      "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
       "engagementTitle": "Longueur des conversations",

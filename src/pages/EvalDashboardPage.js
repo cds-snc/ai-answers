@@ -175,9 +175,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-0 small-text">{t('admin.evalDashboard.description', 'Filter evaluations and explore details in the table below.')}</p>
-
-      <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+      <h2 className="mt-400 mb-400">{t('admin.evalDashboard.timeRangeTitle')}</h2>
+      <div className="mb-600">
+        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+      </div>
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -189,6 +190,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       )}
 
       {error && (<div className="mt-400 error" role="alert">{t('admin.evalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
+
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
+        </div>
+      )}
 
       {hasAppliedFilters && (
         <div className="mt-200">

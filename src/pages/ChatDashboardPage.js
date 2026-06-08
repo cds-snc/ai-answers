@@ -295,16 +295,15 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-0 small-text">
-        {t('admin.chatDashboard.description', 'Filter chat interactions and explore details in the table below.')}
-      </p>
-
-      <FilterPanel
-        lang={lang}
-        onApplyFilters={(filters) => { handleApplyFilters(filters); }}
-        onClearFilters={handleClearFilters}
-        isVisible={true}
-      />
+      <h2 className="mt-400 mb-400">{t('admin.chatDashboard.timeRangeTitle')}</h2>
+      <div className="mb-600">
+        <FilterPanel
+          lang={lang}
+          onApplyFilters={(filters) => { handleApplyFilters(filters); }}
+          onClearFilters={handleClearFilters}
+          isVisible={true}
+        />
+      </div>
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -321,10 +320,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && !error && recordsFiltered === 0 && recordsTotal === 0 && (
-        <p className="chat-dashboard-no-results">
-          {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
-        </p>
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
+        </div>
       )}
 
       {hasAppliedFilters && (

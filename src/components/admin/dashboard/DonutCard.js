@@ -1,24 +1,15 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { COLOURS } from '../../../constants/dashboardColours.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 
 // Donut (hollow pie) chart in a card, with a big figure floated in the centre.
 // `subtitle` and `footer` are optional; omit them for the plain variant.
 // `lang` drives locale-aware number formatting in the tooltip.
-const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, footer, height = 260, lang = 'en' }) => (
-  <div style={{
-    background: '#fff',
-    border: '1px solid #e0e0e0',
-    borderRadius: 8,
-    padding: '24px 16px',
-    flex: 1,
-    minWidth: 280,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-  }}>
-    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: subtitle ? 4 : 12, color: '#333' }}>{title}</div>
-    {subtitle && <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>{subtitle}</div>}
-    <div style={{ position: 'relative' }}>
+const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, centreColour, footer, height = 260, lang = 'en' }) => (
+  <div className="dashboard-card donut-card">
+    <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
+    {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
+    <div className="donut-card__chart-wrap">
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie
@@ -38,22 +29,13 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, f
           <Legend iconType="circle" iconSize={10} />
         </PieChart>
       </ResponsiveContainer>
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -68%)',
-        textAlign: 'center',
-        pointerEvents: 'none',
-      }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: COLOURS.brand, lineHeight: 1 }}>{centreValue}</div>
-        <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{centreLabel}</div>
+      <div className="donut-card__centre">
+        <span className="donut-card__centre-value" style={centreColour ? { color: centreColour } : undefined}>{centreValue}</span>
+        <span className="donut-card__centre-label">{centreLabel}</span>
       </div>
     </div>
     {footer && (
-      <div style={{ textAlign: 'center', fontSize: 13, color: '#666', marginTop: 4, borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
-        {footer}
-      </div>
+      <p className="donut-card__footer font-size-text-xsm-nr">{footer}</p>
     )}
   </div>
 );

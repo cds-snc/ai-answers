@@ -703,6 +703,7 @@
     "chatDashboard": {
       "title": "Chat dashboard",
       "description": "Filter chat interactions and explore details in the table below.",
+      "timeRangeTitle": "Get chat interactions for the selected period",
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
       "noResults": "Apply filters to load chat interactions.",
@@ -759,6 +760,7 @@
     "evalDashboard": {
       "title": "Evaluation dashboard",
       "description": "Filter evaluations and explore details in the table below.",
+      "timeRangeTitle": "Get evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
       "resultsSummary": "Total matching evaluations: {count}",
@@ -788,6 +790,7 @@
     "autoEvalDashboard": {
       "title": "Auto-evaluation dashboard",
       "description": "Filter auto-evaluations and explore details in the table below.",
+      "timeRangeTitle": "Get auto-evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
       "resultsSummary": "Total matching evaluations: {count}",
@@ -1060,7 +1063,8 @@
     "error": "Error",
     "yes": "Yes",
     "no": "No",
-    "na": "N/A"
+    "na": "N/A",
+    "noDataForFilters": "No data found for the selected filters."
   },
   "eval": {
     "metric": "Metric",
@@ -1250,7 +1254,7 @@
     },
     "charts": {
       "accuracyDonutTitle": "Answer accuracy",
-      "accuracyCentre": "accurate",
+      "accuracyCentre": "accuracy",
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
@@ -1273,8 +1277,8 @@
   },
   "partnerDashboard": {
     "title": "Partner dashboard",
+    "overviewTitle": "Overview",
     "error": "Failed to load data. Please try again.",
-    "noData": "No data found for the selected filters.",
     "kpi": {
       "questionsAsked": "Questions asked",
       "questionsSub": "EN: {en} · FR: {fr}",
@@ -1290,7 +1294,6 @@
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
-      "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
       "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
       "engagementTitle": "Conversation length",
