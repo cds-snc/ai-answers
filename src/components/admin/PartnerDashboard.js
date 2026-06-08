@@ -167,16 +167,15 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Satisfaction breakdown bar (shown when reason data exists) */}
-      {feedbackReasonsData.length > 0 && (
-        <div className="dashboard-section">
-          <DivergingBarCard
-            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackReasonsData}
-            lang={lang}
-          />
-        </div>
-      )}
+      {/* Satisfaction breakdown bar */}
+      <div className="dashboard-section">
+        <DivergingBarCard
+          title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+          data={feedbackReasonsData}
+          noDataLabel={t('partnerDashboard.charts.noData')}
+          lang={lang}
+        />
+      </div>
 
       {/* User satisfaction donut + conversation length donut — equal width */}
       <div className="dashboard-row">
