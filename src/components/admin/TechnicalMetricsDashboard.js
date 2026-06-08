@@ -64,19 +64,26 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer size="xl" className="space-y-6">
-      <FilterPanel
-        lang={lang}
-        onApplyFilters={handleApplyFilters}
-        onClearFilters={handleClearFilters}
-        isVisible={true}
-        defaultUserType="public"
-      />
+      <div className="mb-600">
+        <FilterPanel
+          lang={lang}
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
+          isVisible={true}
+          defaultUserType="public"
+        />
+      </div>
+
+      {hasStartedLoading && !Object.values(loadingState).some(Boolean) && data.totalQuestions === 0 && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
+        </div>
+      )}
 
       {hasStartedLoading && (
         <GcdsContainer size="xl" className="bg-white shadow rounded-lg mb-600">
           <div className="p-4">
-            <h2 className="mt-400 mb-400">{t('technicalMetrics.dashboard.title')}</h2>
-
             <SectionWrapper
               isLoading={loadingState.technical}
               error={errorState.technical}

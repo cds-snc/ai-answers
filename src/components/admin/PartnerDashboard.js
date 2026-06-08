@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -16,6 +16,18 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+  const filterWrapRef = useRef(null);
+  const autoApplyFired = useRef(false);
+  const hasUserApplied = useRef(false);
+  const handleApplyFilters = (filters) => {
+    if (autoApplyFired.current) {
+      // Second+ call is user-triggered: close the filter panel and mark as applied.
+      hasUserApplied.current = true;
+      filterWrapRef.current?.querySelector('details')?.removeAttribute('open'); // relies on FilterPanel rendering a <details> element internally
+    }
+    autoApplyFired.current = true;
+    fetchMetrics(filters);
+  };
 
   // --- Derived data ---
 
@@ -74,27 +86,37 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
-      <FilterPanel
-        lang={lang}
-        onApplyFilters={fetchMetrics}
-        onClearFilters={fetchMetrics}
-        isVisible={true}
-        autoApply={true}
-        applyDisabled={loading}
-        defaultUserType="all"
-      />
+    <div>
+      <div ref={filterWrapRef} className="mb-600">
+        <FilterPanel
+          lang={lang}
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={fetchMetrics}
+          isVisible={true}
+          autoApply={true}
+          applyDisabled={loading}
+          defaultUserType="all"
+        />
+      </div>
 
       {error && (
-        <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
+        <div className="dashboard-error">
           {t('partnerDashboard.error')}
         </div>
       )}
 
+      {hasUserApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
+        </div>
+      )}
+
+      <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
+
       {/* KPI cards */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="dashboard-row">
         <StatCard
-          uppercase
           label={t('partnerDashboard.kpi.questionsAsked')}
           value={fmtN(metrics.totalQuestions)}
           sub={t('partnerDashboard.kpi.questionsSub')
@@ -102,14 +124,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
         />
         <StatCard
-          uppercase
           label={t('partnerDashboard.kpi.evaluated')}
           value={fmtN(expertTotal)}
           sub={t('partnerDashboard.kpi.evaluatedSub')
             .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
         />
         <StatCard
-          uppercase
           label={t('partnerDashboard.kpi.accuracyRate')}
           value={pctOrDash(totalAccuracy)}
           sub={showAccuracyByLang
@@ -121,8 +141,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {/* Answer-quality bar + content issues card */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 2, minWidth: 320 }}>
+      <div className="dashboard-row">
+        <div className="dashboard-chart-wide">
           <HBarCard
             title={t('partnerDashboard.charts.accuracyTitle')}
             subtitle={t('partnerDashboard.charts.accuracySubtitle')
@@ -137,7 +157,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           />
         </div>
         <StatCard
-          uppercase
           label={t('partnerDashboard.kpi.contentIssues')}
           value={fmtN(contentIssue.total)}
           sub={t('partnerDashboard.kpi.contentIssuesSub')
@@ -146,32 +165,27 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* User-satisfaction donut + its helpful/not-helpful breakdown bar
-          (positives green, negatives red). The donut always shows; the bar
-          joins it on the same row when there are reasons to break down. */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        {feedbackReasonsData.length > 0 && (
-          <div style={{ flex: 2, minWidth: 320 }}>
-            <HBarCard
-              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-              data={feedbackReasonsData}
-              lang={lang}
-            />
-          </div>
-        )}
+      {/* Satisfaction breakdown bar (shown when reason data exists) */}
+      {feedbackReasonsData.length > 0 && (
+        <div className="dashboard-section">
+          <HBarCard
+            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+            data={feedbackReasonsData}
+            lang={lang}
+          />
+        </div>
+      )}
+
+      {/* User satisfaction donut + conversation length donut — equal width */}
+      <div className="dashboard-row">
         <DonutCard
-          title={t('partnerDashboard.charts.satisfactionTitle')}
+          title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
           data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
           colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
           centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
           centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
           lang={lang}
         />
-      </div>
-
-      {/* Conversation length. Centre figure is the total conversation count;
-          the slices break those down by number of questions asked. */}
-      <div style={{ marginBottom: 24 }}>
         <DonutCard
           title={t('partnerDashboard.charts.engagementTitle')}
           subtitle={t('partnerDashboard.charts.engagementSubtitle')}
@@ -187,12 +201,11 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
           the usage endpoint. */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('partnerDashboard.ops.title')}
       </h2>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="dashboard-row">
         <StatCard
-          uppercase
           label={t('partnerDashboard.ops.medianResponseTime')}
           value={hasResponseTime
             ? t('partnerDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
@@ -202,7 +215,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             : undefined}
         />
         <StatCard
-          uppercase
           label={t('partnerDashboard.ops.inputTokens')}
           value={fmtN(metrics.totalInputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
@@ -210,7 +222,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
-          uppercase
           label={t('partnerDashboard.ops.outputTokens')}
           value={fmtN(metrics.totalOutputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
@@ -220,25 +231,21 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {/* Safety metrics */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('partnerDashboard.safety.title')}
       </h2>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <StatCard
-          uppercase
-          label={t('partnerDashboard.kpi.harmful')}
-          value={fmtN(harmful.total)}
-          sub={t('partnerDashboard.kpi.harmfulSub')
-            .replace('{en}', fmtN(harmful.en))
-            .replace('{fr}', fmtN(harmful.fr))}
-        />
+      <div className="dashboard-row">
+        <div className="dashboard-col-third">
+          <StatCard
+            label={t('partnerDashboard.kpi.harmful')}
+            value={fmtN(harmful.total)}
+            sub={t('partnerDashboard.kpi.harmfulSub')
+              .replace('{en}', fmtN(harmful.en))
+              .replace('{fr}', fmtN(harmful.fr))}
+          />
+        </div>
       </div>
 
-      {!loading && metrics.totalQuestions === 0 && !error && (
-        <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
-          {t('partnerDashboard.noData')}
-        </p>
-      )}
     </div>
   );
 };
