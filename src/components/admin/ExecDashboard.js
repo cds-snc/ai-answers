@@ -266,14 +266,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
       </h2>
       {/* Blocked queries — global safety counter, can't be department-scoped,
           so hidden when a department filter is applied.
-          Layout: stat cards row (blocked total + harmful), then chart full width. */}
+          Layout: left column has blocked total + harmful stacked; chart fills the right. */}
       {appliedDepartment ? (
         <>
           <p className="font-size-text-small mb-300">
             {t('blockedQueries.deptNote')}
           </p>
           <div className="dashboard-row">
-            <div className="dashboard-col-half">
+            <div className="dashboard-col-third">
               <StatCard
                 label={t('execDashboard.kpi.harmful')}
                 value={fmtN(harmful.total)}
@@ -285,40 +285,34 @@ const ExecDashboard = ({ lang = 'en' }) => {
           </div>
         </>
       ) : (
-        <>
-          <div className="dashboard-row">
-            <div className="dashboard-col-half dashboard-col--equal-height">
-              <StatCard
-                label={t('blockedQueries.totalCardLabel')}
-                value={fmtN(blockedTotal.total)}
-                sub={t('blockedQueries.langSub')
-                  .replace('{en}', fmtN(blockedTotal.en))
-                  .replace('{fr}', fmtN(blockedTotal.fr))}
-              />
-            </div>
-            <div className="dashboard-col-half dashboard-col--equal-height">
-              <StatCard
-                label={t('execDashboard.kpi.harmful')}
-                value={fmtN(harmful.total)}
-                sub={t('execDashboard.kpi.harmfulSub')
-                  .replace('{en}', fmtN(harmful.en))
-                  .replace('{fr}', fmtN(harmful.fr))}
-              />
-            </div>
+        <div className="dashboard-row">
+          <div className="dashboard-col-third dashboard-col--equal-height">
+            <StatCard
+              label={t('blockedQueries.totalCardLabel')}
+              value={fmtN(blockedTotal.total)}
+              sub={t('blockedQueries.langSub')
+                .replace('{en}', fmtN(blockedTotal.en))
+                .replace('{fr}', fmtN(blockedTotal.fr))}
+            />
+            <StatCard
+              label={t('execDashboard.kpi.harmful')}
+              value={fmtN(harmful.total)}
+              sub={t('execDashboard.kpi.harmfulSub')
+                .replace('{en}', fmtN(harmful.en))
+                .replace('{fr}', fmtN(harmful.fr))}
+            />
           </div>
-          <div className="dashboard-row">
-            <div className="dashboard-col-full">
-              <HBarCard
-                title={t('blockedQueries.byTypeTitle')}
-                data={blockedBarData}
-                height={Math.max(240, blockedBarData.length * 60)}
-                lang={lang}
-                tooltipContent={BlockedBarTooltip}
-                noDataLabel={t('blockedQueries.noData')}
-              />
-            </div>
+          <div className="dashboard-chart-wide">
+            <HBarCard
+              title={t('blockedQueries.byTypeTitle')}
+              data={blockedBarData}
+              height={Math.max(240, blockedBarData.length * 60)}
+              lang={lang}
+              tooltipContent={BlockedBarTooltip}
+              noDataLabel={t('blockedQueries.noData')}
+            />
           </div>
-        </>
+        </div>
       )}
     </div>
   );
