@@ -36,7 +36,7 @@ const KpiRow = ({ metrics, t, lang = 'en' }) => {
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const k = deriveKpis(metrics);
   return (
-    <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+    <div className="dashboard-row">
       <StatCard
         label={t('execDashboard.kpi.questionsAsked')}
         value={fmtN(k.totalQuestions)}

@@ -84,21 +84,21 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
+    <div>
       {/* Last 12 months summary — fixed window, independent of the filter below.
           Shows a loading state rather than zeroed cards while the (separate)
           year query is in flight. */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.last12Months')}
       </h2>
       {yearLoading ? (
-        <div style={{ color: '#888', textAlign: 'center', padding: '40px 0', fontSize: 14, marginBottom: 24 }}>
+        <div className="dashboard-loading">
           {t('common.loading')}
         </div>
       ) : (
         <>
           {/* Row 1: questions asked, expert evaluated, partner institutions */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div className="dashboard-row">
             <StatCard
               label={t('execDashboard.kpi.questionsAsked')}
               value={fmtN(yearQuestions)}
@@ -117,16 +117,17 @@ const ExecDashboard = ({ lang = 'en' }) => {
             />
           </div>
           {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right) */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div className="dashboard-row">
             <DonutCard
               title={t('execDashboard.charts.accuracyDonutTitle')}
               data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
               colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
               centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
               centreLabel={t('execDashboard.charts.accuracyCentre')}
+              centreColour={yearAccuracyPct !== null ? (yearAccuracyPct >= 50 ? COLOURS.correct : COLOURS.hasError) : undefined}
               lang={lang}
             />
-            <div style={{ flex: 2, minWidth: 320 }}>
+            <div className="dashboard-chart-wide">
               <HBarCard
                 title={t('execDashboard.charts.feedbackBreakdownTitle')}
                 subtitle={yearPfTotal > 0
@@ -145,12 +146,12 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
 
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.filteredPeriod')}
       </h2>
 
       {error && (
-        <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
+        <div className="dashboard-error">
           {t('execDashboard.error')}
         </div>
       )}
@@ -160,7 +161,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Satisfaction (helpful or not) breakdown — positives green, negatives red */}
       {feedbackReasonsData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
+        <div className="dashboard-section">
           <HBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
@@ -171,7 +172,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Top institutions by question volume (all institutions, not just partners) */}
       {departmentData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
+        <div className="dashboard-section">
           <HBarCard
             title={t('execDashboard.charts.departmentsTitle')}
             data={departmentData}
@@ -184,10 +185,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
           the usage endpoint. */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.ops.title')}
       </h2>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="dashboard-row">
         <StatCard
           label={t('execDashboard.ops.medianResponseTime')}
           value={hasResponseTime
@@ -214,21 +215,23 @@ const ExecDashboard = ({ lang = 'en' }) => {
       </div>
 
       {/* Safety metrics */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.safety.title')}
       </h2>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <StatCard
-          label={t('execDashboard.kpi.harmful')}
-          value={fmtN(harmful.total)}
-          sub={t('execDashboard.kpi.harmfulSub')
-            .replace('{en}', fmtN(harmful.en))
-            .replace('{fr}', fmtN(harmful.fr))}
-        />
+      <div className="dashboard-row">
+        <div className="dashboard-col-third">
+          <StatCard
+            label={t('execDashboard.kpi.harmful')}
+            value={fmtN(harmful.total)}
+            sub={t('execDashboard.kpi.harmfulSub')
+              .replace('{en}', fmtN(harmful.en))
+              .replace('{fr}', fmtN(harmful.fr))}
+          />
+        </div>
       </div>
 
       {!loading && metrics.totalQuestions === 0 && !error && (
-        <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
+        <p className="dashboard-no-data">
           {t('execDashboard.noData')}
         </p>
       )}

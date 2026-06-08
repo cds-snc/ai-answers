@@ -140,18 +140,6 @@
   font-weight: bold;
 }
 
-/* font size overrides; working to incorporate still */
-
-.font-size-text-xsm-nr {
-  font-size: 16px !important;
-  line-height: 1.5em;
-}
-
-.font-size-text-xxs-nr {
-  font-size: 14px !important;
-  line-height: 1.2em;
-
-}
 
 .citation-divider {
   border: none;

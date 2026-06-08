@@ -1226,7 +1226,7 @@
     },
     "charts": {
       "accuracyDonutTitle": "Answer accuracy",
-      "accuracyCentre": "accurate",
+      "accuracyCentre": "accuracy",
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
@@ -1249,6 +1249,8 @@
   },
   "partnerDashboard": {
     "title": "Partner dashboard",
+    "overviewTitle": "Overview",
+    "showFilters": "Show filters",
     "error": "Failed to load data. Please try again.",
     "noData": "No data found for the selected filters.",
     "kpi": {

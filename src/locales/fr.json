@@ -1226,7 +1226,7 @@
     },
     "charts": {
       "accuracyDonutTitle": "Exactitude des réponses",
-      "accuracyCentre": "exactes",
+      "accuracyCentre": "précision",
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
@@ -1249,6 +1249,8 @@
   },
   "partnerDashboard": {
     "title": "Tableau de bord partenaire",
+    "overviewTitle": "Vue d'ensemble",
+    "showFilters": "Afficher les filtres",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour les filtres sélectionnés.",
     "kpi": {
