@@ -286,7 +286,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             <HBarCard
               title={t('blockedQueries.byTypeTitle')}
               data={blockedBarData}
-              height={Math.max(240, blockedBarData.length * 56)}
+              height={Math.max(240, blockedBarData.length * 60)}
               lang={lang}
               tooltipContent={BlockedBarTooltip}
               noDataLabel={t('blockedQueries.noData')}
