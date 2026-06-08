@@ -105,7 +105,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       {!loading && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('partnerDashboard.noData')}
+          {t('common.noDataForFilters')}
         </div>
       )}
 
