@@ -27,15 +27,6 @@ const deriveKpis = (metrics) => {
   };
 };
 
-// The exec dashboard's three headline KPI cards (questions asked, expert
-// evaluated, accuracy rate), computed from the given metrics bundle. Reused for
-// both the last-12-months summary and the filtered date range.
-const accuracyColour = (pct) => {
-  if (pct === null) return undefined;
-  if (pct >= 80) return 'green';
-  if (pct > 50) return 'orange';
-  return 'red';
-};
 
 const KpiRow = ({ metrics, t, lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
@@ -59,7 +50,6 @@ const KpiRow = ({ metrics, t, lang = 'en' }) => {
       <StatCard
         label={t('execDashboard.kpi.accuracyRate')}
         value={pctOrDash(k.totalAccuracy)}
-        valueColour={accuracyColour(k.totalAccuracy)}
         sub={k.showAccuracyByLang
           ? t('execDashboard.kpi.accuracySub')
               .replace('{en}', fmtPct(k.enAccuracy))
