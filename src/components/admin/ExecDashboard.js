@@ -144,11 +144,11 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </>
       )}
 
-      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
-
       <h2 className="dashboard-section-title">
         {t('execDashboard.filteredPeriod')}
       </h2>
+
+      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
 
       {error && (
         <div className="dashboard-error">
