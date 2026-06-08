@@ -87,7 +87,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
-      <div ref={filterWrapRef}>
+      <div ref={filterWrapRef} className="mb-600">
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
