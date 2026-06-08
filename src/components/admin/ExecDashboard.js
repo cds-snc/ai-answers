@@ -266,11 +266,24 @@ const ExecDashboard = ({ lang = 'en' }) => {
       </h2>
       {/* Blocked queries — total card beside the by-type chart. Global safety
           counter, can't be department-scoped, so hidden when a department filter
-          is applied. */}
+          is applied. Harmful card stacks under the blocked total in the left column. */}
       {appliedDepartment ? (
-        <p className="font-size-text-small mb-300">
-          {t('blockedQueries.deptNote')}
-        </p>
+        <>
+          <p className="font-size-text-small mb-300">
+            {t('blockedQueries.deptNote')}
+          </p>
+          <div className="dashboard-row">
+            <div className="dashboard-col-third">
+              <StatCard
+                label={t('execDashboard.kpi.harmful')}
+                value={fmtN(harmful.total)}
+                sub={t('execDashboard.kpi.harmfulSub')
+                  .replace('{en}', fmtN(harmful.en))
+                  .replace('{fr}', fmtN(harmful.fr))}
+              />
+            </div>
+          </div>
+        </>
       ) : (
         <div className="dashboard-row">
           <div className="dashboard-col-third">
@@ -281,6 +294,15 @@ const ExecDashboard = ({ lang = 'en' }) => {
                 .replace('{en}', fmtN(blockedTotal.en))
                 .replace('{fr}', fmtN(blockedTotal.fr))}
             />
+            <div className="mt-200">
+              <StatCard
+                label={t('execDashboard.kpi.harmful')}
+                value={fmtN(harmful.total)}
+                sub={t('execDashboard.kpi.harmfulSub')
+                  .replace('{en}', fmtN(harmful.en))
+                  .replace('{fr}', fmtN(harmful.fr))}
+              />
+            </div>
           </div>
           <div className="dashboard-chart-wide">
             <HBarCard
@@ -294,19 +316,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
           </div>
         </div>
       )}
-
-      {/* Harmful sits below the blocked-query counter. */}
-      <div className="dashboard-row">
-        <div className="dashboard-col-third">
-          <StatCard
-            label={t('execDashboard.kpi.harmful')}
-            value={fmtN(harmful.total)}
-            sub={t('execDashboard.kpi.harmfulSub')
-              .replace('{en}', fmtN(harmful.en))
-              .replace('{fr}', fmtN(harmful.fr))}
-          />
-        </div>
-      </div>
     </div>
   );
 };
