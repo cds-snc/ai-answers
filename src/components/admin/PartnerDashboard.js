@@ -17,13 +17,16 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
   const filterWrapRef = useRef(null);
-  const hasAutoApplied = useRef(false);
+  const autoApplyFired = useRef(false);
+  const hasUserApplied = useRef(false);
   const handleApplyFilters = (filters) => {
-    fetchMetrics(filters);
-    if (hasAutoApplied.current) {
+    if (autoApplyFired.current) {
+      // Second+ call is user-triggered: close the filter panel and mark as applied.
+      hasUserApplied.current = true;
       filterWrapRef.current?.querySelector('details')?.removeAttribute('open'); // relies on FilterPanel rendering a <details> element internally
     }
-    hasAutoApplied.current = true;
+    autoApplyFired.current = true;
+    fetchMetrics(filters);
   };
 
   // --- Derived data ---
@@ -102,7 +105,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {hasAutoApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
+      {hasUserApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('common.noDataForFilters')}
