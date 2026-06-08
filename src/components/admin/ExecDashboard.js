@@ -245,6 +245,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             : undefined}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('execDashboard.ops.inputTokens')}
           value={fmtN(metrics.totalInputTokens)}
           sub={t('execDashboard.ops.tokensSub')
@@ -252,6 +253,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('execDashboard.ops.outputTokens')}
           value={fmtN(metrics.totalOutputTokens)}
           sub={t('execDashboard.ops.tokensSub')

@@ -603,6 +603,13 @@
   .dashboard-section-title {
     font: var(--gcds-font-h4-mobile);
   }
+
+  /* On small screens, vertically-stacked stat card columns switch to side-by-side */
+  .dashboard-col-third.dashboard-col--equal-height {
+    flex-direction: row;
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
 }
 
 .dashboard-error {
@@ -680,6 +687,10 @@
   flex: 1;
   min-width: 160px;
   padding: var(--gcds-spacing-300) var(--gcds-spacing-350);
+}
+
+.stat-card--wide {
+  min-width: 240px;
 }
 
 .stat-card__label {
