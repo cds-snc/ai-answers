@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { GcdsContainer } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -6,7 +6,6 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import FilterPanel from './FilterPanel.js';
-import BlockedQueriesTable from './dashboard/BlockedQueriesTable.js';
 import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
 
 DataTable.use(DT);
@@ -21,19 +20,6 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
     hasStartedLoading,
     loadingState,
   } = useTechnicalMetrics();
-
-  // Track the applied department so the blocked-query table (which can't be
-  // department-scoped — blocks happen before the department is known) is hidden
-  // when a specific department is filtered.
-  const [appliedDepartment, setAppliedDepartment] = useState('');
-  const handleApply = useCallback((filters) => {
-    setAppliedDepartment(filters?.department || '');
-    handleApplyFilters(filters);
-  }, [handleApplyFilters]);
-  const handleClear = useCallback((filters) => {
-    setAppliedDepartment('');
-    handleClearFilters(filters);
-  }, [handleClearFilters]);
 
   const fmtNum = (n) => formatNumber(n, lang);
   const fmtMs = (n) => (n == null ? '–' : fmtNum(n));
@@ -81,8 +67,8 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
       <div className="mb-600">
         <FilterPanel
           lang={lang}
-          onApplyFilters={handleApply}
-          onClearFilters={handleClear}
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
           isVisible={true}
           defaultUserType="public"
         />
@@ -98,23 +84,6 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
       {hasStartedLoading && (
         <GcdsContainer size="xl" className="bg-white shadow rounded-lg mb-600">
           <div className="p-4">
-            <h2 className="mt-400 mb-400">{t('technicalMetrics.dashboard.title')}</h2>
-
-            <SectionWrapper
-              isLoading={loadingState.blocked}
-              error={errorState.blocked}
-              title={t('blockedQueries.title')}
-              note={t('blockedQueries.note')}
-            >
-              {appliedDepartment ? (
-                <p className="font-size-text-small">{t('blockedQueries.deptNote')}</p>
-              ) : (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <BlockedQueriesTable blockedQueries={data.blockedQueries} lang={lang} t={t} />
-                </div>
-              )}
-            </SectionWrapper>
-
             <SectionWrapper
               isLoading={loadingState.technical}
               error={errorState.technical}

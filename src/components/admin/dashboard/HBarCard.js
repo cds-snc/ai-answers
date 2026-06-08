@@ -14,25 +14,19 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null }) => {
   const fmtVal = (v) => (percent ? formatPercent(v, lang) : formatNumber(v, lang));
   return (
-    <div style={{
-      background: '#fff',
-      border: '1px solid #e0e0e0',
-      borderRadius: 8,
-      padding: '24px 16px',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    }}>
-      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: subtitle ? 4 : 16, color: '#333' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>{subtitle}</div>}
+    <div className="dashboard-card hbar-card">
+      <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
+      {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
       {data.length === 0 ? (
-        <div style={{ height: height || 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: 13 }}>
+        <div className="hbar-card__no-data font-size-text-xsm-nr" style={{ height: height || 200 }}>
           {noDataLabel}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * 40)}>
           <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" domain={percent ? [0, 100] : undefined} allowDecimals={false} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 12 }} />
-            <YAxis type="category" dataKey="name" width={160} interval={0} tick={{ fontSize: 12 }} />
+            <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 16 }} />
+            <YAxis type="category" dataKey="name" width={160} interval={0} tick={{ fontSize: 16 }} />
             {tooltipContent
               ? <Tooltip content={tooltipContent} />
               : <Tooltip formatter={(value) => fmtVal(value)} />}
@@ -40,7 +34,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
               {data.map((entry) => (
                 <Cell key={entry.name} fill={entry.colour || colour} />
               ))}
-              <LabelList dataKey="value" position="right" formatter={fmtVal} style={{ fontSize: 12, fill: '#333' }} />
+              <LabelList dataKey="value" position="right" formatter={fmtVal} style={{ fontSize: 16, fill: '#333' }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
