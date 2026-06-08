@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
-import { COLOURS } from '../../constants/dashboardColours.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 const today = () => toISODate(new Date());
@@ -14,9 +13,6 @@ const daysAgo = (n) => {
 // FilterPanel date-range presets which use moment().subtract(N - 1, 'days').
 // So a 30-day window goes back 29 days, not 30.
 const lastNDaysStart = (n) => daysAgo(n - 1);
-
-const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 };
-const inputStyle = { padding: '6px 10px', border: '1px solid #bdbdbd', borderRadius: 4, fontSize: 14 };
 
 // Shared filter bar for the exec and partner dashboards.
 // Owns department + date range; reports the selection to the parent via
@@ -43,28 +39,18 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply }) => {
   };
 
   return (
-    <div style={{
-      background: '#f5f7fa',
-      border: '1px solid #e0e0e0',
-      borderRadius: 8,
-      padding: '16px 20px',
-      marginBottom: 28,
-      display: 'flex',
-      alignItems: 'flex-end',
-      gap: 20,
-      flexWrap: 'wrap',
-    }}>
+    <div className="filter-bar">
       {/* Department */}
       <div>
-        <label htmlFor="dashboard-dept" style={labelStyle}>
+        <label htmlFor="dashboard-dept" className="filter-bar__label">
           {t('dashboardFilter.department')}
         </label>
         <select
           id="dashboard-dept"
+          className="filter-bar__select"
           value={department}
           onChange={e => setDepartment(e.target.value)}
           disabled={loading}
-          style={{ ...inputStyle, padding: '7px 12px', minWidth: 200 }}
         >
           <option value="">{t('dashboardFilter.allPartners')}</option>
           {PARTNER_DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -73,50 +59,46 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply }) => {
 
       {/* Start date */}
       <div>
-        <label htmlFor="dashboard-start" style={labelStyle}>
+        <label htmlFor="dashboard-start" className="filter-bar__label">
           {t('dashboardFilter.startDate')}
         </label>
         <input
           id="dashboard-start"
           type="date"
+          className="filter-bar__input"
           value={startDate}
           max={endDate}
           onChange={e => setStartDate(e.target.value)}
           disabled={loading}
-          style={inputStyle}
         />
       </div>
 
       {/* End date */}
       <div>
-        <label htmlFor="dashboard-end" style={labelStyle}>
+        <label htmlFor="dashboard-end" className="filter-bar__label">
           {t('dashboardFilter.endDate')}
         </label>
         <input
           id="dashboard-end"
           type="date"
+          className="filter-bar__input"
           value={endDate}
           min={startDate}
           max={today()}
           onChange={e => setEndDate(e.target.value)}
           disabled={loading}
-          style={inputStyle}
         />
       </div>
 
       <button
+        className="filter-bar__apply"
         onClick={handleApply}
         disabled={loading || !startDate || !endDate}
-        style={{
-          padding: '7px 20px', background: COLOURS.brand, color: '#fff',
-          border: 'none', borderRadius: 4, fontSize: 14, fontWeight: 600,
-          cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
-        }}
       >
         {t('dashboardFilter.apply')}
       </button>
 
-      {loading && <span style={{ fontSize: 13, color: '#888', alignSelf: 'center' }}>{t('dashboardFilter.loading')}</span>}
+      {loading && <span className="filter-bar__loading">{t('dashboardFilter.loading')}</span>}
     </div>
   );
 };

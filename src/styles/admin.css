@@ -596,10 +596,49 @@
   color: #c62828;
 }
 
-.dashboard-no-data {
-  color: var(--gcds-color-grayscale-700);
-  text-align: center;
-  padding: var(--gcds-spacing-500) 0;
+.dashboard-warning {
+  display: grid;
+  grid-template-columns: var(--gcds-notice-icon-width) auto;
+  gap: var(--gcds-notice-icon-gap);
+  align-items: center;
+  color: var(--gcds-notice-text);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: var(--gcds-spacing-300);
+  padding: var(--gcds-spacing-200) 0;
+}
+
+.dashboard-warning__icon {
+  position: relative;
+  display: block;
+  align-self: stretch;
+  width: var(--gcds-notice-border-width);
+  min-height: 52px;
+  margin: 0 auto;
+  background: linear-gradient(
+    to bottom,
+    var(--gcds-notice-danger-text) 0 calc(50% - 1.1rem),
+    transparent calc(50% - 1.1rem) calc(50% + 1.1rem),
+    var(--gcds-notice-danger-text) calc(50% + 1.1rem) 100%
+  );
+}
+
+.dashboard-warning__icon::before {
+  content: '!';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--gcds-notice-danger-text);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
 }
 
 .dashboard-loading {
@@ -720,4 +759,62 @@
   align-items: center;
   justify-content: center;
   color: var(--gcds-color-grayscale-700);
+}
+
+/* ---- DashboardFilterBar ---- */
+
+.filter-bar {
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-250);
+  margin-bottom: var(--gcds-spacing-175);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--gcds-spacing-250);
+  flex-wrap: wrap;
+}
+
+.filter-bar__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--gcds-spacing-50);
+}
+
+.filter-bar__input {
+  padding: 6px 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.filter-bar__select {
+  padding: 7px 12px;
+  border: 1px solid #bdbdbd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.filter-bar__apply {
+  padding: 7px var(--gcds-spacing-250);
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-bar__apply:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.filter-bar__loading {
+  font-size: 13px;
+  color: var(--gcds-color-grayscale-700);
+  align-self: center;
 }

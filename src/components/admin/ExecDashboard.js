@@ -124,7 +124,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
               colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
               centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
               centreLabel={t('execDashboard.charts.accuracyCentre')}
-              centreColour={yearAccuracyPct !== null ? (yearAccuracyPct >= 50 ? COLOURS.correct : COLOURS.hasError) : undefined}
+              centreColour={yearAccuracyPct !== null ? (yearAccuracyPct >= 80 ? COLOURS.correct : COLOURS.hasError) : undefined}
               lang={lang}
             />
             <div className="dashboard-chart-wide">
@@ -153,6 +153,13 @@ const ExecDashboard = ({ lang = 'en' }) => {
       {error && (
         <div className="dashboard-error">
           {t('execDashboard.error')}
+        </div>
+      )}
+
+      {!loading && metrics.totalQuestions === 0 && !error && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('execDashboard.noData')}
         </div>
       )}
 
@@ -230,11 +237,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       </div>
 
-      {!loading && metrics.totalQuestions === 0 && !error && (
-        <p className="dashboard-no-data">
-          {t('execDashboard.noData')}
-        </p>
-      )}
     </div>
   );
 };

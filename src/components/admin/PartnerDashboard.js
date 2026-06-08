@@ -21,7 +21,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const handleApplyFilters = (filters) => {
     fetchMetrics(filters);
     if (hasAutoApplied.current) {
-      filterWrapRef.current?.querySelector('details')?.removeAttribute('open');
+      filterWrapRef.current?.querySelector('details')?.removeAttribute('open'); // relies on FilterPanel rendering a <details> element internally
     }
     hasAutoApplied.current = true;
   };
@@ -102,25 +102,32 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
+      {!loading && metrics.totalQuestions === 0 && !error && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('partnerDashboard.noData')}
+        </div>
+      )}
+
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
 
       {/* KPI cards */}
       <div className="dashboard-row">
         <StatCard
-label={t('partnerDashboard.kpi.questionsAsked')}
+          label={t('partnerDashboard.kpi.questionsAsked')}
           value={fmtN(metrics.totalQuestions)}
           sub={t('partnerDashboard.kpi.questionsSub')
             .replace('{en}', fmtN(metrics.totalQuestionsEn))
             .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
         />
         <StatCard
-label={t('partnerDashboard.kpi.evaluated')}
+          label={t('partnerDashboard.kpi.evaluated')}
           value={fmtN(expertTotal)}
           sub={t('partnerDashboard.kpi.evaluatedSub')
             .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
         />
         <StatCard
-label={t('partnerDashboard.kpi.accuracyRate')}
+          label={t('partnerDashboard.kpi.accuracyRate')}
           value={pctOrDash(totalAccuracy)}
           sub={showAccuracyByLang
             ? t('partnerDashboard.kpi.accuracySub')
@@ -147,7 +154,7 @@ label={t('partnerDashboard.kpi.accuracyRate')}
           />
         </div>
         <StatCard
-label={t('partnerDashboard.kpi.contentIssues')}
+          label={t('partnerDashboard.kpi.contentIssues')}
           value={fmtN(contentIssue.total)}
           sub={t('partnerDashboard.kpi.contentIssuesSub')
             .replace('{ni}', fmtN(contentIssue.needsImprovement))
@@ -196,7 +203,7 @@ label={t('partnerDashboard.kpi.contentIssues')}
       </h2>
       <div className="dashboard-row">
         <StatCard
-label={t('partnerDashboard.ops.medianResponseTime')}
+          label={t('partnerDashboard.ops.medianResponseTime')}
           value={hasResponseTime
             ? t('partnerDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
             : '—'}
@@ -205,14 +212,14 @@ label={t('partnerDashboard.ops.medianResponseTime')}
             : undefined}
         />
         <StatCard
-label={t('partnerDashboard.ops.inputTokens')}
+          label={t('partnerDashboard.ops.inputTokens')}
           value={fmtN(metrics.totalInputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
             .replace('{en}', fmtN(metrics.totalInputTokensEn))
             .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
-label={t('partnerDashboard.ops.outputTokens')}
+          label={t('partnerDashboard.ops.outputTokens')}
           value={fmtN(metrics.totalOutputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
             .replace('{en}', fmtN(metrics.totalOutputTokensEn))
@@ -236,11 +243,6 @@ label={t('partnerDashboard.ops.outputTokens')}
         </div>
       </div>
 
-      {!loading && metrics.totalQuestions === 0 && !error && (
-        <p className="dashboard-no-data">
-          {t('partnerDashboard.noData')}
-        </p>
-      )}
     </div>
   );
 };
