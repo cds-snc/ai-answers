@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText, GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
 import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
@@ -87,11 +87,7 @@ const ChatViewer = ({ lang = 'en' }) => {
     <>
       <GcdsContainer layout="page" tag="main" className="mb-600">
         <h1 className="mb-400">{t('logging.title')}</h1>
-        <nav className="mb-400">
-          <GcdsText>
-            <GcdsLink href={`/${lang}/admin`}>{t('logging.backToAdmin')}</GcdsLink>
-          </GcdsText>
-        </nav>
+
 
         <section className="mb-600">
           <div className="mb-400">

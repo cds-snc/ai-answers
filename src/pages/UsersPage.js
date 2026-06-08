@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
-import { GcdsButton, GcdsLink, GcdsText } from '@gcds-core/components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import UserService from '../services/UserService.js';
@@ -245,11 +245,6 @@ const UsersPage = ({ lang }) => {
     <div className="container mt-4">
       <h1>{t('users.title')}</h1>
 
-      <nav className="mb-400">
-        <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
-        </GcdsText>
-      </nav>
 
       <DataTable
         data={users}

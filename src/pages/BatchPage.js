@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -116,11 +116,7 @@ const BatchPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('batch.title')}</h1>
 
-      <nav className="mb-400">
-        <GcdsLink href={`/${lang}/admin`}>
-          {t('common.backToAdmin')}
-        </GcdsLink>
-      </nav>
+
 
 
       <section id="evaluator" className="mb-600">

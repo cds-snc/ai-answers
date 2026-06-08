@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -287,13 +287,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('admin.chatDashboard.title', 'Chat dashboard')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
-        <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>
-            {t('common.backToAdmin')}
-          </GcdsLink>
-        </GcdsText>
-      </nav>
+
 
       <h2 className="mt-400 mb-400">{t('admin.chatDashboard.timeRangeTitle')}</h2>
       <div className="mb-600">

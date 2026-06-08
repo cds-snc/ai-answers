@@ -318,7 +318,6 @@
     "refresh": "Actualiser",
     "refreshPending": "Patientez...",
     "download": "Télécharger les journaux (JSON)",
-    "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",
     "level": "Niveau",
     "message": "Message",
@@ -353,7 +352,6 @@
   "admin": {
     "title": "Administration de Réponses IA",
     "partnerTitle": "Tableau de bord partenaire Réponses IA",
-    "backToAdmin": "Retour à l'administration",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",

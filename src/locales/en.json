@@ -318,7 +318,6 @@
     "refresh": "Refresh",
     "refreshPending": "Please wait...",
     "download": "Download logs (JSON)",
-    "backToAdmin": "Back to admin",
     "createdAt": "Created at",
     "level": "Level",
     "message": "Message",
@@ -353,7 +352,6 @@
   "admin": {
     "title": "AI Answers Admin",
     "partnerTitle": "AI Answers Partner dashboard",
-    "backToAdmin": "Back to admin",
     "navigation": {
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",

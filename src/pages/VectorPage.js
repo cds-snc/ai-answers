@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText, GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import DataStoreService from '../services/DataStoreService.js';
@@ -104,13 +104,7 @@ const VectorPage = ({ lang = 'en' }) => {
   return (
     <GcdsContainer layout="page">
       <h1>{t('vector.title')}</h1>
-      <nav className="mb-400">
-        <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>
-            {t('common.backToAdmin')}
-          </GcdsLink>
-        </GcdsText>
-      </nav>
+
       <div className="mb-400">
         <h2>{t('vector.indexManagement')}</h2>
         <GcdsText>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer } from '@gcds-core/components-react';
 import { RoleProtectedRoute } from '../components/RoleProtectedRoute.js';
 import PartnerDashboard from '../components/admin/PartnerDashboard.js';
 
@@ -11,11 +11,6 @@ const PartnerDashboardPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('partnerDashboard.title')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
-        <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
-        </GcdsText>
-      </nav>
 
       <PartnerDashboard lang={lang} />
     </GcdsContainer>

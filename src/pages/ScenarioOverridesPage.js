@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import ScenarioOverrideService from '../services/ScenarioOverrideService.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -303,11 +303,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       <GcdsContainer layout="page" tag="main" className="mb-600">
         {/* no overlay styles needed in simplified UI */}
         <h1 className="mb-400">{pageTitle}</h1>
-        <nav className="mb-400">
-          <GcdsLink href={`/${lang}/admin`}>
-            {t('common.backToAdmin')}
-          </GcdsLink>
-        </nav>
+
         <GcdsText className="mb-200">{description1}</GcdsText>
         <GcdsText className="mb-400">{description2}</GcdsText>
 

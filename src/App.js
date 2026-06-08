@@ -329,10 +329,21 @@ const AppLayout = () => {
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Show AI Answers breadcrumb on About and 404 pages */}
+          {/* About and 404: show home breadcrumb */}
           {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
             <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
               {t('notFound.breadcrumb')}
+            </GcdsBreadcrumbsItem>
+          )}
+          {/* Authenticated admin-space pages: show Back to admin breadcrumb */}
+          {!is404 &&
+            location.pathname !== '/' &&
+            location.pathname !== '/en' &&
+            location.pathname !== '/fr' &&
+            !location.pathname.match(/\/(en\/about|fr\/a-propos|en\/signin|fr\/se-connecter|en\/reset|fr\/reinitialisation|fr\/verification-reinitialisation|fr\/reinitialisation-reussie|en\/register|fr\/s-inscrire|en\/logout|fr\/deconnexion)/) &&
+            !/^\/(en|fr)\/admin\/?$/.test(location.pathname) && (
+            <GcdsBreadcrumbsItem href={`/${currentLang}/admin`}>
+              {t('common.backToAdmin')}
             </GcdsBreadcrumbsItem>
           )}
         </GcdsBreadcrumbs>

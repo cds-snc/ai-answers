@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer } from '@gcds-core/components-react';
 import { usePageContext } from '../hooks/usePageParam.js';
 import { RoleProtectedRoute } from '../components/RoleProtectedRoute.js';
 import MetricsDashboard from '../components/admin/MetricsDashboard.js';
@@ -13,11 +13,7 @@ const MetricsPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('metrics.title')}</h1>
       
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
-        <GcdsText>
-          <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
-        </GcdsText>
-      </nav>
+
 
       <section id="metrics-dashboard" className="mb-600">
         <h2 className="mt-400 mb-400">{t('metrics.timeRangeTitle')}</h2>
