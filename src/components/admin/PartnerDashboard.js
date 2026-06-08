@@ -102,7 +102,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && metrics.totalQuestions === 0 && !error && (
+      {hasAutoApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('common.noDataForFilters')}

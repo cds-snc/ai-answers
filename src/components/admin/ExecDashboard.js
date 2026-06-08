@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -16,6 +16,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+  const hasFetched = useRef(false);
+  const handleFilterApply = (filters) => { hasFetched.current = true; fetchMetrics(filters); };
 
   // Separate, fixed last-12-months summary, independent of the filter below.
   // Fetched once on mount; the database only goes back to Oct 2025, which is
@@ -148,7 +150,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.filteredPeriod')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onApply={fetchMetrics} />
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleFilterApply} />
 
       {error && (
         <div className="dashboard-error">
@@ -156,7 +158,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && metrics.totalQuestions === 0 && !error && (
+      {hasFetched.current && !loading && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('execDashboard.noData')}

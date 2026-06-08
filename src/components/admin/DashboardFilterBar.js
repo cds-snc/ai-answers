@@ -17,19 +17,24 @@ const lastNDaysStart = (n) => daysAgo(n - 1);
 // Shared filter bar for the exec and partner dashboards.
 // Owns department + date range; reports the selection to the parent via
 // onApply({ startDate, endDate, department }). department is '' for "all partners".
-// Fires onApply once on mount with the defaults (last 30 days, all partners).
-const DashboardFilterBar = ({ lang = 'en', loading = false, onApply }) => {
+// Fires onInitialLoad (if provided) or onApply once on mount with defaults
+// (last 30 days, all partners). Pass onInitialLoad separately when the parent
+// needs to distinguish the auto-load from an explicit user action.
+const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad }) => {
   const { t } = useTranslations(lang);
   const [department, setDepartment] = useState('');
   const [startDate, setStartDate] = useState(lastNDaysStart(30));
   const [endDate, setEndDate] = useState(today());
 
-  // Keep the latest onApply without retriggering the mount-load effect.
+  // Keep the latest callbacks without retriggering the mount-load effect.
   const onApplyRef = useRef(onApply);
   onApplyRef.current = onApply;
+  const onInitialLoadRef = useRef(onInitialLoad);
+  onInitialLoadRef.current = onInitialLoad;
 
   useEffect(() => {
-    onApplyRef.current({ startDate, endDate, department });
+    const cb = onInitialLoadRef.current || onApplyRef.current;
+    cb({ startDate, endDate, department });
     // Initial load only — subsequent loads are driven by the Apply button.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
