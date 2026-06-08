@@ -272,7 +272,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
           {t('blockedQueries.deptNote')}
         </p>
       ) : (
-        <div className="dashboard-row" style={{ alignItems: 'flex-start' }}>
+        <div className="dashboard-row">
           <div className="dashboard-col-third">
             <StatCard
               label={t('blockedQueries.totalCardLabel')}
@@ -286,6 +286,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             <HBarCard
               title={t('blockedQueries.byTypeTitle')}
               data={blockedBarData}
+              height={Math.max(240, blockedBarData.length * 56)}
               lang={lang}
               tooltipContent={BlockedBarTooltip}
               noDataLabel={t('blockedQueries.noData')}
