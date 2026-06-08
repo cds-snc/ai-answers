@@ -757,7 +757,7 @@
 
 .donut-card__centre-value {
   display: block;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1565c0;
   line-height: 1;
@@ -777,9 +777,9 @@
 
 .donut-card__centre-label {
   display: block;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--gcds-color-grayscale-700);
-  margin-top: var(--gcds-spacing-25);
+  margin-top: 0;
 }
 
 .donut-card__footer {
