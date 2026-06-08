@@ -602,7 +602,7 @@
   gap: var(--gcds-notice-icon-gap);
   align-items: center;
   color: var(--gcds-notice-text);
-  font-size: 1rem;
+  font-size: var(--gcds-font-sizes-text-small);
   line-height: 1.5;
   margin-bottom: var(--gcds-spacing-300);
   padding: var(--gcds-spacing-200) 0;
