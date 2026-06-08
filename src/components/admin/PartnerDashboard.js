@@ -133,6 +133,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <StatCard
           label={t('partnerDashboard.kpi.accuracyRate')}
           value={pctOrDash(totalAccuracy)}
+          valueColour={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
           sub={showAccuracyByLang
             ? t('partnerDashboard.kpi.accuracySub')
                 .replace('{en}', fmtPct(enAccuracy))

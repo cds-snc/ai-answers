@@ -162,6 +162,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
               colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
               centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
               centreLabel={t('execDashboard.charts.accuracyCentre')}
+              centreClass={yearAccuracyPct === null ? undefined : yearAccuracyPct >= 80 ? 'green' : yearAccuracyPct > 50 ? 'orange' : 'red'}
               lang={lang}
             />
             <div className="dashboard-chart-wide">
