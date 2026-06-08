@@ -50,7 +50,7 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
           {noDataLabel}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={height || Math.max(240, data.length * 40)}>
+        <ResponsiveContainer width="100%" height={height || Math.max(240, data.length * 56)}>
           <BarChart data={rows} layout="vertical" stackOffset="sign" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={[-axisMax, axisMax]} allowDecimals={false} tickFormatter={fmtAxisPct} tick={{ fontSize: 16 }} />
