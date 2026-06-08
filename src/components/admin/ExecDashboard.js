@@ -98,8 +98,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
     return (
-      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 6, padding: '8px 10px', fontSize: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
-        <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.name}</div>
+      <div className="chart-tooltip">
+        <div className="chart-tooltip__title">{row.name}</div>
         <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
         <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
       </div>
@@ -267,7 +267,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
           counter, can't be department-scoped, so hidden when a department filter
           is applied. */}
       {appliedDepartment ? (
-        <p className="font-size-text-small" style={{ marginBottom: 24 }}>
+        <p className="font-size-text-small mb-300">
           {t('blockedQueries.deptNote')}
         </p>
       ) : (

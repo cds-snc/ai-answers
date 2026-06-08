@@ -761,6 +761,34 @@
   color: var(--gcds-color-grayscale-700);
 }
 
+/* ---- DivergingBarCard ---- */
+
+.diverging-bar-card {
+  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+}
+
+.diverging-bar-card__no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gcds-color-grayscale-700);
+}
+
+/* Shared recharts custom tooltip chrome */
+.chart-tooltip {
+  background: #fff;
+  border: 1px solid var(--gcds-color-grayscale-100);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-100) var(--gcds-spacing-125);
+  font-size: var(--gcds-font-sizes-text-xsm-nr);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-tooltip__title {
+  font-weight: var(--gcds-font-weights-semibold);
+  margin-bottom: var(--gcds-spacing-50);
+}
+
 /* ---- DashboardFilterBar ---- */
 
 .filter-bar {

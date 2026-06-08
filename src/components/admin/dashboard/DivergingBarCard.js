@@ -34,40 +34,34 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
     return (
-      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 6, padding: '8px 10px', fontSize: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
-        <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.name}</div>
+      <div className="chart-tooltip">
+        <div className="chart-tooltip__title">{row.name}</div>
         <div>{formatNumber(row.value, lang)}</div>
       </div>
     );
   };
 
   return (
-    <div style={{
-      background: '#fff',
-      border: '1px solid #e0e0e0',
-      borderRadius: 8,
-      padding: '24px 16px',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    }}>
-      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: subtitle ? 4 : 16, color: '#333' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>{subtitle}</div>}
+    <div className="dashboard-card diverging-bar-card">
+      <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
+      {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
       {data.length === 0 ? (
-        <div style={{ height: height || 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: 13 }}>
+        <div className="diverging-bar-card__no-data font-size-text-xsm-nr" style={{ height: height || 200 }}>
           {noDataLabel}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={height || Math.max(240, data.length * 40)}>
           <BarChart data={rows} layout="vertical" stackOffset="sign" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" domain={[-axisMax, axisMax]} allowDecimals={false} tickFormatter={fmtAxisPct} tick={{ fontSize: 12 }} />
-            <YAxis type="category" dataKey="name" width={190} interval={0} tick={{ fontSize: 12 }} />
+            <XAxis type="number" domain={[-axisMax, axisMax]} allowDecimals={false} tickFormatter={fmtAxisPct} tick={{ fontSize: 16 }} />
+            <YAxis type="category" dataKey="name" width={190} interval={0} tick={{ fontSize: 16 }} />
             <ReferenceLine x={0} stroke="#bbb" />
             <Tooltip content={<Tip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
             <Bar dataKey="neg" stackId="a" fill={COLOURS.feedbackNegative} radius={[3, 0, 0, 3]}>
-              <LabelList dataKey="neg" position="left" formatter={fmtLabelPct} style={{ fontSize: 12, fill: '#333' }} />
+              <LabelList dataKey="neg" position="left" formatter={fmtLabelPct} style={{ fontSize: 16, fill: '#333' }} />
             </Bar>
             <Bar dataKey="pos" stackId="a" fill={COLOURS.feedbackPositive} radius={[0, 3, 3, 0]}>
-              <LabelList dataKey="pos" position="right" formatter={fmtLabelPct} style={{ fontSize: 12, fill: '#333' }} />
+              <LabelList dataKey="pos" position="right" formatter={fmtLabelPct} style={{ fontSize: 16, fill: '#333' }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
