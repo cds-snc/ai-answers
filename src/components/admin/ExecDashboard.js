@@ -264,16 +264,16 @@ const ExecDashboard = ({ lang = 'en' }) => {
       <h2 className="dashboard-section-title">
         {t('execDashboard.safety.title')}
       </h2>
-      {/* Blocked queries — total card beside the by-type chart. Global safety
-          counter, can't be department-scoped, so hidden when a department filter
-          is applied. Harmful card stacks under the blocked total in the left column. */}
+      {/* Blocked queries — global safety counter, can't be department-scoped,
+          so hidden when a department filter is applied.
+          Layout: stat cards row (blocked total + harmful), then chart full width. */}
       {appliedDepartment ? (
         <>
           <p className="font-size-text-small mb-300">
             {t('blockedQueries.deptNote')}
           </p>
           <div className="dashboard-row">
-            <div className="dashboard-col-third">
+            <div className="dashboard-col-half">
               <StatCard
                 label={t('execDashboard.kpi.harmful')}
                 value={fmtN(harmful.total)}
@@ -285,16 +285,18 @@ const ExecDashboard = ({ lang = 'en' }) => {
           </div>
         </>
       ) : (
-        <div className="dashboard-row">
-          <div className="dashboard-col-third">
-            <StatCard
-              label={t('blockedQueries.totalCardLabel')}
-              value={fmtN(blockedTotal.total)}
-              sub={t('blockedQueries.langSub')
-                .replace('{en}', fmtN(blockedTotal.en))
-                .replace('{fr}', fmtN(blockedTotal.fr))}
-            />
-            <div className="mt-200">
+        <>
+          <div className="dashboard-row">
+            <div className="dashboard-col-half dashboard-col--equal-height">
+              <StatCard
+                label={t('blockedQueries.totalCardLabel')}
+                value={fmtN(blockedTotal.total)}
+                sub={t('blockedQueries.langSub')
+                  .replace('{en}', fmtN(blockedTotal.en))
+                  .replace('{fr}', fmtN(blockedTotal.fr))}
+              />
+            </div>
+            <div className="dashboard-col-half dashboard-col--equal-height">
               <StatCard
                 label={t('execDashboard.kpi.harmful')}
                 value={fmtN(harmful.total)}
@@ -304,17 +306,19 @@ const ExecDashboard = ({ lang = 'en' }) => {
               />
             </div>
           </div>
-          <div className="dashboard-chart-wide">
-            <HBarCard
-              title={t('blockedQueries.byTypeTitle')}
-              data={blockedBarData}
-              height={Math.max(240, blockedBarData.length * 60)}
-              lang={lang}
-              tooltipContent={BlockedBarTooltip}
-              noDataLabel={t('blockedQueries.noData')}
-            />
+          <div className="dashboard-row">
+            <div className="dashboard-col-full">
+              <HBarCard
+                title={t('blockedQueries.byTypeTitle')}
+                data={blockedBarData}
+                height={Math.max(240, blockedBarData.length * 60)}
+                lang={lang}
+                tooltipContent={BlockedBarTooltip}
+                noDataLabel={t('blockedQueries.noData')}
+              />
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

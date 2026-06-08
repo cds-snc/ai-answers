@@ -575,6 +575,23 @@
   max-width: calc((100% - (var(--gcds-spacing-200) * 2)) / 3);
 }
 
+.dashboard-col-half {
+  flex: 0 0 calc((100% - var(--gcds-spacing-200)) / 2);
+  max-width: calc((100% - var(--gcds-spacing-200)) / 2);
+  min-width: 220px;
+}
+
+/* Apply alongside a column class to make direct children stretch to equal height */
+.dashboard-col--equal-height {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-col-full {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
 .dashboard-section-title {
   font: var(--gcds-font-h4);
   margin: 0 0 var(--gcds-spacing-150);
