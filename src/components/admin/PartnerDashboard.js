@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -17,6 +17,19 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+
+  const filterWrapRef = useRef(null);
+  const autoApplyFired = useRef(false);
+  const hasUserApplied = useRef(false);
+  const handleApplyFilters = (filters) => {
+    if (autoApplyFired.current) {
+      // Second+ call is user-triggered: close the filter panel and mark as applied.
+      hasUserApplied.current = true;
+      filterWrapRef.current?.querySelector('details')?.removeAttribute('open');
+    }
+    autoApplyFired.current = true;
+    fetchMetrics(filters);
+  };
 
   // --- Derived data ---
 
@@ -75,20 +88,29 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
-      <FilterPanel
-        lang={lang}
-        onApplyFilters={fetchMetrics}
-        onClearFilters={fetchMetrics}
-        isVisible={true}
-        autoApply={true}
-        applyDisabled={loading}
-        defaultUserType="all"
-      />
+    <div>
+      <div ref={filterWrapRef} className="mb-600">
+        <FilterPanel
+          lang={lang}
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={fetchMetrics}
+          isVisible={true}
+          autoApply={true}
+          applyDisabled={loading}
+          defaultUserType="all"
+        />
+      </div>
 
       {error && (
-        <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
+        <div className="dashboard-error">
           {t('partnerDashboard.error')}
+        </div>
+      )}
+
+      {hasUserApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
         </div>
       )}
 
@@ -188,7 +210,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
           the usage endpoint. */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('partnerDashboard.ops.title')}
       </h2>
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -221,7 +243,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {/* Safety metrics */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('partnerDashboard.safety.title')}
       </h2>
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -235,11 +257,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {!loading && metrics.totalQuestions === 0 && !error && (
-        <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
-          {t('partnerDashboard.noData')}
-        </p>
-      )}
     </div>
   );
 };

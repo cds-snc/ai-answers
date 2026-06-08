@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -23,7 +23,9 @@ const ExecDashboard = ({ lang = 'en' }) => {
   // department-scoped — blocks happen before the department is known) is hidden
   // when a specific department is filtered.
   const [appliedDepartment, setAppliedDepartment] = useState('');
+  const hasFetched = useRef(false);
   const handleApply = useCallback((filters) => {
+    hasFetched.current = true;
     setAppliedDepartment(filters?.department || '');
     fetchMetrics(filters);
   }, [fetchMetrics]);
@@ -120,21 +122,21 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
-    <div style={{ fontFamily: 'inherit' }}>
+    <div>
       {/* Last 12 months summary — fixed window, independent of the filter below.
           Shows a loading state rather than zeroed cards while the (separate)
           year query is in flight. */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.last12Months')}
       </h2>
       {yearLoading ? (
-        <div style={{ color: '#888', textAlign: 'center', padding: '40px 0', fontSize: 14, marginBottom: 24 }}>
+        <div className="dashboard-loading">
           {t('common.loading')}
         </div>
       ) : (
         <>
           {/* Row 1: questions asked, expert evaluated, partner institutions */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div className="dashboard-row">
             <StatCard
               label={t('execDashboard.kpi.questionsAsked')}
               value={fmtN(yearQuestions)}
@@ -153,7 +155,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             />
           </div>
           {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right) */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div className="dashboard-row">
             <DonutCard
               title={t('execDashboard.charts.accuracyDonutTitle')}
               data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
@@ -179,15 +181,22 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </>
       )}
 
-      <DashboardFilterBar lang={lang} loading={loading} onApply={handleApply} />
-
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.filteredPeriod')}
       </h2>
 
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleApply} />
+
       {error && (
-        <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 6, padding: '12px 16px', marginBottom: 24, color: '#c62828' }}>
+        <div className="dashboard-error">
           {t('execDashboard.error')}
+        </div>
+      )}
+
+      {hasFetched.current && !loading && metrics.totalQuestions === 0 && !error && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('execDashboard.noData')}
         </div>
       )}
 
@@ -197,7 +206,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
       {/* Satisfaction (helpful or not) breakdown — diverging: positives right
           (green), negatives left (red), with negatives grouped at the bottom. */}
       {feedbackReasonsData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
+        <div className="dashboard-section">
           <DivergingBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
@@ -208,7 +217,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Top institutions by question volume (all institutions, not just partners) */}
       {departmentData.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
+        <div className="dashboard-section">
           <HBarCard
             title={t('execDashboard.charts.departmentsTitle')}
             data={departmentData}
@@ -221,10 +230,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
           the usage endpoint. */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.ops.title')}
       </h2>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="dashboard-row">
         <StatCard
           label={t('execDashboard.ops.medianResponseTime')}
           value={hasResponseTime
@@ -251,7 +260,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
       </div>
 
       {/* Safety metrics */}
-      <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+      <h2 className="dashboard-section-title">
         {t('execDashboard.safety.title')}
       </h2>
       {/* Blocked queries — total card beside the by-type chart. Global safety
@@ -286,7 +295,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Harmful sits below the blocked-query counter (more KPI cards may be
           added in front of it). */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="dashboard-row">
         <StatCard
           label={t('execDashboard.kpi.harmful')}
           value={fmtN(harmful.total)}
@@ -295,12 +304,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(harmful.fr))}
         />
       </div>
-
-      {!loading && metrics.totalQuestions === 0 && !error && (
-        <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
-          {t('execDashboard.noData')}
-        </p>
-      )}
     </div>
   );
 };

@@ -535,6 +535,150 @@
   margin-right: 15px;
 }
 
+/* ─── Exec / Partner dashboard layout ────────────────────────────────────── */
+
+.dashboard-section-title {
+  font-size: var(--gcds-font-sizes-text-medium, 1rem);
+  font-weight: 600;
+  margin: 0 0 var(--gcds-spacing-175) 0;
+  color: var(--gcds-notice-text, #333);
+}
+
+.dashboard-row {
+  display: flex;
+  gap: var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  flex-wrap: wrap;
+}
+
+.dashboard-section {
+  margin-bottom: var(--gcds-spacing-300);
+}
+
+.dashboard-loading {
+  color: var(--gcds-color-grayscale-700, #888);
+  text-align: center;
+  padding: var(--gcds-spacing-500) 0;
+  font-size: 14px;
+  margin-bottom: var(--gcds-spacing-300);
+}
+
+.dashboard-error {
+  background: #ffebee;
+  border: 1px solid #ef9a9a;
+  border-radius: 6px;
+  padding: var(--gcds-spacing-175) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: #c62828;
+}
+
+/* GCDS-notice–style warning alert — appears below the filter bar when the
+   selected period / filters return 0 questions. Matches the gcds-notice danger
+   pattern: left border broken by a circled ! icon. */
+.dashboard-warning {
+  display: grid;
+  grid-template-columns: var(--gcds-notice-icon-width, 2.25rem) auto;
+  gap: var(--gcds-notice-icon-gap, 0.875rem);
+  align-items: center;
+  color: var(--gcds-notice-text, #333);
+  font-size: var(--gcds-font-sizes-text-small, 1rem);
+  line-height: 1.5;
+  margin-bottom: var(--gcds-spacing-300);
+  padding: var(--gcds-spacing-200) 0;
+}
+
+.dashboard-warning__icon {
+  position: relative;
+  display: block;
+  align-self: stretch;
+  width: var(--gcds-notice-border-width, 0.375rem);
+  min-height: 52px;
+  margin: 0 auto;
+  background: linear-gradient(
+    to bottom,
+    var(--gcds-notice-danger-text, #b3192e) 0 calc(50% - 1.3rem),
+    transparent calc(50% - 1.3rem) calc(50% + 1.3rem),
+    var(--gcds-notice-danger-text, #b3192e) calc(50% + 1.3rem) 100%
+  );
+}
+
+.dashboard-warning__icon::before {
+  content: '!';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--gcds-notice-danger-text, #b3192e);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+/* Filter bar — used by DashboardFilterBar (exec + partner dashboards) */
+.filter-bar {
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-250);
+  margin-bottom: var(--gcds-spacing-175);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--gcds-spacing-250);
+  flex-wrap: wrap;
+}
+
+.filter-bar__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--gcds-spacing-50);
+}
+
+.filter-bar__input {
+  padding: 6px 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.filter-bar__select {
+  padding: 7px 12px;
+  border: 1px solid #bdbdbd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.filter-bar__apply {
+  padding: 7px var(--gcds-spacing-250);
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-bar__apply:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.filter-bar__loading {
+  font-size: 13px;
+  color: var(--gcds-color-grayscale-700, #888);
+  align-self: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 /* Shared input border style — used in ChatOptions and BatchUpload (both auth-gated) */
 .chat-border {
   width: 100%;
