@@ -1270,7 +1270,6 @@
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
-      "satisfactionTitle": "User satisfaction",
       "satisfactionCentre": "of {total} responses",
       "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
       "engagementTitle": "Conversation length",

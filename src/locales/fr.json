@@ -1270,7 +1270,6 @@
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
-      "satisfactionTitle": "Satisfaction des utilisateurs",
       "satisfactionCentre": "sur {total} réponses",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
       "engagementTitle": "Longueur des conversations",
