@@ -130,16 +130,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           sub={t('partnerDashboard.kpi.evaluatedSub')
             .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
         />
-        <StatCard
-          label={t('partnerDashboard.kpi.accuracyRate')}
-          value={pctOrDash(totalAccuracy)}
-          valueColour={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
-          sub={showAccuracyByLang
-            ? t('partnerDashboard.kpi.accuracySub')
-                .replace('{en}', fmtPct(enAccuracy))
-                .replace('{fr}', fmtPct(frAccuracy))
-            : undefined}
-        />
       </div>
 
       {/* Answer-quality bar + content issues card */}
