@@ -215,6 +215,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             : undefined}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('partnerDashboard.ops.inputTokens')}
           value={fmtN(metrics.totalInputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
@@ -222,6 +223,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('partnerDashboard.ops.outputTokens')}
           value={fmtN(metrics.totalOutputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
