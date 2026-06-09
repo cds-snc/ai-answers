@@ -78,6 +78,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     };
     filtersRef.current = normalized;
     setHasAppliedFilters(true);
+    setLoading(true);
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
       else setTableKey((prev) => prev + 1);

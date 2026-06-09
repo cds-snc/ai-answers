@@ -127,6 +127,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
     filtersRef.current = enrichedFilters;
     setHasAppliedFilters(true);
+    setLoading(true);
     try {
       if (tableApiRef.current) {
         tableApiRef.current.ajax.reload();
