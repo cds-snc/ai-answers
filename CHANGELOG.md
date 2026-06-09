@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.137.0](https://github.com/cds-snc/ai-answers/compare/v1.136.0...v1.137.0) (2026-06-09)
+
+
+### Features
+
+* enhance API route handling and add lightweight 404 responses ([742e70a](https://github.com/cds-snc/ai-answers/commit/742e70a8e03c2dc0c84f7d7118116f6d4de2115e))
+* enhance API route handling and add lightweight 404 responses ([84ff2ba](https://github.com/cds-snc/ai-answers/commit/84ff2ba960fa79ae405cceb1d03c27559b30e6a1))
+* fix nbsp ([d48ac35](https://github.com/cds-snc/ai-answers/commit/d48ac35ad5913f3e173d545b015ca47d14bb68a3))
+* fix saving ([e4c6f91](https://github.com/cds-snc/ai-answers/commit/e4c6f912ff4edbda4e32e5026f2b9733bd439d82))
+* refine CSS rules ([aa82e67](https://github.com/cds-snc/ai-answers/commit/aa82e674ba06d1a2d2c14f2f8c23ec721b9584ba))
+* refine functions ([747729d](https://github.com/cds-snc/ai-answers/commit/747729d63fabfe45ef44d084bf684d1cac0dc4f5))
+* show password support all browsers ([3309076](https://github.com/cds-snc/ai-answers/commit/3309076d78def2d1f61a05c334bcbe3820580ce0))
+
+
+### Bug Fixes
+
+* update noticeRole prop in OutageComponent and HomePage ([9e12784](https://github.com/cds-snc/ai-answers/commit/9e127844fbf65b07ec2dc0fabfda53619d97db0a))
+* update noticeRole prop in OutageComponent and HomePage ([cdb2195](https://github.com/cds-snc/ai-answers/commit/cdb21952ff57d14a47fb88022592a69c58c54aa1))
+
 ## [1.136.0](https://github.com/cds-snc/ai-answers/compare/v1.135.0...v1.136.0) (2026-06-08)
 
 

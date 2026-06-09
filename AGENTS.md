@@ -5,6 +5,7 @@
 - **Test runner**: This project uses **vitest**, not jest. Run tests with `npx vitest run <path>` (or `npm test` for all).
 - **CSS loading**: All app styles are loaded once in `src/App.js` (`global.css`, `admin.css`, `chat.css`). Never import these files in individual pages or components — they are already globally available. Do not move these imports to `index.js` either: `App.js` must load after `index.js`'s GCDS CSS (`gcds-utility.min.css` imports Lato/Noto Sans from Google Fonts) so that webpack resolves the stylesheets in the correct order. Moving app CSS into `index.js` alongside GCDS CSS breaks the GC Design System fonts.
 - **No inline styles**: Do not use inline `style={{...}}` attributes on elements. Add a CSS class instead. Inline styles are only acceptable when the value is genuinely dynamic and cannot be expressed as a class (e.g. a runtime-computed width or colour).
+- **No new CSS files**: Do not create additional CSS or CSS module files. Add new styles to the appropriate existing file (`global.css` for site-wide rules, `admin.css` for admin/auth pages, `chat.css` for the chat interface). A new file is only justified if it introduces a genuinely separate styling concern that cannot reasonably live in one of the three existing files — document the reason in a comment at the top of the file if you do create one.
 
 ## How to work well in this codebase
 
@@ -194,6 +195,43 @@ Notes:
 - Prefer putting logic in a hook before moving it to the page.
 - Keep utils pure (no React state/effects); move stateful logic to hooks.
 - If a hook/component/helper becomes cross-feature, promote it to a shared location and update imports.
+
+## CSS values
+
+Prefer GC Design System tokens over hardcoded values whenever a token exists for the property. This keeps the UI consistent with the design system and picks up theme changes automatically.
+
+Before writing a hardcoded value, check the token definitions in:
+- `node_modules/@cdssnc/gcds-utility/dist/gcds-utility.css` — colour palette, border-radius, focus, link, text tokens
+- `node_modules/@gcds-core/components/dist/gcds/gcds.css` — component-level tokens
+- GC DS CSS shortcuts: https://design-system.canada.ca/en/css-shortcuts/ — utility classes that can often replace one-off CSS rules entirely
+
+### Common token mappings
+
+| Hardcoded value | GC DS token |
+|---|---|
+| `#26374A` | `var(--gcds-color-blue-muted)` |
+| `#333` / `#333333` | `var(--gcds-text-primary)` |
+| `#43474e` | `var(--gcds-text-secondary)` |
+| `#284162` (link) | `var(--gcds-link-default)` |
+| `#0535d2` (link hover) | `var(--gcds-link-hover)` |
+| `#d3080c` (error red) | `var(--gcds-color-red-500)` |
+| `#0535d2` (focus) | `var(--gcds-focus-border)` |
+| `border-radius: 2px` | `var(--gcds-border-radius-sm)` |
+| `border-radius: 4-6px` | `var(--gcds-border-radius-md)` |
+
+```css
+/* Prefer */
+color: var(--gcds-text-primary);
+background-color: var(--gcds-color-blue-muted);
+border-radius: var(--gcds-border-radius-md);
+
+/* Avoid */
+color: #333;
+background-color: #26374A;
+border-radius: 4px;
+```
+
+Hardcoded values are acceptable when no GC DS token maps to the property, or when overriding a third-party component that requires a specific value. In those cases leave a short comment explaining why a token wasn't used so a designer can review it later.
 
 ## Key rules
 - Department abbreviations (abbrKey) are defined in `agents/prompts/scenarios/departments_EN.js` / `departments_FR.js` — never invent new ones

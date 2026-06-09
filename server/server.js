@@ -97,16 +97,70 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 
+const normalizePath = (pathName) => pathName.replace(/\/+$/, '') || '/';
+
+const UI_ROUTE_PATTERNS = [
+  /^\/$/,
+  /^\/(?:en|fr)(?:\/.*)?$/,
+];
+
+const isUiRoutePath = (pathName) => UI_ROUTE_PATTERNS.some((pattern) => pattern.test(normalizePath(pathName)));
+
+const sendLightweightNotFound = (res) => {
+  res.status(404).end();
+};
+
+const routePathMatches = (routePath, pathName) => {
+  const normalizedPath = normalizePath(pathName);
+  if (typeof routePath === 'string') {
+    return normalizePath(routePath) === normalizedPath;
+  }
+  if (Array.isArray(routePath)) {
+    return routePath.some((pathItem) => routePathMatches(pathItem, normalizedPath));
+  }
+  return false;
+};
+
+const routeAllowsMethod = (route, method) => {
+  const normalizedMethod = method.toLowerCase();
+  if (normalizedMethod === 'options') return true;
+  if (normalizedMethod === 'head' && route.methods.get) return true;
+  return !!route.methods[normalizedMethod];
+};
+
+const isRegisteredApiRoute = (method, pathName) => {
+  const stack = app._router?.stack || [];
+  return stack.some((layer) => {
+    if (!layer.route) return false;
+    if (!routePathMatches(layer.route.path, pathName)) return false;
+    return routeAllowsMethod(layer.route, method);
+  });
+};
+
 app.use(cors({
   origin: true,
   credentials: true
 }));
 
+// Reject unknown API routes before body parsing, sessions, Passport, and API middleware.
+app.use('/api', (req, res, next) => {
+  if (!isRegisteredApiRoute(req.method, req.originalUrl.split('?')[0])) {
+    sendLightweightNotFound(res);
+    return;
+  }
+  next();
+});
 
-app.use(bodyParser.json({ limit: '100mb' }));
-app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+app.use('/api', bodyParser.json({ limit: '100mb' }));
+app.use('/api', bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../build"), { index: false }));
+
+app.get("/config.js", (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
+});
 
 // Ensure `/api` never caches anything
 app.use('/api', (req, res, next) => {
@@ -122,6 +176,20 @@ app.use('/api', (req, res, next) => {
 app.use((req, res, next) => {
   if (req.method === 'GET' && req.path === '/health') {
     res.status(200).json({ status: 'Healthy' });
+    return;
+  }
+  next();
+});
+
+// Static files have already had a chance to resolve. Anything else outside the
+// known UI route surface should not create/touch sessions or receive the SPA.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/config.js' || req.path === '/health') {
+    next();
+    return;
+  }
+  if (!isUiRoutePath(req.path)) {
+    sendLightweightNotFound(res);
     return;
   }
   next();
@@ -156,15 +224,14 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} request to ${req.url}`);
   next();
 });
-app.get("/config.js", (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
-});
 
 app.get(/.*/, (req, res, next) => {
   if (req.url.startsWith("/api")) {
     next();
+    return;
+  }
+  if (!isUiRoutePath(req.path)) {
+    sendLightweightNotFound(res);
     return;
   }
   res.sendFile(path.join(__dirname, "../build", "index.html"));
@@ -240,6 +307,10 @@ app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
 app.get('/api/util/util-connectivity', connectivityHandler);
 
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'not_found' });
+});
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -286,7 +357,3 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
-
-
-
-

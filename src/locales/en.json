@@ -875,7 +875,9 @@
       "send": "Send verification code",
       "sendError": "Failed to send verification code",
       "invalidCode": "Invalid verification code"
-    }
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "reset": {
     "request": {
