@@ -156,25 +156,8 @@
   font-weight: 600;
   color: #374151;
   border-radius: 8px 8px 0 0;
-  list-style: none;
   display: flex;
   align-items: center;
-}
-
-.filter-panel-summary::-webkit-details-marker {
-  display: none;
-}
-
-.filter-panel-summary::before {
-  content: '►';
-  display: inline-block;
-  margin-right: 0.5rem;
-  font-size: 0.75em;
-  line-height: 1;
-}
-
-details[open] .filter-panel-summary::before {
-  content: '▼';
 }
 
 .filter-panel-summary:hover {
