@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
-import styles from '../styles/auth.module.css';
+import PasswordInput from '../components/auth/PasswordInput.js';
 
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -85,22 +85,22 @@ const LoginPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <div className={styles.login_container}>
+    <div className="auth-login-container">
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
-        <div className={styles.twofa_container}>
+        <div>
           <h2>{t('login.2fa.title')}</h2>
-          <p className={styles.info_message}>{t('login.2fa.sentToEmail')}</p>
-          {twoStepError && <div className={styles.error_message}>{twoStepError}</div>}
-          <div className={styles.form_group}>
+          <p>{t('login.2fa.sentToEmail')}</p>
+          {twoStepError && <div className="auth-error-message">{twoStepError}</div>}
+          <div className="auth-form-group">
             <label htmlFor="code">{t('login.2fa.code')}</label>
             <input id="code" value={code} onChange={(e) => setCode(e.target.value)} disabled={isLoading} />
           </div>
-          <div className={styles.twofa_actions}>
-            <button onClick={verifyTwoStep} disabled={isLoading} className={styles.submit_button}>
+          <div>
+            <button onClick={verifyTwoStep} disabled={isLoading} className="auth-submit-button">
               {t('login.2fa.verify')}
             </button>
-            <button onClick={requestTwoStep} disabled={isLoading || !email} className={styles.secondary_button}>
+            <button onClick={requestTwoStep} disabled={isLoading || !email}>
               {t('login.2fa.resend')}
             </button>
           </div>
@@ -109,9 +109,9 @@ const LoginPage = ({ lang = 'en' }) => {
         // Default login form with signup link when not in 2FA flow
         <>
           <h1>{t('login.title')}</h1>
-          {error && <div className={styles.error_message}>{error}</div>}
+          {error && <div className="auth-error-message">{error}</div>}
           <form onSubmit={handleSubmit}>
-            <div className={styles.form_group}>
+            <div className="auth-form-group">
               <label htmlFor="email">{t('login.email')}</label>
               <input
                 type="email"
@@ -124,24 +124,23 @@ const LoginPage = ({ lang = 'en' }) => {
                 disabled={isLoading}
               />
             </div>
-            <div className={styles.form_group}>
-              <label htmlFor="password">{t('login.password')}</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                title={t('login.password')}
-                onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
-                onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <button type="submit" disabled={isLoading} className={styles.submit_button}>
+            <PasswordInput
+              id="password"
+              label={t('login.password')}
+              value={password}
+              title={t('login.password')}
+              onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
+              onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+              required
+              disabled={isLoading}
+              autoComplete="current-password"
+              lang={lang}
+            />
+            <button type="submit" disabled={isLoading} className="auth-submit-button">
               {isLoading ? t('login.form.submitting') : t('login.submit')}
             </button>
           </form>
-          <div className={styles['auth-links']}>
+          <div className="auth-links">
             <Link to={getPath('register', lang)}>{t('login.form.signupLink')}</Link>
             &nbsp;|&nbsp;
             <Link to={getPath('reset-request', lang)}>{t('login.form.forgotPassword')}</Link>

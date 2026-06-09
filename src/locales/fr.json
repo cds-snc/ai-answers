@@ -408,7 +408,7 @@
         "all": "Tout",
         "allButLogs": "Tout sauf les journaux",
         "allButLogsAndEmbeddings": "Tout sauf les journaux et les embeddings",
-        "expertEvalChats": "Clavardages avec \u00e9valuations d'experts",
+        "expertEvalChats": "Clavardages avec évaluations d'experts",
         "interaction": "Interaction",
         "question": "Question",
         "answer": "Réponse",
@@ -886,7 +886,9 @@
       "send": "Envoyer le code de vérification",
       "sendError": "Impossible d'envoyer le code de vérification",
       "invalidCode": "Code de vérification invalide"
-    }
+    },
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "reset": {
     "request": {
