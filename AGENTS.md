@@ -199,11 +199,30 @@ Notes:
 
 Prefer GC Design System tokens over hardcoded values whenever a token exists for the property. This keeps the UI consistent with the design system and picks up theme changes automatically.
 
+Before writing a hardcoded value, check the token definitions in:
+- `node_modules/@cdssnc/gcds-utility/dist/gcds-utility.css` — colour palette, border-radius, focus, link, text tokens
+- `node_modules/@gcds-core/components/dist/gcds/gcds.css` — component-level tokens
+- GC DS CSS shortcuts: https://design-system.canada.ca/en/css-shortcuts/ — utility classes that can often replace one-off CSS rules entirely
+
+### Common token mappings
+
+| Hardcoded value | GC DS token |
+|---|---|
+| `#26374A` | `var(--gcds-color-blue-muted)` |
+| `#333` / `#333333` | `var(--gcds-text-primary)` |
+| `#43474e` | `var(--gcds-text-secondary)` |
+| `#284162` (link) | `var(--gcds-link-default)` |
+| `#0535d2` (link hover) | `var(--gcds-link-hover)` |
+| `#d3080c` (error red) | `var(--gcds-color-red-500)` |
+| `#0535d2` (focus) | `var(--gcds-focus-border)` |
+| `border-radius: 2px` | `var(--gcds-border-radius-sm)` |
+| `border-radius: 4-6px` | `var(--gcds-border-radius-md)` |
+
 ```css
 /* Prefer */
 color: var(--gcds-text-primary);
-background-color: var(--gcds-color-blue-900);
-border-radius: var(--gcds-border-radius-sm);
+background-color: var(--gcds-color-blue-muted);
+border-radius: var(--gcds-border-radius-md);
 
 /* Avoid */
 color: #333;
