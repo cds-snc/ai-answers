@@ -334,7 +334,7 @@ summary {
   cursor: pointer;
 }
 
-details > summary:first-of-type {
+details > summary:first-of-type:not(.filter-panel-summary) {
   display: list-item;
   counter-increment: list-item 0;
   list-style: inside disclosure-closed;
