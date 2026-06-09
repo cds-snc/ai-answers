@@ -133,6 +133,7 @@ const LoginPage = ({ lang = 'en' }) => {
               onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
               required
               disabled={isLoading}
+              autoComplete="current-password"
               lang={lang}
             />
             <button type="submit" disabled={isLoading} className="auth-submit-button">

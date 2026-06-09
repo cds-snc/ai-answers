@@ -15,7 +15,7 @@ const EyeClosed = () => (
   </svg>
 );
 
-const PasswordInput = ({ id, label, value, onChange, onInvalid, title, required, disabled, lang = 'en' }) => {
+const PasswordInput = ({ id, label, value, onChange, onInvalid, title, required, disabled, autoComplete, lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -32,6 +32,7 @@ const PasswordInput = ({ id, label, value, onChange, onInvalid, title, required,
           onInvalid={onInvalid}
           required={required}
           disabled={disabled}
+          autoComplete={autoComplete}
         />
         <button
           type="button"
@@ -40,7 +41,6 @@ const PasswordInput = ({ id, label, value, onChange, onInvalid, title, required,
           aria-pressed={showPassword}
           onClick={() => setShowPassword((prev) => !prev)}
           disabled={disabled}
-          tabIndex={0}
         >
           {showPassword ? <EyeClosed /> : <EyeOpen />}
         </button>
