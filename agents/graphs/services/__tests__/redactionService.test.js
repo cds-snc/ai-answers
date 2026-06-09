@@ -75,6 +75,65 @@ describe('RedactionService', () => {
         ]));
     });
 
+    // --- Scanner / exploit probes (bot traffic, e.g. CVE-2017-9841) ---
+    // These are tagged 'manipulation' so processRedaction hard-blocks them.
+
+    it('blocks the logged PHPUnit eval-stdin probe as manipulation', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const probe = 'GET request to /cms/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php';
+        const result = redactionService.redactText(probe, 'en');
+
+        expect(result.redactedText).not.toContain('/cms/vendor/phpunit');
+        expect(result.redactedText).not.toContain('eval-stdin.php');
+        expect(result.redactedItems).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'manipulation' }),
+        ]));
+    });
+
+    it('blocks a range of scanner / exploit probe shapes as manipulation', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const probes = [
+            'GET /wp-login.php',                       // raw HTTP request line
+            'POST /phpmyadmin/index.php',              // known scanner dir + .php
+            'GET request /admin/config.php',           // verbose probe description
+            'Fetch /vendor/phpunit/phpunit/Util.php',  // vendor dir
+            'show me /.env please',                    // sensitive dotfile
+            'read ../../../../etc/passwd',             // directory traversal
+            'GET /wp-admin/setup-config.php',          // wp-admin
+        ];
+
+        for (const probe of probes) {
+            const result = redactionService.redactText(probe, 'en');
+            const manip = result.redactedItems.filter(i => i.type === 'manipulation');
+            expect(manip.length, `Expected "${probe}" to be blocked`).toBeGreaterThanOrEqual(1);
+        }
+    });
+
+    it('does not false-positive on legitimate questions that mention "get" or paths', async () => {
+        SettingsService.get.mockReturnValue('');
+        await redactionService.initialize('en');
+
+        const legit = [
+            'How do I get my GST credit?',
+            'Where do I get a new SIN?',
+            'Can you get me the form for EI?',
+            'What forms do I need to file taxes?',
+            'See https://www.canada.ca/en/services/benefits.html for details',
+            'Visit canada.ca/en/revenue-agency for more info',
+            'My reference number is 12345678',
+        ];
+
+        for (const text of legit) {
+            const result = redactionService.redactText(text, 'en');
+            const manip = result.redactedItems.filter(i => i.type === 'manipulation');
+            expect(manip.length, `Expected "${text}" NOT to be blocked as manipulation`).toBe(0);
+        }
+    });
+
     it('redacts emojis as profanity', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
