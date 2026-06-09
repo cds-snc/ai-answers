@@ -71,6 +71,10 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
           onClearFilters={handleClearFilters}
           isVisible={true}
           defaultUserType="public"
+          filterLoading={Object.values(loadingState).some(Boolean)}
+          filterError={Object.values(errorState).find(Boolean) || null}
+          filterResultCount={data.totalQuestions || 0}
+          hasAppliedFilters={hasStartedLoading}
         />
       </div>
 

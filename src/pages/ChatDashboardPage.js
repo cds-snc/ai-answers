@@ -302,6 +302,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           onApplyFilters={(filters) => { handleApplyFilters(filters); }}
           onClearFilters={handleClearFilters}
           isVisible={true}
+          filterLoading={loading}
+          filterError={error}
+          filterResultCount={recordsTotal}
+          hasAppliedFilters={hasAppliedFilters}
         />
       </div>
 

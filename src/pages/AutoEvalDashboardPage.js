@@ -153,7 +153,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       <h2 className="mt-400 mb-400">{t('admin.autoEvalDashboard.timeRangeTitle')}</h2>
       <div className="mb-600">
-        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={recordsTotal} hasAppliedFilters={hasAppliedFilters} />
       </div>
 
       {loading && (

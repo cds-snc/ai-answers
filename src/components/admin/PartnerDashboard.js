@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -17,14 +17,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
-  const filterWrapRef = useRef(null);
   const autoApplyFired = useRef(false);
-  const hasUserApplied = useRef(false);
+  const [hasUserApplied, setHasUserApplied] = useState(false);
   const handleApplyFilters = (filters) => {
     if (autoApplyFired.current) {
-      // Second+ call is user-triggered: close the filter panel and mark as applied.
-      hasUserApplied.current = true;
-      filterWrapRef.current?.querySelector('details')?.removeAttribute('open'); // relies on FilterPanel rendering a <details> element internally
+      // Second+ call is user-triggered: mark as applied so FilterPanel can collapse.
+      setHasUserApplied(true);
     }
     autoApplyFired.current = true;
     fetchMetrics(filters);
@@ -88,7 +86,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
-      <div ref={filterWrapRef} className="mb-600">
+      <div className="mb-600">
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
@@ -97,6 +95,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           autoApply={true}
           applyDisabled={loading}
           defaultUserType="all"
+          filterLoading={loading}
+          filterError={error}
+          filterResultCount={metrics.totalQuestions || 0}
+          hasAppliedFilters={hasUserApplied}
         />
       </div>
 
@@ -106,7 +108,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {hasUserApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
+      {hasUserApplied && !loading && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('common.noDataForFilters')}
