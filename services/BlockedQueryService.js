@@ -64,7 +64,10 @@ class BlockedQueryService {
     await dbConnect();
 
     const match = {
-      date: { $gte: startOfUtcDay(start), $lte: new Date(end) },
+      // Preserve the requested range exactly. The dashboard already passes
+      // date/time boundaries, so rounding the start to UTC midnight would
+      // over-count earlier blocks from the same day.
+      date: { $gte: new Date(start), $lte: new Date(end) },
     };
 
     if (userType === 'admin') {

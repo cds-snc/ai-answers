@@ -115,6 +115,23 @@ describe('BlockedQueryService.getBlockedMetrics', () => {
     expect(blockedQueries.total).toEqual({ total: 10, en: 8, fr: 2 });
   });
 
+  it('preserves the requested start timestamp in the date match', async () => {
+    aggregateMock.mockResolvedValueOnce([]);
+
+    const start = new Date('2026-01-01T15:45:00.000Z');
+    const end = new Date('2026-01-07T23:59:59.999Z');
+
+    await BlockedQueryService.getBlockedMetrics({
+      start,
+      end,
+      userType: 'all',
+    });
+
+    const pipeline = aggregateMock.mock.calls[0][0];
+    expect(pipeline[0].$match.date.$gte.toISOString()).toBe(start.toISOString());
+    expect(pipeline[0].$match.date.$lte.toISOString()).toBe(end.toISOString());
+  });
+
   it("maps the 'public' filter to referredPublic + publicOther", async () => {
     aggregateMock.mockResolvedValueOnce([]);
     await BlockedQueryService.getBlockedMetrics({
