@@ -1042,3 +1042,8 @@ fieldset.gc-chckbxrdio {
     outline-offset: -20px;
   }
 }
+
+/* Suppress Edge's native password reveal button to avoid duplicating the custom toggle */
+input::-ms-reveal {
+  display: none;
+}

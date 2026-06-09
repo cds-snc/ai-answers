@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import AuthService from '../services/AuthService.js';
-import styles from '../styles/auth.module.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { getPath } from '../utils/routes.js';
 
@@ -29,11 +28,11 @@ const ResetRequestPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <div className={styles.login_container}>
+    <div className="auth-login-container">
       <h1>{t('reset.request.title')}</h1>
-      {message && <div className={styles.info_message}>{message}</div>}
+      {message && <div>{message}</div>}
       <form onSubmit={submit}>
-        <div className={styles.form_group}>
+        <div className="auth-form-group">
           <label htmlFor="email">{t('login.email')}</label>
           <input
             id="email"
@@ -46,9 +45,9 @@ const ResetRequestPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <button type="submit" className={styles.submit_button} disabled={isLoading}>{isLoading ? t('reset.request.sending') : t('reset.request.send')}</button>
+        <button type="submit" className="auth-submit-button" disabled={isLoading}>{isLoading ? t('reset.request.sending') : t('reset.request.send')}</button>
       </form>
-      <div className={styles['auth-links']}>
+      <div className="auth-links">
         <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
       </div>
     </div>

@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 
-import styles from '../styles/auth.module.css';
 
 const ResetVerifyPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -30,19 +29,19 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <div className={styles.login_container}>
+    <div className="auth-login-container">
       <h1>{t('reset.verify.title')}</h1>
-      {message && <div className={styles.info_message}>{message}</div>}
+      {message && <div>{message}</div>}
       {mode === 'invalid' && <div>{t('reset.verify.invalidLink')}</div>}
       {mode === 'ready' && (
         <>
           <p>{t('reset.verify.instructionsNoOtp')}</p>
 
-          <div className={styles.twofa_actions}>
-            <button className={styles.submit_button} onClick={gotoSetPassword} disabled={isLoading}>{t('reset.verify.continue')}</button>
+          <div>
+            <button className="auth-submit-button" onClick={gotoSetPassword} disabled={isLoading}>{t('reset.verify.continue')}</button>
           </div>
 
-          <div className={styles['auth-links']}>
+          <div className="auth-links">
             <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
           </div>
         </>

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
-import styles from '../styles/auth.module.css';
 
 const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -40,11 +39,11 @@ const RegisterPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <div className={styles.signup_container}>
+    <div className="auth-signup-container">
       <h1>{t('signup.title')}</h1>
-      {error && <div className={styles.error_message}>{error}</div>}
+      {error && <div className="auth-error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div className={styles.form_group}>
+        <div className="auth-form-group">
           <label htmlFor="email">{t('signup.email')}</label>
           <input
             type="email"
@@ -57,7 +56,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <div className={styles.form_group}>
+        <div className="auth-form-group">
           <label htmlFor="password">{t('signup.password')}</label>
           <input
             type="password"
@@ -70,7 +69,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <div className={styles.form_group}>
+        <div className="auth-form-group">
           <label htmlFor="confirmPassword">{t('signup.confirmPassword')}</label>
           <input
             type="password"
@@ -83,7 +82,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <button type="submit" disabled={isLoading} className={styles.submit_button}>
+        <button type="submit" disabled={isLoading} className="auth-submit-button">
           {isLoading ? t('signup.submitting') : t('signup.submit')}
         </button>
       </form>

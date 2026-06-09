@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import AuthService from '../services/AuthService.js';
 import { getPath } from '../utils/routes.js';
-import styles from '../styles/auth.module.css';
 
 const ResetCompletePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -52,24 +51,24 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   };
 
   return (
-    <div className={styles.login_container}>
+    <div className="auth-login-container">
       <h1>{t('reset.complete.title')}</h1>
-      {message && <div className={styles.info_message}>{message}</div>}
+      {message && <div>{message}</div>}
       <form onSubmit={submit}>
         {/* No code/OTP field — link verification is sufficient to set a new password */}
-        <div className={styles.form_group}>
+        <div className="auth-form-group">
           <label htmlFor="password">{t('reset.complete.password')}</label>
           <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
         </div>
 
-        <div className={styles.form_group}>
+        <div className="auth-form-group">
           <label htmlFor="confirm">{t('reset.complete.confirm')}</label>
           <input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={isLoading} />
         </div>
 
-        <button type="submit" className={styles.submit_button} disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') : t('reset.complete.submit')}</button>
+        <button type="submit" className="auth-submit-button" disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') : t('reset.complete.submit')}</button>
       </form>
-      <div className={styles['auth-links']}>
+      <div className="auth-links">
         <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
       </div>
     </div>
