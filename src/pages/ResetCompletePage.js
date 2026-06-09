@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import AuthService from '../services/AuthService.js';
 import { getPath } from '../utils/routes.js';
+import PasswordInput from '../components/auth/PasswordInput.js';
 
 const ResetCompletePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -56,15 +57,26 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       {message && <div>{message}</div>}
       <form onSubmit={submit}>
         {/* No code/OTP field — link verification is sufficient to set a new password */}
-        <div className="auth-form-group">
-          <label htmlFor="password">{t('reset.complete.password')}</label>
-          <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
-        </div>
-
-        <div className="auth-form-group">
-          <label htmlFor="confirm">{t('reset.complete.confirm')}</label>
-          <input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={isLoading} />
-        </div>
+        <PasswordInput
+          id="password"
+          name="password"
+          label={t('reset.complete.password')}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
+          autoComplete="new-password"
+          lang={lang}
+        />
+        <PasswordInput
+          id="confirm"
+          name="confirm"
+          label={t('reset.complete.confirm')}
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          disabled={isLoading}
+          autoComplete="new-password"
+          lang={lang}
+        />
 
         <button type="submit" className="auth-submit-button" disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') : t('reset.complete.submit')}</button>
       </form>

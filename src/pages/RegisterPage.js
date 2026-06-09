@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
+import PasswordInput from '../components/auth/PasswordInput.js';
 
 const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -56,32 +57,32 @@ const RegisterPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <div className="auth-form-group">
-          <label htmlFor="password">{t('signup.password')}</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            title={t('signup.password')}
-            onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
-            onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
-            required
-            disabled={isLoading}
-          />
-        </div>
-        <div className="auth-form-group">
-          <label htmlFor="confirmPassword">{t('signup.confirmPassword')}</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            title={t('signup.confirmPassword')}
-            onChange={(e) => { e.target.setCustomValidity(''); setConfirmPassword(e.target.value); }}
-            onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
-            required
-            disabled={isLoading}
-          />
-        </div>
+        <PasswordInput
+          id="password"
+          name="password"
+          label={t('signup.password')}
+          value={password}
+          title={t('signup.password')}
+          onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
+          onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+          required
+          disabled={isLoading}
+          autoComplete="new-password"
+          lang={lang}
+        />
+        <PasswordInput
+          id="confirmPassword"
+          name="confirmPassword"
+          label={t('signup.confirmPassword')}
+          value={confirmPassword}
+          title={t('signup.confirmPassword')}
+          onChange={(e) => { e.target.setCustomValidity(''); setConfirmPassword(e.target.value); }}
+          onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+          required
+          disabled={isLoading}
+          autoComplete="new-password"
+          lang={lang}
+        />
         <button type="submit" disabled={isLoading} className="auth-submit-button">
           {isLoading ? t('signup.submitting') : t('signup.submit')}
         </button>

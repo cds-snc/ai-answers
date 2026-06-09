@@ -1043,7 +1043,7 @@ fieldset.gc-chckbxrdio {
   }
 }
 
-/* Suppress Edge's native password reveal button to avoid duplicating the custom toggle */
-input::-ms-reveal {
+/* Suppress Edge's native password reveal button only where the custom toggle is present */
+.auth-password-wrapper input::-ms-reveal {
   display: none;
 }
