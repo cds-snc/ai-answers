@@ -818,3 +818,129 @@
   color: var(--gcds-color-grayscale-700);
   align-self: center;
 }
+
+/* Auth pages (login, register, password reset) */
+.auth-login-container,
+.auth-signup-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form-group {
+  margin-bottom: 20px;
+}
+
+.auth-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.auth-form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.auth-form-group input:focus {
+  outline: none;
+  border-color: #0066CC;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.auth-submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #26374A;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-submit-button:hover {
+  background-color: #1C578A;
+}
+
+.auth-submit-button:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+.auth-error-message {
+  padding: 12px;
+  margin-bottom: 20px;
+  background-color: #FEE;
+  border: 1px solid #FCC;
+  border-radius: 4px;
+  color: #C00;
+  font-size: 0.9rem;
+}
+
+.auth-links {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.auth-links a {
+  color: #0066CC;
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+.auth-password-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.auth-password-wrapper input {
+  flex: 1;
+  padding-right: 2.5rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.auth-password-toggle:hover {
+  color: #0066CC;
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 2px solid #0066CC;
+  border-radius: 2px;
+}
+
+.auth-password-toggle:disabled {
+  cursor: not-allowed;
+  color: #999;
+}
+
+@media (max-width: 480px) {
+  .auth-login-container,
+  .auth-signup-container {
+    margin: 20px;
+    padding: 15px;
+  }
+}
