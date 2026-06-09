@@ -193,7 +193,7 @@ The graph maintains state across all nodes with these key fields:
 - Returns fallback URL to Canada.ca search
 - User receives helpful error message
 
-**File:** [`agents/graphs/services/shortQuery.js`](../../agents/graphs/services/shortQuery.js)
+**File:** [`agents/graphs/guardrails/shortQuery.js`](../../agents/graphs/guardrails/shortQuery.js)
 
 ---
 
@@ -211,6 +211,7 @@ The graph maintains state across all nodes with these key fields:
 - Basic PI patterns (phone numbers, emails, 9-digit numbers) → block question
 
 **File:** [`agents/graphs/services/redactionService.js`](../../agents/graphs/services/redactionService.js)
+Guardrail classification/error mapping lives in [`agents/graphs/guardrails/`](../../agents/graphs/guardrails/).
 
 #### Stage 2: AI-Powered PI Detection
 - AI detects person names, personal IDs, US ZIP codes
@@ -552,7 +553,7 @@ single primary bucket:
   `azureGuardrail`, `unsupportedLanguage` (`und`).
 
 The block type is tagged on the thrown error (`blockType` on
-`ShortQueryValidation` / `RedactionError`) at the guardrail throw sites, and the
+`ShortQueryValidation` / `RedactionError`) from [`agents/graphs/guardrails/`](../../agents/graphs/guardrails/), and the
 single catch block in [`api/chat/chat-graph-run.js`](../../api/chat/chat-graph-run.js)
 fires a fire-and-forget `BlockedQueryService.record()`. Counts are day-bucketed
 by `{ date, type, lang, userType }` in the `BlockedQueryCounter` collection
@@ -561,7 +562,8 @@ in the Safety section of the executive and technical dashboards. Blocks happen
 before the department is known, so the table is global (hidden when a department
 filter is applied).
 
-**Files:** [`services/BlockedQueryService.js`](../../services/BlockedQueryService.js),
+**Files:** [`agents/graphs/guardrails/`](../../agents/graphs/guardrails/),
+[`services/BlockedQueryService.js`](../../services/BlockedQueryService.js),
 [`models/blockedQueryCounter.js`](../../models/blockedQueryCounter.js)
 
 ---

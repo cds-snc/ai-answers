@@ -272,7 +272,7 @@ async function handler(req, res) {
 
     // Text-free safety counter: a blocked query never reaches persistence, so
     // this is the only record of it. err.blockType is set at the guardrail throw
-    // sites (shortQuery.js / GraphWorkflowHelper.js). Fire-and-forget — record()
+    // sites (agents/graphs/guardrails/*). Fire-and-forget — record()
     // never throws, and we don't await so the error response isn't delayed.
     // WARNING: this relies on a long-running server (Express) where the write
     // finishes on the event loop after res.end(). If this handler is ever moved

@@ -2,20 +2,9 @@ import dbConnect from '../api/db/db-connect.js';
 import { BlockedQueryCounter } from '../models/blockedQueryCounter.js';
 import { isReferredPublicUrl } from '../api/util/chat-filters.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import { BLOCK_TYPES } from '../agents/graphs/guardrails/blockTypes.js';
 
-// The guardrail buckets surfaced on the safety dashboards. Order here is the
-// display order on the dashboard table. Keep in sync with the blockType values
-// tagged on errors in the graph (shortQuery.js / GraphWorkflowHelper.js).
-export const BLOCK_TYPES = [
-  'tooShort',            // 1–2 word questions (validate node)
-  'threat',              // threat word list
-  'manipulation',        // manipulation word list (+ obfuscated/zxx input)
-  'profanity',           // profanity / bad-word list + emoji
-  'piStage1',            // private info caught programmatically (regex)
-  'piStage2',            // private info caught by the AI PII stage
-  'azureGuardrail',      // caught by Azure content guardrails / blocked translation
-  'unsupportedLanguage', // unsupported source language (e.g. Indigenous languages)
-];
+export { BLOCK_TYPES };
 
 const BLOCK_TYPE_SET = new Set(BLOCK_TYPES);
 

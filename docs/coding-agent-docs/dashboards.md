@@ -135,8 +135,7 @@ language) **throw before `persistNode`** and are never written as Chat/Interacti
 records — the question text is intentionally discarded. A **text-free** counter is
 the only record of them. End-to-end:
 
-- **Tagging:** each guardrail throw site (`agents/graphs/services/shortQuery.js`,
-  `agents/graphs/workflows/GraphWorkflowHelper.js`) sets a `blockType` on the
+- **Tagging:** each guardrail throw site in `agents/graphs/guardrails/` sets a `blockType` on the
   thrown error (`ShortQueryValidation` / `RedactionError`). A word-list block that
   trips several lists is classified to one primary bucket by priority.
 - **Recording:** the single `catch` in `api/chat/chat-graph-run.js` fires

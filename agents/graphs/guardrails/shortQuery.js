@@ -1,13 +1,5 @@
-class ShortQueryValidation extends Error {
-  constructor(message, userMessage, fallbackUrl) {
-    super(message);
-    this.name = 'ShortQueryValidation';
-    this.userMessage = userMessage;
-    this.fallbackUrl = fallbackUrl;
-    // Bucket for the blocked-query safety counter (see BlockedQueryService).
-    this.blockType = 'tooShort';
-  }
-}
+import { BLOCK_TYPE } from './blockTypes.js';
+import { ShortQueryValidation } from './errors.js';
 
 function countWords(text) {
   if (!text || typeof text !== 'string') return 0;
@@ -45,16 +37,16 @@ function generateFallbackSearchUrl(lang, question, department) {
 
   const dept = (department || '').toLowerCase();
   const entry = map[dept];
-  const url = entry ? (lang === 'fr' ? entry.fr : entry.en) : `${prefix}/sr/srb.html?q=${encodedQuestion}&wb-srch-sub=`;
-
-  return url;
+  return entry ? (lang === 'fr' ? entry.fr : entry.en) : `${prefix}/sr/srb.html?q=${encodedQuestion}&wb-srch-sub=`;
 }
 
 export function validateShortQueryOrThrow(conversationHistory, userMessage, lang, department) {
   const wordCount = countWords(userMessage);
   if (!hasAnyLongUserMessage(conversationHistory) && wordCount <= 2) {
     const fallbackUrl = generateFallbackSearchUrl(lang || 'en', userMessage || '', department);
-    throw new ShortQueryValidation('Short query detected', userMessage, fallbackUrl);
+    const error = new ShortQueryValidation('Short query detected', userMessage, fallbackUrl);
+    error.blockType = BLOCK_TYPE.TOO_SHORT;
+    throw error;
   }
 }
 
