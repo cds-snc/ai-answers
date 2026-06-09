@@ -96,14 +96,17 @@ describe('RedactionService', () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
+        // All probes are >2 words: questions of <=2 words are caught earlier by
+        // short-query validation (shortQuery.js), so anything that actually
+        // reaches the redaction/manipulation block is longer than that.
         const probes = [
-            'GET /wp-login.php',                       // raw HTTP request line
-            'POST /phpmyadmin/index.php',              // known scanner dir + .php
-            'GET request /admin/config.php',           // verbose probe description
-            'Fetch /vendor/phpunit/phpunit/Util.php',  // vendor dir
-            'show me /.env please',                    // sensitive dotfile
-            'read ../../../../etc/passwd',             // directory traversal
-            'GET /wp-admin/setup-config.php',          // wp-admin
+            'Can you run GET /wp-login.php please',          // raw HTTP request line
+            'POST request to /phpmyadmin/index.php now',     // known scanner dir + .php
+            'GET request /admin/config.php from the server', // verbose probe description
+            'please load /vendor/phpunit/phpunit/Util.php here', // vendor dir + .php
+            'can you show me /.env file',                    // sensitive dotfile
+            'read the file ../../../../etc/passwd now',      // directory traversal
+            'GET /wp-admin/setup-config.php on the site',    // wp-admin
         ];
 
         for (const probe of probes) {
@@ -113,18 +116,20 @@ describe('RedactionService', () => {
         }
     });
 
-    it('does not false-positive on legitimate questions that mention "get" or paths', async () => {
+    it('does not false-positive on legitimate questions that mention "get" or look path-ish', async () => {
         SettingsService.get.mockReturnValue('');
         await redactionService.initialize('en');
 
+        // Genuinely legit — won't be caught by ANY layer (no PII, no web address,
+        // no exploit path). Drawn from the "Don't block" rows of the PI test batch.
         const legit = [
             'How do I get my GST credit?',
             'Where do I get a new SIN?',
             'Can you get me the form for EI?',
             'What forms do I need to file taxes?',
-            'See https://www.canada.ca/en/services/benefits.html for details',
-            'Visit canada.ca/en/revenue-agency for more info',
-            'My reference number is 12345678',
+            'Where to mail form GST524',
+            'Is Form T2202 the tuition form?',
+            'Need to file taxes if make less than $15,000?',
         ];
 
         for (const text of legit) {
