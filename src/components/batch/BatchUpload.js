@@ -6,12 +6,7 @@ import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
-
-// Maximum number of questions allowed in a single batch. Caps the load a batch
-// can place on downstream rate limits so a partner can't accidentally submit a
-// huge file. If you change this, update the batch.upload.error.tooManyRows and
-// batch.upload.instructions.step1e locale strings, which name the limit.
-const MAX_BATCH_ROWS = 200;
+import { MAX_BATCH_ITEMS } from '../../config/batch.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -98,7 +93,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           throw new Error(t('batch.upload.error.noValidRows'));
         }
 
-        if (entries.length > MAX_BATCH_ROWS) {
+        if (entries.length > MAX_BATCH_ITEMS) {
           throw new Error(t('batch.upload.error.tooManyRows'));
         }
 

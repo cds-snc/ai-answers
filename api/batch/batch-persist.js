@@ -3,11 +3,7 @@ import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-
-// Maximum number of items allowed in a single batch. Server-side backstop for the
-// client-side MAX_BATCH_ROWS cap in src/components/batch/BatchUpload.js — keep the
-// two values in sync. Bounds the load a batch can place on downstream rate limits.
-const MAX_BATCH_ITEMS = 200;
+import { MAX_BATCH_ITEMS } from '../../src/config/batch.js';
 
 async function batchPersistHandler(req, res) {
   if (req.method !== 'POST') {
