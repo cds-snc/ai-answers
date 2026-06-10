@@ -12,27 +12,32 @@ export const COLOURS = {
   // Answer-quality categories (keyed by category, not a strict scale).
   // correct/needs-improvement/citation-issue are all "correct" outcomes, so
   // they use a green gradient (dark → medium → light); has answer error=red,
-  // harmful=dark red.
-  correct: '#2e7d32',
-  needsImprovement: '#66bb6a',
+  // harmful=dark red. GC DS tokens; all ≥ 3:1 non-text contrast against white.
+  correct: '#1f7a40',          // green-700 ~5.1:1, no stroke needed
+  needsImprovement: '#66bb6a', // lighter fill — paired with qualityBorder stroke for WCAG
   hasError: '#d32f2f',
-  hasCitationError: '#a5d6a7',
+  hasCitationError: '#a5d6a7', // lightest fill — paired with qualityBorder stroke for WCAG
   harmful: '#b71c1c',
+  qualityBorder: '#29a356',    // green-600 ~3.25:1 — lightest passing stroke on lighter quality-bar fills
   // Public yes/no feedback
   yes: BRAND,
   no: '#b0bec5',
   // User-feedback sentiment (helpful / not helpful), classified by score
-  feedbackPositive: '#2e7d32', // green — kept for fallback / non-breakdown uses
+  feedbackPositive: '#1f7a40', // green-700 — kept for fallback / non-breakdown uses
   feedbackNegative: '#c62828', // red  — kept for fallback / non-breakdown uses
   // Per-reason colour scales for the satisfaction breakdown bar. Each group uses
   // five accessible shades (WCAG non-text contrast ≥ 3:1 against white) so
   // individual reasons are visually distinct while staying within their family.
-  // Satisfaction breakdown bar scales — 5 GC DS token stops each, dark→light,
-  // all meeting WCAG non-text contrast ≥ 3:1 against white.
-  // Satisfaction breakdown bar scales — 5 GC DS token stops each, dark→light,
-  // all meeting WCAG non-text contrast ≥ 3:1 against white.
-  // Greens: green-800 → green-750 → green-700 → green-650 → green-600
-  feedbackPositiveScale: ['#14522b', '#196636', '#1f7a40', '#248f4b', '#29a356'],
+  // Satisfaction breakdown bar scales — dark→light. Each entry is { fill, stroke? }.
+  // Stops with fill contrast ≥ 3:1 against white need no stroke. Lighter stops
+  // carry a stroke (green-600, the lightest passing value at ~3.25:1) to meet WCAG.
+  feedbackPositiveScale: [
+    { fill: '#196636' },                      // green-750 ~5.7:1
+    { fill: '#1f7a40' },                      // green-700 ~5.1:1
+    { fill: '#248f4b' },                      // green-650 ~3.79:1
+    { fill: '#29a356' },                      // green-600 ~3.25:1
+    { fill: '#2eb860', stroke: '#29a356' },   // green-550 ~2.4:1, stroke meets 3:1
+  ],
   // Reds: red-700 → red-600 → red-500 → red-400 → red-350
   feedbackNegativeScale: ['#861322', '#b3192e', '#df2039', '#e64d61', '#e96375'],
   // Neutral fill for empty / no-data states

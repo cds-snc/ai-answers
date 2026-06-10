@@ -13,6 +13,32 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 // value-only tooltip — e.g. to surface extra per-row fields like an EN/FR split.
 const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null }) => {
   const fmtVal = (v) => (percent ? formatPercent(v, lang) : formatNumber(v, lang));
+  const lineH = 18;
+  const wrapLines = (text) => {
+    const words = (text || '').split(' ');
+    const lines = [];
+    let cur = '';
+    for (const word of words) {
+      const candidate = cur ? `${cur} ${word}` : word;
+      if (candidate.length <= 18) { cur = candidate; }
+      else { if (cur) lines.push(cur); cur = word; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  };
+  const maxLines = (data || []).length > 0 ? Math.max(...data.map(d => wrapLines(d.name || '').length)) : 1;
+  const barPx = Math.max(40, maxLines * lineH + 16);
+  const renderYTick = ({ x, y, payload }) => {
+    const lines = wrapLines(payload.value || '');
+    const yStart = y - ((lines.length - 1) * lineH) / 2;
+    return (
+      <text fontSize={16} fill="#333" textAnchor="start">
+        {lines.map((line, i) => (
+          <tspan key={i} x={x - 152} y={yStart + i * lineH} dy="0.355em">{line}</tspan>
+        ))}
+      </text>
+    );
+  };
   return (
     <div className="dashboard-card hbar-card">
       <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
@@ -22,19 +48,19 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
           {noDataLabel}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * 40)}>
+        <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * barPx)}>
           <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 16 }} />
-            <YAxis type="category" dataKey="name" width={160} interval={0} tick={{ fontSize: 16 }} />
+            <YAxis type="category" dataKey="name" width={160} interval={0} tick={renderYTick} />
             {tooltipContent
               ? <Tooltip content={tooltipContent} />
               : <Tooltip formatter={(value) => fmtVal(value)} />}
             <Bar dataKey="value" fill={colour} radius={[0, 4, 4, 0]}>
               {data.map((entry) => (
-                <Cell key={entry.name} fill={entry.colour || colour} />
+                <Cell key={entry.name} fill={entry.colour || colour} stroke={entry.stroke || 'none'} strokeWidth={entry.strokeWidth || 0} />
               ))}
-              <LabelList dataKey="value" position="right" formatter={fmtVal} style={{ fontSize: 16, fill: '#333' }} />
+              <LabelList dataKey="value" position="right" formatter={fmtVal} style={{ fontSize: 16, fill: '#333', stroke: 'none' }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>

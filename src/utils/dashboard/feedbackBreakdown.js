@@ -64,15 +64,16 @@ export const buildQualityBarData = (expertScored, aiScored, t) => {
   // sits at the bottom of the chart. Harmful is excluded here — it's a subset
   // of "has answer error" and lives on its own harmful/content-issues card.
   return [
-    { key: 'correct', colour: COLOURS.correct },
-    { key: 'needsImprovement', colour: COLOURS.needsImprovement },
-    { key: 'hasCitationError', colour: COLOURS.hasCitationError },
-    { key: 'hasError', colour: COLOURS.hasError },
+    { key: 'correct',          colour: COLOURS.correct },
+    { key: 'needsImprovement', colour: COLOURS.needsImprovement, stroke: COLOURS.qualityBorder },
+    { key: 'hasCitationError', colour: COLOURS.hasCitationError, stroke: COLOURS.qualityBorder },
+    { key: 'hasError',         colour: COLOURS.hasError },
   ]
-    .map(({ key, colour }) => ({
+    .map(({ key, colour, stroke }) => ({
       name: t(`metrics.dashboard.qualityBar.${key}`),
       value: pct(sum(key)),
       colour,
+      ...(stroke && { stroke, strokeWidth: 1 }),
       count: sum(key),
     }))
     .filter(d => d.count > 0);
@@ -176,14 +177,17 @@ export const buildFeedbackReasonsData = (publicFeedbackReasons, t) => {
   let posIdx = 0, negIdx = 0;
   return filtered.map(({ dir, id, score, value }) => {
     const positive = isPositiveScore(score);
-    const colour = positive
+    const entry = positive
       ? COLOURS.feedbackPositiveScale[posIdx++ % COLOURS.feedbackPositiveScale.length]
       : COLOURS.feedbackNegativeScale[negIdx++ % COLOURS.feedbackNegativeScale.length];
+    const colour = entry.fill ?? entry;
+    const stroke = entry.stroke;
     return {
       name: labelFor(id, dir),
       value,
       positive,
       colour,
+      ...(stroke && { stroke, strokeWidth: 1 }),
     };
   });
 };
