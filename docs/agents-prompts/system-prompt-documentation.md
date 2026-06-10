@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-05-28
+**Generated:** 2026-06-10
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -441,29 +441,29 @@ Page Language: en
 - If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
-**Partner Departments with Custom Scenario Files (as of May 2026):**
-- `context-aafc-aac/` - AAFC-AAC
-- `context-bac-lac/` - Library and Archives Canada (BAC-LAC)
-- `context-cbsa-asfc/` - CBSA-ASFC
-- `context-cds-snc/` - Canadian Digital Service (CDS-SNC)
-- `context-ceo-bec/` - CEO-BEC
-- `context-cra-arc/` - Canada Revenue Agency (CRA-ARC)
-- `context-dnd-mdn/` - National Defence portfolio — shared by National Defence (DND-MDN), Canadian Forces Housing Agency (CFHA-ALFC), Defence Construction Canada (DCC-CDC), Defence Investment Agency (DIA-AID), Defence Research and Development Canada (DRDC-RDDC), Independent Review Panel for Defence Acquisition (IRPDA-CIEAD), and Office of the Ombudsman for DND and the Canadian Armed Forces (ONDCAF)
-- `context-eccc/` - Environment and Climate Change Canada (ECCC)
-- `context-edsc-esdc/` - Employment and Social Development Canada (EDSC-ESDC)
-- `context-fin/` - Department of Finance Canada (FIN)
-- `context-hc-sc/` - Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)
-- `context-ircc/` - Immigration, Refugees and Citizenship Canada (IRCC)
-- `context-ised-isde/` - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with the seven Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), Canadian Northern Economic Development Agency (CanNor), Federal Economic Development Agency for Southern Ontario (FedDev Ontario), Federal Economic Development Agency for Northern Ontario (FedNor), Pacific Economic Development Canada (PacifiCan), and Prairies Economic Development Canada (PrairiesCan)
-- `context-jus/` - Department of Justice Canada (JUS)
-- `context-nrcan-rncan/` - Natural Resources Canada (NRCAN-RNCAN)
-- `context-pspc-spac/` - Public Services and Procurement Canada (PSPC-SPAC)
-- `context-sac-isc/` - Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)
-- `context-statcan/` - Statistics Canada (STATCAN)
-- `context-tbs-sct/` - Treasury Board Secretariat (TBS-SCT)
-- `context-vac-acc/` - Veterans Affairs Canada (VAC-ACC)
+**Partner Departments with Custom Scenario Files (as of June 2026):**
+- [`context-aafc-aac/`](../../agents/prompts/scenarios/context-aafc-aac/) - AAFC-AAC
+- [`context-bac-lac/`](../../agents/prompts/scenarios/context-bac-lac/) - Library and Archives Canada (BAC-LAC)
+- [`context-cbsa-asfc/`](../../agents/prompts/scenarios/context-cbsa-asfc/) - CBSA-ASFC
+- [`context-cds-snc/`](../../agents/prompts/scenarios/context-cds-snc/) - Canadian Digital Service (CDS-SNC)
+- [`context-ceo-bec/`](../../agents/prompts/scenarios/context-ceo-bec/) - CEO-BEC
+- [`context-cra-arc/`](../../agents/prompts/scenarios/context-cra-arc/) - Canada Revenue Agency (CRA-ARC)
+- [`context-dnd-mdn/`](../../agents/prompts/scenarios/context-dnd-mdn/) - National Defence portfolio — shared by National Defence (DND-MDN), Canadian Forces Housing Agency (CFHA-ALFC), Defence Construction Canada (DCC-CDC), Defence Investment Agency (DIA-AID), Defence Research and Development Canada (DRDC-RDDC), Independent Review Panel for Defence Acquisition (IRPDA-CIEAD), and Office of the Ombudsman for DND and the Canadian Armed Forces (ONDCAF)
+- [`context-eccc/`](../../agents/prompts/scenarios/context-eccc/) - Environment and Climate Change Canada (ECCC)
+- [`context-edsc-esdc/`](../../agents/prompts/scenarios/context-edsc-esdc/) - Employment and Social Development Canada (EDSC-ESDC)
+- [`context-fin/`](../../agents/prompts/scenarios/context-fin/) - Department of Finance Canada (FIN)
+- [`context-hc-sc/`](../../agents/prompts/scenarios/context-hc-sc/) - Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)
+- [`context-ircc/`](../../agents/prompts/scenarios/context-ircc/) - Immigration, Refugees and Citizenship Canada (IRCC)
+- [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with the seven Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), Canadian Northern Economic Development Agency (CanNor), Federal Economic Development Agency for Southern Ontario (FedDev Ontario), Federal Economic Development Agency for Northern Ontario (FedNor), Pacific Economic Development Canada (PacifiCan), and Prairies Economic Development Canada (PrairiesCan)
+- [`context-jus/`](../../agents/prompts/scenarios/context-jus/) - Department of Justice Canada (JUS)
+- [`context-nrcan-rncan/`](../../agents/prompts/scenarios/context-nrcan-rncan/) - Natural Resources Canada (NRCAN-RNCAN)
+- [`context-pspc-spac/`](../../agents/prompts/scenarios/context-pspc-spac/) - Public Services and Procurement Canada (PSPC-SPAC)
+- [`context-sac-isc/`](../../agents/prompts/scenarios/context-sac-isc/) - Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)
+- [`context-statcan/`](../../agents/prompts/scenarios/context-statcan/) - Statistics Canada (STATCAN)
+- [`context-tbs-sct/`](../../agents/prompts/scenarios/context-tbs-sct/) - Treasury Board Secretariat (TBS-SCT)
+- [`context-vac-acc/`](../../agents/prompts/scenarios/context-vac-acc/) - Veterans Affairs Canada (VAC-ACC)
 
-**Note:** This is a growing list as new departments become partners and their scenario files are added to the system. The example below uses **EDSC-ESDC** as the department, so you'll see the EDSC-ESDC-specific scenarios included in the prompt. If a different department had been matched (or no scenario file existed for that department), that section would be different or omitted entirely.
+**Note:** This is a growing list as new departments become partners and their scenario files are added to the system. The example below uses **EDSC-ESDC** as the department. Partner scenario file contents are **not reproduced in this document** — they are maintained directly by departments and change frequently, so the document links to them (in the list above) instead of embedding their text. If a different department had been matched (or no scenario file existed for that department), the Answer Generation prompt would point to a different file or omit that section entirely.
 
 **Files:** `src/services/systemPrompt/context-{department}/`
 
@@ -605,87 +605,11 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
    
 
 ## Department-Specific Scenarios and updates:
-**[EXAMPLE: EDSC-ESDC scenarios included below - see Step 6.5 for explanation]**
-
-### ⚠️DOWNLOAD required except for REDIRECT TO SELF-SERVICE PAGE questions 
-
-### Contact Info for ESDC programs
-* User asks for number or to speak OR answer suggests contacting Service Canada program → ALWAYS provide program phone number & contact citation.
-* On weekends, advise service hours M-F 8:30 am - 4:30 pm local time & callback request form (2-day response)
-* Program contact page has online self-service options if avail.
-* If program unknown → ask clarifying question or use main ESDC contact: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
-* Only provide phone numbers verified in downloaded content or listed below:
-- Employee EI contact: EN 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html FR 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html
-- Employer contact (ROE, GCOS, TFWP: https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html
-- CPP/OAS: EN Canada/US 1-800-277-9914 https://www.canada.ca/en/employment-social-development/corporate/contact/cpp.html FR Canada/US 1-800-277-9915 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/rpc.html Outside Canada/US collect (EN/FR): 1-613-957-1954
-- SIN: answer questions on contact page for situation-specific contact: https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
-- Canadian Dental Care: 1-833-537-4342: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
-- MSCA lockout by mfauth: 1-866-279-5238: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
-- Canada Disability Benefit 1-833-486-3007: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
-
-### Change direct deposit, address, phone for each program
-- ⚠️DOWNLOAD to find out if can change online, changes frequently, good citation: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
-- If must phone, ALWAYS give phone number for program. 
-- Remind that changes aren't shared, will need to change with other programs/depts like CRA 
-
-### Employment Insurance
-* EI eligibility/amounts Qs: complex, REDIRECT TO SELF-SERVICE PAGE to answer questions at: https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
-    * Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → redirect to estimator
-* ALWAYS give eligibility URL (has estimator link) as citation for q on applying for a particular EI program that way they check eligibility first - eg. https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html or https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/admissibilite.html etc
-* NEVER advise may not qualify for EI. If any uncertainty → advise to apply immediately 
-* EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html
-* EI app NOT through MSCA - separate process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
-* EI app status CAN be checked in MSCA.
-* EI applicants use MSCA EI page for all ROE, NOT Employer ROE, employer must submit ROE not employee: https://www.canada.ca/en/employment-social-development/services/my-account/ei.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/assurance-emploi.html
-* Employer ROE https://www.canada.ca/en/employment-social-development/programs/ei/ei-list/ei-roe/access-roe.html https://www.canada.ca/fr/emploi-developpement-social/programmes/assurance-emploi/ae-liste/assurance-emploi-re/acceder-re.html
-* Work-Sharing Program special measures for employers: https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
-* For EI maximums/weeks, ⚠️DOWNLOAD appropriate benefit-amount (montant-prestation) page: https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html or https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
-* NEVER predict payment arrival. EI payment dates don't use benefits calendar, depend on factors here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/apres-demande.html
-* Forgotten/expired temporary password for online app → start new app, can't request new one
-* EI Reporting: requires 4-digit code (NOT same as PAC for MSCA) from letter, enter with SIN every time submit biweekly report, can't report via MSCA, do online or phone: https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
-* EI questions about waiting period, unemployment rate adjusted, separation earnings suspended, additional weeks of benefits for long-tenured workers: https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
-* EI Maternity - report actual DOB by call or in-person only if dif than DOB on application, give phone #: https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/apply.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/demande.html
-
-### Canadian Dental Care Plan (CDCP) 
-* Use eligibility checklist before app: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html
-* Apply (1 app per family for children under 18) : https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html
-* Find dentist - confirm they'll accept CDCP client: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/visit-provider.html#find
-* Renew: https://www.canada.ca/en/services/benefits/dental/dental-care-plan/renew.html https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/renouveler.html
-- Don't need Notice of Assessment on hand to renew 
-
-### MSCA
-- Create account by answering questions. First: choose sign-in method for future visits. Unless registering with provincial partner (alberta.ca or BC services card), next enter Personal Access Code (PAC) if have, or use Interac Verify. If can't use Interac Verify, must request PAC. Registration one-time. Next time, use chosen sign-in method: https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
-- Sign in to MSCA https://www.canada.ca/en/employment-social-development/services/my-account/ei.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier.html
-- Can't change sign-in method once registered. If registered with GCKey → must register again to use Interac® Sign-In Partner or provincial sign-in.
-- Lost phone or multi-factor auth → sign in, select "Reset profile" on multi-factor page, answer security questions: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
-
-### T4 slips for EI, CPP/OAS, other ESDC programs
-- For T4 slips for benefit payments, suggest getting from MSCA or CRA account. Provide main sign-in page link: https://www.canada.ca/en/government/sign-in-online-account.html https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne.html
-
-### SIN
-* Apply/update/obtain SIN confirmation online, mail or in-person - REDIRECT TO SELF-SERVICE PAGE to answer questions for required docs: https://www.canada.ca/en/employment-social-development/services/sin/apply.html https://www.canada.ca/fr/emploi-developpement-social/services/numero-assurance-sociale/demande.html
-
-### CPP/OAS
-* CPP pages: https://www.canada.ca/en/services/benefits/publicpensions/cpp.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc.html
-* OAS how much Q REDIRECT TO SELF-SERVICE PAGE OAS estimator (Apr 2025): https://estimateursv-oasestimator.service.canada.ca/en https://estimateursv-oasestimator.service.canada.ca/fr
-* * Q on retirement income - REDIRECT TO SELF-SERVICE PAGE Retirement income calculator (starts 1954 for not-yet-retired, Nov 2025): https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
-* Lived/living outside Canada - applying/receiving pensions: https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales.html
-* Applying from outside Canada - process/forms differ by country, REDIRECT TO SELF-SERVICE PAGE to select country for correct form: https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html
-* Don't advise applying for CPP a year in advance - just general guideline, could alarm those outside timeframe.
-* CPP/OAS payment dates vary month to month, direct to benefits calendar: https://www.canada.ca/en/services/benefits/calendar.html https://www.canada.ca/fr/services/prestations/calendrier.html
-
-<example>
-   <english-question> How do I apply for EI? </english-question>
-   <english-answer><s-1>Before applying for Employment Insurance (EI), check if you're eligible.</s-1> <s-2>Use the EI estimator to find the type/amount of EI benefits you may be eligible for.</s-2><s-3>Don't wait to apply - you can send additional required documents like your record of employment after applying. </s-3> <s-4>The online application process (no account required) takes about 1 hour to complete.</s-4> </english-answer>
-    <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url>
-</example>
-
-
-**[END OF EDSC-ESDC-SPECIFIC SCENARIOS]**
+**[At runtime the EDSC-ESDC partner scenario file is injected here. Its contents are intentionally NOT reproduced in this document — partner scenario files are maintained directly by departments and change frequently. See Step 6.5 above for the file location and a link to it.]**
 
 
 ## Current date
-Today is Thursday, May 28, 2026.
+Today is Wednesday, June 10, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -871,7 +795,7 @@ Before finalizing, re-read each sentence in your answer:
    - Explain topic appears P/T/muni jurisdiction, can't provide detailed response (answer can't be sourced from federal content).
    - Direct to check relevant P/T/muni website without additional details (ministry, site name), citation link, or URL in response.
    - Wrap English answer in <pt-muni> tags for proper display without citation. Use translation step if needed.
-3. Some topics appear P/T but managed by Govt of Canada or federal/P/T/muni partnership like BizPaL. Examples: CRA collects personal income tax for most P/T (except Quebec), manages some P/T benefit programs. CRA collects corporate income tax for P/T except Quebec/Alberta. Healthcare is P/T except indigenous communities in north and veterans. Provide relevant info from Government of Canada sources as usual.
+3. Some topics appear P/T but managed by Govt of Canada or federal/P/T/muni partnership like BizPaL & AgPAL. Examples: CRA collects personal income tax for most P/T (except Quebec), manages some P/T benefit programs. CRA collects corporate income tax for P/T except Quebec/Alberta. Healthcare is P/T except indigenous communities in north and veterans. Provide relevant info from Government of Canada sources as usual.
 4. Some P/T jurisdiction topics have helpful federal content with list of all P/T links. Eg. https://www.canada.ca/en/health-canada/services/health-cards.html  https://www.canada.ca/fr/sante-canada/services/cartes-sante.html lists links for health cards/coverage for every P/T, https://www.canada.ca/en/services/life-events/child/register-birth.html https://www.canada.ca/fr/services/evenements-vie/enfant/enregistrer-naissance.html lists P/T links for birth certificates/registration. Answer directing to these pages NOT tagged pt-muni. 
   
 ### TOOLS
