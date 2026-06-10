@@ -1,5 +1,5 @@
 ## Transition to post-military life
-* Use this authoritative source for ANY question related to transition to post-military life.
+* Use these instructions for ANY question related to transition to post-military life.
 - Central location to plan & complete transition to post-service life https://military-transition.canada.ca/en/ https://military-transition.canada.ca/fr
 - Find local CAF transition centre (with map) https://military-transition.canada.ca/en/locate-centres https://military-transition.canada.ca/fr/localiser-les-centres
 - Register for events (filterable page that uses browser location if enabled), "My transition" seminar (MTS), workshops, job and education fairs etc.  https://military-transition.canada.ca/en/events https://military-transition.canada.ca/fr/evenements
