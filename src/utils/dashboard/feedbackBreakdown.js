@@ -64,15 +64,16 @@ export const buildQualityBarData = (expertScored, aiScored, t) => {
   // sits at the bottom of the chart. Harmful is excluded here — it's a subset
   // of "has answer error" and lives on its own harmful/content-issues card.
   return [
-    { key: 'correct', colour: COLOURS.correct },
-    { key: 'needsImprovement', colour: COLOURS.needsImprovement },
-    { key: 'hasCitationError', colour: COLOURS.hasCitationError },
-    { key: 'hasError', colour: COLOURS.hasError },
+    { key: 'correct',          colour: COLOURS.correct },
+    { key: 'needsImprovement', colour: COLOURS.needsImprovement, stroke: COLOURS.qualityBorder },
+    { key: 'hasCitationError', colour: COLOURS.hasCitationError, stroke: COLOURS.qualityBorder },
+    { key: 'hasError',         colour: COLOURS.hasError },
   ]
-    .map(({ key, colour }) => ({
+    .map(({ key, colour, stroke }) => ({
       name: t(`metrics.dashboard.qualityBar.${key}`),
       value: pct(sum(key)),
       colour,
+      ...(stroke && { stroke, strokeWidth: 1 }),
       count: sum(key),
     }))
     .filter(d => d.count > 0);
@@ -165,20 +166,28 @@ export const buildFeedbackReasonsData = (publicFeedbackReasons, t) => {
     return t(`homepage.publicFeedback.${dir}.options.${id}`);
   };
 
-  return FEEDBACK_REASON_ORDER
+  const filtered = FEEDBACK_REASON_ORDER
     .map(({ dir, id }) => {
       const score = scoreForReason(dir, id);
       const value = (dir === 'yes' ? yesByScore : noByScore)[String(score)]?.total || 0;
       return { dir, id, score, value };
     })
-    .filter(r => r.value > 0)
-    .map(({ dir, id, score, value }) => {
-      const positive = isPositiveScore(score);
-      return {
-        name: labelFor(id, dir),
-        value,
-        positive,
-        colour: positive ? COLOURS.feedbackPositive : COLOURS.feedbackNegative,
-      };
-    });
+    .filter(r => r.value > 0);
+
+  let posIdx = 0, negIdx = 0;
+  return filtered.map(({ dir, id, score, value }) => {
+    const positive = isPositiveScore(score);
+    const entry = positive
+      ? COLOURS.feedbackPositiveScale[posIdx++ % COLOURS.feedbackPositiveScale.length]
+      : COLOURS.feedbackNegativeScale[negIdx++ % COLOURS.feedbackNegativeScale.length];
+    const colour = entry.fill ?? entry;
+    const stroke = entry.stroke;
+    return {
+      name: labelFor(id, dir),
+      value,
+      positive,
+      colour,
+      ...(stroke && { stroke, strokeWidth: 1 }),
+    };
+  });
 };

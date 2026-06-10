@@ -763,14 +763,20 @@
   position: absolute;
   top: 50%;
   left: 50%;
+  transform: translate(-50%, -75%);
+}
+
+.donut-card__centre--multi-line {
   transform: translate(-50%, -68%);
   text-align: center;
   pointer-events: none;
+  width: 120px; /* fit within inner radius (70px → 140px diameter); allows label to wrap */
+  overflow-wrap: break-word;
 }
 
 .donut-card__centre-value {
   display: block;
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 700;
   color: #1565c0;
   line-height: 1;
@@ -791,6 +797,7 @@
 .donut-card__centre-label {
   display: block;
   font-size: 18px;
+  line-height: 1.2;
   color: var(--gcds-color-grayscale-700);
   margin-top: 0;
 }
@@ -814,6 +821,12 @@
   align-items: center;
   justify-content: center;
   color: var(--gcds-color-grayscale-700);
+}
+
+@media (max-width: 768px) {
+  .hbar-ytick-label {
+    font-size: 14px;
+  }
 }
 
 /* ---- DivergingBarCard ---- */

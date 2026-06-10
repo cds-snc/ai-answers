@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import MetricsService from '../../services/MetricsService.js';
+import { MOCK_METRICS } from '../../utils/dashboard/mockMetrics.js';
 
 const INITIAL_METRICS = {
   totalQuestions: 0,
@@ -52,6 +53,10 @@ export function useDashboardMetrics() {
   // set (userType, answerType, partnerEval, aiEval, urlEn/urlFr, …). Both are
   // serialized as query params and read by the shared parseRequestFilters.
   const fetchMetrics = useCallback(async (filters = {}) => {
+    if (import.meta.env.VITE_MOCK_METRICS || new URLSearchParams(window.location.search).get('mock') === '1') {
+      setMetrics(MOCK_METRICS);
+      return;
+    }
     if (!filters.startDate || !filters.endDate) return;
 
     if (abortRef.current) abortRef.current.abort();

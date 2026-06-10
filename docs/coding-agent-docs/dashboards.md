@@ -199,6 +199,31 @@ the only record of them. End-to-end:
 - **No backfill:** counts accrue from deploy forward; historical blocks were never
   recorded. Tests: `__tests__/blockedQueryService.test.js`.
 
+## Local preview with mock data
+
+The exec and partner dashboards can be loaded with realistic placeholder data — no API or backend required. This is useful for layout and locale review without needing real data in the database.
+
+Append `?mock=1` to the dashboard URL in your browser:
+
+```
+http://localhost:3000/en/exec-dashboard?mock=1
+http://localhost:3000/en/partner-dashboard?mock=1
+```
+
+No server restart needed — adding or removing `?mock=1` and refreshing is enough. The mock data is defined in `src/utils/dashboard/mockMetrics.js` and covers all sections: KPI cards, quality bar, satisfaction charts, blocked queries, operations metrics, and conversation depth. Both the filtered-period and last-12-months instances use the same bundle.
+
+To update the placeholder values (e.g. to stress-test a specific threshold or layout edge case), edit `mockMetrics.js` directly and refresh.
+
+## Layout
+
+**Solo, partial-row, and paired components**
+A component left alone in a `dashboard-row` will stretch full width — wrap it in `dashboard-col-third` or `dashboard-col-half` to constrain it. Pick the fraction that matches the column count of the nearest sibling row (e.g. if the row above has 3 cards, use `dashboard-col-third`).
+
+Charts default to full width. When a related KPI card or donut sits alongside one, the chart takes the left (wider) column using `dashboard-chart-wide` and the card or donut sits unstyled on the right.
+
+**Minimum data thresholds**
+Hide charts and donuts when the sample is too small to be meaningful (< 10). Current gates: `>= 10` evaluations for quality bars, `>= 10` responses for satisfaction charts and donuts, `>= 10` conversations for the engagement donut. Blocked queries has no minimum — safety signals show regardless of volume.
+
 ## Conventions
 
 - **Locales**: each dashboard has its own `partnerDashboard.*` / `execDashboard.*`

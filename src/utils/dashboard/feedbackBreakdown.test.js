@@ -29,7 +29,7 @@ describe('buildQualityBarData', () => {
     // total = 100 → values are already percentages
     expect(rows).toEqual([
       { name: 'correct', value: 83, colour: COLOURS.correct, count: 83 },
-      { name: 'needsImprovement', value: 9, colour: COLOURS.needsImprovement, count: 9 },
+      { name: 'needsImprovement', value: 9, colour: COLOURS.needsImprovement, stroke: COLOURS.qualityBorder, strokeWidth: 1, count: 9 },
       { name: 'hasError', value: 8, colour: COLOURS.hasError, count: 8 },
     ]);
   });
@@ -120,8 +120,11 @@ describe('buildFeedbackReasonsData', () => {
     expect(rows.map(r => r.name)).toEqual(['savedTime', 'noCall', 'notWanted', 'notDetailed', 'otherNo']);
     expect(rows.map(r => r.value)).toEqual([98, 6, 21, 29, 37]);
     expect(rows.map(r => r.colour)).toEqual([
-      COLOURS.feedbackPositive, COLOURS.feedbackPositive, COLOURS.feedbackPositive,
-      COLOURS.feedbackNegative, COLOURS.feedbackNegative,
+      COLOURS.feedbackPositiveScale[0].fill,
+      COLOURS.feedbackPositiveScale[1].fill,
+      COLOURS.feedbackPositiveScale[2].fill,
+      COLOURS.feedbackNegativeScale[0],
+      COLOURS.feedbackNegativeScale[1],
     ]);
   });
 
