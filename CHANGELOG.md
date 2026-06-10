@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.140.0](https://github.com/cds-snc/ai-answers/compare/v1.139.0...v1.140.0) (2026-06-10)
+
+
+### Features
+
+* cleanup ([50a91dc](https://github.com/cds-snc/ai-answers/commit/50a91dc4d08d3611955013300bf1f466d20b4bcd))
+* dashboard refinements ([a1052a2](https://github.com/cds-snc/ai-answers/commit/a1052a2abea8de50deec71af50c0d51596d801dd))
+* fiddling with layout ([2de295e](https://github.com/cds-snc/ai-answers/commit/2de295ed03bdd3121d7b3731923a473b0d372afe))
+* refine look and feel ([54120ad](https://github.com/cds-snc/ai-answers/commit/54120adb2377395740648c1ce9db1a620ce1fa17))
+* styling, function with text / height ([0dcc681](https://github.com/cds-snc/ai-answers/commit/0dcc681e2555198c894db5a286e9a60bbf9fc0d5))
+* tweaking spacing ([e3b42f3](https://github.com/cds-snc/ai-answers/commit/e3b42f3c2b369b2799b7219cc50d5c06dab60eb4))
+
+
+### Bug Fixes
+
+* revise prompt ([6328f6a](https://github.com/cds-snc/ai-answers/commit/6328f6a2132d3933b9bf02258f22abe7deb6cf56))
+
 ## [1.139.0](https://github.com/cds-snc/ai-answers/compare/v1.138.0...v1.139.0) (2026-06-10)
 
 
