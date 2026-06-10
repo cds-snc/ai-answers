@@ -156,8 +156,6 @@
   font-weight: 600;
   color: #374151;
   border-radius: 8px 8px 0 0;
-  display: flex;
-  align-items: center;
 }
 
 .filter-panel-summary:hover {

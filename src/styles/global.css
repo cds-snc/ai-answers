@@ -310,6 +310,8 @@ details[open] {
 }
 
 details summary {
+  display: flex !important;
+  align-items: center;
   border: 1px solid #ddd;
   border-radius: 4px;
   color: #295376;
@@ -324,7 +326,7 @@ details > summary {
 
 /* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
 summary {
-  display: list-item !important;
+  display: block !important;
   list-style: none;
   visibility: visible !important;
   cursor: pointer;
