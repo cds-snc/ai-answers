@@ -179,7 +179,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
                       .replace('{pct}', fmtPct(yearSatisfactionPct))
                       .replace('{total}', fmtN(yearPfTotal))}
                     data={yearFeedbackReasonsData}
-                    height={Math.max(240, yearFeedbackReasonsData.length * 60)}
                     noDataLabel={t('execDashboard.charts.noData')}
                     lang={lang}
                   />
@@ -219,7 +218,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
           <DivergingBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
-            height={Math.max(240, feedbackReasonsData.length * 60)}
             lang={lang}
           />
         </div>

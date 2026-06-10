@@ -23,6 +23,9 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
 
   // Split into two signed series so positives render right of 0 and negatives
   // left of 0 (stackOffset="sign"). Only one is ever non-zero per row.
+  // Give labels enough width to avoid wrapping; cap at 280 so bars keep room.
+  const yAxisWidth = Math.min(280, Math.max(160, Math.max(...data.map(d => (d.name || '').length)) * 8));
+
   const rows = data.map((d) => ({
     ...d,
     pos: d.positive ? d.value : 0,
@@ -50,11 +53,11 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
           {noDataLabel}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={height || Math.max(120, data.length * 52)}>
-          <BarChart data={rows} layout="vertical" stackOffset="sign" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={height || Math.max(120, data.length * 40)}>
+          <BarChart data={rows} layout="vertical" stackOffset="sign" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={[-axisMax, axisMax]} allowDecimals={false} tickFormatter={fmtAxisPct} tick={{ fontSize: 16 }} />
-            <YAxis type="category" dataKey="name" width={190} interval={0} tick={{ fontSize: 16 }} />
+            <YAxis type="category" dataKey="name" width={yAxisWidth} interval={0} tick={{ fontSize: 16 }} />
             <ReferenceLine x={0} stroke="#bbb" />
             <Tooltip content={<Tip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
             <Bar dataKey="neg" stackId="a" fill={COLOURS.feedbackNegative} radius={[3, 0, 0, 3]}>
