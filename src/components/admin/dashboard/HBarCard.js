@@ -11,30 +11,37 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 // wins. `subtitle` and `noDataLabel` are optional. Pass `tooltipContent` (a
 // recharts custom-content render fn/component) to replace the default
 // value-only tooltip — e.g. to surface extra per-row fields like an EN/FR split.
-const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null }) => {
+const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null, yAxisWidth = 160, yAxisTextAlign = 'left' }) => {
   const fmtVal = (v) => (percent ? formatPercent(v, lang) : formatNumber(v, lang));
   const lineH = 18;
+  const CHAR_PX = 7.0;
+  const YAXIS_W = yAxisWidth;
+  const charsPerLine = Math.floor((YAXIS_W - 8) / CHAR_PX); // ~20 chars
   const wrapLines = (text) => {
     const words = (text || '').split(' ');
     const lines = [];
     let cur = '';
     for (const word of words) {
       const candidate = cur ? `${cur} ${word}` : word;
-      if (candidate.length <= 18) { cur = candidate; }
+      if (candidate.length <= charsPerLine) { cur = candidate; }
       else { if (cur) lines.push(cur); cur = word; }
     }
     if (cur) lines.push(cur);
     return lines;
   };
-  const maxLines = (data || []).length > 0 ? Math.max(...data.map(d => wrapLines(d.name || '').length)) : 1;
+  const allWrapped = (data || []).map(d => wrapLines(d.name || ''));
+  const maxLines = allWrapped.length > 0 ? Math.max(...allWrapped.map(ls => ls.length)) : 1;
+  const maxLineLen = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => l.length))) : 10;
   const barPx = Math.max(40, maxLines * lineH + 16);
+  const xOffset = Math.min(maxLineLen * CHAR_PX + 8, YAXIS_W - 4);
   const renderYTick = ({ x, y, payload }) => {
     const lines = wrapLines(payload.value || '');
     const yStart = y - ((lines.length - 1) * lineH) / 2;
+    const isRight = yAxisTextAlign === 'right';
     return (
-      <text fontSize={16} fill="#333" textAnchor="start">
+      <text fontSize={15} fill="#333" textAnchor={isRight ? 'end' : 'start'}>
         {lines.map((line, i) => (
-          <tspan key={i} x={x - 152} y={yStart + i * lineH} dy="0.355em">{line}</tspan>
+          <tspan key={i} x={isRight ? x : x - xOffset} y={yStart + i * lineH} dy="0.355em">{line}</tspan>
         ))}
       </text>
     );
@@ -52,7 +59,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
           <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 16 }} />
-            <YAxis type="category" dataKey="name" width={160} interval={0} tick={renderYTick} />
+            <YAxis type="category" dataKey="name" width={YAXIS_W} interval={0} tick={renderYTick} />
             {tooltipContent
               ? <Tooltip content={tooltipContent} />
               : <Tooltip formatter={(value) => fmtVal(value)} />}

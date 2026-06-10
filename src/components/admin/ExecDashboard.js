@@ -231,6 +231,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
             data={departmentData}
             colour={COLOURS.brand}
             lang={lang}
+            yAxisWidth={240}
+            yAxisTextAlign="right"
           />
         </div>
       )}
