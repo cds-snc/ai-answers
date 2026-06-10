@@ -15,11 +15,26 @@ const FilterPanel = ({
   autoApply = false,
   applyButtonText = null,
   applyDisabled = false,
-  defaultUserType = 'all'
+  defaultUserType = 'all',
+  filterLoading = false,
+  filterError = null,
+  filterResultCount = null,
+  hasAppliedFilters = false
 }) => {
   const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
+  const [isOpen, setIsOpen] = useState(true);
+
+  // Collapse when results load successfully; keep open on error or no results
+  useEffect(() => {
+    if (!hasAppliedFilters || filterLoading) return;
+    if (filterError || filterResultCount === 0) {
+      setIsOpen(true);
+    } else if (filterResultCount > 0) {
+      setIsOpen(false);
+    }
+  }, [hasAppliedFilters, filterLoading, filterError, filterResultCount]);
 
   // Helper function to format date for display (local time)
   const formatDateTimeLocal = (date) => {
@@ -313,7 +328,7 @@ const FilterPanel = ({
   if (!isVisible) return null;
 
   return (
-    <details className="filter-panel" open>
+    <details className="filter-panel" open={isOpen} onToggle={(e) => setIsOpen(e.target.open)}>
       <summary className="filter-panel-summary">
         {t('admin.filters.title') || 'Filters'}
       </summary>

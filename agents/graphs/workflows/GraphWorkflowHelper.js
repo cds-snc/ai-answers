@@ -1,9 +1,14 @@
 import ServerLoggingService from '../../../services/ServerLoggingService.js';
-import { redactionService } from '../services/redactionService.js';
 import { ScenarioOverrideService } from '../../../services/ScenarioOverrideService.js';
-import { checkPII } from '../services/piiService.js';
-import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
-import { translateQuestion as translateService } from '../services/translationService.js';
+import {
+  RedactionError,
+  ShortQueryValidation,
+  runInitialPiiGuardrail,
+  runPostTranslationGuardrail,
+  runRedactionGuardrail,
+  translateWithGuardrail,
+  validateShortQueryOrThrow,
+} from '../guardrails/index.js';
 import { parseResponse, parseSentences } from '../services/answerService.js';
 import { parseContextMessage } from '../services/contextService.js';
 
@@ -16,50 +21,24 @@ import { InteractionPersistenceService } from '../../../services/InteractionPers
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
 
-// RedactionError class
-class RedactionError extends Error {
-  constructor(message, redactedText, redactedItems) {
-    super(message);
-    this.name = 'RedactionError';
-    this.redactedText = redactedText;
-    this.redactedItems = redactedItems;
-  }
-}
-
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
     validateShortQueryOrThrow(conversationHistory, userMessage, lang, department);
   }
 
   async processRedaction(userMessage, lang, chatId, selectedAI) {
-    await redactionService.ensureInitialized(lang);
-    const { redactedText, redactedItems } = redactionService.redactText(userMessage, lang);
-
-    // Check if any blocking-type redactions were applied (profanity, threat, manipulation)
-    const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
-    const hasBlockingRedaction = redactedItems.some(item => blockingTypes.includes(item.type));
-    if (hasBlockingRedaction) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
-    }
-
-    const piiResult = await checkPII({ chatId, message: userMessage, agentType: selectedAI });
-    if (piiResult.blocked) {
-      throw new RedactionError('Blocked content detected in translation', '#############', redactedItems);
-    }
-    if (piiResult.pii !== null) {
-      // Use the PII-aware redaction string returned by the PII checker
-      throw new RedactionError('PII detected in user message', piiResult.pii, redactedItems);
-    }
-    return { redactedText, redactedItems };
+    const result = await runRedactionGuardrail(userMessage, lang);
+    await runInitialPiiGuardrail({
+      chatId,
+      message: userMessage,
+      selectedAI,
+      redactedItems: result.redactedItems,
+    });
+    return result;
   }
 
   async translateQuestion(text, lang, selectedAI, translationContext = []) {
-    const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
-    if (resp && resp.blocked === true) {
-      await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
-      throw new RedactionError('Blocked content detected in translation', '#############', null);
-    }
-    return resp;
+    return translateWithGuardrail(text, lang, selectedAI, translationContext);
   }
 
   // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on
@@ -78,60 +57,7 @@ export class GraphWorkflowHelper {
   // Both blocks are only as good as the translator's labeling — false positives
   // will reject legit users, which is why we log every trigger for auditing.
   async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
-    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
-    if (sourceLang === 'zxx') {
-      await ServerLoggingService.info('postTranslateGuard zxx hard-block', chatId, {
-        originalText: translationData?.originalText,
-        translatedText: translationData?.translatedText,
-        translatedLanguage: translationData?.translatedLanguage,
-      });
-      throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null);
-    }
-    if (sourceLang === 'und') {
-      await ServerLoggingService.info('postTranslateGuard und hard-block (unsupported language)', chatId, {
-        originalText: translationData?.originalText,
-        translatedText: translationData?.translatedText,
-        translatedLanguage: translationData?.translatedLanguage,
-      });
-      throw new RedactionError('Blocked unsupported language after translation', '#############', null);
-    }
-
-    const translatedText = translationData?.translatedText;
-    if (!translatedText) return;
-
-    const previousLang = redactionService.currentLang;
-    try {
-      await redactionService.ensureInitialized('en');
-      const { redactedItems } = redactionService.redactText(translatedText, 'en');
-      const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
-      if (redactedItems.some(item => blockingTypes.includes(item.type))) {
-        throw new RedactionError('Blocked content detected after translation', '#############', redactedItems);
-      }
-    } finally {
-      if (previousLang && previousLang !== 'en') {
-        await redactionService.ensureInitialized(previousLang);
-      }
-    }
-
-    const isEnOrFr = ['en', 'eng', 'fr', 'fra'].includes(sourceLang);
-    if (isEnOrFr) return;
-
-    let piiResult;
-    try {
-      piiResult = await checkPII({ chatId, message: translatedText, agentType: selectedAI });
-    } catch (error) {
-      await ServerLoggingService.warn('postTranslateGuard checkPII failed - failing open', chatId, {
-        error: error?.message || String(error),
-      });
-      return;
-    }
-
-    if (piiResult?.blocked) {
-      throw new RedactionError('Blocked content detected after translation', '#############', null);
-    }
-    if (typeof piiResult?.pii === 'string' && piiResult.pii.length > 0) {
-      throw new RedactionError('PII detected in user message', piiResult.pii, null);
-    }
+    return runPostTranslationGuardrail(translationData, chatId, selectedAI, originalLang);
   }
 
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -7,7 +7,9 @@ import StatCard from './dashboard/StatCard.js';
 import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
+import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
@@ -16,8 +18,17 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+
+  // Track the applied department so the blocked-query table (which can't be
+  // department-scoped — blocks happen before the department is known) is hidden
+  // when a specific department is filtered.
+  const [appliedDepartment, setAppliedDepartment] = useState('');
   const hasFetched = useRef(false);
-  const handleFilterApply = (filters) => { hasFetched.current = true; fetchMetrics(filters); };
+  const handleApply = useCallback((filters) => {
+    hasFetched.current = true;
+    setAppliedDepartment(filters?.department || '');
+    fetchMetrics(filters);
+  }, [fetchMetrics]);
 
   // Separate, fixed last-12-months summary, independent of the filter below.
   // Fetched once on mount; the database only goes back to Oct 2025, which is
@@ -69,6 +80,31 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   // Harmful (expert evaluations only). Shown in the Safety metrics row, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
+
+  // Blocked queries (safety counter). Total card + ranked bar breakdown by type.
+  const blockedTotal = metrics.blockedQueries?.total || {};
+  const blockedBarData = useMemo(() => {
+    const bq = metrics.blockedQueries || {};
+    return BLOCK_QUERY_TYPES
+      .map((type) => {
+        const row = bq[type] || {};
+        return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
+      })
+      .filter((d) => d.value > 0);
+  }, [metrics.blockedQueries, t]);
+
+  // Custom bar tooltip: total plus the EN/FR split for the hovered block type.
+  const BlockedBarTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0].payload;
+    return (
+      <div className="chart-tooltip">
+        <div className="chart-tooltip__title">{row.name}</div>
+        <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
+        <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
+      </div>
+    );
+  };
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
@@ -126,11 +162,11 @@ const ExecDashboard = ({ lang = 'en' }) => {
               colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
               centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
               centreLabel={t('execDashboard.charts.accuracyCentre')}
-              centreColour={yearAccuracyPct !== null ? (yearAccuracyPct >= 80 ? COLOURS.correct : COLOURS.hasError) : undefined}
+              centreClass={yearAccuracyPct === null ? undefined : yearAccuracyPct >= 80 ? 'green' : yearAccuracyPct > 50 ? 'orange' : 'red'}
               lang={lang}
             />
             <div className="dashboard-chart-wide">
-              <HBarCard
+              <DivergingBarCard
                 title={t('execDashboard.charts.feedbackBreakdownTitle')}
                 subtitle={yearPfTotal > 0
                   ? t('execDashboard.charts.satisfactionBreakdownSubtitle')
@@ -150,7 +186,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.filteredPeriod')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleFilterApply} />
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleApply} />
 
       {error && (
         <div className="dashboard-error">
@@ -168,10 +204,11 @@ const ExecDashboard = ({ lang = 'en' }) => {
       {/* Headline KPI cards for the selected date range */}
       <KpiRow metrics={metrics} t={t} lang={lang} />
 
-      {/* Satisfaction (helpful or not) breakdown — positives green, negatives red */}
+      {/* Satisfaction (helpful or not) breakdown — diverging: positives right
+          (green), negatives left (red), with negatives grouped at the bottom. */}
       {feedbackReasonsData.length > 0 && (
         <div className="dashboard-section">
-          <HBarCard
+          <DivergingBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
             lang={lang}
@@ -208,6 +245,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             : undefined}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('execDashboard.ops.inputTokens')}
           value={fmtN(metrics.totalInputTokens)}
           sub={t('execDashboard.ops.tokensSub')
@@ -215,6 +253,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('execDashboard.ops.outputTokens')}
           value={fmtN(metrics.totalOutputTokens)}
           sub={t('execDashboard.ops.tokensSub')
@@ -227,18 +266,56 @@ const ExecDashboard = ({ lang = 'en' }) => {
       <h2 className="dashboard-section-title">
         {t('execDashboard.safety.title')}
       </h2>
-      <div className="dashboard-row">
-        <div className="dashboard-col-third">
-          <StatCard
-            label={t('execDashboard.kpi.harmful')}
-            value={fmtN(harmful.total)}
-            sub={t('execDashboard.kpi.harmfulSub')
-              .replace('{en}', fmtN(harmful.en))
-              .replace('{fr}', fmtN(harmful.fr))}
-          />
+      {/* Blocked queries — global safety counter, can't be department-scoped,
+          so hidden when a department filter is applied.
+          Layout: left column has blocked total + harmful stacked; chart fills the right. */}
+      {appliedDepartment ? (
+        <>
+          <p className="font-size-text-small mb-300">
+            {t('blockedQueries.deptNote')}
+          </p>
+          <div className="dashboard-row">
+            <div className="dashboard-col-third">
+              <StatCard
+                label={t('execDashboard.kpi.harmful')}
+                value={fmtN(harmful.total)}
+                sub={t('execDashboard.kpi.harmfulSub')
+                  .replace('{en}', fmtN(harmful.en))
+                  .replace('{fr}', fmtN(harmful.fr))}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="dashboard-row">
+          <div className="dashboard-col-third dashboard-col--equal-height">
+            <StatCard
+              label={t('blockedQueries.totalCardLabel')}
+              value={fmtN(blockedTotal.total)}
+              sub={t('blockedQueries.langSub')
+                .replace('{en}', fmtN(blockedTotal.en))
+                .replace('{fr}', fmtN(blockedTotal.fr))}
+            />
+            <StatCard
+              label={t('execDashboard.kpi.harmful')}
+              value={fmtN(harmful.total)}
+              sub={t('execDashboard.kpi.harmfulSub')
+                .replace('{en}', fmtN(harmful.en))
+                .replace('{fr}', fmtN(harmful.fr))}
+            />
+          </div>
+          <div className="dashboard-chart-wide">
+            <HBarCard
+              title={t('blockedQueries.byTypeTitle')}
+              data={blockedBarData}
+              height={Math.max(240, blockedBarData.length * 60)}
+              lang={lang}
+              tooltipContent={BlockedBarTooltip}
+              noDataLabel={t('blockedQueries.noData')}
+            />
+          </div>
         </div>
-      </div>
-
+      )}
     </div>
   );
 };

@@ -575,6 +575,24 @@
   max-width: calc((100% - (var(--gcds-spacing-200) * 2)) / 3);
 }
 
+.dashboard-col-half {
+  flex: 0 0 calc((100% - var(--gcds-spacing-200)) / 2);
+  max-width: calc((100% - var(--gcds-spacing-200)) / 2);
+  min-width: 220px;
+}
+
+/* Apply alongside a column class to make direct children share the full column height */
+.dashboard-col--equal-height {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gcds-spacing-200);
+}
+
+.dashboard-col-full {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
 .dashboard-section-title {
   font: var(--gcds-font-h4);
   margin: 0 0 var(--gcds-spacing-150);
@@ -584,6 +602,13 @@
 @media only screen and (width < 48em) {
   .dashboard-section-title {
     font: var(--gcds-font-h4-mobile);
+  }
+
+  /* On small screens, vertically-stacked stat card columns switch to side-by-side */
+  .dashboard-col-third.dashboard-col--equal-height {
+    flex-direction: row;
+    flex: 1 1 100%;
+    max-width: 100%;
   }
 }
 
@@ -664,6 +689,10 @@
   padding: var(--gcds-spacing-300) var(--gcds-spacing-350);
 }
 
+.stat-card--wide {
+  min-width: 240px;
+}
+
 .stat-card__label {
   font-size: var(--gcds-font-sizes-h6);
   color: var(--gcds-color-grayscale-700);
@@ -677,6 +706,18 @@
   color: #1565c0;
   line-height: 1;
   margin: var(--gcds-spacing-150) 0;
+}
+
+.stat-card__value--green {
+  color: var(--gcds-color-green-700);
+}
+
+.stat-card__value--orange {
+  color: #e65100;
+}
+
+.stat-card__value--red {
+  color: var(--gcds-color-red-700);
 }
 
 .stat-card__sub {
@@ -710,6 +751,8 @@
 
 .donut-card .recharts-legend-item-text {
   color: var(--gcds-color-grayscale-700) !important;
+  font-size: 1rem !important;
+  line-height: 1.5em !important;
 }
 
 .donut-card__chart-wrap {
@@ -727,17 +770,29 @@
 
 .donut-card__centre-value {
   display: block;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1565c0;
   line-height: 1;
 }
 
+.donut-card__centre-value--green {
+  color: var(--gcds-color-green-700);
+}
+
+.donut-card__centre-value--orange {
+  color: #e65100;
+}
+
+.donut-card__centre-value--red {
+  color: var(--gcds-color-red-700);
+}
+
 .donut-card__centre-label {
   display: block;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--gcds-color-grayscale-700);
-  margin-top: var(--gcds-spacing-25);
+  margin-top: 0;
 }
 
 .donut-card__footer {
@@ -759,6 +814,34 @@
   align-items: center;
   justify-content: center;
   color: var(--gcds-color-grayscale-700);
+}
+
+/* ---- DivergingBarCard ---- */
+
+.diverging-bar-card {
+  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+}
+
+.diverging-bar-card__no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gcds-color-grayscale-700);
+}
+
+/* Shared recharts custom tooltip chrome */
+.chart-tooltip {
+  background: #fff;
+  border: 1px solid var(--gcds-color-grayscale-100);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-100) var(--gcds-spacing-125);
+  font-size: var(--gcds-font-sizes-text-xsm-nr);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-tooltip__title {
+  font-weight: var(--gcds-font-weights-semibold);
+  margin-bottom: var(--gcds-spacing-50);
 }
 
 /* ---- DashboardFilterBar ---- */
