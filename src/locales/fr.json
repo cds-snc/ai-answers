@@ -234,7 +234,8 @@
         "step1b": "Les questions peuvent être numérotées avec un espace avant le texte — p. ex. 001.  Comment faire une demande d'AE",
         "step1c": "Votre fichier CSV peut contenir d'autres colonnes (p. ex. avec des réponses précédentes) — les numéros de questions vous aident à les associer par la suite.",
         "step1d": "Vous aurez besoin de fichiers séparés pour les questions en anglais à poser/répondre comme si elles étaient sur une page anglaise, et les questions en français à poser/répondre sur la page française de Réponses IA.",
-        "step2": "Attribuez un nom, choisissez le flux de travail (habituellement Défaut) et la famille de modèles (habituellement déjà sélectionnée).",
+        "step1e": "Un lot peut contenir un maximum de 200 questions. Divisez les ensembles plus volumineux en plusieurs fichiers.",
+        "step2": "Attribuez un nom et laissez le flux de travail et la famille de modèles aux sélections par défaut.",
         "step3": "Sélectionnez la langue du fichier de lot (c.-à-d. la langue de la page que le lot simule).",
         "step4": "Choisissez votre fichier CSV et cliquez sur le bouton Télécharger qui apparaît.",
         "step5": "Cliquez sur le bouton Traiter une fois que le fichier apparaît dans la section Lots incomplets.",
@@ -273,7 +274,8 @@
         "missingQuestionColumn": "La colonne de question requise est introuvable dans le fichier CSV. Valeurs attendues : Problem Details, ProblemDetails, Question, Redacted Question.",
         "noValidRows": "Aucune ligne valide trouvée dans le fichier CSV. Vérifiez que l'en-tête de la colonne de questions est l'un des suivants : Problem Details, Question, Redacted Question.",
         "readFailed": "Impossible de lire le fichier. Veuillez réessayer de le télécharger.",
-        "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer."
+        "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer.",
+        "tooManyRows": "Ce fichier contient plus de 200 questions. Un lot peut contenir un maximum de 200 questions. Veuillez le diviser en fichiers plus petits et les téléverser séparément."
       }
     },
     "list": {

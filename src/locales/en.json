@@ -234,7 +234,8 @@
         "step1b": "The questions can be numbered with a space before the question text — e.g. 001.  How apply for EI",
         "step1c": "Your CSV file can contain other columns (e.g. with previous answers) — the question numbers help you match them up later.",
         "step1d": "You'll need separate files for English questions to be asked/answered as if on an English page, and French questions to be asked/answered on the French AI Answers page.",
-        "step2": "Assign a name, choose workflow (usually Default) and model family (usually already selected).",
+        "step1e": "A batch can contain a maximum of 200 questions. Split larger sets into multiple files.",
+        "step2": "Assign a name, and leave workflow and model family at default selections.",
         "step3": "Select the language of the batch file (i.e. the language of the page the batch is simulating).",
         "step4": "Choose your CSV file and click the Upload button that appears.",
         "step5": "Click the Process button once the file shows up in the Incomplete batches section.",
@@ -273,7 +274,8 @@
         "missingQuestionColumn": "Required question column not found in the CSV file. Expected one of: Problem Details, ProblemDetails, Question, Redacted Question.",
         "noValidRows": "No valid rows found in the CSV. Check that the question column header is one of: Problem Details, Question, Redacted Question.",
         "readFailed": "Failed to read the file. Please try uploading again.",
-        "saveFailed": "Failed to save batch to server. Please try again."
+        "saveFailed": "Failed to save batch to server. Please try again.",
+        "tooManyRows": "This file has more than 200 questions. A batch can contain a maximum of 200 questions. Please split it into smaller files and upload them separately."
       }
     },
     "list": {
