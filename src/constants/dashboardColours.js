@@ -27,8 +27,8 @@ export const COLOURS = {
   // Per-reason colour scales for the satisfaction breakdown bar. Each group uses
   // five accessible shades (WCAG non-text contrast ≥ 3:1 against white) so
   // individual reasons are visually distinct while staying within their family.
-  feedbackPositiveScale: ['#1b5e20', '#2e7d32', '#2d6a4f', '#388e3c', '#43a047'],
-  feedbackNegativeScale: ['#b71c1c', '#c62828', '#c0392b', '#d32f2f', '#e53935'],
+  feedbackPositiveScale: ['#1b5e20', '#2e7d32', '#388e3c', '#66bb6a', '#a5d6a7'],
+  feedbackNegativeScale: ['#b71c1c', '#c62828', '#d32f2f', '#ef5350', '#ef9a9a'],
   // Neutral fill for empty / no-data states
   empty: '#e0e0e0',
 };

@@ -156,7 +156,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
             />
           </div>
           {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right).
-              Each hidden below 10 samples; row omitted if neither qualifies. */}
+              Independent charts sharing a row. Each hidden below 10 samples;
+              row omitted if neither qualifies. */}
           {(yearEvalTotal >= 10 || yearPfTotal >= 10) && (
             <div className="dashboard-row">
               {yearEvalTotal >= 10 && (

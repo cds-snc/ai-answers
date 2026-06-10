@@ -172,14 +172,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           Hidden below 10 responses — percentages from tiny samples are misleading. */}
       {pfTotal >= 10 && (
         <div className="dashboard-row">
-          <div className="dashboard-chart-wide">
-            <DivergingBarCard
-              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-              data={feedbackReasonsData}
-              noDataLabel={t('partnerDashboard.charts.noData')}
-              lang={lang}
-            />
-          </div>
           <DonutCard
             title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
@@ -189,6 +181,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             centreClass={satisfactionPct === null ? undefined : satisfactionPct >= 80 ? 'green' : satisfactionPct > 50 ? 'orange' : 'red'}
             lang={lang}
           />
+          <div className="dashboard-chart-wide">
+            <DivergingBarCard
+              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+              data={feedbackReasonsData}
+              noDataLabel={t('partnerDashboard.charts.noData')}
+              lang={lang}
+            />
+          </div>
         </div>
       )}
 
