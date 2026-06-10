@@ -178,7 +178,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
             centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
             centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
-            centreClass={satisfactionPct === null ? undefined : satisfactionPct >= 80 ? 'green' : satisfactionPct > 50 ? 'orange' : 'red'}
             lang={lang}
           />
           <div className="dashboard-chart-wide">

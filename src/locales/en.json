@@ -1232,8 +1232,8 @@
       "threat": "Threat words",
       "manipulation": "Manipulation words",
       "profanity": "Profanity",
-      "piStage1": "Private information – programmatic",
-      "piStage2": "Private information – AI detection",
+      "piStage1": "Private information: programmatic",
+      "piStage2": "Private information: AI detection",
       "azureGuardrail": "Azure guardrails",
       "unsupportedLanguage": "Unsupported language"
     }

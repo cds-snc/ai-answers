@@ -1232,8 +1232,8 @@
       "threat": "Mots menaçants",
       "manipulation": "Mots de manipulation",
       "profanity": "Grossièretés",
-      "piStage1": "Renseignements personnels – par programme",
-      "piStage2": "Renseignements personnels – détection par IA",
+      "piStage1": "Renseignements personnels : par programme",
+      "piStage2": "Renseignements personnels : détection par IA",
       "azureGuardrail": "Mesures de protection Azure",
       "unsupportedLanguage": "Langue non prise en charge"
     }

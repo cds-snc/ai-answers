@@ -11,7 +11,7 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 // wins. `subtitle` and `noDataLabel` are optional. Pass `tooltipContent` (a
 // recharts custom-content render fn/component) to replace the default
 // value-only tooltip — e.g. to surface extra per-row fields like an EN/FR split.
-const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null, yAxisWidth = 160, yAxisTextAlign = 'left' }) => {
+const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null, yAxisWidth = 160, yAxisTextAlign = 'left', marginLeft = 8 }) => {
   const fmtVal = (v) => (percent ? formatPercent(v, lang) : formatNumber(v, lang));
   const lineH = 18;
   const CHAR_PX = 7.0;
@@ -34,12 +34,16 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
   const maxLineLen = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => l.length))) : 10;
   const barPx = Math.max(40, maxLines * lineH + 16);
   const xOffset = Math.min(maxLineLen * CHAR_PX + 8, YAXIS_W - 4);
+  // When right-aligned, only allocate as much axis space as the text needs.
+  const effectiveYAxisWidth = yAxisTextAlign === 'right'
+    ? Math.min(YAXIS_W, maxLineLen * CHAR_PX + 16)
+    : YAXIS_W;
   const renderYTick = ({ x, y, payload }) => {
     const lines = wrapLines(payload.value || '');
     const yStart = y - ((lines.length - 1) * lineH) / 2;
     const isRight = yAxisTextAlign === 'right';
     return (
-      <text fontSize={15} fill="#333" textAnchor={isRight ? 'end' : 'start'}>
+      <text className="hbar-ytick-label" fontSize={16} fill="#333" textAnchor={isRight ? 'end' : 'start'}>
         {lines.map((line, i) => (
           <tspan key={i} x={isRight ? x : x - xOffset} y={yStart + i * lineH} dy="0.355em">{line}</tspan>
         ))}
@@ -56,10 +60,10 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={height || Math.max(200, data.length * barPx)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 44, top: 4, bottom: 4 }}>
+          <BarChart data={data} layout="vertical" margin={{ left: marginLeft, right: 44, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={percent ? [0, 100] : undefined} tickFormatter={percent ? fmtVal : undefined} tick={{ fontSize: 16 }} />
-            <YAxis type="category" dataKey="name" width={YAXIS_W} interval={0} tick={renderYTick} />
+            <YAxis type="category" dataKey="name" width={effectiveYAxisWidth} interval={0} tick={renderYTick} />
             {tooltipContent
               ? <Tooltip content={tooltipContent} />
               : <Tooltip formatter={(value) => fmtVal(value)} />}

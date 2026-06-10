@@ -233,6 +233,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             lang={lang}
             yAxisWidth={240}
             yAxisTextAlign="right"
+            marginLeft={32}
           />
         </div>
       )}

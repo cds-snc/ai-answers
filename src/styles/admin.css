@@ -793,6 +793,7 @@
 .donut-card__centre-label {
   display: block;
   font-size: 18px;
+  line-height: 1.2;
   color: var(--gcds-color-grayscale-700);
   margin-top: 0;
 }
@@ -816,6 +817,12 @@
   align-items: center;
   justify-content: center;
   color: var(--gcds-color-grayscale-700);
+}
+
+@media (max-width: 768px) {
+  .hbar-ytick-label {
+    font-size: 14px;
+  }
 }
 
 /* ---- DivergingBarCard ---- */

@@ -23,11 +23,11 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
 
   // Split into two signed series so positives render right of 0 and negatives
   // left of 0 (stackOffset="sign"). Only one is ever non-zero per row.
-  // Give labels enough width to avoid wrapping; cap at 280 so bars keep room.
-  const CHAR_PX = 8.5;
-  const yAxisWidth = Math.min(280, Math.max(160, Math.max(...data.map(d => (d.name || '').length)) * CHAR_PX));
+  // Give labels enough width to avoid wrapping; cap at 340 so bars keep room.
+  const CHAR_PX = 7.5;
+  const yAxisWidth = Math.min(340, Math.max(160, Math.max(...data.map(d => (d.name || '').length)) * CHAR_PX));
   const charsPerLine = Math.max(10, Math.floor((yAxisWidth - 8) / CHAR_PX));
-  const lineH = 18;
+  const lineH = 16;
 
   const wrapLines = (text) => {
     const words = (text || '').split(' ');
@@ -45,14 +45,14 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
   const allWrapped = data.map(d => wrapLines(d.name || ''));
   const maxLines = allWrapped.length > 0 ? Math.max(...allWrapped.map(ls => ls.length)) : 1;
   const maxLineLen = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => l.length))) : 10;
-  const barPx = Math.max(40, maxLines * lineH + 16);
+  const barPx = Math.max(36, maxLines * lineH + 8);
   const xOffset = Math.min(maxLineLen * CHAR_PX + 8, yAxisWidth - 4);
 
   const renderYTick = ({ x, y, payload }) => {
     const lines = wrapLines(payload.value || '');
     const yStart = y - ((lines.length - 1) * lineH) / 2;
     return (
-      <text fontSize={15} fill="#333" textAnchor="start">
+      <text className="hbar-ytick-label" fontSize={16} fill="#333" textAnchor="start">
         {lines.map((line, i) => (
           <tspan key={i} x={x - xOffset} y={yStart + i * lineH} dy="0.355em">{line}</tspan>
         ))}
