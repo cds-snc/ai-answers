@@ -107,6 +107,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   };
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
+  const filteredPfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
 
   const departmentData = useMemo(() => {
     return Object.entries(metrics.byDepartment || {})
@@ -154,31 +155,37 @@ const ExecDashboard = ({ lang = 'en' }) => {
               value={fmtN(yearPartnerCount)}
             />
           </div>
-          {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right) */}
-          <div className="dashboard-row">
-            <DonutCard
-              title={t('execDashboard.charts.accuracyDonutTitle')}
-              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-              colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
-              centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
-              centreLabel={t('execDashboard.charts.accuracyCentre')}
-              centreClass={yearAccuracyPct === null ? undefined : yearAccuracyPct >= 80 ? 'green' : yearAccuracyPct > 50 ? 'orange' : 'red'}
-              lang={lang}
-            />
-            <div className="dashboard-chart-wide">
-              <DivergingBarCard
-                title={t('execDashboard.charts.feedbackBreakdownTitle')}
-                subtitle={yearPfTotal > 0
-                  ? t('execDashboard.charts.satisfactionBreakdownSubtitle')
+          {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right).
+              Each hidden below 10 samples; row omitted if neither qualifies. */}
+          {(yearEvalTotal >= 10 || yearPfTotal >= 10) && (
+            <div className="dashboard-row">
+              {yearEvalTotal >= 10 && (
+                <DonutCard
+                  title={t('execDashboard.charts.accuracyDonutTitle')}
+                  data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+                  colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+                  centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
+                  centreLabel={t('execDashboard.charts.accuracyCentre')}
+                  centreClass={yearAccuracyPct === null ? undefined : yearAccuracyPct >= 80 ? 'green' : yearAccuracyPct > 50 ? 'orange' : 'red'}
+                  lang={lang}
+                />
+              )}
+              {yearPfTotal >= 10 && (
+                <div className="dashboard-chart-wide">
+                  <DivergingBarCard
+                    title={t('execDashboard.charts.feedbackBreakdownTitle')}
+                    subtitle={t('execDashboard.charts.satisfactionBreakdownSubtitle')
                       .replace('{pct}', fmtPct(yearSatisfactionPct))
-                      .replace('{total}', fmtN(yearPfTotal))
-                  : undefined}
-                data={yearFeedbackReasonsData}
-                noDataLabel={t('execDashboard.charts.noData')}
-                lang={lang}
-              />
+                      .replace('{total}', fmtN(yearPfTotal))}
+                    data={yearFeedbackReasonsData}
+                    height={Math.max(240, yearFeedbackReasonsData.length * 60)}
+                    noDataLabel={t('execDashboard.charts.noData')}
+                    lang={lang}
+                  />
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </>
       )}
 
@@ -206,11 +213,12 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Satisfaction (helpful or not) breakdown — diverging: positives right
           (green), negatives left (red), with negatives grouped at the bottom. */}
-      {feedbackReasonsData.length > 0 && (
+      {filteredPfTotal >= 10 && (
         <div className="dashboard-section">
           <DivergingBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
+            height={Math.max(240, feedbackReasonsData.length * 60)}
             lang={lang}
           />
         </div>

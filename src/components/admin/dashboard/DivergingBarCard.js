@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, LabelList } from 'recharts';
 import { COLOURS } from '../../../constants/dashboardColours.js';
 import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 
@@ -50,7 +50,7 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
           {noDataLabel}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={height || Math.max(240, data.length * 40)}>
+        <ResponsiveContainer width="100%" height={height || Math.max(120, data.length * 52)}>
           <BarChart data={rows} layout="vertical" stackOffset="sign" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={[-axisMax, axisMax]} allowDecimals={false} tickFormatter={fmtAxisPct} tick={{ fontSize: 16 }} />
@@ -58,9 +58,11 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
             <ReferenceLine x={0} stroke="#bbb" />
             <Tooltip content={<Tip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
             <Bar dataKey="neg" stackId="a" fill={COLOURS.feedbackNegative} radius={[3, 0, 0, 3]}>
+              {rows.map((row, i) => <Cell key={i} fill={row.colour || COLOURS.feedbackNegative} />)}
               <LabelList dataKey="neg" position="left" formatter={fmtLabelPct} style={{ fontSize: 16, fill: '#333' }} />
             </Bar>
             <Bar dataKey="pos" stackId="a" fill={COLOURS.feedbackPositive} radius={[0, 3, 3, 0]}>
+              {rows.map((row, i) => <Cell key={i} fill={row.colour || COLOURS.feedbackPositive} />)}
               <LabelList dataKey="pos" position="right" formatter={fmtLabelPct} style={{ fontSize: 16, fill: '#333' }} />
             </Bar>
           </BarChart>

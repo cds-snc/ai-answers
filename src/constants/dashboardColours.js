@@ -22,8 +22,13 @@ export const COLOURS = {
   yes: BRAND,
   no: '#b0bec5',
   // User-feedback sentiment (helpful / not helpful), classified by score
-  feedbackPositive: '#2e7d32', // green
-  feedbackNegative: '#c62828', // red
+  feedbackPositive: '#2e7d32', // green — kept for fallback / non-breakdown uses
+  feedbackNegative: '#c62828', // red  — kept for fallback / non-breakdown uses
+  // Per-reason colour scales for the satisfaction breakdown bar. Each group uses
+  // five accessible shades (WCAG non-text contrast ≥ 3:1 against white) so
+  // individual reasons are visually distinct while staying within their family.
+  feedbackPositiveScale: ['#1b5e20', '#2e7d32', '#2d6a4f', '#388e3c', '#43a047'],
+  feedbackNegativeScale: ['#b71c1c', '#c62828', '#c0392b', '#d32f2f', '#e53935'],
   // Neutral fill for empty / no-data states
   empty: '#e0e0e0',
 };

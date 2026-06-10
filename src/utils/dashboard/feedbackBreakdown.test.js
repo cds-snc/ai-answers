@@ -120,8 +120,11 @@ describe('buildFeedbackReasonsData', () => {
     expect(rows.map(r => r.name)).toEqual(['savedTime', 'noCall', 'notWanted', 'notDetailed', 'otherNo']);
     expect(rows.map(r => r.value)).toEqual([98, 6, 21, 29, 37]);
     expect(rows.map(r => r.colour)).toEqual([
-      COLOURS.feedbackPositive, COLOURS.feedbackPositive, COLOURS.feedbackPositive,
-      COLOURS.feedbackNegative, COLOURS.feedbackNegative,
+      COLOURS.feedbackPositiveScale[0],
+      COLOURS.feedbackPositiveScale[1],
+      COLOURS.feedbackPositiveScale[2],
+      COLOURS.feedbackNegativeScale[0],
+      COLOURS.feedbackNegativeScale[1],
     ]);
   });
 

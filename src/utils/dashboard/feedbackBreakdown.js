@@ -165,20 +165,25 @@ export const buildFeedbackReasonsData = (publicFeedbackReasons, t) => {
     return t(`homepage.publicFeedback.${dir}.options.${id}`);
   };
 
-  return FEEDBACK_REASON_ORDER
+  const filtered = FEEDBACK_REASON_ORDER
     .map(({ dir, id }) => {
       const score = scoreForReason(dir, id);
       const value = (dir === 'yes' ? yesByScore : noByScore)[String(score)]?.total || 0;
       return { dir, id, score, value };
     })
-    .filter(r => r.value > 0)
-    .map(({ dir, id, score, value }) => {
-      const positive = isPositiveScore(score);
-      return {
-        name: labelFor(id, dir),
-        value,
-        positive,
-        colour: positive ? COLOURS.feedbackPositive : COLOURS.feedbackNegative,
-      };
-    });
+    .filter(r => r.value > 0);
+
+  let posIdx = 0, negIdx = 0;
+  return filtered.map(({ dir, id, score, value }) => {
+    const positive = isPositiveScore(score);
+    const colour = positive
+      ? COLOURS.feedbackPositiveScale[posIdx++ % COLOURS.feedbackPositiveScale.length]
+      : COLOURS.feedbackNegativeScale[negIdx++ % COLOURS.feedbackNegativeScale.length];
+    return {
+      name: labelFor(id, dir),
+      value,
+      positive,
+      colour,
+    };
+  });
 };

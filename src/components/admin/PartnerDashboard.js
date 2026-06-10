@@ -117,7 +117,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
 
-      {/* KPI cards */}
+      {/* KPI cards — 4 columns: questions, expert eval, accuracy, content issues */}
       <div className="dashboard-row">
         <StatCard
           label={t('partnerDashboard.kpi.questionsAsked')}
@@ -141,24 +141,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
                 .replace('{fr}', fmtPct(frAccuracy))
             : undefined}
         />
-      </div>
-
-      {/* Answer-quality bar + content issues card */}
-      <div className="dashboard-row">
-        <div className="dashboard-chart-wide">
-          <HBarCard
-            title={t('partnerDashboard.charts.accuracyTitle')}
-            subtitle={t('partnerDashboard.charts.accuracySubtitle')
-              .replace('{total}', fmtN(expertTotal + aiTotal))
-              .replace('{expert}', fmtN(expertTotal))
-              .replace('{ai}', fmtN(aiTotal))}
-            data={qualityData}
-            percent
-            height={240}
-            noDataLabel={t('partnerDashboard.charts.noData')}
-            lang={lang}
-          />
-        </div>
         <StatCard
           label={t('partnerDashboard.kpi.contentIssues')}
           value={fmtN(contentIssue.total)}
@@ -168,37 +150,65 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Satisfaction breakdown bar */}
+      {/* Answer-quality bar — full width. Hidden below 10 evals. */}
+      {(expertTotal + aiTotal) >= 10 && (
       <div className="dashboard-section">
-        <DivergingBarCard
-          title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-          data={feedbackReasonsData}
+        <HBarCard
+          title={t('partnerDashboard.charts.accuracyTitle')}
+          subtitle={t('partnerDashboard.charts.accuracySubtitle')
+            .replace('{total}', fmtN(expertTotal + aiTotal))
+            .replace('{expert}', fmtN(expertTotal))
+            .replace('{ai}', fmtN(aiTotal))}
+          data={qualityData}
+          percent
+          height={240}
           noDataLabel={t('partnerDashboard.charts.noData')}
           lang={lang}
         />
       </div>
+      )}
 
-      {/* User satisfaction donut + conversation length donut — equal width */}
+      {/* Satisfaction breakdown bar (wide) + user satisfaction donut side by side.
+          Hidden below 10 responses — percentages from tiny samples are misleading. */}
+      {pfTotal >= 10 && (
+        <div className="dashboard-row">
+          <div className="dashboard-chart-wide">
+            <DivergingBarCard
+              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+              data={feedbackReasonsData}
+              noDataLabel={t('partnerDashboard.charts.noData')}
+              lang={lang}
+            />
+          </div>
+          <DonutCard
+            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+            data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+            colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
+            centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
+            centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
+            centreClass={satisfactionPct === null ? undefined : satisfactionPct >= 80 ? 'green' : satisfactionPct > 50 ? 'orange' : 'red'}
+            lang={lang}
+          />
+        </div>
+      )}
+
+      {/* Conversation length donut. Hidden below 10 conversations. */}
+      {totalConversations >= 10 && (
       <div className="dashboard-row">
-        <DonutCard
-          title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-          data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-          colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
-          centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
-          centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
-          lang={lang}
-        />
-        <DonutCard
-          title={t('partnerDashboard.charts.engagementTitle')}
-          subtitle={t('partnerDashboard.charts.engagementSubtitle')}
-          data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-          colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-          centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-          centreLabel={t('partnerDashboard.charts.conversations')}
-          footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
-          lang={lang}
-        />
+        <div className="dashboard-col-half">
+          <DonutCard
+            title={t('partnerDashboard.charts.engagementTitle')}
+            subtitle={t('partnerDashboard.charts.engagementSubtitle')}
+            data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+            colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+            centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+            centreLabel={t('partnerDashboard.charts.conversations')}
+            footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
+            lang={lang}
+          />
+        </div>
       </div>
+      )}
 
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from

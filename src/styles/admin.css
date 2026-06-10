@@ -766,6 +766,8 @@
   transform: translate(-50%, -68%);
   text-align: center;
   pointer-events: none;
+  width: 120px; /* fit within inner radius (70px → 140px diameter); allows label to wrap */
+  overflow-wrap: break-word;
 }
 
 .donut-card__centre-value {
