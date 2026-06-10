@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.138.0](https://github.com/cds-snc/ai-answers/compare/v1.137.0...v1.138.0) (2026-06-10)
+
+
+### Features
+
+* auto-close on results panels ([8fa9d00](https://github.com/cds-snc/ai-answers/commit/8fa9d000212f2272205f2cb1ab39da0e616f7981))
+* blocked query counter backend and front end ([a907193](https://github.com/cds-snc/ai-answers/commit/a9071931979d5c047e42129d3b7be166b0373e9a))
+* fix as global rule ([af2e44f](https://github.com/cds-snc/ai-answers/commit/af2e44fd713746aa67802b38ea1c7d14a35fe758))
+* fix icon ([0d389b2](https://github.com/cds-snc/ai-answers/commit/0d389b2df5c2339489d5df3d3cca8ae6f3d3630e))
+* fix in global - for about page ([0dcb1ca](https://github.com/cds-snc/ai-answers/commit/0dcb1ca0cb83dfa9ba91bfa782ba869cb5819663))
+* state change for auto close ([1f26096](https://github.com/cds-snc/ai-answers/commit/1f2609678c6505b6f872cf652bc9b48e76c6629b))
+
+
+### Bug Fixes
+
+* add script kiddie words to regex blocking ([a5f96a4](https://github.com/cds-snc/ai-answers/commit/a5f96a4057cb503e11cb395c779e8ca147da8118))
+* caret placement ([b1ed62e](https://github.com/cds-snc/ai-answers/commit/b1ed62e3f897a124ab2bf3f4fd3b0bf28b2d1a90))
+
 ## [1.137.0](https://github.com/cds-snc/ai-answers/compare/v1.136.0...v1.137.0) (2026-06-09)
 
 
