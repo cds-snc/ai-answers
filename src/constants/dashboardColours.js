@@ -13,9 +13,9 @@ export const COLOURS = {
   // correct/needs-improvement/citation-issue are all "correct" outcomes, so
   // they use a green gradient (dark → medium → light); has answer error=red,
   // harmful=dark red. GC DS tokens; all ≥ 3:1 non-text contrast against white.
-  correct: '#1f7a40',          // green-700 ~5.1:1, no stroke needed
+  correct: '#1f7a40',          // custom scale: between --gcds-color-green-500 (#289f58, 3:1) and green-700 (#03662a, 7:1) — ~5.1:1
   needsImprovement: '#66bb6a', // lighter fill — paired with qualityBorder stroke for WCAG
-  hasError: '#d32f2f',
+  hasError: '#d3080c',         // --gcds-color-red-500, 3:1 contrast
   hasCitationError: '#a5d6a7', // lightest fill — paired with qualityBorder stroke for WCAG
   harmful: '#b71c1c',
   qualityBorder: '#29a356',    // green-600 ~3.25:1 — lightest passing stroke on lighter quality-bar fills
@@ -25,6 +25,9 @@ export const COLOURS = {
   // User-feedback sentiment (helpful / not helpful), classified by score
   feedbackPositive: '#1f7a40', // green-700 — kept for fallback / non-breakdown uses
   feedbackNegative: '#c62828', // red  — kept for fallback / non-breakdown uses
+  // Satisfaction donut — lightest scale green (with border) + mid-scale red
+  satisfactionPositive: '#1f7a40',                              // matches COLOURS.correct
+  satisfactionNegative: '#d3080c',                              // matches COLOURS.hasError
   // Per-reason colour scales for the satisfaction breakdown bar. Each group uses
   // five accessible shades (WCAG non-text contrast ≥ 3:1 against white) so
   // individual reasons are visually distinct while staying within their family.

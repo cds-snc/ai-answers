@@ -175,9 +175,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           <DonutCard
             title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={feedbackData.length > 0 ? [COLOURS.feedbackPositive, COLOURS.feedbackNegative] : [COLOURS.empty]}
+            colours={feedbackData.length > 0 ? [COLOURS.satisfactionPositive, COLOURS.satisfactionNegative] : [COLOURS.empty]}
             centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
             centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
+            centreMultiLine
             lang={lang}
           />
           <div className="dashboard-chart-wide">

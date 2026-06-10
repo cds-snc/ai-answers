@@ -5,7 +5,7 @@ import { formatNumber } from '../../../utils/numberFormat.js';
 // Donut (hollow pie) chart in a card, with a big figure floated in the centre.
 // `subtitle` and `footer` are optional; omit them for the plain variant.
 // `lang` drives locale-aware number formatting in the tooltip.
-const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, centreClass, footer, height = 260, lang = 'en' }) => (
+const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, centreClass, centreMultiLine = false, footer, height = 260, lang = 'en' }) => (
   <div className="dashboard-card donut-card">
     <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
     {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
@@ -21,15 +21,18 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, c
             dataKey="value"
             paddingAngle={2}
           >
-            {data.map((entry, i) => (
-              <Cell key={entry.name} fill={colours[i % colours.length]} />
-            ))}
+            {data.map((entry, i) => {
+              const c = colours[i % colours.length];
+              const fill = typeof c === 'string' ? c : c.fill;
+              const stroke = typeof c === 'string' ? 'none' : (c.stroke || 'none');
+              return <Cell key={entry.name} fill={fill} stroke={stroke} strokeWidth={stroke === 'none' ? 0 : 2} />;
+            })}
           </Pie>
           <Tooltip formatter={(value, name) => [formatNumber(value, lang), name]} />
           <Legend iconType="circle" iconSize={10} />
         </PieChart>
       </ResponsiveContainer>
-      <div className="donut-card__centre">
+      <div className={`donut-card__centre${centreMultiLine ? ' donut-card__centre--multi-line' : ''}`}>
         <span className={`donut-card__centre-value${centreClass ? ` donut-card__centre-value--${centreClass}` : ''}`}>{centreValue}</span>
         <span className="donut-card__centre-label">{centreLabel}</span>
       </div>

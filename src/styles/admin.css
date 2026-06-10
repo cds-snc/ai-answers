@@ -763,6 +763,10 @@
   position: absolute;
   top: 50%;
   left: 50%;
+  transform: translate(-50%, -75%);
+}
+
+.donut-card__centre--multi-line {
   transform: translate(-50%, -68%);
   text-align: center;
   pointer-events: none;
@@ -772,7 +776,7 @@
 
 .donut-card__centre-value {
   display: block;
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 700;
   color: #1565c0;
   line-height: 1;
