@@ -6,6 +6,7 @@ import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
+import { MAX_BATCH_ITEMS } from '../../config/batch.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -90,6 +91,10 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
         if (!entries.length) {
           throw new Error(t('batch.upload.error.noValidRows'));
+        }
+
+        if (entries.length > MAX_BATCH_ITEMS) {
+          throw new Error(t('batch.upload.error.tooManyRows'));
         }
 
         // Only keep fields needed: question variants and URLs
@@ -188,6 +193,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                 <li>{t('batch.upload.instructions.step1b')}</li>
                 <li>{t('batch.upload.instructions.step1c')}</li>
                 <li>{t('batch.upload.instructions.step1d')}</li>
+                <li>{t('batch.upload.instructions.step1e')}</li>
               </ul>
             </li>
             <li>{t('batch.upload.instructions.step2')}</li>

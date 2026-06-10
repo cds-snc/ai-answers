@@ -3,6 +3,7 @@ import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { MAX_BATCH_ITEMS } from '../../src/config/batch.js';
 
 async function batchPersistHandler(req, res) {
   if (req.method !== 'POST') {
@@ -65,6 +66,13 @@ async function batchPersistHandler(req, res) {
 
     // No batchId provided: create a new batch and generate a batchId if missing
     if (!batchData._id) {
+      // Backstop the client-side cap: reject oversized batches before creating any
+      // documents so a partner/admin can't overload downstream rate limits.
+      if (Array.isArray(batchData.items) && batchData.items.length > MAX_BATCH_ITEMS) {
+        return res.status(400).json({
+          message: `Batch exceeds the maximum of ${MAX_BATCH_ITEMS} questions (received ${batchData.items.length}).`,
+        });
+      }
       console.log(`[batch-persist] creating new batch (batchId will be set to _id) with ${batchData.items?.length || 0} items`);
       const batch = new Batch({ ...batchData, createdBy: req.user?.userId || '' });
       await batch.save();

@@ -1,7 +1,48 @@
-# Exec & Partner Dashboards
+# Dashboards & filters
 
-Read this before working on the executive or partner dashboards (the card/chart
-dashboards, **not** the older `MetricsDashboard` performance-metrics page).
+There are two dashboard families, and one filter layer shared across most of them:
+
+- **Card/chart dashboards** — Executive and Partner. KPI cards, donuts, bars.
+  Deep-dive in [Exec & partner card dashboards](#exec--partner-card-dashboards).
+- **Table/filter dashboards** — Chat, Eval, AutoEval, and the older
+  `MetricsDashboard` performance-metrics page. DataTables + per-column/global filters.
+- **Shared filter layer** — `FilterPanel.js` + `getChatFilterConditions`
+  (`api/util/chat-filters.js`), consumed by Partner, Metrics, Chat, Eval, AutoEval,
+  and Export. The Exec dashboard is the odd one out (uses `DashboardFilterBar`).
+
+**Jump to what you're touching:**
+
+| Editing… | Read first |
+|----------|-----------|
+| `FilterPanel.js` or `getChatFilterConditions` (affects many dashboards) | [Shared filter logic](#shared-filter-logic-read-first-when-touching-filters) + [Cross-dashboard gotchas](#cross-dashboard-gotchas) |
+| Chat / Eval / AutoEval / Metrics table dashboards | [Shared filter logic](#shared-filter-logic-read-first-when-touching-filters) + [Cross-dashboard gotchas](#cross-dashboard-gotchas) |
+| Exec or Partner card/chart dashboard | [Exec & partner card dashboards](#exec--partner-card-dashboards) |
+
+## Shared filter logic (read first when touching filters)
+
+When changing `FilterPanel.js` or the backend filter logic in `getChatFilterConditions` (`api/util/chat-filters.js`), you must verify the change works across **all consumers** — each has a different aggregation pipeline shape, so a regex or filter condition that works on one may fail on another due to different field paths, `$lookup` ordering, or stored data formats:
+
+- **ChatDashboardPage** (`api/chat/chat-dashboard.js`)
+- **EvalDashboardPage** (`api/eval/eval-dashboard.js`) — aggregates from `Interaction` with `basePath: ''` and `userField: 'chatUser'`; `referringUrl` may be stored without protocol prefix
+- **AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`, same backend)
+- **MetricsDashboard** (`api/metrics/metrics-common.js` + individual metric endpoints)
+- **PartnerDashboard** (`api/metrics/*` via `parseRequestFilters`) — uses `FilterPanel` too; see the [filter components](#filter-components) table below
+- **Export/Download** (`api/chat/chat-export-logs.js`) — has a `$lookup` that overwrites `user`; user-type filter must be applied early in `dateFilter` before the overwrite
+
+## Cross-dashboard gotchas
+
+- **DataTables `stateSave`**: When changing column `searchable`/`orderable` settings, bump the `TABLE_STORAGE_KEY` version — stale localStorage can silently apply old column filters that no longer have visible inputs.
+- **Eval dashboard aggregates from `Interaction`, not `Chat`**: Fields from the parent chat (like `user`, `chatId`, `pageLanguage`) must be `$lookup`'d and extracted. The `user` field lives on `Chat`, so in the eval pipeline it's `chatUser` — pass `userField: 'chatUser'` to `getChatFilterConditions`.
+- **Cleanup `$project` stages**: If you add a `$lookup` + `$addFields` for a new field, don't remove it in the cleanup `$project` if a later `$project` still needs it.
+- **Chat Dashboard doesn't support per-column filters** (only global search). Eval Dashboard does via `columnSearch` + `initComplete` filter inputs. Adding column filters to Chat Dashboard requires both frontend (`initComplete` + `columnSearch` in ajax) and backend (`columnSearch` handling in `chat-dashboard.js`).
+
+---
+
+# Exec & partner card dashboards
+
+The card/chart dashboards — **not** the older `MetricsDashboard` performance-metrics
+page. (If you're only touching their filters, the shared sections above usually
+cover it.)
 
 ## What they are
 

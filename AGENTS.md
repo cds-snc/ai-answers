@@ -7,6 +7,27 @@
 - **No inline styles**: Do not use inline `style={{...}}` attributes on elements. Add a CSS class instead. Inline styles are only acceptable when the value is genuinely dynamic and cannot be expressed as a class (e.g. a runtime-computed width or colour).
 - **No new CSS files**: Do not create additional CSS or CSS module files. Add new styles to the appropriate existing file (`global.css` for site-wide rules, `admin.css` for admin/auth pages, `chat.css` for the chat interface). A new file is only justified if it introduces a genuinely separate styling concern that cannot reasonably live in one of the three existing files — document the reason in a comment at the top of the file if you do create one.
 
+## Do not edit prompts during unrelated coding work
+
+Prompt files in `agents/prompts/` — the system prompt, `agenticBase.js`,
+`citationInstructions.js`, `safety.js`, `contextSystemPrompt.js`, and the
+`scenarios/` files — are tuned through a dedicated process: changes are made by
+the prompt maintainers (Lisa Fast and Ryan Hyma) and validated by running
+evaluation **batches** before they ship. A prompt tweak that looks harmless can
+silently shift answer quality, department routing, or safety behaviour for every
+user, and that regression is only caught by batch validation — not by tests or
+code review.
+
+So unless your task is **explicitly** prompt tuning directed by a maintainer:
+
+- **Do not edit anything under `agents/prompts/`** as a side effect of other work.
+- If a coding task seems to need a prompt change to work, **stop and flag it**:
+  describe what you think needs to change and why, and let a maintainer decide.
+  Do not make the edit yourself, and do not work around it by editing a prompt.
+
+This applies to all coding work — bug fixes, refactors, new features,
+dashboards — not just prompt-adjacent areas.
+
 ## How to work well in this codebase
 
 1. **State assumptions early.** Before implementing anything non-trivial, say what you're assuming so we can catch misalignment before code is written.
@@ -22,13 +43,15 @@
 
 ## Documentation Regeneration
 
-When any file in `agents/prompts/` is changed (except department scenarios in `agents/prompts/scenarios/context-*/`), regenerate the system prompt documentation:
+When you change a **shared** prompt file in `agents/prompts/` — `agenticBase.js`, `safety.js`, `citationInstructions.js`, `scenarios-all.js`, the PII / translation / query-rewrite prompts, or `contextSystemPrompt.js` — regenerate the system prompt documentation:
 
 ```bash
 node scripts/generate-system-prompt-documentation.js
 ```
 
 This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the actual prompts.
+
+**Department scenario files do NOT require regeneration.** Changes to any `agents/prompts/scenarios/context-*/` file (partner department scenarios, which change frequently on partner request) never affect the generated documentation: the doc links to those files rather than embedding their contents. Do not run the generator for scenario-file changes.
 
 ## Inspecting a chat run (debugging)
 
@@ -121,7 +144,7 @@ Before starting work, read the relevant reference doc:
 - **Backend/pipeline/agent/service changes:** [docs/coding-agent-docs/architecture-quick-ref.md](docs/coding-agent-docs/architecture-quick-ref.md)
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
-- **Exec/Partner dashboards (cards, charts, metric bundle):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
+- **Dashboards & filters (exec/partner cards, `FilterPanel`, cross-dashboard filter logic, Chat/Eval/Metrics gotchas):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
 
 ## Database query safety
 
@@ -138,22 +161,6 @@ Use `requireObjectIdString(value, fieldName)` for ObjectId-backed fields, `requi
 Normalize user-controlled query values by assigning back to the existing variable before the query. Prefer `chatId = requireString(chatId, 'chatId')` over introducing `safeChatId` / `safe*` variables unless a separate raw value is genuinely needed later.
 
 Keep existing route error contracts unless the task explicitly asks to change them. In most alert-cleanup work, let helper-thrown errors fall through the endpoint's existing `catch` block instead of adding new invalid-ID/status branches.
-
-## FilterPanel and filter logic
-When changing `FilterPanel.js` or the backend filter logic in `getChatFilterConditions` (`api/util/chat-filters.js`), you must verify the change works across **all consumers**:
-- **ChatDashboardPage** (`api/chat/chat-dashboard.js`)
-- **EvalDashboardPage** (`api/eval/eval-dashboard.js`) — aggregates from `Interaction` with `basePath: ''` and `userField: 'chatUser'`; `referringUrl` may be stored without protocol prefix
-- **AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`, same backend)
-- **MetricsDashboard** (`api/metrics/metrics-common.js` + individual metric endpoints)
-- **Export/Download** (`api/chat/chat-export-logs.js`) — has a `$lookup` that overwrites `user`; user-type filter must be applied early in `dateFilter` before the overwrite
-
-Each consumer has a different aggregation pipeline shape. A regex or filter condition that works on one may fail on another due to different field paths, `$lookup` ordering, or stored data formats.
-
-## Dashboard gotchas
-- **DataTables `stateSave`**: When changing column `searchable`/`orderable` settings, bump the `TABLE_STORAGE_KEY` version — stale localStorage can silently apply old column filters that no longer have visible inputs.
-- **Eval dashboard aggregates from `Interaction`, not `Chat`**: Fields from the parent chat (like `user`, `chatId`, `pageLanguage`) must be `$lookup`'d and extracted. The `user` field lives on `Chat`, so in the eval pipeline it's `chatUser` — pass `userField: 'chatUser'` to `getChatFilterConditions`.
-- **Cleanup `$project` stages**: If you add a `$lookup` + `$addFields` for a new field, don't remove it in the cleanup `$project` if a later `$project` still needs it.
-- **Chat Dashboard doesn't support per-column filters** (only global search). Eval Dashboard does via `columnSearch` + `initComplete` filter inputs. Adding column filters to Chat Dashboard requires both frontend (`initComplete` + `columnSearch` in ajax) and backend (`columnSearch` handling in `chat-dashboard.js`).
 
 ## Adding new pages
 
