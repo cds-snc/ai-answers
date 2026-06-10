@@ -110,6 +110,27 @@ export const splitPublicFeedbackTotals = (totals = {}, noReasonsByScore = {}) =>
 
 const NO_OTHER_SCORE = FEEDBACK_OPTIONS.NO.find(o => o.id === 'other').score;
 
+// Fixed top→bottom display order for the satisfaction breakdown bar. Positives
+// first (largest-typical at top: savedTime), then negatives, with each group's
+// "Other" last. notWanted is a NO-direction option but sits in the positive
+// group (positive about AI). `dir` selects the YES/NO option set for the score
+// and the label namespace. Stable across date ranges (NOT sorted by count).
+const FEEDBACK_REASON_ORDER = [
+  { dir: 'yes', id: 'savedTime' },
+  { dir: 'yes', id: 'noCall' },
+  { dir: 'yes', id: 'noVisit' },
+  { dir: 'no', id: 'notWanted' },
+  { dir: 'yes', id: 'other' },
+  { dir: 'no', id: 'notDetailed' },
+  { dir: 'no', id: 'irrelevant' },
+  { dir: 'no', id: 'confusing' },
+  { dir: 'no', id: 'brokenLink' },
+  { dir: 'no', id: 'other' },
+];
+
+const scoreForReason = (dir, id) =>
+  FEEDBACK_OPTIONS[dir === 'yes' ? 'YES' : 'NO'].find(o => o.id === id)?.score;
+
 // Corrected public feedback -> two donut rows (helpful / not helpful),
 // classified by score so notWanted counts as helpful (see
 // splitPublicFeedbackTotals). Returns [] when there is no public feedback.
@@ -124,12 +145,13 @@ export const buildFeedbackSplitData = (publicFeedbackTotals, publicFeedbackReaso
   ];
 };
 
-// Full public-feedback breakdown -> bar rows (one per reason). Ordered positives
-// first (green) then negatives (red); within each group the option order is
-// preserved — NOT sorted by count, so the order is stable across date ranges.
-// notWanted ("answer is clear, but not what I wanted to hear") is a 'no' reason
-// but counts as positive (green). Zero-count reasons are dropped. Returns []
-// when there is no public feedback.
+// Full public-feedback breakdown -> bar rows (one per reason), in the fixed
+// FEEDBACK_REASON_ORDER (positives first/green, then negatives/red) — NOT sorted
+// by count, so the order is stable across date ranges. notWanted ("answer is
+// clear, but not what I wanted to hear") is a 'no' reason but counts as positive
+// (green). Zero-count reasons are dropped. `positive` is carried through so a
+// diverging chart can place the row left/right; `colour` stays for the plain bar
+// consumers. Returns [] when there is no public feedback.
 export const buildFeedbackReasonsData = (publicFeedbackReasons, t) => {
   const yesByScore = groupByScore(publicFeedbackReasons?.yes || {}, YES_OTHER_SCORE);
   const noByScore = groupByScore(publicFeedbackReasons?.no || {}, NO_OTHER_SCORE);
@@ -143,20 +165,20 @@ export const buildFeedbackReasonsData = (publicFeedbackReasons, t) => {
     return t(`homepage.publicFeedback.${dir}.options.${id}`);
   };
 
-  const rows = [];
-  [['yes', FEEDBACK_OPTIONS.YES, yesByScore], ['no', FEEDBACK_OPTIONS.NO, noByScore]].forEach(([dir, options, byScore]) => {
-    options.forEach((opt) => {
-      const value = byScore[String(opt.score)]?.total || 0;
-      if (value <= 0) return;
-      rows.push({ name: labelFor(opt.id, dir), value, positive: isPositiveScore(opt.score) });
+  return FEEDBACK_REASON_ORDER
+    .map(({ dir, id }) => {
+      const score = scoreForReason(dir, id);
+      const value = (dir === 'yes' ? yesByScore : noByScore)[String(score)]?.total || 0;
+      return { dir, id, score, value };
+    })
+    .filter(r => r.value > 0)
+    .map(({ dir, id, score, value }) => {
+      const positive = isPositiveScore(score);
+      return {
+        name: labelFor(id, dir),
+        value,
+        positive,
+        colour: positive ? COLOURS.feedbackPositive : COLOURS.feedbackNegative,
+      };
     });
-  });
-
-  // Positives first, then negatives; stable within each group.
-  return [...rows.filter(r => r.positive), ...rows.filter(r => !r.positive)]
-    .map(({ name, value, positive }) => ({
-      name,
-      value,
-      colour: positive ? COLOURS.feedbackPositive : COLOURS.feedbackNegative,
-    }));
 };

@@ -23,13 +23,15 @@ const INITIAL_METRICS = {
   publicFeedbackTotals: { totalQuestionsWithFeedback: 0, yes: 0, no: 0 },
   publicFeedbackReasons: { yes: {}, no: {} },
   byDepartment: {},
+  blockedQueries: {},
 };
 
 // Fetches the shared dashboard metric bundle (usage, sessions, expert feedback,
 // public feedback, departments, technical) used by the exec and partner
-// dashboards. The
-// underlying figures are computed server-side by the metrics endpoints — this
-// hook only orchestrates the parallel fetch, abort, and loading/error state.
+// dashboards. The underlying figures are computed server-side by the metrics
+// endpoints — this hook only orchestrates the fetch, abort, and loading/error
+// state. Blocked-query metrics are treated as best-effort so they don't take
+// down the rest of the dashboard if that endpoint fails.
 //
 // Call fetchMetrics(filters) with at least { startDate, endDate }; any other
 // filter keys (department, userType, answerType, …) are passed straight through
@@ -69,8 +71,10 @@ export function useDashboardMetrics() {
         MetricsService.getDepartmentMetrics(filters, signal),
         MetricsService.getTechnicalMetrics(filters, signal),
       ]);
+      const blocked = await MetricsService.getBlockedMetrics(filters, signal)
+        .catch(() => ({ blockedQueries: INITIAL_METRICS.blockedQueries }));
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);

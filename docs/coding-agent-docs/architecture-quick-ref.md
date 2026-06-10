@@ -8,7 +8,8 @@ Read this before backend, pipeline, agent, or service work.
 |-----------|---------|
 | `agents/graphs/` | LangGraph state-machine workflows (nodes, edges, state) |
 | `agents/graphs/workflows/` | `GraphWorkflowHelper.js` — shared node implementations |
-| `agents/graphs/services/` | Graph-internal services (redaction, short-query) |
+| `agents/graphs/services/` | Graph-internal services (redaction, translation, answer/context helpers) |
+| `agents/graphs/guardrails/` | Query-blocking guardrails and shared block-type errors/constants |
 | `agents/prompts/` | System prompt assembly and base prompt text |
 | `agents/prompts/scenarios/` | `scenarios-all.js` (global rules) + `context-{abbrKey}/` (per-dept) |
 | `agents/strategies/` | Strategy pattern implementations (e.g. sentence compare) |
@@ -143,6 +144,5 @@ Each file exports `async function handler(req, res)`. Organised by domain:
 | `api/user/` | User management |
 | `api/vector/` | Vector reinitialise, similar chats, stats |
 | `api/util/` | Shared utilities (backoff, cookies, connectivity, URL check) |
-
 
 

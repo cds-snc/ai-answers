@@ -1214,6 +1214,30 @@
     "apply": "Apply",
     "loading": "Loading..."
   },
+  "blockedQueries": {
+    "title": "Blocked queries",
+    "byTypeTitle": "Blocked queries by type",
+    "totalCardLabel": "Total blocked queries",
+    "langSub": "EN: {en} · FR: {fr}",
+    "noData": "No blocked queries in this date range.",
+    "note": "Questions stopped by the safety and security guardrails before reaching the answer step. The question text is never stored — only the count per type. Reported across all institutions (blocks happen before the institution is identified).",
+    "deptNote": "Blocked queries can't be broken down by institution — blocks happen before the institution is identified. Clear the institution filter to see blocked-query counts.",
+    "colType": "Block type",
+    "colTotal": "Total",
+    "colEn": "EN",
+    "colFr": "FR",
+    "totalRow": "Total blocked",
+    "types": {
+      "tooShort": "Too short (1–2 words)",
+      "threat": "Threat words",
+      "manipulation": "Manipulation words",
+      "profanity": "Profanity",
+      "piStage1": "Private information – programmatic",
+      "piStage2": "Private information – AI detection",
+      "azureGuardrail": "Azure guardrails",
+      "unsupportedLanguage": "Unsupported language"
+    }
+  },
   "execDashboard": {
     "title": "AI Answers Executive dashboard",
     "description": "Data includes questions from all users - including from partner organizations signed in to test and evaluate.",

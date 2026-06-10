@@ -310,6 +310,8 @@ details[open] {
 }
 
 details summary {
+  display: flex !important;
+  align-items: center;
   border: 1px solid #ddd;
   border-radius: 4px;
   color: #295376;
@@ -324,20 +326,26 @@ details > summary {
 
 /* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
 summary {
-  display: list-item !important;
-  list-style-type: none;
-  list-style-type: disclosure-closed;
+  display: block !important;
+  list-style: none;
   visibility: visible !important;
-}
-
-summary {
   cursor: pointer;
 }
 
-details > summary:first-of-type {
-  display: list-item;
-  counter-increment: list-item 0;
-  list-style: inside disclosure-closed;
+summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::before {
+  content: '►';
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 0.75em;
+  line-height: 1;
+}
+
+details[open] > summary::before {
+  content: '▼';
 }
 
 /* buttons */

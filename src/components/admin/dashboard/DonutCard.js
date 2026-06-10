@@ -5,7 +5,7 @@ import { formatNumber } from '../../../utils/numberFormat.js';
 // Donut (hollow pie) chart in a card, with a big figure floated in the centre.
 // `subtitle` and `footer` are optional; omit them for the plain variant.
 // `lang` drives locale-aware number formatting in the tooltip.
-const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, centreColour, footer, height = 260, lang = 'en' }) => (
+const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, centreClass, footer, height = 260, lang = 'en' }) => (
   <div className="dashboard-card donut-card">
     <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
     {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
@@ -30,7 +30,7 @@ const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, c
         </PieChart>
       </ResponsiveContainer>
       <div className="donut-card__centre">
-        <span className="donut-card__centre-value" style={centreColour ? { color: centreColour } : undefined}>{centreValue}</span>
+        <span className={`donut-card__centre-value${centreClass ? ` donut-card__centre-value--${centreClass}` : ''}`}>{centreValue}</span>
         <span className="donut-card__centre-label">{centreLabel}</span>
       </div>
     </div>

@@ -193,7 +193,9 @@ The graph maintains state across all nodes with these key fields:
 - Returns fallback URL to Canada.ca search
 - User receives helpful error message
 
-**File:** [`agents/graphs/services/shortQuery.js`](../../agents/graphs/services/shortQuery.js)
+**Files:**
+- Guardrail: [`agents/graphs/guardrails/shortQuery.js`](../../agents/graphs/guardrails/shortQuery.js)
+- Error types/constants: [`agents/graphs/guardrails/errors.js`](../../agents/graphs/guardrails/errors.js), [`agents/graphs/guardrails/blockTypes.js`](../../agents/graphs/guardrails/blockTypes.js)
 
 ---
 
@@ -210,7 +212,9 @@ The graph maintains state across all nodes with these key fields:
 - Manipulation patterns → block question
 - Basic PI patterns (phone numbers, emails, 9-digit numbers) → block question
 
-**File:** [`agents/graphs/services/redactionService.js`](../../agents/graphs/services/redactionService.js)
+**Files:**
+- Redaction engine: [`agents/graphs/services/redactionService.js`](../../agents/graphs/services/redactionService.js)
+- Guardrail wrapper/classification: [`agents/graphs/guardrails/redactionGuardrail.js`](../../agents/graphs/guardrails/redactionGuardrail.js)
 
 #### Stage 2: AI-Powered PI Detection
 - AI detects person names, personal IDs, US ZIP codes
@@ -221,6 +225,7 @@ The graph maintains state across all nodes with these key fields:
 **Files:**
 - Service: [`services/PIIAgentService.js`](../../services/PIIAgentService.js)
 - Prompt: [`agents/prompts/piiAgentPrompt.js`](../../agents/prompts/piiAgentPrompt.js)
+- Guardrail wrapper: [`agents/graphs/guardrails/piiGuardrail.js`](../../agents/graphs/guardrails/piiGuardrail.js)
 
 ---
 
@@ -247,7 +252,9 @@ The graph maintains state across all nodes with these key fields:
 }
 ```
 
-**File:** [`agents/graphs/services/translationService.js`](../../agents/graphs/services/translationService.js)
+**Files:**
+- Translation service: [`agents/graphs/services/translationService.js`](../../agents/graphs/services/translationService.js)
+- Translation guardrails: [`agents/graphs/guardrails/translationGuardrail.js`](../../agents/graphs/guardrails/translationGuardrail.js)
 
 #### Post-translation guardrail (non-EN/FR only)
 
@@ -257,6 +264,10 @@ After translation, `GraphWorkflowHelper.postTranslateGuard()` runs a second-stag
 - **Non-EN/FR source languages only:** AI PI detection runs again on the translated text — threats or personal information written in another language may only be recognizable once rendered in English
 
 This is a second-stage guardrail, not a replacement for the `redact` node. The `redact` node always runs first (on the original text, in the original language); `postTranslateGuard` adds an extra pass for languages where the first-pass word lists have limited coverage.
+
+The same guardrail wrapper also maps translation-service blocks to `azureGuardrail`,
+obfuscated `zxx` source language to `manipulation`, and unsupported `und` source
+language to `unsupportedLanguage`.
 
 ---
 
@@ -538,6 +549,32 @@ Tracked per interaction:
 - Tool invocations
 - Confidence rating
 - Short-circuit hit/miss
+
+### Blocked-query counter (safety/security)
+
+Queries blocked by the guardrails (`validate` and `redact` nodes, plus the
+post-translation guard) throw before `persistNode` and are **never persisted** —
+the question text is intentionally discarded. To still track guardrail volume, a
+**text-free** counter records one increment per blocked query, classified to a
+single primary bucket:
+
+- `tooShort`, `threat`, `manipulation` (incl. obfuscated `zxx` input),
+  `profanity`, `piStage1` (programmatic PI), `piStage2` (AI PI detection),
+  `azureGuardrail`, `unsupportedLanguage` (`und`).
+
+The block type is tagged on the thrown error (`blockType` on
+`ShortQueryValidation` / `RedactionError`) from [`agents/graphs/guardrails/`](../../agents/graphs/guardrails/), and the
+single catch block in [`api/chat/chat-graph-run.js`](../../api/chat/chat-graph-run.js)
+fires a fire-and-forget `BlockedQueryService.record()`. Counts are day-bucketed
+by `{ date, type, lang, userType }` in the `BlockedQueryCounter` collection
+(no question text), surfaced via [`api/metrics/metrics-blocked.js`](../../api/metrics/metrics-blocked.js)
+in the Safety section of the executive and technical dashboards. Blocks happen
+before the department is known, so the table is global (hidden when a department
+filter is applied).
+
+**Files:** [`agents/graphs/guardrails/`](../../agents/graphs/guardrails/),
+[`services/BlockedQueryService.js`](../../services/BlockedQueryService.js),
+[`models/blockedQueryCounter.js`](../../models/blockedQueryCounter.js)
 
 ---
 
