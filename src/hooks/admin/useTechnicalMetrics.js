@@ -33,12 +33,13 @@ const initialState = {
   totalAnswerOutputTokensFr: 0,
   totalGoogleSearches: 0,
   totalQuestions: 0,
+  blockedQueries: {},
 };
 
 export function useTechnicalMetrics() {
   const [data, setData] = useState(initialState);
-  const [loadingState, setLoadingState] = useState({ technical: false, usage: false });
-  const [errorState, setErrorState] = useState({ technical: null, usage: null });
+  const [loadingState, setLoadingState] = useState({ technical: false, usage: false, blocked: false });
+  const [errorState, setErrorState] = useState({ technical: null, usage: null, blocked: null });
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
   const abortControllerRef = useRef(null);
 
@@ -61,7 +62,7 @@ export function useTechnicalMetrics() {
       const resolvedFilters = filters || getDefaultDateRange();
 
       setHasStartedLoading(true);
-      setErrorState({ technical: null, usage: null });
+      setErrorState({ technical: null, usage: null, blocked: null });
 
       const fetchSection = async (key, fetchFn) => {
         updateLoading(key, true);
@@ -86,6 +87,7 @@ export function useTechnicalMetrics() {
 
       fetchSection('technical', MetricsService.getTechnicalMetrics.bind(MetricsService));
       fetchSection('usage', MetricsService.getUsageMetrics.bind(MetricsService));
+      fetchSection('blocked', MetricsService.getBlockedMetrics.bind(MetricsService));
     },
     [updateError, updateLoading]
   );

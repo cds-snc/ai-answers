@@ -127,6 +127,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
     filtersRef.current = enrichedFilters;
     setHasAppliedFilters(true);
+    setLoading(true);
     try {
       if (tableApiRef.current) {
         tableApiRef.current.ajax.reload();
@@ -302,6 +303,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           onApplyFilters={(filters) => { handleApplyFilters(filters); }}
           onClearFilters={handleClearFilters}
           isVisible={true}
+          filterLoading={loading}
+          filterError={error}
+          filterResultCount={recordsTotal}
+          hasAppliedFilters={hasAppliedFilters}
         />
       </div>
 

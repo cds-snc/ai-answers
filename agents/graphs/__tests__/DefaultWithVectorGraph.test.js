@@ -38,9 +38,22 @@ vi.mock('../services/answerService.js', () => ({
     parseResponse: vi.fn().mockReturnValue({ answerType: 'normal', citationUrl: 'http://foo.com' }),
     parseSentences: vi.fn().mockReturnValue(['Sentence 1'])
 }));
-vi.mock('../services/shortQuery.js', () => ({
+vi.mock('../guardrails/index.js', () => ({
+    RedactionError: class RedactionError extends Error {
+        constructor(message, redactedText, redactedItems, blockType = null) {
+            super(message);
+            this.name = 'RedactionError';
+            this.redactedText = redactedText;
+            this.redactedItems = redactedItems;
+            this.blockType = blockType;
+        }
+    },
+    ShortQueryValidation: class ShortQueryValidation extends Error { },
+    runInitialPiiGuardrail: vi.fn(),
+    runPostTranslationGuardrail: vi.fn(),
+    runRedactionGuardrail: vi.fn((userMessage) => ({ redactedText: userMessage, redactedItems: [] })),
+    translateWithGuardrail: vi.fn((text) => ({ translatedText: text, originalLanguage: 'en' })),
     validateShortQueryOrThrow: vi.fn(),
-    ShortQueryValidation: class ShortQueryValidation extends Error { }
 }));
 vi.mock('../services/piiService.js', () => ({
     checkPII: vi.fn().mockResolvedValue({ blocked: false, pii: null })

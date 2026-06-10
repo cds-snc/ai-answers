@@ -99,6 +99,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     };
     filtersRef.current = normalized;
     setHasAppliedFilters(true);
+    setLoading(true);
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
       else setTableKey((prev) => prev + 1);
@@ -177,7 +178,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
       <h2 className="mt-400 mb-400">{t('admin.evalDashboard.timeRangeTitle')}</h2>
       <div className="mb-600">
-        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={recordsTotal} hasAppliedFilters={hasAppliedFilters} />
       </div>
 
       {loading && (

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -6,6 +6,7 @@ import FilterPanel from './FilterPanel.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
@@ -16,14 +17,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
-  const filterWrapRef = useRef(null);
   const autoApplyFired = useRef(false);
-  const hasUserApplied = useRef(false);
+  const [hasUserApplied, setHasUserApplied] = useState(false);
   const handleApplyFilters = (filters) => {
     if (autoApplyFired.current) {
-      // Second+ call is user-triggered: close the filter panel and mark as applied.
-      hasUserApplied.current = true;
-      filterWrapRef.current?.querySelector('details')?.removeAttribute('open'); // relies on FilterPanel rendering a <details> element internally
+      // Second+ call is user-triggered: mark as applied so FilterPanel can collapse.
+      setHasUserApplied(true);
     }
     autoApplyFired.current = true;
     fetchMetrics(filters);
@@ -87,7 +86,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
-      <div ref={filterWrapRef} className="mb-600">
+      <div className="mb-600">
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
@@ -96,6 +95,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           autoApply={true}
           applyDisabled={loading}
           defaultUserType="all"
+          filterLoading={loading}
+          filterError={error}
+          filterResultCount={metrics.totalQuestions || 0}
+          hasAppliedFilters={hasUserApplied}
         />
       </div>
 
@@ -105,7 +108,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {hasUserApplied.current && !loading && metrics.totalQuestions === 0 && !error && (
+      {hasUserApplied && !loading && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('common.noDataForFilters')}
@@ -165,16 +168,15 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Satisfaction breakdown bar (shown when reason data exists) */}
-      {feedbackReasonsData.length > 0 && (
-        <div className="dashboard-section">
-          <HBarCard
-            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackReasonsData}
-            lang={lang}
-          />
-        </div>
-      )}
+      {/* Satisfaction breakdown bar */}
+      <div className="dashboard-section">
+        <DivergingBarCard
+          title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+          data={feedbackReasonsData}
+          noDataLabel={t('partnerDashboard.charts.noData')}
+          lang={lang}
+        />
+      </div>
 
       {/* User satisfaction donut + conversation length donut — equal width */}
       <div className="dashboard-row">
@@ -215,6 +217,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             : undefined}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('partnerDashboard.ops.inputTokens')}
           value={fmtN(metrics.totalInputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')
@@ -222,6 +225,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
         />
         <StatCard
+          className="stat-card--wide"
           label={t('partnerDashboard.ops.outputTokens')}
           value={fmtN(metrics.totalOutputTokens)}
           sub={t('partnerDashboard.ops.tokensSub')

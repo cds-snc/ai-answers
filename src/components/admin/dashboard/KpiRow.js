@@ -27,9 +27,7 @@ const deriveKpis = (metrics) => {
   };
 };
 
-// The exec dashboard's three headline KPI cards (questions asked, expert
-// evaluated, accuracy rate), computed from the given metrics bundle. Reused for
-// both the last-12-months summary and the filtered date range.
+
 const KpiRow = ({ metrics, t, lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
