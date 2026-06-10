@@ -9,6 +9,7 @@ import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
+import { safeHttpHref } from '../../utils/safeUrl.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -731,7 +732,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
-                      href={displayUrl}
+                      href={safeHttpHref(displayUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
