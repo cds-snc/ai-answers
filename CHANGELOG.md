@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.139.0](https://github.com/cds-snc/ai-answers/compare/v1.138.0...v1.139.0) (2026-06-10)
+
+
+### Features
+
+* add limit to batch runs ([bc0003d](https://github.com/cds-snc/ai-answers/commit/bc0003d6709129bcbdddc170d84d8a2044488feb))
+
 ## [1.138.0](https://github.com/cds-snc/ai-answers/compare/v1.137.0...v1.138.0) (2026-06-10)
 
 
