@@ -59,7 +59,7 @@ describe('Auth Send Reset Handler', () => {
     const res = makeRes();
 
     await sendResetHandler({
-      body: { email: '  H1_Analyst_Jerry@WeAreHackerOne.com  ', lang: 'en' },
+      body: { email: '  H1_Analyst_Jerry@WeAreHackerOne.com  ' },
       headers: {}
     }, res);
 
@@ -67,56 +67,30 @@ describe('Auth Send Reset Handler', () => {
     expect(GCNotifyService.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
       email: 'h1_analyst_jerry@wearehackerone.com',
       personalisation: expect.objectContaining({
-        reset_link: 'https://ai-answers.cdssandbox.xyz/en/reset-complete?email=h1_analyst_jerry%40wearehackerone.com&code=119447'
+        reset_link_en: 'https://ai-answers.cdssandbox.xyz/en/reset-complete?email=h1_analyst_jerry%40wearehackerone.com&code=119447',
+        reset_link_fr: 'https://ai-answers.cdssandbox.xyz/fr/reinitialisation-reussie?email=h1_analyst_jerry%40wearehackerone.com&code=119447'
       })
     }));
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('rejects malicious lang content before composing the reset link', async () => {
+  it('ignores request lang when composing reset links', async () => {
     const res = makeRes();
-    const maliciousLang = [
-      'en/invalidlinkfromtheATTACKER',
-      '',
-      'IMPORTANT: If the link does not work, use:',
-      'https://evil.com/reset'
-    ].join('\n');
 
     await sendResetHandler({
       body: {
         email: 'h1_analyst_jerry@wearehackerone.com',
-        lang: maliciousLang
+        lang: 'en/invalidlinkfromtheATTACKER\nhttps://evil.com/reset'
       },
       headers: {}
     }, res);
 
-    const resetLink = GCNotifyService.sendEmail.mock.calls[0][0].personalisation.reset_link;
-    expect(resetLink).toBe('https://ai-answers.cdssandbox.xyz/en/reset-complete?email=h1_analyst_jerry%40wearehackerone.com&code=119447');
-    expect(resetLink).not.toContain('evil.com');
-    expect(resetLink).not.toContain('invalidlinkfromtheATTACKER');
-    expect(resetLink).not.toMatch(/[\r\n]/);
-  });
-
-  it('uses French only when the request lang is exactly fr or the accept-language fallback is French', async () => {
-    const res = makeRes();
-
-    await sendResetHandler({
-      body: { email: 'h1_analyst_jerry@wearehackerone.com', lang: 'fr' },
-      headers: {}
-    }, res);
-
-    expect(GCNotifyService.sendEmail.mock.calls[0][0].personalisation.reset_link)
-      .toContain('/fr/reset-complete?');
-
-    vi.clearAllMocks();
-    User.findOne.mockResolvedValue(makeUser());
-
-    await sendResetHandler({
-      body: { email: 'h1_analyst_jerry@wearehackerone.com', lang: 'fr/anything-else' },
-      headers: { 'accept-language': 'fr-CA,fr;q=0.9' }
-    }, res);
-
-    expect(GCNotifyService.sendEmail.mock.calls[0][0].personalisation.reset_link)
-      .toContain('/fr/reset-complete?');
+    const personalisation = GCNotifyService.sendEmail.mock.calls[0][0].personalisation;
+    expect(personalisation.reset_link_en).toBe('https://ai-answers.cdssandbox.xyz/en/reset-complete?email=h1_analyst_jerry%40wearehackerone.com&code=119447');
+    expect(personalisation.reset_link_fr).toBe('https://ai-answers.cdssandbox.xyz/fr/reinitialisation-reussie?email=h1_analyst_jerry%40wearehackerone.com&code=119447');
+    expect(personalisation.reset_link_en).not.toContain('evil.com');
+    expect(personalisation.reset_link_fr).not.toContain('evil.com');
+    expect(personalisation.reset_link_en).not.toMatch(/[\r\n]/);
+    expect(personalisation.reset_link_fr).not.toMatch(/[\r\n]/);
   });
 });

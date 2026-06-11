@@ -5,12 +5,9 @@ import { SettingsService } from '../../services/SettingsService.js';
 import os from 'os';
 import speakeasy from 'speakeasy';
 
-function normalizeResetLanguage(value, acceptLanguage = '') {
-  if (value === 'en' || value === 'fr') {
-    return value;
-  }
-
-  return String(acceptLanguage).toLowerCase().includes('fr') ? 'fr' : 'en';
+function buildResetLink(baseUrl, path, email, code) {
+  const normalizedBaseUrl = String(baseUrl || '').replace(/\/+$/, '');
+  return `${normalizedBaseUrl}${path}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`;
 }
 
 const sendResetHandler = async (req, res) => {
@@ -50,10 +47,10 @@ const sendResetHandler = async (req, res) => {
 
     console.debug(`[auth-send-reset][${os.hostname()}] Generated TOTP code for reset`);
 
-    // Compose reset link with code
+    // Compose trusted reset links for both languages; the template decides which to render.
     const frontendUrl = SettingsService.get('site.baseUrl') || process.env.FRONTEND_URL || 'http://localhost:3000';
-    const lang = normalizeResetLanguage(req.body.lang, req.headers['accept-language']);
-    const resetLink = `${frontendUrl}/${lang}/reset-complete?email=${encodeURIComponent(normalizedEmail)}&code=${code}`;
+    const resetLinkEn = buildResetLink(frontendUrl, '/en/reset-complete', normalizedEmail, code);
+    const resetLinkFr = buildResetLink(frontendUrl, '/fr/reinitialisation-reussie', normalizedEmail, code);
 
     console.debug(`[auth-send-reset][${os.hostname()}] Reset link generated`);
 
@@ -69,7 +66,8 @@ const sendResetHandler = async (req, res) => {
       templateId,
       personalisation: {
         name: '', // Required by many templates
-        reset_link: resetLink
+        reset_link_en: resetLinkEn,
+        reset_link_fr: resetLinkFr
       }
     });
 
