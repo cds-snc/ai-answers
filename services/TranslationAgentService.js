@@ -40,6 +40,34 @@ export async function translateQuestion({ text, desiredLanguage, selectedAI = 'o
       };
     }
 
+    // Deterministic backstop for the no-op invariant: when the detected source
+    // language equals the target language there is nothing to translate, so the
+    // result MUST be a no-op (see translationPrompt no-op rule). A non-no-op here
+    // means the model performed a within-language transform — e.g. it followed an
+    // instruction embedded in the user's text ("Could you answer in French?") and
+    // rewrote/translated it anyway. Discard that output and pass the original text
+    // through unchanged so the embedded instruction has no effect. Both fields come
+    // from the model in iso3, so an exact (case-insensitive) match is a same-language
+    // signal without needing an iso2/iso3 mapping.
+    const src = (result.originalLanguage || '').toLowerCase();
+    const tgt = (result.translatedLanguage || '').toLowerCase();
+    if (src && tgt && src === tgt) {
+      ServerLoggingService.info('translate coerced to no-op (source==target, dropping within-language transform)', chatId, {
+        originalLanguage: result.originalLanguage,
+        translatedLanguage: result.translatedLanguage,
+        translatedText: result.translatedText,
+        originalText: text,
+      });
+      return {
+        originalLanguage: result.originalLanguage,
+        translatedLanguage: desiredLanguage,
+        translatedText: text,
+        noTranslation: true,
+        originalText: text,
+        translation_context: translationContext,
+      };
+    }
+
     const flattened = Object.assign({}, result, { originalText: text, translation_context: translationContext });
     return flattened;
   } catch (err) {
