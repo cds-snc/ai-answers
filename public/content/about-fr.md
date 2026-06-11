@@ -27,12 +27,15 @@ Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web.
 ## Confidentialité et conditions d'utilisation de l'IA
 
 ### Stockage
-Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.
+Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Ces questions et d'autres questions bloquées (par exemple, les questions contenant des grossièretés ou rédigées dans une langue ou un code non reconnu) ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.
 
 ### Avertissement
 Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.
 
 Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.
+
+### Prestation de services dans les langues officielles du Canada
+La [Loi sur les langues officielles](https://laws-lois.justice.gc.ca/fra/lois/O-3.01/), le [Règlement sur les langues officielles – communications avec le public et prestation des services](https://laws-lois.justice.gc.ca/fra/reglements/DORS-92-48/index.html) et les exigences des politiques du Conseil du Trésor prévoient les circonstances où nous employons le français et l'anglais dans la prestation des services au public. Choisissez le bouton de langue anglaise ou française en haut de la page pour utiliser la version d'AI Answers dans la langue officielle correspondante. Les questions posées et répondues dans une langue autre que l'anglais ou le français sont offertes à titre gracieux aux visiteurs de notre site Web.
 
 ### Conditions
 Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.

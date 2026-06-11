@@ -213,6 +213,7 @@ const HomePage = ({ lang = "en" }) => {
         >
           <GcdsText>{t("homepage.privacy.storage")}</GcdsText>
           <GcdsText>{t("homepage.privacy.disclaimer")}</GcdsText>
+          <GcdsText>{t("homepage.privacy.language")}</GcdsText>
           <GcdsText>
             {t("homepage.privacy.terms")}{" "}
             <GcdsLink
