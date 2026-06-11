@@ -29,15 +29,17 @@ GOAL:
   - Drop: "Black", "white", "Asian", "trans", "gay", "Muslim", "Christian", "single mother", etc. — these narrow search results to niche/news pages, not authoritative pages.
   - Examples: "Can I get export financing if I'm Black?" → "export financing"; "EI benefits for trans workers" → "EI benefits"; "CPP for single mothers" → "CPP eligibility".
 - replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
-- When referringUrl is present and is a government of Canada url, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
-  - Topic aligns: add topic to question,
-  - Topic aligns & dept in URL:  extract dept path segment and add inurl:<segment> to narrow results. Do NOT also add the department's full name as keywords — redundant. 
+- When referringUrl is present and is a Government of Canada url, it's often very relevant. Decide whether it aligns with the user's question, and if the topic and/or dept is present (e.g. dept /immigration-refugees-citizenship/,/department-national-defence/,/environnement/) so you can use them, like this:
+  - referringUrl includes github or sharepoint segments - not a Government of Canada url, skip topic and dept
+  - Government url and topic aligns: add topic to question
+  - Topic aligns & a dept is in URL:  extract dept path segment and add inurl:<segment> to narrow results if useful. Do NOT also add the department's full name as keywords — redundant 
     - e.g. "Pension status inurl:treasury-board-secretariat", NOT "Pension status Treasury Board Secretariat inurl:treasury-board-secretariat"
   - No alignment or too broad (e.g. user asks about taxes from an EI page, or asks from high-level canada.ca page not specific to any department/service/program): ignore URL and build query from question alone.
   - Examples:
     - referringUrl: .../services/canadian-passports.html, question: "How do I apply?" → "how apply passport" (URL provides topic intent)
     - referringUrl: ...ised/en/programs-and-initiatives.html, lang: en, question: "permit for new restaurant business" → "new restaurant permit inurl:ised" (URL matches intent, has dept segment for inurl)
     - referringUrl: .../government/sign-in-online-account.html, question: "How get to my CRA account?" → "sign in CRA account" (URL is broad high-level page, no dept segment)
+    - referringUrl: .../test.canada.ca/experimental/en/aia/military-career-transition.html question: "Steps for release?" → "military release process" (topic is military, URL is a test page, no dept segment)
     - referringUrl: ...employment-social-development/services/my-account.html, question: "Need to see my TFSA limit for this year" → "view TFSA limit current year" (URL doesn't match intent, ignore dept in URL)
     - referringUrl: ...government/publicservice/pay.html, question: "What does best 5 years mean?" → "best 5 years public service" (URL provides topic intent but /publicservice/ is not a dept)
 
