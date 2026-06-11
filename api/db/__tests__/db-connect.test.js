@@ -21,13 +21,13 @@ describe('db-connect DocumentDB target selection', () => {
     process.env = { ...originalEnv };
   });
 
-  it('normalizes unknown DocumentDB versions to 5', async () => {
+  it('normalizes unknown DocumentDB versions to 8', async () => {
     const { normalizeDocumentDbVersion } = await loadDbConnect();
 
     expect(normalizeDocumentDbVersion('8')).toBe('8');
     expect(normalizeDocumentDbVersion('5')).toBe('5');
-    expect(normalizeDocumentDbVersion('')).toBe('5');
-    expect(normalizeDocumentDbVersion('latest')).toBe('5');
+    expect(normalizeDocumentDbVersion('')).toBe('8');
+    expect(normalizeDocumentDbVersion('latest')).toBe('8');
   });
 
   it('selects explicit DocumentDB 5 and 8 URI environment variables', async () => {
@@ -37,7 +37,8 @@ describe('db-connect DocumentDB target selection', () => {
 
     const { getDocumentDbUri, switchDocumentDbVersion } = await loadDbConnect();
 
-    expect(getDocumentDbUri()).toBe('mongodb://docdb5');
+    expect(getDocumentDbUri()).toBe('mongodb://docdb8');
+    expect(getDocumentDbUri('5')).toBe('mongodb://docdb5');
     await switchDocumentDbVersion('8');
     expect(getDocumentDbUri()).toBe('mongodb://docdb8');
   });
