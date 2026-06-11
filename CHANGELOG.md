@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.141.0](https://github.com/cds-snc/ai-answers/compare/v1.140.0...v1.141.0) (2026-06-11)
+
+
+### Features
+
+* add language normalization for reset link and implement tests f… ([5f0b28d](https://github.com/cds-snc/ai-answers/commit/5f0b28d10fd71036573ca03215e077bb56a6b6ab))
+* add language normalization for reset link and implement tests for sendResetHandler ([53013fc](https://github.com/cds-snc/ai-answers/commit/53013fc5086da97762518815d4ecafe1a4f0f34c))
+* update reset link handling to support multiple languages and improve security ([e738d8d](https://github.com/cds-snc/ai-answers/commit/e738d8de767d7b474678af94adb51689a0228887))
+
 ## [1.140.0](https://github.com/cds-snc/ai-answers/compare/v1.139.0...v1.140.0) (2026-06-10)
 
 
