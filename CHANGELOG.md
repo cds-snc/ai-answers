@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.142.0](https://github.com/cds-snc/ai-answers/compare/v1.141.0...v1.142.0) (2026-06-11)
+
+
+### Features
+
+* implement settings cache refresh functionality and update Docum… ([364f6cf](https://github.com/cds-snc/ai-answers/commit/364f6cfc6f0611172c9b6137a694deb7f3a1bf2e))
+* implement settings cache refresh functionality and update DocumentDB version handling ([e432943](https://github.com/cds-snc/ai-answers/commit/e4329430488a621c8f9cc070470e100a5a47d663))
+
 ## [1.141.0](https://github.com/cds-snc/ai-answers/compare/v1.140.0...v1.141.0) (2026-06-11)
 
 
