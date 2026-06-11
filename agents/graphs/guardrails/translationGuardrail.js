@@ -6,6 +6,33 @@ import { checkTranslatedPii } from './piiGuardrail.js';
 import { redactionService } from '../services/redactionService.js';
 import { translateQuestion as translateService } from '../services/translationService.js';
 
+// Canadian Indigenous language iso3 codes (incl. macrolanguage codes) that are
+// not yet supported. The translation prompt is asked to emit "und" for these,
+// but that LLM signal is unreliable: it tends to return the precise variant code
+// instead (e.g. "ike" for Eastern Canadian Inuktitut, not "und"). This set is the
+// deterministic backstop — any code here is treated exactly like "und". Not
+// exhaustive; extend as new variants are observed.
+export const UNSUPPORTED_INDIGENOUS_ISO3 = new Set([
+  // Inuit
+  'iku', 'ike', 'ikt',
+  // Cree
+  'cre', 'crj', 'crk', 'crl', 'crm', 'csw', 'cwd',
+  // Innu / Naskapi / Atikamekw
+  'moe', 'nsk', 'atj',
+  // Michif
+  'crg',
+  // Ojibwe family (incl. Oji-Cree / Severn)
+  'oji', 'ojb', 'ojc', 'ojg', 'ojs', 'ojw', 'otw', 'ciw',
+  // Algonquian (other)
+  'alq', 'mic', 'bla',
+  // Dene / Athabaskan
+  'chp', 'dgr', 'den', 'scs', 'xsl', 'gwi', 'crx', 'caf', 'bea', 'sek', 'kkz', 'tht',
+  // Haida / Tsimshianic
+  'hai', 'hdn', 'hax', 'git', 'ncg', 'tsi',
+  // Iroquoian
+  'moh', 'one', 'cay', 'tus',
+]);
+
 export async function translateWithGuardrail(text, lang, selectedAI, translationContext = []) {
   const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
   if (resp && resp.blocked === true) {
@@ -28,8 +55,9 @@ export async function runPostTranslationGuardrail(translationData, chatId, selec
     });
     throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null, BLOCK_TYPE.MANIPULATION);
   }
-  if (sourceLang === 'und') {
+  if (sourceLang === 'und' || UNSUPPORTED_INDIGENOUS_ISO3.has(sourceLang)) {
     await ServerLoggingService.info('postTranslateGuard und hard-block (unsupported language)', chatId, {
+      detectedLanguage: sourceLang,
       originalText: translationData?.originalText,
       translatedText: translationData?.translatedText,
       translatedLanguage: translationData?.translatedLanguage,

@@ -24,4 +24,18 @@ describe('translation guardrail', () => {
       'openai'
     )).rejects.toBeInstanceOf(RedactionError);
   });
+
+  it.each(['ike', 'ikt', 'iku', 'crk', 'ojs', 'moh', 'mic', 'IKE'])(
+    'hard-blocks Canadian Indigenous iso3 code "%s" even when it is not literally "und"',
+    async (code) => {
+      await expect(runPostTranslationGuardrail(
+        { originalLanguage: code, translatedText: 'Hello' },
+        'chat-1',
+        'openai'
+      )).rejects.toMatchObject({
+        name: 'RedactionError',
+        blockType: BLOCK_TYPE.UNSUPPORTED_LANGUAGE,
+      });
+    }
+  );
 });
