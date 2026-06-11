@@ -5,6 +5,14 @@ import { SettingsService } from '../../services/SettingsService.js';
 import os from 'os';
 import speakeasy from 'speakeasy';
 
+function normalizeResetLanguage(value, acceptLanguage = '') {
+  if (value === 'en' || value === 'fr') {
+    return value;
+  }
+
+  return String(acceptLanguage).toLowerCase().includes('fr') ? 'fr' : 'en';
+}
+
 const sendResetHandler = async (req, res) => {
   try {
     const { email } = req.body || {};
@@ -17,7 +25,8 @@ const sendResetHandler = async (req, res) => {
     await dbConnect();
 
     // Find user — generic response regardless to prevent enumeration
-    let user = await User.findOne({ email: String(email).toLowerCase().trim() });
+    const normalizedEmail = String(email).toLowerCase().trim();
+    let user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       console.warn(`[auth-send-reset][${os.hostname()}] Reset requested for unknown account`);
@@ -43,8 +52,8 @@ const sendResetHandler = async (req, res) => {
 
     // Compose reset link with code
     const frontendUrl = SettingsService.get('site.baseUrl') || process.env.FRONTEND_URL || 'http://localhost:3000';
-    const lang = req.body.lang || (req.headers['accept-language']?.includes('fr') ? 'fr' : 'en');
-    const resetLink = `${frontendUrl}/${lang}/reset-complete?email=${encodeURIComponent(email)}&code=${code}`;
+    const lang = normalizeResetLanguage(req.body.lang, req.headers['accept-language']);
+    const resetLink = `${frontendUrl}/${lang}/reset-complete?email=${encodeURIComponent(normalizedEmail)}&code=${code}`;
 
     console.debug(`[auth-send-reset][${os.hostname()}] Reset link generated`);
 
@@ -56,7 +65,7 @@ const sendResetHandler = async (req, res) => {
     }
 
     await GCNotifyService.sendEmail({
-      email,
+      email: normalizedEmail,
       templateId,
       personalisation: {
         name: '', // Required by many templates
