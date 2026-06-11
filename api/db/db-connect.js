@@ -26,7 +26,7 @@ let cached = { conn: null, promise: null };
 let activeDocumentDbVersion = normalizeDocumentDbVersion(process.env.DOCDB_ACTIVE_VERSION);
 
 function normalizeDocumentDbVersion(value) {
-  return String(value || '5').trim() === '8' ? '8' : '5';
+  return String(value || '8').trim() === '5' ? '5' : '8';
 }
 
 function getDocumentDbUri(version = activeDocumentDbVersion) {
