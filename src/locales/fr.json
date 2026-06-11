@@ -1550,5 +1550,64 @@
     "title": "Page introuvable",
     "message": "Nous ne trouvons pas la page que vous cherchez.",
     "homeLink": "Retourner à Réponses IA"
+  },
+  "navVariant": {
+    "appTitle": "AI Answers",
+    "navAriaLabel": "Navigation principale",
+    "submenuLabel": "sous-menu",
+    "useAIGroupLabel": "Utiliser Réponses IA",
+    "useAISubItem": "Utiliser avec les options d'évaluation",
+    "mobileMenuLabel": "Menu",
+    "mobileCloseLabel": "Fermer",
+    "demo1Title": "Conception de navigation — menu déroulant",
+    "demo2Title": "Conception de navigation — navigation supérieure partenaire",
+    "demo3Title": "Conception de navigation — navigation supérieure partenaire et administrateur",
+    "demo4Title": "Conception de navigation — avec recherche",
+    "demoPlaceholder": "Le contenu de la page apparaîtrait ici."
+  },
+  "localNav": {
+    "trigger": {
+      "ariaLabel": "Menu du compte"
+    },
+    "close": "Fermer le menu",
+    "role": {
+      "partner": "Partenaire",
+      "admin": "Administrateur"
+    },
+    "partner": {
+      "sectionLabel": "Menu partenaire"
+    },
+    "admin": {
+      "sectionLabel": "Menu administrateur"
+    },
+    "groups": {
+      "dashboards": "Tableaux de bord",
+      "chats": "Clavardages",
+      "management": "Gestion",
+      "usersSystem": "Utilisateurs et système",
+      "infrastructure": "Infrastructure"
+    },
+    "items": {
+      "useAI": "Utiliser Réponses IA avec options d'évaluation",
+      "partnerDashboard": "Tableau de bord partenaire",
+      "evalDashboard": "Tableau de bord des évaluations",
+      "performanceMetrics": "Métriques de performance",
+      "technicalMetrics": "Métriques techniques",
+      "viewChats": "Voir les clavardages",
+      "fullChatTrace": "Trace complète d'un clavardage",
+      "editScenarios": "Modifier les scénarios",
+      "manageBatches": "Voir et gérer les lots",
+      "execDashboard": "Tableau de bord exécutif",
+      "autoEval": "Auto-évaluation",
+      "manageUsers": "Gérer les comptes utilisateurs",
+      "activeSessions": "Sessions actives",
+      "settings": "Paramètres",
+      "manageDatabase": "Gérer la base de données",
+      "vectorAdmin": "Administration des vecteurs",
+      "evalAdmin": "Administration des évaluations",
+      "connectivity": "Connectivité du service",
+      "managePassword": "Gérer le mot de passe",
+      "signOut": "Se déconnecter"
+    }
   }
 }

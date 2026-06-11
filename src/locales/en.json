@@ -1550,5 +1550,64 @@
     "title": "Page not found",
     "message": "We can't find the page you're looking for.",
     "homeLink": "Return to AI Answers"
+  },
+  "navVariant": {
+    "appTitle": "AI Answers",
+    "navAriaLabel": "Main navigation",
+    "submenuLabel": "submenu",
+    "useAIGroupLabel": "Use AI answers",
+    "useAISubItem": "Use with evaluation options",
+    "mobileMenuLabel": "Menu",
+    "mobileCloseLabel": "Close",
+    "demo1Title": "Navigation design — dropdown",
+    "demo2Title": "Navigation design — partner top nav",
+    "demo3Title": "Navigation design — partner and admin top nav",
+    "demo4Title": "Navigation design — with search",
+    "demoPlaceholder": "Page content would appear here."
+  },
+  "localNav": {
+    "trigger": {
+      "ariaLabel": "Account menu"
+    },
+    "close": "Close menu",
+    "role": {
+      "partner": "Partner",
+      "admin": "Admin"
+    },
+    "partner": {
+      "sectionLabel": "Partner menu"
+    },
+    "admin": {
+      "sectionLabel": "Admin menu"
+    },
+    "groups": {
+      "dashboards": "Dashboards",
+      "chats": "Chats",
+      "management": "Management",
+      "usersSystem": "Users & system",
+      "infrastructure": "Infrastructure"
+    },
+    "items": {
+      "useAI": "Use AI answers with evaluation options",
+      "partnerDashboard": "Partner dashboard",
+      "evalDashboard": "Evaluation dashboard",
+      "performanceMetrics": "Performance metrics",
+      "technicalMetrics": "Technical metrics",
+      "viewChats": "View chats",
+      "fullChatTrace": "Full chat trace",
+      "editScenarios": "Edit scenarios",
+      "manageBatches": "View & manage batches",
+      "execDashboard": "Executive dashboard",
+      "autoEval": "Auto-evaluation",
+      "manageUsers": "Manage user accounts",
+      "activeSessions": "Active sessions",
+      "settings": "Settings",
+      "manageDatabase": "Manage database",
+      "vectorAdmin": "Vector admin",
+      "evalAdmin": "Evaluation admin",
+      "connectivity": "Service connectivity",
+      "managePassword": "Manage password",
+      "signOut": "Sign out"
+    }
   }
 }

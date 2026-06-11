@@ -27,6 +27,9 @@ export const ROUTE_SLUGS = {
   database:                { en: 'database',                     fr: 'base-de-donnees' },
   vector:                  { en: 'vector',                       fr: 'vecteur' },
   connectivity:            { en: 'connectivity',                 fr: 'connectivite' },
+  'nav-demo-1':            { en: 'nav-demo-1',                   fr: 'demo-nav-1' },
+  'nav-demo-2':            { en: 'nav-demo-2',                   fr: 'demo-nav-2' },
+  'nav-demo-3':            { en: 'nav-demo-3',                   fr: 'demo-nav-3' },
 };
 
 /**
