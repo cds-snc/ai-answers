@@ -54,7 +54,7 @@ const AdminPage = ({ lang = 'en' }) => {
           </h2>
           <ul className="list-none p-0">
             <li>
-              <GcdsLink href={`/${lang}`}>
+              <GcdsLink href={`/${lang}`} target="_blank" rel="noopener noreferrer">
                 {t('admin.navigation.aiAnswers', 'AI Answers')}
               </GcdsLink>
             </li>
