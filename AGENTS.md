@@ -13,10 +13,7 @@ Prompt files in `agents/prompts/` — the system prompt, `agenticBase.js`,
 `citationInstructions.js`, `safety.js`, `contextSystemPrompt.js`, and the
 `scenarios/` files — are tuned through a dedicated process: changes are made by
 the prompt maintainers (Lisa Fast and Ryan Hyma) and validated by running
-evaluation **batches** before they ship. A prompt tweak that looks harmless can
-silently shift answer quality, department routing, or safety behaviour for every
-user, and that regression is only caught by batch validation — not by tests or
-code review.
+evaluation **batches** before they ship. They may ask for assistance tuning prompts.
 
 So unless your task is **explicitly** prompt tuning directed by a maintainer:
 
