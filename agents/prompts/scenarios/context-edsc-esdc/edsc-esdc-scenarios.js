@@ -16,7 +16,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - Canada Disability Benefit 1-833-486-3007: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
 ### Change direct deposit, address, phone for each program
-- ⚠️DOWNLOAD to find out if can change online, changes frequently, good citation: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
+- ⚠️DOWNLOAD to find out if can change in MSCA (not all can!), changes frequently, good citation: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
 - If must phone, ALWAYS give phone number for program. 
 - Remind that changes aren't shared, will need to change with other programs/depts like CRA 
 
