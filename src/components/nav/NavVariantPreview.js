@@ -30,9 +30,12 @@ function MobileGroupLabel({ label }) {
 
 // Mobile fallback matching the desktop group structure — no partner/admin section headers.
 // Styled to match the GC DS top nav mobile pattern: full-width "Menu" trigger + full-screen overlay.
-function NavVariantMobile({ variant, lang }) {
+function NavVariantMobile({ variant, lang, generic = false }) {
   const { t } = useTranslations(lang);
   const { isOpen, toggle, close, triggerRef, menuRef, onMenuKeyDown, onTriggerKeyDown } = useLocalNav();
+  const appTitle = generic ? t('navVariant.demo4GenericAppTitle') : t('navVariant.appTitle');
+  const groupLabel = generic ? t('navVariant.demo4GenericGroupLabel') : t('navVariant.useAIGroupLabel');
+  const subItem = generic ? t('navVariant.demo4GenericSubItem') : t('navVariant.useAISubItem');
 
   const sigSrc = lang === 'fr' ? '/sig-clr-fr.svg' : '/sig-clr-en.svg';
   const sigAlt = lang === 'fr' ? 'Gouvernement du Canada' : 'Government of Canada';
@@ -68,7 +71,7 @@ function NavVariantMobile({ variant, lang }) {
               >
                 {t('navVariant.mobileCloseLabel')}
               </button>
-              <span className="nav-variant-mobile-header-title">{t('navVariant.appTitle')}</span>
+              <span className="nav-variant-mobile-header-title">{appTitle}</span>
             </div>
             <ul
               ref={menuRef}
@@ -77,8 +80,8 @@ function NavVariantMobile({ variant, lang }) {
               aria-label={t('localNav.trigger.ariaLabel')}
               onKeyDown={onMenuKeyDown}
             >
-              <MobileGroupLabel label={t('navVariant.useAIGroupLabel')} />
-              <MobileNavLink href={`/${lang}`} label={t('navVariant.useAISubItem')} />
+              <MobileGroupLabel label={groupLabel} />
+              <MobileNavLink href={`/${lang}`} label={subItem} />
 
               <MobileGroupLabel label={t('localNav.groups.dashboards')} />
               <MobileNavLink href={getPath('partner-dashboard', lang)} label={t('localNav.items.partnerDashboard')} />
@@ -226,9 +229,12 @@ export function AccountMenu({ lang, overrideEmail, compact = false }) {
 }
 
 // Renders the nav bar only — no wrapper box, no labels. Drop directly into a demo page.
-export default function NavVariantPreview({ variant = 'partner', lang = 'en' }) {
+export default function NavVariantPreview({ variant = 'partner', lang = 'en', generic = false }) {
   const { t } = useTranslations(lang);
   const submenu = (group) => `${group} ${t('navVariant.submenuLabel')}`;
+  const appTitle = generic ? t('navVariant.demo4GenericAppTitle') : t('navVariant.appTitle');
+  const groupLabel = generic ? t('navVariant.demo4GenericGroupLabel') : t('navVariant.useAIGroupLabel');
+  const subItem = generic ? t('navVariant.demo4GenericSubItem') : t('navVariant.useAISubItem');
 
   if (variant === 'current') {
     return (
@@ -243,12 +249,12 @@ export default function NavVariantPreview({ variant = 'partner', lang = 'en' }) 
       {/* Desktop: GcdsTopNav */}
       <div className="nav-variant-bar">
         <GcdsTopNav label={t('navVariant.navAriaLabel')} alignment="end">
-          <GcdsNavLink href="#" slot="home">{t('navVariant.appTitle')}</GcdsNavLink>
+          <GcdsNavLink href="#" slot="home">{appTitle}</GcdsNavLink>
           <GcdsNavGroup
-            openTrigger={t('navVariant.useAIGroupLabel')}
-            menuLabel={submenu(t('navVariant.useAIGroupLabel'))}
+            openTrigger={groupLabel}
+            menuLabel={submenu(groupLabel)}
           >
-            <GcdsNavLink href={`/${lang}`}>{t('navVariant.useAISubItem')}</GcdsNavLink>
+            <GcdsNavLink href={`/${lang}`}>{subItem}</GcdsNavLink>
           </GcdsNavGroup>
 
           {/* Dashboards — admin dashboards follow partner dashboards in the combined variant */}
@@ -311,7 +317,7 @@ export default function NavVariantPreview({ variant = 'partner', lang = 'en' }) 
 
       {/* Mobile: our overlay design with desktop-matching group structure */}
       <div className="nav-variant-mobile-bar">
-        <NavVariantMobile variant={variant} lang={lang} />
+        <NavVariantMobile variant={variant} lang={lang} generic={generic} />
       </div>
     </>
   );

@@ -7,7 +7,9 @@ const NavDemo4Page = ({ lang = 'en' }) => {
   return (
     <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('navVariant.demo4Title')}</h1>
-      <p>{t('navVariant.demoPlaceholder')}</p>
+      <p className="mb-300">{t('navVariant.demo4Lorem1')}</p>
+      <p className="mb-300">{t('navVariant.demo4Lorem2')}</p>
+      <p className="mb-300">{t('navVariant.demo4Lorem3')}</p>
     </GcdsContainer>
   );
 };

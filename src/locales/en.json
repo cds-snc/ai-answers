@@ -1562,7 +1562,13 @@
     "demo1Title": "Navigation design — dropdown",
     "demo2Title": "Navigation design — partner top nav",
     "demo3Title": "Navigation design — partner and admin top nav",
-    "demo4Title": "Navigation design — with search",
+    "demo4Title": "Lorem ipsum dolor sit amet",
+    "demo4GenericAppTitle": "Top navigation",
+    "demo4GenericGroupLabel": "Services",
+    "demo4GenericSubItem": "Overview",
+    "demo4Lorem1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "demo4Lorem2": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "demo4Lorem3": "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.",
     "demoPlaceholder": "Page content would appear here."
   },
   "localNav": {

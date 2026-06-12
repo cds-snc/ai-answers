@@ -82,7 +82,7 @@ export default function NavDemoHeader({ lang, langHref, variant, demoEmail, show
         </div>
       )}
 
-      <NavVariantPreview variant={variant} lang={lang} />
+      <NavVariantPreview variant={variant} lang={lang} generic={showSearch} />
 
       <div className="nav-demo-breadcrumb-container">
         <GcdsBreadcrumbs lang={lang} />
