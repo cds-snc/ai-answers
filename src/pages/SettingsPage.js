@@ -33,6 +33,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [chatTransport, setChatTransport] = useState('sse');
   const [savingChatTransport, setSavingChatTransport] = useState(false);
 
+  // Canadian Indigenous language blocking guardrail (on by default)
+  const [indigenousLanguageBlocking, setIndigenousLanguageBlocking] = useState('true');
+  const [savingIndigenousLanguageBlocking, setSavingIndigenousLanguageBlocking] = useState(false);
+
 
 
   // Two-factor authentication settings
@@ -94,6 +98,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
       const chatTransportSetting = await DataStoreService.getSetting('chat.transport', 'sse');
       setChatTransport(normalizeChatTransport(chatTransportSetting));
+
+      const indigenousBlockingSetting = await DataStoreService.getSetting('guardrail.indigenousLanguageBlocking', 'true');
+      setIndigenousLanguageBlocking(String(indigenousBlockingSetting ?? 'true'));
 
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
@@ -366,6 +373,18 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleIndigenousLanguageBlockingChange = async (e) => {
+    const newValue = e.target.value;
+    setIndigenousLanguageBlocking(newValue);
+    setSavingIndigenousLanguageBlocking(true);
+    try {
+      const current = await saveAndVerify('guardrail.indigenousLanguageBlocking', newValue);
+      setIndigenousLanguageBlocking(String(current ?? 'true'));
+    } finally {
+      setSavingIndigenousLanguageBlocking(false);
+    }
+  };
+
   const handleResetTemplateIdChange = (e) => {
     setResetTemplateId(e.target.value);
   };
@@ -523,6 +542,19 @@ const SettingsPage = ({ lang = 'en' }) => {
             {AVAILABLE_MODELS.map(m => (
               <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
             ))}
+          </select>
+
+          <label htmlFor="indigenous-language-blocking" className="mb-200 display-block mt-400">
+            {t('settings.indigenousLanguageBlocking.label')}
+          </label>
+          <select
+            id="indigenous-language-blocking"
+            value={indigenousLanguageBlocking}
+            onChange={handleIndigenousLanguageBlockingChange}
+            disabled={savingIndigenousLanguageBlocking}
+          >
+            <option value="true">{t('common.yes')}</option>
+            <option value="false">{t('common.no')}</option>
           </select>
 
         </div>

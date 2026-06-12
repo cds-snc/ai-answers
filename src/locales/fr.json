@@ -980,6 +980,9 @@
         "ndjson": "Flux NDJSON"
       }
     },
+    "indigenousLanguageBlocking": {
+      "label": "Blocage des langues autochtones du Canada"
+    },
     "statusLabel": "Statut du service",
     "statuses": {
       "available": "Disponible",

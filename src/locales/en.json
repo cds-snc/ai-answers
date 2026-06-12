@@ -980,6 +980,9 @@
         "ndjson": "NDJSON stream"
       }
     },
+    "indigenousLanguageBlocking": {
+      "label": "Canadian Indigenous language blocking"
+    },
     "statusLabel": "Service status",
     "statuses": {
       "available": "Available",
