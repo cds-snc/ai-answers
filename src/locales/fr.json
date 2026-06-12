@@ -1006,6 +1006,12 @@
         "docdb8": "DocumentDB 8"
       }
     },
+    "refreshCache": {
+      "label": "Rafraîchir le cache des paramètres",
+      "loading": "Rafraîchissement du cache...",
+      "success": "Cache des paramètres rafraîchi.",
+      "error": "Échec du rafraîchissement du cache des paramètres : {error}"
+    },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",

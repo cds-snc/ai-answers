@@ -1006,6 +1006,12 @@
         "docdb8": "DocumentDB 8"
       }
     },
+    "refreshCache": {
+      "label": "Refresh settings cache",
+      "loading": "Refreshing cache...",
+      "success": "Settings cache refreshed.",
+      "error": "Failed to refresh settings cache: {error}"
+    },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
+import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -18,8 +18,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingDeployment, setSavingDeployment] = useState(false);
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
-  const [documentDbVersion, setDocumentDbVersion] = useState('5');
+  const [documentDbVersion, setDocumentDbVersion] = useState('8');
   const [savingDocumentDbVersion, setSavingDocumentDbVersion] = useState(false);
+  const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
+  const [settingsCacheMessage, setSettingsCacheMessage] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
@@ -84,8 +86,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDeploymentMode(mode);
       const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
       setVectorServiceType(type);
-      const dbVersion = await DataStoreService.getSetting('database.documentdbVersion', '5');
-      setDocumentDbVersion(dbVersion === '8' ? '8' : '5');
+      const dbVersion = await DataStoreService.getSetting('database.documentdbVersion', '8');
+      setDocumentDbVersion(dbVersion === '5' ? '5' : '8');
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
       // Load default workflow setting
@@ -331,6 +333,19 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleRefreshSettingsCache = async () => {
+    setRefreshingSettingsCache(true);
+    setSettingsCacheMessage('');
+    try {
+      await DataStoreService.refreshSettingsCache();
+      setSettingsCacheMessage(t('settings.refreshCache.success'));
+    } catch (error) {
+      setSettingsCacheMessage(t('settings.refreshCache.error').replace('{error}', error.message));
+    } finally {
+      setRefreshingSettingsCache(false);
+    }
+  };
+
 
 
   const handleBaseUrlChange = (e) => {
@@ -448,6 +463,18 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="5">{t('settings.documentDbVersion.options.docdb5')}</option>
             <option value="8">{t('settings.documentDbVersion.options.docdb8')}</option>
           </select>
+
+          <div className="mt-200">
+            <GcdsButton
+              type="button"
+              variant="secondary"
+              onClick={handleRefreshSettingsCache}
+              disabled={refreshingSettingsCache}
+            >
+              {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
+            </GcdsButton>
+          </div>
+          {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
 
           <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
             {t('settings.vectorServiceTypeLabel')}

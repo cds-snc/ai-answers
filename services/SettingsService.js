@@ -13,7 +13,7 @@ import { requireLiteralString, requireString } from '../api/util/db-query.js';
 const SETTING_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
-  'database.documentdbVersion': '5',
+  'database.documentdbVersion': '8',
   'guardrail.indigenousLanguageBlocking': 'true',
 };
 
@@ -25,6 +25,7 @@ class SettingsServiceClass {
   }
 
   async loadAll() {
+    this.cache = {};
     await dbConnect();
     const settings = await Setting.find({});
     settings.forEach(s => {
@@ -42,6 +43,10 @@ class SettingsServiceClass {
     await this.applyDocumentDbVersionSetting();
 
     console.log(`[SettingsService] Loaded ${settings.length} settings into cache.`);
+  }
+
+  async refreshCache() {
+    await this.loadAll();
   }
 
   get(key) {
