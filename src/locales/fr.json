@@ -1077,6 +1077,8 @@
     "error": "Erreur",
     "yes": "Oui",
     "no": "Non",
+    "on": "Activé",
+    "off": "Désactivé",
     "na": "S.O.",
     "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés."
   },

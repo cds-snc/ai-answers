@@ -580,8 +580,8 @@ const SettingsPage = ({ lang = 'en' }) => {
             onChange={handleIndigenousLanguageBlockingChange}
             disabled={savingIndigenousLanguageBlocking}
           >
-            <option value="true">{t('common.yes')}</option>
-            <option value="false">{t('common.no')}</option>
+            <option value="true">{t('common.on')}</option>
+            <option value="false">{t('common.off')}</option>
           </select>
 
         </div>

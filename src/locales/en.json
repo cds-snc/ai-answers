@@ -1077,6 +1077,8 @@
     "error": "Error",
     "yes": "Yes",
     "no": "No",
+    "on": "On",
+    "off": "Off",
     "na": "N/A",
     "noDataForFilters": "No data found for the selected filters."
   },
