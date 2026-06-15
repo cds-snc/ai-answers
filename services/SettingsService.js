@@ -14,6 +14,7 @@ const SETTING_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
   'database.documentdbVersion': '8',
+  'guardrail.indigenousLanguageBlocking': 'true',
 };
 
 const DOCUMENTDB_VERSION_SETTING = 'database.documentdbVersion';

@@ -181,9 +181,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
-        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
-        return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       }
     },
     {

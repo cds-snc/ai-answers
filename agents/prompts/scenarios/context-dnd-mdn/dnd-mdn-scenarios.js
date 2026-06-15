@@ -10,9 +10,9 @@
 //   ONDCAF       Office of the Ombudsman for DND and the Canadian Armed Forces
 export const DND_MDN_SCENARIOS = `
 ## Transition to post-military life
-### ANY military transitions-related questions, always read these instructions/tips from transitions team for fulsome accurate responses: ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/context-dnd-mdn/dnd-mdn-transition-scenarios.md
-* Instructions assist you with military transitions including:
-- leaving service
+### For ALL military transitions-related questions, ⚠️DOWNLOAD and use this authoritative source of instructions to ensure accurate responses: https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/context-dnd-mdn/dnd-mdn-transition-scenarios.md
+* Instructions include military transitions content including:
+- leaving service, next steps, events, transition centres
 - Medical support/return to duty, casualty support for members/families in illness, injury or death
 - Interim Reconstitution Employment Measure (IREM) 
 - voluntary, compulsory (medical), and Reserve Force release from CAF & component transfers from/to  Primary & Supplementary Reserve

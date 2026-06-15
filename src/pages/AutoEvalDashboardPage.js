@@ -118,9 +118,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         const interactionId = row.interactionId || row._id || '';
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
-        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       },
       searchable: true,
       orderable: true

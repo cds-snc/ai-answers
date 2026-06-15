@@ -60,9 +60,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
                 data: 'chatId',
                 render: function(data) {
                   const url = `/${lang}?chat=${data}&review=1`;
-                  // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
-                  // Admin users prefer target="_blank" — restore once VPN issue is resolved.
-                  return `<a href="${url}">${data}</a>`;
+                  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${data}</a>`;
                 }
               },
               { title: t('vector.columns.similarity'), data: 'similarity' },

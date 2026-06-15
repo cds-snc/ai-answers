@@ -151,6 +151,14 @@ ${departmentsString}
 <departmentUrl>https://www.canada.ca/en/treasury-board-secretariat.html</departmentUrl>
 </analysis>
 </example>
+
+<example>
+* A question about release process asked on an english military transition page with search results that include Treasury Board results would match DND-MDN, not TBS-SCT, because question and referring-url take priority over search results, military topic aligns with question:
+<analysis>
+<department>DND-MDN</department>
+<departmentUrl>https://www.canada.ca/en/department-national-defence.html</departmentUrl>
+</analysis>
+</example>
 </examples>
     `;
 
