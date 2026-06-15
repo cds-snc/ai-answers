@@ -152,6 +152,6 @@
     "esbuild": "^0.28.0",
     "get-port": "^7.1.0",
     "mongodb-memory-server": "^10.1.4",
-    "vite": "^8.0.14"
+    "vite": "^8.0.16"
   }
 }
