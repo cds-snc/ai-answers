@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.143.0](https://github.com/cds-snc/ai-answers/compare/v1.142.0...v1.143.0) (2026-06-16)
+
+
+### Features
+
+* add indigenous language toggle ([1eaacf6](https://github.com/cds-snc/ai-answers/commit/1eaacf6ae81a8ed77acaeb451518522c22674d9d))
+* add OL policy stuff ([bd745a8](https://github.com/cds-snc/ai-answers/commit/bd745a82e9a755f506ab30fc525b925b231ce65f))
+* add switch in settings for language on off ([1ed911d](https://github.com/cds-snc/ai-answers/commit/1ed911d38037f1e2adf4e0e1286db7389b692792))
+
+
+### Bug Fixes
+
+* add actual guardrail to block indigenous languages ([22bd038](https://github.com/cds-snc/ai-answers/commit/22bd03825c4d31d5135b4277edaeefeb6d650f5d))
+* add exception to translation to explain to ask in same language ([1fa67c2](https://github.com/cds-snc/ai-answers/commit/1fa67c2f4d1ca3fa934c4e610cbe8fb2a29c5199))
+* change to on off instead of yes no for blocking setting ([d0d7a86](https://github.com/cds-snc/ai-answers/commit/d0d7a86a4d81b6fbdc9776ec4662a3ce97f0397a))
+* change user message to cover blocked languages ([99caa55](https://github.com/cds-snc/ai-answers/commit/99caa55b01648b252d9b0de643468086fd6c1685))
+* deterministic check to solve question instructions ([4e2467f](https://github.com/cds-snc/ai-answers/commit/4e2467f5d00e4baadfd6383032ae66e20904e782))
+* make chats open in new tab ([9dba730](https://github.com/cds-snc/ai-answers/commit/9dba730352aeb9f9593aade4a318a3a53d763c98))
+* try again ([465035d](https://github.com/cds-snc/ai-answers/commit/465035d0ad294c449edfdaaef24580de64e46202))
+
 ## [1.142.0](https://github.com/cds-snc/ai-answers/compare/v1.141.0...v1.142.0) (2026-06-11)
 
 
