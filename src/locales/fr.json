@@ -1493,7 +1493,53 @@
     "allEmbeddingsGenerated": "Tous les incorporations ont été générées !",
     "generateEmbeddingsFailed": "Échec de la génération des incorporations. Vérifiez la console pour plus de détails.",
     "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
-    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !"
+    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !",
+    "docdb8Capability": {
+      "title": "Test des capacités de recherche vectorielle de DocumentDB 8",
+      "description": "Exécutez des tests d'agrégation dans DocumentDB 8 pour vérifier si les filtres peuvent réduire l'ensemble des candidats avant la recherche vectorielle.",
+      "run": "Exécuter le test des capacités",
+      "running": "Exécution du test des capacités...",
+      "pass": "Réussite",
+      "fail": "Échec",
+      "yes": "Oui",
+      "no": "Non",
+      "noError": "Aucune erreur",
+      "notAvailable": "Non disponible",
+      "estimatedFeedbackSelectivity": "Sélectivité estimée des rétroactions",
+      "recommendedStrategy": "Stratégie recommandée",
+      "rawResults": "Résultats diagnostiques bruts",
+      "durationMs": "{ms} ms",
+      "scoreRange": "{min} à {max}",
+      "oversamplingHint": "Avec une sélectivité des rétroactions de {selectivity}, le post-filtrage doit examiner environ {candidates} candidats vectoriels pour retourner 10 résultats avec rétroaction.",
+      "counts": {
+        "totalEmbeddings": "Nombre total d'embeddings de questions",
+        "embeddingsWithInteraction": "Embeddings avec interactions",
+        "interactionsWithFeedback": "Interactions avec rétroaction",
+        "embeddingsWithFeedbackInteraction": "Embeddings joints à une rétroaction",
+        "estimatedCandidatesForTenFeedbackResults": "Candidats estimés pour 10 résultats avec rétroaction"
+      },
+      "table": {
+        "capability": "Capacité",
+        "status": "État",
+        "resultCount": "Nombre de résultats",
+        "preFilter": "Préfiltre",
+        "score": "Plage des scores",
+        "duration": "Durée",
+        "error": "Erreur"
+      },
+      "capabilities": {
+        "vectorSearchBasicSupport": "Prise en charge de base de $vectorSearch",
+        "vectorSearchScoreSupport": "Prise en charge de $meta vectorSearchScore",
+        "postFilterAfterVectorSearch": "Filtre après la recherche vectorielle",
+        "simpleMatchBeforeVectorSearch": "$match simple avant la recherche vectorielle",
+        "feedbackLookupFilterBeforeVectorSearch": "Recherche et filtre des rétroactions avant la recherche vectorielle"
+      },
+      "recommendations": {
+        "lookupPreFilter": "Utiliser un préfiltre d'agrégation avec recherche des rétroactions avant $vectorSearch.",
+        "denormalizedPreFilter": "Dénormaliser les champs de rétroaction dans les embeddings, puis utiliser $match avant $vectorSearch.",
+        "dedicatedFeedbackCollection": "Utiliser une collection et un index distincts pour les embeddings avec rétroaction afin d'éviter de rechercher les enregistrements sans rétroaction."
+      }
+    }
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
