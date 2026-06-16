@@ -13,12 +13,12 @@ data "aws_ssm_parameter" "docdb_password" {
 
 moved {
   from = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group[0]
-  to   = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group
+  to   = aws_docdb_cluster_parameter_group.ai-answers-docdb-cluster-parameter-group
 }
 
 moved {
   from = aws_docdb_cluster.ai-answers-docdb8-cluster[0]
-  to   = aws_docdb_cluster.ai-answers-docdb8-cluster
+  to   = aws_docdb_cluster.ai-answers-docdb-cluster
 }
 
 # Create a security group for the DocumentDB cluster
@@ -65,15 +65,15 @@ resource "aws_docdb_subnet_group" "ai-answers-docdb-subnet-group" {
 resource "aws_ssm_parameter" "docdb_uri" {
   name       = "docdb_uri"
   type       = "SecureString"
-  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb8-cluster.endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
-  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb8-instance]
+  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb-cluster.endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb-instance]
 }
 
-# DocumentDB 8 cluster.
-resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb8-cluster-parameter-group" {
-  name        = "${var.product_name}-docdb8-cluster-parameter-group"
+# DocumentDB cluster.
+resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb-cluster-parameter-group" {
+  name        = "${var.product_name}-docdb-cluster-parameter-group"
   family      = "docdb8.0"
-  description = "Parameter group for ${var.product_name} ${var.env} DocumentDB 8"
+  description = "Parameter group for ${var.product_name} ${var.env} DocumentDB"
 
   parameter {
     name  = "tls"
@@ -86,8 +86,8 @@ resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb8-cluster-paramete
   }
 }
 
-resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
-  cluster_identifier              = "${var.product_name}-docdb8-cluster"
+resource "aws_docdb_cluster" "ai-answers-docdb-cluster" {
+  cluster_identifier              = "${var.product_name}-docdb-cluster"
   engine                          = "docdb"
   engine_version                  = "8.0.0"
   master_username                 = data.aws_ssm_parameter.docdb_username.value
@@ -98,7 +98,7 @@ resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
   apply_immediately               = true
   skip_final_snapshot             = true
   port                            = 27017
-  db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group.name
+  db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb-cluster-parameter-group.name
 
   lifecycle {
     prevent_destroy = true
@@ -110,10 +110,10 @@ resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
   }
 }
 
-resource "aws_docdb_cluster_instance" "ai-answers-docdb8-instance" {
+resource "aws_docdb_cluster_instance" "ai-answers-docdb-instance" {
   count              = var.docdb_instance_count
-  identifier         = "${var.product_name}-docdb8-instance-${count.index}"
-  cluster_identifier = aws_docdb_cluster.ai-answers-docdb8-cluster.id
+  identifier         = "${var.product_name}-docdb-instance-${count.index}"
+  cluster_identifier = aws_docdb_cluster.ai-answers-docdb-cluster.id
   instance_class     = "db.t3.medium"
   engine             = "docdb"
   apply_immediately  = true
