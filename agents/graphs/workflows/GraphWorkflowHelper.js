@@ -9,8 +9,8 @@ import {
   translateWithGuardrail,
   validateShortQueryOrThrow,
 } from '../guardrails/index.js';
-import { parseResponse, parseSentences } from '../services/answerService.js';
-import { parseContextMessage } from '../services/contextService.js';
+import { parseResponse, parseSentences } from '../parsers/answerParser.js';
+import { parseContextMessage } from '../parsers/contextParser.js';
 
 // Services for direct invocation
 import { SearchContextService } from '../../../services/SearchContextService.js';

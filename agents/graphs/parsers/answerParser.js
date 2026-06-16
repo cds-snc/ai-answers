@@ -1,4 +1,4 @@
-// Server-side answer parsing service
+// Server-side answer parsing helpers.
 // Mirrors the parsing logic from src/services/AnswerService.js
 
 export function parseSentences(text) {
@@ -7,7 +7,7 @@ export function parseSentences(text) {
     let match;
 
     while ((match = sentenceRegex.exec(text)) !== null) {
-        const index = parseInt(match[1]) - 1;
+        const index = parseInt(match[1], 10) - 1;
         if (index >= 0 && index < 4 && match[2].trim()) {
             sentences[index] = match[2].trim();
         }
@@ -122,7 +122,7 @@ export function parseResponse(text) {
     const paragraphs = content.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph !== '');
     const sentences = parseSentences(content);
 
-    const result = {
+    return {
         answerType,
         content,
         preliminaryChecks,
@@ -133,6 +133,4 @@ export function parseResponse(text) {
         confidenceRating,
         sentences,
     };
-
-    return result;
 }

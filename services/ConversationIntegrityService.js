@@ -16,7 +16,7 @@ class ConversationIntegrityService {
         }
 
         // 1. "Take what you need" for AI responses
-        // Check <answer> first: parseResponse.js uses <answer> as source of truth when both tags exist.
+        // Check <answer> first: answerParser.js uses <answer> as source of truth when both tags exist.
         const answerMatch = text.match(/<answer>([\s\S]*?)<\/answer>/) ||
             text.match(/<english-answer>([\s\S]*?)<\/english-answer>/);
 

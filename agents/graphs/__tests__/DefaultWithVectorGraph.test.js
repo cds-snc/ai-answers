@@ -30,11 +30,11 @@ vi.mock('../GraphEventLogger.js', () => ({
 }));
 
 
-// Mock helper internal services
-vi.mock('../services/contextService.js', () => ({
+// Mock helper internal parsers
+vi.mock('../parsers/contextParser.js', () => ({
     parseContextMessage: vi.fn().mockReturnValue({ formatted: 'context', systemPrompt: 'sys', query: 'q' })
 }));
-vi.mock('../services/answerService.js', () => ({
+vi.mock('../parsers/answerParser.js', () => ({
     parseResponse: vi.fn().mockReturnValue({ answerType: 'normal', citationUrl: 'http://foo.com' }),
     parseSentences: vi.fn().mockReturnValue(['Sentence 1'])
 }));
