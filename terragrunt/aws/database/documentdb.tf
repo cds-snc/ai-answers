@@ -1,5 +1,5 @@
 #
-# Terraform code to create an Amazon DocumentDB cluster 
+# Terraform code to create an Amazon DocumentDB cluster
 #
 
 # Retrieve the username and password from the SSM parameter store
@@ -9,6 +9,16 @@ data "aws_ssm_parameter" "docdb_username" {
 
 data "aws_ssm_parameter" "docdb_password" {
   name = var.docdb_password_name
+}
+
+moved {
+  from = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group[0]
+  to   = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group
+}
+
+moved {
+  from = aws_docdb_cluster.ai-answers-docdb8-cluster[0]
+  to   = aws_docdb_cluster.ai-answers-docdb8-cluster
 }
 
 # Create a security group for the DocumentDB cluster
@@ -51,71 +61,16 @@ resource "aws_docdb_subnet_group" "ai-answers-docdb-subnet-group" {
   }
 }
 
-# DocumentDB Cluster Parameter Group
-resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb-cluster-parameter-group" {
-  name        = "${var.product_name}-docdb-cluster-parameter-group"
-  family      = "docdb5.0" # Latest engine version
-  description = "Parameter group for ${var.product_name} ${var.env} DocumentDB"
-
-  # Parameter overrides. Enabled TLS encryption.
-  parameter {
-    name  = "tls"
-    value = "enabled"
-  }
-
-  tags = {
-    CostCentre = var.billing_code
-    Terraform  = true
-  }
-}
-
-# DocumentDB Cluster
-resource "aws_docdb_cluster" "ai-answers-docdb-cluster" {
-  cluster_identifier              = "${var.product_name}-docdb-cluster"
-  engine                          = "docdb"
-  engine_version                  = "5.0.0" # DocDB engine version
-  master_username                 = data.aws_ssm_parameter.docdb_username.value
-  master_password                 = data.aws_ssm_parameter.docdb_password.value
-  db_subnet_group_name            = aws_docdb_subnet_group.ai-answers-docdb-subnet-group.name
-  vpc_security_group_ids          = [aws_security_group.ai-answers-docdb-sg.id] # SG for the DocumentDB cluster
-  storage_encrypted               = true
-  apply_immediately               = true
-  skip_final_snapshot             = true
-  port                            = 27017
-  db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb-cluster-parameter-group.name
-
-  tags = {
-    CostCentre = var.billing_code
-    Terraform  = true
-  }
-}
-
-# DocumentDB Cluster Instance
-resource "aws_docdb_cluster_instance" "ai-answers-docdb-instance" {
-  count              = var.docdb_instance_count
-  identifier         = "${var.product_name}-docdb-instance"
-  cluster_identifier = aws_docdb_cluster.ai-answers-docdb-cluster.id
-  instance_class     = "db.t3.medium" # Increased from db.t3.medium for higher throughput testing
-  engine             = "docdb"
-  apply_immediately  = true
-
-  tags = {
-    CostCentre = var.billing_code
-    Terraform  = true
-  }
-}
-
-# Create an ssm parameter to store the docdb uri
+# Create an SSM parameter to store the active DocumentDB URI.
 resource "aws_ssm_parameter" "docdb_uri" {
   name       = "docdb_uri"
   type       = "SecureString"
-  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb-cluster.endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
-  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb-instance]
+  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb8-cluster.endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb8-instance]
 }
 
-# Side-by-side DocumentDB 8 cluster for upgrade testing.
+# DocumentDB 8 cluster.
 resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb8-cluster-parameter-group" {
-  count       = var.docdb8_enabled ? 1 : 0
   name        = "${var.product_name}-docdb8-cluster-parameter-group"
   family      = "docdb8.0"
   description = "Parameter group for ${var.product_name} ${var.env} DocumentDB 8"
@@ -132,7 +87,6 @@ resource "aws_docdb_cluster_parameter_group" "ai-answers-docdb8-cluster-paramete
 }
 
 resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
-  count                           = var.docdb8_enabled ? 1 : 0
   cluster_identifier              = "${var.product_name}-docdb8-cluster"
   engine                          = "docdb"
   engine_version                  = "8.0.0"
@@ -144,7 +98,11 @@ resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
   apply_immediately               = true
   skip_final_snapshot             = true
   port                            = 27017
-  db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group[0].name
+  db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group.name
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   tags = {
     CostCentre = var.billing_code
@@ -153,9 +111,9 @@ resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
 }
 
 resource "aws_docdb_cluster_instance" "ai-answers-docdb8-instance" {
-  count              = var.docdb8_enabled ? var.docdb_instance_count : 0
+  count              = var.docdb_instance_count
   identifier         = "${var.product_name}-docdb8-instance-${count.index}"
-  cluster_identifier = aws_docdb_cluster.ai-answers-docdb8-cluster[0].id
+  cluster_identifier = aws_docdb_cluster.ai-answers-docdb8-cluster.id
   instance_class     = "db.t3.medium"
   engine             = "docdb"
   apply_immediately  = true
@@ -164,12 +122,4 @@ resource "aws_docdb_cluster_instance" "ai-answers-docdb8-instance" {
     CostCentre = var.billing_code
     Terraform  = true
   }
-}
-
-resource "aws_ssm_parameter" "docdb8_uri" {
-  count      = var.docdb8_enabled ? 1 : 0
-  name       = "docdb8_uri"
-  type       = "SecureString"
-  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb8-cluster[0].endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
-  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb8-instance]
 }
