@@ -7,7 +7,29 @@ import { getPath } from '../../utils/routes.js';
 import LocalNav from './LocalNav.js';
 
 function getInitials(email = '') {
-  return (email[0] ?? '?').toUpperCase();
+  const local = email.split('@')[0] ?? '';
+  const parts = local.split('.');
+  if (parts.length >= 2 && parts[0] && parts[1]) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  const single = (local[0] ?? '?').toUpperCase();
+  return single + single;
+}
+
+function getInitialsFromName(name = '') {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  const single = (parts[0]?.[0] ?? '?').toUpperCase();
+  return single + single;
+}
+
+function formatName(email = '') {
+  const local = email.split('@')[0] ?? '';
+  return local
+    .split('.')
+    .filter(Boolean)
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ');
 }
 
 function MobileNavLink({ href, label }) {
@@ -30,7 +52,7 @@ function MobileGroupLabel({ label }) {
 
 // Mobile fallback matching the desktop group structure — no partner/admin section headers.
 // Styled to match the GC DS top nav mobile pattern: full-width "Menu" trigger + full-screen overlay.
-function NavVariantMobile({ variant, lang, generic = false }) {
+function NavVariantMobile({ variant, lang, generic = false, mobileAccount }) {
   const { t } = useTranslations(lang);
   const { isOpen, toggle, close, triggerRef, menuRef, onMenuKeyDown, onTriggerKeyDown } = useLocalNav();
   const appTitle = generic ? t('navVariant.demo4GenericAppTitle') : t('navVariant.appTitle');
@@ -42,7 +64,7 @@ function NavVariantMobile({ variant, lang, generic = false }) {
   const wordmarkSrc = '/wmms-blk.svg';
 
   return (
-    <div className="nav-variant-mobile-nav">
+    <div className={`nav-variant-mobile-nav${mobileAccount ? ' nav-variant-mobile-nav--with-account' : ''}`}>
       <button
         ref={triggerRef}
         className="nav-variant-mobile-menu-btn"
@@ -54,6 +76,9 @@ function NavVariantMobile({ variant, lang, generic = false }) {
       >
         {t('navVariant.mobileMenuLabel')}
       </button>
+      {mobileAccount && (
+        <div className="nav-variant-mobile-account">{mobileAccount}</div>
+      )}
 
       {isOpen && (
         <div className="local-nav-overlay" onKeyDown={e => e.key === 'Escape' && close()}>
@@ -131,7 +156,7 @@ function NavVariantMobile({ variant, lang, generic = false }) {
 
 // Minimal account button — sign out only. Exported so the layout can slot it into the header.
 // compact=true: small positioned dropdown (brand band use); false: full-screen overlay (sidebar use).
-export function AccountMenu({ lang, overrideEmail, compact = false }) {
+export function AccountMenu({ lang, overrideEmail, flyoutEmail, flyoutName: flyoutNameProp, compact = false }) {
   const { currentUser, logout } = useAuth();
   const { t } = useTranslations(lang);
   const { isOpen, toggle, close, triggerRef, menuRef, onMenuKeyDown, onTriggerKeyDown } = useLocalNav();
@@ -144,9 +169,13 @@ export function AccountMenu({ lang, overrideEmail, compact = false }) {
 
   if (!currentUser) return null;
 
-  const email = overrideEmail ?? (currentUser.email ?? '');
-  const displayName = email;
-  const initials = getInitials(email);
+  const triggerEmailAddr = overrideEmail ?? (currentUser.email ?? '');
+  const triggerName = formatName(triggerEmailAddr);
+  const triggerInitials = getInitials(triggerEmailAddr);
+
+  const flyoutEmailAddr = flyoutEmail ?? triggerEmailAddr;
+  const flyoutName = flyoutNameProp ?? formatName(flyoutEmailAddr);
+  const flyoutInitials = flyoutNameProp ? getInitialsFromName(flyoutNameProp) : getInitials(flyoutEmailAddr);
 
   return (
     <div className={compact ? 'account-menu-compact' : 'local-nav'}>
@@ -160,8 +189,8 @@ export function AccountMenu({ lang, overrideEmail, compact = false }) {
         onClick={toggle}
         onKeyDown={onTriggerKeyDown}
       >
-        <span className="local-nav-avatar" aria-hidden="true">{initials}</span>
-        <span className="local-nav-trigger-name">{displayName}</span>
+        <span className="local-nav-avatar" aria-hidden="true">{flyoutInitials}</span>
+        <span className="local-nav-trigger-name">{triggerName}</span>
         <span className="local-nav-caret" aria-hidden="true">
           <i className="fa-solid fa-chevron-down" />
         </span>
@@ -175,6 +204,13 @@ export function AccountMenu({ lang, overrideEmail, compact = false }) {
           aria-label={t('localNav.trigger.ariaLabel')}
           onKeyDown={onMenuKeyDown}
         >
+          <li role="presentation" className="account-menu-compact__name-header">
+            <span className="local-nav-avatar account-menu-compact__avatar" aria-hidden="true">{flyoutInitials}</span>
+            <span className="account-menu-compact__name-group">
+              <span className="account-menu-compact__name">{flyoutName}</span>
+              <span className="account-menu-compact__email">{flyoutEmailAddr}</span>
+            </span>
+          </li>
           <li role="none">
             <a className="local-nav-item-link" href="#" role="menuitem" tabIndex={-1}>
               {t('localNav.items.managePassword')}
@@ -229,10 +265,10 @@ export function AccountMenu({ lang, overrideEmail, compact = false }) {
 }
 
 // Renders the nav bar only — no wrapper box, no labels. Drop directly into a demo page.
-export default function NavVariantPreview({ variant = 'partner', lang = 'en', generic = false }) {
+export default function NavVariantPreview({ variant = 'partner', lang = 'en', generic = false, homeLabel, mobileAccount }) {
   const { t } = useTranslations(lang);
   const submenu = (group) => `${group} ${t('navVariant.submenuLabel')}`;
-  const appTitle = generic ? t('navVariant.demo4GenericAppTitle') : t('navVariant.appTitle');
+  const appTitle = homeLabel ?? (generic ? t('navVariant.demo4GenericAppTitle') : t('navVariant.appTitle'));
   const groupLabel = generic ? t('navVariant.demo4GenericGroupLabel') : t('navVariant.useAIGroupLabel');
   const subItem = generic ? t('navVariant.demo4GenericSubItem') : t('navVariant.useAISubItem');
 
@@ -249,7 +285,14 @@ export default function NavVariantPreview({ variant = 'partner', lang = 'en', ge
       {/* Desktop: GcdsTopNav */}
       <div className="nav-variant-bar">
         <GcdsTopNav label={t('navVariant.navAriaLabel')} alignment="end">
-          <GcdsNavLink href="#" slot="home">{appTitle}</GcdsNavLink>
+          {homeLabel ? (
+            <span slot="home" className="nav-demo-home-label">
+              <span className="nav-demo-home-label__avatar" aria-hidden="true">{getInitials(homeLabel)}</span>
+              <span className="nav-demo-home-label__text">{homeLabel}</span>
+            </span>
+          ) : (
+            <span slot="home" className="nav-demo-home-title">{appTitle}</span>
+          )}
           <GcdsNavGroup
             openTrigger={groupLabel}
             menuLabel={submenu(groupLabel)}
@@ -317,7 +360,7 @@ export default function NavVariantPreview({ variant = 'partner', lang = 'en', ge
 
       {/* Mobile: our overlay design with desktop-matching group structure */}
       <div className="nav-variant-mobile-bar">
-        <NavVariantMobile variant={variant} lang={lang} generic={generic} />
+        <NavVariantMobile variant={variant} lang={lang} generic={generic} mobileAccount={mobileAccount} />
       </div>
     </>
   );

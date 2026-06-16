@@ -11,11 +11,11 @@ function getInitials(email = '') {
   return (a + b).toUpperCase() || '?';
 }
 
-function NavLink({ href, label, isSubItem }) {
+function NavLink({ href, label }) {
   return (
     <li role="none">
       <a
-        className={['local-nav-item-link', isSubItem ? 'local-nav-item-link--sub' : ''].filter(Boolean).join(' ')}
+        className="local-nav-item-link local-nav-item-link--sub"
         href={href}
         role="menuitem"
         tabIndex={-1}
@@ -26,15 +26,18 @@ function NavLink({ href, label, isSubItem }) {
   );
 }
 
-function GroupLabel({ label }) {
+function NavGroup({ label, children }) {
   return (
-    <li role="presentation" aria-hidden="true">
-      <span className="local-nav-group-label">{label}</span>
+    <li role="none" className="local-nav-mega-col">
+      <span className="local-nav-group-label" aria-hidden="true">{label}</span>
+      <ul role="none" className="local-nav-mega-col-items">
+        {children}
+      </ul>
     </li>
   );
 }
 
-export default function LocalNav({ lang = 'en' }) {
+export default function LocalNavMega({ lang = 'en' }) {
   const { currentUser, logout } = useAuth();
   const { t } = useTranslations(lang);
   const { isOpen, toggle, close, triggerRef, menuRef, onMenuKeyDown, onTriggerKeyDown } = useLocalNav();
@@ -101,7 +104,8 @@ export default function LocalNav({ lang = 'en' }) {
               aria-label={t('localNav.trigger.ariaLabel')}
               onKeyDown={onMenuKeyDown}
             >
-              <li role="none">
+              {/* ── Use AI — full-width top row ──────────────────────────────── */}
+              <li role="none" className="local-nav-mega-primary">
                 <a
                   className="local-nav-item-link local-nav-item-link--primary"
                   href={`/${lang}`}
@@ -112,45 +116,50 @@ export default function LocalNav({ lang = 'en' }) {
                 </a>
               </li>
 
-              {/* ── Dashboards — partner + admin combined ───────────────────── */}
-              <GroupLabel label={t('localNav.groups.dashboards')} />
-              <NavLink href={getPath('partner-dashboard',   lang)} label={t('localNav.items.partnerDashboard')}  isSubItem />
-              <NavLink href={getPath('eval-dashboard',      lang)} label={t('localNav.items.evalDashboard')}     isSubItem />
-              <NavLink href={getPath('metrics',             lang)} label={t('localNav.items.performanceMetrics')} isSubItem />
-              <NavLink href={getPath('technical-metrics',   lang)} label={t('localNav.items.technicalMetrics')}  isSubItem />
+              {/* ── Columns ─────────────────────────────────────────────────── */}
+              <NavGroup label={t('localNav.groups.dashboards')}>
+                <NavLink href={getPath('partner-dashboard',   lang)} label={t('localNav.items.partnerDashboard')}   />
+                <NavLink href={getPath('eval-dashboard',      lang)} label={t('localNav.items.evalDashboard')}      />
+                <NavLink href={getPath('metrics',             lang)} label={t('localNav.items.performanceMetrics')} />
+                <NavLink href={getPath('technical-metrics',   lang)} label={t('localNav.items.technicalMetrics')}   />
+                {showAdmin && (
+                  <>
+                    <NavLink href={getPath('exec-dashboard',      lang)} label={t('localNav.items.execDashboard')} />
+                    <NavLink href={getPath('auto-eval-dashboard', lang)} label={t('localNav.items.autoEval')}      />
+                  </>
+                )}
+              </NavGroup>
+
+              <NavGroup label={t('localNav.groups.chats')}>
+                <NavLink href={getPath('chat-dashboard', lang)} label={t('localNav.items.viewChats')}    />
+                <NavLink href={getPath('chat-viewer',    lang)} label={t('localNav.items.fullChatTrace')} />
+              </NavGroup>
+
+              <NavGroup label={t('localNav.groups.management')}>
+                <NavLink href={getPath('scenario-overrides', lang)} label={t('localNav.items.editScenarios')} />
+                <NavLink href={getPath('batch',              lang)} label={t('localNav.items.manageBatches')} />
+              </NavGroup>
+
               {showAdmin && (
                 <>
-                  <NavLink href={getPath('exec-dashboard',      lang)} label={t('localNav.items.execDashboard')} isSubItem />
-                  <NavLink href={getPath('auto-eval-dashboard', lang)} label={t('localNav.items.autoEval')}      isSubItem />
+                  <NavGroup label={t('localNav.groups.usersSystem')}>
+                    <NavLink href={getPath('users',    lang)} label={t('localNav.items.manageUsers')}    />
+                    <NavLink href={getPath('sessions', lang)} label={t('localNav.items.activeSessions')} />
+                    <NavLink href={getPath('settings', lang)} label={t('localNav.items.settings')}       />
+                  </NavGroup>
+
+                  <NavGroup label={t('localNav.groups.infrastructure')}>
+                    <NavLink href={getPath('database',     lang)} label={t('localNav.items.manageDatabase')} />
+                    <NavLink href={getPath('vector',       lang)} label={t('localNav.items.vectorAdmin')}    />
+                    <NavLink href={getPath('eval',         lang)} label={t('localNav.items.evalAdmin')}      />
+                    <NavLink href={getPath('connectivity', lang)} label={t('localNav.items.connectivity')}   />
+                  </NavGroup>
                 </>
               )}
 
-              <GroupLabel label={t('localNav.groups.chats')} />
-              <NavLink href={getPath('chat-dashboard', lang)} label={t('localNav.items.viewChats')}    isSubItem />
-              <NavLink href={getPath('chat-viewer',    lang)} label={t('localNav.items.fullChatTrace')} isSubItem />
-
-              <GroupLabel label={t('localNav.groups.management')} />
-              <NavLink href={getPath('scenario-overrides', lang)} label={t('localNav.items.editScenarios')} isSubItem />
-              <NavLink href={getPath('batch',              lang)} label={t('localNav.items.manageBatches')} isSubItem />
-
-              {showAdmin && (
-                <>
-                  <GroupLabel label={t('localNav.groups.usersSystem')} />
-                  <NavLink href={getPath('users',    lang)} label={t('localNav.items.manageUsers')}    isSubItem />
-                  <NavLink href={getPath('sessions', lang)} label={t('localNav.items.activeSessions')} isSubItem />
-                  <NavLink href={getPath('settings', lang)} label={t('localNav.items.settings')}       isSubItem />
-
-                  <GroupLabel label={t('localNav.groups.infrastructure')} />
-                  <NavLink href={getPath('database',     lang)} label={t('localNav.items.manageDatabase')} isSubItem />
-                  <NavLink href={getPath('vector',       lang)} label={t('localNav.items.vectorAdmin')}    isSubItem />
-                  <NavLink href={getPath('eval',         lang)} label={t('localNav.items.evalAdmin')}      isSubItem />
-                  <NavLink href={getPath('connectivity', lang)} label={t('localNav.items.connectivity')}   isSubItem />
-                </>
-              )}
-
-              {/* ── Sign out ────────────────────────────────────────────────── */}
-              <li role="separator" className="local-nav-section-divider" />
-              <li role="none">
+              {/* ── Sign out — full-width bottom row ─────────────────────────── */}
+              <li role="separator" className="local-nav-section-divider local-nav-mega-footer-divider" />
+              <li role="none" className="local-nav-mega-footer">
                 <button
                   className="local-nav-item-link local-nav-item-link--signout"
                   type="button"

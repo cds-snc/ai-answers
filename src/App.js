@@ -39,9 +39,11 @@ import { useTranslations } from './hooks/useTranslations.js';
 import { translateSlug } from './utils/routes.js';
 import { useAuth } from './contexts/AuthContext.js';
 import LocalNav from './components/nav/LocalNav.js';
+import LocalNavMega from './components/nav/LocalNavMega.js';
 import NavVariantPreview from './components/nav/NavVariantPreview.js';
 import NavDemoHeader from './components/nav/NavDemoHeader.js';
 import NavDemo1Page from './pages/NavDemo1Page.js';
+import NavDemo1bPage from './pages/NavDemo1bPage.js';
 import NavDemo2Page from './pages/NavDemo2Page.js';
 import NavDemo3Page from './pages/NavDemo3Page.js';
 import NavDemo4Page from './pages/NavDemo4Page.js';
@@ -329,6 +331,8 @@ const AppLayout = () => {
     null;
   const demoShowSearch = demoTopNavVariant === 'partner-admin-search';
   const demoVariant = demoShowSearch ? 'partner-admin' : demoTopNavVariant;
+  const isNavDemo1 = pathname === '/en/nav-demo-1' || pathname === '/fr/demo-nav-1';
+  const isNavDemo1b = pathname === '/en/nav-demo-1b' || pathname === '/fr/demo-nav-1b';
 
   return (
     <>
@@ -348,20 +352,20 @@ const AppLayout = () => {
           lang={currentLang}
           langHref={alternateLangHref}
           variant={demoVariant}
-          demoEmail={demoVariant === 'partner' ? 'partner@partner.com' : undefined}
+          demoEmail={demoVariant === 'partner' ? 'partner@partner.com' : demoVariant === 'partner-admin' ? 'First Last' : undefined}
           showSearch={demoShowSearch}
         />
       ) : (
-        <div className="nav-demo-header-wrap">
+        <div className={`nav-demo-header-wrap${isNavDemo1 ? ' nav-demo-1-wrap' : ''}${isNavDemo1b ? ' nav-demo-1b-wrap' : ''}`}>
           <GcdsHeader
             lang={currentLang}
             langHref={alternateLangHref}
             skipToHref="#main-content"
           >
-            {/* Design 1: dropdown LocalNav in the dark-blue menu band */}
+            {/* Design 1 / 1b: dropdown nav in the dark-blue menu band */}
             {currentUser && (
               <div slot="menu" className="local-nav-header-slot">
-                <LocalNav lang={currentLang} />
+                {isNavDemo1b ? <LocalNavMega lang={currentLang} /> : <LocalNav lang={currentLang} />}
               </div>
             )}
             <GcdsBreadcrumbs slot="breadcrumb">
@@ -463,6 +467,8 @@ export default function App() {
       { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
       { path: '/en/nav-demo-1', element: <NavDemo1Page lang="en" />, roles: ['admin'] },
       { path: '/fr/demo-nav-1', element: <NavDemo1Page lang="fr" />, roles: ['admin'] },
+      { path: '/en/nav-demo-1b', element: <NavDemo1bPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/demo-nav-1b', element: <NavDemo1bPage lang="fr" />, roles: ['admin'] },
       { path: '/en/nav-demo-2', element: <NavDemo2Page lang="en" />, roles: ['admin'] },
       { path: '/fr/demo-nav-2', element: <NavDemo2Page lang="fr" />, roles: ['admin'] },
       { path: '/en/nav-demo-3', element: <NavDemo3Page lang="en" />, roles: ['admin'] },

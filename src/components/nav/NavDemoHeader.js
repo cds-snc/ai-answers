@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GcdsLangToggle, GcdsBreadcrumbs } from '@gcds-core/components-react';
-import { AccountMenu } from './NavVariantPreview.js';
-import NavVariantPreview from './NavVariantPreview.js';
+import NavVariantPreview, { AccountMenu } from './NavVariantPreview.js';
 
 const SKIP_I18N = {
   en: { skip: 'Skip to main content', label: 'Skip to' },
@@ -29,13 +28,13 @@ export default function NavDemoHeader({ lang, langHref, variant, demoEmail, show
 
       <div className={`nav-demo-brand${searchOpen ? ' nav-demo-brand--search-open' : ''}`}>
         <div className="nav-demo-brand__inner">
-          <div className="nav-demo-brand__sig">
-            <img src={sigSrc} alt={sigAlt} className="nav-demo-sig-img" />
-          </div>
           <div className="nav-demo-brand__toggle">
             <GcdsLangToggle lang={lang} href={langHref} />
           </div>
-          <div className={`nav-demo-brand__account${showSearch ? ' nav-demo-brand__account--with-search' : ''}`}>
+          <div className="nav-demo-brand__sig">
+            <img src={sigSrc} alt={sigAlt} className="nav-demo-sig-img" />
+          </div>
+          <div className={`nav-demo-brand__account${showSearch ? ' nav-demo-brand__account--with-search' : ''}${variant === 'partner' ? ' nav-demo-brand__account--partner' : ''}${variant === 'partner-admin' ? ' nav-demo-brand__account--partner-admin' : ''}`}>
             {showSearch && (
               <button
                 className={`nav-demo-search-toggle${searchOpen ? ' nav-demo-search-toggle--active' : ''}`}
@@ -51,8 +50,12 @@ export default function NavDemoHeader({ lang, langHref, variant, demoEmail, show
               <button className="nav-demo-signin-btn" type="button">
                 {lang === 'fr' ? 'Se connecter' : 'Sign in'}
               </button>
+            ) : variant === 'partner' ? (
+              <button className="nav-demo-signout-btn" type="button">
+                {lang === 'fr' ? 'Se déconnecter' : 'Sign out'}
+              </button>
             ) : (
-              <AccountMenu lang={lang} overrideEmail={demoEmail} compact />
+              <AccountMenu lang={lang} flyoutName={demoEmail} compact />
             )}
           </div>
         </div>
@@ -82,7 +85,7 @@ export default function NavDemoHeader({ lang, langHref, variant, demoEmail, show
         </div>
       )}
 
-      <NavVariantPreview variant={variant} lang={lang} generic={showSearch} />
+      <NavVariantPreview variant={variant} lang={lang} generic={showSearch} homeLabel={variant === 'partner' ? demoEmail : undefined} />
 
       <div className="nav-demo-breadcrumb-container">
         <GcdsBreadcrumbs lang={lang} />
