@@ -28,9 +28,3 @@ variable "docdb_instance_count" {
   type        = number
   default     = 1
 }
-
-variable "docdb8_enabled" {
-  description = "Whether to create a side-by-side DocumentDB 8 cluster"
-  type        = bool
-  default     = false
-}

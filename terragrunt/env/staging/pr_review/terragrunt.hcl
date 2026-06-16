@@ -24,7 +24,6 @@ dependency "database" {
   mock_outputs = {
     aws_docdb_security_group_id = "sg-00000000"
     docdb_uri_arn               = "arn:aws:ssm:ca-central-1:123456789012:parameter/docdb_uri"
-    docdb5_uri_arn              = "arn:aws:ssm:ca-central-1:123456789012:parameter/docdb_uri"
     docdb8_uri_arn              = "arn:aws:ssm:ca-central-1:123456789012:parameter/docdb8_uri"
   }
 }
@@ -62,7 +61,6 @@ inputs = {
   redis_security_group_id                = dependency.elasticache.outputs.redis_security_group_id
   ai_answers_lambda_client_iam_role_name = "ai-answers-lambda-client"
   docdb_uri_arn                          = dependency.database.outputs.docdb_uri_arn
-  docdb5_uri_arn                         = dependency.database.outputs.docdb5_uri_arn
   docdb8_uri_arn                         = dependency.database.outputs.docdb8_uri_arn
   docdb_username_arn                     = dependency.ssm.outputs.docdb_username_arn
   docdb_password_arn                     = dependency.ssm.outputs.docdb_password_arn

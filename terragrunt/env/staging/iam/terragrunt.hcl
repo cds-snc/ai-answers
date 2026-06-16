@@ -38,7 +38,6 @@ dependency "database" {
   mock_outputs_merge_with_state           = true
   mock_outputs = {
     docdb_uri_arn  = "mock_docdb_uri_arn"
-    docdb5_uri_arn = "mock_docdb5_uri_arn"
     docdb8_uri_arn = "mock_docdb8_uri_arn"
   }
 }
@@ -59,7 +58,6 @@ inputs = {
   azure_openai_endpoint_arn          = dependency.ssm.outputs.azure_openai_endpoint_arn
   azure_openai_api_version_arn       = dependency.ssm.outputs.azure_openai_api_version_arn
   docdb_uri_arn                      = dependency.database.outputs.docdb_uri_arn
-  docdb5_uri_arn                     = dependency.database.outputs.docdb5_uri_arn
   docdb8_uri_arn                     = dependency.database.outputs.docdb8_uri_arn
   canada_ca_search_api_key_arn       = dependency.ssm.outputs.canada_ca_search_api_key_arn
   canada_ca_search_uri_arn           = dependency.ssm.outputs.canada_ca_search_uri_arn

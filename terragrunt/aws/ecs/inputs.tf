@@ -81,11 +81,6 @@ variable "docdb_uri_arn" {
   type        = string
 }
 
-variable "docdb5_uri_arn" {
-  description = "ARN of the DocumentDB 5 URI parameter"
-  type        = string
-}
-
 variable "docdb8_uri_arn" {
   description = "ARN of the DocumentDB 8 URI parameter"
   type        = string
