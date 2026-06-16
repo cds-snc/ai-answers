@@ -54,11 +54,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
           id="dashboard-dept"
           className="filter-bar__select"
           value={department}
-          onChange={e => {
-            const newDept = e.target.value;
-            setDepartment(newDept);
-            if (startDate && endDate) onApply({ startDate, endDate, department: newDept });
-          }}
+          onChange={e => setDepartment(e.target.value)}
           disabled={loading}
         >
           <option value="">{t('dashboardFilter.allPartners')}</option>

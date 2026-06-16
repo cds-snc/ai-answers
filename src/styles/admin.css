@@ -372,6 +372,12 @@
   background: #e5e7eb;
 }
 
+/* Hide the daterangepicker's own Apply button — the FilterPanel's Apply button
+   reads from the picker instance directly, so the in-calendar Apply is redundant. */
+.daterangepicker .applyBtn {
+  display: none;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .filter-grid {
