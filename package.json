@@ -149,7 +149,7 @@
     "dotenv-cli": "^7.4.4",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "get-port": "^7.1.0",
     "mongodb-memory-server": "^10.1.4",
     "vite": "^8.0.16"
