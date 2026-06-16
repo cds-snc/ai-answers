@@ -27,11 +27,6 @@ variable "docdb_uri_arn" {
   type        = string
 }
 
-variable "docdb8_uri_arn" {
-  description = "ARN for the DocumentDB 8 URI SSM parameter"
-  type        = string
-}
-
 variable "docdb_username_arn" {
   description = "ARN for the docdb_username SSM parameter"
   type        = string

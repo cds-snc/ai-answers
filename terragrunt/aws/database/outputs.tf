@@ -17,8 +17,3 @@ output "docdb_uri_arn" {
   description = "ARN of the primary DocumentDB URI parameter"
   value       = aws_ssm_parameter.docdb_uri.arn
 }
-
-output "docdb8_uri_arn" {
-  description = "ARN of the DocumentDB 8 URI parameter"
-  value       = aws_ssm_parameter.docdb8_uri.arn
-}
