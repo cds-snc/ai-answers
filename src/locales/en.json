@@ -1212,8 +1212,8 @@
     "downloadedPagesTitle": "Downloaded pages"
   },
   "dashboardFilter": {
-    "department": "By institution",
-    "allPartners": "All institutions",
+    "department": "By partner institution",
+    "allPartners": "All partners",
     "startDate": "Start date",
     "endDate": "End date",
     "apply": "Apply",

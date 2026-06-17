@@ -1212,8 +1212,8 @@
     "runEvaluation": "Lancer l'évaluation"
   },
   "dashboardFilter": {
-    "department": "Par institution",
-    "allPartners": "Toutes les institutions",
+    "department": "Par institution partenaire",
+    "allPartners": "Tous les partenaires",
     "startDate": "Date de début",
     "endDate": "Date de fin",
     "apply": "Appliquer",
