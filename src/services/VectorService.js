@@ -21,8 +21,9 @@ const VectorService = {
     return await response.json();
   },
 
-  async runDocdb8CapabilityTest() {
-    const response = await AuthService.fetch(getApiUrl('vector-docdb8-capability-test'));
+  async runDocdb8CapabilityTest(probe) {
+    const query = probe ? `?probe=${encodeURIComponent(probe)}` : '';
+    const response = await AuthService.fetch(getApiUrl(`vector-docdb8-capability-test${query}`));
     if (!response.ok) throw new Error('Failed to run DocumentDB 8 vector capability test');
     return await response.json();
   },
