@@ -9,35 +9,15 @@ const FEEDBACK_VECTOR_INDEX = 'feedback_questions_vector_index';
 const VECTOR_PATH = 'questionsEmbedding';
 const FEEDBACK_COLLECTION = 'feedback_embeddings';
 const TARGET_K = 10;
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 const VECTOR_EXISTS_FILTER = {
   [`${VECTOR_PATH}.0`]: { $exists: true },
 };
 
-function getCapabilityProbeConfig(isProduction = IS_PRODUCTION) {
-  if (isProduction) {
-    return {
-      benchmarkRuns: 1,
-      annPostFilterCandidateLimitValues: [TARGET_K * 10, TARGET_K * 25],
-      annPostFilterNumCandidatesValues: [100, 250],
-      feedbackAnnNumCandidatesValues: [100, 250],
-    };
-  }
-
-  return {
-    benchmarkRuns: 3,
-    annPostFilterCandidateLimitValues: [TARGET_K * 5, TARGET_K * 10, TARGET_K * 20, TARGET_K * 50, TARGET_K * 100],
-    annPostFilterNumCandidatesValues: [100, 200, 500, 1000],
-    feedbackAnnNumCandidatesValues: [50, 100, 200, 500],
-  };
-}
-
-const CAPABILITY_PROBE_CONFIG = getCapabilityProbeConfig();
-const BENCHMARK_RUNS = CAPABILITY_PROBE_CONFIG.benchmarkRuns;
-const ANN_POST_FILTER_CANDIDATE_LIMIT_VALUES = CAPABILITY_PROBE_CONFIG.annPostFilterCandidateLimitValues;
-const ANN_POST_FILTER_NUM_CANDIDATES_VALUES = CAPABILITY_PROBE_CONFIG.annPostFilterNumCandidatesValues;
-const FEEDBACK_ANN_NUM_CANDIDATES_VALUES = CAPABILITY_PROBE_CONFIG.feedbackAnnNumCandidatesValues;
+const BENCHMARK_RUNS = 1;
+const ANN_POST_FILTER_CANDIDATE_LIMIT_VALUES = [TARGET_K * 10];
+const ANN_POST_FILTER_NUM_CANDIDATES_VALUES = [100];
+const FEEDBACK_ANN_NUM_CANDIDATES_VALUES = [100];
 
 function serializeValue(value) {
   return value?.toString?.() || value;
@@ -323,6 +303,462 @@ async function safeQuery(label, queryFn, fallback, warnings) {
     }
     return fallback;
   }
+}
+
+function buildSingleProbeResponse({
+  probe,
+  sample,
+  queryVector,
+  counts,
+  test,
+  warnings,
+  available = true,
+}) {
+  const embeddingsWithInteraction = counts?.embeddingsWithInteraction || 0;
+  const embeddingsWithFeedbackInteraction = counts?.embeddingsWithFeedbackInteraction || 0;
+  const estimatedFeedbackSelectivity = embeddingsWithInteraction
+    ? embeddingsWithFeedbackInteraction / embeddingsWithInteraction
+    : null;
+  const estimatedCandidatesForTenFeedbackResults = estimatedFeedbackSelectivity && estimatedFeedbackSelectivity > 0
+    ? Math.ceil(TARGET_K / estimatedFeedbackSelectivity)
+    : null;
+
+  return {
+    available,
+    probe,
+    sampleEmbeddingId: sample?._id ? serializeValue(sample._id) : null,
+    vectorPath: VECTOR_PATH,
+    vectorIndex: VECTOR_INDEX,
+    counts: {
+      ...(counts || {}),
+      estimatedFeedbackSelectivity,
+      estimatedCandidatesForTenFeedbackResults,
+    },
+    test,
+    warnings,
+    recommendation: probe,
+  };
+}
+
+async function buildCapabilityProbeResult(probe) {
+  await dbConnect();
+  const db = mongoose.connection.db;
+  const embeddings = db.collection('embeddings');
+  const interactions = db.collection('interactions');
+  const feedbackEmbeddings = db.collection(FEEDBACK_COLLECTION);
+  const warnings = [];
+
+  const [
+    sample,
+    totalEmbeddings,
+    embeddingsWithInteraction,
+    interactionsWithFeedback,
+    embeddingsWithFeedbackInteractionResult,
+    feedbackCollectionAvailable,
+  ] = await Promise.all([
+    safeQuery(
+      'Sample embedding lookup',
+      () => embeddings.findOne(
+        VECTOR_EXISTS_FILTER,
+        {
+          projection: { [VECTOR_PATH]: 1 },
+        }
+      ),
+      null,
+      warnings
+    ),
+    safeQuery(
+      'Total embeddings count',
+      () => embeddings.countDocuments(VECTOR_EXISTS_FILTER),
+      0,
+      warnings
+    ),
+    safeQuery(
+      'Embeddings with interaction count',
+      () => embeddings.countDocuments({
+        ...VECTOR_EXISTS_FILTER,
+        interactionId: { $exists: true, $ne: null },
+      }),
+      0,
+      warnings
+    ),
+    safeQuery(
+      'Interactions with feedback count',
+      () => interactions.countDocuments({
+        expertFeedback: { $exists: true, $ne: null },
+      }),
+      0,
+      warnings
+    ),
+    safeQuery(
+      'Embeddings with feedback interaction count',
+      () => embeddings.aggregate([
+        { $match: VECTOR_EXISTS_FILTER },
+        {
+          $lookup: {
+            from: 'interactions',
+            localField: 'interactionId',
+            foreignField: '_id',
+            as: 'inter',
+          },
+        },
+        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: false } },
+        { $match: { 'inter.expertFeedback': { $exists: true, $ne: null } } },
+        { $count: 'count' },
+      ]).toArray(),
+      [],
+      warnings
+    ),
+    safeQuery(
+      'Feedback collection availability check',
+      () => collectionExists(db, FEEDBACK_COLLECTION),
+      false,
+      warnings
+    ),
+  ]);
+
+  const queryVector = sample?.[VECTOR_PATH];
+  if (!Array.isArray(queryVector) || queryVector.length === 0) {
+    return buildSingleProbeResponse({
+      probe,
+      sample,
+      queryVector: null,
+      counts: {
+        totalEmbeddings,
+        embeddingsWithInteraction,
+        interactionsWithFeedback,
+        embeddingsWithFeedbackInteraction: embeddingsWithFeedbackInteractionResult[0]?.count || 0,
+        feedbackCollectionAvailable,
+      },
+      test: {
+        name: probe,
+        strategy: probe,
+        supported: false,
+        skipped: true,
+        resultCount: 0,
+        finalResultCount: 0,
+        sampleResults: [],
+        scoreSummary: {
+          numericScoreCount: 0,
+          hasNumericScores: false,
+          minScore: null,
+          maxScore: null,
+        },
+        localScoreMin: null,
+        localScoreMax: null,
+        topIds: [],
+        durationMs: null,
+        durationsMs: [],
+        metadata: {
+          skipped: true,
+          reason: 'No embeddings with questionsEmbedding were found.',
+        },
+        error: null,
+      },
+      warnings,
+      available: false,
+    });
+  }
+
+  const counts = {
+    totalEmbeddings,
+    embeddingsWithInteraction,
+    interactionsWithFeedback,
+    embeddingsWithFeedbackInteraction: embeddingsWithFeedbackInteractionResult[0]?.count || 0,
+    feedbackCollectionAvailable,
+  };
+
+  const probeDefinitions = {
+    ann_all_then_feedback_post_filter: async () => runAggregateBenchmark(
+      embeddings,
+      'ann_all_then_feedback_post_filter',
+      [
+        {
+          $vectorSearch: {
+            index: VECTOR_INDEX,
+            path: VECTOR_PATH,
+            queryVector,
+            limit: TARGET_K * 10,
+            numCandidates: 100,
+            exact: false,
+          },
+        },
+        {
+          $lookup: {
+            from: 'interactions',
+            localField: 'interactionId',
+            foreignField: '_id',
+            as: 'inter',
+          },
+        },
+        {
+          $unwind: {
+            path: '$inter',
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $match: {
+            'inter.expertFeedback': { $exists: true, $ne: null },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            interactionId: 1,
+            expertFeedbackId: '$inter.expertFeedback',
+            questionsEmbedding: 1,
+          },
+        },
+        { $limit: TARGET_K },
+      ],
+      {
+        queryVector,
+        vectorField: VECTOR_PATH,
+        topK: TARGET_K,
+        runs: 1,
+        metadata: {
+          strategy: 'ann_all_then_feedback_post_filter',
+          candidateLimit: TARGET_K * 10,
+          numCandidates: 100,
+          candidateReductionBeforeVectorSearch: false,
+          vectorSearchStage: 'first',
+        },
+      }
+    ),
+    exact_after_feedback_lookup_match: async () => runAggregateBenchmark(
+      embeddings,
+      'exact_after_feedback_lookup_match',
+      [
+        {
+          $lookup: {
+            from: 'interactions',
+            localField: 'interactionId',
+            foreignField: '_id',
+            as: 'inter',
+          },
+        },
+        {
+          $unwind: {
+            path: '$inter',
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $match: {
+            'inter.expertFeedback': { $exists: true, $ne: null },
+          },
+        },
+        {
+          $vectorSearch: {
+            index: VECTOR_INDEX,
+            path: VECTOR_PATH,
+            queryVector,
+            limit: TARGET_K,
+            exact: true,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            interactionId: 1,
+            expertFeedbackId: '$inter.expertFeedback',
+            questionsEmbedding: 1,
+          },
+        },
+      ],
+      {
+        queryVector,
+        vectorField: VECTOR_PATH,
+        topK: TARGET_K,
+        runs: 1,
+        metadata: {
+          strategy: 'exact_after_feedback_lookup_match',
+          candidateReductionBeforeVectorSearch: true,
+          vectorSearchStage: 'afterFeedbackLookupAndMatch',
+        },
+      }
+    ),
+    exact_after_denormalized_match: async () => runAggregateBenchmark(
+      embeddings,
+      'exact_after_denormalized_match',
+      [
+        {
+          $match: {
+            hasExpertFeedback: true,
+          },
+        },
+        {
+          $vectorSearch: {
+            index: VECTOR_INDEX,
+            path: VECTOR_PATH,
+            queryVector,
+            limit: TARGET_K,
+            exact: true,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            interactionId: 1,
+            expertFeedbackId: 1,
+            expertFeedbackTotalScore: 1,
+            pageLanguage: 1,
+            questionsEmbedding: 1,
+          },
+        },
+      ],
+      {
+        queryVector,
+        vectorField: VECTOR_PATH,
+        topK: TARGET_K,
+        runs: 1,
+        metadata: {
+          strategy: 'exact_after_denormalized_match',
+          candidateReductionBeforeVectorSearch: true,
+          vectorSearchStage: 'afterLocalMatch',
+        },
+      }
+    ),
+    ann_feedback_only_collection: async () => {
+      if (!feedbackCollectionAvailable) {
+        return {
+          name: 'ann_feedback_only_collection',
+          strategy: 'ann_feedback_only_collection',
+          supported: false,
+          skipped: true,
+          resultCount: 0,
+          finalResultCount: 0,
+          sampleResults: [],
+          scoreSummary: {
+            numericScoreCount: 0,
+            hasNumericScores: false,
+            minScore: null,
+            maxScore: null,
+          },
+          localScoreMin: null,
+          localScoreMax: null,
+          topIds: [],
+          durationMs: null,
+          durationsMs: [],
+          metadata: {
+            skipped: true,
+            reason: 'feedback_embeddings collection is not available',
+            collectionExists: false,
+          },
+          error: null,
+        };
+      }
+
+      return runAggregateBenchmark(
+        feedbackEmbeddings,
+        'ann_feedback_only_collection',
+        [
+          {
+            $vectorSearch: {
+              index: FEEDBACK_VECTOR_INDEX,
+              path: VECTOR_PATH,
+              queryVector,
+              limit: TARGET_K,
+              numCandidates: 100,
+              exact: false,
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              sourceEmbeddingId: 1,
+              interactionId: 1,
+              expertFeedbackId: 1,
+              expertFeedbackTotalScore: 1,
+              pageLanguage: 1,
+              questionsEmbedding: 1,
+            },
+          },
+        ],
+        {
+          queryVector,
+          vectorField: VECTOR_PATH,
+          topK: TARGET_K,
+          runs: 1,
+          metadata: {
+            strategy: 'ann_feedback_only_collection',
+            collectionExists: true,
+            collectionCount: await safeQuery(
+              'Feedback collection count',
+              () => feedbackEmbeddings.countDocuments({
+                questionsEmbedding: { $exists: true, $type: 'array', $not: { $size: 0 } },
+              }),
+              0,
+              warnings
+            ),
+            candidateReductionBeforeVectorSearch: false,
+            vectorSearchStage: 'first',
+          },
+        }
+      );
+    },
+    node_bruteforce_feedback_subset: async () => runAggregateBenchmark(
+      embeddings,
+      'node_bruteforce_feedback_subset',
+      [
+        {
+          $lookup: {
+            from: 'interactions',
+            localField: 'interactionId',
+            foreignField: '_id',
+            as: 'inter',
+          },
+        },
+        {
+          $unwind: {
+            path: '$inter',
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $match: {
+            'inter.expertFeedback': { $exists: true, $ne: null },
+            questionsEmbedding: { $exists: true, $ne: null },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            interactionId: 1,
+            expertFeedbackId: '$inter.expertFeedback',
+            questionsEmbedding: 1,
+          },
+        },
+      ],
+      {
+        queryVector,
+        vectorField: VECTOR_PATH,
+        topK: TARGET_K,
+        runs: 1,
+      }
+    ),
+  };
+
+  const runProbe = probeDefinitions[probe];
+  if (!runProbe) {
+    throw new Error(`Unknown DocumentDB 8 capability probe: ${probe}`);
+  }
+
+  const test = await runProbe();
+  return buildSingleProbeResponse({
+    probe,
+    sample,
+    queryVector,
+    counts,
+    test: {
+      ...test,
+      supported: Boolean(test.supported),
+      strategy: probe,
+    },
+    warnings,
+    available: true,
+  });
 }
 
 async function buildCapabilityResult() {
@@ -966,7 +1402,8 @@ async function vectorDocdb8CapabilityTestHandler(req, res) {
   }
 
   try {
-    const result = await buildCapabilityResult();
+    const probe = req.query?.probe;
+    const result = probe ? await buildCapabilityProbeResult(String(probe)) : await buildCapabilityResult();
     return res.status(200).json(result);
   } catch (error) {
     console.error('Error running DocumentDB 8 vector capability test:', error);
@@ -989,13 +1426,13 @@ export const config = {
 
 export {
   buildCapabilityResult,
+  buildCapabilityProbeResult,
   buildWarningList,
   buildRecallComparison,
   collectionExists,
   cosineFromDoc,
   formatResult,
   getRecommendation,
-  getCapabilityProbeConfig,
   median,
   recallAtK,
   runAggregateBenchmark,
