@@ -79,6 +79,7 @@ import { VectorService, initVectorService } from '../services/VectorServiceFacto
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
+import vectorDocdb8CapabilityTestHandler from '../api/vector/vector-docdb8-capability-test.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
@@ -242,6 +243,7 @@ app.get(/.*/, (req, res, next) => {
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
+app.get('/api/vector/vector-docdb8-capability-test', vectorDocdb8CapabilityTestHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);

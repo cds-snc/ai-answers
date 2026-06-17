@@ -20,6 +20,12 @@ const VectorService = {
     const response = await AuthService.fetch(getApiUrl(`vector-similar-chats?chatId=${encodeURIComponent(chatId)}`));
     return await response.json();
   },
+
+  async runDocdb8CapabilityTest() {
+    const response = await AuthService.fetch(getApiUrl('vector-docdb8-capability-test'));
+    if (!response.ok) throw new Error('Failed to run DocumentDB 8 vector capability test');
+    return await response.json();
+  },
   // Add more methods as needed for other endpoints
 };
 

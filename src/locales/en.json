@@ -1493,7 +1493,54 @@
     "allEmbeddingsGenerated": "All embeddings have been generated!",
     "generateEmbeddingsFailed": "Failed to generate embeddings. Check the console for details.",
     "regenerateConfirm": "This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?",
-    "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully!"
+    "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully!",
+    "docdb8Capability": {
+      "title": "DocumentDB 8 vector search capability test",
+      "description": "Run aggregation probes against DocumentDB 8 to see whether filters can reduce the candidate set before vector search.",
+      "run": "Run capability test",
+      "running": "Running capability test...",
+      "pass": "Pass",
+      "fail": "Fail",
+      "yes": "Yes",
+      "no": "No",
+      "noError": "No error",
+      "notAvailable": "Not available",
+      "estimatedFeedbackSelectivity": "Estimated feedback selectivity",
+      "recommendedStrategy": "Recommended strategy",
+      "rawResults": "Raw diagnostic results",
+      "durationMs": "{ms} ms",
+      "scoreRange": "{min} to {max}",
+      "oversamplingHint": "At {selectivity} feedback selectivity, post-filtering needs roughly {candidates} vector candidates to return 10 feedback-backed results.",
+      "counts": {
+        "totalEmbeddings": "Total question embeddings",
+        "embeddingsWithInteraction": "Embeddings with interactions",
+        "interactionsWithFeedback": "Interactions with feedback",
+        "embeddingsWithFeedbackInteraction": "Embeddings joined to feedback",
+        "estimatedCandidatesForTenFeedbackResults": "Estimated candidates for 10 feedback results"
+      },
+      "table": {
+        "capability": "Capability",
+        "status": "Status",
+        "resultCount": "Result count",
+        "preFilter": "Pre-filter",
+        "score": "Score range",
+        "duration": "Duration",
+        "error": "Error"
+      },
+      "capabilities": {
+        "vectorSearchBasicSupport": "$vectorSearch basic support",
+        "vectorSearchScoreSupport": "$meta vectorSearchScore support",
+        "postFilterAfterVectorSearch": "Post-filter after vector search",
+        "simpleMatchBeforeVectorSearch": "Simple $match before vector search",
+        "feedbackLookupFilterBeforeVectorSearch": "Feedback lookup/filter before vector search"
+      },
+      "recommendations": {
+        "annPostFilter": "Use ANN first with post-filtering, but increase candidateLimit based on feedback selectivity.",
+        "lookupPreFilter": "Use aggregation pre-filter with feedback lookup before $vectorSearch.",
+        "denormalizedPreFilter": "Denormalize feedback fields onto embeddings, then use $match before $vectorSearch.",
+        "dedicatedFeedbackCollection": "Use a separate feedback embeddings collection and index to avoid searching records without feedback."
+      }
+    }
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
