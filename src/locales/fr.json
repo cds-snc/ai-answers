@@ -999,13 +999,6 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
-    "documentDbVersion": {
-      "label": "Version de DocumentDB",
-      "options": {
-        "docdb5": "DocumentDB 5",
-        "docdb8": "DocumentDB 8"
-      }
-    },
     "refreshCache": {
       "label": "Rafraîchir le cache des paramètres",
       "loading": "Rafraîchissement du cache...",

@@ -23,18 +23,9 @@ import "../../models/sentenceEmbedding.js";
 // Cache the connection and promise at the module level. This is safe for
 // worker threads, as each thread gets its own module instance.
 let cached = { conn: null, promise: null };
-let activeDocumentDbVersion = normalizeDocumentDbVersion(process.env.DOCDB_ACTIVE_VERSION);
 
-function normalizeDocumentDbVersion(value) {
-  return String(value || '8').trim() === '5' ? '5' : '8';
-}
-
-function getDocumentDbUri(version = activeDocumentDbVersion) {
-  const normalizedVersion = normalizeDocumentDbVersion(version);
-  if (normalizedVersion === '8') {
-    return process.env.DOCDB_8_URI || process.env.DOCDB_URI;
-  }
-  return process.env.DOCDB_5_URI || process.env.DOCDB_URI;
+function getDocumentDbUri() {
+  return process.env.DOCDB_URI;
 }
 
 function getConnectionConfig() {
@@ -55,12 +46,11 @@ function getConnectionConfig() {
     };
   }
 
-  const version = activeDocumentDbVersion;
-  const connectionString = getDocumentDbUri(version);
+  const connectionString = getDocumentDbUri();
 
   return {
     connectionString,
-    targetKey: `docdb${version}:${connectionString}`,
+    targetKey: `docdb8:${connectionString}`,
     opts: {
       tls: true,
       tlsCAFile: "/app/global-bundle.pem",
@@ -76,27 +66,6 @@ function getConnectionConfig() {
   };
 }
 
-async function switchDocumentDbVersion(version) {
-  const nextVersion = normalizeDocumentDbVersion(version);
-  if (process.env.MONGODB_URI) {
-    activeDocumentDbVersion = nextVersion;
-    return;
-  }
-
-  const previousTarget = cached.targetKey;
-  activeDocumentDbVersion = nextVersion;
-  const nextTarget = getConnectionConfig().targetKey;
-
-  if (previousTarget && previousTarget !== nextTarget) {
-    cached = { conn: null, promise: null, targetKey: null };
-    await mongoose.disconnect();
-  }
-}
-
-function getActiveDocumentDbVersion() {
-  return activeDocumentDbVersion;
-}
-
 async function dbConnect() {
   const { connectionString, opts, targetKey } = getConnectionConfig();
 
@@ -108,7 +77,7 @@ async function dbConnect() {
     if (process.env.MONGODB_URI) {
       console.log('Connecting to MongoDB via MONGODB_URI');
     } else {
-      console.log(`Connecting to DocumentDB version ${activeDocumentDbVersion}`);
+      console.log('Connecting to DocumentDB via DOCDB_URI');
     }
     console.log("DB Connection Options:", opts);
 
@@ -132,8 +101,5 @@ async function dbConnect() {
 
 export default dbConnect;
 export {
-  getActiveDocumentDbVersion,
   getDocumentDbUri,
-  normalizeDocumentDbVersion,
-  switchDocumentDbVersion,
 };
