@@ -1245,7 +1245,7 @@
   },
   "execDashboard": {
     "title": "Tableau de bord exécutif Réponses IA",
-    "description": "Les données comprennent les questions de tous les utilisateurs, y compris celles des organisations partenaires connectées pour tester et évaluer.",
+    "description": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
     "overviewTitle": "Aperçu",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",

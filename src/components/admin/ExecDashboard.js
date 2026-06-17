@@ -27,13 +27,21 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const [appliedEndDate, setAppliedEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const hasFetched = useRef(false);
 
+  // The exec dashboard reports on public usage only: it excludes questions from
+  // admin/partner accounts signed in to test and evaluate (userType 'public' =
+  // no logged-in user, which already covers the referred-public subset). The
+  // minimal filter bar has no userType selector, so this is fixed here.
+  const fetchExecMetrics = useCallback((filters) => {
+    fetchMetrics({ ...filters, userType: 'public' });
+  }, [fetchMetrics]);
+
   const handleApply = useCallback((filters) => {
     hasFetched.current = true;
     setAppliedDepartment(filters?.department || '');
     setAppliedStartDate(filters?.startDate || '');
     setAppliedEndDate(filters?.endDate || '');
-    fetchMetrics(filters);
-  }, [fetchMetrics]);
+    fetchExecMetrics(filters);
+  }, [fetchExecMetrics]);
 
   const formatDateRange = (start, end) => {
     if (!start || !end) return '';
@@ -117,7 +125,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.overviewTitle')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleApply} />
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchExecMetrics} onApply={handleApply} />
 
       <h2 className="dashboard-section-title">
         {formatDateRange(displayStartDate, appliedEndDate)}

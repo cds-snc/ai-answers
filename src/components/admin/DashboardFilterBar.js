@@ -4,21 +4,12 @@ import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 const today = () => toISODate(new Date());
-const daysAgo = (n) => {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return toISODate(d);
-};
-// "Last N days" inclusive of today (today counts as day 1), matching the
-// FilterPanel date-range presets which use moment().subtract(N - 1, 'days').
-// So a 30-day window goes back 29 days, not 30.
-const lastNDaysStart = (n) => daysAgo(n - 1);
 
 // Shared filter bar for the exec and partner dashboards.
 // Owns department + date range; reports the selection to the parent via
 // onApply({ startDate, endDate, department }). department is '' for "all partners".
 // Fires onInitialLoad (if provided) or onApply once on mount with defaults
-// (last 30 days, all partners). Pass onInitialLoad separately when the parent
+// (last 12 months, all partners). Pass onInitialLoad separately when the parent
 // needs to distinguish the auto-load from an explicit user action.
 const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad }) => {
   const { t } = useTranslations(lang);

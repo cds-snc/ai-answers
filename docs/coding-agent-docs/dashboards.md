@@ -82,13 +82,28 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
 | Component | Used by | Notes |
 |-----------|---------|-------|
 | `FilterPanel.js` | **Partner** | Full filter (date-range picker, dept, userType, advanced: answerType/partnerEval/aiEval/url). Pass `autoApply` to load on mount; `defaultUserType="all"`. Also used by `MetricsDashboard`. |
-| `DashboardFilterBar.js` | **Exec** | Minimal (dept + two date inputs). Auto-fires `onApply` on mount (last 30 days). |
+| `DashboardFilterBar.js` | **Exec** | Minimal (dept + two date inputs). Auto-fires `onApply` on mount (last 12 months). No userType selector — ExecDashboard fixes `userType: 'public'` on every fetch (see below). |
 
-`FilterPanel` owns its own default range (last 7 days). The minimal bar uses 30.
+`FilterPanel` owns its own default range (last 7 days). The minimal bar uses the last 12 months.
+
+**Exec dashboard is public-only.** `ExecDashboard` wraps every metrics fetch
+(`fetchExecMetrics`) to inject `userType: 'public'`, so it reports public usage
+and excludes questions from admin/partner accounts signed in to test/evaluate.
+`'public'` (no logged-in user) already covers the referred-public subset; in the
+blocked-query counter it sums `referredPublic + publicOther`. This is fixed in
+code, not user-selectable. The title note (`execDashboard.description`) states the
+exclusion — keep the two in sync.
+
+**Exec range heading** clamps its start date up to `metrics.firstDataDate` (the
+first day with data in range) so it never shows an empty leading stretch when the
+default 12-month window reaches back before any data exists. `firstDataDate` is a
+`$min` over `createdAt` in `metrics-usage.js`; the heading self-corrects if the DB
+is cleared and data starts later.
 
 ## Metric bundle shape (the important fields)
 
 ```
+metrics.firstDataDate                                                // earliest createdAt in range (ISO ts), from usage; null if no data
 metrics.totalQuestions / totalQuestionsEn / totalQuestionsFr / totalConversations
 metrics.totalInputTokens / totalInputTokensEn / totalInputTokensFr   // from usage
 metrics.totalOutputTokens / totalOutputTokensEn / totalOutputTokensFr // from usage
@@ -134,7 +149,6 @@ come from `src/constants/dashboardColours.js`.
 | File | Purpose |
 |------|---------|
 | `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = exec style. |
-| `KpiRow.js` | The 3 exec headline KPIs (questions / expert-evaluated / accuracy) derived from a metrics bundle. Reused for the filtered range **and** the last-12-months row. |
 | `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
 | `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on both dashboards. |
@@ -221,7 +235,7 @@ http://localhost:3000/en/exec-dashboard?mock=1
 http://localhost:3000/en/partner-dashboard?mock=1
 ```
 
-No server restart needed — adding or removing `?mock=1` and refreshing is enough. The mock data is defined in `src/utils/dashboard/mockMetrics.js` and covers all sections: KPI cards, quality bar, satisfaction charts, blocked queries, operations metrics, and conversation depth. Both the filtered-period and last-12-months instances use the same bundle.
+No server restart needed — adding or removing `?mock=1` and refreshing is enough. The mock data is defined in `src/utils/dashboard/mockMetrics.js` and covers all sections: KPI cards, quality bar, satisfaction charts, blocked queries, operations metrics, and conversation depth.
 
 To update the placeholder values (e.g. to stress-test a specific threshold or layout edge case), edit `mockMetrics.js` directly and refresh.
 
@@ -244,8 +258,9 @@ Hide charts and donuts when the sample is too small to be meaningful (< 10). Cur
   from `src/utils/numberFormat.js` (locale-aware; FR uses `1 000`, `45 %`).
 - **Exec page title** carries "AI Answers" for screenshot identification; FR puts
   "Réponses IA" at the end (matches `admin.partnerTitle`).
-- The exec **last-12-months row** uses a *second* `useDashboardMetrics` instance
-  fetched once on mount for `now − 1 year`, independent of the filter.
+- The exec dashboard is a **single filterable section** defaulting to the last 12
+  months (the old fixed last-12-months row + its second `useDashboardMetrics`
+  instance were removed in the reorg). One filter, one metrics fetch.
 
 ## Tests
 
