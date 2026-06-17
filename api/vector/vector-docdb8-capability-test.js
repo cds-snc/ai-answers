@@ -740,8 +740,9 @@ async function buildCapabilityProbeResult(probe) {
     ),
   };
 
-  const runProbe = probeDefinitions[probe];
-  if (!runProbe) {
+  const hasProbe = Object.prototype.hasOwnProperty.call(probeDefinitions, probe);
+  const runProbe = hasProbe ? probeDefinitions[probe] : null;
+  if (typeof runProbe !== 'function') {
     throw new Error(`Unknown DocumentDB 8 capability probe: ${probe}`);
   }
 
