@@ -48,7 +48,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const yearExpertTotal = yearMetrics.expertScored?.total?.total || 0;
   const yearEvaluatedPct = yearExpertTotal > 0 && yearQuestions > 0 ? Math.round((yearExpertTotal / yearQuestions) * 100) : 0;
   // Partner count — departments with at least 1 question asked.
-  const yearPartnerCount = Object.values(yearMetrics.byDepartment || {})
+  const byDepartmentCount = Object.values(yearMetrics.byDepartment || {})
     .filter(d => (d.total || 0) > 0).length;
 
   // Row 2 left: accuracy donut. Only "has answer error" counts against accuracy
@@ -152,7 +152,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
             />
             <StatCard
               label={t('execDashboard.kpi.partnerCount')}
-              value={fmtN(yearPartnerCount)}
+              value={fmtN(byDepartmentCount)}
             />
           </div>
           {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right).
