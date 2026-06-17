@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.146.0](https://github.com/cds-snc/ai-answers/compare/v1.145.0...v1.146.0) (2026-06-17)
+
+
+### Features
+
+* add single probe descriptions and additional probe options for DocumentDB 8 capability tests ([7367990](https://github.com/cds-snc/ai-answers/commit/7367990eef9d47077ffdd89654231b79cfff27e2))
+* implement capability probe response builder and benchmark execution for DocumentDB 8 ([92d3d0d](https://github.com/cds-snc/ai-answers/commit/92d3d0d2b57f408d5fbaa2308c33516e2bcab040))
+
+
+### Bug Fixes
+
+* improve probe validation in capability probe result builder ([588fdd7](https://github.com/cds-snc/ai-answers/commit/588fdd79d70c8c101ab42f45bf1334a5f6080b57))
+
 ## [1.145.0](https://github.com/cds-snc/ai-answers/compare/v1.144.0...v1.145.0) (2026-06-17)
 
 
