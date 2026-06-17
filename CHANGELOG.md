@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.144.0](https://github.com/cds-snc/ai-answers/compare/v1.143.0...v1.144.0) (2026-06-17)
+
+
+### Features
+
+* add ANN post-filter recommendation to English and French locales ([39eae61](https://github.com/cds-snc/ai-answers/commit/39eae61a94449ad0f887baffc2db2e0c656c97a1))
+* add DocumentDB 8 vector search capability test and related UI components ([62581eb](https://github.com/cds-snc/ai-answers/commit/62581eb14bbb90d3ec6ae147f4b4189cda7daf44))
+* add tests for DocumentDB 8 vector search capabilities ([978a7ea](https://github.com/cds-snc/ai-answers/commit/978a7ea13974048dc7701938b500a79588ecb548))
+* remove docdb5 ([06d2ac6](https://github.com/cds-snc/ai-answers/commit/06d2ac689f60c3e43a0163ed9a44b7411bc14a35))
+* remove docdb5 ([8917433](https://github.com/cds-snc/ai-answers/commit/8917433d29a13bdd14d579b1ab8276fdf6b7a097))
+* remove references to DocumentDB 8 and related parameters ([58f7d2f](https://github.com/cds-snc/ai-answers/commit/58f7d2f2cf8937f0973c63353d560afcbccbdc9c))
+* update DocumentDB instance references to remove version-specific identifiers ([6948610](https://github.com/cds-snc/ai-answers/commit/694861026ec6c89dd0082185ecb16ee76fcc9a5d))
+* update DocumentDB references to remove version-specific identifiers ([d8229e1](https://github.com/cds-snc/ai-answers/commit/d8229e16ad8851523ca30e2d06a2929bcc86d998))
+
+
+### Bug Fixes
+
+* remove DOCDB_5_URI and DOCDB_8_URI from Lambda deploy script ([aaef73e](https://github.com/cds-snc/ai-answers/commit/aaef73e10677e0131760f9f19dc1a31835b9f394))
+
+
+### Miscellaneous Chores
+
+* remove DocumentDB 5 support and related code ([9484834](https://github.com/cds-snc/ai-answers/commit/94848346c9cd4a8e4382dd25c7c9e878a98506b8))
+
 ## [1.143.0](https://github.com/cds-snc/ai-answers/compare/v1.142.0...v1.143.0) (2026-06-16)
 
 
