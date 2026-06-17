@@ -1,3 +1,4 @@
+import { normalizeObjectId } from '../api/util/db-query.js';
 import { Chat } from '../models/chat.js';
 import { Embedding } from '../models/embedding.js';
 import { ExpertFeedback } from '../models/expertFeedback.js';
@@ -14,6 +15,10 @@ function feedbackMetadata(feedback) {
 }
 
 async function getPageLanguage(interactionId, fallbackChatId = null) {
+  interactionId = normalizeObjectId(interactionId);
+  fallbackChatId = normalizeObjectId(fallbackChatId);
+  if (!interactionId && !fallbackChatId) return null;
+
   const query = fallbackChatId
     ? { $or: [{ _id: fallbackChatId }, { interactions: interactionId }] }
     : { interactions: interactionId };
@@ -23,17 +28,23 @@ async function getPageLanguage(interactionId, fallbackChatId = null) {
 
 class EmbeddingMetadataService {
   async syncForInteraction(interactionOrId, feedbackOrId = null) {
+    const interactionId = normalizeObjectId(interactionOrId);
     const interaction = typeof interactionOrId === 'object' && interactionOrId?._id
       ? interactionOrId
-      : await Interaction.findById(interactionOrId).select('_id expertFeedback').lean();
+      : interactionId
+        ? await Interaction.findById(interactionId).select('_id expertFeedback').lean()
+        : null;
     if (!interaction?._id) return { matchedCount: 0, modifiedCount: 0 };
 
     const feedbackId = feedbackOrId || interaction.expertFeedback;
+    const normalizedFeedbackId = normalizeObjectId(feedbackId);
     if (!feedbackId) return this.clearForInteraction(interaction._id);
 
     const feedback = typeof feedbackId === 'object' && feedbackId?._id
       ? feedbackId
-      : await ExpertFeedback.findById(feedbackId).lean();
+      : normalizedFeedbackId
+        ? await ExpertFeedback.findById(normalizedFeedbackId).lean()
+        : null;
     if (!feedback?._id) return this.clearForInteraction(interaction._id);
 
     const pageLanguage = await getPageLanguage(interaction._id);
@@ -50,6 +61,9 @@ class EmbeddingMetadataService {
   }
 
   async clearForInteraction(interactionId) {
+    interactionId = normalizeObjectId(interactionId);
+    if (!interactionId) return { matchedCount: 0, modifiedCount: 0 };
+
     return Embedding.updateOne(
       { interactionId },
       {
@@ -64,6 +78,7 @@ class EmbeddingMetadataService {
   }
 
   async backfillBatch({ lastProcessedId = null, limit = 100 } = {}) {
+    lastProcessedId = normalizeObjectId(lastProcessedId);
     const query = lastProcessedId ? { _id: { $gt: lastProcessedId } } : {};
     const embeddings = await Embedding.find(query)
       .sort({ _id: 1 })

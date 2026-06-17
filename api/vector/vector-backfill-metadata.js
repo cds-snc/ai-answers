@@ -1,4 +1,5 @@
 import dbConnect from '../db/db-connect.js';
+import { normalizeObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, adminMiddleware } from '../../middleware/auth.js';
 import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
 
@@ -10,13 +11,19 @@ async function vectorBackfillMetadataHandler(req, res) {
   try {
     await dbConnect();
     const { lastProcessedId = null, limit = 100 } = req.body || {};
+    const normalizedLastProcessedId = lastProcessedId
+      ? normalizeObjectIdString(lastProcessedId)
+      : null;
+    if (lastProcessedId && !normalizedLastProcessedId) {
+      return res.status(400).json({ error: 'Invalid lastProcessedId' });
+    }
     const parsedLimit = Number(limit);
     const boundedLimit = Number.isFinite(parsedLimit)
       ? Math.max(1, Math.min(Math.floor(parsedLimit), 500))
       : 100;
 
     const result = await EmbeddingMetadataService.backfillBatch({
-      lastProcessedId,
+      lastProcessedId: normalizedLastProcessedId,
       limit: boundedLimit,
     });
 
