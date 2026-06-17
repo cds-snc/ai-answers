@@ -94,7 +94,7 @@ metrics.totalInputTokens / totalInputTokensEn / totalInputTokensFr   // from usa
 metrics.totalOutputTokens / totalOutputTokensEn / totalOutputTokensFr // from usage
 metrics.responseTime.{ count, median, p90, p95, max, maxChatId }    // ms, from technical
 metrics.sessionsByQuestionCount.{singleQuestion,twoQuestions,threeQuestions}.total
-metrics.byDepartment[dept].{ total, expertScored.total }
+metrics.byDepartment[dept].{ total, expertScored.total }  // total = interactions (questions), not conversations
 metrics.expertScored.<cat>.{ total, en, fr }   // cat: total, correct, needsImprovement,
                                                 //      hasError, hasCitationError, harmful, hasContentIssue
 metrics.aiScored.<cat>.{ total, en, fr }        // same cats EXCEPT no hasContentIssue
