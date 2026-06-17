@@ -23,7 +23,11 @@ const lastNDaysStart = (n) => daysAgo(n - 1);
 const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad }) => {
   const { t } = useTranslations(lang);
   const [department, setDepartment] = useState('');
-  const [startDate, setStartDate] = useState(lastNDaysStart(30));
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return toISODate(d);
+  });
   const [endDate, setEndDate] = useState(today());
 
   // Keep the latest callbacks without retriggering the mount-load effect.

@@ -1,10 +1,9 @@
-import React, { useMemo, useEffect, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
+import { buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
-import KpiRow from './dashboard/KpiRow.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
@@ -19,64 +18,45 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
-  // Track the applied department so the blocked-query table (which can't be
-  // department-scoped — blocks happen before the department is known) is hidden
-  // when a specific department is filtered.
   const [appliedDepartment, setAppliedDepartment] = useState('');
+  const [appliedStartDate, setAppliedStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [appliedEndDate, setAppliedEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const hasFetched = useRef(false);
+
   const handleApply = useCallback((filters) => {
     hasFetched.current = true;
     setAppliedDepartment(filters?.department || '');
+    setAppliedStartDate(filters?.startDate || '');
+    setAppliedEndDate(filters?.endDate || '');
     fetchMetrics(filters);
   }, [fetchMetrics]);
 
-  // Separate, fixed last-12-months summary, independent of the filter below.
-  // Fetched once on mount; the database only goes back to Oct 2025, which is
-  // within the window, so the query simply returns everything since then.
-  const { metrics: yearMetrics, loading: yearLoading, fetchMetrics: fetchYearMetrics } = useDashboardMetrics();
-  useEffect(() => {
-    const end = new Date();
-    const start = new Date();
-    start.setFullYear(start.getFullYear() - 1);
-    fetchYearMetrics({ startDate: start.toISOString(), endDate: end.toISOString() });
-  }, [fetchYearMetrics]);
+  const formatDateRange = (start, end) => {
+    if (!start || !end) return '';
+    const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
+    const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+    const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    return `${parse(start).toLocaleDateString(locale, opts)} – ${parse(end).toLocaleDateString(locale, opts)}`;
+  };
 
-  // --- Last-12-months derived data ---
+  // KPI derived data
+  const totalQuestions = metrics.totalQuestions || 0;
+  const expertTotal = metrics.expertScored?.total?.total || 0;
+  const evaluatedPct = expertTotal > 0 && totalQuestions > 0 ? Math.round((expertTotal / totalQuestions) * 100) : 0;
 
-  // Row 1: questions, expert evaluated, partner count.
-  const yearQuestions = yearMetrics.totalQuestions || 0;
-  const yearExpertTotal = yearMetrics.expertScored?.total?.total || 0;
-  const yearEvaluatedPct = yearExpertTotal > 0 && yearQuestions > 0 ? Math.round((yearExpertTotal / yearQuestions) * 100) : 0;
-  // Department count — departments with at least 1 question asked.
-  const byDepartmentCount = Object.values(yearMetrics.byDepartment || {})
-    .filter(d => (d.total || 0) > 0).length;
-
-  // Row 2 left: accuracy donut. Only "has answer error" counts against accuracy
-  // (citation issues / needs-improvement do not); combines expert + AI evals.
-  const yearAiTotal = yearMetrics.aiScored?.total?.total || 0;
-  const yearEvalTotal = yearExpertTotal + yearAiTotal;
-  const yearHasError = (yearMetrics.expertScored?.hasError?.total || 0) + (yearMetrics.aiScored?.hasError?.total || 0);
-  const yearAccuracyPct = yearEvalTotal > 0 ? 100 - Math.round((yearHasError / yearEvalTotal) * 100) : null;
-  const accuracyDonutData = yearEvalTotal > 0 ? [
-    { name: t('execDashboard.charts.accurate'), value: yearEvalTotal - yearHasError },
-    { name: t('execDashboard.charts.hasError'), value: yearHasError },
+  // Accuracy donut (expert + AI evals combined; only hasError counts against accuracy)
+  const aiTotal = metrics.aiScored?.total?.total || 0;
+  const evalTotal = expertTotal + aiTotal;
+  const hasError = (metrics.expertScored?.hasError?.total || 0) + (metrics.aiScored?.hasError?.total || 0);
+  const accuracyPct = evalTotal > 0 ? 100 - Math.round((hasError / evalTotal) * 100) : null;
+  const accuracyDonutData = evalTotal > 0 ? [
+    { name: t('execDashboard.charts.accurate'), value: evalTotal - hasError },
+    { name: t('execDashboard.charts.hasError'), value: hasError },
   ] : [];
-
-  // Row 2 right: satisfaction breakdown bar. Positive rate (helpful / total) is
-  // surfaced in the subtitle; feedback is classified by score (not the raw
-  // yes/no click) so notWanted counts as helpful.
-  const yearPfTotal = yearMetrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
-  const yearFeedbackData = useMemo(
-    () => buildFeedbackSplitData(yearMetrics.publicFeedbackTotals, yearMetrics.publicFeedbackReasons, t),
-    [yearMetrics.publicFeedbackTotals, yearMetrics.publicFeedbackReasons, t],
-  );
-  const yearSatisfactionPct = yearPfTotal > 0 ? Math.round(((yearFeedbackData[0]?.value || 0) / yearPfTotal) * 100) : null;
-  const yearFeedbackReasonsData = useMemo(
-    () => buildFeedbackReasonsData(yearMetrics.publicFeedbackReasons, t),
-    [yearMetrics.publicFeedbackReasons, t],
-  );
-
-  // --- Filtered-period derived data ---
 
   // Harmful (expert evaluations only). Shown in the Safety metrics row, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
@@ -93,7 +73,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
       .filter((d) => d.value > 0);
   }, [metrics.blockedQueries, t]);
 
-  // Custom bar tooltip: total plus the EN/FR split for the hovered block type.
   const BlockedBarTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
@@ -109,6 +88,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
   const filteredPfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
 
+  // Count of institutions with at least one question in the filtered period.
+  const byDepartmentCount = Object.values(metrics.byDepartment || {})
+    .filter(d => (d.total || 0) > 0).length;
+
   const departmentData = useMemo(() => {
     return Object.entries(metrics.byDepartment || {})
       .map(([dept, data]) => ({ name: dept, value: data.total || 0 }))
@@ -117,83 +100,23 @@ const ExecDashboard = ({ lang = 'en' }) => {
       .slice(0, 10);
   }, [metrics.byDepartment]);
 
-  // Operations metrics. Median response time comes from the technical metrics
-  // endpoint (milliseconds, shown in seconds); token totals come from usage.
   const responseTime = metrics.responseTime || {};
   const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
     <div>
-      {/* Last 12 months summary — fixed window, independent of the filter below.
-          Shows a loading state rather than zeroed cards while the (separate)
-          year query is in flight. */}
       <h2 className="dashboard-section-title">
-        {t('execDashboard.last12Months')}
-      </h2>
-      {yearLoading ? (
-        <div className="dashboard-loading">
-          {t('common.loading')}
-        </div>
-      ) : (
-        <>
-          {/* Row 1: questions asked, expert evaluated, partner institutions */}
-          <div className="dashboard-row">
-            <StatCard
-              label={t('execDashboard.kpi.questionsAsked')}
-              value={fmtN(yearQuestions)}
-              sub={t('execDashboard.kpi.questionsSub')
-                .replace('{en}', fmtN(yearMetrics.totalQuestionsEn))
-                .replace('{fr}', fmtN(yearMetrics.totalQuestionsFr))}
-            />
-            <StatCard
-              label={t('execDashboard.kpi.evaluated')}
-              value={fmtN(yearExpertTotal)}
-              sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(yearEvaluatedPct))}
-            />
-            <StatCard
-              label={t('execDashboard.kpi.partnerCount')}
-              value={fmtN(byDepartmentCount)}
-            />
-          </div>
-          {/* Row 2: accuracy donut (left) + satisfaction breakdown bar (right).
-              Independent charts sharing a row. Each hidden below 10 samples;
-              row omitted if neither qualifies. */}
-          {(yearEvalTotal >= 10 || yearPfTotal >= 10) && (
-            <div className="dashboard-row">
-              {yearEvalTotal >= 10 && (
-                <DonutCard
-                  title={t('execDashboard.charts.accuracyDonutTitle')}
-                  data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
-                  colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
-                  centreValue={yearAccuracyPct !== null ? fmtPct(yearAccuracyPct) : '—'}
-                  centreLabel={t('execDashboard.charts.accuracyCentre')}
-                  centreClass={yearAccuracyPct === null ? undefined : yearAccuracyPct >= 80 ? 'green' : yearAccuracyPct > 50 ? 'orange' : 'red'}
-                  lang={lang}
-                />
-              )}
-              {yearPfTotal >= 10 && (
-                <div className="dashboard-chart-wide">
-                  <DivergingBarCard
-                    title={t('execDashboard.charts.feedbackBreakdownTitle')}
-                    subtitle={t('execDashboard.charts.satisfactionBreakdownSubtitle')
-                      .replace('{pct}', fmtPct(yearSatisfactionPct))
-                      .replace('{total}', fmtN(yearPfTotal))}
-                    data={yearFeedbackReasonsData}
-                    noDataLabel={t('execDashboard.charts.noData')}
-                    lang={lang}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      <h2 className="dashboard-section-title">
-        {t('execDashboard.filteredPeriod')}
+        {t('execDashboard.overviewTitle')}
       </h2>
 
       <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleApply} />
+
+      <h2 className="dashboard-section-title">
+        {formatDateRange(appliedStartDate, appliedEndDate)}
+      </h2>
+      <p className="font-size-text-small mb-300">
+        {t('execDashboard.dataStartsNote')}
+      </p>
 
       {error && (
         <div className="dashboard-error">
@@ -208,11 +131,54 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Headline KPI cards for the selected date range */}
-      <KpiRow metrics={metrics} t={t} lang={lang} />
+      {/* KPI row: accuracy donut on the left (~2/3 wide), stat cards stacked on the right.
+          Falls back to a flat row when there are too few evals to show the donut. */}
+      {evalTotal >= 10 ? (
+        <div className="dashboard-row">
+          <div className="dashboard-col-half">
+            <DonutCard
+              title={t('execDashboard.charts.accuracyDonutTitle')}
+              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+              colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+              centreValue={accuracyPct !== null ? fmtPct(accuracyPct) : '—'}
+              centreLabel={t('execDashboard.charts.accuracyCentre')}
+              centreClass={accuracyPct === null ? undefined : accuracyPct >= 80 ? 'green' : accuracyPct > 50 ? 'orange' : 'red'}
+              lang={lang}
+            />
+          </div>
+          <div className="dashboard-col-half dashboard-col--equal-height">
+            <StatCard
+              label={t('execDashboard.kpi.questionsAsked')}
+              value={fmtN(totalQuestions)}
+              sub={t('execDashboard.kpi.questionsSub')
+                .replace('{en}', fmtN(metrics.totalQuestionsEn))
+                .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
+            />
+            <StatCard
+              label={t('execDashboard.kpi.evaluated')}
+              value={fmtN(expertTotal)}
+              sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="dashboard-row">
+          <StatCard
+            label={t('execDashboard.kpi.questionsAsked')}
+            value={fmtN(totalQuestions)}
+            sub={t('execDashboard.kpi.questionsSub')
+              .replace('{en}', fmtN(metrics.totalQuestionsEn))
+              .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
+          />
+          <StatCard
+            label={t('execDashboard.kpi.evaluated')}
+            value={fmtN(expertTotal)}
+            sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+          />
+        </div>
+      )}
 
-      {/* Satisfaction (helpful or not) breakdown — diverging: positives right
-          (green), negatives left (red), with negatives grouped at the bottom. */}
+      {/* Satisfaction (helpful or not) breakdown — full width diverging bar */}
       {filteredPfTotal >= 10 && (
         <div className="dashboard-section">
           <DivergingBarCard
@@ -223,24 +189,30 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Top institutions by question volume (all institutions, not just partners) */}
+      {/* Top institutions: institution count stat card left, bar chart right */}
       {departmentData.length > 0 && (
-        <div className="dashboard-section">
-          <HBarCard
-            title={t('execDashboard.charts.departmentsTitle')}
-            data={departmentData}
-            colour={COLOURS.brand}
-            lang={lang}
-            yAxisWidth={240}
-            yAxisTextAlign="right"
-            marginLeft={32}
-          />
+        <div className="dashboard-row">
+          <div className="dashboard-col-third dashboard-col--equal-height">
+            <StatCard
+              label={t('execDashboard.kpi.partnerCount')}
+              value={fmtN(byDepartmentCount)}
+            />
+          </div>
+          <div className="dashboard-chart-wide">
+            <HBarCard
+              title={t('execDashboard.charts.departmentsTitle')}
+              data={departmentData}
+              colour={COLOURS.brand}
+              lang={lang}
+              yAxisWidth={240}
+              yAxisTextAlign="right"
+              marginLeft={32}
+            />
+          </div>
         </div>
       )}
 
-      {/* Operations metrics. Median response time is drawn from the technical
-          metrics endpoint (ms, displayed in seconds); token totals come from
-          the usage endpoint. */}
+      {/* Operations metrics */}
       <h2 className="dashboard-section-title">
         {t('execDashboard.ops.title')}
       </h2>
