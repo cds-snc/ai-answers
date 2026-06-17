@@ -94,7 +94,7 @@ metrics.totalInputTokens / totalInputTokensEn / totalInputTokensFr   // from usa
 metrics.totalOutputTokens / totalOutputTokensEn / totalOutputTokensFr // from usage
 metrics.responseTime.{ count, median, p90, p95, max, maxChatId }    // ms, from technical
 metrics.sessionsByQuestionCount.{singleQuestion,twoQuestions,threeQuestions}.total
-metrics.byDepartment[dept].{ total, expertScored.total }
+metrics.byDepartment[dept].{ total, expertScored.total }  // total = interactions (questions), not conversations
 metrics.expertScored.<cat>.{ total, en, fr }   // cat: total, correct, needsImprovement,
                                                 //      hasError, hasCitationError, harmful, hasContentIssue
 metrics.aiScored.<cat>.{ total, en, fr }        // same cats EXCEPT no hasContentIssue
@@ -106,6 +106,17 @@ metrics.blockedQueries.<type>.{ total, en, fr } // from metrics-blocked; type: t
                                                 //   manipulation, azureGuardrail,
                                                 //   unsupportedLanguage, plus a `total` bucket
 ```
+
+### What each metric counts
+
+Most metrics count at the **interaction level** (one per question asked):
+`totalQuestions`, `expertScored`, `aiScored`, `publicFeedback`, `byDepartment.total`, and `byDepartmentCount` (institutions with questions) all count interactions. A 3-question TBS session counts as 3 toward TBS's total.
+
+Two metrics count at the **chat (conversation) level** — intentionally:
+- **`totalConversations`** — distinct Chat IDs; measures unique conversations.
+- **`sessionsByQuestionCount`** — groups by Chat ID to show session depth (how many questions per conversation). Chat-level grouping is correct here.
+
+Nothing else should count at the Chat ID level. If you add a new metric that aggregates from `Chat` without `$unwind`ing interactions, verify the counting unit is intentional.
 
 Expert metrics come from `api/metrics/metrics-expert-feedback.js`, AI from
 `metrics-ai-eval.js`, public feedback from `metrics-public-feedback.js`. Token

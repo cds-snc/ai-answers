@@ -263,9 +263,24 @@ const FilterPanel = ({
   ];
 
   const handleApply = () => {
-    // Parse local datetime strings and convert to UTC ISO strings for backend
-    const startObj = parseDateTimeLocal(dateRange.startDate);
-    const endObj = parseDateTimeLocal(dateRange.endDate);
+    // Prefer the picker's live state over React state: the picker tracks the
+    // user's calendar selection in real-time, so dates are correct even when
+    // the user chose a custom range without clicking Apply inside the calendar.
+    const picker = dateRangePickerInstance.current;
+    const startDateStr = picker
+      ? formatDateTimeLocal(picker.startDate.toDate())
+      : dateRange.startDate;
+    const endDateStr = picker
+      ? formatDateTimeLocal(picker.endDate.toDate())
+      : dateRange.endDate;
+
+    // Sync React state so the input reflects the applied dates if they changed.
+    if (startDateStr !== dateRange.startDate || endDateStr !== dateRange.endDate) {
+      setDateRange({ startDate: startDateStr, endDate: endDateStr });
+    }
+
+    const startObj = parseDateTimeLocal(startDateStr);
+    const endObj = parseDateTimeLocal(endDateStr);
 
     const filters = {
       startDate: startObj ? startObj.toISOString() : undefined,

@@ -41,7 +41,9 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         },
         // Apply department filter after context lookup
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
-        { $match: { expertFeedback: { $ne: null } } },
+        // Exclude blank ExpertFeedback records created solely by the neverStale flag
+        // (those have totalScore: null because no human scored the interaction).
+        { $match: { expertFeedback: { $ne: null }, 'expertFeedback.totalScore': { $ne: null } } },
         {
             $addFields: {
                 category: getPartnerEvalAggregationExpression('$expertFeedback'),
