@@ -120,6 +120,14 @@ describe('getChatFilterConditions - referredPublic regex', () => {
             ['https://alpha.canada.ca/en', true],
             ['https://ai-answers.alpha.canada.ca/en/chat', true],
             ['https://staging.canada.ca/en', true],
+            // AI Answers app self-referrals — excluded by host label, in any
+            // environment (so it survives the alpha retirement / a domain move)
+            ['https://ai-answers.canada.ca/en/chat', true],
+            ['https://ai-answers.canada.ca/fr', true],
+            ['ai-answers.alpha.canada.ca/en', true],
+            // French app host
+            ['https://reponses-ia.canada.ca/fr', true],
+            ['https://reponses-ia.alpha.canada.ca/fr/clavardage', true],
             // Test (exact match only — not wildcard, to avoid excluding e.g. contest.canada.ca)
             ['https://test.canada.ca/', true],
             // Without protocol prefix (as stored in some pipelines)
@@ -139,6 +147,10 @@ describe('getChatFilterConditions - referredPublic regex', () => {
             ['https://contest.canada.ca/', false],
             ['https://ised-isde.canada.ca/site/spectrum', false],
             ['https://sac-isc.gc.ca/eng/home', false],
+            // "ai-answers" in the path of a real public page is NOT the app host
+            ['https://www.canada.ca/en/ai-answers', false],
+            // Different host label that merely starts with "ai-answers"
+            ['https://ai-answers-info.canada.ca/', false],
         ])('should NOT exclude: %s', (url, expected) => {
             expect(getExclusionRegex().test(url)).toBe(expected);
         });
