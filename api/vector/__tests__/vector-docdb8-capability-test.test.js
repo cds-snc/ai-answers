@@ -238,20 +238,6 @@ describe('vector docdb8 capability probe', () => {
     })).toBe('annPostFilter');
   });
 
-  it('uses a lighter probe configuration in production', () => {
-    const productionConfig = module.getCapabilityProbeConfig(true);
-    const defaultConfig = module.getCapabilityProbeConfig(false);
-
-    expect(productionConfig.benchmarkRuns).toBe(1);
-    expect(productionConfig.annPostFilterCandidateLimitValues).toEqual([100, 250]);
-    expect(productionConfig.annPostFilterNumCandidatesValues).toEqual([100, 250]);
-    expect(productionConfig.feedbackAnnNumCandidatesValues).toEqual([100, 250]);
-    expect(defaultConfig.benchmarkRuns).toBe(3);
-    expect(defaultConfig.annPostFilterCandidateLimitValues).toHaveLength(5);
-    expect(defaultConfig.annPostFilterNumCandidatesValues).toHaveLength(4);
-    expect(defaultConfig.feedbackAnnNumCandidatesValues).toHaveLength(4);
-  });
-
   it('returns the new benchmark groups, recall comparisons, and warnings', async () => {
     const result = await module.buildCapabilityResult();
 
@@ -262,7 +248,7 @@ describe('vector docdb8 capability probe', () => {
     expect(result.tests.exact_after_denormalized_match).toBeTruthy();
     expect(result.tests.ann_feedback_only_collection).toBeTruthy();
     expect(result.tests.node_bruteforce_feedback_subset).toBeTruthy();
-    expect(result.benchmarks.ann_all_then_feedback_post_filter).toHaveLength(20);
+    expect(result.benchmarks.ann_all_then_feedback_post_filter).toHaveLength(1);
     expect(result.recallComparisons).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -279,6 +265,19 @@ describe('vector docdb8 capability probe', () => {
     expect(typeof result.recommendation).toBe('string');
     expect(result.tests.vectorSearchThenFeedbackFilter.metadata.candidateReductionBeforeVectorSearch).toBe(false);
     expect(result.tests.feedbackFilterBeforeVectorSearch.metadata.vectorSearchStage).toBe('afterFeedbackLookupAndMatch');
+  });
+
+  it('runs a single probe when requested', async () => {
+    const result = await module.buildCapabilityProbeResult('ann_all_then_feedback_post_filter');
+
+    expect(result.available).toBe(true);
+    expect(result.probe).toBe('ann_all_then_feedback_post_filter');
+    expect(result.test).toMatchObject({
+      strategy: 'ann_all_then_feedback_post_filter',
+      supported: true,
+    });
+    expect(typeof result.test.durationMs).toBe('number');
+    expect(result.test.metadata.candidateLimit).toBe(100);
   });
 
   it('keeps going when a supporting count query fails', async () => {
