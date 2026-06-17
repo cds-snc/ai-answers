@@ -1535,6 +1535,7 @@
         "feedbackLookupFilterBeforeVectorSearch": "Feedback lookup/filter before vector search"
       },
       "recommendations": {
+        "annPostFilter": "Use ANN first with post-filtering, but increase candidateLimit based on feedback selectivity.",
         "lookupPreFilter": "Use aggregation pre-filter with feedback lookup before $vectorSearch.",
         "denormalizedPreFilter": "Denormalize feedback fields onto embeddings, then use $match before $vectorSearch.",
         "dedicatedFeedbackCollection": "Use a separate feedback embeddings collection and index to avoid searching records without feedback."

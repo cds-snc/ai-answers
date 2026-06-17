@@ -41,6 +41,9 @@ const getDocdb8CapabilityRows = (result, t) => ([
 ]);
 
 const getDocdb8RecommendationText = (recommendation, t) => {
+  if (recommendation === 'annPostFilter') {
+    return t('vector.docdb8Capability.recommendations.annPostFilter');
+  }
   if (recommendation === 'lookupPreFilter') {
     return t('vector.docdb8Capability.recommendations.lookupPreFilter');
   }
