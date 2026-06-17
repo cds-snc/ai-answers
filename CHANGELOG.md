@@ -1,5 +1,57 @@
 # Changelog
 
+## [1.146.1](https://github.com/cds-snc/ai-answers/compare/v1.146.0...v1.146.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* expert evaluation and partner count, calendar apply bttn ([c8f9a23](https://github.com/cds-snc/ai-answers/commit/c8f9a2356fd178c444578d10d78e61bcdf69f15c))
+
+## [1.146.0](https://github.com/cds-snc/ai-answers/compare/v1.145.0...v1.146.0) (2026-06-17)
+
+
+### Features
+
+* add single probe descriptions and additional probe options for DocumentDB 8 capability tests ([7367990](https://github.com/cds-snc/ai-answers/commit/7367990eef9d47077ffdd89654231b79cfff27e2))
+* implement capability probe response builder and benchmark execution for DocumentDB 8 ([92d3d0d](https://github.com/cds-snc/ai-answers/commit/92d3d0d2b57f408d5fbaa2308c33516e2bcab040))
+
+
+### Bug Fixes
+
+* improve probe validation in capability probe result builder ([588fdd7](https://github.com/cds-snc/ai-answers/commit/588fdd79d70c8c101ab42f45bf1334a5f6080b57))
+
+## [1.145.0](https://github.com/cds-snc/ai-answers/compare/v1.144.0...v1.145.0) (2026-06-17)
+
+
+### Features
+
+* enhance capability probe with production-specific configuration… ([f39a2d3](https://github.com/cds-snc/ai-answers/commit/f39a2d3dd9cc7907f6753e5316e800ee3196dfc1))
+* enhance capability probe with production-specific configurations and improved error handling ([c2dcd30](https://github.com/cds-snc/ai-answers/commit/c2dcd3053b99093915d45bb38227125fe9157649))
+
+## [1.144.0](https://github.com/cds-snc/ai-answers/compare/v1.143.0...v1.144.0) (2026-06-17)
+
+
+### Features
+
+* add ANN post-filter recommendation to English and French locales ([39eae61](https://github.com/cds-snc/ai-answers/commit/39eae61a94449ad0f887baffc2db2e0c656c97a1))
+* add DocumentDB 8 vector search capability test and related UI components ([62581eb](https://github.com/cds-snc/ai-answers/commit/62581eb14bbb90d3ec6ae147f4b4189cda7daf44))
+* add tests for DocumentDB 8 vector search capabilities ([978a7ea](https://github.com/cds-snc/ai-answers/commit/978a7ea13974048dc7701938b500a79588ecb548))
+* remove docdb5 ([06d2ac6](https://github.com/cds-snc/ai-answers/commit/06d2ac689f60c3e43a0163ed9a44b7411bc14a35))
+* remove docdb5 ([8917433](https://github.com/cds-snc/ai-answers/commit/8917433d29a13bdd14d579b1ab8276fdf6b7a097))
+* remove references to DocumentDB 8 and related parameters ([58f7d2f](https://github.com/cds-snc/ai-answers/commit/58f7d2f2cf8937f0973c63353d560afcbccbdc9c))
+* update DocumentDB instance references to remove version-specific identifiers ([6948610](https://github.com/cds-snc/ai-answers/commit/694861026ec6c89dd0082185ecb16ee76fcc9a5d))
+* update DocumentDB references to remove version-specific identifiers ([d8229e1](https://github.com/cds-snc/ai-answers/commit/d8229e16ad8851523ca30e2d06a2929bcc86d998))
+
+
+### Bug Fixes
+
+* remove DOCDB_5_URI and DOCDB_8_URI from Lambda deploy script ([aaef73e](https://github.com/cds-snc/ai-answers/commit/aaef73e10677e0131760f9f19dc1a31835b9f394))
+
+
+### Miscellaneous Chores
+
+* remove DocumentDB 5 support and related code ([9484834](https://github.com/cds-snc/ai-answers/commit/94848346c9cd4a8e4382dd25c7c9e878a98506b8))
+
 ## [1.143.0](https://github.com/cds-snc/ai-answers/compare/v1.142.0...v1.143.0) (2026-06-16)
 
 

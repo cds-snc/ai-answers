@@ -56,8 +56,6 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
     effect = "Allow"
     resources = [
       var.docdb_uri_arn,
-      var.docdb5_uri_arn,
-      var.docdb8_uri_arn,
       var.docdb_username_arn,
       var.docdb_password_arn,
       var.azure_openai_api_key_arn,

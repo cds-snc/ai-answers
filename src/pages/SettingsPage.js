@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { usePageContext } from '../hooks/usePageParam.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
 
 const normalizeChatTransport = (value) => (
@@ -11,15 +10,12 @@ const normalizeChatTransport = (value) => (
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const { language } = usePageContext();
   const [status, setStatus] = useState('available');
   const [saving, setSaving] = useState(false);
   const [deploymentMode, setDeploymentMode] = useState('CDS');
   const [savingDeployment, setSavingDeployment] = useState(false);
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
-  const [documentDbVersion, setDocumentDbVersion] = useState('8');
-  const [savingDocumentDbVersion, setSavingDocumentDbVersion] = useState(false);
   const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
   const [settingsCacheMessage, setSettingsCacheMessage] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
@@ -86,8 +82,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDeploymentMode(mode);
       const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
       setVectorServiceType(type);
-      const dbVersion = await DataStoreService.getSetting('database.documentdbVersion', '8');
-      setDocumentDbVersion(dbVersion === '5' ? '5' : '8');
       const url = await DataStoreService.getSetting('site.baseUrl', '');
       setBaseUrl(url ?? '');
       // Load default workflow setting
@@ -321,18 +315,6 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleDocumentDbVersionChange = async (e) => {
-    const newVersion = e.target.value === '8' ? '8' : '5';
-    setDocumentDbVersion(newVersion);
-    setSavingDocumentDbVersion(true);
-    try {
-      const current = await saveAndVerify('database.documentdbVersion', newVersion, (v) => (v === '8' ? '8' : '5'));
-      setDocumentDbVersion(current);
-    } finally {
-      setSavingDocumentDbVersion(false);
-    }
-  };
-
   const handleRefreshSettingsCache = async () => {
     setRefreshingSettingsCache(true);
     setSettingsCacheMessage('');
@@ -420,6 +402,17 @@ const SettingsPage = ({ lang = 'en' }) => {
       <nav className="mb-400">
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
+      <div className="mb-400">
+        <GcdsButton
+          type="button"
+          variant="secondary"
+          onClick={handleRefreshSettingsCache}
+          disabled={refreshingSettingsCache}
+        >
+          {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
+        </GcdsButton>
+        {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
+      </div>
       <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400" tabIndex="0">
         <div>
           <label htmlFor="site-status" className="mb-200 display-block">
@@ -450,31 +443,6 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="CDS">{t('settings.deploymentMode.cds')}</option>
             <option value="Vercel">{t('settings.deploymentMode.serverless')}</option>
           </select>
-
-          <label htmlFor="documentdb-version" className="mb-200 display-block mt-400">
-            {t('settings.documentDbVersion.label')}
-          </label>
-          <select
-            id="documentdb-version"
-            value={documentDbVersion}
-            onChange={handleDocumentDbVersionChange}
-            disabled={savingDocumentDbVersion}
-          >
-            <option value="5">{t('settings.documentDbVersion.options.docdb5')}</option>
-            <option value="8">{t('settings.documentDbVersion.options.docdb8')}</option>
-          </select>
-
-          <div className="mt-200">
-            <GcdsButton
-              type="button"
-              variant="secondary"
-              onClick={handleRefreshSettingsCache}
-              disabled={refreshingSettingsCache}
-            >
-              {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
-            </GcdsButton>
-          </div>
-          {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
 
           <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
             {t('settings.vectorServiceTypeLabel')}

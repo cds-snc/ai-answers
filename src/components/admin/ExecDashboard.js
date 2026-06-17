@@ -47,7 +47,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const yearQuestions = yearMetrics.totalQuestions || 0;
   const yearExpertTotal = yearMetrics.expertScored?.total?.total || 0;
   const yearEvaluatedPct = yearExpertTotal > 0 && yearQuestions > 0 ? Math.round((yearExpertTotal / yearQuestions) * 100) : 0;
-  // Partner count — departments with at least 1 question asked.
+  // Department count — departments with at least 1 question asked.
   const byDepartmentCount = Object.values(yearMetrics.byDepartment || {})
     .filter(d => (d.total || 0) > 0).length;
 
