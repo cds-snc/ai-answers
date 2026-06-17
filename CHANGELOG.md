@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.146.1](https://github.com/cds-snc/ai-answers/compare/v1.146.0...v1.146.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* expert evaluation and partner count, calendar apply bttn ([c8f9a23](https://github.com/cds-snc/ai-answers/commit/c8f9a2356fd178c444578d10d78e61bcdf69f15c))
+
 ## [1.146.0](https://github.com/cds-snc/ai-answers/compare/v1.145.0...v1.146.0) (2026-06-17)
 
 
