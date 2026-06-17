@@ -21,11 +21,6 @@ moved {
   to   = aws_docdb_cluster.ai-answers-docdb8-cluster
 }
 
-moved {
-  from = aws_ssm_parameter.docdb8_uri[0]
-  to   = aws_ssm_parameter.docdb8_uri
-}
-
 # Create a security group for the DocumentDB cluster
 resource "aws_security_group" "ai-answers-docdb-sg" {
   name        = "${var.product_name}-example-docdb-sg"
@@ -105,6 +100,10 @@ resource "aws_docdb_cluster" "ai-answers-docdb8-cluster" {
   port                            = 27017
   db_cluster_parameter_group_name = aws_docdb_cluster_parameter_group.ai-answers-docdb8-cluster-parameter-group.name
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     CostCentre = var.billing_code
     Terraform  = true
@@ -123,11 +122,4 @@ resource "aws_docdb_cluster_instance" "ai-answers-docdb8-instance" {
     CostCentre = var.billing_code
     Terraform  = true
   }
-}
-
-resource "aws_ssm_parameter" "docdb8_uri" {
-  name       = "docdb8_uri"
-  type       = "SecureString"
-  value      = "mongodb://${data.aws_ssm_parameter.docdb_username.value}:${data.aws_ssm_parameter.docdb_password.value}@${aws_docdb_cluster.ai-answers-docdb8-cluster.endpoint}:27017/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
-  depends_on = [aws_docdb_cluster_instance.ai-answers-docdb8-instance]
 }

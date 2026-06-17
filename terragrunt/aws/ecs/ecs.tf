@@ -5,10 +5,6 @@ locals {
       "valueFrom" = var.docdb_uri_arn
     },
     {
-      "name"      = "DOCDB_8_URI"
-      "valueFrom" = var.docdb8_uri_arn
-    },
-    {
       "name"      = "CANADA_CA_SEARCH_URI"
       "valueFrom" = var.canada_ca_search_uri_arn
     },
