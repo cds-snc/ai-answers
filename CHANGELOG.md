@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.145.0](https://github.com/cds-snc/ai-answers/compare/v1.144.0...v1.145.0) (2026-06-17)
+
+
+### Features
+
+* enhance capability probe with production-specific configuration… ([f39a2d3](https://github.com/cds-snc/ai-answers/commit/f39a2d3dd9cc7907f6753e5316e800ee3196dfc1))
+* enhance capability probe with production-specific configurations and improved error handling ([c2dcd30](https://github.com/cds-snc/ai-answers/commit/c2dcd3053b99093915d45bb38227125fe9157649))
+
 ## [1.144.0](https://github.com/cds-snc/ai-answers/compare/v1.143.0...v1.144.0) (2026-06-17)
 
 
