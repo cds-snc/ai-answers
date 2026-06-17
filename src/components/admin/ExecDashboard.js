@@ -10,7 +10,6 @@ import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
-import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
@@ -48,8 +47,9 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const yearQuestions = yearMetrics.totalQuestions || 0;
   const yearExpertTotal = yearMetrics.expertScored?.total?.total || 0;
   const yearEvaluatedPct = yearExpertTotal > 0 && yearQuestions > 0 ? Math.round((yearExpertTotal / yearQuestions) * 100) : 0;
-  // Partner count — departments with at least 1 expert evaluation.
-  const yearPartnerCount = PARTNER_DEPARTMENTS.length;
+  // Partner count — departments with at least 1 question asked.
+  const yearPartnerCount = Object.values(yearMetrics.byDepartment || {})
+    .filter(d => (d.total || 0) > 0).length;
 
   // Row 2 left: accuracy donut. Only "has answer error" counts against accuracy
   // (citation issues / needs-improvement do not); combines expert + AI evals.
