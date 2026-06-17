@@ -43,6 +43,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
     return `${parse(start).toLocaleDateString(locale, opts)} – ${parse(end).toLocaleDateString(locale, opts)}`;
   };
 
+  // The applied range may reach back further than any data exists (the default
+  // span is the last 12 months, but the DB only holds data from some later
+  // point). Clamp the displayed start to the first date that actually has
+  // records in range so the heading never claims an empty stretch of time.
+  // firstDataDate arrives as an ISO timestamp; the calendar day is all we show.
+  const dataStartDay = metrics.firstDataDate ? metrics.firstDataDate.split('T')[0] : null;
+  const displayStartDate = dataStartDay || appliedStartDate;
+
   // KPI derived data
   const totalQuestions = metrics.totalQuestions || 0;
   const expertTotal = metrics.expertScored?.total?.total || 0;
@@ -112,11 +120,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
       <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchMetrics} onApply={handleApply} />
 
       <h2 className="dashboard-section-title">
-        {formatDateRange(appliedStartDate, appliedEndDate)}
+        {formatDateRange(displayStartDate, appliedEndDate)}
       </h2>
-      <p className="font-size-text-small mb-300">
-        {t('execDashboard.dataStartsNote')}
-      </p>
 
       {error && (
         <div className="dashboard-error">

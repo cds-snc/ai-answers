@@ -1246,7 +1246,6 @@
   "execDashboard": {
     "title": "AI Answers Executive dashboard",
     "description": "Data includes questions from all users - including from partner organizations signed in to test and evaluate.",
-    "dataStartsNote": "Note: data starts October 2025",
     "overviewTitle": "Overview",
     "error": "Failed to load data. Please try again.",
     "noData": "No data found for the selected date range.",

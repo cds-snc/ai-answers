@@ -3,6 +3,7 @@
 // Both useDashboardMetrics instances (filtered + year) return this same bundle,
 // which is sufficient for visual review of all dashboard sections.
 export const MOCK_METRICS = {
+  firstDataDate: '2025-10-01T00:00:00.000Z',
   totalQuestions: 347,
   totalQuestionsEn: 241,
   totalQuestionsFr: 106,

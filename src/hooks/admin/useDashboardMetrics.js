@@ -3,6 +3,7 @@ import MetricsService from '../../services/MetricsService.js';
 import { MOCK_METRICS } from '../../utils/dashboard/mockMetrics.js';
 
 const INITIAL_METRICS = {
+  firstDataDate: null,
   totalQuestions: 0,
   totalQuestionsEn: 0,
   totalQuestionsFr: 0,

@@ -1246,7 +1246,6 @@
   "execDashboard": {
     "title": "Tableau de bord exécutif Réponses IA",
     "description": "Les données comprennent les questions de tous les utilisateurs, y compris celles des organisations partenaires connectées pour tester et évaluer.",
-    "dataStartsNote": "Note : les données commencent en octobre 2025",
     "overviewTitle": "Aperçu",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
