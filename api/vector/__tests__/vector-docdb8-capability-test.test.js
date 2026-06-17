@@ -130,7 +130,11 @@ function createFeedbackCollectionAggregate() {
   });
 }
 
-function createDbMock({ feedbackCollectionExists = true, denormFieldsPresent = true } = {}) {
+function createDbMock({
+  feedbackCollectionExists = true,
+  denormFieldsPresent = true,
+  interactionsCountFails = false,
+} = {}) {
   const embeddings = {
     findOne: vi.fn((query, options) => {
       if (options?.projection?.questionsEmbedding) {
@@ -154,7 +158,11 @@ function createDbMock({ feedbackCollectionExists = true, denormFieldsPresent = t
   };
 
   const interactions = {
-    countDocuments: vi.fn(() => Promise.resolve(2)),
+    countDocuments: vi.fn(() => (
+      interactionsCountFails
+        ? Promise.reject(new Error('interactions count failed'))
+        : Promise.resolve(2)
+    )),
   };
 
   const feedbackEmbeddings = {
@@ -230,6 +238,20 @@ describe('vector docdb8 capability probe', () => {
     })).toBe('annPostFilter');
   });
 
+  it('uses a lighter probe configuration in production', () => {
+    const productionConfig = module.getCapabilityProbeConfig(true);
+    const defaultConfig = module.getCapabilityProbeConfig(false);
+
+    expect(productionConfig.benchmarkRuns).toBe(1);
+    expect(productionConfig.annPostFilterCandidateLimitValues).toEqual([100, 250]);
+    expect(productionConfig.annPostFilterNumCandidatesValues).toEqual([100, 250]);
+    expect(productionConfig.feedbackAnnNumCandidatesValues).toEqual([100, 250]);
+    expect(defaultConfig.benchmarkRuns).toBe(3);
+    expect(defaultConfig.annPostFilterCandidateLimitValues).toHaveLength(5);
+    expect(defaultConfig.annPostFilterNumCandidatesValues).toHaveLength(4);
+    expect(defaultConfig.feedbackAnnNumCandidatesValues).toHaveLength(4);
+  });
+
   it('returns the new benchmark groups, recall comparisons, and warnings', async () => {
     const result = await module.buildCapabilityResult();
 
@@ -257,6 +279,27 @@ describe('vector docdb8 capability probe', () => {
     expect(typeof result.recommendation).toBe('string');
     expect(result.tests.vectorSearchThenFeedbackFilter.metadata.candidateReductionBeforeVectorSearch).toBe(false);
     expect(result.tests.feedbackFilterBeforeVectorSearch.metadata.vectorSearchStage).toBe('afterFeedbackLookupAndMatch');
+  });
+
+  it('keeps going when a supporting count query fails', async () => {
+    dbMock = createDbMock({ interactionsCountFails: true });
+    Object.defineProperty(mongoose.connection, 'db', {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: dbMock.db,
+    });
+    module = await import('../vector-docdb8-capability-test.js');
+
+    const result = await module.buildCapabilityResult();
+
+    expect(result.available).toBe(true);
+    expect(result.counts.interactionsWithFeedback).toBe(0);
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Interactions with feedback count failed'),
+      ])
+    );
   });
 
   it('skips the denormalized exact-search benchmark when the fields are absent', async () => {

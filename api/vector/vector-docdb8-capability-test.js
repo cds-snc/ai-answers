@@ -8,15 +8,36 @@ const VECTOR_INDEX = 'questions_vector_index';
 const FEEDBACK_VECTOR_INDEX = 'feedback_questions_vector_index';
 const VECTOR_PATH = 'questionsEmbedding';
 const FEEDBACK_COLLECTION = 'feedback_embeddings';
-const BENCHMARK_RUNS = 3;
 const TARGET_K = 10;
-const ANN_POST_FILTER_CANDIDATE_LIMIT_VALUES = [TARGET_K * 5, TARGET_K * 10, TARGET_K * 20, TARGET_K * 50, TARGET_K * 100];
-const ANN_POST_FILTER_NUM_CANDIDATES_VALUES = [100, 200, 500, 1000];
-const FEEDBACK_ANN_NUM_CANDIDATES_VALUES = [50, 100, 200, 500];
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 const VECTOR_EXISTS_FILTER = {
-  [VECTOR_PATH]: { $exists: true, $type: 'array', $not: { $size: 0 } },
+  [`${VECTOR_PATH}.0`]: { $exists: true },
 };
+
+function getCapabilityProbeConfig(isProduction = IS_PRODUCTION) {
+  if (isProduction) {
+    return {
+      benchmarkRuns: 1,
+      annPostFilterCandidateLimitValues: [TARGET_K * 10, TARGET_K * 25],
+      annPostFilterNumCandidatesValues: [100, 250],
+      feedbackAnnNumCandidatesValues: [100, 250],
+    };
+  }
+
+  return {
+    benchmarkRuns: 3,
+    annPostFilterCandidateLimitValues: [TARGET_K * 5, TARGET_K * 10, TARGET_K * 20, TARGET_K * 50, TARGET_K * 100],
+    annPostFilterNumCandidatesValues: [100, 200, 500, 1000],
+    feedbackAnnNumCandidatesValues: [50, 100, 200, 500],
+  };
+}
+
+const CAPABILITY_PROBE_CONFIG = getCapabilityProbeConfig();
+const BENCHMARK_RUNS = CAPABILITY_PROBE_CONFIG.benchmarkRuns;
+const ANN_POST_FILTER_CANDIDATE_LIMIT_VALUES = CAPABILITY_PROBE_CONFIG.annPostFilterCandidateLimitValues;
+const ANN_POST_FILTER_NUM_CANDIDATES_VALUES = CAPABILITY_PROBE_CONFIG.annPostFilterNumCandidatesValues;
+const FEEDBACK_ANN_NUM_CANDIDATES_VALUES = CAPABILITY_PROBE_CONFIG.feedbackAnnNumCandidatesValues;
 
 function serializeValue(value) {
   return value?.toString?.() || value;
@@ -293,19 +314,93 @@ function buildWarningList({ vectorSearchScoreSupport, annPreFilterSupported }) {
   return warnings;
 }
 
+async function safeQuery(label, queryFn, fallback, warnings) {
+  try {
+    return await queryFn();
+  } catch (error) {
+    if (Array.isArray(warnings)) {
+      warnings.push(`${label} failed: ${error.message}`);
+    }
+    return fallback;
+  }
+}
+
 async function buildCapabilityResult() {
   await dbConnect();
   const db = mongoose.connection.db;
   const embeddings = db.collection('embeddings');
   const interactions = db.collection('interactions');
   const feedbackEmbeddings = db.collection(FEEDBACK_COLLECTION);
+  const probeWarnings = [];
 
-  const sample = await embeddings.findOne(
-    VECTOR_EXISTS_FILTER,
-    {
-      projection: { [VECTOR_PATH]: 1 },
-    }
-  );
+  const [
+    sample,
+    totalEmbeddings,
+    embeddingsWithInteraction,
+    interactionsWithFeedback,
+    embeddingsWithFeedbackInteractionResult,
+    feedbackCollectionAvailable,
+  ] = await Promise.all([
+    safeQuery(
+      'Sample embedding lookup',
+      () => embeddings.findOne(
+        VECTOR_EXISTS_FILTER,
+        {
+          projection: { [VECTOR_PATH]: 1 },
+        }
+      ),
+      null,
+      probeWarnings
+    ),
+    safeQuery(
+      'Total embeddings count',
+      () => embeddings.countDocuments(VECTOR_EXISTS_FILTER),
+      0,
+      probeWarnings
+    ),
+    safeQuery(
+      'Embeddings with interaction count',
+      () => embeddings.countDocuments({
+        ...VECTOR_EXISTS_FILTER,
+        interactionId: { $exists: true, $ne: null },
+      }),
+      0,
+      probeWarnings
+    ),
+    safeQuery(
+      'Interactions with feedback count',
+      () => interactions.countDocuments({
+        expertFeedback: { $exists: true, $ne: null },
+      }),
+      0,
+      probeWarnings
+    ),
+    safeQuery(
+      'Embeddings with feedback interaction count',
+      () => embeddings.aggregate([
+        { $match: VECTOR_EXISTS_FILTER },
+        {
+          $lookup: {
+            from: 'interactions',
+            localField: 'interactionId',
+            foreignField: '_id',
+            as: 'inter',
+          },
+        },
+        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: false } },
+        { $match: { 'inter.expertFeedback': { $exists: true, $ne: null } } },
+        { $count: 'count' },
+      ]).toArray(),
+      [],
+      probeWarnings
+    ),
+    safeQuery(
+      'Feedback collection availability check',
+      () => collectionExists(db, FEEDBACK_COLLECTION),
+      false,
+      probeWarnings
+    ),
+  ]);
 
   const queryVector = sample?.[VECTOR_PATH];
   if (!Array.isArray(queryVector) || queryVector.length === 0) {
@@ -313,51 +408,19 @@ async function buildCapabilityResult() {
       available: false,
       message: 'No embeddings with questionsEmbedding were found.',
       counts: {
-        totalEmbeddings: 0,
-        embeddingsWithInteraction: 0,
-        interactionsWithFeedback: 0,
-        embeddingsWithFeedbackInteraction: 0,
+        totalEmbeddings,
+        embeddingsWithInteraction,
+        interactionsWithFeedback,
+        embeddingsWithFeedbackInteraction: embeddingsWithFeedbackInteractionResult[0]?.count || 0,
         estimatedFeedbackSelectivity: null,
         estimatedCandidatesForTenFeedbackResults: null,
       },
       tests: {},
       benchmarks: {},
       recommendation: 'annPostFilter',
-      warnings: [],
+      probeWarnings,
     };
   }
-
-  const [
-    totalEmbeddings,
-    embeddingsWithInteraction,
-    interactionsWithFeedback,
-    embeddingsWithFeedbackInteractionResult,
-    feedbackCollectionAvailable,
-  ] = await Promise.all([
-    embeddings.countDocuments(VECTOR_EXISTS_FILTER),
-    embeddings.countDocuments({
-      ...VECTOR_EXISTS_FILTER,
-      interactionId: { $exists: true, $ne: null },
-    }),
-    interactions.countDocuments({
-      expertFeedback: { $exists: true, $ne: null },
-    }),
-    embeddings.aggregate([
-      { $match: VECTOR_EXISTS_FILTER },
-      {
-        $lookup: {
-          from: 'interactions',
-          localField: 'interactionId',
-          foreignField: '_id',
-          as: 'inter',
-        },
-      },
-      { $unwind: { path: '$inter', preserveNullAndEmptyArrays: false } },
-      { $match: { 'inter.expertFeedback': { $exists: true, $ne: null } } },
-      { $count: 'count' },
-    ]).toArray(),
-    collectionExists(db, FEEDBACK_COLLECTION),
-  ]);
 
   const embeddingsWithFeedbackInteraction = embeddingsWithFeedbackInteractionResult[0]?.count || 0;
   const estimatedFeedbackSelectivity = embeddingsWithInteraction
@@ -889,7 +952,7 @@ async function buildCapabilityResult() {
       nodeBruteforceFeedbackSubsetSupport: Boolean(nodeBruteforceFeedbackSubset?.supported),
       annPreFilterSupported: Boolean(exactAfterFeedbackLookup?.supported || exactAfterDenormalizedMatch?.supported),
     },
-    warnings,
+    warnings: [...probeWarnings, ...warnings],
     tests,
     benchmarks: benchmarkResults,
     recallComparisons,
@@ -932,6 +995,7 @@ export {
   cosineFromDoc,
   formatResult,
   getRecommendation,
+  getCapabilityProbeConfig,
   median,
   recallAtK,
   runAggregateBenchmark,
