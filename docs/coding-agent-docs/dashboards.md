@@ -98,7 +98,10 @@ exclusion — keep the two in sync.
 first day with data in range) so it never shows an empty leading stretch when the
 default 12-month window reaches back before any data exists. `firstDataDate` is a
 `$min` over `createdAt` in `metrics-usage.js`; the heading self-corrects if the DB
-is cleared and data starts later.
+is cleared and data starts later. The filter bar's **start input** is snapped to
+that same date once the fetch returns (`DashboardFilterBar`'s `dataStartDate`
+prop) so the inputs and the heading always show the same range — the snap changes
+only after a fetch, so it never fights a mid-edit.
 
 ## Metric bundle shape (the important fields)
 

@@ -125,7 +125,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.overviewTitle')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchExecMetrics} onApply={handleApply} />
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchExecMetrics} onApply={handleApply} dataStartDate={dataStartDay} />
 
       <h2 className="dashboard-section-title">
         {formatDateRange(displayStartDate, appliedEndDate)}

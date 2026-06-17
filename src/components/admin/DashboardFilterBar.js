@@ -11,7 +11,10 @@ const today = () => toISODate(new Date());
 // Fires onInitialLoad (if provided) or onApply once on mount with defaults
 // (last 12 months, all partners). Pass onInitialLoad separately when the parent
 // needs to distinguish the auto-load from an explicit user action.
-const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad }) => {
+// `dataStartDate` (YYYY-MM-DD, optional): once the parent learns the first date
+// that actually has data in range, the start input snaps to it so the inputs
+// match the displayed range heading.
+const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad, dataStartDate }) => {
   const { t } = useTranslations(lang);
   const [department, setDepartment] = useState('');
   const [startDate, setStartDate] = useState(() => {
@@ -33,6 +36,12 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     // Initial load only — subsequent loads are driven by the Apply button.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Snap the start input to the actual first-data date once it's known (changes
+  // only after a fetch, so it never fights the user mid-edit).
+  useEffect(() => {
+    if (dataStartDate) setStartDate(dataStartDate);
+  }, [dataStartDate]);
 
   const handleApply = () => {
     if (startDate && endDate) onApply({ startDate, endDate, department });
