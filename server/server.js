@@ -77,6 +77,7 @@ import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
+import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadata.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
@@ -240,6 +241,7 @@ app.get(/.*/, (req, res, next) => {
 
 
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
+app.post('/api/vector/vector-backfill-metadata', vectorBackfillMetadataHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);

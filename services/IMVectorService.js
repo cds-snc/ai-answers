@@ -389,10 +389,10 @@ class IMVectorService {
    * Returns an array where each entry corresponds to the top-k neighbors for
    * the respective question.
    * @param {string[]} questions
-   * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
+   * @param {{provider?:string, modelName?:string, k?:number, threshold?:number, expertFeedbackRating?:number, expertFeedbackComparison?:string, language?:string, recencyDays?:number, useDenormalizedPreFilter?:boolean}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Ensure vectors are loaded
@@ -418,6 +418,8 @@ class IMVectorService {
       expertFeedbackComparison,
       language,
       pageLang,
+      recencyDays,
+      useDenormalizedPreFilter,
       usingQuestionsIndex: Boolean(this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0),
     });
 

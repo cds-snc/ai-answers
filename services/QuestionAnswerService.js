@@ -108,7 +108,7 @@ class QuestionAnswerService {
   }
 
   async getSimilarQuestionsContext(question, opts = {}) {
-    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365 } = opts;
+    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365, useDenormalizedPreFilter = false } = opts;
     if (!question || typeof question !== 'string') return '';
 
     try {
@@ -117,7 +117,17 @@ class QuestionAnswerService {
       // Over-fetch so the recency filter (applied after expertFeedback populates) has
       // headroom to still return k hits. Capped to avoid pathological fan-out.
       const vectorK = Math.min(k * 3, 15);
-      const matches = await vectorService.matchQuestions([question], { provider: 'azure', modelName: 'text-embedding-3-large', k: vectorK, threshold, expertFeedbackRating, expertFeedbackComparison, language });
+      const matches = await vectorService.matchQuestions([question], {
+        provider: 'azure',
+        modelName: 'text-embedding-3-large',
+        k: vectorK,
+        threshold,
+        expertFeedbackRating,
+        expertFeedbackComparison,
+        language,
+        recencyDays,
+        useDenormalizedPreFilter,
+      });
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);

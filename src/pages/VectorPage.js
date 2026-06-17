@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
+import { formatNumber } from '../utils/numberFormat.js';
+
+const METADATA_BACKFILL_DELAY_MS = 500;
 
 const VectorPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
   const { t } = useTranslations(lang || language);
+  const fmtN = (n) => formatNumber(n, lang || language);
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +23,10 @@ const VectorPage = ({ lang = 'en' }) => {
   const [isRequestInProgress, setIsRequestInProgress] = useState(false);
   const [isRegeneratingEmbeddings, setIsRegeneratingEmbeddings] = useState(false);
   const [provider, setProvider] = useState("openai");
+  const [metadataProgress, setMetadataProgress] = useState(null);
+  const [isBackfillingMetadata, setIsBackfillingMetadata] = useState(false);
+  const [stopMetadataBackfill, setStopMetadataBackfill] = useState(false);
+  const stopMetadataBackfillRef = useRef(false);
 
   // Fetch vector stats using VectorService
   const fetchVectorStats = async () => {
@@ -101,6 +109,33 @@ const VectorPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleBackfillMetadata = async (lastId = metadataProgress?.lastProcessedId || null) => {
+    if (isBackfillingMetadata) return;
+    setIsBackfillingMetadata(true);
+    setStopMetadataBackfill(false);
+    stopMetadataBackfillRef.current = false;
+    let nextLastId = lastId;
+    try {
+      while (true) {
+        const result = await VectorService.backfillMetadata({ lastProcessedId: nextLastId, limit: 100 });
+        setMetadataProgress(result);
+        nextLastId = result.lastProcessedId || nextLastId;
+        if (result.remaining <= 0 || stopMetadataBackfillRef.current) break;
+        await new Promise(resolve => setTimeout(resolve, METADATA_BACKFILL_DELAY_MS));
+      }
+    } catch (err) {
+      console.error('Error backfilling embedding metadata:', err);
+      alert(t('vector.metadataBackfillFailed'));
+    } finally {
+      setIsBackfillingMetadata(false);
+    }
+  };
+
+  const handleStopMetadataBackfill = () => {
+    stopMetadataBackfillRef.current = true;
+    setStopMetadataBackfill(true);
+  };
+
   return (
     <GcdsContainer layout="page">
       <h1>{t('vector.title')}</h1>
@@ -164,6 +199,42 @@ const VectorPage = ({ lang = 'en' }) => {
               )}
               {isAutoProcessingEmbeddings && (
                 <span> • <strong>{t('vector.autoProcessingActive')}</strong></span>
+              )}
+            </p>
+          </div>
+        )}
+        <hr className="mb-400" />
+        <h2>{t('vector.metadataBackfillTitle')}</h2>
+        <GcdsText>
+          {t('vector.metadataBackfillDescription')}
+        </GcdsText>
+        <div className="button-group">
+          <GcdsButton
+            onClick={() => handleBackfillMetadata()}
+            disabled={isBackfillingMetadata}
+            className="mb-200 mr-200"
+          >
+            {metadataProgress?.lastProcessedId ? t('vector.resumeMetadataBackfill') : t('vector.startMetadataBackfill')}
+          </GcdsButton>
+          <GcdsButton
+            onClick={handleStopMetadataBackfill}
+            disabled={!isBackfillingMetadata}
+            variant="secondary"
+            className="mb-200 mr-200"
+          >
+            {t('vector.stopMetadataBackfill')}
+          </GcdsButton>
+        </div>
+        {metadataProgress && (
+          <div className="mb-200">
+            <p>
+              <span>{t('vector.metadataProcessed')}: {fmtN(metadataProgress.processed)}</span>
+              <span> {t('vector.remaining')}: {fmtN(metadataProgress.remaining)}</span>
+              {isBackfillingMetadata && (
+                <span> <strong>{t('vector.autoProcessingActive')}</strong></span>
+              )}
+              {stopMetadataBackfill && !isBackfillingMetadata && (
+                <span> <strong>{t('vector.metadataBackfillStopped')}</strong></span>
               )}
             </p>
           </div>

@@ -16,6 +16,16 @@ const VectorService = {
     return await response.json();
   },
 
+  async backfillMetadata({ lastProcessedId = null, limit = 100 } = {}) {
+    const response = await AuthService.fetch(getApiUrl('vector-backfill-metadata'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lastProcessedId, limit }),
+    });
+    if (!response.ok) throw new Error('Failed to backfill embedding metadata');
+    return await response.json();
+  },
+
   async getSimilarChats(chatId) {
     const response = await AuthService.fetch(getApiUrl(`vector-similar-chats?chatId=${encodeURIComponent(chatId)}`));
     return await response.json();

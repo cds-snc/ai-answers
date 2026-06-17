@@ -61,6 +61,29 @@ describe('DocDBVectorService', () => {
     expect(capturedPipeline).toContainEqual({ $match: { 'chat.pageLanguage': 'en' } });
   });
 
+  it('uses denormalized metadata filters before vector search when requested', async () => {
+    await service.matchQuestions(['same question'], {
+      k: 5,
+      expertFeedbackRating: 100,
+      expertFeedbackComparison: 'lte',
+      language: 'en',
+      recencyDays: 365,
+      useDenormalizedPreFilter: true,
+    });
+
+    expect(capturedPipeline[0]).toMatchObject({
+      $match: {
+        expertFeedbackId: { $exists: true, $ne: null },
+        expertFeedbackTotalScore: { $lte: 100 },
+        pageLanguage: 'en',
+      },
+    });
+    expect(capturedPipeline[0].$match.$or).toHaveLength(2);
+    expect(capturedPipeline[1].$search.vectorSearch.path).toBe('questionsEmbedding');
+    expect(capturedPipeline[1].$search.vectorSearch.k).toBe(25);
+    expect(capturedPipeline.some((stage) => stage.$lookup)).toBe(false);
+  });
+
   it('returns separate embedding group counts in stats', async () => {
     const collectionCounts = {
       questionsAnswerEmbedding: 25,

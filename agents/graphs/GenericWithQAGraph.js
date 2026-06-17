@@ -158,6 +158,7 @@ graph.addNode('similarQuestions', async (state) => {
       language: state.lang,
       includeQuestionFlow: true,
       recencyDays: 365,
+      useDenormalizedPreFilter: true,
     });
   } catch (err) {
     await ServerLoggingService.warn('similarQuestions node failed', state.chatId, err);
