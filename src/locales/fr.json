@@ -171,7 +171,7 @@
       },
       "citation": {
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche Canada.ca",
-        "heading": "Continuez avec ce lien\u00a0:"
+        "heading": "Continuez avec ce lien :"
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
@@ -1539,6 +1539,14 @@
         "lookupPreFilter": "Utiliser un préfiltre d'agrégation avec recherche des rétroactions avant $vectorSearch.",
         "denormalizedPreFilter": "Dénormaliser les champs de rétroaction dans les embeddings, puis utiliser $match avant $vectorSearch.",
         "dedicatedFeedbackCollection": "Utiliser une collection et un index distincts pour les embeddings avec rétroaction afin d'éviter de rechercher les enregistrements sans rétroaction."
+      },
+      "singleProbeDescription": "Chaque bouton exécute un seul test une fois et conserve seulement ce résultat.",
+      "probes": {
+        "annAllThenFeedbackPostFilter": "Exécuter le post-filtrage ANN",
+        "exactAfterFeedbackLookupMatch": "Exécuter le préfiltre avec recherche des rétroactions",
+        "exactAfterDenormalizedMatch": "Exécuter le préfiltre dénormalisé",
+        "annFeedbackOnlyCollection": "Exécuter la collection de rétroactions",
+        "nodeBruteforceFeedbackSubset": "Exécuter la ligne de base en force brute"
       }
     }
   },

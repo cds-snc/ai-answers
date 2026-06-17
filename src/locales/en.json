@@ -1497,6 +1497,7 @@
     "docdb8Capability": {
       "title": "DocumentDB 8 vector search capability test",
       "description": "Run aggregation probes against DocumentDB 8 to see whether filters can reduce the candidate set before vector search.",
+      "singleProbeDescription": "Each button runs one probe once and stores only that result.",
       "run": "Run capability test",
       "running": "Running capability test...",
       "pass": "Pass",
@@ -1526,6 +1527,13 @@
         "score": "Score range",
         "duration": "Duration",
         "error": "Error"
+      },
+      "probes": {
+        "annAllThenFeedbackPostFilter": "Run ANN post-filter",
+        "exactAfterFeedbackLookupMatch": "Run lookup pre-filter",
+        "exactAfterDenormalizedMatch": "Run denormalized pre-filter",
+        "annFeedbackOnlyCollection": "Run feedback collection",
+        "nodeBruteforceFeedbackSubset": "Run brute-force baseline"
       },
       "capabilities": {
         "vectorSearchBasicSupport": "$vectorSearch basic support",
