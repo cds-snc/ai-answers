@@ -114,9 +114,10 @@ class QuestionAnswerService {
     try {
       await dbConnect();
       const vectorService = await initVectorService();
-      // Over-fetch so the recency filter (applied after expertFeedback populates) has
-      // headroom to still return k hits. Capped to avoid pathological fan-out.
-      const vectorK = Math.min(k * 3, 15);
+      // The legacy post-filter path over-fetches because metadata filters happen
+      // after vector search. The DocDB 8 denormalized path applies those filters
+      // before ANN, so it can ask for the actual number of examples needed.
+      const vectorK = useDenormalizedPreFilter ? k : Math.min(k * 3, 15);
       const matches = await vectorService.matchQuestions([question], {
         provider: 'azure',
         modelName: 'text-embedding-3-large',

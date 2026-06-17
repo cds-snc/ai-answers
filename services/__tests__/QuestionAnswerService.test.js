@@ -126,6 +126,40 @@ describe('QuestionAnswerService', () => {
     expect(result).toBe('');
   });
 
+  it('does not over-fetch when denormalized pre-filtering is enabled', async () => {
+    mockMatchQuestions.mockResolvedValue([[]]);
+    mockInteractionFind.mockReturnValue(createChainableQuery([]));
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      useDenormalizedPreFilter: true,
+      recencyDays: 365,
+    });
+
+    expect(result).toBe('');
+    expect(mockMatchQuestions).toHaveBeenCalledWith(['benefits'], expect.objectContaining({
+      k: 3,
+      recencyDays: 365,
+      useDenormalizedPreFilter: true,
+    }));
+  });
+
+  it('keeps legacy over-fetching when denormalized pre-filtering is disabled', async () => {
+    mockMatchQuestions.mockResolvedValue([[]]);
+    mockInteractionFind.mockReturnValue(createChainableQuery([]));
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      useDenormalizedPreFilter: false,
+    });
+
+    expect(result).toBe('');
+    expect(mockMatchQuestions).toHaveBeenCalledWith(['benefits'], expect.objectContaining({
+      k: 9,
+      useDenormalizedPreFilter: false,
+    }));
+  });
+
   it('drops hits whose expertFeedback.createdAt is older than recencyDays', async () => {
     const recentDate = new Date();
     const staleDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000); // 400 days old
