@@ -61,6 +61,7 @@ const VectorPage = ({ lang = 'en' }) => {
   const [isRegeneratingEmbeddings, setIsRegeneratingEmbeddings] = useState(false);
   const [provider, setProvider] = useState('openai');
   const [metadataProgress, setMetadataProgress] = useState(null);
+  const [metadataBatchSizeInput, setMetadataBatchSizeInput] = useState('100');
   const [isBackfillingMetadata, setIsBackfillingMetadata] = useState(false);
   const [stopMetadataBackfill, setStopMetadataBackfill] = useState(false);
   const stopMetadataBackfillRef = useRef(false);
@@ -161,13 +162,22 @@ const VectorPage = ({ lang = 'en' }) => {
 
   const handleBackfillMetadata = async (lastId = metadataProgress?.lastProcessedId || null) => {
     if (isBackfillingMetadata) return;
+    const parsedBatchSize = Number.parseInt(metadataBatchSizeInput, 10);
+    if (!Number.isFinite(parsedBatchSize) || parsedBatchSize < 1 || parsedBatchSize > 500) {
+      alert(t('vector.metadataBatchSizeInvalid'));
+      return;
+    }
+
     setIsBackfillingMetadata(true);
     setStopMetadataBackfill(false);
     stopMetadataBackfillRef.current = false;
     let nextLastId = lastId;
     try {
       while (true) {
-        const result = await VectorService.backfillMetadata({ lastProcessedId: nextLastId, limit: 100 });
+        const result = await VectorService.backfillMetadata({
+          lastProcessedId: nextLastId,
+          limit: parsedBatchSize,
+        });
         setMetadataProgress(result);
         if (result.remaining > 0 && result.lastProcessedId) {
           window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(result));
@@ -358,6 +368,26 @@ const VectorPage = ({ lang = 'en' }) => {
         <GcdsText>
           {t('vector.metadataBackfillDescription')}
         </GcdsText>
+        <div className="mb-200">
+          <label htmlFor="metadata-backfill-batch-size" className="display-block mb-100">
+            {t('vector.metadataBatchSizeLabel')}
+          </label>
+          <input
+            id="metadata-backfill-batch-size"
+            type="number"
+            min="1"
+            max="500"
+            step="1"
+            inputMode="numeric"
+            value={metadataBatchSizeInput}
+            onChange={(e) => setMetadataBatchSizeInput(e.target.value)}
+            disabled={isBackfillingMetadata}
+            className="mr-200"
+          />
+          <GcdsText>
+            {t('vector.metadataBatchSizeHelp')}
+          </GcdsText>
+        </div>
         <div className="button-group">
           <GcdsButton
             onClick={metadataProgress?.lastProcessedId ? handleResumeMetadataBackfill : handleRestartMetadataBackfill}
