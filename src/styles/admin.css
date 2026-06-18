@@ -1044,7 +1044,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid #b0b8c1;
   border-radius: var(--gcds-button-border-radius);
   background: #fff;
