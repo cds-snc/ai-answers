@@ -191,6 +191,16 @@ const VectorPage = ({ lang = 'en' }) => {
     setStopMetadataBackfill(true);
   };
 
+  const handleResumeMetadataBackfill = () => {
+    handleBackfillMetadata(metadataProgress?.lastProcessedId || null);
+  };
+
+  const handleRestartMetadataBackfill = () => {
+    window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
+    setMetadataProgress(null);
+    handleBackfillMetadata(null);
+  };
+
   const handleRunDocdb8CapabilityTest = async (probe) => {
     setDocdb8CapabilityLoadingProbe(probe);
     setDocdb8CapabilityErrors((current) => ({
@@ -350,12 +360,22 @@ const VectorPage = ({ lang = 'en' }) => {
         </GcdsText>
         <div className="button-group">
           <GcdsButton
-            onClick={() => handleBackfillMetadata()}
+            onClick={metadataProgress?.lastProcessedId ? handleResumeMetadataBackfill : handleRestartMetadataBackfill}
             disabled={isBackfillingMetadata}
             className="mb-200 mr-200"
           >
             {metadataProgress?.lastProcessedId ? t('vector.resumeMetadataBackfill') : t('vector.startMetadataBackfill')}
           </GcdsButton>
+          {metadataProgress?.lastProcessedId && (
+            <GcdsButton
+              onClick={handleRestartMetadataBackfill}
+              disabled={isBackfillingMetadata}
+              variant="secondary"
+              className="mb-200 mr-200"
+            >
+              {t('vector.restartMetadataBackfill')}
+            </GcdsButton>
+          )}
           <GcdsButton
             onClick={handleStopMetadataBackfill}
             disabled={!isBackfillingMetadata}
@@ -370,6 +390,12 @@ const VectorPage = ({ lang = 'en' }) => {
             <p>
               <span>{t('vector.metadataProcessed')}: {fmtN(metadataProgress.processed)}</span>
               <span> {t('vector.remaining')}: {fmtN(metadataProgress.remaining)}</span>
+              {metadataProgress?.lastProcessedId && (
+                <span>
+                  {' '}
+                  {t('vector.metadataResumeFromId').replace('{id}', metadataProgress.lastProcessedId)}
+                </span>
+              )}
               {isBackfillingMetadata && (
                 <span> <strong>{t('vector.autoProcessingActive')}</strong></span>
               )}
