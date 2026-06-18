@@ -31,6 +31,12 @@ const VectorService = {
     return await response.json();
   },
 
+  async lookupMetadata(chatId) {
+    const response = await AuthService.fetch(getApiUrl(`vector-metadata-lookup?chatId=${encodeURIComponent(chatId)}`));
+    if (!response.ok) throw new Error('Failed to look up embedding metadata');
+    return await response.json();
+  },
+
   async runDocdb8CapabilityTest(probe) {
     const query = probe ? `?probe=${encodeURIComponent(probe)}` : '';
     const response = await AuthService.fetch(getApiUrl(`vector-docdb8-capability-test${query}`));

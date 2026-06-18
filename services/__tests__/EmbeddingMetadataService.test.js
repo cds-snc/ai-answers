@@ -3,6 +3,7 @@ import EmbeddingMetadataService from '../EmbeddingMetadataService.js';
 
 const {
   mockUpdateMany,
+  mockEmbeddingFind,
   mockChatFindOne,
   mockInteractionFind,
   mockInteractionFindById,
@@ -10,6 +11,7 @@ const {
   mockExpertFeedbackFindById,
 } = vi.hoisted(() => ({
   mockUpdateMany: vi.fn(),
+  mockEmbeddingFind: vi.fn(),
   mockChatFindOne: vi.fn(),
   mockInteractionFind: vi.fn(),
   mockInteractionFindById: vi.fn(),
@@ -36,6 +38,7 @@ vi.mock('../../models/interaction.js', () => ({
 vi.mock('../../models/embedding.js', () => ({
   Embedding: {
     updateMany: mockUpdateMany,
+    find: mockEmbeddingFind,
   },
 }));
 
@@ -60,6 +63,7 @@ function mockInteractionFindResult(interactions) {
 describe('EmbeddingMetadataService', () => {
   beforeEach(() => {
     mockUpdateMany.mockReset();
+    mockEmbeddingFind.mockReset();
     mockChatFindOne.mockReset();
     mockInteractionFind.mockReset();
     mockInteractionFindById.mockReset();
@@ -280,5 +284,101 @@ describe('EmbeddingMetadataService', () => {
         }),
       }
     );
+  });
+
+  it('looks up embedding metadata for each chat interaction and flags stale metadata', async () => {
+    mockChatFindOne.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => ({
+            _id: '507f1f77bcf86cd799439031',
+            chatId: 'chat-123',
+            pageLanguage: 'en',
+            interactions: [{
+              _id: '507f1f77bcf86cd799439011',
+              interactionId: '1',
+              question: { language: 'fr' },
+              expertFeedback: {
+                _id: '507f1f77bcf86cd799439012',
+                totalScore: 80,
+                neverStale: true,
+                createdAt: new Date('2024-01-01T00:00:00Z'),
+              },
+            }],
+          }),
+        }),
+      }),
+    });
+    mockEmbeddingFind.mockReturnValue({
+      select: () => ({
+        sort: () => ({
+          lean: async () => ([{
+            _id: '507f1f77bcf86cd799439021',
+            interactionId: '507f1f77bcf86cd799439011',
+            expertFeedbackId: '507f1f77bcf86cd799439099',
+            expertFeedbackTotalScore: 60,
+            expertFeedbackNeverStale: false,
+            pageLanguage: 'fr',
+            interactionLanguage: 'en',
+          }]),
+        }),
+      }),
+    });
+
+    const result = await EmbeddingMetadataService.lookupForChat('chat-123');
+
+    expect(result.chat).toEqual(expect.objectContaining({
+      chatId: 'chat-123',
+      interactionCount: 1,
+      embeddingCount: 1,
+    }));
+    expect(result.rows[0]).toEqual(expect.objectContaining({
+      rowNumber: 1,
+      interactionObjectId: '507f1f77bcf86cd799439011',
+      interactionDisplayId: '1',
+      embeddingId: '507f1f77bcf86cd799439021',
+      attachedExpertFeedbackId: '507f1f77bcf86cd799439012',
+      metadataExpertFeedbackId: '507f1f77bcf86cd799439099',
+      metadataStatus: 'staleFeedbackId',
+      chatPageLanguage: 'en',
+      interactionLanguage: 'fr',
+      metadataPageLanguage: 'fr',
+      metadataInteractionLanguage: 'en',
+    }));
+  });
+
+  it('shows interactions with missing embeddings in metadata lookup', async () => {
+    mockChatFindOne.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => ({
+            _id: '507f1f77bcf86cd799439031',
+            chatId: 'chat-123',
+            pageLanguage: 'en',
+            interactions: [{
+              _id: '507f1f77bcf86cd799439011',
+              interactionId: '1',
+              question: { language: 'en' },
+              expertFeedback: null,
+            }],
+          }),
+        }),
+      }),
+    });
+    mockEmbeddingFind.mockReturnValue({
+      select: () => ({
+        sort: () => ({
+          lean: async () => ([]),
+        }),
+      }),
+    });
+
+    const result = await EmbeddingMetadataService.lookupForChat('chat-123');
+
+    expect(result.rows[0]).toEqual(expect.objectContaining({
+      interactionObjectId: '507f1f77bcf86cd799439011',
+      embeddingId: null,
+      metadataStatus: 'missingEmbedding',
+    }));
   });
 });

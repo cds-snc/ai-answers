@@ -353,6 +353,116 @@ class EmbeddingMetadataService {
       ...(includeDetails ? { batchRecords } : {}),
     };
   }
+
+  async lookupForChat(chatId) {
+    if (!chatId || typeof chatId !== 'string') {
+      return { chat: null, rows: [] };
+    }
+
+    const chat = await Chat.findOne({ chatId })
+      .select('_id chatId pageLanguage interactions')
+      .populate({
+        path: 'interactions',
+        select: '_id interactionId expertFeedback question',
+        populate: [
+          { path: 'expertFeedback', select: 'totalScore type neverStale createdAt' },
+          { path: 'question', select: 'language' },
+        ],
+      })
+      .lean();
+    if (!chat) return { chat: null, rows: [] };
+
+    const interactions = Array.isArray(chat.interactions) ? chat.interactions : [];
+    const interactionIds = interactions.map((interaction) => interaction._id).filter(Boolean);
+    const embeddings = interactionIds.length
+      ? await Embedding.find({ interactionId: { $in: interactionIds } })
+        .select('_id interactionId expertFeedbackId expertFeedbackTotalScore expertFeedbackCreatedAt expertFeedbackNeverStale pageLanguage interactionLanguage')
+        .sort({ interactionId: 1, _id: 1 })
+        .lean()
+      : [];
+
+    const embeddingsByInteractionId = new Map();
+    for (const embedding of embeddings) {
+      const key = toIdString(embedding.interactionId);
+      if (!embeddingsByInteractionId.has(key)) embeddingsByInteractionId.set(key, []);
+      embeddingsByInteractionId.get(key).push(embedding);
+    }
+
+    const rows = interactions.flatMap((interaction, index) => {
+      const interactionObjectId = toIdString(interaction._id);
+      const attachedFeedback = interaction.expertFeedback && typeof interaction.expertFeedback === 'object'
+        ? interaction.expertFeedback
+        : null;
+      const attachedFeedbackId = toIdString(attachedFeedback?._id || interaction.expertFeedback);
+      const matchingEmbeddings = embeddingsByInteractionId.get(interactionObjectId) || [];
+      const base = {
+        rowNumber: index + 1,
+        chatId: chat.chatId,
+        chatObjectId: toIdString(chat._id),
+        chatPageLanguage: chat.pageLanguage || null,
+        interactionObjectId,
+        interactionDisplayId: interaction.interactionId || null,
+        interactionLanguage: normalizeMatchLanguage(interaction.question?.language) || interaction.question?.language || null,
+        attachedExpertFeedbackId: attachedFeedbackId,
+        attachedExpertFeedbackType: normalizeFeedbackType(attachedFeedback),
+        attachedExpertFeedbackTotalScore: typeof attachedFeedback?.totalScore === 'number' ? attachedFeedback.totalScore : null,
+        attachedExpertFeedbackNeverStale: attachedFeedback?.neverStale === true,
+      };
+
+      if (!matchingEmbeddings.length) {
+        return [{
+          ...base,
+          embeddingId: null,
+          embeddingInteractionId: null,
+          metadataExpertFeedbackId: null,
+          metadataExpertFeedbackTotalScore: null,
+          metadataExpertFeedbackCreatedAt: null,
+          metadataExpertFeedbackNeverStale: null,
+          metadataPageLanguage: null,
+          metadataInteractionLanguage: null,
+          metadataStatus: 'missingEmbedding',
+        }];
+      }
+
+      return matchingEmbeddings.map((embedding) => {
+        const metadataFeedbackId = toIdString(embedding.expertFeedbackId);
+        let metadataStatus = 'metadataMatches';
+        if (!attachedFeedbackId && metadataFeedbackId) {
+          metadataStatus = 'unexpectedMetadata';
+        } else if (attachedFeedbackId && !metadataFeedbackId) {
+          metadataStatus = 'missingMetadata';
+        } else if (attachedFeedbackId && metadataFeedbackId && attachedFeedbackId !== metadataFeedbackId) {
+          metadataStatus = 'staleFeedbackId';
+        }
+
+        return {
+          ...base,
+          embeddingId: toIdString(embedding._id),
+          embeddingInteractionId: toIdString(embedding.interactionId),
+          metadataExpertFeedbackId: metadataFeedbackId,
+          metadataExpertFeedbackTotalScore: typeof embedding.expertFeedbackTotalScore === 'number'
+            ? embedding.expertFeedbackTotalScore
+            : null,
+          metadataExpertFeedbackCreatedAt: embedding.expertFeedbackCreatedAt || null,
+          metadataExpertFeedbackNeverStale: embedding.expertFeedbackNeverStale === true,
+          metadataPageLanguage: embedding.pageLanguage || null,
+          metadataInteractionLanguage: embedding.interactionLanguage || null,
+          metadataStatus,
+        };
+      });
+    });
+
+    return {
+      chat: {
+        _id: toIdString(chat._id),
+        chatId: chat.chatId,
+        pageLanguage: chat.pageLanguage || null,
+        interactionCount: interactions.length,
+        embeddingCount: embeddings.length,
+      },
+      rows,
+    };
+  }
 }
 
 export default new EmbeddingMetadataService();

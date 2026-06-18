@@ -65,6 +65,10 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataBatchRecords, setMetadataBatchRecords] = useState([]);
   const [isBackfillingMetadata, setIsBackfillingMetadata] = useState(false);
   const [stopMetadataBackfill, setStopMetadataBackfill] = useState(false);
+  const [metadataLookupChatId, setMetadataLookupChatId] = useState('');
+  const [metadataLookupResult, setMetadataLookupResult] = useState(null);
+  const [metadataLookupLoading, setMetadataLookupLoading] = useState(false);
+  const [metadataLookupError, setMetadataLookupError] = useState(null);
   const stopMetadataBackfillRef = useRef(false);
 
   useEffect(() => {
@@ -277,6 +281,25 @@ const VectorPage = ({ lang = 'en' }) => {
       }));
     } finally {
       setDocdb8CapabilityLoadingProbe(null);
+    }
+  };
+
+  const handleMetadataLookup = async () => {
+    const trimmedChatId = metadataLookupChatId.trim();
+    if (!trimmedChatId) {
+      alert(t('vector.metadataLookup.chatIdRequired'));
+      return;
+    }
+    setMetadataLookupLoading(true);
+    setMetadataLookupError(null);
+    try {
+      const result = await VectorService.lookupMetadata(trimmedChatId);
+      setMetadataLookupResult(result);
+    } catch (err) {
+      setMetadataLookupResult(null);
+      setMetadataLookupError(err.message);
+    } finally {
+      setMetadataLookupLoading(false);
     }
   };
 
@@ -530,6 +553,85 @@ const VectorPage = ({ lang = 'en' }) => {
                     <td>{record.metadata?.expertFeedbackId || t('vector.metadataBatchResults.emptyValue')}</td>
                     <td>{record.metadata?.expertFeedbackTotalScore ?? t('vector.metadataBatchResults.emptyValue')}</td>
                     <td>{fmtN(record.modifiedCount ?? 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <hr className="mb-400" />
+        <h2>{t('vector.metadataLookup.title')}</h2>
+        <GcdsText>
+          {t('vector.metadataLookup.description')}
+        </GcdsText>
+        <div className="mb-200">
+          <label htmlFor="metadata-lookup-chat-id" className="display-block mb-100">
+            {t('vector.metadataLookup.chatIdLabel')}
+          </label>
+          <input
+            id="metadata-lookup-chat-id"
+            type="text"
+            value={metadataLookupChatId}
+            onChange={(e) => setMetadataLookupChatId(e.target.value)}
+            placeholder={t('vector.chatIdPlaceholder')}
+            disabled={metadataLookupLoading}
+            className="mr-200"
+          />
+          <GcdsButton
+            onClick={handleMetadataLookup}
+            disabled={metadataLookupLoading}
+            className="mb-200 mr-200"
+          >
+            {metadataLookupLoading ? t('vector.metadataLookup.loading') : t('vector.metadataLookup.lookup')}
+          </GcdsButton>
+        </div>
+        {metadataLookupError && <div className="error-message">{metadataLookupError}</div>}
+        {metadataLookupResult?.chat && (
+          <div className="mb-400">
+            <p>
+              <span>{t('vector.metadataLookup.chatSummary.chatId')}: {metadataLookupResult.chat.chatId}</span>
+              <span> {t('vector.metadataLookup.chatSummary.pageLanguage')}: {metadataLookupResult.chat.pageLanguage || t('vector.metadataBatchResults.emptyValue')}</span>
+              <span> {t('vector.metadataLookup.chatSummary.interactions')}: {fmtN(metadataLookupResult.chat.interactionCount)}</span>
+              <span> {t('vector.metadataLookup.chatSummary.embeddings')}: {fmtN(metadataLookupResult.chat.embeddingCount)}</span>
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('vector.metadataLookup.columns.row')}</th>
+                  <th>{t('vector.metadataLookup.columns.status')}</th>
+                  <th>{t('vector.metadataLookup.columns.interactionObjectId')}</th>
+                  <th>{t('vector.metadataLookup.columns.interactionDisplayId')}</th>
+                  <th>{t('vector.metadataLookup.columns.embeddingId')}</th>
+                  <th>{t('vector.metadataLookup.columns.embeddingInteractionId')}</th>
+                  <th>{t('vector.metadataLookup.columns.attachedExpertFeedbackId')}</th>
+                  <th>{t('vector.metadataLookup.columns.metadataExpertFeedbackId')}</th>
+                  <th>{t('vector.metadataLookup.columns.attachedScore')}</th>
+                  <th>{t('vector.metadataLookup.columns.metadataScore')}</th>
+                  <th>{t('vector.metadataLookup.columns.chatPageLanguage')}</th>
+                  <th>{t('vector.metadataLookup.columns.metadataPageLanguage')}</th>
+                  <th>{t('vector.metadataLookup.columns.interactionLanguage')}</th>
+                  <th>{t('vector.metadataLookup.columns.metadataInteractionLanguage')}</th>
+                  <th>{t('vector.metadataLookup.columns.neverStale')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(metadataLookupResult.rows || []).map((row) => (
+                  <tr key={`${row.interactionObjectId || 'interaction'}-${row.embeddingId || 'missing'}`}>
+                    <td>{fmtN(row.rowNumber)}</td>
+                    <td>{t(`vector.metadataLookup.statuses.${row.metadataStatus || 'unknown'}`)}</td>
+                    <td>{row.interactionObjectId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.interactionDisplayId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.embeddingId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.embeddingInteractionId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.attachedExpertFeedbackId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.metadataExpertFeedbackId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{typeof row.attachedExpertFeedbackTotalScore === 'number' ? fmtN(row.attachedExpertFeedbackTotalScore) : t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{typeof row.metadataExpertFeedbackTotalScore === 'number' ? fmtN(row.metadataExpertFeedbackTotalScore) : t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.chatPageLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.metadataPageLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.interactionLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.metadataInteractionLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{row.metadataExpertFeedbackNeverStale ? t('vector.docdb8Capability.yes') : t('vector.docdb8Capability.no')}</td>
                   </tr>
                 ))}
               </tbody>
