@@ -311,7 +311,7 @@ class DocDBVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false } = opts;
+  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -340,6 +340,7 @@ class DocDBVectorService {
       pageLang,
       recencyDays,
       useDenormalizedPreFilter,
+      returnDebugData,
     });
     const hasPostSearchFilters = Boolean(pageLang) || typeof expertFeedbackRating === 'number';
     const engineK = useDenormalizedPreFilter
@@ -425,10 +426,12 @@ class DocDBVectorService {
     // is already projected as questionsEmbedding). This lets us (a) enforce the
     // similarity threshold when one is requested and (b) return hits in true
     // similarity order. No expert-feedback promotion: relevance decides order.
+    const debugPerQuestion = [];
     const resultsPerQuestion = allDocs.map((docs, idx) => {
       const queryEmb = embeddings[idx];
       const candidates = Array.isArray(docs) ? docs : [];
       const mapped = [];
+      const debugCandidates = [];
       for (const r of candidates) {
         let sim = 0;
         try {
@@ -436,11 +439,18 @@ class DocDBVectorService {
         } catch (err) {
           ServerLoggingService.error('Error computing cosine similarity (matchQuestions)', 'DocDBVectorService', err);
         }
+        const debugEntry = {
+          id: r._id?.toString?.() || null,
+          interactionId: r.interactionId?.toString?.() || r.interactionId || null,
+          expertFeedbackId: r.expertFeedbackId || null,
+          similarity: sim,
+        };
+        debugCandidates.push(debugEntry);
         if (threshold !== null && sim < threshold) continue;
         const expertFeedbackId = r.expertFeedbackId || null;
         mapped.push({
-          id: r._id?.toString?.() || null,
-          interactionId: r.interactionId?.toString?.() || r.interactionId,
+          id: debugEntry.id,
+          interactionId: debugEntry.interactionId,
           expertFeedbackId,
           expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
           similarity: sim,
@@ -460,10 +470,11 @@ class DocDBVectorService {
         finalCount: top.length,
         threshold,
       });
+      debugPerQuestion.push(debugCandidates);
       return top;
     });
 
-    return resultsPerQuestion;
+    return returnDebugData ? { results: resultsPerQuestion, debug: debugPerQuestion } : resultsPerQuestion;
   }
 
   async getStats() {

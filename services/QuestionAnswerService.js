@@ -108,7 +108,7 @@ class QuestionAnswerService {
   }
 
   async getSimilarQuestionsContext(question, opts = {}) {
-    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365, useDenormalizedPreFilter = false } = opts;
+    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
     if (!question || typeof question !== 'string') return '';
 
     try {
@@ -118,7 +118,7 @@ class QuestionAnswerService {
       // after vector search. The DocDB 8 denormalized path applies those filters
       // before ANN, so it can ask for the actual number of examples needed.
       const vectorK = useDenormalizedPreFilter ? k : Math.min(k * 3, 15);
-      const matches = await vectorService.matchQuestions([question], {
+      const vectorResponse = await vectorService.matchQuestions([question], {
         provider: 'azure',
         modelName: 'text-embedding-3-large',
         k: vectorK,
@@ -128,13 +128,17 @@ class QuestionAnswerService {
         language,
         recencyDays,
         useDenormalizedPreFilter,
+        returnDebugData,
       });
+      const matches = returnDebugData ? vectorResponse?.results : vectorResponse;
+      const debugCandidates = returnDebugData ? (Array.isArray(vectorResponse?.debug?.[0]) ? vectorResponse.debug[0] : []) : [];
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);
       if (!filtered.length) return '';
 
-      const interactionIds = [...new Set(filtered.map((h) => h.interactionId))];
+      const debugInteractionIds = returnDebugData ? [...new Set(debugCandidates.map((h) => h.interactionId).filter(Boolean))] : [];
+      const interactionIds = [...new Set([...filtered.map((h) => h.interactionId), ...debugInteractionIds])];
       const interactions = await Interaction.find({ _id: { $in: interactionIds } })
         .select('question answer expertFeedback')
         .populate({ path: 'question', model: Question })
@@ -143,12 +147,22 @@ class QuestionAnswerService {
         .lean();
 
       const interById = new Map(interactions.map((i) => [i._id.toString(), i]));
+      const chatDocs = returnDebugData
+        ? await Chat.find({ interactions: { $in: interactionIds } }).select('chatId interactions').lean()
+        : [];
+      const chatIdByInteractionId = new Map();
+      for (const chat of chatDocs) {
+        for (const iid of chat.interactions || []) {
+          chatIdByInteractionId.set(iid.toString(), chat.chatId || null);
+        }
+      }
 
       const cutoff = typeof recencyDays === 'number' && recencyDays > 0
         ? Date.now() - (recencyDays * 24 * 60 * 60 * 1000)
         : null;
 
       const lines = [];
+      const matchedDebugRecords = [];
       for (const hit of filtered) {
         if (lines.length >= k) break;
         const inter = interById.get(hit.interactionId.toString());
@@ -178,6 +192,7 @@ class QuestionAnswerService {
         const dateStr = efCreatedAt && Number.isFinite(efCreatedAt.getTime())
           ? efCreatedAt.toISOString().slice(0, 10)
           : null;
+        const chatId = chatIdByInteractionId.get(hit.interactionId.toString()) || null;
 
         if (!questionText || !answerText) continue;
 
@@ -191,9 +206,46 @@ class QuestionAnswerService {
         if (citationText) blockParts.push(`Citation: ${citationText}`);
 
         lines.push(blockParts.join('\n'));
+        if (returnDebugData) {
+          matchedDebugRecords.push({
+            interactionId: hit.interactionId?.toString?.() || hit.interactionId || null,
+            chatId,
+            similarity: hit.similarity ?? null,
+            cosineSimilarity: hit.similarity ?? null,
+            questionText,
+            answerText,
+            thresholdPassed: true,
+          });
+        }
       }
 
-      return lines.length ? lines.join('\n\n') : '';
+      if (!returnDebugData) {
+        return lines.length ? lines.join('\n\n') : '';
+      }
+
+      const preThresholdRecords = debugCandidates.map((hit) => {
+        const inter = interById.get(hit.interactionId?.toString?.() || hit.interactionId);
+        const chatId = chatIdByInteractionId.get(hit.interactionId?.toString?.() || hit.interactionId) || null;
+        const questionText = inter?.question?.redactedQuestion || inter?.question?.englishQuestion || '';
+        const answerText = inter?.answer?.content || inter?.answer?.englishAnswer || '';
+        return {
+          interactionId: hit.interactionId?.toString?.() || hit.interactionId || null,
+          chatId,
+          similarity: hit.similarity ?? null,
+          cosineSimilarity: hit.similarity ?? null,
+          questionText,
+          answerText,
+          thresholdPassed: typeof hit.similarity === 'number' ? hit.similarity >= threshold : false,
+        };
+      });
+
+      return {
+        text: lines.length ? lines.join('\n\n') : '',
+        debug: {
+          preThresholdRecords,
+          matchedRecords: matchedDebugRecords,
+        },
+      };
     } catch (err) {
       ServerLoggingService.error('QuestionAnswerService.getSimilarQuestionsContext error', '', err);
       return '';

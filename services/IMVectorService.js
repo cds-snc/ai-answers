@@ -392,7 +392,7 @@ class IMVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number, expertFeedbackRating?:number, expertFeedbackComparison?:string, language?:string, recencyDays?:number, useDenormalizedPreFilter?:boolean}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Ensure vectors are loaded
@@ -420,9 +420,11 @@ class IMVectorService {
       pageLang,
       recencyDays,
       useDenormalizedPreFilter,
+      returnDebugData,
       usingQuestionsIndex: Boolean(this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0),
     });
 
+  const debugPerQuestion = [];
   const resultsPerQuestion = [];
     for (let questionIndex = 0; questionIndex < embeddings.length; questionIndex++) {
       const emb = embeddings[questionIndex];
@@ -440,14 +442,22 @@ class IMVectorService {
       // neighbors in order. Keep up to k*2 items so we can promote expert-backed
       // items and then slice down to k.
       const mapped = [];
+      const debugCandidates = [];
       for (const r of results) {
         const id = r.document.id;
         const meta = this.qaMeta.get(id) || {};
         const sim = r.similarity;
         const expertFeedbackId = meta.expertFeedbackId || null;
+        debugCandidates.push({
+          id,
+          interactionId: meta.interactionId || null,
+          expertFeedbackId,
+          similarity: sim,
+        });
         mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
         if (mapped.length >= k * 2) break;
       }
+      debugPerQuestion.push(debugCandidates);
       ServerLoggingService.info('matchQuestions mapped results', 'IMVectorService', {
         questionIndex,
         mappedCount: mapped.length,
@@ -547,7 +557,7 @@ class IMVectorService {
       });
       resultsPerQuestion.push(result);
     }
-    return resultsPerQuestion;
+    return returnDebugData ? { results: resultsPerQuestion, debug: debugPerQuestion } : resultsPerQuestion;
   }
 
   getStats() {
