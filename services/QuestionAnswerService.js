@@ -137,7 +137,6 @@ class QuestionAnswerService {
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);
-      if (!filtered.length) return '';
 
       const debugInteractionIds = returnDebugData ? [...new Set(debugCandidates.map((h) => h.interactionId).filter(Boolean))] : [];
       const interactionIds = [...new Set([...filtered.map((h) => h.interactionId), ...debugInteractionIds])];
@@ -222,6 +221,7 @@ class QuestionAnswerService {
       }
 
       if (!returnDebugData) {
+        if (!filtered.length) return '';
         return lines.length ? lines.join('\n\n') : '';
       }
 

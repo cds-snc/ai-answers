@@ -14,6 +14,15 @@ function feedbackMetadata(feedback) {
   };
 }
 
+function normalizeMatchLanguage(value) {
+  if (!value || typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized.startsWith('fr') || normalized.includes('french')) return 'fr';
+  if (normalized.startsWith('en') || normalized.includes('english')) return 'en';
+  return normalized;
+}
+
 async function getPageLanguage(interactionId, fallbackChatId = null) {
   interactionId = normalizeObjectId(interactionId);
   fallbackChatId = normalizeObjectId(fallbackChatId);
@@ -50,7 +59,8 @@ async function getInteractionLanguage(interactionOrId, fallbackChatId = null) {
         .lean()
       : null;
 
-  if (interaction?.question?.language) return interaction.question.language;
+  const normalized = normalizeMatchLanguage(interaction?.question?.language);
+  if (normalized) return normalized;
 
   if (chatId) {
     const chat = await Chat.findOne({ _id: chatId }).select('pageLanguage').lean();
@@ -87,7 +97,7 @@ class EmbeddingMetadataService {
     const update = {
       ...metadata,
       pageLanguage: pageLanguage || undefined,
-      interactionLanguage: interactionLanguage || undefined,
+      interactionLanguage: normalizeMatchLanguage(interactionLanguage) || undefined,
     };
 
     return Embedding.updateOne(
