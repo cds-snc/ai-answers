@@ -19,14 +19,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
   const [appliedDepartment, setAppliedDepartment] = useState('');
-  const [appliedStartDate, setAppliedStartDate] = useState(() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() - 1);
-    const oneYearAgo = d.toISOString().split('T')[0];
-    return oneYearAgo < '2025-10-01' ? '2025-10-01' : oneYearAgo;
-  });
-  const [appliedEndDate, setAppliedEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [appliedStartDate, setAppliedStartDate] = useState('');
+  const [appliedEndDate, setAppliedEndDate] = useState('');
   const hasFetched = useRef(false);
+  const userHasApplied = useRef(false);
 
   // The exec dashboard reports on public usage only: it excludes questions from
   // admin/partner accounts signed in to test and evaluate (userType 'public' =
@@ -36,8 +32,16 @@ const ExecDashboard = ({ lang = 'en' }) => {
     fetchMetrics({ ...filters, userType: 'public' });
   }, [fetchMetrics]);
 
+  const handleInitialLoad = useCallback((filters) => {
+    setAppliedDepartment(filters?.department || '');
+    setAppliedStartDate(filters?.startDate || '');
+    setAppliedEndDate(filters?.endDate || '');
+    fetchExecMetrics(filters);
+  }, [fetchExecMetrics]);
+
   const handleApply = useCallback((filters) => {
     hasFetched.current = true;
+    userHasApplied.current = true;
     setAppliedDepartment(filters?.department || '');
     setAppliedStartDate(filters?.startDate || '');
     setAppliedEndDate(filters?.endDate || '');
@@ -60,7 +64,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   // Clear dataStartDay while loading so the heading shows the newly-applied
   // start date rather than the stale firstDataDate from the previous fetch.
   const dataStartDay = !loading && metrics.firstDataDate ? metrics.firstDataDate.split('T')[0] : null;
-  const displayStartDate = dataStartDay || appliedStartDate;
+  const displayStartDate = (!userHasApplied.current && dataStartDay) ? dataStartDay : appliedStartDate;
 
   // KPI derived data
   const totalQuestions = metrics.totalQuestions || 0;
@@ -145,7 +149,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.overviewTitle')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onApply={handleApply} dataStartDate={dataStartDay} />
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={handleInitialLoad} onApply={handleApply} dataStartDate={dataStartDay} />
 
       <h2 className="dashboard-section-title">
         {formatDateRange(displayStartDate, appliedEndDate)}
