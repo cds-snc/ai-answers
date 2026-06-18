@@ -4,7 +4,8 @@ import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 const today = () => toISODate(new Date());
-// Earliest date with data — prevents selecting a range before any records exist.
+// Earliest date with data. No backfill before this date is planned, so this is
+// a safe permanent floor for both the min attribute and the initial start date.
 const DATA_START_DATE = '2025-10-01';
 
 // Shared filter bar for the exec and partner dashboards.
