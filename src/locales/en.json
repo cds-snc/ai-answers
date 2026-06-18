@@ -1529,6 +1529,7 @@
       "chatIdRequired": "Please enter a chat ID.",
       "lookup": "Look up metadata",
       "loading": "Looking up metadata...",
+      "failed": "Failed to look up embedding metadata.",
       "chatSummary": {
         "chatId": "Chat ID",
         "pageLanguage": "Page language",

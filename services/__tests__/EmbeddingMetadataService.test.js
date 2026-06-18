@@ -60,6 +60,14 @@ function mockInteractionFindResult(interactions) {
   });
 }
 
+function mockObjectId(id) {
+  return {
+    _id: id,
+    toString: () => id,
+    valueOf: () => id,
+  };
+}
+
 describe('EmbeddingMetadataService', () => {
   beforeEach(() => {
     mockUpdateMany.mockReset();
@@ -170,7 +178,7 @@ describe('EmbeddingMetadataService', () => {
     const interaction = {
       _id: '507f1f77bcf86cd799439011',
       interactionId: '1',
-      expertFeedback: '507f1f77bcf86cd799439012',
+      expertFeedback: mockObjectId('507f1f77bcf86cd799439012'),
       question: { language: 'eng' },
     };
     mockInteractionFindResult([interaction]);
@@ -226,6 +234,46 @@ describe('EmbeddingMetadataService', () => {
       action: 'updated',
       modifiedCount: 2,
     }));
+  });
+
+  it('loads the expert feedback document when backfill receives only an object id', async () => {
+    const interaction = {
+      _id: '507f1f77bcf86cd799439011',
+      expertFeedback: mockObjectId('507f1f77bcf86cd799439012'),
+      question: { language: 'en' },
+    };
+    mockInteractionFindResult([interaction]);
+    mockExpertFeedbackFindById.mockReturnValue({
+      lean: async () => ({
+        _id: '507f1f77bcf86cd799439012',
+        totalScore: 100,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      }),
+    });
+    mockChatFindOne.mockReturnValue({
+      select: () => ({
+        lean: async () => ({ pageLanguage: 'en' }),
+      }),
+    });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+    mockInteractionCountDocuments.mockResolvedValue(0);
+
+    const result = await EmbeddingMetadataService.backfillBatch({
+      phase: 'interactions',
+      limit: 1,
+    });
+
+    expect(mockExpertFeedbackFindById).toHaveBeenCalledWith('507f1f77bcf86cd799439012');
+    expect(result.updated).toBe(1);
+    expect(mockUpdateMany).toHaveBeenCalledWith(
+      { interactionId: '507f1f77bcf86cd799439011' },
+      {
+        $set: expect.objectContaining({
+          expertFeedbackId: '507f1f77bcf86cd799439012',
+          expertFeedbackTotalScore: 100,
+        }),
+      }
+    );
   });
 
   it('continues interaction backfill from the saved _id without clearing again', async () => {

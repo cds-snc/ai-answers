@@ -34,6 +34,13 @@ function normalizeFeedbackType(feedback) {
   return type || null;
 }
 
+function looksLikeExpertFeedbackDocument(feedback) {
+  if (!feedback || typeof feedback !== 'object') return false;
+  return ['totalScore', 'type', 'neverStale', 'createdAt'].some((key) =>
+    Object.prototype.hasOwnProperty.call(feedback, key)
+  );
+}
+
 function toIdString(value) {
   if (!value) return null;
   return String(value);
@@ -156,7 +163,7 @@ class EmbeddingMetadataService {
       };
     }
 
-    const feedback = typeof feedbackId === 'object' && feedbackId?._id
+    const feedback = looksLikeExpertFeedbackDocument(feedbackId)
       ? feedbackId
       : normalizedFeedbackId
         ? await ExpertFeedback.findById(normalizedFeedbackId).lean()

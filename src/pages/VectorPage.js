@@ -296,8 +296,9 @@ const VectorPage = ({ lang = 'en' }) => {
       const result = await VectorService.lookupMetadata(trimmedChatId);
       setMetadataLookupResult(result);
     } catch (err) {
+      console.error('Error looking up embedding metadata:', err);
       setMetadataLookupResult(null);
-      setMetadataLookupError(err.message);
+      setMetadataLookupError(t('vector.metadataLookup.failed'));
     } finally {
       setMetadataLookupLoading(false);
     }

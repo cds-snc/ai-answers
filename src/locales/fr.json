@@ -1529,6 +1529,7 @@
       "chatIdRequired": "Veuillez entrer un ID de clavardage.",
       "lookup": "Rechercher les métadonnées",
       "loading": "Recherche des métadonnées...",
+      "failed": "Échec de la recherche des métadonnées des incorporations.",
       "chatSummary": {
         "chatId": "ID du clavardage",
         "pageLanguage": "Langue de la page",
