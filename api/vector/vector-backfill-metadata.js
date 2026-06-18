@@ -10,7 +10,7 @@ async function vectorBackfillMetadataHandler(req, res) {
 
   try {
     await dbConnect();
-    const { lastProcessedId = null, limit = 100 } = req.body || {};
+    const { lastProcessedId = null, limit = 100, includeDetails = false } = req.body || {};
     const normalizedLastProcessedId = lastProcessedId
       ? normalizeObjectIdString(lastProcessedId)
       : null;
@@ -25,6 +25,7 @@ async function vectorBackfillMetadataHandler(req, res) {
     const result = await EmbeddingMetadataService.backfillBatch({
       lastProcessedId: normalizedLastProcessedId,
       limit: boundedLimit,
+      includeDetails: includeDetails === true || includeDetails === 'true',
     });
 
     return res.status(200).json(result);

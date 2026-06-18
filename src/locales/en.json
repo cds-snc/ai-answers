@@ -1488,6 +1488,38 @@
     "metadataProcessed": "Processed in last batch",
     "metadataResumeFromId": "Saved resume ID: {id}",
     "metadataBackfillFailed": "Failed to backfill embedding metadata. Check the console for details.",
+    "metadataBatchResultsTitle": "Last batch metadata diagnostics",
+    "metadataBatchResultsDescription": "Each row shows what metadata backfill did for one processed embedding in the latest batch.",
+    "metadataBatchResults": {
+      "emptyValue": "(none)",
+      "columns": {
+        "embeddingId": "Embedding ID",
+        "storedInteractionId": "Stored interaction ID",
+        "resolvedInteractionId": "Resolved interaction ID",
+        "action": "Action",
+        "reason": "Reason",
+        "feedbackType": "Feedback type",
+        "pageLanguage": "Page language",
+        "interactionLanguage": "Interaction language",
+        "expertFeedbackId": "Expert feedback ID",
+        "totalScore": "Total score",
+        "modifiedCount": "Modified count"
+      },
+      "actions": {
+        "updated": "Updated",
+        "cleared": "Cleared",
+        "skipped": "Skipped",
+        "unknown": "Unknown"
+      },
+      "reasons": {
+        "none": "No reason",
+        "interactionNotFound": "Interaction not found",
+        "missingFeedback": "Missing interaction expert feedback",
+        "missingFeedbackDocument": "Missing expert feedback document",
+        "autoEvalFeedback": "Auto-eval feedback excluded",
+        "unknown": "Unknown"
+      }
+    },
     "similarChats": "Find similar chats",
     "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
     "chatIdPlaceholder": "Enter Chat ID",

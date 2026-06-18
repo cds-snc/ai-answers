@@ -1488,6 +1488,38 @@
     "metadataProcessed": "Traité dans le dernier lot",
     "metadataResumeFromId": "ID de reprise enregistré : {id}",
     "metadataBackfillFailed": "Échec du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
+    "metadataBatchResultsTitle": "Diagnostic des métadonnées du dernier lot",
+    "metadataBatchResultsDescription": "Chaque ligne montre ce que le remplissage des métadonnées a fait pour un embedding traité dans le dernier lot.",
+    "metadataBatchResults": {
+      "emptyValue": "(aucune)",
+      "columns": {
+        "embeddingId": "ID de l'embedding",
+        "storedInteractionId": "ID d'interaction enregistrée",
+        "resolvedInteractionId": "ID d'interaction résolue",
+        "action": "Action",
+        "reason": "Raison",
+        "feedbackType": "Type de rétroaction",
+        "pageLanguage": "Langue de la page",
+        "interactionLanguage": "Langue de l'interaction",
+        "expertFeedbackId": "ID de rétroaction experte",
+        "totalScore": "Score total",
+        "modifiedCount": "Nombre modifié"
+      },
+      "actions": {
+        "updated": "Mis à jour",
+        "cleared": "Effacé",
+        "skipped": "Ignoré",
+        "unknown": "Inconnu"
+      },
+      "reasons": {
+        "none": "Aucune raison",
+        "interactionNotFound": "Interaction introuvable",
+        "missingFeedback": "Rétroaction experte manquante sur l'interaction",
+        "missingFeedbackDocument": "Document de rétroaction experte manquant",
+        "autoEvalFeedback": "Rétroaction d'auto-évaluation exclue",
+        "unknown": "Inconnu"
+      }
+    },
     "similarChats": "Trouver des chats similaires",
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
     "chatIdPlaceholder": "Entrez l'ID du chat",

@@ -19,6 +19,29 @@ function isAutoEvalFeedback(feedback) {
   return String(feedback.type || '').trim().toLowerCase() === 'ai';
 }
 
+function normalizeFeedbackType(feedback) {
+  if (!feedback || typeof feedback !== 'object') return null;
+  const type = String(feedback.type || '').trim().toLowerCase();
+  return type || null;
+}
+
+function toIdString(value) {
+  if (!value) return null;
+  return String(value);
+}
+
+function buildClearedSnapshot(interactionId) {
+  return {
+    interactionId: toIdString(interactionId),
+    expertFeedbackId: null,
+    expertFeedbackTotalScore: null,
+    expertFeedbackCreatedAt: null,
+    expertFeedbackNeverStale: null,
+    pageLanguage: null,
+    interactionLanguage: null,
+  };
+}
+
 function normalizeMatchLanguage(value) {
   if (!value || typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
@@ -122,7 +145,13 @@ class EmbeddingMetadataService {
     if (!feedbackId) {
       if (clearWhenMissingFeedback) {
         const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
-        return { ...clearResult, metadataAction: 'cleared' };
+        return {
+          ...clearResult,
+          metadataAction: 'cleared',
+          clearReason: 'missingFeedback',
+          metadataSnapshot: buildClearedSnapshot(interaction._id),
+          feedbackType: null,
+        };
       }
       return {
         matchedCount: 0,
@@ -139,7 +168,13 @@ class EmbeddingMetadataService {
     if (!feedback?._id) {
       if (clearWhenMissingFeedback) {
         const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
-        return { ...clearResult, metadataAction: 'cleared' };
+        return {
+          ...clearResult,
+          metadataAction: 'cleared',
+          clearReason: 'missingFeedbackDocument',
+          metadataSnapshot: buildClearedSnapshot(interaction._id),
+          feedbackType: null,
+        };
       }
       return {
         matchedCount: 0,
@@ -151,7 +186,13 @@ class EmbeddingMetadataService {
     // Auto-eval feedback must not be denormalized onto retrieval embeddings.
     if (isAutoEvalFeedback(feedback)) {
       const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
-      return { ...clearResult, metadataAction: 'cleared' };
+      return {
+        ...clearResult,
+        metadataAction: 'cleared',
+        clearReason: 'autoEvalFeedback',
+        metadataSnapshot: buildClearedSnapshot(interaction._id),
+        feedbackType: normalizeFeedbackType(feedback),
+      };
     }
 
     const pageLanguage = await getPageLanguage(interaction._id);
@@ -172,7 +213,20 @@ class EmbeddingMetadataService {
       updateFilter,
       { $set: update }
     );
-    return { ...updateResult, metadataAction: 'updated' };
+    return {
+      ...updateResult,
+      metadataAction: 'updated',
+      metadataSnapshot: {
+        interactionId: toIdString(interaction._id),
+        expertFeedbackId: toIdString(metadata.expertFeedbackId),
+        expertFeedbackTotalScore: metadata.expertFeedbackTotalScore,
+        expertFeedbackCreatedAt: metadata.expertFeedbackCreatedAt || null,
+        expertFeedbackNeverStale: metadata.expertFeedbackNeverStale,
+        pageLanguage: pageLanguage || null,
+        interactionLanguage: normalizeMatchLanguage(interactionLanguage) || null,
+      },
+      feedbackType: normalizeFeedbackType(feedback),
+    };
   }
 
   async clearForInteraction(interactionId, { embeddingId = null } = {}) {
@@ -200,7 +254,7 @@ class EmbeddingMetadataService {
     );
   }
 
-  async backfillBatch({ lastProcessedId = null, limit = 100 } = {}) {
+  async backfillBatch({ lastProcessedId = null, limit = 100, includeDetails = false } = {}) {
     lastProcessedId = normalizeObjectId(lastProcessedId);
     const query = lastProcessedId ? { _id: { $gt: lastProcessedId } } : {};
     const embeddings = await Embedding.find(query)
@@ -213,12 +267,25 @@ class EmbeddingMetadataService {
     let cleared = 0;
     let skipped = 0;
     let lastId = lastProcessedId || null;
+    const batchRecords = [];
 
     for (const embedding of embeddings) {
       lastId = embedding._id.toString();
       const interaction = await findInteractionByEmbedding(embedding);
       if (!interaction) {
         skipped += 1;
+        if (includeDetails) {
+          batchRecords.push({
+            embeddingId: toIdString(embedding._id),
+            storedInteractionId: toIdString(embedding.interactionId),
+            resolvedInteractionId: null,
+            action: 'skipped',
+            reason: 'interactionNotFound',
+            feedbackType: null,
+            metadata: null,
+            modifiedCount: 0,
+          });
+        }
         continue;
       }
       const result = await this.syncForInteraction(interaction, null, {
@@ -226,10 +293,46 @@ class EmbeddingMetadataService {
       });
       if (result.skippedReason) {
         skipped += 1;
+        if (includeDetails) {
+          batchRecords.push({
+            embeddingId: toIdString(embedding._id),
+            storedInteractionId: toIdString(embedding.interactionId),
+            resolvedInteractionId: toIdString(interaction._id),
+            action: 'skipped',
+            reason: result.skippedReason,
+            feedbackType: result.feedbackType || null,
+            metadata: result.metadataSnapshot || null,
+            modifiedCount: result.modifiedCount || 0,
+          });
+        }
       } else if (result.metadataAction === 'cleared') {
         cleared += result.modifiedCount || 0;
+        if (includeDetails) {
+          batchRecords.push({
+            embeddingId: toIdString(embedding._id),
+            storedInteractionId: toIdString(embedding.interactionId),
+            resolvedInteractionId: toIdString(interaction._id),
+            action: 'cleared',
+            reason: result.clearReason || null,
+            feedbackType: result.feedbackType || null,
+            metadata: result.metadataSnapshot || null,
+            modifiedCount: result.modifiedCount || 0,
+          });
+        }
       } else {
         updated += result.modifiedCount || 0;
+        if (includeDetails) {
+          batchRecords.push({
+            embeddingId: toIdString(embedding._id),
+            storedInteractionId: toIdString(embedding.interactionId),
+            resolvedInteractionId: toIdString(interaction._id),
+            action: 'updated',
+            reason: null,
+            feedbackType: result.feedbackType || null,
+            metadata: result.metadataSnapshot || null,
+            modifiedCount: result.modifiedCount || 0,
+          });
+        }
       }
     }
 
@@ -242,6 +345,7 @@ class EmbeddingMetadataService {
       skipped,
       remaining,
       lastProcessedId: lastId,
+      ...(includeDetails ? { batchRecords } : {}),
     };
   }
 }

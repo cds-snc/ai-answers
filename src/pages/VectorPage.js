@@ -62,6 +62,7 @@ const VectorPage = ({ lang = 'en' }) => {
   const [provider, setProvider] = useState('openai');
   const [metadataProgress, setMetadataProgress] = useState(null);
   const [metadataBatchSizeInput, setMetadataBatchSizeInput] = useState('100');
+  const [metadataBatchRecords, setMetadataBatchRecords] = useState([]);
   const [isBackfillingMetadata, setIsBackfillingMetadata] = useState(false);
   const [stopMetadataBackfill, setStopMetadataBackfill] = useState(false);
   const stopMetadataBackfillRef = useRef(false);
@@ -177,10 +178,20 @@ const VectorPage = ({ lang = 'en' }) => {
         const result = await VectorService.backfillMetadata({
           lastProcessedId: nextLastId,
           limit: parsedBatchSize,
+          includeDetails: true,
         });
         setMetadataProgress(result);
+        setMetadataBatchRecords(Array.isArray(result.batchRecords) ? result.batchRecords : []);
+        const progressSnapshot = {
+          processed: result.processed,
+          updated: result.updated,
+          cleared: result.cleared,
+          skipped: result.skipped,
+          remaining: result.remaining,
+          lastProcessedId: result.lastProcessedId,
+        };
         if (result.remaining > 0 && result.lastProcessedId) {
-          window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(result));
+          window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(progressSnapshot));
         } else {
           window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
         }
@@ -208,6 +219,7 @@ const VectorPage = ({ lang = 'en' }) => {
   const handleRestartMetadataBackfill = () => {
     window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
     setMetadataProgress(null);
+    setMetadataBatchRecords([]);
     handleBackfillMetadata(null);
   };
 
@@ -433,6 +445,46 @@ const VectorPage = ({ lang = 'en' }) => {
                 <span> <strong>{t('vector.metadataBackfillStopped')}</strong></span>
               )}
             </p>
+          </div>
+        )}
+        {metadataBatchRecords.length > 0 && (
+          <div className="mb-400">
+            <h3>{t('vector.metadataBatchResultsTitle')}</h3>
+            <GcdsText>{t('vector.metadataBatchResultsDescription')}</GcdsText>
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('vector.metadataBatchResults.columns.embeddingId')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.storedInteractionId')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.resolvedInteractionId')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.action')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.reason')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.feedbackType')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.pageLanguage')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.interactionLanguage')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.expertFeedbackId')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.totalScore')}</th>
+                  <th>{t('vector.metadataBatchResults.columns.modifiedCount')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {metadataBatchRecords.map((record) => (
+                  <tr key={record.embeddingId}>
+                    <td>{record.embeddingId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{record.storedInteractionId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{record.resolvedInteractionId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{t(`vector.metadataBatchResults.actions.${record.action || 'unknown'}`)}</td>
+                    <td>{t(`vector.metadataBatchResults.reasons.${record.reason || 'none'}`)}</td>
+                    <td>{record.feedbackType || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{record.metadata?.pageLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{record.metadata?.interactionLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{record.metadata?.expertFeedbackId || t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{record.metadata?.expertFeedbackTotalScore ?? t('vector.metadataBatchResults.emptyValue')}</td>
+                    <td>{fmtN(record.modifiedCount ?? 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
         <hr className="mb-400" />

@@ -88,7 +88,11 @@ describe('EmbeddingMetadataService', () => {
       },
     });
 
-    expect(result).toEqual({ matchedCount: 2, modifiedCount: 2, metadataAction: 'updated' });
+    expect(result).toEqual(expect.objectContaining({
+      matchedCount: 2,
+      modifiedCount: 2,
+      metadataAction: 'updated',
+    }));
     expect(mockUpdateMany).toHaveBeenCalledWith(
       { interactionId: '507f1f77bcf86cd799439011' },
       {
