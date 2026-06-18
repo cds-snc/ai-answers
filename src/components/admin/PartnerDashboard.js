@@ -99,7 +99,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
-      <div className="mb-600">
+      <div className="mb-100">
         {/* TODO: Advanced filters (answer type, partner eval, AI eval, URL) are passed to the
             API and filter the aggregate data, but PartnerDashboard has no charts that surface
             those breakdowns. Either hide the advanced section or add corresponding chart sections. */}

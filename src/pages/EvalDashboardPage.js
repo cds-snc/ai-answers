@@ -175,7 +175,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       </nav>
 
       <h2 className="mt-400 mb-400">{t('admin.evalDashboard.timeRangeTitle')}</h2>
-      <div className="mb-600">
+      <div className="mb-100">
         <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={recordsTotal} hasAppliedFilters={hasAppliedFilters} />
       </div>
 

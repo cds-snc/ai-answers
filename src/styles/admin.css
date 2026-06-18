@@ -743,8 +743,8 @@
   color: var(--gcds-notice-text);
   font-size: var(--gcds-font-sizes-text-small);
   line-height: 1.5;
-  margin-bottom: var(--gcds-spacing-300);
-  padding: var(--gcds-spacing-200) 0;
+  margin-bottom: var(--gcds-spacing-150);
+  padding: var(--gcds-spacing-100) 0;
 }
 
 .dashboard-warning__icon {
