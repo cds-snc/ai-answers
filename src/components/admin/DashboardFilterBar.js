@@ -4,26 +4,28 @@ import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 const today = () => toISODate(new Date());
-const daysAgo = (n) => {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return toISODate(d);
-};
-// "Last N days" inclusive of today (today counts as day 1), matching the
-// FilterPanel date-range presets which use moment().subtract(N - 1, 'days').
-// So a 30-day window goes back 29 days, not 30.
-const lastNDaysStart = (n) => daysAgo(n - 1);
+// Earliest date with data. No backfill before this date is planned, so this is
+// a safe permanent floor for both the min attribute and the initial start date.
+const DATA_START_DATE = '2025-10-01';
 
 // Shared filter bar for the exec and partner dashboards.
 // Owns department + date range; reports the selection to the parent via
 // onApply({ startDate, endDate, department }). department is '' for "all partners".
 // Fires onInitialLoad (if provided) or onApply once on mount with defaults
-// (last 30 days, all partners). Pass onInitialLoad separately when the parent
+// (last 12 months, all partners). Pass onInitialLoad separately when the parent
 // needs to distinguish the auto-load from an explicit user action.
-const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad }) => {
+// `dataStartDate` (YYYY-MM-DD, optional): once the parent learns the first date
+// that actually has data in range, the start input snaps to it so the inputs
+// match the displayed range heading.
+const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad, dataStartDate }) => {
   const { t } = useTranslations(lang);
   const [department, setDepartment] = useState('');
-  const [startDate, setStartDate] = useState(lastNDaysStart(30));
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    const oneYearAgo = toISODate(d);
+    return oneYearAgo < DATA_START_DATE ? DATA_START_DATE : oneYearAgo;
+  });
   const [endDate, setEndDate] = useState(today());
 
   // Keep the latest callbacks without retriggering the mount-load effect.
@@ -32,6 +34,10 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   const onInitialLoadRef = useRef(onInitialLoad);
   onInitialLoadRef.current = onInitialLoad;
 
+  // True after the user has explicitly clicked Apply. Prevents the data-start
+  // snap from overwriting a date the user intentionally chose.
+  const userHasApplied = useRef(false);
+
   useEffect(() => {
     const cb = onInitialLoadRef.current || onApplyRef.current;
     cb({ startDate, endDate, department });
@@ -39,8 +45,18 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Snap the start input to the first date with actual data in range, but only
+  // before the user has manually applied a filter. After that, their chosen
+  // date takes precedence — the heading handles clamping independently.
+  useEffect(() => {
+    if (dataStartDate && !userHasApplied.current) setStartDate(dataStartDate);
+  }, [dataStartDate]);
+
   const handleApply = () => {
-    if (startDate && endDate) onApply({ startDate, endDate, department });
+    if (startDate && endDate) {
+      userHasApplied.current = true;
+      onApply({ startDate, endDate, department });
+    }
   };
 
   return (
@@ -72,6 +88,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
           type="date"
           className="filter-bar__input"
           value={startDate}
+          min={DATA_START_DATE}
           max={endDate}
           onChange={e => setStartDate(e.target.value)}
           disabled={loading}

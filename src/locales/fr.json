@@ -1212,7 +1212,7 @@
     "runEvaluation": "Lancer l'évaluation"
   },
   "dashboardFilter": {
-    "department": "Institution partenaire",
+    "department": "Par institution partenaire",
     "allPartners": "Tous les partenaires",
     "startDate": "Date de début",
     "endDate": "Date de fin",
@@ -1245,9 +1245,8 @@
   },
   "execDashboard": {
     "title": "Tableau de bord exécutif Réponses IA",
-    "description": "Les données comprennent les questions de tous les utilisateurs, y compris celles des organisations partenaires connectées pour tester et évaluer.",
-    "last12Months": "12 derniers mois",
-    "filteredPeriod": "Période filtrée (30 derniers jours par défaut)",
+    "description": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
+    "overviewTitle": "Aperçu",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
     "kpi": {
@@ -1255,8 +1254,6 @@
       "evaluatedSub": "{pct} des questions",
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
-      "accuracyRate": "Taux d'exactitude",
-      "accuracySub": "EN : {en} · FR : {fr}",
       "partnerCount": "Institutions avec des questions",
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}"
@@ -1267,7 +1264,6 @@
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
-      "satisfactionBreakdownSubtitle": "{pct} utiles · {total} réponses",
       "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
     },

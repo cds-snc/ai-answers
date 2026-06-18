@@ -36,6 +36,19 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     [metrics.expertScored, metrics.aiScored, t],
   );
 
+  // Quality bar tooltip shows the raw count — the percentage is already on the
+  // bar label, so repeating it adds nothing (mirrors the satisfaction chart).
+  const QualityBarTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0].payload;
+    return (
+      <div className="chart-tooltip">
+        <div className="chart-tooltip__title">{row.name}</div>
+        <div>{fmtN(row.count)}</div>
+      </div>
+    );
+  };
+
   // Accuracy rate (MetricsDashboard definition): only "has answer error" counts
   // against accuracy — citation issues / needs-improvement scores do not.
   // Total accuracy combines expert + AI evals; the breakdown is by language.
@@ -163,6 +176,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           percent
           height={240}
           noDataLabel={t('partnerDashboard.charts.noData')}
+          tooltipContent={QualityBarTooltip}
           lang={lang}
         />
       </div>

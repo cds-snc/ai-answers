@@ -37,6 +37,7 @@ function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter =
         {
             $project: {
                 chatId: 1,
+                createdAt: 1,
                 searchProvider: 1,
                 pageLanguage: 1,
                 department: { $arrayElemAt: ['$ctx.department', 0] },
@@ -88,6 +89,7 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
     stages.push({
         $project: {
             chatId: 1,
+            createdAt: 1,
             searchProvider: 1,
             pageLanguage: 1,
             department: 1,
@@ -162,6 +164,7 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
     stages.push({
         $group: {
             _id: null,
+            firstDataDate: { $min: '$createdAt' },
             totalQuestions: { $sum: 1 },
             totalQuestionsEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } },
             totalQuestionsFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } },
@@ -216,6 +219,9 @@ async function getUsageMetrics(req, res) {
         const overall = result[0] || {};
 
         const metrics = {
+            // Earliest chat createdAt within the applied range — lets the UI clamp
+            // the displayed range heading to the first date that actually has data.
+            firstDataDate: overall.firstDataDate || null,
             totalQuestions: overall.totalQuestions || 0,
             totalQuestionsEn: overall.totalQuestionsEn || 0,
             totalQuestionsFr: overall.totalQuestionsFr || 0,

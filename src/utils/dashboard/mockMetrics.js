@@ -1,8 +1,9 @@
 // Mock metrics bundle for local layout/locale preview.
 // Enable by adding VITE_MOCK_METRICS=true to .env.local (already gitignored).
-// Both useDashboardMetrics instances (filtered + year) return this same bundle,
+// The dashboard's useDashboardMetrics instance returns this same bundle,
 // which is sufficient for visual review of all dashboard sections.
 export const MOCK_METRICS = {
+  firstDataDate: '2025-10-01T00:00:00.000Z',
   totalQuestions: 347,
   totalQuestionsEn: 241,
   totalQuestionsFr: 106,
