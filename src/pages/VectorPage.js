@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsButton, GcdsLink, GcdsDetails } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -8,6 +8,7 @@ import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js'
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
 
 const METADATA_BACKFILL_DELAY_MS = 500;
+const METADATA_BACKFILL_PROGRESS_KEY = 'vectorMetadataBackfillProgress';
 
 const getDocdb8ProbeDefinitions = (t) => ([
   {
@@ -63,6 +64,19 @@ const VectorPage = ({ lang = 'en' }) => {
   const [isBackfillingMetadata, setIsBackfillingMetadata] = useState(false);
   const [stopMetadataBackfill, setStopMetadataBackfill] = useState(false);
   const stopMetadataBackfillRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const savedProgress = window.localStorage.getItem(METADATA_BACKFILL_PROGRESS_KEY);
+      if (!savedProgress) return;
+      const parsedProgress = JSON.parse(savedProgress);
+      if (parsedProgress?.lastProcessedId && typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0) {
+        setMetadataProgress(parsedProgress);
+      }
+    } catch (err) {
+      console.error('Error loading metadata backfill progress:', err);
+    }
+  }, []);
 
   // Fetch vector stats using VectorService
   const fetchVectorStats = async () => {
@@ -155,6 +169,11 @@ const VectorPage = ({ lang = 'en' }) => {
       while (true) {
         const result = await VectorService.backfillMetadata({ lastProcessedId: nextLastId, limit: 100 });
         setMetadataProgress(result);
+        if (result.remaining > 0 && result.lastProcessedId) {
+          window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(result));
+        } else {
+          window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
+        }
         nextLastId = result.lastProcessedId || nextLastId;
         if (result.remaining <= 0 || stopMetadataBackfillRef.current) break;
         await new Promise(resolve => setTimeout(resolve, METADATA_BACKFILL_DELAY_MS));
