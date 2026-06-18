@@ -1264,7 +1264,6 @@
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
       "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
-      "satisfactionBreakdownSubtitle": "{pct} utiles · {total} réponses",
       "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
     },

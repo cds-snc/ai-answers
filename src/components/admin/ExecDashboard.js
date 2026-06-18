@@ -22,7 +22,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const [appliedStartDate, setAppliedStartDate] = useState(() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
-    return d.toISOString().split('T')[0];
+    const oneYearAgo = d.toISOString().split('T')[0];
+    return oneYearAgo < '2025-10-01' ? '2025-10-01' : oneYearAgo;
   });
   const [appliedEndDate, setAppliedEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const hasFetched = useRef(false);
@@ -121,6 +122,23 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const responseTime = metrics.responseTime || {};
   const hasResponseTime = (responseTime.count || 0) > 0;
 
+  const kpiCards = (
+    <>
+      <StatCard
+        label={t('execDashboard.kpi.questionsAsked')}
+        value={fmtN(totalQuestions)}
+        sub={t('execDashboard.kpi.questionsSub')
+          .replace('{en}', fmtN(metrics.totalQuestionsEn))
+          .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
+      />
+      <StatCard
+        label={t('execDashboard.kpi.evaluated')}
+        value={fmtN(expertTotal)}
+        sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+      />
+    </>
+  );
+
   return (
     <div>
       <h2 className="dashboard-section-title">
@@ -169,34 +187,12 @@ const ExecDashboard = ({ lang = 'en' }) => {
             />
           </div>
           <div className="dashboard-col-half dashboard-col--equal-height">
-            <StatCard
-              label={t('execDashboard.kpi.questionsAsked')}
-              value={fmtN(totalQuestions)}
-              sub={t('execDashboard.kpi.questionsSub')
-                .replace('{en}', fmtN(metrics.totalQuestionsEn))
-                .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
-            />
-            <StatCard
-              label={t('execDashboard.kpi.evaluated')}
-              value={fmtN(expertTotal)}
-              sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
-            />
+            {kpiCards}
           </div>
         </div>
       ) : (
         <div className="dashboard-row">
-          <StatCard
-            label={t('execDashboard.kpi.questionsAsked')}
-            value={fmtN(totalQuestions)}
-            sub={t('execDashboard.kpi.questionsSub')
-              .replace('{en}', fmtN(metrics.totalQuestionsEn))
-              .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
-          />
-          <StatCard
-            label={t('execDashboard.kpi.evaluated')}
-            value={fmtN(expertTotal)}
-            sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
-          />
+          {kpiCards}
         </div>
       )}
 

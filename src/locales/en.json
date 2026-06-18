@@ -1264,7 +1264,6 @@
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
-      "satisfactionBreakdownSubtitle": "{pct} helpful · {total} responses",
       "departmentsTitle": "Top institutions by question volume",
       "noData": "No data"
     },
