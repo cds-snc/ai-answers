@@ -8,19 +8,17 @@ ogImage: "og-about-fr.png"
 
 ## Aperçu
 
-Canada.ca Réponses IA est un agent de discussion IA spécialisé conçu pour aider les utilisateurs des sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent via l'outil de rétroaction sur la page qu'elles ne trouvent pas les réponses dont elles ont besoin sur Canada.ca. Ce service d'IA personnalisé peut fournir de brèves réponses aux questions des utilisateurs provenant de l'ensemble de l'écosystème en ligne des services, programmes et sites Web du gouvernement fédéral.
+Canada.ca Réponses IA est une plateforme de discussion IA spécialisée conçue pour aider les utilisateurs des sites Web du gouvernement du Canada. Ce service d'IA personnalisé peut fournir de brèves réponses aux questions des utilisateurs provenant de l'ensemble de l'écosystème en ligne des services, programmes et sites Web du gouvernement fédéral.
 
-Le service Réponses IA a débuté comme une expérience à la fin de 2024 par le Bureau de l'expérience Canada.ca. Par la suite, lors d'essais sur invitation sur des pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement.  
+Le service Réponses IA a débuté comme une expérience à la fin de 2024 par le Bureau de l'expérience Canada.ca et le Service numérique canadien. Par la suite, lors d'essais sur des pages sélectionnées de Canada.ca en 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à des milliers de questions.  
 
-Les essais bêta en collaboration avec les organisations partenaires ont commencé en novembre 2025 et se poursuivent vers un déploiement élargi en 2026.
-
-Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation humaine, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts en la matière (EM) des questions et réponses. Les évaluations sont utilisées pour améliorer la qualité des réponses et pour produire des évaluations IA automatisées de questions similaires.
+Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation humaine des réponses par des experts en la matière des institutions partenaires. Les évaluations sont utilisées pour améliorer la qualité des réponses et pour produire des évaluations IA automatisées de questions similaires.
 
 ## Accessibilité et convivialité
 
 Les utilisateurs sont submergés par les longues pages contenant plusieurs instructions et ont de la difficulté à choisir entre les liens. Beaucoup visitent les sites Web gouvernementaux depuis des téléphones mobiles. Réponses IA produit un maximum de quatre phrases par réponse, soigneusement conçues pour être aussi claires que possible. Un seul lien de citation est fourni pour vous permettre de passer à l'étape suivante et de vérifier la réponse, réduisant la surcharge de choix. Des réponses plus courtes avec une seule citation augmentent également la précision.
 
-Ces choix de conception sont basés sur des données provenant de plus de 50 tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.
+Ces choix de conception sont basés sur des données provenant de tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.
 
 Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web.
 
@@ -43,7 +41,7 @@ Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gou
 Votre utilisation de ce système et de toute information générée est également soumise aux [Conditions d'utilisation de Canada.ca](https://www.canada.ca/fr/transparence/avis.html).
 
 ## Billets de blogue sur Réponses IA
-- [Réponses IA&nbsp;: Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
+- [Réponses IA&nbsp;: Mises à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 - [Résultats de l'étude sur la confiance envers l'IA sur Canada.ca](https://blogue.canada.ca/2025/02/18/confiance-ia.html)
 
 ## Documentation de la fiche système
