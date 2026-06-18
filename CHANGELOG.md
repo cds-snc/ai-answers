@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.147.0](https://github.com/cds-snc/ai-answers/compare/v1.146.1...v1.147.0) (2026-06-18)
+
+
+### Features
+
+* exec dashboard reorder ([89e6b0c](https://github.com/cds-snc/ai-answers/commit/89e6b0ccf0e33f3605e17cd79f18188ba09ce02b))
+* exec dashboard reorder ([f36926b](https://github.com/cds-snc/ai-answers/commit/f36926b75ed0dc6e3b1838e138f9341e54e04fe5))
+* pr cleanup ([6ccff8d](https://github.com/cds-snc/ai-answers/commit/6ccff8d9619a39596733bbfe9c3be7607e2e6ed5))
+* pr review fix cont. ([2fd7796](https://github.com/cds-snc/ai-answers/commit/2fd7796ce3eb39856eeb689a0a1ce3fcfcadf26a))
+* pr review fixes ([ad54bdc](https://github.com/cds-snc/ai-answers/commit/ad54bdcda90f0fec53345b8458fd32f2bb86fe7e))
+
+
+### Bug Fixes
+
+* code review and change exec to only use PUBLIC not ADMIN ([a0f1c30](https://github.com/cds-snc/ai-answers/commit/a0f1c30f33cff9e23321b9db3ee5bbf56aec33dc))
+* filter match start date of data ([27d185f](https://github.com/cds-snc/ai-answers/commit/27d185fdc6fb2da6ecb8b6886c56964b260d70b5))
+* label ([b40cfcb](https://github.com/cds-snc/ai-answers/commit/b40cfcb8e5cde83ee28b19893a2fb390f9d29e0d))
+* redundancy from pr review ([68c1ed7](https://github.com/cds-snc/ai-answers/commit/68c1ed7766aa4c2b0689e6e10874585c5f0ec968))
+* referringUrl rules for Public-referring ([75f4def](https://github.com/cds-snc/ai-answers/commit/75f4def5a6f9c42937a0aef8d9b788fa31cf8682))
+* tooltips show count not duplicate percentage ([7ec58e7](https://github.com/cds-snc/ai-answers/commit/7ec58e79511c531955189100aed5e81a3456de3f))
+* update note ([2e9e2cc](https://github.com/cds-snc/ai-answers/commit/2e9e2ccf68126c6f293925f9bbcd7b7ff4655913))
+* use start date in heading ([ce92ff0](https://github.com/cds-snc/ai-answers/commit/ce92ff062d1ccbb8c85b5c7468952fca6b301af6))
+
 ## [1.146.1](https://github.com/cds-snc/ai-answers/compare/v1.146.0...v1.146.1) (2026-06-17)
 
 
