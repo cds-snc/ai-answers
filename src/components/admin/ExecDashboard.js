@@ -133,13 +133,20 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {formatDateRange(displayStartDate, appliedEndDate)}
       </h2>
 
+      {loading ? (
+        <div className="dashboard-loading">
+          {t('common.loading')}
+        </div>
+      ) : (
+      <>
+
       {error && (
         <div className="dashboard-error">
           {t('execDashboard.error')}
         </div>
       )}
 
-      {hasFetched.current && !loading && metrics.totalQuestions === 0 && !error && (
+      {hasFetched.current && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('execDashboard.noData')}
@@ -312,6 +319,8 @@ const ExecDashboard = ({ lang = 'en' }) => {
             />
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

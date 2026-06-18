@@ -259,6 +259,12 @@ Hide charts and donuts when the sample is too small to be meaningful (< 10). Cur
   EN + FR together; run `node scripts/find-dead-locale-keys.cjs` (0 parity gaps).
 - **Numbers/percent**: always `formatNumber`/`formatPercent`/`formatDecimal`
   from `src/utils/numberFormat.js` (locale-aware; FR uses `1 000`, `45 %`).
+- **En-dash separators**: a hardcoded ` – ` is acceptable in headings, date
+  ranges (e.g. `formatDateRange` in `ExecDashboard`), and department
+  abbreviations like `CRA-ARC` (these end with a name, not a dash, and are
+  short enough not to line-break). Avoid it in chart bar labels and tooltips —
+  the chart library renders its own dash between label and value, and a
+  hardcoded ` – ` sits directly next to it.
 - **Exec page title** carries "AI Answers" for screenshot identification; FR puts
   "Réponses IA" at the end (matches `admin.partnerTitle`).
 - The exec dashboard is a **single filterable section** defaulting to the last 12
