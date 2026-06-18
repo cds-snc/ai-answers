@@ -88,7 +88,7 @@ describe('EmbeddingMetadataService', () => {
       },
     });
 
-    expect(result).toEqual({ matchedCount: 2, modifiedCount: 2 });
+    expect(result).toEqual({ matchedCount: 2, modifiedCount: 2, metadataAction: 'updated' });
     expect(mockUpdateMany).toHaveBeenCalledWith(
       { interactionId: '507f1f77bcf86cd799439011' },
       {
@@ -223,6 +223,71 @@ describe('EmbeddingMetadataService', () => {
           pageLanguage: 'fr',
           interactionLanguage: 'en',
         }),
+      }
+    );
+  });
+
+  it('excludes auto-eval feedback during backfill and clears metadata instead', async () => {
+    mockEmbeddingFind.mockReturnValue({
+      sort: () => ({
+        limit: () => ({
+          select: () => ({
+            lean: async () => ([{
+              _id: '507f1f77bcf86cd799439021',
+              interactionId: '507f1f77bcf86cd799439011',
+            }]),
+          }),
+        }),
+      }),
+    });
+    mockInteractionFindById.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => ({
+            _id: '507f1f77bcf86cd799439011',
+            expertFeedback: '507f1f77bcf86cd799439012',
+            question: { language: 'en' },
+          }),
+        }),
+      }),
+    });
+    mockExpertFeedbackFindById.mockReturnValue({
+      lean: async () => ({
+        _id: '507f1f77bcf86cd799439012',
+        type: 'ai',
+        totalScore: 100,
+      }),
+    });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+    mockCountDocuments.mockResolvedValue(0);
+
+    const result = await EmbeddingMetadataService.backfillBatch({ limit: 1 });
+
+    expect(result).toEqual(expect.objectContaining({
+      processed: 1,
+      updated: 0,
+      cleared: 1,
+      skipped: 0,
+      remaining: 0,
+    }));
+    expect(mockUpdateMany).toHaveBeenCalledWith(
+      {
+        $or: [
+          { _id: '507f1f77bcf86cd799439021' },
+          { interactionId: '507f1f77bcf86cd799439011' },
+        ],
+      },
+      {
+        $set: {
+          interactionId: '507f1f77bcf86cd799439011',
+        },
+        $unset: {
+          expertFeedbackId: '',
+          expertFeedbackTotalScore: '',
+          expertFeedbackCreatedAt: '',
+          expertFeedbackNeverStale: '',
+          interactionLanguage: '',
+        },
       }
     );
   });

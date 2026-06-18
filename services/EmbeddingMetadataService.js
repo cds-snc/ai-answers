@@ -14,6 +14,11 @@ function feedbackMetadata(feedback) {
   };
 }
 
+function isAutoEvalFeedback(feedback) {
+  if (!feedback || typeof feedback !== 'object') return false;
+  return String(feedback.type || '').trim().toLowerCase() === 'ai';
+}
+
 function normalizeMatchLanguage(value) {
   if (!value || typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
@@ -115,9 +120,15 @@ class EmbeddingMetadataService {
     const feedbackId = feedbackOrId || interaction.expertFeedback;
     const normalizedFeedbackId = normalizeObjectId(feedbackId);
     if (!feedbackId) {
-      return clearWhenMissingFeedback
-        ? this.clearForInteraction(interaction._id, { embeddingId })
-        : { matchedCount: 0, modifiedCount: 0, skippedReason: 'missingFeedback' };
+      if (clearWhenMissingFeedback) {
+        const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
+        return { ...clearResult, metadataAction: 'cleared' };
+      }
+      return {
+        matchedCount: 0,
+        modifiedCount: 0,
+        skippedReason: 'missingFeedback',
+      };
     }
 
     const feedback = typeof feedbackId === 'object' && feedbackId?._id
@@ -126,9 +137,21 @@ class EmbeddingMetadataService {
         ? await ExpertFeedback.findById(normalizedFeedbackId).lean()
         : null;
     if (!feedback?._id) {
-      return clearWhenMissingFeedback
-        ? this.clearForInteraction(interaction._id, { embeddingId })
-        : { matchedCount: 0, modifiedCount: 0, skippedReason: 'missingFeedbackDocument' };
+      if (clearWhenMissingFeedback) {
+        const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
+        return { ...clearResult, metadataAction: 'cleared' };
+      }
+      return {
+        matchedCount: 0,
+        modifiedCount: 0,
+        skippedReason: 'missingFeedbackDocument',
+      };
+    }
+
+    // Auto-eval feedback must not be denormalized onto retrieval embeddings.
+    if (isAutoEvalFeedback(feedback)) {
+      const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
+      return { ...clearResult, metadataAction: 'cleared' };
     }
 
     const pageLanguage = await getPageLanguage(interaction._id);
@@ -145,10 +168,11 @@ class EmbeddingMetadataService {
       interactionLanguage: normalizeMatchLanguage(interactionLanguage) || undefined,
     };
 
-    return Embedding.updateMany(
+    const updateResult = await Embedding.updateMany(
       updateFilter,
       { $set: update }
     );
+    return { ...updateResult, metadataAction: 'updated' };
   }
 
   async clearForInteraction(interactionId, { embeddingId = null } = {}) {
@@ -202,10 +226,10 @@ class EmbeddingMetadataService {
       });
       if (result.skippedReason) {
         skipped += 1;
-      } else if (interaction.expertFeedback) {
-        updated += result.modifiedCount || 0;
-      } else {
+      } else if (result.metadataAction === 'cleared') {
         cleared += result.modifiedCount || 0;
+      } else {
+        updated += result.modifiedCount || 0;
       }
     }
 
