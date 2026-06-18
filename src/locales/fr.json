@@ -1490,6 +1490,7 @@
     "metadataBackfillFailed": "Échec du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
     "metadataBatchResultsTitle": "Diagnostic des métadonnées du dernier lot",
     "metadataBatchResultsDescription": "Chaque ligne montre ce que le remplissage des métadonnées a fait pour un embedding traité dans le dernier lot.",
+    "metadataBatchSummary": "{updated} ont reçu des métadonnées, {cleared} supprimées ou modifiées",
     "metadataBatchResults": {
       "emptyValue": "(aucune)",
       "columns": {

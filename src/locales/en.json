@@ -1490,6 +1490,7 @@
     "metadataBackfillFailed": "Failed to backfill embedding metadata. Check the console for details.",
     "metadataBatchResultsTitle": "Last batch metadata diagnostics",
     "metadataBatchResultsDescription": "Each row shows what metadata backfill did for one processed embedding in the latest batch.",
+    "metadataBatchSummary": "{updated} received metadata, {cleared} removed or altered",
     "metadataBatchResults": {
       "emptyValue": "(none)",
       "columns": {

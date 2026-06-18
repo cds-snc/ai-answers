@@ -451,6 +451,17 @@ const VectorPage = ({ lang = 'en' }) => {
           <div className="mb-400">
             <h3>{t('vector.metadataBatchResultsTitle')}</h3>
             <GcdsText>{t('vector.metadataBatchResultsDescription')}</GcdsText>
+            <div className="mb-100">
+              <strong>
+                {(() => {
+                  const updatedCount = metadataProgress?.updated ?? metadataBatchRecords.filter(r => r.action === 'updated').length;
+                  const clearedCount = metadataProgress?.cleared ?? metadataBatchRecords.filter(r => r.action === 'cleared').length;
+                  return t('vector.metadataBatchSummary')
+                    .replace('{updated}', fmtN(updatedCount))
+                    .replace('{cleared}', fmtN(clearedCount));
+                })()}
+              </strong>
+            </div>
             <table>
               <thead>
                 <tr>
