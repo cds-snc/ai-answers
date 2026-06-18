@@ -26,13 +26,47 @@ async function getPageLanguage(interactionId, fallbackChatId = null) {
   return chat?.pageLanguage || null;
 }
 
+async function getInteractionLanguage(interactionOrId, fallbackChatId = null) {
+  const rawInteractionId = typeof interactionOrId === 'object' && interactionOrId?._id
+    ? interactionOrId._id
+    : interactionOrId;
+  const interactionId = normalizeObjectId(rawInteractionId);
+  const chatId = normalizeObjectId(fallbackChatId);
+  if (!interactionId && !chatId) return null;
+
+  const hasQuestionLanguage = typeof interactionOrId === 'object'
+    && interactionOrId
+    && typeof interactionOrId.question === 'object'
+    && interactionOrId.question
+    && typeof interactionOrId.question.language === 'string'
+    && interactionOrId.question.language.trim().length;
+
+  const interaction = hasQuestionLanguage
+    ? interactionOrId
+    : interactionId
+      ? await Interaction.findById(interactionId)
+        .select('_id question')
+        .populate({ path: 'question', select: 'language' })
+        .lean()
+      : null;
+
+  if (interaction?.question?.language) return interaction.question.language;
+
+  if (chatId) {
+    const chat = await Chat.findOne({ _id: chatId }).select('pageLanguage').lean();
+    return chat?.pageLanguage || null;
+  }
+
+  return null;
+}
+
 class EmbeddingMetadataService {
   async syncForInteraction(interactionOrId, feedbackOrId = null) {
     const interactionId = normalizeObjectId(interactionOrId);
     const interaction = typeof interactionOrId === 'object' && interactionOrId?._id
       ? interactionOrId
       : interactionId
-        ? await Interaction.findById(interactionId).select('_id expertFeedback').lean()
+        ? await Interaction.findById(interactionId).select('_id expertFeedback question').populate({ path: 'question', select: 'language' }).lean()
         : null;
     if (!interaction?._id) return { matchedCount: 0, modifiedCount: 0 };
 
@@ -48,10 +82,12 @@ class EmbeddingMetadataService {
     if (!feedback?._id) return this.clearForInteraction(interaction._id);
 
     const pageLanguage = await getPageLanguage(interaction._id);
+    const interactionLanguage = await getInteractionLanguage(interaction, interaction._id);
     const metadata = feedbackMetadata(feedback);
     const update = {
       ...metadata,
       pageLanguage: pageLanguage || undefined,
+      interactionLanguage: interactionLanguage || undefined,
     };
 
     return Embedding.updateOne(
@@ -72,6 +108,7 @@ class EmbeddingMetadataService {
           expertFeedbackTotalScore: '',
           expertFeedbackCreatedAt: '',
           expertFeedbackNeverStale: '',
+          interactionLanguage: '',
         },
       }
     );
@@ -94,7 +131,8 @@ class EmbeddingMetadataService {
     for (const embedding of embeddings) {
       lastId = embedding._id.toString();
       const interaction = await Interaction.findById(embedding.interactionId)
-        .select('_id expertFeedback')
+        .select('_id expertFeedback question')
+        .populate({ path: 'question', select: 'language' })
         .lean();
       if (!interaction) {
         skipped += 1;

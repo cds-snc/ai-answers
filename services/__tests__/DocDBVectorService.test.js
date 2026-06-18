@@ -84,6 +84,26 @@ describe('DocDBVectorService', () => {
     expect(capturedPipeline.some((stage) => stage.$lookup)).toBe(false);
   });
 
+  it('uses interactionLanguage instead of pageLanguage for denormalized matching when provided', async () => {
+    await service.matchQuestions(['same question'], {
+      k: 5,
+      expertFeedbackRating: 100,
+      expertFeedbackComparison: 'lte',
+      interactionLanguage: 'en',
+      recencyDays: 365,
+      useDenormalizedPreFilter: true,
+    });
+
+    expect(capturedPipeline[0]).toMatchObject({
+      $match: {
+        expertFeedbackId: { $exists: true, $ne: null },
+        expertFeedbackTotalScore: { $lte: 100 },
+        interactionLanguage: 'en',
+      },
+    });
+    expect(capturedPipeline[0].$match).not.toHaveProperty('pageLanguage');
+  });
+
   it('returns separate embedding group counts in stats', async () => {
     const collectionCounts = {
       questionsAnswerEmbedding: 25,

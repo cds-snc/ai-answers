@@ -109,6 +109,7 @@ class QuestionAnswerService {
 
   async getSimilarQuestionsContext(question, opts = {}) {
     const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
+    const interactionLanguage = opts.interactionLanguage || null;
     if (!question || typeof question !== 'string') return '';
 
     try {
@@ -126,6 +127,7 @@ class QuestionAnswerService {
         expertFeedbackRating,
         expertFeedbackComparison,
         language,
+        interactionLanguage,
         recencyDays,
         useDenormalizedPreFilter,
         returnDebugData,

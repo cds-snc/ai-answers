@@ -157,6 +157,7 @@ graph.addNode('similarQuestions', async (state) => {
       expertFeedbackRating: 100,
       expertFeedbackComparison: 'lte',
       language: state.lang,
+      interactionLanguage: state.context?.originalLang || state.translationData?.originalLanguage || state.lang,
       includeQuestionFlow: true,
       recencyDays: 365,
       useDenormalizedPreFilter: true,

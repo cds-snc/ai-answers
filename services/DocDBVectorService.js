@@ -152,7 +152,12 @@ class DocDBVectorService {
         await this._ensureStandardIndex(
           'embeddings',
           { expertFeedbackId: 1, pageLanguage: 1, expertFeedbackTotalScore: 1, expertFeedbackCreatedAt: 1 },
-          'qa_denormalized_filter_index'
+          'qa_denormalized_page_filter_index'
+        );
+        await this._ensureStandardIndex(
+          'embeddings',
+          { expertFeedbackId: 1, interactionLanguage: 1, expertFeedbackTotalScore: 1, expertFeedbackCreatedAt: 1 },
+          'qa_denormalized_interaction_filter_index'
         );
       } catch { }
       try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch { }
@@ -311,7 +316,7 @@ class DocDBVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, interactionLanguage = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -337,6 +342,7 @@ class DocDBVectorService {
       expertFeedbackRating,
       expertFeedbackComparison,
       language,
+      interactionLanguage,
       pageLang,
       recencyDays,
       useDenormalizedPreFilter,
@@ -354,6 +360,9 @@ class DocDBVectorService {
     const pipelines = embeddings.map((emb) => {
       const pipeline = [];
       if (useDenormalizedPreFilter) {
+        const denormalizedLanguage = interactionLanguage
+          ? desiredPageLang(interactionLanguage)
+          : pageLang;
         const preMatch = {
           expertFeedbackId: { $exists: true, $ne: null },
         };
@@ -367,7 +376,10 @@ class DocDBVectorService {
             preMatch.expertFeedbackTotalScore = expertFeedbackRating;
           }
         }
-        if (pageLang) preMatch.pageLanguage = pageLang;
+        if (denormalizedLanguage) {
+          if (interactionLanguage) preMatch.interactionLanguage = denormalizedLanguage;
+          else preMatch.pageLanguage = denormalizedLanguage;
+        }
         if (typeof recencyDays === 'number' && recencyDays > 0) {
           const cutoff = new Date(Date.now() - (recencyDays * 24 * 60 * 60 * 1000));
           preMatch.$or = [
