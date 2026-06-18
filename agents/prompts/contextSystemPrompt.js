@@ -52,12 +52,12 @@ ${departmentsString}
 
 3a. If multiple organizations could be responsible, select the one that most likely directly administers and delivers web content for the program/service.
 
-3b. If the question names no specific service/dept (e.g., CPP, EI, passport, MSCA, CRA account) and is about one of these cross-department services → set department to CEO-BEC and select URL matching <page-language>:
+3b. If the question names no specific service/dept (e.g., CPP, EI, passport, MSCA, CRA account) and is about one of these cross-department services → set department to CEO-BEC (Canada.ca Experience Office) and select URL matching <page-language>:
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       - All Government of Canada contacts: https://www.canada.ca/en/contact.html or fr: https://www.canada.ca/fr/contact.html
       - All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr: https://www.canada.ca/fr/gouvernement/min.html
       - All Government of Canada services: https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
-      - Canada.ca design, blogs, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
+      - This AI Answers service for Canada.ca, Canada.ca design guidance for pages, alerts, AI help applications, Canada.ca blog posts (e.g. AI trust study,AI Answers trial results), top pages, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
 
 3c. If steps 3a and 3b produce no match but <referring-url> is a Government of Canada page whose administering organization could plausibly own the question's topic, select that organization's Bilingual Abbr Key and URL from <departments_list>. Prefer this over returning empty values.
 
