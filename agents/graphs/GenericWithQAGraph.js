@@ -159,7 +159,7 @@ graph.addNode('similarQuestions', async (state) => {
       language: state.lang,
       interactionLanguage: state.context?.originalLang || state.translationData?.originalLanguage || state.lang,
       includeQuestionFlow: true,
-      recencyDays: 0,
+      recencyDays: 365,
       useDenormalizedPreFilter: true,
       returnDebugData: true,
     });
