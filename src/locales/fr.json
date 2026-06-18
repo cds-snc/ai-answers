@@ -1214,8 +1214,15 @@
   "dashboardFilter": {
     "department": "Par institution partenaire",
     "allPartners": "Tous les partenaires",
+    "dateRange": "Plage de dates",
+    "last30": "30 derniers jours",
+    "lastQuarter": "Dernier trimestre",
+    "allTime": "Toutes les données",
+    "custom": "Personnalisé",
     "startDate": "Date de début",
     "endDate": "Date de fin",
+    "showing": "Résultats :",
+    "removeFilter": "Supprimer le filtre",
     "apply": "Appliquer",
     "loading": "Chargement..."
   },

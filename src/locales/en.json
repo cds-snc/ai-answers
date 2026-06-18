@@ -1214,8 +1214,15 @@
   "dashboardFilter": {
     "department": "By partner institution",
     "allPartners": "All partners",
+    "dateRange": "Date range",
+    "last30": "Last 30 days",
+    "lastQuarter": "Last quarter",
+    "allTime": "All data",
+    "custom": "Custom",
     "startDate": "Start date",
     "endDate": "End date",
+    "showing": "Showing:",
+    "removeFilter": "Remove filter",
     "apply": "Apply",
     "loading": "Loading..."
   },
