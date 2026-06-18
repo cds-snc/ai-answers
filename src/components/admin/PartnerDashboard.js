@@ -100,6 +100,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   return (
     <div>
       <div className="mb-600">
+        {/* TODO: Advanced filters (answer type, partner eval, AI eval, URL) are passed to the
+            API and filter the aggregate data, but PartnerDashboard has no charts that surface
+            those breakdowns. Either hide the advanced section or add corresponding chart sections. */}
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
@@ -108,6 +111,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           autoApply={true}
           applyDisabled={loading}
           defaultUserType="all"
+          defaultOpen={false}
           filterLoading={loading}
           filterError={error}
           filterResultCount={metrics.totalQuestions || 0}

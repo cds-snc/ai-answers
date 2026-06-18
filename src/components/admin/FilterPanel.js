@@ -17,6 +17,7 @@ const FilterPanel = ({
   applyButtonText = null,
   applyDisabled = false,
   defaultUserType = 'all',
+  defaultOpen = true,
   filterLoading = false,
   filterError = null,
   filterResultCount = null,
@@ -25,7 +26,7 @@ const FilterPanel = ({
   const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   // Collapse when results load successfully; keep open on error or no results
   useEffect(() => {
