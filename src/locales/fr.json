@@ -1518,6 +1518,7 @@
         "missingFeedback": "Rétroaction experte manquante sur l'interaction",
         "missingFeedbackDocument": "Document de rétroaction experte manquant",
         "autoEvalFeedback": "Rétroaction d'auto-évaluation exclue",
+        "allMetadataReset": "Toutes les métadonnées réinitialisées",
         "unknown": "Inconnu"
       }
     },

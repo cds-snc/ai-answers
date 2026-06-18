@@ -1518,6 +1518,7 @@
         "missingFeedback": "Missing interaction expert feedback",
         "missingFeedbackDocument": "Missing expert feedback document",
         "autoEvalFeedback": "Auto-eval feedback excluded",
+        "allMetadataReset": "All metadata reset",
         "unknown": "Unknown"
       }
     },

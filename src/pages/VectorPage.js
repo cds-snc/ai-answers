@@ -72,8 +72,10 @@ const VectorPage = ({ lang = 'en' }) => {
       const savedProgress = window.localStorage.getItem(METADATA_BACKFILL_PROGRESS_KEY);
       if (!savedProgress) return;
       const parsedProgress = JSON.parse(savedProgress);
-      if (parsedProgress?.lastProcessedId && typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0) {
+      if (parsedProgress?.phase === 'interactions' && typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0) {
         setMetadataProgress(parsedProgress);
+      } else {
+        window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
       }
     } catch (err) {
       console.error('Error loading metadata backfill progress:', err);
@@ -161,7 +163,11 @@ const VectorPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleBackfillMetadata = async (lastId = metadataProgress?.lastProcessedId || null) => {
+  const handleBackfillMetadata = async (
+    lastId = metadataProgress?.lastProcessedId || null,
+    phase = metadataProgress?.phase || 'clear',
+    initialProgress = metadataProgress
+  ) => {
     if (isBackfillingMetadata) return;
     const parsedBatchSize = Number.parseInt(metadataBatchSizeInput, 10);
     if (!Number.isFinite(parsedBatchSize) || parsedBatchSize < 1 || parsedBatchSize > 500) {
@@ -173,12 +179,13 @@ const VectorPage = ({ lang = 'en' }) => {
     setStopMetadataBackfill(false);
     stopMetadataBackfillRef.current = false;
     let nextLastId = lastId;
+    let nextPhase = phase;
     // cumulative counters across batches (initialize from any saved progress)
     const cumulative = {
-      processed: metadataProgress?.processed || 0,
-      updated: metadataProgress?.updated || 0,
-      cleared: metadataProgress?.cleared || 0,
-      skipped: metadataProgress?.skipped || 0,
+      processed: initialProgress?.processed || 0,
+      updated: initialProgress?.updated || 0,
+      cleared: initialProgress?.cleared || 0,
+      skipped: initialProgress?.skipped || 0,
     };
     try {
       while (true) {
@@ -186,6 +193,7 @@ const VectorPage = ({ lang = 'en' }) => {
           lastProcessedId: nextLastId,
           limit: parsedBatchSize,
           includeDetails: true,
+          phase: nextPhase,
         });
         // accumulate totals so UI shows cumulative progress across the run
         cumulative.processed += result.processed || 0;
@@ -200,6 +208,7 @@ const VectorPage = ({ lang = 'en' }) => {
           skipped: cumulative.skipped,
           remaining: result.remaining,
           lastProcessedId: result.lastProcessedId,
+          phase: result.phase,
         });
         setMetadataBatchRecords(Array.isArray(result.batchRecords) ? result.batchRecords : []);
         const progressSnapshot = {
@@ -209,13 +218,15 @@ const VectorPage = ({ lang = 'en' }) => {
           skipped: cumulative.skipped,
           remaining: result.remaining,
           lastProcessedId: result.lastProcessedId,
+          phase: result.phase,
         };
-        if (result.remaining > 0 && result.lastProcessedId) {
+        if (result.remaining > 0) {
           window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(progressSnapshot));
         } else {
           window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
         }
         nextLastId = result.lastProcessedId || nextLastId;
+        nextPhase = result.phase || nextPhase;
         if (result.remaining <= 0 || stopMetadataBackfillRef.current) break;
         await new Promise(resolve => setTimeout(resolve, METADATA_BACKFILL_DELAY_MS));
       }
@@ -233,14 +244,18 @@ const VectorPage = ({ lang = 'en' }) => {
   };
 
   const handleResumeMetadataBackfill = () => {
-    handleBackfillMetadata(metadataProgress?.lastProcessedId || null);
+    handleBackfillMetadata(
+      metadataProgress?.lastProcessedId || null,
+      metadataProgress?.phase || 'interactions',
+      metadataProgress
+    );
   };
 
   const handleRestartMetadataBackfill = () => {
     window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
     setMetadataProgress(null);
     setMetadataBatchRecords([]);
-    handleBackfillMetadata(null);
+    handleBackfillMetadata(null, 'clear', null);
   };
 
   const handleRunDocdb8CapabilityTest = async (probe) => {
@@ -266,6 +281,9 @@ const VectorPage = ({ lang = 'en' }) => {
   };
 
   const docdb8ProbeDefinitions = getDocdb8ProbeDefinitions(t);
+  const hasMetadataBackfillResume = metadataProgress?.phase === 'interactions'
+    && typeof metadataProgress.remaining === 'number'
+    && metadataProgress.remaining > 0;
   const loadedDocdb8Results = docdb8ProbeDefinitions
     .map(({ key, label }) => ({
       key,
@@ -422,13 +440,13 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         <div className="button-group">
           <GcdsButton
-            onClick={metadataProgress?.lastProcessedId ? handleResumeMetadataBackfill : handleRestartMetadataBackfill}
+            onClick={hasMetadataBackfillResume ? handleResumeMetadataBackfill : handleRestartMetadataBackfill}
             disabled={isBackfillingMetadata}
             className="mb-200 mr-200"
           >
-            {metadataProgress?.lastProcessedId ? t('vector.resumeMetadataBackfill') : t('vector.startMetadataBackfill')}
+            {hasMetadataBackfillResume ? t('vector.resumeMetadataBackfill') : t('vector.startMetadataBackfill')}
           </GcdsButton>
-          {metadataProgress?.lastProcessedId && (
+          {hasMetadataBackfillResume && (
             <GcdsButton
               onClick={handleRestartMetadataBackfill}
               disabled={isBackfillingMetadata}

@@ -10,7 +10,7 @@ async function vectorBackfillMetadataHandler(req, res) {
 
   try {
     await dbConnect();
-    const { lastProcessedId = null, limit = 100, includeDetails = false } = req.body || {};
+    const { lastProcessedId = null, limit = 100, includeDetails = false, phase = 'clear' } = req.body || {};
     const normalizedLastProcessedId = lastProcessedId
       ? normalizeObjectIdString(lastProcessedId)
       : null;
@@ -26,6 +26,7 @@ async function vectorBackfillMetadataHandler(req, res) {
       lastProcessedId: normalizedLastProcessedId,
       limit: boundedLimit,
       includeDetails: includeDetails === true || includeDetails === 'true',
+      phase: phase === 'interactions' ? 'interactions' : 'clear',
     });
 
     return res.status(200).json(result);

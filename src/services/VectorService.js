@@ -16,11 +16,11 @@ const VectorService = {
     return await response.json();
   },
 
-  async backfillMetadata({ lastProcessedId = null, limit = 100, includeDetails = false } = {}) {
+  async backfillMetadata({ lastProcessedId = null, limit = 100, includeDetails = false, phase = 'clear' } = {}) {
     const response = await AuthService.fetch(getApiUrl('vector-backfill-metadata'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lastProcessedId, limit, includeDetails }),
+      body: JSON.stringify({ lastProcessedId, limit, includeDetails, phase }),
     });
     if (!response.ok) throw new Error('Failed to backfill embedding metadata');
     return await response.json();
