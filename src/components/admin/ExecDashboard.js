@@ -56,7 +56,9 @@ const ExecDashboard = ({ lang = 'en' }) => {
   // point). Clamp the displayed start to the first date that actually has
   // records in range so the heading never claims an empty stretch of time.
   // firstDataDate arrives as an ISO timestamp; the calendar day is all we show.
-  const dataStartDay = metrics.firstDataDate ? metrics.firstDataDate.split('T')[0] : null;
+  // Clear dataStartDay while loading so the heading shows the newly-applied
+  // start date rather than the stale firstDataDate from the previous fetch.
+  const dataStartDay = !loading && metrics.firstDataDate ? metrics.firstDataDate.split('T')[0] : null;
   const displayStartDate = dataStartDay || appliedStartDate;
 
   // KPI derived data
@@ -125,7 +127,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.overviewTitle')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={fetchExecMetrics} onApply={handleApply} dataStartDate={dataStartDay} />
+      <DashboardFilterBar lang={lang} loading={loading} onApply={handleApply} dataStartDate={dataStartDay} />
 
       <h2 className="dashboard-section-title">
         {formatDateRange(displayStartDate, appliedEndDate)}

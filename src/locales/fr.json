@@ -1254,8 +1254,6 @@
       "evaluatedSub": "{pct} des questions",
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
-      "accuracyRate": "Taux d'exactitude",
-      "accuracySub": "EN : {en} · FR : {fr}",
       "partnerCount": "Institutions avec des questions",
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}"

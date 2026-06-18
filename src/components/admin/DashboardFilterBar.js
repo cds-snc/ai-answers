@@ -4,6 +4,8 @@ import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 const today = () => toISODate(new Date());
+// Earliest date with data — prevents selecting a range before any records exist.
+const DATA_START_DATE = '2025-10-01';
 
 // Shared filter bar for the exec and partner dashboards.
 // Owns department + date range; reports the selection to the parent via
@@ -20,7 +22,8 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
-    return toISODate(d);
+    const oneYearAgo = toISODate(d);
+    return oneYearAgo < DATA_START_DATE ? DATA_START_DATE : oneYearAgo;
   });
   const [endDate, setEndDate] = useState(today());
 
@@ -30,6 +33,10 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   const onInitialLoadRef = useRef(onInitialLoad);
   onInitialLoadRef.current = onInitialLoad;
 
+  // True after the user has explicitly clicked Apply. Prevents the data-start
+  // snap from overwriting a date the user intentionally chose.
+  const userHasApplied = useRef(false);
+
   useEffect(() => {
     const cb = onInitialLoadRef.current || onApplyRef.current;
     cb({ startDate, endDate, department });
@@ -37,14 +44,18 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Snap the start input to the actual first-data date once it's known (changes
-  // only after a fetch, so it never fights the user mid-edit).
+  // Snap the start input to the first date with actual data in range, but only
+  // before the user has manually applied a filter. After that, their chosen
+  // date takes precedence — the heading handles clamping independently.
   useEffect(() => {
-    if (dataStartDate) setStartDate(dataStartDate);
+    if (dataStartDate && !userHasApplied.current) setStartDate(dataStartDate);
   }, [dataStartDate]);
 
   const handleApply = () => {
-    if (startDate && endDate) onApply({ startDate, endDate, department });
+    if (startDate && endDate) {
+      userHasApplied.current = true;
+      onApply({ startDate, endDate, department });
+    }
   };
 
   return (
@@ -76,6 +87,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
           type="date"
           className="filter-bar__input"
           value={startDate}
+          min={DATA_START_DATE}
           max={endDate}
           onChange={e => setStartDate(e.target.value)}
           disabled={loading}
