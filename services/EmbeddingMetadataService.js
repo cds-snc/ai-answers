@@ -320,7 +320,8 @@ class EmbeddingMetadataService {
           });
         }
       } else if (result.metadataAction === 'cleared') {
-        cleared += result.modifiedCount || 0;
+        // count the embedding row that was cleared (one per embedding processed)
+        cleared += 1;
         if (includeDetails) {
           batchRecords.push({
             embeddingId: toIdString(embedding._id),
@@ -334,7 +335,8 @@ class EmbeddingMetadataService {
           });
         }
       } else {
-        updated += result.modifiedCount || 0;
+        // count the embedding row that was updated (one per embedding processed)
+        updated += 1;
         if (includeDetails) {
           batchRecords.push({
             embeddingId: toIdString(embedding._id),

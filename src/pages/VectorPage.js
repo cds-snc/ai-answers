@@ -173,6 +173,13 @@ const VectorPage = ({ lang = 'en' }) => {
     setStopMetadataBackfill(false);
     stopMetadataBackfillRef.current = false;
     let nextLastId = lastId;
+    // cumulative counters across batches (initialize from any saved progress)
+    const cumulative = {
+      processed: metadataProgress?.processed || 0,
+      updated: metadataProgress?.updated || 0,
+      cleared: metadataProgress?.cleared || 0,
+      skipped: metadataProgress?.skipped || 0,
+    };
     try {
       while (true) {
         const result = await VectorService.backfillMetadata({
@@ -180,13 +187,26 @@ const VectorPage = ({ lang = 'en' }) => {
           limit: parsedBatchSize,
           includeDetails: true,
         });
-        setMetadataProgress(result);
+        // accumulate totals so UI shows cumulative progress across the run
+        cumulative.processed += result.processed || 0;
+        cumulative.updated += result.updated || 0;
+        cumulative.cleared += result.cleared || 0;
+        cumulative.skipped += result.skipped || 0;
+
+        setMetadataProgress({
+          processed: cumulative.processed,
+          updated: cumulative.updated,
+          cleared: cumulative.cleared,
+          skipped: cumulative.skipped,
+          remaining: result.remaining,
+          lastProcessedId: result.lastProcessedId,
+        });
         setMetadataBatchRecords(Array.isArray(result.batchRecords) ? result.batchRecords : []);
         const progressSnapshot = {
-          processed: result.processed,
-          updated: result.updated,
-          cleared: result.cleared,
-          skipped: result.skipped,
+          processed: cumulative.processed,
+          updated: cumulative.updated,
+          cleared: cumulative.cleared,
+          skipped: cumulative.skipped,
           remaining: result.remaining,
           lastProcessedId: result.lastProcessedId,
         };

@@ -1,6 +1,7 @@
 import dbConnect from './db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import EmbeddingService from '../../services/EmbeddingService.js';
+import { Embedding } from '../../models/embedding.js';
 import config from '../../config/eval.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
@@ -15,12 +16,17 @@ async function regenerateEmbeddingsHandler(req, res) {
         const duration = config.embedBatchProcessingDuration;
         const result = await EmbeddingService.processEmbeddingForDuration(duration, !regenerateAll, lastProcessedId, provider);
 
+        // report current embedding count to help debug regenerate issues
+        await dbConnect();
+        const totalEmbeddings = await Embedding.countDocuments();
+
         return res.status(200).json({
             completed: result.completed,
             total: result.total,
             remaining: result.remaining,
             lastProcessedId: result.lastProcessedId,
-            duration: result.duration
+            duration: result.duration,
+            totalEmbeddings
         });
     } catch (error) {
         console.error('Error regenerating embeddings:', error);

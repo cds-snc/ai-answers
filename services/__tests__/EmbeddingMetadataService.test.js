@@ -202,7 +202,7 @@ describe('EmbeddingMetadataService', () => {
 
     expect(result).toEqual(expect.objectContaining({
       processed: 1,
-      updated: 2,
+      updated: 1,
       cleared: 0,
       skipped: 0,
       remaining: 0,
