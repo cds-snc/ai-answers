@@ -644,8 +644,9 @@
       }
     },
     "filters": {
-      "title": "Filtres - sélectionnez puis Appliquer pour voir",
-      "clearAll": "Effacer",
+      "title": "Filtres",
+      "clearAll": "Tout effacer",
+      "filtersLabel": "Filtres :",
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
@@ -676,7 +677,8 @@
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
       "filterOptions": "Options de filtre",
-      "showAdvanced": "Plus d'options de filtre"
+      "advancedTitle": "Filtres avancés",
+      "showAdvanced": "Plus de filtres"
     },
     "publicEval": {
       "title": "Évaluation publique",

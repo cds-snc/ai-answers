@@ -644,8 +644,9 @@
       }
     },
     "filters": {
-      "title": "Filters - select then apply to view",
-      "clearAll": "Clear",
+      "title": "Filters",
+      "clearAll": "Clear all",
+      "filtersLabel": "Filters:",
       "apply": "Apply",
       "loading": "Loading...",
       "dateRange": "Date range (24-hour)",
@@ -676,7 +677,8 @@
       "evalHasCitationError": "Citation error",
       "evalHarmful": "Harmful",
       "filterOptions": "Filter options",
-      "showAdvanced": "More filter options"
+      "advancedTitle": "Advanced filters",
+      "showAdvanced": "More filters"
     },
     "publicEval": {
       "title": "Public evaluation",

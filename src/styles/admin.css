@@ -143,23 +143,89 @@
 
 /* Filter Panel Styles */
 .filter-panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
+.filter-panel:not([open]) {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
 .filter-panel-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   cursor: pointer;
   font-weight: 600;
+  font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
   color: #374151;
   border-radius: 8px 8px 0 0;
+  padding: 0.5rem 0.75rem;
+  list-style: none;
+  margin: 0;
+}
+
+.filter-panel-summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-panel-summary::marker {
+  content: '';
 }
 
 .filter-panel-summary:hover {
   background: #f3f4f6;
+}
+
+/* Closed state: shrink to button */
+.filter-panel:not([open]) > .filter-panel-summary {
+  width: fit-content;
+  background: var(--gcds-color-blue-muted);
+  color: #fff;
+  border-radius: var(--gcds-button-border-radius);
+  border-bottom: none;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-panel:not([open]) > .filter-panel-summary:hover {
+  background: var(--gcds-button-primary-hover-background);
+}
+
+.filter-panel-summary__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+.filter-panel-summary__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--gcds-color-blue-100);
+  color: var(--gcds-color-blue-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 2px;
 }
 
 .filter-panel-summary:focus,
@@ -174,13 +240,36 @@
 }
 
 .filter-panel-content {
-  padding: 1rem 0rem 1rem 0rem;
+  padding: 1rem 1.25rem 1rem;
 }
 
 .filter-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 0.75rem;
+}
+
+.filter-main-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-advanced-title {
+  font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 600;
+  color: var(--gcds-text-primary);
+  margin: 0.75rem 0 0.25rem;
+}
+
+.filter-advanced-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
 }
 
 .filter-row {
@@ -191,12 +280,14 @@
 .filter-column {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .filter-label {
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
+  margin-bottom: 2px;
 }
 
 .filter-field {
@@ -206,10 +297,11 @@
 .filter-input,
 .filter-select {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.3rem 0.625rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
+  font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
@@ -222,6 +314,13 @@
 
 .filter-advanced-details {
   font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.filter-advanced-summary {
+  font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
+  cursor: pointer;
 }
 
 /* Quick set buttons styling */
@@ -338,38 +437,44 @@
 
 .filter-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   justify-content: flex-end;
-  padding-top: 1rem;
+  align-items: center;
+  padding-top: 0.5rem;
 }
 
 .filter-button {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 0.875rem;
+  padding: var(--gcds-button-small-padding);
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-small-font-desktop);
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  border: none;
+  border: var(--gcds-button-border-width) solid transparent;
+  width: var(--gcds-button-width);
 }
 
 .filter-button-primary {
-  background: #3b82f6;
-  color: white;
+  background: var(--gcds-button-primary-default-background);
+  color: var(--gcds-button-primary-default-text);
+  border-color: var(--gcds-button-primary-default-background);
+  padding-left: 2.25rem;
+  padding-right: 2.25rem;
 }
 
-.filter-button-primary:hover {
-  background: #2563eb;
+.filter-button-primary:hover:not(:disabled) {
+  background: var(--gcds-button-primary-hover-background);
+  border-color: var(--gcds-button-primary-hover-background);
 }
 
 .filter-button-secondary {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: none;
+  border-color: transparent;
+  color: var(--gcds-link-default);
+  text-decoration: underline;
 }
 
-.filter-button-secondary:hover {
-  background: #e5e7eb;
+.filter-button-secondary:hover:not(:disabled) {
+  color: var(--gcds-link-hover);
+  background: none;
 }
 
 /* Hide the daterangepicker's own Apply button — the FilterPanel's Apply button
@@ -380,9 +485,11 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .filter-grid {
+  .filter-grid,
+  .filter-main-row,
+  .filter-advanced-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .filter-actions {
@@ -499,7 +606,8 @@
   display: flex;
   align-items: center;
   gap: var(--gcds-spacing-100);
-  font-size: 14px;
+  font-size: 16px;
+  font-family: 'Noto Sans', sans-serif;
   cursor: pointer;
 }
 
@@ -936,13 +1044,14 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 7px 16px;
+  padding: 6px 12px;
   border: 1px solid #b0b8c1;
-  border-radius: var(--gcds-border-radius-md);
+  border-radius: var(--gcds-button-border-radius);
   background: #fff;
   color: var(--gcds-text-primary);
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
+  line-height: 1.4;
   cursor: pointer;
 }
 
@@ -1004,14 +1113,14 @@
 
 /* Apply button (custom row only) — GC DS primary style */
 .filter-bar__apply {
-  padding: 7px var(--gcds-spacing-300);
-  background: var(--gcds-color-blue-muted);
-  color: #fff;
-  border: none;
-  border-radius: var(--gcds-border-radius-md);
+  padding: 6px 14px;
+  background: var(--gcds-button-primary-default-background);
+  color: var(--gcds-button-primary-default-text);
+  border: 1px solid var(--gcds-button-primary-default-background);
+  border-radius: var(--gcds-button-border-radius);
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
-  font-weight: 600;
+  line-height: 1.4;
   cursor: pointer;
   white-space: nowrap;
   align-self: flex-end;
@@ -1030,13 +1139,18 @@
 .filter-bar__pills-row {
   display: flex;
   align-items: center;
-  gap: var(--gcds-spacing-150);
+  gap: 6px;
   flex-wrap: wrap;
+  row-gap: 4px;
   padding-top: 10px;
   padding-bottom: 10px;
-  padding-left: var(--gcds-spacing-250);
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
+}
+
+/* Exec dashboard pills align with the bordered filter box content */
+.filter-bar-wrapper .filter-bar__pills-row {
+  padding-left: var(--gcds-spacing-250);
 }
 
 .filter-bar__showing {
@@ -1048,22 +1162,19 @@
 .filter-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 10px;
+  gap: 4px;
+  padding: 3px 10px;
   border: none;
   border-radius: 20px;
   background: #e5e7eb;
   color: var(--gcds-text-primary);
-  font-size: 16px;
+  font-size: 14px;
   font-family: 'Noto Sans', sans-serif;
-}
-
-.filter-pill--closable {
-  background: var(--gcds-color-blue-100);
+  line-height: 1.4;
 }
 
 .filter-pill--closable:hover {
-  background: #b8d3ee;
+  background: var(--gcds-color-blue-100);
 }
 
 .filter-pill__close {
@@ -1072,13 +1183,33 @@
   cursor: pointer;
   padding: 0;
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   color: var(--gcds-text-secondary);
 }
 
 .filter-pill__close:hover:not(:disabled) {
   color: var(--gcds-text-primary);
+}
+
+.filter-pills__clear-all {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: 'Noto Sans', sans-serif;
+  line-height: 1.4;
+  color: var(--gcds-link-default);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.filter-pills__clear-all:hover {
+  color: var(--gcds-link-hover);
 }
 
 .filter-bar__loading {
