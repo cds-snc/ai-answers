@@ -42,6 +42,21 @@ function buildClearedSnapshot(interactionId) {
   };
 }
 
+function buildUpdateFilter(interactionId, embeddingId = null, updateScope = 'interaction') {
+  const normalizedEmbeddingId = normalizeObjectId(embeddingId);
+  if (updateScope === 'embedding' && normalizedEmbeddingId) {
+    return { _id: normalizedEmbeddingId };
+  }
+
+  if (normalizedEmbeddingId) {
+    return {
+      $or: [{ _id: normalizedEmbeddingId }, { interactionId }],
+    };
+  }
+
+  return { interactionId };
+}
+
 function normalizeMatchLanguage(value) {
   if (!value || typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
@@ -131,7 +146,11 @@ async function findInteractionByEmbedding(embedding) {
 }
 
 class EmbeddingMetadataService {
-  async syncForInteraction(interactionOrId, feedbackOrId = null, { clearWhenMissingFeedback = true, embeddingId = null } = {}) {
+  async syncForInteraction(interactionOrId, feedbackOrId = null, {
+    clearWhenMissingFeedback = true,
+    embeddingId = null,
+    updateScope = 'interaction',
+  } = {}) {
     const interactionId = normalizeObjectId(interactionOrId);
     const interaction = typeof interactionOrId === 'object' && interactionOrId?._id
       ? interactionOrId
@@ -144,7 +163,7 @@ class EmbeddingMetadataService {
     const normalizedFeedbackId = normalizeObjectId(feedbackId);
     if (!feedbackId) {
       if (clearWhenMissingFeedback) {
-        const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
+        const clearResult = await this.clearForInteraction(interaction._id, { embeddingId, updateScope });
         return {
           ...clearResult,
           metadataAction: 'cleared',
@@ -167,7 +186,7 @@ class EmbeddingMetadataService {
         : null;
     if (!feedback?._id) {
       if (clearWhenMissingFeedback) {
-        const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
+        const clearResult = await this.clearForInteraction(interaction._id, { embeddingId, updateScope });
         return {
           ...clearResult,
           metadataAction: 'cleared',
@@ -185,7 +204,7 @@ class EmbeddingMetadataService {
 
     // Auto-eval feedback must not be denormalized onto retrieval embeddings.
     if (isAutoEvalFeedback(feedback)) {
-      const clearResult = await this.clearForInteraction(interaction._id, { embeddingId });
+      const clearResult = await this.clearForInteraction(interaction._id, { embeddingId, updateScope });
       return {
         ...clearResult,
         metadataAction: 'cleared',
@@ -198,10 +217,7 @@ class EmbeddingMetadataService {
     const pageLanguage = await getPageLanguage(interaction._id);
     const interactionLanguage = await getInteractionLanguage(interaction, interaction._id);
     const metadata = feedbackMetadata(feedback);
-    const normalizedEmbeddingId = normalizeObjectId(embeddingId);
-    const updateFilter = normalizedEmbeddingId
-      ? { $or: [{ _id: normalizedEmbeddingId }, { interactionId: interaction._id }] }
-      : { interactionId: interaction._id };
+    const updateFilter = buildUpdateFilter(interaction._id, embeddingId, updateScope);
     const update = {
       ...metadata,
       interactionId: interaction._id,
@@ -229,13 +245,10 @@ class EmbeddingMetadataService {
     };
   }
 
-  async clearForInteraction(interactionId, { embeddingId = null } = {}) {
+  async clearForInteraction(interactionId, { embeddingId = null, updateScope = 'interaction' } = {}) {
     interactionId = normalizeObjectId(interactionId);
     if (!interactionId) return { matchedCount: 0, modifiedCount: 0 };
-    const normalizedEmbeddingId = normalizeObjectId(embeddingId);
-    const updateFilter = normalizedEmbeddingId
-      ? { $or: [{ _id: normalizedEmbeddingId }, { interactionId }] }
-      : { interactionId };
+    const updateFilter = buildUpdateFilter(interactionId, embeddingId, updateScope);
 
     return Embedding.updateMany(
       updateFilter,
@@ -290,6 +303,7 @@ class EmbeddingMetadataService {
       }
       const result = await this.syncForInteraction(interaction, null, {
         embeddingId: embedding._id,
+        updateScope: 'embedding',
       });
       if (result.skippedReason) {
         skipped += 1;

@@ -143,12 +143,7 @@ describe('EmbeddingMetadataService', () => {
       remaining: 0,
     }));
     expect(mockUpdateMany).toHaveBeenCalledWith(
-      {
-        $or: [
-          { _id: '507f1f77bcf86cd799439021' },
-          { interactionId: '507f1f77bcf86cd799439011' },
-        ],
-      },
+      { _id: '507f1f77bcf86cd799439021' },
       {
         $set: {
           interactionId: '507f1f77bcf86cd799439011',
@@ -213,12 +208,7 @@ describe('EmbeddingMetadataService', () => {
       remaining: 0,
     }));
     expect(mockUpdateMany).toHaveBeenCalledWith(
-      {
-        $or: [
-          { _id: '507f1f77bcf86cd799439021' },
-          { interactionId: '507f1f77bcf86cd799439011' },
-        ],
-      },
+      { _id: '507f1f77bcf86cd799439021' },
       {
         $set: expect.objectContaining({
           expertFeedbackId: '507f1f77bcf86cd799439012',
@@ -275,12 +265,7 @@ describe('EmbeddingMetadataService', () => {
       remaining: 0,
     }));
     expect(mockUpdateMany).toHaveBeenCalledWith(
-      {
-        $or: [
-          { _id: '507f1f77bcf86cd799439021' },
-          { interactionId: '507f1f77bcf86cd799439011' },
-        ],
-      },
+      { _id: '507f1f77bcf86cd799439021' },
       {
         $set: {
           interactionId: '507f1f77bcf86cd799439011',
@@ -358,12 +343,7 @@ describe('EmbeddingMetadataService', () => {
       _id: { $in: ['507f1f77bcf86cd799439011'] },
     });
     expect(mockUpdateMany).toHaveBeenCalledWith(
-      {
-        $or: [
-          { _id: '507f1f77bcf86cd799439021' },
-          { interactionId: '507f1f77bcf86cd799439011' },
-        ],
-      },
+      { _id: '507f1f77bcf86cd799439021' },
       {
         $set: expect.objectContaining({
           interactionId: '507f1f77bcf86cd799439011',
