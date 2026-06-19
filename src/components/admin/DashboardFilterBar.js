@@ -299,7 +299,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       {/* Pills row — outside the bordered filter box */}
       <div className="filter-bar__pills-row">
         <span className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
-        <span className={`filter-pill${isDefault ? '' : ' filter-pill--closable'}`}>
+        <span className={`filter-pill${isDefault ? ' filter-pill--info' : ' filter-pill--closable'}`}>
           {pillPartner} · {pillDate}
           {!isDefault && (
             <button

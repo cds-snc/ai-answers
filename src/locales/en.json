@@ -678,7 +678,7 @@
       "evalHarmful": "Harmful",
       "filterOptions": "Filter options",
       "advancedTitle": "Advanced filters",
-      "advancedAll": "Advanced filters: all",
+      "allFilters": "All",
       "showAdvanced": "More filters"
     },
     "publicEval": {

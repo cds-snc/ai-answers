@@ -400,8 +400,8 @@ const FilterPanel = ({
   };
 
   // Build pills from applied state.
-  // Date, institution, and user type always show once filters have been applied.
-  // Multi-select eval filters expand to one pill per selected value showing the label.
+  // Blue info pills (no ×) show the current state for always-present filters.
+  // Grey closable pills (×) show when a filter differs from its default.
   const buildPills = () => {
     if (!appliedFilters) return [];
     const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
@@ -409,59 +409,54 @@ const FilterPanel = ({
     const pills = [];
 
     if (appliedFilters.startDate && appliedFilters.endDate) {
+      const defaults = getDefaultDates();
+      const isDefaultDate =
+        appliedFilters.startDate.substring(0, 10) === defaults.startDate.substring(0, 10) &&
+        appliedFilters.endDate.substring(0, 10) === defaults.endDate.substring(0, 10);
       const s = new Date(appliedFilters.startDate).toLocaleDateString(locale, dateOpts);
       const e = new Date(appliedFilters.endDate).toLocaleDateString(locale, dateOpts);
-      pills.push({ key: 'date', label: `${s} – ${e}` });
+      pills.push({ key: 'date', label: `${s} – ${e}`, info: isDefaultDate });
     }
 
-    const deptValue = appliedFilters.department || t('admin.filters.allDepartments');
-    pills.push({ key: 'department', label: deptValue, closable: !!appliedFilters.department });
-
-    const userTypeValue = appliedFilters.userType || defaultUserType;
-    const userOpt = userTypeOptions.find(o => o.value === userTypeValue);
-    const userLabel = userOpt ? userOpt.label : userTypeValue;
-    pills.push({ key: 'userType', label: `${t('admin.filters.users')}: ${userLabel}`, closable: userTypeValue !== defaultUserType });
-
-    const advancedAllDefault =
+    const allAtDefault =
+      !appliedFilters.department &&
+      (!appliedFilters.userType || appliedFilters.userType === defaultUserType) &&
       (!appliedFilters.answerType || appliedFilters.answerType === 'all') &&
       (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') &&
       (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') &&
       !appliedFilters.urlEn &&
       !appliedFilters.urlFr;
 
-    if (advancedAllDefault) {
-      pills.push({ key: 'advancedAll', label: t('admin.filters.advancedAll'), closable: false });
+    if (allAtDefault) {
+      pills.push({ key: 'allFilters', label: t('admin.filters.allFilters'), info: true });
     } else {
+      if (appliedFilters.department) pills.push({ key: 'department', label: appliedFilters.department });
+      if (appliedFilters.userType && appliedFilters.userType !== defaultUserType) {
+        const userOpt = userTypeOptions.find(o => o.value === appliedFilters.userType);
+        pills.push({ key: 'userType', label: `${t('admin.filters.users')}: ${userOpt ? userOpt.label : appliedFilters.userType}` });
+      }
       if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
       if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
-
-      if (!appliedFilters.answerType || appliedFilters.answerType === 'all') {
-        pills.push({ key: 'answerType', label: `${t('admin.filters.answerType')}: ${t('admin.filters.allAnswerTypes')}`, closable: false });
-      } else {
+      if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
         appliedFilters.answerType.split(',').forEach(val => {
           const opt = answerTypeOptions.find(o => o.value === val);
-          pills.push({ key: 'answerType', value: val, label: `${t('admin.filters.answerType')}: ${opt ? opt.label : val}` });
+          pills.push({ key: 'answerType', value: val, label: opt ? opt.label : val });
         });
       }
-
-      if (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') {
-        pills.push({ key: 'partnerEval', label: `${t('admin.filters.partnerEval')}: ${t('admin.filters.allPartnerEvals')}`, closable: false });
-      } else {
+      if (appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all') {
         appliedFilters.partnerEval.split(',').forEach(val => {
           const opt = partnerEvalOptions.find(o => o.value === val);
           pills.push({ key: 'partnerEval', value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
         });
       }
-
-      if (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') {
-        pills.push({ key: 'aiEval', label: `${t('admin.filters.aiEval')}: ${t('admin.filters.allAiEvals')}`, closable: false });
-      } else {
+      if (appliedFilters.aiEval && appliedFilters.aiEval !== 'all') {
         appliedFilters.aiEval.split(',').forEach(val => {
           const opt = aiEvalOptions.find(o => o.value === val);
           pills.push({ key: 'aiEval', value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
         });
       }
     }
+
     return pills;
   };
 
@@ -662,10 +657,10 @@ const FilterPanel = ({
         {pills.map(pill => (
           <span
             key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
-            className={`filter-pill${pill.closable !== false ? ' filter-pill--closable' : ''}`}
+            className={`filter-pill${pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
           >
             {pill.label}
-            {pill.closable !== false && (
+            {!pill.info && (
               <button
                 type="button"
                 className="filter-pill__close"
