@@ -77,12 +77,18 @@ const FilterPanel = ({
     return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
-  // Default to last 7 days, both at midnight (00:00:00) — no time picking.
+  // End is yesterday 23:59 to match backend behaviour: the API queries
+  // createdAt up to midnight (start of today), so today always returns empty.
+  // Capping the picker at yesterday keeps the UI honest — what you select is
+  // what you get. Individual conversations from today are findable by chat ID
+  // in the Chat Viewer.
   const getDefaultDates = () => {
     const end = new Date();
-    end.setHours(0, 0, 0, 0);
-    const start = new Date(end);
+    end.setDate(end.getDate() - 1); // yesterday
+    end.setHours(23, 59, 59, 0);
+    const start = new Date();
     start.setDate(start.getDate() - 7);
+    start.setHours(0, 0, 0, 0);
     return {
       startDate: formatDateTimeLocal(start),
       endDate: formatDateTimeLocal(end)
@@ -149,6 +155,7 @@ const FilterPanel = ({
       endDate: endDateObj ? moment(endDateObj) : moment(),
       opens: 'right',
       alwaysShowCalendars: true,
+      maxDate: moment().subtract(1, 'day').endOf('day'),
       locale: {
         format: 'YYYY/MM/DD',
         separator: ' - ',
@@ -167,11 +174,10 @@ const FilterPanel = ({
         firstDay: isFrench ? 1 : 0
       },
       ranges: {
-        [isFrench ? 'Aujourd\'hui' : 'Today']: [moment().startOf('day'), moment().endOf('day')],
         [isFrench ? 'Hier' : 'Yesterday']: [moment().subtract(1, 'days').startOf('day'), moment().subtract(1, 'days').endOf('day')],
-        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(6, 'days').startOf('day'), moment()],
-        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(29, 'days').startOf('day'), moment()],
-        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().endOf('month')],
+        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(7, 'days').startOf('day'), moment().subtract(1, 'day').endOf('day')],
+        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(30, 'days').startOf('day'), moment().subtract(1, 'day').endOf('day')],
+        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().subtract(1, 'day').endOf('day')],
         [isFrench ? 'Le mois dernier' : 'Last Month']: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
       }
     };
@@ -187,7 +193,7 @@ const FilterPanel = ({
       const startDate = picker.startDate.toDate();
       const endDate = picker.endDate.toDate();
       startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 0);
       setDateRange({
         startDate: formatDateTimeLocal(startDate),
         endDate: formatDateTimeLocal(endDate)
@@ -282,7 +288,7 @@ const FilterPanel = ({
     const rawStart = picker ? picker.startDate.toDate() : parseDateTimeLocal(dateRange.startDate);
     const rawEnd = picker ? picker.endDate.toDate() : parseDateTimeLocal(dateRange.endDate);
     if (rawStart) rawStart.setHours(0, 0, 0, 0);
-    if (rawEnd) rawEnd.setHours(0, 0, 0, 0);
+    if (rawEnd) rawEnd.setHours(23, 59, 59, 0);
     const startDateStr = rawStart ? formatDateTimeLocal(rawStart) : dateRange.startDate;
     const endDateStr = rawEnd ? formatDateTimeLocal(rawEnd) : dateRange.endDate;
 
@@ -364,18 +370,12 @@ const FilterPanel = ({
     if (key === 'date') {
       const d = getDefaultDates();
       setDateRange(d);
-      if (dateRangePickerInstance.current) {
-        const s = parseDateTimeLocal(d.startDate);
-        const e = parseDateTimeLocal(d.endDate);
-        if (s && e) {
-          dateRangePickerInstance.current.setStartDate(moment(s));
-          dateRangePickerInstance.current.setEndDate(moment(e));
-        }
+      const s = parseDateTimeLocal(d.startDate);
+      const e = parseDateTimeLocal(d.endDate);
+      if (dateRangePickerInstance.current && s && e) {
+        dateRangePickerInstance.current.setStartDate(moment(s));
+        dateRangePickerInstance.current.setEndDate(moment(e));
       }
-      const s = parseDateTimeLocal(getDefaultDates().startDate);
-      const e = parseDateTimeLocal(getDefaultDates().endDate);
-      if (s) s.setHours(0, 0, 0, 0);
-      if (e) e.setHours(0, 0, 0, 0);
       next.startDate = s ? s.toISOString() : undefined;
       next.endDate = e ? e.toISOString() : undefined;
     } else if (key === 'department') { setDepartment(''); next.department = ''; }

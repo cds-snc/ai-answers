@@ -3,7 +3,16 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
-const todayStr = () => toISODate(new Date());
+
+// End dates use yesterday to match backend behaviour: the API queries createdAt
+// up to midnight (start of today), so today always returns empty. Capping the
+// picker at yesterday keeps the UI honest — what you select is what you get.
+// Individual conversations from today are findable by chat ID in the Chat Viewer.
+const yesterdayStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toISODate(d);
+};
 
 // Absolute floor — no data exists before this date. Used as the fallback
 // min for custom inputs before the real first-data date loads from the DB.
@@ -20,14 +29,17 @@ const getCurrentFiscalQuarter = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1; // 1-12
-  if (month >= 4 && month <= 6)  return { startDate: `${year}-04-01`, endDate: `${year}-06-30` };
-  if (month >= 7 && month <= 9)  return { startDate: `${year}-07-01`, endDate: `${year}-09-30` };
-  if (month >= 10 && month <= 12) return { startDate: `${year}-10-01`, endDate: `${year}-12-31` };
-  return { startDate: `${year}-01-01`, endDate: `${year}-03-31` }; // Q4
+  const end = yesterdayStr();
+  // Cap quarter end at yesterday — mid-quarter selections show complete days only.
+  const cap = (quarterEnd) => quarterEnd < end ? quarterEnd : end;
+  if (month >= 4 && month <= 6)  return { startDate: `${year}-04-01`, endDate: cap(`${year}-06-30`) };
+  if (month >= 7 && month <= 9)  return { startDate: `${year}-07-01`, endDate: cap(`${year}-09-30`) };
+  if (month >= 10 && month <= 12) return { startDate: `${year}-10-01`, endDate: cap(`${year}-12-31`) };
+  return { startDate: `${year}-01-01`, endDate: cap(`${year}-03-31`) }; // Q4
 };
 
 const getDateRange = (preset, customStart, customEnd, allTimeStart) => {
-  const endDate = todayStr();
+  const endDate = yesterdayStr();
   if (preset === 'last30') {
     const d = new Date();
     d.setDate(d.getDate() - 30);
@@ -57,7 +69,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   const [datePreset, setDatePreset] = useState('allTime');
   const [showCustom, setShowCustom] = useState(false);
   const [customStart, setCustomStart] = useState(DATA_START_DATE);
-  const [customEnd, setCustomEnd] = useState(todayStr);
+  const [customEnd, setCustomEnd] = useState(yesterdayStr);
 
   // Applied state — drives the pill display
   const [appliedDept, setAppliedDept] = useState('');
@@ -107,7 +119,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     if (!minDate || minDate === DATA_START_DATE) return;
     if (appliedPresetRef.current !== 'allTime' || didSnapAllTime.current) return;
     didSnapAllTime.current = true;
-    onApplyRef.current({ startDate: minDate, endDate: todayStr(), department: appliedDeptRef.current });
+    onApplyRef.current({ startDate: minDate, endDate: yesterdayStr(), department: appliedDeptRef.current });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minDate]);
 
@@ -184,7 +196,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     // so the snap effect must not re-fire when loading completes.
     didSnapAllTime.current = true;
     const allTimeStart = minDate || DATA_START_DATE;
-    onApplyRef.current({ startDate: allTimeStart, endDate: todayStr(), department: '' });
+    onApplyRef.current({ startDate: allTimeStart, endDate: yesterdayStr(), department: '' });
   };
 
   const isDefault = appliedDept === '' && appliedPreset === 'allTime';
@@ -263,7 +275,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
               className="filter-bar__input"
               value={customStart}
               min={minDate}
-              max={customEnd || todayStr()}
+              max={customEnd || yesterdayStr()}
               onChange={e => setCustomStart(e.target.value)}
               disabled={loading}
             />
@@ -278,7 +290,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
               className="filter-bar__input"
               value={customEnd}
               min={customStart || minDate}
-              max={todayStr()}
+              max={yesterdayStr()}
               onChange={e => setCustomEnd(e.target.value)}
               disabled={loading}
             />
