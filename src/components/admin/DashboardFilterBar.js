@@ -45,17 +45,17 @@ const getDateRange = (preset, customStart, customEnd, allTimeStart) => {
     d.setDate(d.getDate() - 30);
     return { startDate: toISODate(d), endDate };
   }
-  if (preset === 'lastQuarter') return getCurrentFiscalQuarter();
+  if (preset === 'currentQuarter') return getCurrentFiscalQuarter();
   // "All time" will become a "last year" toggle once sufficient historical data exists.
   if (preset === 'allTime') return { startDate: allTimeStart || DATA_START_DATE, endDate };
   if (preset === 'custom') return { startDate: customStart || DATA_START_DATE, endDate: customEnd || endDate };
   return { startDate: DATA_START_DATE, endDate };
 };
 
-const PRESETS = ['last30', 'lastQuarter', 'allTime', 'custom'];
+const PRESETS = ['last30', 'currentQuarter', 'allTime', 'custom'];
 
 // Filter bar for the exec dashboard.
-// Presets: Last 30 days | Last quarter | All time (default) | Custom.
+// Presets: Last 30 days | Current quarter | All time (default) | Custom. As more data and time passes, update to Last quarter, last year, etc.
 // Non-custom presets and department changes auto-apply immediately.
 // Custom requires the user to set dates and click Apply in the expanded row.
 // Clicking the active Custom button collapses the row without applying.
