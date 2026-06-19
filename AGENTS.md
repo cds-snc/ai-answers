@@ -37,6 +37,7 @@ dashboards — not just prompt-adjacent areas.
 8. **Test-first for non-trivial logic.** Write the test that defines success, implement until it passes, then show both.
 9. **Run existing tests after changes.** After modifying code, run the relevant test suite (`npm test` or the specific test file) to catch regressions before considering the task done.
 10. **Check for downstream impact.** After changing a shared function, utility, or service, trace its callers to verify the change doesn't break other consumers. Don't assume the only usage is the one you're fixing.
+11. **Prefer fail-fast contracts.** Avoid permissive input handling that guesses between multiple runtime shapes. If a function needs different input forms, make the contract explicit with separate methods, clear types, or strict runtime validation, and fail loudly when the wrong shape arrives.
 
 ## Documentation Regeneration
 

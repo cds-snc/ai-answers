@@ -7,6 +7,7 @@ import { Embedding } from '../../models/embedding.js';
 import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
 import { requireString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
+import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
 
 async function feedbackPersistExpertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -36,6 +37,8 @@ async function feedbackPersistExpertHandler(req, res) {
     }
     existingInteraction.expertFeedback = expertFeedbackDoc._id;
     await expertFeedbackDoc.save();
+    await existingInteraction.save();
+    await EmbeddingMetadataService.syncForInteraction(existingInteraction, expertFeedbackDoc);
     // Add embedding to VectorService
     const embedding = await Embedding.findOne({ interactionId: existingInteraction._id });
     if (embedding && embedding.questionsAnswerEmbedding && embedding.answerEmbedding) {
@@ -48,7 +51,6 @@ async function feedbackPersistExpertHandler(req, res) {
         sentenceEmbeddings: Array.isArray(sentenceDocs) ? sentenceDocs.map(d => d.embedding) : []
       });
     }
-    await existingInteraction.save();
     res.status(200).json({ message: 'Expert feedback logged successfully' });
   } catch (error) {
     console.error('Error saving expert feedback:', error);
