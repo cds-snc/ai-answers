@@ -168,6 +168,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     setAppliedPreset('custom');
     setAppliedCustomStart(startDate);
     setAppliedCustomEnd(endDate);
+    setShowCustom(false);
     onApplyRef.current({ startDate, endDate, department });
   };
 
