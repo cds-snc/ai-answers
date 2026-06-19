@@ -8,19 +8,17 @@ ogImage: "og-about-en.png"
 
 ## Overview
 
-Canada.ca AI Answers is a specialized AI chat agent designed to help users of Government of Canada websites. Everyday, thousands of people tell us via the Page Feedback Tool that they aren't finding the answers they need on Canada.ca. This custom AI service can provide brief answers to user questions from the entire online ecosystem of federal government services, programs, and websites.
+Canada.ca AI Answers is a specialized AI chat platform designed to help users of Government of Canada websites. This custom AI service can provide brief answers to user questions from the entire online ecosystem of federal government services, programs, and websites.
 
-The AI Answers service began as an experiment in late 2024 by the Canada.ca Experience Office (CEO). Later, in invited trials on selected Canada.ca pages in summer and fall 2025, the service sourced content across 60+ federal institutions to answer over 4,600 questions. The accuracy rate of 94.5% was scored by experts from across government.  
+The AI Answers service began as an experiment in late 2024 by the Canada.ca Experience Office and the Canadian Digital Service. Later, in trials on selected Canada.ca pages in 2025, the service sourced content across 60+ federal institutions to answer thousands of questions.   
 
-Beta-testing in collaboration with partner organizations began in November 2025 and continues towards an expanded rollout in 2026. 
-
-Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation, metrics, user management, and settings. The innovative evaluation system leverages subject-matter expert(SME) evaluations of questions and answers.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
+Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation of answers by subject-matter experts from partnering institutions.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
 
 ## Accessibility and usability
 
 Users can be overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.
 
-These design choices are based on evidence from over 50 usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.
+These design choices are based on evidence from usability tests conducted in English and French during the AI Answers design process, including testing with blind persons using a range of screen readers.
 
 The service meets WCAG 2.1 AA accessibility standards for web content accessibility.
 
@@ -43,7 +41,7 @@ This AI system relies on information provided on Government of Canada websites. 
 Your use of this system and any information generated is also subject to the [Canada.ca Terms and conditions](https://www.canada.ca/en/transparency/terms.html).
 
 ## AI Answers Blog posts
-- [AI Answers: Enterprise-scale trial for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
+- [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
 
 ## System Card documentation

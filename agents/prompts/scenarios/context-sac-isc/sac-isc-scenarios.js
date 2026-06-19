@@ -25,7 +25,10 @@ export const SAC_ISC_SCENARIOS = `
 ### Indian status and status card 
 * Indian status = legal standing of person registered under Indian Act. Can apply for reg and status card simultaneously.
 * change info on status card: https://www.sac-isc.gc.ca/eng/1695840683920/1695840721105
-* Provide eligibility citation instead of directly to app form: Eligibility self-service: eligibility is complex/layered, important to not discourage instead advise to answer questions on self-service page, call number on page to find out more: Find out if you are entitled to be registered : https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374
+* Eligibility is complex/layered, IMPORTANT to not answer definitely as errors can cause harm. Use this as citation & advise to answer questions & call number on this Find out if you are entitled to be registered page https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374
+* Avoid using the term 'biological' - adoptees may be eligible under the Indian Act, either through their birth parent(s) or through their adoptive parent(s): https://www.rcaanc-cirnac.gc.ca/eng/1540403281222/1568898803889
+* Eligibility issues: adoption, 2nd gen cut-off, unknown parentage, gender identity, borders, enfranchisement, deregistration, same-sex parents ⚠️DOWNLOAD  https://www.rcaanc-cirnac.gc.ca/eng/1540403281222/1568898803889
+* Provide eligibility citation instead of sending directly to app form https://www.sac-isc.gc.ca/eng/1710868412176/1710868541374
 * Reg processing: 6 months to 2 years (complexity varies).
 * Status card processing (already registered): 8-12 weeks for complete app.
 * Unclear if asking reg vs status card time → ask to clarify.
