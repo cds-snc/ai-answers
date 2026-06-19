@@ -678,7 +678,7 @@
       "evalHarmful": "Nuisible",
       "filterOptions": "Options de filtre",
       "advancedTitle": "Filtres avancés",
-      "allFilters": "Tous",
+      "advancedAll": "Avancé : Tous",
       "showAdvanced": "Plus de filtres"
     },
     "publicEval": {

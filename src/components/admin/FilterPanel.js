@@ -418,23 +418,31 @@ const FilterPanel = ({
       pills.push({ key: 'date', label: `${s} – ${e}`, info: isDefaultDate });
     }
 
-    const allAtDefault =
-      !appliedFilters.department &&
-      (!appliedFilters.userType || appliedFilters.userType === defaultUserType) &&
+    const deptIsDefault = !appliedFilters.department;
+    pills.push({
+      key: 'department',
+      label: deptIsDefault ? t('admin.filters.allDepartments') : appliedFilters.department,
+      info: deptIsDefault,
+    });
+
+    const userIsDefault = !appliedFilters.userType || appliedFilters.userType === defaultUserType;
+    if (userIsDefault) {
+      pills.push({ key: 'usersAll', label: `${t('admin.filters.users')}: ${t('admin.filters.allUsers')}`, info: true });
+    } else {
+      const userOpt = userTypeOptions.find(o => o.value === appliedFilters.userType);
+      pills.push({ key: 'userType', label: userOpt ? userOpt.label : appliedFilters.userType });
+    }
+
+    const advancedDefault =
       (!appliedFilters.answerType || appliedFilters.answerType === 'all') &&
       (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') &&
       (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') &&
       !appliedFilters.urlEn &&
       !appliedFilters.urlFr;
 
-    if (allAtDefault) {
-      pills.push({ key: 'allFilters', label: t('admin.filters.allFilters'), info: true });
+    if (advancedDefault) {
+      pills.push({ key: 'advancedAll', label: t('admin.filters.advancedAll'), info: true });
     } else {
-      if (appliedFilters.department) pills.push({ key: 'department', label: appliedFilters.department });
-      if (appliedFilters.userType && appliedFilters.userType !== defaultUserType) {
-        const userOpt = userTypeOptions.find(o => o.value === appliedFilters.userType);
-        pills.push({ key: 'userType', label: `${t('admin.filters.users')}: ${userOpt ? userOpt.label : appliedFilters.userType}` });
-      }
       if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
       if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
       if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
@@ -672,13 +680,15 @@ const FilterPanel = ({
             )}
           </span>
         ))}
-        <button
-          type="button"
-          className="filter-pills__clear-all"
-          onClick={handleClear}
-        >
-          {t('admin.filters.clearAll')}
-        </button>
+        {pills.some(p => !p.info) && (
+          <button
+            type="button"
+            className="filter-pills__clear-all"
+            onClick={handleClear}
+          >
+            {t('admin.filters.clearAll')}
+          </button>
+        )}
       </div>
     )}
     </div>
