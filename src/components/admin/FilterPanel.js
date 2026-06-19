@@ -333,7 +333,7 @@ const FilterPanel = ({
       department: '',
       urlEn: '',
       urlFr: '',
-      userType: 'all',
+      userType: defaultUserType,
       answerType: 'all',
       partnerEval: 'all',
       aiEval: 'all'
@@ -342,8 +342,9 @@ const FilterPanel = ({
     setAppliedFilters(null);
     if (autoApply) {
       onApplyFilters(defaultFilters);
+    } else {
+      onClearFilters(defaultFilters);
     }
-    onClearFilters(defaultFilters);
   };
 
   // Remove a single filter pill. For multi-select filters, `value` is the specific
@@ -411,25 +412,25 @@ const FilterPanel = ({
     const isAllUsers = !appliedFilters.userType || appliedFilters.userType === 'all';
     pills.push({ key: 'userType', label: isAllUsers ? `${t('admin.filters.users')}: ${userLabel}` : userLabel });
 
-    if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `URL EN: ${appliedFilters.urlEn}` });
-    if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `URL FR: ${appliedFilters.urlFr}` });
+    if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
+    if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
 
     if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
       appliedFilters.answerType.split(',').forEach(val => {
         const opt = answerTypeOptions.find(o => o.value === val);
-        pills.push({ key: 'answerType', value: val, label: `${t('admin.filters.answerType')}: ${opt ? opt.label : val}` });
+        pills.push({ key: `answerType-${val}`, value: val, label: `${t('admin.filters.answerType')}: ${opt ? opt.label : val}` });
       });
     }
     if (appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all') {
       appliedFilters.partnerEval.split(',').forEach(val => {
         const opt = partnerEvalOptions.find(o => o.value === val);
-        pills.push({ key: 'partnerEval', value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
+        pills.push({ key: `partnerEval-${val}`, value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
       });
     }
     if (appliedFilters.aiEval && appliedFilters.aiEval !== 'all') {
       appliedFilters.aiEval.split(',').forEach(val => {
         const opt = aiEvalOptions.find(o => o.value === val);
-        pills.push({ key: 'aiEval', value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
+        pills.push({ key: `aiEval-${val}`, value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
       });
     }
     return pills;

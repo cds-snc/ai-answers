@@ -139,15 +139,24 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     }
     setShowCustom(false);
     setDatePreset(preset);
-    // Reset the all-time snap guard so it can fire again if the user switches
-    // away and comes back to All time.
-    if (preset === 'allTime') didSnapAllTime.current = false;
+    // Only reset the snap guard when minDate hasn't arrived yet. Once it's known,
+    // fireApply already uses the correct value — resetting here would cause the
+    // snap effect to fire a redundant second fetch when loading completes.
+    if (preset === 'allTime' && (!minDate || minDate === DATA_START_DATE)) {
+      didSnapAllTime.current = false;
+    }
     fireApply(preset, department);
   };
 
   const handleDeptChange = (newDept) => {
     setDepartment(newDept);
-    if (datePreset !== 'custom') {
+    if (datePreset === 'custom') {
+      // Close the custom panel and apply with the last confirmed preset so the
+      // dept change takes effect immediately (consistent with non-custom behaviour).
+      setShowCustom(false);
+      setDatePreset(appliedPreset);
+      fireApply(appliedPreset, newDept);
+    } else {
       fireApply(datePreset, newDept);
     }
   };
@@ -170,7 +179,9 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     setAppliedPreset('allTime');
     setAppliedCustomStart('');
     setAppliedCustomEnd('');
-    didSnapAllTime.current = false;
+    // We're applying the correct all-time range right here using the known minDate,
+    // so the snap effect must not re-fire when loading completes.
+    didSnapAllTime.current = true;
     const allTimeStart = minDate || DATA_START_DATE;
     onApplyRef.current({ startDate: allTimeStart, endDate: todayStr(), department: '' });
   };
