@@ -27,10 +27,18 @@ const FilterPanel = ({
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  // Set to true by handleClear so the auto-close effect doesn't immediately
+  // re-close the panel after the clear re-fetch completes.
+  const skipNextAutoClose = useRef(false);
 
-  // Collapse when results load successfully; keep open on error or no results
+  // Collapse when results load successfully; keep open on error or no results.
+  // Skipped once after a Clear so the panel stays open for the user to re-filter.
   useEffect(() => {
     if (!hasAppliedFilters || filterLoading) return;
+    if (skipNextAutoClose.current) {
+      skipNextAutoClose.current = false;
+      return;
+    }
     if (filterError || filterResultCount === 0) {
       setIsOpen(true);
     } else if (filterResultCount > 0) {
@@ -340,6 +348,8 @@ const FilterPanel = ({
     };
 
     setAppliedFilters(null);
+    setIsOpen(true);
+    skipNextAutoClose.current = true;
     if (autoApply) {
       onApplyFilters(defaultFilters);
     } else {
@@ -405,33 +415,52 @@ const FilterPanel = ({
     }
 
     const deptValue = appliedFilters.department || t('admin.filters.allDepartments');
-    pills.push({ key: 'department', label: deptValue });
+    pills.push({ key: 'department', label: deptValue, closable: !!appliedFilters.department });
 
-    const userOpt = userTypeOptions.find(o => o.value === (appliedFilters.userType || 'all'));
-    const userLabel = userOpt ? userOpt.label : appliedFilters.userType;
-    const isAllUsers = !appliedFilters.userType || appliedFilters.userType === 'all';
-    pills.push({ key: 'userType', label: isAllUsers ? `${t('admin.filters.users')}: ${userLabel}` : userLabel });
+    const userTypeValue = appliedFilters.userType || defaultUserType;
+    const userOpt = userTypeOptions.find(o => o.value === userTypeValue);
+    const userLabel = userOpt ? userOpt.label : userTypeValue;
+    pills.push({ key: 'userType', label: `${t('admin.filters.users')}: ${userLabel}`, closable: userTypeValue !== defaultUserType });
 
-    if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
-    if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
+    const advancedAllDefault =
+      (!appliedFilters.answerType || appliedFilters.answerType === 'all') &&
+      (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') &&
+      (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') &&
+      !appliedFilters.urlEn &&
+      !appliedFilters.urlFr;
 
-    if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
-      appliedFilters.answerType.split(',').forEach(val => {
-        const opt = answerTypeOptions.find(o => o.value === val);
-        pills.push({ key: `answerType-${val}`, value: val, label: `${t('admin.filters.answerType')}: ${opt ? opt.label : val}` });
-      });
-    }
-    if (appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all') {
-      appliedFilters.partnerEval.split(',').forEach(val => {
-        const opt = partnerEvalOptions.find(o => o.value === val);
-        pills.push({ key: `partnerEval-${val}`, value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
-      });
-    }
-    if (appliedFilters.aiEval && appliedFilters.aiEval !== 'all') {
-      appliedFilters.aiEval.split(',').forEach(val => {
-        const opt = aiEvalOptions.find(o => o.value === val);
-        pills.push({ key: `aiEval-${val}`, value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
-      });
+    if (advancedAllDefault) {
+      pills.push({ key: 'advancedAll', label: t('admin.filters.advancedAll'), closable: false });
+    } else {
+      if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
+      if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
+
+      if (!appliedFilters.answerType || appliedFilters.answerType === 'all') {
+        pills.push({ key: 'answerType', label: `${t('admin.filters.answerType')}: ${t('admin.filters.allAnswerTypes')}`, closable: false });
+      } else {
+        appliedFilters.answerType.split(',').forEach(val => {
+          const opt = answerTypeOptions.find(o => o.value === val);
+          pills.push({ key: 'answerType', value: val, label: `${t('admin.filters.answerType')}: ${opt ? opt.label : val}` });
+        });
+      }
+
+      if (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') {
+        pills.push({ key: 'partnerEval', label: `${t('admin.filters.partnerEval')}: ${t('admin.filters.allPartnerEvals')}`, closable: false });
+      } else {
+        appliedFilters.partnerEval.split(',').forEach(val => {
+          const opt = partnerEvalOptions.find(o => o.value === val);
+          pills.push({ key: 'partnerEval', value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
+        });
+      }
+
+      if (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') {
+        pills.push({ key: 'aiEval', label: `${t('admin.filters.aiEval')}: ${t('admin.filters.allAiEvals')}`, closable: false });
+      } else {
+        appliedFilters.aiEval.split(',').forEach(val => {
+          const opt = aiEvalOptions.find(o => o.value === val);
+          pills.push({ key: 'aiEval', value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
+        });
+      }
     }
     return pills;
   };
@@ -631,16 +660,21 @@ const FilterPanel = ({
     {pills.length > 0 && (
       <div className="filter-bar__pills-row">
         {pills.map(pill => (
-          <span key={pill.key} className="filter-pill filter-pill--closable">
+          <span
+            key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
+            className={`filter-pill${pill.closable !== false ? ' filter-pill--closable' : ''}`}
+          >
             {pill.label}
-            <button
-              type="button"
-              className="filter-pill__close"
-              onClick={() => removeFilter(pill.key, pill.value)}
-              aria-label={t('dashboardFilter.removeFilter')}
-            >
-              ×
-            </button>
+            {pill.closable !== false && (
+              <button
+                type="button"
+                className="filter-pill__close"
+                onClick={() => removeFilter(pill.key, pill.value)}
+                aria-label={t('dashboardFilter.removeFilter')}
+              >
+                ×
+              </button>
+            )}
           </span>
         ))}
         <button
