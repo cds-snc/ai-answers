@@ -67,4 +67,26 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     expect(pipelineIncludes('hasDownload')).toBe(true);
     expect(pipelineIncludes('firstToolId')).toBe(true);
   });
+
+  it('calls aggregate exactly once, not twice', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(1);
+  });
+
+  it('includes $setWindowFields with totalCount in the pipeline', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(pipelineIncludes('$setWindowFields')).toBe(true);
+    expect(pipelineIncludes('totalCount')).toBe(true);
+  });
+
+  it('passes totalCount from the result through to the response', async () => {
+    InteractionModel.Interaction.aggregate = vi.fn().mockImplementationOnce((pipeline) => {
+      capturedPipeline = pipeline;
+      return { allowDiskUse: () => Promise.resolve([{ totalCount: 42 }]) };
+    });
+    const req = { method: 'GET', query: { startDate: new Date().toISOString(), endDate: new Date().toISOString() } };
+    const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
+    await handler(req, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ totalCount: 42 }));
+  });
 });
