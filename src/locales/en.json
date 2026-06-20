@@ -646,7 +646,6 @@
     "filters": {
       "title": "Filters",
       "clearAll": "Clear all",
-      "filtersLabel": "Filters:",
       "apply": "Apply",
       "loading": "Loading...",
       "dateRange": "Date range (24-hour)",
@@ -676,7 +675,6 @@
       "evalHasError": "Error",
       "evalHasCitationError": "Citation error",
       "evalHarmful": "Harmful",
-      "filterOptions": "Filter options",
       "advancedTitle": "Advanced filters",
       "advancedAll": "Advanced: All",
       "showAdvanced": "More filters"

@@ -646,7 +646,6 @@
     "filters": {
       "title": "Filtres",
       "clearAll": "Tout effacer",
-      "filtersLabel": "Filtres :",
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
@@ -676,7 +675,6 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
-      "filterOptions": "Options de filtre",
       "advancedTitle": "Filtres avancés",
       "advancedAll": "Avancé : Tous",
       "showAdvanced": "Plus de filtres"
