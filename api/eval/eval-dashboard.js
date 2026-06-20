@@ -1,8 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
-import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import mongoose from 'mongoose';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
@@ -434,7 +432,9 @@ async function evalDashboardHandler(req, res) {
       if (andClauses.length) pipeline.push({ $match: { $and: andClauses } });
     }
 
-    // Stamp each document with the filtered total before paging — avoids a second aggregation pass
+    // Stamp each document with the filtered total before paging — avoids a second aggregation pass.
+    // filterPipelineLength marks the boundary so we can count without sort/skip/limit if needed.
+    const filterPipelineLength = pipeline.length;
     pipeline.push({
       $setWindowFields: {
         output: { totalCount: { $count: {} } }
@@ -467,7 +467,15 @@ async function evalDashboardHandler(req, res) {
     }
 
     const results = await Interaction.aggregate(pipeline).allowDiskUse(true);
-    const totalCount = results[0]?.totalCount ?? 0;
+    let totalCount = results[0]?.totalCount ?? 0;
+
+    // Edge case: a stale client sent start >= totalCount so $skip exhausted all results.
+    // Fall back to a lightweight count on the filter-only stages (no sort/skip/limit).
+    if (totalCount === 0 && isDataTablesMode && start > 0) {
+      const countPipeline = pipeline.slice(0, filterPipelineLength).concat([{ $count: 'totalCount' }]);
+      const countResult = await Interaction.aggregate(countPipeline).allowDiskUse(true);
+      totalCount = countResult[0]?.totalCount ?? 0;
+    }
 
     const rows = results.map((r) => ({
       _id: r._id ? String(r._id) : '',

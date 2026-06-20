@@ -89,4 +89,22 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     await handler(req, res);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ totalCount: 42 }));
   });
+
+  it('returns correct totalCount when $skip exhausts all results (stale client)', async () => {
+    // First call: $skip removed all docs so results is empty
+    // Second call: fallback count pipeline returns the real total
+    InteractionModel.Interaction.aggregate = vi.fn()
+      .mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }))
+      .mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([{ totalCount: 400 }]) }));
+    const req = { method: 'GET', query: {
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      start: '400',
+      length: '100'
+    }};
+    const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
+    await handler(req, res);
+    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(2);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ recordsTotal: 400 }));
+  });
 });
