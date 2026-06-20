@@ -82,9 +82,22 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
 | Component | Used by | Notes |
 |-----------|---------|-------|
 | `FilterPanel.js` | **Partner** | Full filter (date-range picker, dept, userType, advanced: answerType/partnerEval/aiEval/url). Pass `autoApply` to load on mount; `defaultUserType="all"`. Also used by `MetricsDashboard`. |
-| `DashboardFilterBar.js` | **Exec** | Minimal (dept + two date inputs). Auto-fires `onApply` on mount (last 12 months). No userType selector — ExecDashboard fixes `userType: 'public'` on every fetch (see below). |
+| `DashboardFilterBar.js` | **Exec** | Preset bar (Last 30 days / Current quarter / All time / Custom). Auto-fires `onApply` on mount. No userType selector — ExecDashboard fixes `userType: 'public'` on every fetch (see below). |
 
-`FilterPanel` owns its own default range (last 7 days). The minimal bar uses the last 12 months.
+`FilterPanel` owns its own default range (last 7 days). End dates cap at yesterday (23:59:59) to match the backend, which queries `createdAt` up to midnight — today's data is never returned.
+
+### DashboardFilterBar — "All data" preset and load-on-mount
+
+**"All data" is a temporary preset** that spans from the first date with real data in the DB (`metrics.firstDataDate`, passed as `minDate`) to yesterday. Once a full year of data exists, replace it with a "Last year" preset (or add it alongside "Current quarter"). To do this: add a `'lastYear'` case to `getDateRange`, update `PRESETS`, and add locale keys for `dashboardFilter.lastYear` in both EN and FR.
+
+**Auto-loads on mount.** `DashboardFilterBar` fires `onInitialLoad` (or `onApply`) once on mount with the "All data" range. This is intentional while data is small, but as volume grows the default fetch may become slow. If that happens, drop `onInitialLoad` from `ExecDashboard` — the bar will then wait for an explicit Apply click before fetching. The comment in `DashboardFilterBar.js` marks this known trade-off.
+
+### FilterPanel auto-close behaviour
+
+`FilterPanel` auto-closes after a successful fetch (results > 0) and stays open on error or zero results. This is controlled by `skipNextAutoClose` (a ref):
+
+- **`handleClear`** sets `skipNextAutoClose.current = true` before calling `onApplyFilters` / `onClearFilters`. It also calls `setIsOpen(true)` directly — without the skip, the auto-close effect would immediately fight that and close the panel again.
+- **`removeFilter`** (pill × button) does **not** set `skipNextAutoClose`. This is intentional: removing a pill is semantically the same as re-applying filters, so if results come back the panel should auto-close normally. If the panel was open because of zero results and removing the pill brings results back, closing is the correct outcome.
 
 **Exec dashboard is public-only.** `ExecDashboard` wraps every metrics fetch
 (`fetchExecMetrics`) to inject `userType: 'public'`, so it reports public usage

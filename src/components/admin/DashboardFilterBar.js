@@ -23,7 +23,7 @@ const DATA_START_DATE = '2025-10-01';
 //   Q2: July 1 – September 30
 //   Q3: October 1 – December 31
 //   Q4: January 1 – March 31
-// "Last quarter" returns the current fiscal quarter (date-aware).
+// "Current quarter" returns the ongoing fiscal quarter (date-aware).
 // Future enhancement: let the user pick individual quarters via a Q1/Q2/Q3/Q4 toggle.
 const getCurrentFiscalQuarter = () => {
   const now = new Date();
