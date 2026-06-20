@@ -20,7 +20,7 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     InteractionModel.Interaction.aggregate = vi.fn().mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
       return { allowDiskUse: () => Promise.resolve([]) };
-    }).mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+    });
     const mod = await import('../api/eval/eval-dashboard.js');
     handler = mod && (mod.default || mod);
   });

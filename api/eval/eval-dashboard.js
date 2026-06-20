@@ -434,6 +434,13 @@ async function evalDashboardHandler(req, res) {
       if (andClauses.length) pipeline.push({ $match: { $and: andClauses } });
     }
 
+    // Stamp each document with the filtered total before paging — avoids a second aggregation pass
+    pipeline.push({
+      $setWindowFields: {
+        output: { totalCount: { $count: {} } }
+      }
+    });
+
     // Sorting
     const sortFieldMap = {
       createdAt: 'createdAt',
@@ -460,19 +467,7 @@ async function evalDashboardHandler(req, res) {
     }
 
     const results = await Interaction.aggregate(pipeline).allowDiskUse(true);
-
-    // For records count, use a copy of pipeline up to project then count
-    const countPipeline = pipeline.slice(0, Math.max(0, pipeline.findIndex(s => s.$sort !== undefined))).filter(Boolean);
-    // if pipeline had skip/limit, remove them for counting
-    const filteredCountPipeline = [];
-    for (const stage of countPipeline) {
-      if (stage.$skip || stage.$limit || stage.$sort) continue;
-      filteredCountPipeline.push(stage);
-    }
-    // Append count
-    filteredCountPipeline.push({ $count: 'totalCount' });
-    const countResult = filteredCountPipeline.length ? await Interaction.aggregate(filteredCountPipeline).allowDiskUse(true) : [];
-    const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
+    const totalCount = results[0]?.totalCount ?? 0;
 
     const rows = results.map((r) => ({
       _id: r._id ? String(r._id) : '',
