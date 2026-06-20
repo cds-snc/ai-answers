@@ -37,6 +37,16 @@ import ConnectivityPage from './pages/ConnectivityPage.js';
 import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
 import { translateSlug } from './utils/routes.js';
+import { useAuth } from './contexts/AuthContext.js';
+import LocalNav from './components/nav/LocalNav.js';
+import LocalNavMega from './components/nav/LocalNavMega.js';
+import NavVariantPreview from './components/nav/NavVariantPreview.js';
+import NavDemoHeader from './components/nav/NavDemoHeader.js';
+import NavDemo1Page from './pages/NavDemo1Page.js';
+import NavDemo1bPage from './pages/NavDemo1bPage.js';
+import NavDemo2Page from './pages/NavDemo2Page.js';
+import NavDemo3Page from './pages/NavDemo3Page.js';
+import NavDemo4Page from './pages/NavDemo4Page.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -183,6 +193,7 @@ const AppLayout = () => {
 
   const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
   const { t } = useTranslations(currentLang);
+  const { currentUser } = useAuth();
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
 
@@ -311,9 +322,21 @@ const AppLayout = () => {
     }
   }, [currentLang, location.pathname]);
 
+  // Nav demo routes: designs 2 & 3 use GcdsTopNav in the layout instead of LocalNav in the header
+  const pathname = location.pathname;
+  const demoTopNavVariant =
+    (pathname === '/en/nav-demo-2' || pathname === '/fr/demo-nav-2') ? 'partner' :
+    (pathname === '/en/nav-demo-3' || pathname === '/fr/demo-nav-3') ? 'partner-admin' :
+    (pathname === '/en/nav-demo-4' || pathname === '/fr/demo-nav-4') ? 'partner-admin-search' :
+    null;
+  const demoShowSearch = demoTopNavVariant === 'partner-admin-search';
+  const demoVariant = demoShowSearch ? 'partner-admin' : demoTopNavVariant;
+  const isNavDemo1 = pathname === '/en/nav-demo-1' || pathname === '/fr/demo-nav-1';
+  const isNavDemo1b = pathname === '/en/nav-demo-1b' || pathname === '/fr/demo-nav-1b';
+
   return (
     <>
-      {!is404 && (
+      {!is404 && !demoShowSearch && (
         <section className="alpha-top">
           <div className="container">
             <small>
@@ -323,20 +346,39 @@ const AppLayout = () => {
           </div>
         </section>
       )}
-      <GcdsHeader
-        lang={currentLang}
-        langHref={alternateLangHref}
-        skipToHref="#main-content"
-      >
-        <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Show AI Answers breadcrumb on About and 404 pages */}
-          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
-            <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
-              {t('notFound.breadcrumb')}
-            </GcdsBreadcrumbsItem>
-          )}
-        </GcdsBreadcrumbs>
-      </GcdsHeader>
+      {/* Demo pages 2 & 3: custom header with owned brand band slots */}
+      {demoTopNavVariant ? (
+        <NavDemoHeader
+          lang={currentLang}
+          langHref={alternateLangHref}
+          variant={demoVariant}
+          demoEmail={demoVariant === 'partner' ? 'partner@partner.com' : demoVariant === 'partner-admin' ? 'First Last' : undefined}
+          showSearch={demoShowSearch}
+        />
+      ) : (
+        <div className={`nav-demo-header-wrap${isNavDemo1 ? ' nav-demo-1-wrap' : ''}${isNavDemo1b ? ' nav-demo-1b-wrap' : ''}`}>
+          <GcdsHeader
+            lang={currentLang}
+            langHref={alternateLangHref}
+            skipToHref="#main-content"
+          >
+            {/* Design 1 / 1b: dropdown nav in the dark-blue menu band */}
+            {currentUser && (
+              <div slot="menu" className="local-nav-header-slot">
+                {isNavDemo1b ? <LocalNavMega lang={currentLang} /> : <LocalNav lang={currentLang} />}
+              </div>
+            )}
+            <GcdsBreadcrumbs slot="breadcrumb">
+              {/* Show AI Answers breadcrumb on About and 404 pages */}
+              {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
+                <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
+                  {t('notFound.breadcrumb')}
+                </GcdsBreadcrumbsItem>
+              )}
+            </GcdsBreadcrumbs>
+          </GcdsHeader>
+        </div>
+      )}
       <main id="main-content">
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
@@ -422,7 +464,17 @@ export default function App() {
       { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
       { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'] },
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/nav-demo-1', element: <NavDemo1Page lang="en" />, roles: ['admin'] },
+      { path: '/fr/demo-nav-1', element: <NavDemo1Page lang="fr" />, roles: ['admin'] },
+      { path: '/en/nav-demo-1b', element: <NavDemo1bPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/demo-nav-1b', element: <NavDemo1bPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/nav-demo-2', element: <NavDemo2Page lang="en" />, roles: ['admin'] },
+      { path: '/fr/demo-nav-2', element: <NavDemo2Page lang="fr" />, roles: ['admin'] },
+      { path: '/en/nav-demo-3', element: <NavDemo3Page lang="en" />, roles: ['admin'] },
+      { path: '/fr/demo-nav-3', element: <NavDemo3Page lang="fr" />, roles: ['admin'] },
+      { path: '/en/nav-demo-4', element: <NavDemo4Page lang="en" />, roles: ['admin'] },
+      { path: '/fr/demo-nav-4', element: <NavDemo4Page lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

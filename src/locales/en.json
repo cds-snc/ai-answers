@@ -1693,5 +1693,72 @@
     "title": "Page not found",
     "message": "We can't find the page you're looking for.",
     "homeLink": "Return to AI Answers"
+  },
+  "navVariant": {
+    "appTitle": "AI Answers",
+    "navAriaLabel": "Main navigation",
+    "submenuLabel": "submenu",
+    "useAIGroupLabel": "Use AI answers",
+    "useAISubItem": "Use with evaluation options",
+    "mobileMenuLabel": "Menu",
+    "mobileCloseLabel": "Close",
+    "demo1Title": "Navigation design — dropdown",
+    "demo1bTitle": "Navigation design — mega menu",
+    "demo2Title": "Navigation design — partner top nav",
+    "demo3Title": "Navigation design — partner and admin top nav",
+    "demo4Title": "Lorem ipsum dolor sit amet",
+    "accountLabel": "Account",
+    "demo4GenericAppTitle": "Top navigation",
+    "demo4GenericGroupLabel": "Services",
+    "demo4GenericSubItem": "Overview",
+    "demo4Lorem1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "demo4Lorem2": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "demo4Lorem3": "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.",
+    "demoPlaceholder": "Page content would appear here."
+  },
+  "localNav": {
+    "trigger": {
+      "ariaLabel": "Account menu"
+    },
+    "close": "Close menu",
+    "role": {
+      "partner": "Partner",
+      "admin": "Admin"
+    },
+    "partner": {
+      "sectionLabel": "Partner menu"
+    },
+    "admin": {
+      "sectionLabel": "Admin menu"
+    },
+    "groups": {
+      "dashboards": "Dashboards",
+      "chats": "Chats",
+      "management": "Management",
+      "usersSystem": "Users & system",
+      "infrastructure": "Infrastructure"
+    },
+    "items": {
+      "useAI": "Use AI answers with evaluation options",
+      "partnerDashboard": "Partner dashboard",
+      "evalDashboard": "Evaluation dashboard",
+      "performanceMetrics": "Performance metrics",
+      "technicalMetrics": "Technical metrics",
+      "viewChats": "View chats",
+      "fullChatTrace": "Full chat trace",
+      "editScenarios": "Edit scenarios",
+      "manageBatches": "View & manage batches",
+      "execDashboard": "Executive dashboard",
+      "autoEval": "Auto-evaluation",
+      "manageUsers": "Manage user accounts",
+      "activeSessions": "Active sessions",
+      "settings": "Settings",
+      "manageDatabase": "Manage database",
+      "vectorAdmin": "Vector admin",
+      "evalAdmin": "Evaluation admin",
+      "connectivity": "Service connectivity",
+      "managePassword": "Manage password",
+      "signOut": "Sign out"
+    }
   }
 }

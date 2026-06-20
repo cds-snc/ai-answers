@@ -1693,5 +1693,72 @@
     "title": "Page introuvable",
     "message": "Nous ne trouvons pas la page que vous cherchez.",
     "homeLink": "Retourner à Réponses IA"
+  },
+  "navVariant": {
+    "appTitle": "AI Answers",
+    "navAriaLabel": "Navigation principale",
+    "submenuLabel": "sous-menu",
+    "useAIGroupLabel": "Utiliser Réponses IA",
+    "useAISubItem": "Utiliser avec les options d'évaluation",
+    "mobileMenuLabel": "Menu",
+    "mobileCloseLabel": "Fermer",
+    "demo1Title": "Conception de navigation — menu déroulant",
+    "demo1bTitle": "Conception de navigation — méga-menu",
+    "demo2Title": "Conception de navigation — navigation supérieure partenaire",
+    "demo3Title": "Conception de navigation — navigation supérieure partenaire et administrateur",
+    "demo4Title": "Lorem ipsum dolor sit amet",
+    "accountLabel": "Compte",
+    "demo4GenericAppTitle": "Navigation supérieure",
+    "demo4GenericGroupLabel": "Services",
+    "demo4GenericSubItem": "Aperçu",
+    "demo4Lorem1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "demo4Lorem2": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "demo4Lorem3": "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.",
+    "demoPlaceholder": "Le contenu de la page apparaîtrait ici."
+  },
+  "localNav": {
+    "trigger": {
+      "ariaLabel": "Menu du compte"
+    },
+    "close": "Fermer le menu",
+    "role": {
+      "partner": "Partenaire",
+      "admin": "Administrateur"
+    },
+    "partner": {
+      "sectionLabel": "Menu partenaire"
+    },
+    "admin": {
+      "sectionLabel": "Menu administrateur"
+    },
+    "groups": {
+      "dashboards": "Tableaux de bord",
+      "chats": "Clavardages",
+      "management": "Gestion",
+      "usersSystem": "Utilisateurs et système",
+      "infrastructure": "Infrastructure"
+    },
+    "items": {
+      "useAI": "Utiliser Réponses IA avec options d'évaluation",
+      "partnerDashboard": "Tableau de bord partenaire",
+      "evalDashboard": "Tableau de bord des évaluations",
+      "performanceMetrics": "Métriques de performance",
+      "technicalMetrics": "Métriques techniques",
+      "viewChats": "Voir les clavardages",
+      "fullChatTrace": "Trace complète d'un clavardage",
+      "editScenarios": "Modifier les scénarios",
+      "manageBatches": "Voir et gérer les lots",
+      "execDashboard": "Tableau de bord exécutif",
+      "autoEval": "Auto-évaluation",
+      "manageUsers": "Gérer les comptes utilisateurs",
+      "activeSessions": "Sessions actives",
+      "settings": "Paramètres",
+      "manageDatabase": "Gérer la base de données",
+      "vectorAdmin": "Administration des vecteurs",
+      "evalAdmin": "Administration des évaluations",
+      "connectivity": "Connectivité du service",
+      "managePassword": "Gérer le mot de passe",
+      "signOut": "Se déconnecter"
+    }
   }
 }

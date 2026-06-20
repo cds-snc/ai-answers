@@ -1047,3 +1047,1280 @@
     padding: 15px;
   }
 }
+
+/* ── Header slot wrapper — right-aligned band with bottom border matching GcdsHeader divider ── */
+.local-nav-header-slot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-200);
+  max-width: var(--gcds-header-container-max-width, 1200px);
+  width: 90%;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--gcds-color-grayscale-100);
+}
+
+/* ============================================================
+   Local navigation — account dropdown / mobile overlay
+   ============================================================ */
+
+.local-nav {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ── Trigger — on white menu-slot background ────────────────── */
+.local-nav-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gcds-spacing-100);
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-100);
+  background: none;
+  color: var(--gcds-text-primary);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.local-nav-trigger:hover {
+  color: #1354ec;
+}
+
+.local-nav-trigger:hover .local-nav-trigger-name {
+  text-decoration: underline;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.3em;
+}
+
+.local-nav-trigger:focus-visible {
+  background-color: #1354ec;
+  border-radius: 0.125rem;
+  box-shadow: 0 0 0 0.125rem #fff;
+  color: #fff;
+  outline: 0.25rem solid #1354ec;
+  outline-offset: 0.125rem;
+}
+
+/* ── Avatar circle — dark blue on white background ──────────── */
+.local-nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--gcds-border-radius-xl);
+  background: var(--gcds-color-blue-900);
+  color: var(--gcds-text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+/* ── Name label ────────────────────────────────────────────── */
+.local-nav-trigger-name {
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Chevron caret ─────────────────────────────────────────── */
+.local-nav-caret {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.local-nav-trigger[aria-expanded="true"] .local-nav-caret {
+  transform: rotate(180deg);
+}
+
+/* ============================================================
+   Dropdown / overlay shell
+   ============================================================ */
+
+.local-nav-overlay {
+  position: absolute;
+  top: calc(100% + var(--gcds-spacing-50));
+  right: 0;
+  z-index: 300;
+}
+
+.local-nav-mobile-header {
+  display: none;
+}
+
+.local-nav-mobile-scroll {
+  display: contents;
+}
+
+.local-nav-menu-list {
+  display: block;
+  min-width: 18rem;
+  max-height: 70vh;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: var(--gcds-spacing-100) 0;
+  background: var(--gcds-color-grayscale-0);
+  border: 1px solid var(--gcds-color-grayscale-100);
+  border-radius: var(--gcds-border-radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.local-nav-menu-list:focus {
+  outline: none;
+}
+
+/* ── Section divider ───────────────────────────────────────── */
+.local-nav-section-divider {
+  list-style: none;
+  height: 1px;
+  background: var(--gcds-color-grayscale-100);
+  margin: var(--gcds-spacing-100) 0;
+  border: none;
+  padding: 0;
+}
+
+/* ── Role section header (dual-role only) — sentence case ───── */
+.local-nav-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-75);
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-200) var(--gcds-spacing-50);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gcds-text-primary);
+}
+
+/* Partner section header — deep teal background, white text */
+/* No GCDS token for this shade — designer to review */
+.local-nav-section-header--partner {
+  background-color: #0d6b52;
+  color: var(--gcds-text-light);
+}
+
+/* Admin section header — deep purple background, white text */
+/* No GCDS token for this shade — designer to review */
+.local-nav-section-header--admin {
+  background-color: #4a42a0;
+  color: var(--gcds-text-light);
+}
+
+/* ── Sub-group label — sentence case, muted ────────────────── */
+.local-nav-group-label {
+  display: block;
+  padding: var(--gcds-spacing-100) var(--gcds-spacing-200) var(--gcds-spacing-25);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gcds-text-secondary);
+}
+
+/* ── Menu items — gcds-nav-link side-nav style ─────────────── */
+.local-nav-item-link {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem var(--gcds-spacing-200);
+  min-height: 50px;
+  /* gcds-nav-link default text colour */
+  color: #1f497a;
+  font: 500 1rem/150% "Noto Sans", sans-serif;
+  text-decoration: underline solid currentColor;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.3em;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s ease-in-out;
+}
+
+.local-nav-item-link:hover {
+  /* gcds-nav-link side-nav hover */
+  background-color: #f2f2f2;
+  color: #1354ec;
+  text-decoration-thickness: 0.125rem;
+}
+
+.local-nav-item-link:focus-visible {
+  /* gcds-nav-link focus ring */
+  background-color: #1354ec;
+  border-radius: 0.125rem;
+  box-shadow: 0 0 0 0.125rem #fff;
+  color: #fff;
+  outline: 0.25rem solid #1354ec;
+  outline-offset: 0.125rem;
+  text-decoration: none;
+}
+
+/* Primary action — no indent, normal weight, matches nav-link style */
+.local-nav-item-link--primary {
+  font-weight: 400;
+  color: #1f497a;
+  text-decoration: underline solid currentColor;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.3em;
+}
+
+.local-nav-item-link--primary:hover {
+  background-color: #f2f2f2;
+  color: #1354ec;
+  text-decoration-thickness: 0.125rem;
+}
+
+
+/* Sub-items: indented by the gcds-nav-group side-nav dropdown padding (1.75rem) */
+.local-nav-item-link--sub {
+  padding-left: calc(var(--gcds-spacing-200) + 1.75rem);
+}
+
+/* ── Sign-out — danger, no underline by default ────────────── */
+.local-nav-item-link--signout {
+  color: var(--gcds-color-red-500);
+  text-decoration: underline solid currentColor;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.3em;
+}
+
+.local-nav-item-link--signout:hover {
+  background-color: var(--gcds-color-red-100);
+  color: var(--gcds-color-red-700);
+  text-decoration-thickness: 0.125rem;
+}
+
+.local-nav-item-link--signout:focus-visible {
+  background-color: #1354ec;
+  color: #fff;
+  text-decoration: none;
+}
+
+/* ============================================================
+   Mobile — full-screen overlay
+   ============================================================ */
+@media (max-width: 767px) {
+  .local-nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--gcds-color-grayscale-0);
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior: contain;
+  }
+
+  .local-nav-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--gcds-spacing-150);
+    padding: var(--gcds-spacing-200);
+    background: var(--gcds-color-blue-900);
+    color: var(--gcds-text-light);
+    flex-shrink: 0;
+  }
+
+  /* On mobile the header is dark, so flip avatar to white-fill */
+  .local-nav-mobile-header .local-nav-avatar {
+    background: var(--gcds-color-grayscale-0);
+    color: var(--gcds-color-blue-900);
+  }
+
+  .local-nav-mobile-email {
+    flex: 1;
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .local-nav-mobile-close {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: none;
+    border: none;
+    color: var(--gcds-text-light);
+    font-size: 1.125rem;
+    cursor: pointer;
+    border-radius: var(--gcds-border-radius-md);
+    flex-shrink: 0;
+  }
+
+  .local-nav-mobile-close:focus-visible {
+    outline: 3px solid var(--gcds-text-light);
+    outline-offset: 2px;
+  }
+
+  .local-nav-mobile-scroll {
+    display: block;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .local-nav-menu-list {
+    max-height: none;
+    overflow-y: visible;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    min-width: unset;
+  }
+
+  .local-nav-item-link {
+    min-height: 50px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Nav variant demo pages
+   ══════════════════════════════════════════════════════════════ */
+
+/* Row that holds gcds-top-nav + account button side by side */
+.nav-variant-bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--gcds-color-grayscale-0);
+}
+
+.nav-variant-bar gcds-top-nav {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Stack "AI Answers" / "Admin" on separate lines in the home slot */
+.nav-home-line {
+  display: block;
+}
+
+/* Non-link app title in the GcdsTopNav home slot — matches gcds-nav-link home styling */
+.nav-demo-home-title {
+  color: var(--gcds-nav-link-top-nav-text-primary, #333);
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  font: var(--gcds-nav-link-top-nav-home-font, 700 1rem/150% "Noto Sans", sans-serif);
+  padding: var(--gcds-nav-link-top-nav-home-padding, 1rem 0.125rem);
+  text-decoration: none;
+}
+
+/* ── POC: account button overlay in GcdsHeader brand band ────────────────
+   Positioned absolutely to sit to the left of the lang toggle.
+   TODO: remove when custom admin header is built — this is a hack. ──── */
+/* Slightly increase FIP signature size in the brand band on demo pages */
+.nav-demo-header-wrap gcds-header {
+  --gcds-signature-signature-height: 1.75rem;
+  --gcds-signature-sm-width: 9rem;
+  --gcds-signature-sm-max-height: 1.5rem;
+  --gcds-header-brand-padding: 1.25rem 0 1.5rem;
+}
+
+.nav-demo-header-wrap {
+  position: relative;
+}
+
+.nav-demo-account-overlay .local-nav-trigger {
+  border: 1px solid var(--gcds-color-grayscale-150);
+}
+
+.nav-demo-account-overlay {
+  position: absolute;
+  /* Brand band: padding-top 0.5rem + wordmark ~3rem + padding-bottom 1rem ≈ 4.5rem */
+  top: 2.5rem;
+  height: 4.5rem;
+  /* Sit to the left of the lang toggle (~6.5rem wide incl. padding) */
+  right: 7rem;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0.5rem;
+  z-index: 100;
+}
+
+@media (max-width: 48em) {
+  /* Hide the brand band account overlay on mobile — it can't be reliably
+     positioned relative to GcdsHeader internals without a custom header slot. */
+  .nav-demo-account-overlay {
+    display: none;
+  }
+}
+
+/* ── Custom demo header (designs 2 & 3) ─────────────────────────────── */
+
+.nav-demo-custom-header {
+  margin: var(--gcds-header-margin);
+}
+
+/* Skip link — hidden until focused */
+.nav-demo-skip-nav {
+  margin-inline: auto;
+  position: absolute;
+  text-align: center;
+  top: var(--gcds-header-skiptonav-top);
+  width: 100%;
+  z-index: 10;
+}
+
+.nav-demo-skip-link {
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: inherit;
+  z-index: 3;
+}
+
+.nav-demo-skip-link:not(:focus) {
+  clip: rect(0, 0, 0, 0);
+  height: 0;
+  overflow: hidden;
+  width: 0;
+}
+
+/* Brand band */
+.nav-demo-brand {
+  border-block-end: var(--gcds-header-brand-border-width) solid var(--gcds-header-brand-border-color);
+  padding: var(--gcds-header-brand-padding);
+}
+
+.nav-demo-brand--search-open {
+  border-block-end: none;
+  padding-block-end: 0;
+}
+
+.nav-demo-brand__inner {
+  display: grid;
+  gap: var(--gcds-header-brand-grid-gap);
+  grid-template-areas: "signature toggle account";
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  margin: 0 auto;
+  max-width: var(--gcds-header-container-max-width);
+  width: 90%;
+}
+
+@media (min-width: 48em) {
+  .nav-demo-brand__inner {
+    grid-template-areas:
+      "toggle    toggle"
+      "signature account";
+    grid-template-columns: 1fr auto;
+  }
+
+  .nav-demo-brand__sig {
+    padding-block-end: 16px;
+  }
+
+  .nav-demo-brand__account {
+    padding-block-start: 8px;
+  }
+}
+
+.nav-demo-brand__sig  { grid-area: signature; display: flex; align-items: center; }
+.nav-demo-brand__toggle { grid-area: toggle; display: flex; align-items: center; justify-content: flex-end; }
+.nav-demo-brand__account { grid-area: account; display: flex; align-items: center; justify-content: flex-end; }
+
+/* Visually hidden — screen-reader only */
+.wb-invis {
+  clip: rect(0,0,0,0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* Search toggle + sign in — demo-4 only, both blue square buttons */
+.nav-demo-brand__account--with-search {
+  gap: var(--gcds-spacing-100);
+}
+
+.nav-demo-search-toggle {
+  background-color: #fff;
+  border: 1px solid rgb(38, 55, 74);
+  border-radius: 0;
+  color: rgb(38, 55, 74);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Noto Sans";
+  font-size: 1rem;
+  line-height: 1;
+  padding: var(--gcds-spacing-200);
+  aspect-ratio: 1;
+}
+
+.nav-demo-search-toggle--active {
+  background-color:  #8C969B;
+  border-color: #8C969B;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+.nav-demo-search-toggle:focus-visible {
+  background-color: var(--gcds-focus-background);
+  border-color: var(--gcds-focus-background);
+  color: var(--gcds-focus-text);
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: var(--gcds-border-width-md);
+}
+
+.nav-demo-signin-btn {
+  background-color: rgb(38, 55, 74);
+  border: 1px solid rgb(38, 55, 74);
+  border-radius: 0;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  font-family: "Noto Sans";
+  font-size: 1rem;
+  line-height: 1;
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-300);
+  white-space: nowrap;
+}
+
+.nav-demo-signin-btn:focus-visible {
+  background-color: var(--gcds-focus-background);
+  border-color: var(--gcds-focus-background);
+  color: var(--gcds-focus-text);
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: var(--gcds-border-width-md);
+}
+
+
+/* Expanded search area — below the brand band, above the nav */
+.nav-demo-search-expanded {
+  background: #8C969B;
+  width: 100%;
+}
+
+.nav-demo-search-container {
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: var(--gcds-header-container-max-width);
+  padding: var(--gcds-spacing-300) 0;
+  width: 90%;
+}
+
+@media (max-width: 47.9375em) {
+  .nav-demo-search-container {
+    max-width: 100%;
+    padding: var(--gcds-spacing-300) var(--gcds-spacing-400);
+    width: 100%;
+  }
+}
+
+.nav-demo-search-input-wrap {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.nav-demo-search-input {
+  background: #fff;
+  border: 1px solid #fff;
+  border-right: none;
+  border-radius: var(--gcds-border-radius-sm) 0 0 var(--gcds-border-radius-sm);
+  flex: 1;
+  font-size: 1rem;
+  min-width: 0;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+}
+
+.nav-demo-search-input:focus-visible {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: var(--gcds-border-width-md);
+}
+
+.nav-demo-search-submit-icon {
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+.nav-demo-search-submit {
+  background: rgb(38, 55, 74);
+  border: 1px solid rgb(38, 55, 74);
+  border-radius: 0;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+}
+
+.nav-demo-search-submit:focus-visible {
+  background-color: var(--gcds-focus-background);
+  border-color: var(--gcds-focus-background);
+  color: var(--gcds-focus-text);
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: var(--gcds-border-width-md);
+}
+
+/* Signature image — matches our FIP override size */
+.nav-demo-sig-img {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+}
+
+@media (min-width: 48em) {
+  .nav-demo-sig-img {
+    height: 2rem;
+  }
+}
+
+/* Compact account menu — small positioned dropdown for the brand band */
+.account-menu-compact {
+  position: relative;
+}
+
+.account-menu-compact__name-header {
+  align-items: center;
+  border-bottom: var(--gcds-border-width-sm) solid var(--gcds-color-grayscale-150);
+  display: flex;
+  flex-direction: row;
+  gap: var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-300) var(--gcds-spacing-150);
+}
+
+.account-menu-compact__avatar {
+  flex-shrink: 0;
+}
+
+.account-menu-compact__name-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.account-menu-compact__name,
+.account-menu-compact__dropdown .account-menu-compact__name {
+  color: var(--gcds-text-primary);
+  font-size: 1.125rem !important;
+  font-weight: 700;
+}
+
+.account-menu-compact__email {
+  color: var(--gcds-text-primary);
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-compact__dropdown {
+  background: #fff;
+  border: 1px solid var(--gcds-color-grayscale-150);
+  border-radius: var(--gcds-border-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  min-width: 18rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--gcds-spacing-100));
+  z-index: 200;
+}
+
+@media (max-width: 47.9375em) {
+  .account-menu-compact {
+    width: 100%;
+  }
+
+  .account-menu-compact__dropdown {
+    min-width: unset;
+  }
+}
+
+/* Tablet — reposition dropdown relative to the full-width brand inner so it isn't constrained by the narrow account grid cell */
+@media (min-width: 48em) and (max-width: 63.9375em) {
+  .nav-demo-brand__inner {
+    position: relative;
+  }
+
+  .account-menu-compact {
+    position: static;
+  }
+
+  .account-menu-compact__dropdown {
+    left: 0;
+    right: 0;
+    min-width: unset;
+  }
+}
+
+/* Account button inside brand band — filled dark blue */
+.nav-demo-brand__account .local-nav-trigger {
+  background-color: rgb(38, 55, 74);
+  border: 1px solid rgb(38, 55, 74);
+  color: #fff;
+  max-width: 14rem;
+  overflow: hidden;
+}
+
+.nav-demo-brand__account .local-nav-trigger .local-nav-caret {
+  color: #fff;
+}
+
+.nav-demo-brand__account .local-nav-trigger .local-nav-avatar {
+  background: #fff;
+  color: rgb(38, 55, 74);
+}
+
+/* Demo-3 (partner-admin): white trigger, blue avatar circle, no border on desktop */
+.nav-demo-brand__account--partner-admin .local-nav-trigger {
+  background-color: #fff;
+  border: none;
+  color: rgb(38, 55, 74);
+}
+
+.nav-demo-brand__account--partner-admin .local-nav-trigger .local-nav-caret {
+  color: rgb(38, 55, 74);
+}
+
+.nav-demo-brand__account--partner-admin .local-nav-trigger .local-nav-avatar {
+  background: rgb(38, 55, 74);
+  color: #fff;
+}
+
+/* Demo-2: email + avatar in the nav home slot — non-interactive */
+.nav-demo-home-label {
+  align-items: center;
+  cursor: default;
+  display: inline-flex;
+  gap: var(--gcds-spacing-100);
+  pointer-events: none;
+}
+
+.nav-demo-home-label__avatar {
+  align-items: center;
+  background: var(--gcds-color-blue-900);
+  border-radius: var(--gcds-border-radius-xl);
+  color: var(--gcds-text-light);
+  display: flex;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  height: 24px;
+  justify-content: center;
+  text-transform: uppercase;
+  width: 24px;
+}
+
+.nav-demo-home-label__text {
+  font-size: 1.125rem;
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Demo-2 (partner only): sign out button — white bg, dark blue outline, same size as demo-4 sign-in */
+.nav-demo-signout-btn {
+  background-color: #fff;
+  border: 1px solid rgb(38, 55, 74);
+  border-radius: 0;
+  box-sizing: border-box;
+  color: rgb(38, 55, 74);
+  cursor: pointer;
+  font-family: "Noto Sans";
+  font-size: 1rem;
+  line-height: 1;
+  padding: 1.125rem var(--gcds-spacing-300);
+  white-space: nowrap;
+}
+
+.nav-demo-signout-btn:hover {
+  text-decoration: underline;
+}
+
+.nav-demo-signout-btn:focus-visible {
+  background-color: var(--gcds-focus-background);
+  border-color: var(--gcds-focus-background);
+  color: var(--gcds-focus-text);
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: var(--gcds-border-width-md);
+}
+
+
+/* On mobile, account button spans the account grid area full-width */
+@media (max-width: 47.9375em) {
+  .nav-demo-brand__account .local-nav-trigger {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+
+}
+
+@media (max-width: 23.4375em) {
+  .nav-demo-sig-img {
+    height: 1.25rem;
+  }
+
+  /* Partner-admin: FIP now shares row 1 with just FR (not FR + FL), so restore full size */
+  .nav-demo-brand__inner:has(.nav-demo-brand__account--partner-admin) .nav-demo-sig-img {
+    height: 1.75rem;
+  }
+}
+
+/* At 425px and below, account box goes full-width */
+@media (max-width: 26.5625em) {
+  .nav-demo-brand__inner {
+    grid-template-areas:
+      "signature toggle"
+      "account   account";
+    grid-template-columns: 1fr auto;
+    padding-block-start: var(--gcds-spacing-200);
+    row-gap: var(--gcds-spacing-300);
+  }
+
+  .nav-demo-brand__account--with-search {
+    width: 100%;
+    gap: var(--gcds-spacing-100);
+  }
+
+  .nav-demo-search-toggle {
+    aspect-ratio: auto;
+    flex: 1;
+  }
+
+  .nav-demo-signin-btn {
+    flex: 3;
+    text-align: center;
+  }
+
+  .nav-demo-brand__account .local-nav-trigger {
+    font: var(--gcds-nav-group-font);
+    padding: var(--gcds-spacing-200) var(--gcds-spacing-400);
+    max-width: none;
+    width: 100%;
+    justify-content: center;
+  }
+
+}
+
+/* Breadcrumb container — mirrors GcdsHeader's container width */
+.nav-demo-breadcrumb-container {
+  margin: 0 auto;
+  max-width: var(--gcds-header-container-max-width);
+  width: 90%;
+}
+
+/* ── End custom demo header ─────────────────────────────────────────── */
+
+/* Design 1: full-width bar for the dropdown trigger */
+.nav-variant-current-bar {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--gcds-spacing-100) var(--gcds-spacing-200);
+  background: var(--gcds-color-grayscale-0);
+  border-bottom: 0.0625rem solid #d9d9d9;
+}
+
+/* ── Demo-1 mega menu — desktop only ─────────────────────────────────── */
+@media (min-width: 48em) {
+  /* Wide overlay anchored right, extends left */
+  .nav-demo-1b-wrap .local-nav-overlay {
+    right: 0;
+    width: 80vw;
+  }
+
+  /* Menu list becomes a flex row of columns */
+  .nav-demo-1b-wrap .local-nav-menu-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    min-width: unset;
+    padding: var(--gcds-spacing-300) var(--gcds-spacing-400);
+    width: 100%;
+  }
+
+  /* Full-width top row: Use AI link */
+  .nav-demo-1b-wrap .local-nav-mega-primary {
+    border-bottom: var(--gcds-border-width-sm) solid var(--gcds-color-grayscale-150);
+    flex: 0 0 100%;
+    margin-bottom: var(--gcds-spacing-300);
+    padding-bottom: var(--gcds-spacing-200);
+  }
+
+  /* Each category column */
+  .nav-demo-1b-wrap .local-nav-mega-col {
+    border-right: var(--gcds-border-width-sm) solid var(--gcds-color-grayscale-150);
+    flex: 1 1 0;
+    min-width: 8rem;
+    padding: 0 var(--gcds-spacing-300);
+  }
+
+  .nav-demo-1b-wrap .local-nav-mega-col:first-of-type {
+    padding-left: 0;
+  }
+
+  .nav-demo-1b-wrap .local-nav-mega-col:last-of-type {
+    border-right: none;
+  }
+
+  /* Inner item list — remove default list styling */
+  .nav-demo-1b-wrap .local-nav-mega-col-items {
+    list-style: none;
+    margin: var(--gcds-spacing-100) 0 0;
+    padding: 0;
+  }
+
+  /* Remove sub-item indent inside mega columns */
+  .nav-demo-1b-wrap .local-nav-mega-col .local-nav-item-link--sub {
+    padding-left: 0;
+  }
+
+  /* Full-width divider + sign out footer */
+  .nav-demo-1b-wrap .local-nav-mega-footer-divider,
+  .nav-demo-1b-wrap .local-nav-mega-footer {
+    flex: 0 0 100%;
+  }
+
+  .nav-demo-1b-wrap .local-nav-mega-footer-divider {
+    margin-top: var(--gcds-spacing-300);
+  }
+}
+
+/* Mobile fallback — our overlay design replaces GcdsTopNav's hamburger */
+.nav-variant-mobile-bar {
+  display: none;
+}
+
+@media (max-width: 48em) {
+  .nav-variant-bar {
+    display: none;
+  }
+  .nav-variant-mobile-bar {
+    display: block;
+    padding: var(--gcds-spacing-100) var(--gcds-spacing-200);
+    background: var(--gcds-color-grayscale-0);
+    border-bottom: 0.0625rem solid #d9d9d9;
+  }
+}
+
+/* GC DS-style mobile nav: full-width Menu/Close trigger + bottom-sheet overlay */
+.nav-variant-mobile-nav {
+  width: 100%;
+}
+
+.nav-variant-mobile-menu-btn {
+  background: transparent;
+  border: var(--gcds-nav-group-mobile-trigger-border-width) solid var(--gcds-nav-group-mobile-trigger-text);
+  border-radius: var(--gcds-nav-group-mobile-trigger-border-radius);
+  color: var(--gcds-nav-group-mobile-trigger-text);
+  cursor: pointer;
+  display: block;
+  font: var(--gcds-nav-group-font);
+  margin-block-start: var(--gcds-nav-group-mobile-trigger-margin);
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-400);
+  text-align: center;
+  width: 100%;
+}
+
+/* Partner-admin mobile: Menu (75%) + account trigger (25%) side by side */
+.nav-variant-mobile-nav--with-account {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.nav-variant-mobile-nav--with-account .nav-variant-mobile-menu-btn {
+  flex: 0 0 75%;
+  width: 75%;
+}
+
+.nav-variant-mobile-account {
+  flex: 0 0 25%;
+  display: flex;
+  align-items: stretch;
+}
+
+.nav-variant-mobile-account .account-menu-compact {
+  width: 100%;
+}
+
+.nav-variant-mobile-account .local-nav-trigger {
+  width: 100%;
+  justify-content: center;
+  border: var(--gcds-nav-group-mobile-trigger-border-width) solid var(--gcds-nav-group-mobile-trigger-text);
+  border-left: none;
+  border-radius: 0 var(--gcds-nav-group-mobile-trigger-border-radius) var(--gcds-nav-group-mobile-trigger-border-radius) 0;
+  background: transparent;
+  color: var(--gcds-nav-group-mobile-trigger-text);
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-100);
+  font: var(--gcds-nav-group-font);
+  margin-block-start: var(--gcds-nav-group-mobile-trigger-margin);
+}
+
+/* On mobile, collapse the partner-admin account to an icon-only button; dropdown pushes content */
+@media (max-width: 47.9375em) {
+  /* Keep just the avatar + chevron; hide the name label */
+  .nav-demo-brand__account--partner-admin .local-nav-trigger-name {
+    display: none;
+  }
+
+  /* Flatten wrappers into the grid so the trigger stays in its named area
+     and the dropdown becomes an in-flow second grid row that pushes content down.
+     :not(--with-search) keeps demo-4's flex layout intact. */
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search),
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search) .account-menu-compact {
+    display: contents;
+  }
+
+  /* Trigger reclaims its "account" grid area */
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search) .local-nav-trigger {
+    align-self: center;
+    gap: var(--gcds-spacing-50);
+    grid-area: account;
+    justify-self: end;
+    padding: var(--gcds-spacing-75) var(--gcds-spacing-50);
+    width: auto;
+  }
+
+  /* Dropdown: in-flow second grid row, full width */
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search) .account-menu-compact__dropdown {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    position: static;
+  }
+}
+
+/* At 425px and below, partner-admin FL gets its own right-aligned row and shows "Admin" text.
+   Declared after the icon-only mobile block so these rules win the cascade. */
+@media (max-width: 26.5625em) {
+  .nav-demo-brand__account--partner-admin .local-nav-trigger-name {
+    display: block;
+  }
+
+  .nav-demo-brand__account--partner-admin .local-nav-trigger {
+    padding: var(--gcds-spacing-100) var(--gcds-spacing-200);
+  }
+
+  /* Dropdown lives in row 3 (trigger occupies row 2 via grid-area: account) */
+  .nav-demo-brand__account--partner-admin .account-menu-compact__dropdown {
+    grid-row: 3;
+  }
+}
+
+/* At 425px and below, partner-admin (no search) FL sits in the right 25% of the mobile nav bar.
+   Uses :not(--with-search) throughout so demo-4 (partner-admin + search) is unaffected.
+   Declared last so it wins the cascade over all earlier 26.5625em blocks. */
+@media (max-width: 26.5625em) {
+  /* Positioning anchor for the absolutely-placed trigger and dropdown */
+  .nav-demo-custom-header:has(.nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search)) {
+    position: relative;
+  }
+
+  /* Brand band: single-row FIP + FR — no account area, no extra gap or padding */
+  .nav-demo-brand__inner:has(.nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search)) {
+    grid-template-areas: "signature toggle";
+    grid-template-columns: 1fr auto;
+    padding-block-start: 0;
+    row-gap: 0;
+  }
+
+  /* Icon-only at this width — no room for the name alongside the avatar in 25% */
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search) .local-nav-trigger-name {
+    display: none;
+  }
+
+  /* Reserve right 25% of the nav bar for the FL trigger */
+  .nav-demo-custom-header:has(.nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search)) .nav-variant-mobile-bar {
+    padding-right: 25%;
+  }
+
+  /* Squared-off Menu button right corners so it butts against the FL trigger */
+  .nav-demo-custom-header:has(.nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search)) .nav-variant-mobile-menu-btn {
+    border-radius: var(--gcds-nav-group-mobile-trigger-border-radius) 0 0 var(--gcds-nav-group-mobile-trigger-border-radius);
+  }
+
+  /* FL trigger: absolutely positioned into the right 25% of the nav bar row.
+     brand band height = 0.5(pad-top) + 1.75(FIP) + 1(pad-bottom) + 0.0625(border) = 3.3125rem
+     offset to align with Menu button = nav-bar pad(0.5rem) + btn margin(0.5rem) = 1rem  */
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search) .local-nav-trigger {
+    position: absolute;
+    top: 3.3125rem;
+    right: 0;
+    width: 25%;
+    background: transparent;
+    border: var(--gcds-nav-group-mobile-trigger-border-width) solid var(--gcds-nav-group-mobile-trigger-text);
+    border-left: none;
+    border-radius: 0 var(--gcds-nav-group-mobile-trigger-border-radius) var(--gcds-nav-group-mobile-trigger-border-radius) 0;
+    color: var(--gcds-nav-group-mobile-trigger-text);
+    font: var(--gcds-nav-group-font);
+    justify-content: center;
+    margin-block-start: calc(var(--gcds-spacing-100) + var(--gcds-nav-group-mobile-trigger-margin));
+    padding: var(--gcds-spacing-200) var(--gcds-spacing-100);
+  }
+
+  /* Dropdown: full-width below the nav bar
+     brand band (3.3125rem) + nav bar (5rem) = 8.3125rem */
+  .nav-demo-brand__account--partner-admin:not(.nav-demo-brand__account--with-search) .account-menu-compact__dropdown {
+    position: absolute;
+    top: 8.3125rem;
+    left: 0;
+    right: 0;
+    grid-column: unset;
+    grid-row: unset;
+  }
+}
+
+/* Overlay header */
+.nav-variant-mobile-header {
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-200) 0;
+}
+
+.nav-variant-mobile-close-btn {
+  background: transparent;
+  border: var(--gcds-nav-group-mobile-trigger-border-width) solid var(--gcds-nav-group-mobile-trigger-text);
+  border-radius: var(--gcds-nav-group-mobile-trigger-border-radius);
+  color: var(--gcds-nav-group-mobile-trigger-text);
+  cursor: pointer;
+  display: block;
+  font: var(--gcds-nav-group-font);
+  margin-bottom: var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  text-align: center;
+  width: 100%;
+}
+
+.nav-variant-mobile-header-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--gcds-text-primary);
+}
+
+/* Account accordion above Menu button */
+.nav-variant-mobile-account-bar {
+  width: 100%;
+  margin-block-start: var(--gcds-nav-group-mobile-trigger-margin);
+}
+
+.nav-variant-mobile-account-btn {
+  background: transparent;
+  border: 1px solid var(--gcds-color-grayscale-150);
+  border-radius: 0;
+  color: var(--gcds-nav-group-mobile-trigger-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-200);
+  font: var(--gcds-nav-group-font);
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-400);
+  text-align: left;
+  width: 100%;
+}
+
+.nav-variant-mobile-account-email {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-variant-mobile-account-panel {
+  border: 1px solid var(--gcds-color-grayscale-150);
+  border-top: none;
+  border-radius: 0 0 var(--gcds-nav-group-mobile-trigger-border-radius) var(--gcds-nav-group-mobile-trigger-border-radius);
+}
+
+.nav-variant-mobile-account-signout {
+  background: transparent;
+  border: none;
+  color: var(--gcds-link-default);
+  cursor: pointer;
+  display: block;
+  font: var(--gcds-nav-group-font);
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-400);
+  text-align: left;
+  text-decoration: underline;
+  width: 100%;
+}
+
+.nav-variant-mobile-account-signout:hover {
+  color: var(--gcds-color-red-500);
+}
+
+/* In-overlay account trigger: icon + caret only, dropdown overlay on click */
+.nav-variant-mobile-account-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nav-variant-mobile-account-trigger {
+  background-color: rgb(38, 55, 74) !important;
+  border: 1px solid rgb(38, 55, 74) !important;
+  border-radius: 0 !important;
+  color: #fff !important;
+}
+
+.nav-variant-mobile-account-trigger .local-nav-avatar,
+.nav-variant-mobile-account-trigger .local-nav-caret {
+  color: #fff;
+}
+
+.nav-variant-mobile-account-trigger .local-nav-avatar {
+  background: #fff;
+  color: rgb(38, 55, 74);
+}
+
+.nav-variant-mobile-account-trigger .local-nav-trigger-name {
+  display: none;
+}
+
+.nav-variant-mobile-account-dropdown {
+  background: #fff;
+  border: 1px solid var(--gcds-color-grayscale-150);
+  border-radius: var(--gcds-border-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--gcds-spacing-50));
+  min-width: 10rem;
+  z-index: 10;
+}
+
+.nav-variant-mobile-sig-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--gcds-spacing-300) var(--gcds-spacing-200) var(--gcds-spacing-200);
+}
+
+.nav-variant-mobile-sig {
+  width: 18rem;
+  max-width: 70%;
+  display: block;
+}
+
+.nav-variant-mobile-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--gcds-spacing-400);
+  padding-top: var(--gcds-spacing-300);
+  padding-bottom: var(--gcds-spacing-200);
+  border-top: 0.0625rem solid var(--gcds-color-grayscale-150);
+}
+
+.nav-variant-mobile-footer img {
+  width: 8rem;
+  max-width: 100%;
+  display: block;
+}
+
