@@ -89,10 +89,11 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   appliedPresetRef.current = appliedPreset;
 
   // Fire initial load once on mount with "all time" defaults.
-  // Known issue: as data volume grows, auto-loading the default range on mount
-  // may be slow. If that becomes a problem, this should be changed to require
-  // an explicit Apply click — drop onInitialLoad from the caller and the bar
-  // will wait for Apply before fetching.
+  // TODO: Review as data volume grows — auto-loading the full date range on mount
+  // may become slow. If that happens, drop onInitialLoad from the caller so the
+  // bar waits for an explicit Apply click before fetching. Also note that if minDate
+  // differs from DATA_START_DATE a second query fires automatically (see snap effect
+  // below) — two queries on every page open over the full dataset.
   useEffect(() => {
     const { startDate, endDate } = getDateRange('allTime', null, null, DATA_START_DATE);
     const cb = onInitialLoadRef.current || onApplyRef.current;
