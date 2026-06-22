@@ -74,7 +74,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     setHasAppliedFilters(true);
     setLoading(true);
     try {
-      if (tableApiRef.current) tableApiRef.current.ajax.reload();
+      if (tableApiRef.current) tableApiRef.current.ajax.reload(null, true);
       else setTableKey((prev) => prev + 1);
     } catch (e) { void e; }
   }, []);
@@ -87,7 +87,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     } catch (e) { void e; }
     setTableKey((prev) => prev + 1);
     filtersRef.current = getDefaultEvalFilters();
-    try { if (tableApiRef.current) tableApiRef.current.ajax.reload(); } catch (e) { void e; }
+    try { if (tableApiRef.current) tableApiRef.current.ajax.reload(null, true); } catch (e) { void e; }
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
   // Columns: Chat ID, Interaction ID, Department, Page Language, AutoEval, Processed, Has matches, Fallback, No-match reason, Date
@@ -176,9 +176,13 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 order: [[8, 'desc']],
                 stateSave: true,
                 layout: {
-                  topStart: 'info',
+                  topStart: {
+                    features: ['info', 'pageLength']
+                  },
                   topEnd: 'paging',
-                  bottomStart: 'info',
+                  bottomStart: {
+                    features: ['info', 'pageLength']
+                  },
                   bottomEnd: 'paging'
                 },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
@@ -218,7 +222,8 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                         const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
                         const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
                         sel.addEventListener('change', function () {
-                          column.search(this.value).draw();
+                          column.search(this.value);
+                          api.page('first').draw('page');
                         });
                         filterContainer.appendChild(sel);
                       } else {
@@ -227,7 +232,8 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                         input.className = 'dt-col-search';
                         input.placeholder = t('admin.autoEvalDashboard.columnFilterPlaceholder', 'Filter');
                         input.addEventListener('input', debounce(function (e) {
-                          column.search(e.target.value).draw();
+                          column.search(e.target.value);
+                          api.page('first').draw('page');
                         }, 350));
                         filterContainer.appendChild(input);
                       }
