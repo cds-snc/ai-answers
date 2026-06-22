@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, within } from '@testing-library/react';
 
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({
@@ -42,19 +42,19 @@ vi.mock('@gcds-core/components-react', () => ({
 describe('eval dashboard pages', () => {
   it('renders the eval dashboard without crashing', async () => {
     const { default: EvalDashboardPage } = await import('../EvalDashboardPage.js');
-    const { getByText } = render(<EvalDashboardPage lang="en" />);
+    const { container } = render(<EvalDashboardPage lang="en" />);
 
     await waitFor(() => {
-      expect(getByText(/Evaluation dashboard/i)).toBeTruthy();
+      expect(within(container).getByRole('heading', { name: 'Evaluation dashboard' })).toBeTruthy();
     });
   });
 
   it('renders the auto-eval dashboard without crashing', async () => {
     const { default: AutoEvalDashboardPage } = await import('../AutoEvalDashboardPage.js');
-    const { getByText } = render(<AutoEvalDashboardPage lang="en" />);
+    const { container } = render(<AutoEvalDashboardPage lang="en" />);
 
     await waitFor(() => {
-      expect(getByText(/Auto-Evaluation dashboard/i)).toBeTruthy();
+      expect(within(container).getByRole('heading', { name: 'Auto-Evaluation dashboard' })).toBeTruthy();
     });
   });
 });
