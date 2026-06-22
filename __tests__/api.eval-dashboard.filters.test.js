@@ -73,29 +73,26 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(1);
   });
 
-  it('includes $setWindowFields with totalCount in the pipeline', async () => {
+  it('does not include $setWindowFields in the pipeline', async () => {
     await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
-    expect(pipelineIncludes('$setWindowFields')).toBe(true);
-    expect(pipelineIncludes('totalCount')).toBe(true);
+    expect(pipelineIncludes('$setWindowFields')).toBe(false);
   });
 
-  it('passes totalCount from the result through to the response', async () => {
+  it('returns hasMore when the query has more rows than the page size', async () => {
     InteractionModel.Interaction.aggregate = vi.fn().mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
-      return { allowDiskUse: () => Promise.resolve([{ totalCount: 42 }]) };
+      return { allowDiskUse: () => Promise.resolve(Array.from({ length: 101 }, () => ({}))) };
     });
-    const req = { method: 'GET', query: { startDate: new Date().toISOString(), endDate: new Date().toISOString() } };
+    const req = { method: 'GET', query: { startDate: new Date().toISOString(), endDate: new Date().toISOString(), length: '100' } };
     const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
     await handler(req, res);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ totalCount: 42 }));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ hasMore: true }));
+    expect(res.json.mock.calls[0][0]).not.toHaveProperty('totalCount');
   });
 
-  it('returns correct totalCount when $skip exhausts all results (stale client)', async () => {
-    // First call: $skip removed all docs so results is empty
-    // Second call: fallback count pipeline returns the real total
+  it('does not make a second aggregation pass when the page is exhausted', async () => {
     InteractionModel.Interaction.aggregate = vi.fn()
-      .mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }))
-      .mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([{ totalCount: 400 }]) }));
+      .mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
     const req = { method: 'GET', query: {
       startDate: new Date().toISOString(),
       endDate: new Date().toISOString(),
@@ -104,7 +101,7 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     }};
     const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
     await handler(req, res);
-    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(2);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ recordsTotal: 400 }));
+    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ hasMore: false }));
   });
 });

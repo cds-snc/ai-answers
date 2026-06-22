@@ -432,15 +432,6 @@ async function evalDashboardHandler(req, res) {
       if (andClauses.length) pipeline.push({ $match: { $and: andClauses } });
     }
 
-    // Stamp each document with the filtered total before paging — avoids a second aggregation pass.
-    // filterPipelineLength marks the boundary so we can count without sort/skip/limit if needed.
-    const filterPipelineLength = pipeline.length;
-    pipeline.push({
-      $setWindowFields: {
-        output: { totalCount: { $count: {} } }
-      }
-    });
-
     // Sorting
     const sortFieldMap = {
       createdAt: 'createdAt',
@@ -461,23 +452,18 @@ async function evalDashboardHandler(req, res) {
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
     pipeline.push(sortStage);
 
+    const pageSize = isDataTablesMode ? Math.min(Math.max(length, 1), 2000) : null;
+
     if (isDataTablesMode) {
       if (start > 0) pipeline.push({ $skip: start });
-      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
+      pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
     }
 
     const results = await Interaction.aggregate(pipeline).allowDiskUse(true);
-    let totalCount = results[0]?.totalCount ?? 0;
+    const hasMore = isDataTablesMode && pageSize !== null && results.length > pageSize;
+    const rows = isDataTablesMode && pageSize !== null ? results.slice(0, pageSize) : results;
 
-    // Edge case: a stale client sent start >= totalCount so $skip exhausted all results.
-    // Fall back to a lightweight count on the filter-only stages (no sort/skip/limit).
-    if (totalCount === 0 && isDataTablesMode && start > 0) {
-      const countPipeline = pipeline.slice(0, filterPipelineLength).concat([{ $count: 'totalCount' }]);
-      const countResult = await Interaction.aggregate(countPipeline).allowDiskUse(true);
-      totalCount = countResult[0]?.totalCount ?? 0;
-    }
-
-    const rows = results.map((r) => ({
+    const mappedRows = rows.map((r) => ({
       _id: r._id ? String(r._id) : '',
       interactionId: r.interactionId || (r._id ? String(r._id) : ''),
       questionNumber: r.questionNumber || 0,
@@ -502,11 +488,11 @@ async function evalDashboardHandler(req, res) {
 
     if (isDataTablesMode) {
       const draw = Number.isFinite(parseInt(drawParam, 10)) ? parseInt(drawParam, 10) : 0;
-      return res.status(200).json({ draw, recordsTotal: totalCount, recordsFiltered: totalCount, data: rows });
+      return res.status(200).json({ draw, hasMore, data: mappedRows });
     }
 
-    const nextLastId = rows.length > 0 ? rows[rows.length - 1]._id : null;
-    return res.status(200).json({ success: true, rows, lastId: nextLastId, totalCount });
+    const nextLastId = mappedRows.length > 0 ? mappedRows[mappedRows.length - 1]._id : null;
+    return res.status(200).json({ success: true, rows: mappedRows, lastId: nextLastId, hasMore });
   } catch (err) {
     console.error('Failed to fetch eval dashboard data', err);
     return res.status(500).json({ error: 'Failed to fetch eval dashboard data', details: err.message });

@@ -35,19 +35,13 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
   const [dataTableReady, setDataTableReady] = useState(false);
-  const [recordsTotal, setRecordsTotal] = useState(0);
-  const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [pageResultCount, setPageResultCount] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
-    [lang]
-  );
 
   const formatDate = useCallback((dateStr) => {
     if (!dateStr) return '';
@@ -96,16 +90,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     try { if (tableApiRef.current) tableApiRef.current.ajax.reload(); } catch (e) { void e; }
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
-  const resultsSummary = useMemo(() => {
-    const template = t('admin.autoEvalDashboard.resultsSummary', 'Total matching evaluations: {count}');
-    return template.replace('{count}', numberFormatter.format(recordsFiltered));
-  }, [numberFormatter, recordsFiltered, t]);
-
-  const totalSummary = useMemo(() => {
-    const template = t('admin.autoEvalDashboard.totalCount', 'Total eval rows in range: {total}');
-    return template.replace('{total}', numberFormatter.format(recordsTotal));
-  }, [numberFormatter, recordsTotal, t]);
-
   // Columns: Chat ID, Interaction ID, Department, Page Language, AutoEval, Processed, Has matches, Fallback, No-match reason, Date
   const columns = useMemo(() => ([
     {
@@ -152,7 +136,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       <h2 className="mt-400 mb-400">{t('admin.autoEvalDashboard.timeRangeTitle')}</h2>
       <div className="mb-600">
-        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={recordsTotal} hasAppliedFilters={hasAppliedFilters} />
+        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={pageResultCount} hasAppliedFilters={hasAppliedFilters} />
       </div>
 
       {loading && (
@@ -166,7 +150,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       {error && (<div className="mt-400 error" role="alert">{t('admin.autoEvalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
 
-      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
+      {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('common.noDataForFilters')}
@@ -175,7 +159,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       {hasAppliedFilters && (
         <div className="mt-200">
-          <div className="chat-dashboard-summary" role="status" aria-live="polite"><output>{resultsSummary}</output><output>{totalSummary}</output></div>
           {dataTableReady && (
             <div className="chat-dashboard-table-container">
             <DataTable
@@ -186,8 +169,10 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 processing: true,
                 serverSide: true,
                 paging: true,
+                pagingType: 'simple',
                 searching: true,
                 ordering: true,
+                info: false,
                 autoWidth: false,
                 order: [[8, 'desc']],
                 stateSave: true,
@@ -242,9 +227,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                       filterContainer.addEventListener('mousedown', stopSort);
                       headerEl.appendChild(filterContainer);
                     });
-                    api.on('xhr.dt', function (_e, _settings, json) {
-                      try { setRecordsTotal((json && json.recordsTotal) || 0); setRecordsFiltered((json && json.recordsFiltered) || 0); } catch (e) { /* ignore */ }
-                    });
                   } catch (e) { /* ignore initComplete errors */ }
                 },
                 ajax: async (dtParams, callback) => {
@@ -277,12 +259,16 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     if (searchValue) query.search = searchValue;
                     if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
                     const result = await EvaluationService.getEvalDashboard(query);
-                    setRecordsTotal(result?.recordsTotal || 0);
-                    setRecordsFiltered(result?.recordsFiltered || 0);
-                    callback({ draw: dtParams.draw || 0, recordsTotal: result?.recordsTotal || 0, recordsFiltered: result?.recordsFiltered || 0, data: Array.isArray(result?.data) ? result.data : [] });
+                    const rows = Array.isArray(result?.data) ? result.data : [];
+                    const start = Number.isFinite(Number(dtParams.start)) ? Number(dtParams.start) : 0;
+                    const hasMore = result?.hasMore === true;
+                    const syntheticCount = start + rows.length + (hasMore ? 1 : 0);
+                    setPageResultCount(syntheticCount);
+                    callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load auto-eval dashboard data', err);
                     setError(err.message || String(err));
+                    setPageResultCount(0);
                     callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                   } finally {
                     setLoading(false);
