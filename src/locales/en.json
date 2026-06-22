@@ -644,8 +644,8 @@
       }
     },
     "filters": {
-      "title": "Filters - select then apply to view",
-      "clearAll": "Clear",
+      "title": "Filters",
+      "clearAll": "Clear all",
       "apply": "Apply",
       "loading": "Loading...",
       "dateRange": "Date range (24-hour)",
@@ -675,8 +675,9 @@
       "evalHasError": "Error",
       "evalHasCitationError": "Citation error",
       "evalHarmful": "Harmful",
-      "filterOptions": "Filter options",
-      "showAdvanced": "More filter options"
+      "advancedTitle": "Advanced filters",
+      "advancedAll": "Advanced: All",
+      "showAdvanced": "More filters"
     },
     "publicEval": {
       "title": "Public evaluation",
@@ -1215,8 +1216,15 @@
   "dashboardFilter": {
     "department": "By partner institution",
     "allPartners": "All partners",
+    "dateRange": "Date range",
+    "last30": "Last 30 days",
+    "currentQuarter": "Current quarter",
+    "allTime": "All data",
+    "custom": "Custom",
     "startDate": "Start date",
     "endDate": "End date",
+    "showing": "Showing:",
+    "removeFilter": "Remove filter",
     "apply": "Apply",
     "loading": "Loading..."
   },

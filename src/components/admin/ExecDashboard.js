@@ -22,7 +22,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const [appliedStartDate, setAppliedStartDate] = useState('');
   const [appliedEndDate, setAppliedEndDate] = useState('');
   const hasFetched = useRef(false);
-  const userHasApplied = useRef(false);
 
   // The exec dashboard reports on public usage only: it excludes questions from
   // admin/partner accounts signed in to test and evaluate (userType 'public' =
@@ -33,6 +32,7 @@ const ExecDashboard = ({ lang = 'en' }) => {
   }, [fetchMetrics]);
 
   const handleInitialLoad = useCallback((filters) => {
+    hasFetched.current = true;
     setAppliedDepartment(filters?.department || '');
     setAppliedStartDate(filters?.startDate || '');
     setAppliedEndDate(filters?.endDate || '');
@@ -41,7 +41,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   const handleApply = useCallback((filters) => {
     hasFetched.current = true;
-    userHasApplied.current = true;
     setAppliedDepartment(filters?.department || '');
     setAppliedStartDate(filters?.startDate || '');
     setAppliedEndDate(filters?.endDate || '');
@@ -56,15 +55,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
     return `${parse(start).toLocaleDateString(locale, opts)} – ${parse(end).toLocaleDateString(locale, opts)}`;
   };
 
-  // The applied range may reach back further than any data exists (the default
-  // span is the last 12 months, but the DB only holds data from some later
-  // point). Clamp the displayed start to the first date that actually has
-  // records in range so the heading never claims an empty stretch of time.
-  // firstDataDate arrives as an ISO timestamp; the calendar day is all we show.
-  // Clear dataStartDay while loading so the heading shows the newly-applied
-  // start date rather than the stale firstDataDate from the previous fetch.
-  const dataStartDay = !loading && metrics.firstDataDate ? metrics.firstDataDate.split('T')[0] : null;
-  const displayStartDate = (!userHasApplied.current && dataStartDay) ? dataStartDay : appliedStartDate;
+  // The actual first date with data in the DB — used to clamp the custom date
+  // picker min so users can't select a date range with no data.
+  // Cleared while loading so it doesn't carry over a stale value between fetches.
+  const minDate = !loading && metrics.firstDataDate ? metrics.firstDataDate.split('T')[0] : undefined;
 
   // KPI derived data
   const totalQuestions = metrics.totalQuestions || 0;
@@ -149,10 +143,10 @@ const ExecDashboard = ({ lang = 'en' }) => {
         {t('execDashboard.overviewTitle')}
       </h2>
 
-      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={handleInitialLoad} onApply={handleApply} dataStartDate={dataStartDay} />
+      <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={handleInitialLoad} onApply={handleApply} minDate={minDate} />
 
       <h2 className="dashboard-section-title">
-        {formatDateRange(displayStartDate, appliedEndDate)}
+        {formatDateRange(appliedStartDate, appliedEndDate)}
       </h2>
 
       {loading ? (

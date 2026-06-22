@@ -1,5 +1,6 @@
 // FilterPanel.js - reimplemented using FilterPanelV2 UI
 import React, { useState, useEffect, useRef } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import $ from 'jquery';
 import moment from '../../utils/momentSetup.js';
@@ -16,6 +17,7 @@ const FilterPanel = ({
   applyButtonText = null,
   applyDisabled = false,
   defaultUserType = 'all',
+  defaultOpen = true,
   filterLoading = false,
   filterError = null,
   filterResultCount = null,
@@ -24,11 +26,19 @@ const FilterPanel = ({
   const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  // Set to true by handleClear so the auto-close effect doesn't immediately
+  // re-close the panel after the clear re-fetch completes.
+  const skipNextAutoClose = useRef(false);
 
-  // Collapse when results load successfully; keep open on error or no results
+  // Collapse when results load successfully; keep open on error or no results.
+  // Skipped once after a Clear so the panel stays open for the user to re-filter.
   useEffect(() => {
     if (!hasAppliedFilters || filterLoading) return;
+    if (skipNextAutoClose.current) {
+      skipNextAutoClose.current = false;
+      return;
+    }
     if (filterError || filterResultCount === 0) {
       setIsOpen(true);
     } else if (filterResultCount > 0) {
@@ -67,10 +77,18 @@ const FilterPanel = ({
     return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
-  // Default to last 7 days (local time)
+  // End is yesterday 23:59 to match backend behaviour: the API queries
+  // createdAt up to midnight (start of today), so today always returns empty.
+  // Capping the picker at yesterday keeps the UI honest — what you select is
+  // what you get. Individual conversations from today are findable by chat ID
+  // in the Chat Viewer.
   const getDefaultDates = () => {
     const end = new Date();
-    const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+    end.setDate(end.getDate() - 1); // yesterday
+    end.setHours(23, 59, 59, 0);
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    start.setHours(0, 0, 0, 0);
     return {
       startDate: formatDateTimeLocal(start),
       endDate: formatDateTimeLocal(end)
@@ -87,6 +105,10 @@ const FilterPanel = ({
   const [partnerEval, setPartnerEval] = useState([]);
   const [aiEval, setAiEval] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Tracks what has actually been applied — drives the pill display.
+  // null means nothing has been applied yet (no pills shown).
+  const [appliedFilters, setAppliedFilters] = useState(null);
 
   // If autoApply is enabled, apply default filters on mount
   useEffect(() => {
@@ -105,6 +127,7 @@ const FilterPanel = ({
         aiEval: 'all'
       };
       onApplyFilters(defaultFilters);
+      setAppliedFilters(defaultFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -130,13 +153,11 @@ const FilterPanel = ({
     const config = {
       startDate: startDateObj ? moment(startDateObj) : moment().subtract(6, 'days'),
       endDate: endDateObj ? moment(endDateObj) : moment(),
-      opens: 'left',
+      opens: 'right',
       alwaysShowCalendars: true,
-      timePicker: true,
-      timePicker24Hour: true,
-      timePickerSeconds: false,
+      maxDate: moment().subtract(1, 'day').endOf('day'),
       locale: {
-        format: 'YYYY/MM/DD HH:mm',
+        format: 'YYYY/MM/DD',
         separator: ' - ',
         applyLabel: isFrench ? 'Appliquer' : 'Apply',
         cancelLabel: isFrench ? 'Annuler' : 'Cancel',
@@ -153,11 +174,10 @@ const FilterPanel = ({
         firstDay: isFrench ? 1 : 0
       },
       ranges: {
-        [isFrench ? 'Aujourd\'hui' : 'Today']: [moment().startOf('day'), moment().endOf('day')],
         [isFrench ? 'Hier' : 'Yesterday']: [moment().subtract(1, 'days').startOf('day'), moment().subtract(1, 'days').endOf('day')],
-        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(6, 'days').startOf('day'), moment()],
-        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(29, 'days').startOf('day'), moment()],
-        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().endOf('month')],
+        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(7, 'days').startOf('day'), moment().subtract(1, 'day').endOf('day')],
+        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(30, 'days').startOf('day'), moment().subtract(1, 'day').endOf('day')],
+        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().subtract(1, 'day').endOf('day')],
         [isFrench ? 'Le mois dernier' : 'Last Month']: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
       }
     };
@@ -170,16 +190,14 @@ const FilterPanel = ({
 
     // Handle date selection - convert moment to local time string
     $picker.on('apply.daterangepicker', function (ev, picker) {
-      // Get moment objects from picker and convert to Date objects (local time)
       const startDate = picker.startDate.toDate();
       const endDate = picker.endDate.toDate();
-
-      // Format as local time strings (same as original FilterPanel.js)
-      const newRange = {
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 0);
+      setDateRange({
         startDate: formatDateTimeLocal(startDate),
         endDate: formatDateTimeLocal(endDate)
-      };
-      setDateRange(newRange);
+      });
     });
 
     // Cleanup
@@ -267,12 +285,12 @@ const FilterPanel = ({
     // user's calendar selection in real-time, so dates are correct even when
     // the user chose a custom range without clicking Apply inside the calendar.
     const picker = dateRangePickerInstance.current;
-    const startDateStr = picker
-      ? formatDateTimeLocal(picker.startDate.toDate())
-      : dateRange.startDate;
-    const endDateStr = picker
-      ? formatDateTimeLocal(picker.endDate.toDate())
-      : dateRange.endDate;
+    const rawStart = picker ? picker.startDate.toDate() : parseDateTimeLocal(dateRange.startDate);
+    const rawEnd = picker ? picker.endDate.toDate() : parseDateTimeLocal(dateRange.endDate);
+    if (rawStart) rawStart.setHours(0, 0, 0, 0);
+    if (rawEnd) rawEnd.setHours(23, 59, 59, 0);
+    const startDateStr = rawStart ? formatDateTimeLocal(rawStart) : dateRange.startDate;
+    const endDateStr = rawEnd ? formatDateTimeLocal(rawEnd) : dateRange.endDate;
 
     // Sync React state so the input reflects the applied dates if they changed.
     if (startDateStr !== dateRange.startDate || endDateStr !== dateRange.endDate) {
@@ -294,6 +312,7 @@ const FilterPanel = ({
       aiEval: aiEval.length > 0 ? aiEval.join(',') : 'all'
     };
 
+    setAppliedFilters(filters);
     onApplyFilters(filters);
   };
 
@@ -328,242 +347,306 @@ const FilterPanel = ({
       department: '',
       urlEn: '',
       urlFr: '',
-      userType: 'all',
+      userType: defaultUserType,
       answerType: 'all',
       partnerEval: 'all',
       aiEval: 'all'
     };
 
+    setAppliedFilters(null);
+    setIsOpen(true);
+    skipNextAutoClose.current = true;
     if (autoApply) {
       onApplyFilters(defaultFilters);
+    } else {
+      onClearFilters(defaultFilters);
     }
-    onClearFilters(defaultFilters);
   };
+
+  // Remove a single filter pill. For multi-select filters, `value` is the specific
+  // value to remove; omit to reset the whole filter to default.
+  const removeFilter = (key, value) => {
+    const next = { ...appliedFilters };
+    if (key === 'date') {
+      const d = getDefaultDates();
+      setDateRange(d);
+      const s = parseDateTimeLocal(d.startDate);
+      const e = parseDateTimeLocal(d.endDate);
+      if (dateRangePickerInstance.current && s && e) {
+        dateRangePickerInstance.current.setStartDate(moment(s));
+        dateRangePickerInstance.current.setEndDate(moment(e));
+      }
+      next.startDate = s ? s.toISOString() : undefined;
+      next.endDate = e ? e.toISOString() : undefined;
+    } else if (key === 'department') { setDepartment(''); next.department = ''; }
+    else if (key === 'userType') { setUserType(defaultUserType); next.userType = defaultUserType; }
+    else if (key === 'urlEn') { setUrlEn(''); next.urlEn = ''; }
+    else if (key === 'urlFr') { setUrlFr(''); next.urlFr = ''; }
+    else if (key === 'answerType') {
+      const remaining = (appliedFilters.answerType || '').split(',').filter(v => v !== value);
+      setAnswerType(remaining);
+      next.answerType = remaining.length > 0 ? remaining.join(',') : 'all';
+    } else if (key === 'partnerEval') {
+      const remaining = (appliedFilters.partnerEval || '').split(',').filter(v => v !== value);
+      setPartnerEval(remaining);
+      next.partnerEval = remaining.length > 0 ? remaining.join(',') : 'all';
+    } else if (key === 'aiEval') {
+      const remaining = (appliedFilters.aiEval || '').split(',').filter(v => v !== value);
+      setAiEval(remaining);
+      next.aiEval = remaining.length > 0 ? remaining.join(',') : 'all';
+    }
+    setAppliedFilters(next);
+    onApplyFilters(next);
+  };
+
+  // Build pills from applied state.
+  // Blue info pills (no ×) show the current state for always-present filters.
+  // Grey closable pills (×) show when a filter differs from its default.
+  const buildPills = () => {
+    if (!appliedFilters) return [];
+    const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
+    const dateOpts = { year: 'numeric', month: 'short', day: 'numeric' };
+    const pills = [];
+
+    if (appliedFilters.startDate && appliedFilters.endDate) {
+      const defaults = getDefaultDates();
+      const isDefaultDate =
+        appliedFilters.startDate.substring(0, 10) === defaults.startDate.substring(0, 10) &&
+        appliedFilters.endDate.substring(0, 10) === defaults.endDate.substring(0, 10);
+      const s = new Date(appliedFilters.startDate).toLocaleDateString(locale, dateOpts);
+      const e = new Date(appliedFilters.endDate).toLocaleDateString(locale, dateOpts);
+      pills.push({ key: 'date', label: `${s} – ${e}`, info: isDefaultDate });
+    }
+
+    const deptIsDefault = !appliedFilters.department;
+    pills.push({
+      key: 'department',
+      label: deptIsDefault ? t('admin.filters.allDepartments') : appliedFilters.department,
+      info: deptIsDefault,
+    });
+
+    const userIsDefault = !appliedFilters.userType || appliedFilters.userType === defaultUserType;
+    if (userIsDefault) {
+      pills.push({ key: 'usersAll', label: `${t('admin.filters.users')}: ${t('admin.filters.allUsers')}`, info: true });
+    } else {
+      const userOpt = userTypeOptions.find(o => o.value === appliedFilters.userType);
+      pills.push({ key: 'userType', label: userOpt ? userOpt.label : appliedFilters.userType });
+    }
+
+    const advancedDefault =
+      (!appliedFilters.answerType || appliedFilters.answerType === 'all') &&
+      (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') &&
+      (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') &&
+      !appliedFilters.urlEn &&
+      !appliedFilters.urlFr;
+
+    if (advancedDefault) {
+      pills.push({ key: 'advancedAll', label: t('admin.filters.advancedAll'), info: true });
+    } else {
+      if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
+      if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
+      if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
+        appliedFilters.answerType.split(',').forEach(val => {
+          const opt = answerTypeOptions.find(o => o.value === val);
+          pills.push({ key: 'answerType', value: val, label: opt ? opt.label : val });
+        });
+      }
+      if (appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all') {
+        appliedFilters.partnerEval.split(',').forEach(val => {
+          const opt = partnerEvalOptions.find(o => o.value === val);
+          pills.push({ key: 'partnerEval', value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
+        });
+      }
+      if (appliedFilters.aiEval && appliedFilters.aiEval !== 'all') {
+        appliedFilters.aiEval.split(',').forEach(val => {
+          const opt = aiEvalOptions.find(o => o.value === val);
+          pills.push({ key: 'aiEval', value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
+        });
+      }
+    }
+
+    return pills;
+  };
+
+  const pills = buildPills();
 
   if (!isVisible) return null;
 
   return (
+    <div className="filter-panel-wrapper">
     <details className="filter-panel" open={isOpen} onToggle={(e) => setIsOpen(e.target.open)}>
       <summary className="filter-panel-summary">
-        {t('admin.filters.title') || 'Filters'}
+        <SlidersHorizontal className="filter-panel-summary__icon" aria-hidden="true" />
+        {t('admin.filters.title')}
+        {appliedFilters && pills.length > 0 && (
+          <span className="filter-panel-summary__count">{pills.length}</span>
+        )}
       </summary>
       <div className="filter-panel-content">
-        <div className="filter-grid">
-          {/* Left column - Date Range and Users */}
-          <div className="filter-column">
-            <div className="filter-row">
-              <label htmlFor="dateRangePicker" className="filter-label">
-                {t('admin.filters.dateRange') || 'Date Range'}
-              </label>
-              <input
-                ref={dateRangePickerRef}
-                type="text"
-                id="dateRangePicker"
-                className="filter-input"
-                readOnly
-                style={{ backgroundColor: 'white', cursor: 'pointer' }}
-              />
-            </div>
-
-            <div className="filter-row">
-              <label htmlFor="user-type" className="filter-label">
-                {t('admin.filters.users') || 'User Type'}
-              </label>
-              <select
-                id="user-type"
-                value={userType}
-                onChange={(e) => setUserType(e.target.value)}
-                className="filter-select"
-              >
-                {userTypeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Row 1: date range, partner institution, users */}
+        <div className="filter-main-row">
+          <div className="filter-row">
+            <label htmlFor="dateRangePicker" className="filter-label">
+              {t('admin.filters.dateRange') || 'Date Range'}
+            </label>
+            <input
+              ref={dateRangePickerRef}
+              type="text"
+              id="dateRangePicker"
+              className="filter-input"
+              readOnly
+              style={{ backgroundColor: 'white', cursor: 'pointer' }}
+            />
           </div>
 
-          {/* Right column - Basic Filters */}
-          <div className="filter-column">
-            <div className="filter-row">
-              <label htmlFor="department" className="filter-label">
-                {t('admin.filters.department') || 'Department'}
-              </label>
-              <select
-                id="department"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="filter-select"
-              >
-                {departmentOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Advanced Filters - Collapsible (Closed by default) */}
-            <div className="filter-label">{t('admin.filters.filterOptions')}</div>
-            <details
-              className="filter-advanced-details"
-              open={showAdvancedFilters}
-              onToggle={(e) => setShowAdvancedFilters(e.target.open)}
+          <div className="filter-row">
+            <label htmlFor="department" className="filter-label">
+              {t('admin.filters.department') || 'Department'}
+            </label>
+            <select
+              id="department"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="filter-select"
             >
-              <summary className="filter-advanced-summary">
-                {t('admin.filters.showAdvanced')}
-              </summary>
-              <div className="filter-advanced-section mt-100">
-                <div className="filter-row">
-                  <label htmlFor="url-en" className="filter-label">
-                    {t('admin.filters.urlEn') || 'URL (EN)'}
-                  </label>
-                  <input
-                    type="text"
-                    id="url-en"
-                    value={urlEn}
-                    onChange={(e) => setUrlEn(e.target.value)}
-                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                    className="filter-input"
-                  />
-                </div>
-                <div className="filter-row">
-                  <label htmlFor="url-fr" className="filter-label">
-                    {t('admin.filters.urlFr') || 'URL (FR)'}
-                  </label>
-                  <input
-                    type="text"
-                    id="url-fr"
-                    value={urlFr}
-                    onChange={(e) => setUrlFr(e.target.value)}
-                    placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
-                    className="filter-input"
-                  />
-                </div>
-                <div className="filter-row">
-                  <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
-                    <summary className="filter-label">
-                      {t('admin.filters.answerType') || 'Answer Type'}
-                      {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
-                    </summary>
-                    <div className="filter-checkbox-group">
-                      <label className="filter-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={answerType.length === 0}
-                          onChange={(e) => handleAnswerTypeAll(e.target.checked)}
-                          className="filter-checkbox"
-                        />
-                        {t('admin.filters.allAnswerTypes') || 'All Answer Types'}
-                      </label>
-                      {answerTypeOptions
-                        .filter(option => option.value !== 'all')
-                        .map(option => (
-                          <label key={option.value} className="filter-checkbox-label">
-                            <input
-                              type="checkbox"
-                              value={option.value}
-                              checked={answerType.includes(option.value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setAnswerType([...answerType, option.value]);
-                                } else {
-                                  setAnswerType(answerType.filter(v => v !== option.value));
-                                }
-                              }}
-                              className="filter-checkbox"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                    </div>
-                  </details>
-                </div>
-                <div className="filter-row">
-                  <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
-                    <summary className="filter-label">
-                      {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                      {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
-                    </summary>
-                    <div className="filter-checkbox-group">
-                      <label className="filter-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={partnerEval.length === 0}
-                          onChange={(e) => handlePartnerEvalAll(e.target.checked)}
-                          className="filter-checkbox"
-                        />
-                        {t('admin.filters.allPartnerEvals') || 'All'}
-                      </label>
-                      {partnerEvalOptions
-                        .filter(option => option.value !== 'all')
-                        .map(option => (
-                          <label key={option.value} className="filter-checkbox-label">
-                            <input
-                              type="checkbox"
-                              value={option.value}
-                              checked={partnerEval.includes(option.value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setPartnerEval([...partnerEval, option.value]);
-                                } else {
-                                  setPartnerEval(partnerEval.filter(v => v !== option.value));
-                                }
-                              }}
-                              className="filter-checkbox"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                    </div>
-                  </details>
-                </div>
-                <div className="filter-row mb-100">
-                  <details className="filter-checkbox-details" onToggle={handleNestedToggle}>
-                    <summary className="filter-label">
-                      {t('admin.filters.aiEval') || 'AI Evaluation'}
-                      {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
-                    </summary>
-                    <div className="filter-checkbox-group">
-                      <label className="filter-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={aiEval.length === 0}
-                          onChange={(e) => handleAiEvalAll(e.target.checked)}
-                          className="filter-checkbox"
-                        />
-                        {t('admin.filters.allAiEvals') || 'All'}
-                      </label>
-                      {aiEvalOptions
-                        .filter(option => option.value !== 'all')
-                        .map(option => (
-                          <label key={option.value} className="filter-checkbox-label">
-                            <input
-                              type="checkbox"
-                              value={option.value}
-                              checked={aiEval.includes(option.value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setAiEval([...aiEval, option.value]);
-                                } else {
-                                  setAiEval(aiEval.filter(v => v !== option.value));
-                                }
-                              }}
-                              className="filter-checkbox"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                    </div>
-                  </details>
-                </div>
-              </div>
-            </details>
+              {departmentOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-row">
+            <label htmlFor="user-type" className="filter-label">
+              {t('admin.filters.users') || 'User Type'}
+            </label>
+            <select
+              id="user-type"
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+              className="filter-select"
+            >
+              {userTypeOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
+        {/* Row 2: advanced filters */}
+        <p className="filter-advanced-title">{t('admin.filters.advancedTitle')}</p>
+        <details
+          className="filter-advanced-details"
+          open={showAdvancedFilters}
+          onToggle={(e) => { e.stopPropagation(); setShowAdvancedFilters(e.target.open); }}
+        >
+          <summary className="filter-advanced-summary">
+            {t('admin.filters.showAdvanced')}
+          </summary>
+          <div className="filter-advanced-grid">
+            {/* URL column — EN and FR stacked */}
+            <div className="filter-column">
+              <div className="filter-row">
+                <label htmlFor="url-en" className="filter-label">
+                  {t('admin.filters.urlEn') || 'URL (EN)'}
+                </label>
+                <input
+                  type="text"
+                  id="url-en"
+                  value={urlEn}
+                  onChange={(e) => setUrlEn(e.target.value)}
+                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  className="filter-input"
+                />
+              </div>
+              <div className="filter-row">
+                <label htmlFor="url-fr" className="filter-label">
+                  {t('admin.filters.urlFr') || 'URL (FR)'}
+                </label>
+                <input
+                  type="text"
+                  id="url-fr"
+                  value={urlFr}
+                  onChange={(e) => setUrlFr(e.target.value)}
+                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  className="filter-input"
+                />
+              </div>
+            </div>
+
+            {/* Answer type column */}
+            <details className="filter-checkbox-details" open onToggle={(e) => e.stopPropagation()}>
+              <summary className="filter-label">
+                {t('admin.filters.answerType') || 'Answer Type'}
+                {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
+              </summary>
+              <div className="filter-checkbox-group">
+                <label className="filter-checkbox-label">
+                  <input type="checkbox" checked={answerType.length === 0} onChange={(e) => handleAnswerTypeAll(e.target.checked)} className="filter-checkbox" />
+                  {t('admin.filters.allAnswerTypes') || 'All'}
+                </label>
+                {answerTypeOptions.filter(o => o.value !== 'all').map(option => (
+                  <label key={option.value} className="filter-checkbox-label">
+                    <input type="checkbox" value={option.value} checked={answerType.includes(option.value)} onChange={(e) => { if (e.target.checked) { setAnswerType([...answerType, option.value]); } else { setAnswerType(answerType.filter(v => v !== option.value)); } }} className="filter-checkbox" />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </details>
+
+            {/* Partner eval column */}
+            <details className="filter-checkbox-details" open onToggle={(e) => e.stopPropagation()}>
+              <summary className="filter-label">
+                {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+              </summary>
+              <div className="filter-checkbox-group">
+                <label className="filter-checkbox-label">
+                  <input type="checkbox" checked={partnerEval.length === 0} onChange={(e) => handlePartnerEvalAll(e.target.checked)} className="filter-checkbox" />
+                  {t('admin.filters.allPartnerEvals') || 'All'}
+                </label>
+                {partnerEvalOptions.filter(o => o.value !== 'all').map(option => (
+                  <label key={option.value} className="filter-checkbox-label">
+                    <input type="checkbox" value={option.value} checked={partnerEval.includes(option.value)} onChange={(e) => { if (e.target.checked) { setPartnerEval([...partnerEval, option.value]); } else { setPartnerEval(partnerEval.filter(v => v !== option.value)); } }} className="filter-checkbox" />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </details>
+
+            {/* AI eval column */}
+            <details className="filter-checkbox-details" open onToggle={(e) => e.stopPropagation()}>
+              <summary className="filter-label">
+                {t('admin.filters.aiEval') || 'AI Evaluation'}
+                {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+              </summary>
+              <div className="filter-checkbox-group">
+                <label className="filter-checkbox-label">
+                  <input type="checkbox" checked={aiEval.length === 0} onChange={(e) => handleAiEvalAll(e.target.checked)} className="filter-checkbox" />
+                  {t('admin.filters.allAiEvals') || 'All'}
+                </label>
+                {aiEvalOptions.filter(o => o.value !== 'all').map(option => (
+                  <label key={option.value} className="filter-checkbox-label">
+                    <input type="checkbox" value={option.value} checked={aiEval.includes(option.value)} onChange={(e) => { if (e.target.checked) { setAiEval([...aiEval, option.value]); } else { setAiEval(aiEval.filter(v => v !== option.value)); } }} className="filter-checkbox" />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </details>
+          </div>
+        </details>
+
         <div className="filter-actions">
+          <button
+            type="button"
+            onClick={handleClear}
+            className="filter-button filter-button-secondary"
+          >
+            {t('admin.filters.clearAll')}
+          </button>
           <button
             id="filter-apply-button"
             type="button"
@@ -571,18 +654,44 @@ const FilterPanel = ({
             className="filter-button filter-button-primary"
             disabled={applyDisabled}
           >
-            {applyButtonText || t('admin.filters.apply') || 'Apply Filters'}
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="filter-button filter-button-secondary"
-          >
-            {t('admin.filters.clearAll') || 'Clear All'}
+            {applyButtonText || t('admin.filters.apply')}
           </button>
         </div>
       </div>
     </details>
+
+    {pills.length > 0 && (
+      <div className="filter-bar__pills-row">
+        {pills.map(pill => (
+          <span
+            key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
+            className={`filter-pill${pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
+          >
+            {pill.label}
+            {!pill.info && (
+              <button
+                type="button"
+                className="filter-pill__close"
+                onClick={() => removeFilter(pill.key, pill.value)}
+                aria-label={t('dashboardFilter.removeFilter')}
+              >
+                ×
+              </button>
+            )}
+          </span>
+        ))}
+        {pills.some(p => !p.info) && (
+          <button
+            type="button"
+            className="filter-pills__clear-all"
+            onClick={handleClear}
+          >
+            {t('admin.filters.clearAll')}
+          </button>
+        )}
+      </div>
+    )}
+    </div>
   );
 };
 

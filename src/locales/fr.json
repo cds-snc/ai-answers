@@ -644,8 +644,8 @@
       }
     },
     "filters": {
-      "title": "Filtres - sélectionnez puis Appliquer pour voir",
-      "clearAll": "Effacer",
+      "title": "Filtres",
+      "clearAll": "Tout effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
@@ -675,8 +675,9 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
-      "filterOptions": "Options de filtre",
-      "showAdvanced": "Plus d'options de filtre"
+      "advancedTitle": "Filtres avancés",
+      "advancedAll": "Avancé : Tous",
+      "showAdvanced": "Plus de filtres"
     },
     "publicEval": {
       "title": "Évaluation publique",
@@ -1215,8 +1216,15 @@
   "dashboardFilter": {
     "department": "Par institution partenaire",
     "allPartners": "Tous les partenaires",
+    "dateRange": "Plage de dates",
+    "last30": "30 derniers jours",
+    "currentQuarter": "Trimestre en cours",
+    "allTime": "Toutes les données",
+    "custom": "Personnalisé",
     "startDate": "Date de début",
     "endDate": "Date de fin",
+    "showing": "Résultats :",
+    "removeFilter": "Supprimer le filtre",
     "apply": "Appliquer",
     "loading": "Chargement..."
   },

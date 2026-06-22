@@ -205,7 +205,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer size="xl" className="space-y-6">
-      <div className="mb-600">
+      <div className="mb-100">
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
