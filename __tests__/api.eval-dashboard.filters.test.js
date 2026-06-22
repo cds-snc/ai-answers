@@ -20,7 +20,7 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     InteractionModel.Interaction.aggregate = vi.fn().mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
       return { allowDiskUse: () => Promise.resolve([]) };
-    }).mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+    });
     const mod = await import('../api/eval/eval-dashboard.js');
     handler = mod && (mod.default || mod);
   });
@@ -66,5 +66,42 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     expect(pipelineIncludes('downloadWebPage')).toBe(true);
     expect(pipelineIncludes('hasDownload')).toBe(true);
     expect(pipelineIncludes('firstToolId')).toBe(true);
+  });
+
+  it('calls aggregate exactly once, not twice', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not include $setWindowFields in the pipeline', async () => {
+    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
+    expect(pipelineIncludes('$setWindowFields')).toBe(false);
+  });
+
+  it('returns hasMore when the query has more rows than the page size', async () => {
+    InteractionModel.Interaction.aggregate = vi.fn().mockImplementationOnce((pipeline) => {
+      capturedPipeline = pipeline;
+      return { allowDiskUse: () => Promise.resolve(Array.from({ length: 101 }, () => ({}))) };
+    });
+    const req = { method: 'GET', query: { startDate: new Date().toISOString(), endDate: new Date().toISOString(), length: '100' } };
+    const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
+    await handler(req, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ hasMore: true }));
+    expect(res.json.mock.calls[0][0]).not.toHaveProperty('totalCount');
+  });
+
+  it('does not make a second aggregation pass when the page is exhausted', async () => {
+    InteractionModel.Interaction.aggregate = vi.fn()
+      .mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+    const req = { method: 'GET', query: {
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      start: '400',
+      length: '100'
+    }};
+    const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
+    await handler(req, res);
+    expect(InteractionModel.Interaction.aggregate).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ hasMore: false }));
   });
 });
