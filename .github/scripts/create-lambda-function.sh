@@ -52,7 +52,7 @@ S3_BUCKET_NAME=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="s3_bucket
 REDIS_URL=$(aws ssm get-parameter --name redis_url --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || echo "")
 
 # Build base environment variables
-ENV_VARS="NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID,BEDROCK_ROLE_ARN=$CROSS_ACCOUNT_BEDROCK_ROLE,BEDROCK_REGION=$BEDROCK_REGION,CONVERSATION_INTEGRITY_SECRET=$CONVERSATION_INTEGRITY_SECRET,S3_BUCKET_NAME=$S3_BUCKET_NAME"
+ENV_VARS="NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID,BEDROCK_ROLE_ARN=$CROSS_ACCOUNT_BEDROCK_ROLE,BEDROCK_REGION=$BEDROCK_REGION,CONVERSATION_INTEGRITY_SECRET=$CONVERSATION_INTEGRITY_SECRET,S3_BUCKET_NAME=$S3_BUCKET_NAME,AWS_LWA_INVOKE_MODE=response_stream"
 
 # Add REDIS_URL only if it has a value (parameter exists in SSM)
 if [ -n "$REDIS_URL" ]; then
@@ -144,6 +144,15 @@ if check_function_exists "$FULL_FUNCTION_NAME"; then
     echo "Error: Failed to update function configuration"
     exit 1
   fi
+
+  echo "Updating function URL configuration for response streaming..."
+  if ! aws lambda update-function-url-config \
+    --function-name "$FULL_FUNCTION_NAME" \
+    --auth-type NONE \
+    --invoke-mode RESPONSE_STREAM > /dev/null 2>&1; then
+    echo "Error: Failed to update function URL configuration"
+    exit 1
+  fi
 else
   echo "Function does not exist. Creating new Lambda function..."
   echo "Using image: ${REGISTRY}/${IMAGE}:${IMAGE_TAG}"
@@ -188,7 +197,8 @@ else
   echo "Creating function URL configuration..."
   if ! aws lambda create-function-url-config \
     --function-name "$FULL_FUNCTION_NAME" \
-    --auth-type NONE > /dev/null 2>&1; then
+    --auth-type NONE \
+    --invoke-mode RESPONSE_STREAM > /dev/null 2>&1; then
     echo "Error: Failed to create function URL configuration"
     exit 1
   fi

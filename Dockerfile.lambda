@@ -58,6 +58,8 @@ ENV READINESS_CHECK_PORT=3001
 ENV READINESS_CHECK_PROTOCOL=http
 ENV READINESS_CHECK_MAX_WAIT=60
 ENV READINESS_CHECK_INTERVAL=1
+# Lambda Web Adapter defaults to buffered mode; SSE needs response streaming.
+ENV AWS_LWA_INVOKE_MODE=response_stream
 
 # Optional: ensure Node trusts the RDS bundle
 ENV NODE_EXTRA_CA_CERTS=/app/global-bundle.pem
