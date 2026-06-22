@@ -199,6 +199,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 autoWidth: false,
                 order: [[11, 'desc']],
                 stateSave: true,
+                layout: {
+                  topStart: 'info',
+                  topEnd: 'paging',
+                  bottomStart: 'info',
+                  bottomEnd: 'paging'
+                },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
                   const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
                   return `${t('common.page', 'Page')} ${pageNumber}`;
