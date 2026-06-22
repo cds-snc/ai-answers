@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.149.0](https://github.com/cds-snc/ai-answers/compare/v1.148.0...v1.149.0) (2026-06-22)
+
+
+### Features
+
+* enable response streaming for Lambda Web Adapter ([798ef7d](https://github.com/cds-snc/ai-answers/commit/798ef7d91444e69eb9668d5d17456c8ce2297054))
+* enable response streaming for Lambda Web Adapter ([5ba7e3e](https://github.com/cds-snc/ai-answers/commit/5ba7e3e8e78ded079183c33183281bb5a359d991))
+* note about data and load ([0b725ba](https://github.com/cds-snc/ai-answers/commit/0b725baa2c18995510fbececf26113247f774b57))
+
+
+### Bug Fixes
+
+* add layout configuration for paging info in eval and auto eval dashboards ([4951c41](https://github.com/cds-snc/ai-answers/commit/4951c41f9b4a41e8430df21b00fc361c85cfe262))
+* add page number display to eval and auto eval dashboards ([3782e59](https://github.com/cds-snc/ai-answers/commit/3782e593f3801c316ccc2fa753a4d02c6c0aa60c))
+* replace double aggregation with $setWindowFields in eval dashboard ([7cb79e1](https://github.com/cds-snc/ai-answers/commit/7cb79e18928c877d0e3512a8748dbc6f13c0c9ed))
+* update eval and auto eval dashboards to improve table reload and pagination features ([892c8d8](https://github.com/cds-snc/ai-answers/commit/892c8d86893756bd655c37c6fb259b82b68d9e71))
+* update eval dashboard tests to use container and within for heading checks ([c416eed](https://github.com/cds-snc/ai-answers/commit/c416eedb24043caae02cb20cc646503a675a7ffa))
+* update eval dashboard to remove double aggregation and adjust response structure ([e2dbcf3](https://github.com/cds-snc/ai-answers/commit/e2dbcf3d85704dd41cefa9c396c49e120633a8f8))
+
 ## [1.148.0](https://github.com/cds-snc/ai-answers/compare/v1.147.0...v1.148.0) (2026-06-19)
 
 
