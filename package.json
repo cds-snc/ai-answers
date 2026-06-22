@@ -58,7 +58,7 @@
     "flydrive": "^2.0.0",
     "googleapis": "^144.0.0",
     "gray-matter": "^4.0.3",
-    "http-proxy-middleware": "^3.0.5",
+    "http-proxy-middleware": "^3.0.7",
     "imvectordb": "^0.0.6",
     "install": "^0.13.0",
     "isbot": "^3.6.0",
