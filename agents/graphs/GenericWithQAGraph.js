@@ -149,16 +149,22 @@ graph.addNode('similarQuestions', async (state) => {
   });
 
   let similarQuestions = '';
+  let similarQuestionsDebug = null;
   try {
-    similarQuestions = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
+    const similarResult = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
       threshold: 0.75,
       expertFeedbackRating: 100,
       expertFeedbackComparison: 'lte',
       language: state.lang,
+      interactionLanguage: state.context?.originalLang || state.translationData?.originalLanguage || state.lang,
       includeQuestionFlow: true,
       recencyDays: 365,
+      useDenormalizedPreFilter: true,
+      returnDebugData: true,
     });
+    similarQuestions = typeof similarResult === 'string' ? similarResult : (similarResult?.text || '');
+    similarQuestionsDebug = typeof similarResult === 'object' && similarResult ? similarResult.debug || null : null;
   } catch (err) {
     await ServerLoggingService.warn('similarQuestions node failed', state.chatId, err);
   }
@@ -166,10 +172,17 @@ graph.addNode('similarQuestions', async (state) => {
   const out = {
     context: { ...state.context, similarQuestions },
   };
+  const preThresholdRecords = Array.isArray(similarQuestionsDebug?.preThresholdRecords) ? similarQuestionsDebug.preThresholdRecords : [];
+  const matchedRecords = Array.isArray(similarQuestionsDebug?.matchedRecords) ? similarQuestionsDebug.matchedRecords : [];
   logGraphEvent('info', 'node:similarQuestions output', state.chatId, {
     hasSimilar: !!similarQuestions,
     similarQuestionsLength: typeof similarQuestions === 'string' ? similarQuestions.length : 0,
     similarQuestionsText: similarQuestions || '',
+    allChatIds: preThresholdRecords.map((record) => record.chatId).filter(Boolean),
+    matchedChatIds: matchedRecords.map((record) => record.chatId).filter(Boolean),
+    matchedRecords,
+    preThresholdChatIds: preThresholdRecords.map((record) => record.chatId).filter(Boolean),
+    preThresholdRecords,
   });
   return out;
 });

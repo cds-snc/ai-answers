@@ -1,8 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
-import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import mongoose from 'mongoose';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
@@ -454,27 +452,18 @@ async function evalDashboardHandler(req, res) {
     const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
     pipeline.push(sortStage);
 
+    const pageSize = isDataTablesMode ? Math.min(Math.max(length, 1), 2000) : null;
+
     if (isDataTablesMode) {
       if (start > 0) pipeline.push({ $skip: start });
-      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
+      pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
     }
 
     const results = await Interaction.aggregate(pipeline).allowDiskUse(true);
+    const hasMore = isDataTablesMode && pageSize !== null && results.length > pageSize;
+    const rows = isDataTablesMode && pageSize !== null ? results.slice(0, pageSize) : results;
 
-    // For records count, use a copy of pipeline up to project then count
-    const countPipeline = pipeline.slice(0, Math.max(0, pipeline.findIndex(s => s.$sort !== undefined))).filter(Boolean);
-    // if pipeline had skip/limit, remove them for counting
-    const filteredCountPipeline = [];
-    for (const stage of countPipeline) {
-      if (stage.$skip || stage.$limit || stage.$sort) continue;
-      filteredCountPipeline.push(stage);
-    }
-    // Append count
-    filteredCountPipeline.push({ $count: 'totalCount' });
-    const countResult = filteredCountPipeline.length ? await Interaction.aggregate(filteredCountPipeline).allowDiskUse(true) : [];
-    const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
-
-    const rows = results.map((r) => ({
+    const mappedRows = rows.map((r) => ({
       _id: r._id ? String(r._id) : '',
       interactionId: r.interactionId || (r._id ? String(r._id) : ''),
       questionNumber: r.questionNumber || 0,
@@ -499,11 +488,11 @@ async function evalDashboardHandler(req, res) {
 
     if (isDataTablesMode) {
       const draw = Number.isFinite(parseInt(drawParam, 10)) ? parseInt(drawParam, 10) : 0;
-      return res.status(200).json({ draw, recordsTotal: totalCount, recordsFiltered: totalCount, data: rows });
+      return res.status(200).json({ draw, hasMore, data: mappedRows });
     }
 
-    const nextLastId = rows.length > 0 ? rows[rows.length - 1]._id : null;
-    return res.status(200).json({ success: true, rows, lastId: nextLastId, totalCount });
+    const nextLastId = mappedRows.length > 0 ? mappedRows[mappedRows.length - 1]._id : null;
+    return res.status(200).json({ success: true, rows: mappedRows, lastId: nextLastId, hasMore });
   } catch (err) {
     console.error('Failed to fetch eval dashboard data', err);
     return res.status(500).json({ error: 'Failed to fetch eval dashboard data', details: err.message });

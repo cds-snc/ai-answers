@@ -13,10 +13,11 @@ function createChainableQuery(resolvedValue) {
 
 // Hoisting mocks so they're initialized before VectorServiceFactory and InteractionPersistenceService accesses them
 // initVectorService is hoisted to fix flakiness with vi.clearAllMocks() wiping the mock implementation during tests and being undefined
-const { mockMatchQuestions, mockInteractionFind, mockChatFindOne, mockInitVectorService } = vi.hoisted(() => ({
+const { mockMatchQuestions, mockInteractionFind, mockChatFindOne, mockChatFind, mockInitVectorService } = vi.hoisted(() => ({
     mockMatchQuestions: vi.fn(),
     mockInteractionFind: vi.fn(),
     mockChatFindOne: vi.fn(),
+    mockChatFind: vi.fn(),
     mockInitVectorService: vi.fn(),
 }));
 
@@ -37,7 +38,7 @@ vi.mock('../../models/answer.js', () => ({ Answer: {} }));
 vi.mock('../../models/expertFeedback.js', () => ({ ExpertFeedback: {} }));
 vi.mock('../../models/question.js', () => ({ Question: {} }));
 vi.mock('../../models/chat.js', () => ({
-  Chat: { findOne: mockChatFindOne },
+  Chat: { findOne: mockChatFindOne, find: mockChatFind },
 }));
 
 // Silence logging in tests
@@ -51,6 +52,7 @@ describe('QuestionAnswerService', () => {
     mockMatchQuestions.mockReset();
     mockInteractionFind.mockReset();
     mockChatFindOne.mockReset();
+    mockChatFind.mockReset();
     mockInitVectorService.mockResolvedValue({ matchQuestions: mockMatchQuestions }); // Re-apply after clearAllMocks wipes it
   });
 
@@ -117,6 +119,94 @@ describe('QuestionAnswerService', () => {
     expect(result).toContain('Citation: https://example.gc.ca');
   });
 
+  it('returns debug data with chatIds, similarity, and pre-threshold text when requested', async () => {
+    mockMatchQuestions.mockResolvedValue({
+      results: [[{
+        interactionId: 'i1',
+        expertFeedbackId: 'ef1',
+        similarity: 0.91,
+      }]],
+      debug: [[
+        {
+          interactionId: 'i1',
+          expertFeedbackId: 'ef1',
+          similarity: 0.91,
+        },
+        {
+          interactionId: 'i2',
+          expertFeedbackId: 'ef2',
+          similarity: 0.74,
+        },
+      ]],
+    });
+
+    mockInteractionFind.mockReturnValue(createChainableQuery([
+      {
+        _id: 'i1',
+        question: { redactedQuestion: 'Matched Q?' },
+        answer: { content: 'Matched A.' },
+        expertFeedback: { totalScore: 80, createdAt: new Date(), neverStale: false },
+      },
+      {
+        _id: 'i2',
+        question: { redactedQuestion: 'Below threshold Q?' },
+        answer: { content: 'Below threshold A.' },
+        expertFeedback: { totalScore: 80, createdAt: new Date(), neverStale: false },
+      },
+    ]));
+
+    mockChatFindOne.mockReturnValue({
+      populate: () => ({
+        lean: async () => ({
+          interactions: [
+            { _id: 'i1', question: { redactedQuestion: 'Matched Q?' } },
+            { _id: 'i2', question: { redactedQuestion: 'Below threshold Q?' } },
+          ],
+        }),
+      }),
+    });
+    mockChatFind.mockReturnValue({
+      select: () => ({
+        lean: async () => [
+          { chatId: 'chat-1', interactions: ['i1'] },
+          { chatId: 'chat-2', interactions: ['i2'] },
+        ],
+      }),
+    });
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      includeQuestionFlow: false,
+      returnDebugData: true,
+    });
+
+    expect(result).toMatchObject({
+      text: expect.stringContaining('Q: Matched Q?'),
+      debug: {
+        matchedRecords: [
+          expect.objectContaining({
+            interactionId: 'i1',
+            chatId: 'chat-1',
+            similarity: 0.91,
+            questionText: 'Matched Q?',
+          }),
+        ],
+        preThresholdRecords: [
+          expect.objectContaining({
+            interactionId: 'i1',
+            similarity: 0.91,
+            questionText: 'Matched Q?',
+          }),
+          expect.objectContaining({
+            interactionId: 'i2',
+            similarity: 0.74,
+            questionText: 'Below threshold Q?',
+          }),
+        ],
+      },
+    });
+  });
+
   it('returns empty string when no matches are found', async () => {
     mockMatchQuestions.mockResolvedValue([[]]);
     mockInteractionFind.mockReturnValue(createChainableQuery([]));
@@ -124,6 +214,40 @@ describe('QuestionAnswerService', () => {
 
     const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits');
     expect(result).toBe('');
+  });
+
+  it('does not over-fetch when denormalized pre-filtering is enabled', async () => {
+    mockMatchQuestions.mockResolvedValue([[]]);
+    mockInteractionFind.mockReturnValue(createChainableQuery([]));
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      useDenormalizedPreFilter: true,
+      recencyDays: 365,
+    });
+
+    expect(result).toBe('');
+    expect(mockMatchQuestions).toHaveBeenCalledWith(['benefits'], expect.objectContaining({
+      k: 3,
+      recencyDays: 365,
+      useDenormalizedPreFilter: true,
+    }));
+  });
+
+  it('keeps legacy over-fetching when denormalized pre-filtering is disabled', async () => {
+    mockMatchQuestions.mockResolvedValue([[]]);
+    mockInteractionFind.mockReturnValue(createChainableQuery([]));
+
+    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
+      k: 3,
+      useDenormalizedPreFilter: false,
+    });
+
+    expect(result).toBe('');
+    expect(mockMatchQuestions).toHaveBeenCalledWith(['benefits'], expect.objectContaining({
+      k: 9,
+      useDenormalizedPreFilter: false,
+    }));
   });
 
   it('drops hits whose expertFeedback.createdAt is older than recencyDays', async () => {

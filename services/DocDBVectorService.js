@@ -62,6 +62,17 @@ class DocDBVectorService {
     });
   }
 
+  async _ensureStandardIndex(collectionName, keySpec, indexName) {
+    const db = mongoose.connection.db;
+    const list = await db.command({ listIndexes: collectionName });
+    const exists = list.cursor.firstBatch.some((i) => i.name === indexName);
+    if (exists) return;
+    await db.command({
+      createIndexes: collectionName,
+      indexes: [{ key: keySpec, name: indexName }],
+    });
+  }
+
   async initialize() {
     if (this.isInitialized) return;
     if (this.initializingPromise) return this.initializingPromise;
@@ -137,6 +148,18 @@ class DocDBVectorService {
       // Ensure a dedicated vector index for questions-only embeddings so
       // matchQuestions can search against questionsEmbedding separately.
       try { await this._ensureVectorIndex('embeddings', { questionsEmbedding: 'vector' }, qaOptions, 'questions_vector_index'); } catch { }
+      try {
+        await this._ensureStandardIndex(
+          'embeddings',
+          { expertFeedbackId: 1, pageLanguage: 1, expertFeedbackTotalScore: 1, expertFeedbackCreatedAt: 1 },
+          'qa_denormalized_page_filter_index'
+        );
+        await this._ensureStandardIndex(
+          'embeddings',
+          { expertFeedbackId: 1, interactionLanguage: 1, expertFeedbackTotalScore: 1, expertFeedbackCreatedAt: 1 },
+          'qa_denormalized_interaction_filter_index'
+        );
+      } catch { }
       try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch { }
 
 
@@ -293,7 +316,7 @@ class DocDBVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, interactionLanguage = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -319,41 +342,82 @@ class DocDBVectorService {
       expertFeedbackRating,
       expertFeedbackComparison,
       language,
+      interactionLanguage,
       pageLang,
+      recencyDays,
+      useDenormalizedPreFilter,
+      returnDebugData,
     });
     const hasPostSearchFilters = Boolean(pageLang) || typeof expertFeedbackRating === 'number';
-    const engineK = hasPostSearchFilters ? Math.max(k * 20, 100) : k * 2;
+    const engineK = useDenormalizedPreFilter
+      ? Math.max(k * 4, 25)
+      : (hasPostSearchFilters ? Math.max(k * 20, 100) : k * 2);
     ServerLoggingService.info('matchQuestions search config', 'DocDBVectorService', {
       hasPostSearchFilters,
       engineK,
+      useDenormalizedPreFilter,
     });
     const pipelines = embeddings.map((emb) => {
       const pipeline = [];
+      if (useDenormalizedPreFilter) {
+        const denormalizedLanguage = interactionLanguage
+          ? desiredPageLang(interactionLanguage)
+          : pageLang;
+        const preMatch = {
+          expertFeedbackId: { $exists: true, $ne: null },
+        };
+        if (typeof expertFeedbackRating === 'number') {
+          const cmp = expertFeedbackComparison || 'eq';
+          if (cmp === 'lt') {
+            preMatch.expertFeedbackTotalScore = { $lt: expertFeedbackRating };
+          } else if (cmp === 'lte') {
+            preMatch.expertFeedbackTotalScore = { $lte: expertFeedbackRating };
+          } else {
+            preMatch.expertFeedbackTotalScore = expertFeedbackRating;
+          }
+        }
+        if (denormalizedLanguage) {
+          if (interactionLanguage) preMatch.interactionLanguage = denormalizedLanguage;
+          else preMatch.pageLanguage = denormalizedLanguage;
+        }
+        if (typeof recencyDays === 'number' && recencyDays > 0) {
+          const cutoff = new Date(Date.now() - (recencyDays * 24 * 60 * 60 * 1000));
+          preMatch.$or = [
+            { expertFeedbackNeverStale: true },
+            { expertFeedbackCreatedAt: { $gte: cutoff } },
+          ];
+        }
+        pipeline.push({ $match: preMatch });
+      }
       pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: engineK, efSearch: 200 } } });
       pipeline.push({ $limit: engineK });
       if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
-      pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
-      pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
-      // Populate expertFeedback so we can filter by its totalScore when requested
-      pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'inter.expertFeedback', foreignField: '_id', as: 'ef' } });
-      pipeline.push({ $unwind: { path: '$ef', preserveNullAndEmptyArrays: true } });
-      pipeline.push({ $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } });
-      pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
-      pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
-      pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
-      // If a desired expertFeedbackRating was provided, apply comparison (eq by default for backwards compatibility)
-      if (typeof expertFeedbackRating === 'number') {
-        const cmp = expertFeedbackComparison || 'eq';
-        if (cmp === 'lt') {
-          pipeline.push({ $match: { 'ef.totalScore': { $lt: expertFeedbackRating } } });
-        } else if (cmp === 'lte') {
-          pipeline.push({ $match: { 'ef.totalScore': { $lte: expertFeedbackRating } } });
-        } else { // eq
-          pipeline.push({ $match: { 'ef.totalScore': expertFeedbackRating } });
+      if (!useDenormalizedPreFilter) {
+        pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
+        pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
+        // Populate expertFeedback so we can filter by its totalScore when requested
+        pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'inter.expertFeedback', foreignField: '_id', as: 'ef' } });
+        pipeline.push({ $unwind: { path: '$ef', preserveNullAndEmptyArrays: true } });
+        pipeline.push({ $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } });
+        pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
+        pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
+        pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
+        // If a desired expertFeedbackRating was provided, apply comparison (eq by default for backwards compatibility)
+        if (typeof expertFeedbackRating === 'number') {
+          const cmp = expertFeedbackComparison || 'eq';
+          if (cmp === 'lt') {
+            pipeline.push({ $match: { 'ef.totalScore': { $lt: expertFeedbackRating } } });
+          } else if (cmp === 'lte') {
+            pipeline.push({ $match: { 'ef.totalScore': { $lte: expertFeedbackRating } } });
+          } else { // eq
+            pipeline.push({ $match: { 'ef.totalScore': expertFeedbackRating } });
+          }
         }
+        if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
+        pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead', expertFeedbackScore: '$ef.totalScore' } });
+      } else {
+        pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: 1, questionsEmbedding: 1, expertFeedbackScore: '$expertFeedbackTotalScore' } });
       }
-      if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
-      pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead', expertFeedbackScore: '$ef.totalScore' } });
       return pipeline;
     });
 
@@ -374,10 +438,12 @@ class DocDBVectorService {
     // is already projected as questionsEmbedding). This lets us (a) enforce the
     // similarity threshold when one is requested and (b) return hits in true
     // similarity order. No expert-feedback promotion: relevance decides order.
+    const debugPerQuestion = [];
     const resultsPerQuestion = allDocs.map((docs, idx) => {
       const queryEmb = embeddings[idx];
       const candidates = Array.isArray(docs) ? docs : [];
       const mapped = [];
+      const debugCandidates = [];
       for (const r of candidates) {
         let sim = 0;
         try {
@@ -385,11 +451,18 @@ class DocDBVectorService {
         } catch (err) {
           ServerLoggingService.error('Error computing cosine similarity (matchQuestions)', 'DocDBVectorService', err);
         }
+        const debugEntry = {
+          id: r._id?.toString?.() || null,
+          interactionId: r.interactionId?.toString?.() || r.interactionId || null,
+          expertFeedbackId: r.expertFeedbackId || null,
+          similarity: sim,
+        };
+        debugCandidates.push(debugEntry);
         if (threshold !== null && sim < threshold) continue;
         const expertFeedbackId = r.expertFeedbackId || null;
         mapped.push({
-          id: r._id?.toString?.() || null,
-          interactionId: r.interactionId?.toString?.() || r.interactionId,
+          id: debugEntry.id,
+          interactionId: debugEntry.interactionId,
           expertFeedbackId,
           expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
           similarity: sim,
@@ -409,10 +482,11 @@ class DocDBVectorService {
         finalCount: top.length,
         threshold,
       });
+      debugPerQuestion.push(debugCandidates);
       return top;
     });
 
-    return resultsPerQuestion;
+    return returnDebugData ? { results: resultsPerQuestion, debug: debugPerQuestion } : resultsPerQuestion;
   }
 
   async getStats() {

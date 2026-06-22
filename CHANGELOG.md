@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.148.0](https://github.com/cds-snc/ai-answers/compare/v1.147.0...v1.148.0) (2026-06-19)
+
+
+### Features
+
+* add expert feedback document validation and enhance error handling for metadata lookup ([d2b1397](https://github.com/cds-snc/ai-answers/commit/d2b1397a38d0e66bd8b0360c836a904bbccf690a))
+* add guideline for fail-fast contracts to improve input handling ([8826737](https://github.com/cds-snc/ai-answers/commit/8826737486492a6c39bf1afa60b46e890e59db63))
+* add summary for metadata batch results in English and French locales ([1617c85](https://github.com/cds-snc/ai-answers/commit/1617c85481940f66e8f72c608d24ed30e640cd39))
+* enhance embedding regeneration and metadata processing with cumulative progress tracking ([6b63f3a](https://github.com/cds-snc/ai-answers/commit/6b63f3a698b95fb47f3c91808fd6e178242b8a47))
+* enhance EmbeddingMetadataService with dynamic update filter and updateScope parameter ([1fd1b36](https://github.com/cds-snc/ai-answers/commit/1fd1b36d144bf31dcdf0fa9b27e68f92844f70ff))
+* enhance metadata backfill process with phase handling and localization support ([be05c32](https://github.com/cds-snc/ai-answers/commit/be05c32a0349327804bb714d10f8e2e66486806e))
+* Generic QA Workflow optimizations ([5912d7e](https://github.com/cds-snc/ai-answers/commit/5912d7eb1984c2e6fe9a86b66366dd7a5ae13266))
+* implement embedding metadata lookup functionality with localization support ([aa2b248](https://github.com/cds-snc/ai-answers/commit/aa2b2480c5e128d22eb7f80b6017ead7bbd29652))
+* update recencyDays parameter to 365 for similarQuestions node ([97dc820](https://github.com/cds-snc/ai-answers/commit/97dc8204dc573a4fcd6187f4275a694a2544b29c))
+
+
+### Bug Fixes
+
+* avoid biological ([6d2793d](https://github.com/cds-snc/ai-answers/commit/6d2793d0906ae87cd509d799f9462e82fdae8162))
+* CEO scenario ([d4568d5](https://github.com/cds-snc/ai-answers/commit/d4568d56887c8fb97ec28b3b00ec58876e185fa1))
+* reinforce AI Answers is CEO-BEC dept scenario ([6349ce4](https://github.com/cds-snc/ai-answers/commit/6349ce4e51cc9aab5d208b8a32f9f25643131a56))
+* simplify about pages ([3735927](https://github.com/cds-snc/ai-answers/commit/373592784b67529c046a4e090b277acb654516c7))
+* typo and clarify ([9cee7c3](https://github.com/cds-snc/ai-answers/commit/9cee7c3017af012e1a240f95db1a56b11f206806))
+* update ISC scenario re eligibility ([681888c](https://github.com/cds-snc/ai-answers/commit/681888ccab6da6f83769f684e54c568e2e3e046c))
+
+## [1.147.0](https://github.com/cds-snc/ai-answers/compare/v1.146.1...v1.147.0) (2026-06-18)
+
+
+### Features
+
+* exec dashboard reorder ([89e6b0c](https://github.com/cds-snc/ai-answers/commit/89e6b0ccf0e33f3605e17cd79f18188ba09ce02b))
+* exec dashboard reorder ([f36926b](https://github.com/cds-snc/ai-answers/commit/f36926b75ed0dc6e3b1838e138f9341e54e04fe5))
+* pr cleanup ([6ccff8d](https://github.com/cds-snc/ai-answers/commit/6ccff8d9619a39596733bbfe9c3be7607e2e6ed5))
+* pr review fix cont. ([2fd7796](https://github.com/cds-snc/ai-answers/commit/2fd7796ce3eb39856eeb689a0a1ce3fcfcadf26a))
+* pr review fixes ([ad54bdc](https://github.com/cds-snc/ai-answers/commit/ad54bdcda90f0fec53345b8458fd32f2bb86fe7e))
+
+
+### Bug Fixes
+
+* code review and change exec to only use PUBLIC not ADMIN ([a0f1c30](https://github.com/cds-snc/ai-answers/commit/a0f1c30f33cff9e23321b9db3ee5bbf56aec33dc))
+* filter match start date of data ([27d185f](https://github.com/cds-snc/ai-answers/commit/27d185fdc6fb2da6ecb8b6886c56964b260d70b5))
+* label ([b40cfcb](https://github.com/cds-snc/ai-answers/commit/b40cfcb8e5cde83ee28b19893a2fb390f9d29e0d))
+* redundancy from pr review ([68c1ed7](https://github.com/cds-snc/ai-answers/commit/68c1ed7766aa4c2b0689e6e10874585c5f0ec968))
+* referringUrl rules for Public-referring ([75f4def](https://github.com/cds-snc/ai-answers/commit/75f4def5a6f9c42937a0aef8d9b788fa31cf8682))
+* tooltips show count not duplicate percentage ([7ec58e7](https://github.com/cds-snc/ai-answers/commit/7ec58e79511c531955189100aed5e81a3456de3f))
+* update note ([2e9e2cc](https://github.com/cds-snc/ai-answers/commit/2e9e2ccf68126c6f293925f9bbcd7b7ff4655913))
+* use start date in heading ([ce92ff0](https://github.com/cds-snc/ai-answers/commit/ce92ff062d1ccbb8c85b5c7468952fca6b301af6))
+
 ## [1.146.1](https://github.com/cds-snc/ai-answers/compare/v1.146.0...v1.146.1) (2026-06-17)
 
 

@@ -3,6 +3,25 @@ import { tool } from "@langchain/core/tools";
 
 const customsearch = google.customsearch('v1');
 
+function maskSecretValue(text) {
+    if (!text) return text;
+
+    return String(text)
+        .replace(/([?&]key=)([^&\s]+)/gi, '$1[REDACTED]');
+}
+
+function sanitizeErrorForLogging(error) {
+    if (!error) return error;
+
+    return {
+        name: error.name,
+        message: maskSecretValue(error.message),
+        code: error.code,
+        status: error.status,
+        stack: maskSecretValue(error.stack),
+    };
+}
+
 
 /**
  * Extracts search results from Google Custom Search API response.
@@ -64,9 +83,10 @@ const contextSearch = async (query, lang) => {
             provider: "google"
         };
     } catch (error) {
-        console.error("Error performing Google search:", error);
+        const sanitizedError = sanitizeErrorForLogging(error);
+        console.error("Error performing Google search:", sanitizedError);
         return {
-            results: "Search failed: " + error.message,
+            results: "Search failed: " + maskSecretValue(error.message),
             provider: "google"
         };
     }

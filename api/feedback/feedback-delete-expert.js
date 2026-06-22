@@ -3,6 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
+import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
 
 async function feedbackDeleteExpertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -39,6 +40,7 @@ async function feedbackDeleteExpertHandler(req, res) {
     // Unset the expertFeedback reference on the interaction
     interaction.expertFeedback = undefined;
     await interaction.save();
+    await EmbeddingMetadataService.clearForInteraction(interaction._id);
 
     // Delete the expert feedback document
     const result = await ExpertFeedback.deleteOne({ _id: efId });
