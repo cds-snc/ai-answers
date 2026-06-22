@@ -169,13 +169,16 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 processing: true,
                 serverSide: true,
                 paging: true,
-                pagingType: 'simple',
                 searching: true,
                 ordering: true,
-                info: false,
+                info: true,
                 autoWidth: false,
                 order: [[8, 'desc']],
                 stateSave: true,
+                infoCallback: function (_settings, start, end, _max, _total, _pre) {
+                  const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
+                  return `${t('common.page', 'Page')} ${pageNumber}`;
+                },
                 language: {
                   ...dataTableLanguage(lang),
                   search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
