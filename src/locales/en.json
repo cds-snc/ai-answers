@@ -984,6 +984,19 @@
     "indigenousLanguageBlocking": {
       "label": "Canadian Indigenous language blocking"
     },
+    "health": {
+      "title": "Health checks",
+      "description": "Control the automated health monitor and its dependency checks.",
+      "enabledLabel": "Enable health monitoring",
+      "databaseEnabledLabel": "Check database health",
+      "searchEnabledLabel": "Check search health",
+      "llmEnabledLabel": "Check LLM health",
+      "failureThreshold": "Failure threshold",
+      "failureWindowMinutes": "Failure window (seconds)",
+      "intervalMinutes": "Check interval (seconds)",
+      "alertRecipients": "Alert recipients",
+      "alertTemplateId": "GC Notify alert template ID"
+    },
     "statusLabel": "Service status",
     "statuses": {
       "available": "Available",
@@ -1683,6 +1696,17 @@
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
     "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
+    "simulation": {
+      "title": "Failure simulation",
+      "description": "Flip a service into simulated outage mode to exercise the health monitor.",
+      "enable": "Simulate failure",
+      "disable": "Clear simulation",
+      "labels": {
+        "database": "Database",
+        "search": "Search",
+        "llm": "LLM"
+      }
+    },
     "connected": "Connected",
     "errors": "Errors",
     "warnings": "Warnings",

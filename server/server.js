@@ -91,6 +91,7 @@ import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
+import systemHealthMonitor from '../services/SystemHealthMonitor.js';
 
 
 
@@ -329,6 +330,9 @@ const PORT = process.env.PORT || 3001;
 
     await SettingsService.loadAll();
     console.log("Settings service started...");
+
+    systemHealthMonitor.start();
+    console.log("System health monitor started...");
 
     // Initialize rate limiter middleware (depends on settings).
     // The middleware registered above will wait for this promise to resolve.

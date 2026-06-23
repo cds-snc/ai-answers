@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import NotifyClient from 'notifications-node-client';
 import GCNotifyService from '../GCNotifyService.js';
+import ServerLoggingService from '../ServerLoggingService.js';
 
 describe('GCNotifyService', () => {
   it('throws when API key missing', async () => {
@@ -18,12 +19,27 @@ describe('GCNotifyService', () => {
     process.env.GC_NOTIFY_TEMPLATE_ID = 'tpl-123';
 
     const sendEmailMock = vi.spyOn(NotifyClient.NotifyClient.prototype, 'sendEmail').mockResolvedValue({ id: 'notif-1' });
+    const infoMock = vi.spyOn(ServerLoggingService, 'info').mockImplementation(() => {});
 
     const res = await GCNotifyService.sendEmail({ email: 'test@example.com', personalisation: { name: 'x' } });
     expect(sendEmailMock).toHaveBeenCalled();
+    expect(infoMock).toHaveBeenCalledWith('GC Notify sent email', 'gc-notify-service', expect.objectContaining({
+      template: 'tpl-123',
+      email: 'test@example.com',
+      result: expect.objectContaining({
+        status: null,
+        statusText: null,
+        data: expect.objectContaining({
+          id: 'notif-1',
+          reference: null,
+          uri: null,
+        }),
+      }),
+    }));
     expect(res.success).toBe(true);
     expect(res.response).toEqual({ id: 'notif-1' });
     sendEmailMock.mockRestore();
+    infoMock.mockRestore();
   });
 
   it('handles API error response gracefully', async () => {
