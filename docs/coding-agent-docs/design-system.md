@@ -47,7 +47,7 @@ The choice between applying utility classes directly in markup vs. writing a cus
 - **Use CSS shortcuts** for simple, focused changes that need only a few styles — e.g. styling an `<a>` tag to look like a GC DS link, adding spacing to a label, setting a text colour. A handful of utility classes in the HTML is clean and sufficient.
 - **Use a custom CSS class with tokens** for design elements with many properties that need to be understood and maintained together — e.g. a chat message bubble, a dashboard stat card, a form panel. These belong in the CSS file as a named class so the full visual definition is in one place and can be reviewed as a whole. Don't split a complex component's styles between a custom class and scattered utility classes — keep it consolidated.
 
-**Typography is an exception to component bundling.** Font size adjustments (e.g. a small non-responsive label size for screen reader context) should be defined as standalone utility classes in the CSS file, not embedded inside component classes. This keeps typographic deviations minimal, named, and reusable — a card or badge can reference `.text-label-small` rather than each defining their own font size, making it easier to maintain consistency and review the full type scale in one place.
+**Typography is an exception to component bundling.** Font size adjustments (e.g. a small non-responsive label size for mobile context) should be defined as standalone utility classes in the CSS file, not embedded inside component classes. This keeps typographic deviations minimal, named, and reusable — a card or badge can reference `.text-label-small` or `.text-label-small-nr` (nr = non-responsive) rather than each defining their own font size, making it easier to maintain consistency and review the full type scale in one place. Custom sizes must be minimal and strategic — solving a specific problem, not accumulating ad hoc. They should form a coherent sub-scale that respects the GC DS sizing rhythm — stepping in consistent increments that align with the design system's existing type scale (e.g. 14, 16, 18px) rather than a scatter of arbitrary values. The smallest size in the set should have a non-responsive variant so it doesn't become unreadably small on mobile.
 
 ## GC Design System tokens
 
@@ -85,6 +85,8 @@ border-radius: 4px;
 ```
 
 Hardcoded values are acceptable when no GC DS token maps to the property, or when overriding a third-party component that requires a specific value. In those cases leave a short comment explaining why a token wasn't used so a designer can review it later.
+
+The same rhythm principle applies to colours. If additional shades are needed beyond what GC DS provides — for example, to achieve proper contrast ratios for charts or to fill out a data set with enough distinct colours — follow the GC DS colour scale's existing tone and stepping pattern rather than introducing unrelated values. A custom shade should feel like a natural step within the palette (e.g. one stop darker than an existing token) and serve a specific, justified purpose such as a hover state or accessible contrast pair.
 
 ## Dashboard chart colours
 
