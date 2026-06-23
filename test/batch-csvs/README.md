@@ -12,9 +12,9 @@ Manual-run fixtures for testing the AI Answers pipeline against specific issues,
 
 | File | Purpose |
 | --- | --- |
-| `blocking-other-testset-27May2026.csv` | blocking threat, manipulation, badwords and obfuscation/encoded-content examples — verifies the redaction layer catches expected patterns and that the translation prompt decodes obfuscated input. Final column describes whether it should be blocked or not.|
 | `scis.csv` | Minimal single-question fixture (acronym lookup). |
 | `ISC-contactEval-9Feb-EN.csv` | ISC contact-evaluation batch from Feb 9 — historical regression sample. |
 | `Blocking PI testbatch 5May2026.csv` | PI redaction test set with variants that should and should not be blocked. Columns: `category`, `BLOCK`, `QUESTION`, `URL`. |
 | `fr-xdept-batch-30april2026.csv` | French-language cross-department batch — checks routing/citations across CRA, ESDC, etc. Includes original aiService answer + citation for comparison. |
 | `test-batch-range-5may2026.csv` | Range-of-questions sample (off-topic, non-GC, novelty prompts) with expected English answer text for regression checking. |
+
