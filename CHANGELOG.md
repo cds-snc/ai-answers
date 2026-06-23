@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.150.0](https://github.com/cds-snc/ai-answers/compare/v1.149.0...v1.150.0) (2026-06-23)
+
+
+### Features
+
+* add design instructions, css cleanup instructions ([620d968](https://github.com/cds-snc/ai-answers/commit/620d9683745aaf7423bf5224c2989ca91ca4b50c))
+* add design instructions, css cleanup instructions ([240b555](https://github.com/cds-snc/ai-answers/commit/240b5555680b8ef44cc4cbd9949cbd824201f5c2))
+* adjustments for clarity ([4aff28d](https://github.com/cds-snc/ai-answers/commit/4aff28dc239295f3edee5cb3f4afa1765ae7d157))
+
+
+### Bug Fixes
+
+* add line numbers ([2f14caa](https://github.com/cds-snc/ai-answers/commit/2f14caa58b949b48e9d6504ae06bcedfbf8a2161))
+* add new ERI pages ([a32082a](https://github.com/cds-snc/ai-answers/commit/a32082a7b908ae226a3044f3d488f8c6943945e3))
+* delete blocking testset ([a0b9687](https://github.com/cds-snc/ai-answers/commit/a0b96877addf3e445a9cf3a5a726b0dbb54cea6c))
+* renumber the files first ([24a4781](https://github.com/cds-snc/ai-answers/commit/24a4781bf786abfb76884d37451300f2653c200c))
+
 ## [1.149.0](https://github.com/cds-snc/ai-answers/compare/v1.148.0...v1.149.0) (2026-06-22)
 
 
