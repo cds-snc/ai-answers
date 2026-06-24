@@ -3,6 +3,9 @@ import { DOMAIN_REGISTRY } from '../config/citationDomainRegistry.js';
 // Static bilingual strings — kept inline rather than in locale files because
 // this is a pure utility with no React context. These strings are stable; if
 // they ever need to change, update both EN and FR variants here together.
+//
+// C8 note: lang is expected to be 'en' or 'fr' only — this app's two official
+// languages. Passing any other value will produce undefined behaviour.
 const STRINGS = {
   en: {
     opensInNewTab: '(opens in new tab)',
@@ -32,26 +35,53 @@ function isOpaque(segment) {
   return OPAQUE_PATTERNS.some(p => p.test(segment));
 }
 
+// Returns true for GC-owned domains (.gc.ca and canada.ca including subdomains).
+function isGcDomain(hostname) {
+  return hostname === 'canada.ca' ||
+    hostname.endsWith('.canada.ca') ||
+    hostname.endsWith('.gc.ca');
+}
+
+// Converts a slug string to a readable label.
+// EN: title-case (each word capitalised — appropriate for program/page names).
+// FR: sentence case (first word only — French typographic convention).
+function toReadableLabel(slug, lang) {
+  const words = slug.replace(/[-_]/g, ' ');
+  if (lang === 'fr') {
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  }
+  return words.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // Derives a human-readable label from URL path segments, or returns null if
 // no readable slug is found.
-function extractSlugLabel(pathname) {
-  const segments = pathname
+function extractSlugLabel(pathname, lang) {
+  const rawSegments = pathname
     .split('/')
     .map(s => s.replace(/\.[a-z]{2,5}$/i, '')) // strip file extension
-    .filter(s => s && !SKIP_SEGMENTS.has(s.toLowerCase()))
-    .filter(s => !isOpaque(s));
+    .filter(s => s && !SKIP_SEGMENTS.has(s.toLowerCase()));
 
-  if (segments.length === 0) return null;
+  // If the first remaining segment looks like an unrecognized locale code
+  // (letters only, no hyphens, ≤5 chars), skip it. This covers any language
+  // prefix other than the known EN/FR variants already in SKIP_SEGMENTS —
+  // including indigenous language codes (e.g. 'oji', 'cre', 'moh', 'iku')
+  // and other languages (e.g. 'es'). In all these cases the function falls
+  // back gracefully to "Government of Canada — domain" via Tier 3, rather
+  // than surfacing the raw language code as a label.
+  const segments = (
+    rawSegments.length > 0 && /^[a-zA-Z]{1,5}$/.test(rawSegments[0])
+  ) ? rawSegments.slice(1) : rawSegments;
 
-  const last = segments[segments.length - 1];
+  const filtered = segments.filter(s => !isOpaque(s));
+
+  if (filtered.length === 0) return null;
+
+  const last = filtered[filtered.length - 1];
 
   // Must contain at least one letter — rules out any remaining numeric-only values
   if (!/[a-zA-Z]/.test(last)) return null;
 
-  // Title-case: hyphens and underscores become word separators
-  return last
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+  return toReadableLabel(last, lang);
 }
 
 // Builds a descriptive aria-label for a GC citation link.
@@ -60,8 +90,13 @@ function extractSlugLabel(pathname) {
 //   "Government of Canada — Employment Insurance — canada.ca (opens in new tab)"
 // Tier 2 — opaque/numeric path, domain in registry:
 //   "Government of Canada — Indigenous Services Canada — sac-isc.gc.ca (opens in new tab)"
-// Tier 3 — unknown domain, opaque path (domain-only fallback):
-//   "unknown-dept.gc.ca (opens in new tab)"
+// Tier 3 — unregistered GC domain with opaque path:
+//   "Government of Canada — travel.gc.ca (opens in new tab)"
+// Tier 3 — non-GC domain (unexpected; upstream validation should prevent this):
+//   "example.com (opens in new tab)"
+//
+// C7 note: Tier 1 prepends "Government of Canada" to any domain with a readable
+// slug. This relies on upstream URL validation ensuring only GC URLs reach here.
 //
 // WCAG 2.5.3 note: the aria-label differs from the visible link text (raw URL).
 // This is intentional — 2.5.3 targets speech-input activation of named controls,
@@ -69,9 +104,13 @@ function extractSlugLabel(pathname) {
 export function buildAriaLabel(url, lang = 'en') {
   const s = STRINGS[lang];
 
+  // C1: normalise protocol-relative URLs (//canada.ca/...) so new URL() can
+  // parse them — safeHttpHref allows these through but new URL() requires a scheme.
+  const normalized = typeof url === 'string' && url.startsWith('//') ? `https:${url}` : url;
+
   let parsed;
   try {
-    parsed = new URL(url);
+    parsed = new URL(normalized);
   } catch {
     return '';
   }
@@ -79,8 +118,17 @@ export function buildAriaLabel(url, lang = 'en') {
   // Strip www. prefix so registry lookups work for both www.canada.ca and canada.ca
   const hostname = parsed.hostname.replace(/^www\./, '');
 
+  // C3: decode percent-encoded path characters (e.g. %C3%A9 → é) so slug labels
+  // are readable. Falls back to the raw encoded form if decoding fails.
+  let pathname;
+  try {
+    pathname = decodeURIComponent(parsed.pathname);
+  } catch {
+    pathname = parsed.pathname;
+  }
+
   // Tier 1: readable path slug
-  const slugLabel = extractSlugLabel(parsed.pathname);
+  const slugLabel = extractSlugLabel(pathname, lang);
   if (slugLabel) {
     return `${s.govCa} — ${slugLabel} — ${hostname} ${s.opensInNewTab}`;
   }
@@ -97,6 +145,13 @@ export function buildAriaLabel(url, lang = 'en') {
     return `${s.govCa} — ${deptName} — ${hostname} ${s.opensInNewTab}`;
   }
 
-  // Tier 3: unknown domain, opaque path — domain + "opens in new tab" only
+  // Tier 3: always prefix GC domains with "Government of Canada" so something
+  // sensible is returned for unregistered domains or any URL whose path could
+  // not produce a readable slug — including indigenous language paths and any
+  // other language prefix not covered by SKIP_SEGMENTS.
+  if (isGcDomain(hostname)) {
+    return `${s.govCa} — ${hostname} ${s.opensInNewTab}`;
+  }
+
   return `${hostname} ${s.opensInNewTab}`;
 }

@@ -9,10 +9,10 @@ describe('buildAriaLabel', () => {
       ).toBe('Government of Canada — Employment Insurance — canada.ca (opens in new tab)');
     });
 
-    it('derives label from last readable slug (fr)', () => {
+    it('derives label from last readable slug (fr) — sentence case', () => {
       expect(
         buildAriaLabel('https://www.canada.ca/fr/services/prestations/ae/assurance-emploi.html', 'fr')
-      ).toBe("Gouvernement du Canada — Assurance Emploi — canada.ca (s'ouvre dans un nouvel onglet)");
+      ).toBe("Gouvernement du Canada — Assurance emploi — canada.ca (s'ouvre dans un nouvel onglet)");
     });
 
     it('strips locale prefix segments', () => {
@@ -38,6 +38,12 @@ describe('buildAriaLabel', () => {
         buildAriaLabel('https://canada.ca/en/services/cpp_retirement_pension.html', 'en')
       ).toBe('Government of Canada — Cpp Retirement Pension — canada.ca (opens in new tab)');
     });
+
+    it('decodes percent-encoded path characters (C3)', () => {
+      expect(
+        buildAriaLabel('https://canada.ca/fr/services/b%C3%A9n%C3%A9fices-emploi.html', 'fr')
+      ).toBe("Gouvernement du Canada — Bénéfices emploi — canada.ca (s'ouvre dans un nouvel onglet)");
+    });
   });
 
   describe('Tier 2 — domain registry fallback', () => {
@@ -54,17 +60,23 @@ describe('buildAriaLabel', () => {
     });
   });
 
-  describe('Tier 3 — unregistered domain with opaque path', () => {
-    it('returns domain + opens-in-new-tab only (en)', () => {
+  describe('Tier 3 — unregistered GC domain', () => {
+    it('prefixes Government of Canada for unregistered gc.ca domain (en)', () => {
       expect(
         buildAriaLabel('https://travel.gc.ca/en/98765', 'en')
-      ).toBe('travel.gc.ca (opens in new tab)');
+      ).toBe('Government of Canada — travel.gc.ca (opens in new tab)');
     });
 
-    it('returns domain + opens-in-new-tab only (fr)', () => {
+    it('prefixes Government of Canada for unregistered gc.ca domain (fr)', () => {
       expect(
         buildAriaLabel('https://voyage.gc.ca/fr/98765', 'fr')
-      ).toBe("voyage.gc.ca (s'ouvre dans un nouvel onglet)");
+      ).toBe("Gouvernement du Canada — voyage.gc.ca (s'ouvre dans un nouvel onglet)");
+    });
+
+    it('falls back gracefully for indigenous-language paths', () => {
+      expect(
+        buildAriaLabel('https://www.rcaanc-cirnac.gc.ca/oji/1654808101029/1654808142553', 'en')
+      ).toBe('Government of Canada — rcaanc-cirnac.gc.ca (opens in new tab)');
     });
   });
 
@@ -83,6 +95,10 @@ describe('buildAriaLabel', () => {
       ).toBe('Government of Canada — canada.ca (opens in new tab)');
     });
 
-
+    it('handles protocol-relative URLs (C1)', () => {
+      expect(
+        buildAriaLabel('//canada.ca/en/services/employment-insurance.html', 'en')
+      ).toBe('Government of Canada — Employment Insurance — canada.ca (opens in new tab)');
+    });
   });
 });
