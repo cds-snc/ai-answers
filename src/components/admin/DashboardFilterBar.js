@@ -41,8 +41,20 @@ const getDateRange = (preset, customStart, customEnd, allTimeStart) => {
     return { startDate: toISODate(d), endDate };
   }
   if (preset === 'currentQuarter') return getCurrentFiscalQuarter();
-  // "All time" will become a "last year" toggle once sufficient historical data exists.
-  if (preset === 'allTime') return { startDate: allTimeStart || DATA_START_DATE, endDate };
+  // "Last 12 months": a rolling 12-month window, clamped up to the first date
+  // with data (allTimeStart = firstDataDate) so it never reaches back before any
+  // data exists. While less than a year of data exists this is effectively
+  // "all data so far"; once history passes 12 months it becomes a true rolling
+  // year. The range heading shows the real (clamped) span, so a partial year
+  // isn't misleading.
+  if (preset === 'allTime') {
+    const floor = allTimeStart || DATA_START_DATE;
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const oneYearAgoStr = toISODate(oneYearAgo);
+    const startDate = oneYearAgoStr > floor ? oneYearAgoStr : floor; // max(floor, today − 12 months)
+    return { startDate, endDate };
+  }
   if (preset === 'custom') return { startDate: customStart || DATA_START_DATE, endDate: customEnd || endDate };
   return { startDate: DATA_START_DATE, endDate };
 };
@@ -115,7 +127,10 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     if (!minDate || minDate === DATA_START_DATE) return;
     if (appliedPresetRef.current !== 'allTime' || didSnapAllTime.current) return;
     didSnapAllTime.current = true;
-    onApplyRef.current({ startDate: minDate, endDate: todayStr(), department: appliedDeptRef.current });
+    // Re-apply through getDateRange so the 12-month clamp uses the real first-data
+    // date (start = max(firstDataDate, today − 12 months)).
+    const { startDate, endDate } = getDateRange('allTime', null, null, minDate);
+    onApplyRef.current({ startDate, endDate, department: appliedDeptRef.current });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minDate]);
 

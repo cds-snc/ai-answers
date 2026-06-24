@@ -1219,7 +1219,7 @@
     "dateRange": "Plage de dates",
     "last30": "30 derniers jours",
     "currentQuarter": "Trimestre en cours",
-    "allTime": "Toutes les données",
+    "allTime": "Les 12 derniers mois",
     "custom": "Personnalisé",
     "startDate": "Date de début",
     "endDate": "Date de fin",
