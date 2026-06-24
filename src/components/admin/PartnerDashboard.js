@@ -173,13 +173,20 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
+      {loading ? (
+        <div className="dashboard-loading">
+          {t('common.loading')}
+        </div>
+      ) : (
+      <>
+
       {error && (
         <div className="dashboard-error">
           {t('partnerDashboard.error')}
         </div>
       )}
 
-      {hasUserApplied && !loading && metrics.totalQuestions === 0 && !error && (
+      {hasUserApplied && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('common.noDataForFilters')}
@@ -406,6 +413,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             />
           </div>
         </div>
+      )}
+      </>
       )}
 
     </div>
