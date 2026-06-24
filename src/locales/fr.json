@@ -1336,6 +1336,21 @@
       "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation.",
       "colUrl": "Page référente",
       "colCount": "Redirections"
+    },
+    "citations": {
+      "title": "Principales pages citées",
+      "subtitle": "Pages du gouvernement du Canada les plus souvent citées par Réponses IA, calculé par question.",
+      "colUrl": "Page citée",
+      "colCount": "Questions",
+      "noCitations": "Aucune citation pour cette période.",
+      "answerTypesTitle": "Types de réponses",
+      "answerTypeColLabel": "Type de réponse",
+      "types": {
+        "normal": "Réponses GC (avec citation)",
+        "clarifyingQuestion": "Questions de clarification",
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Réponses hors du mandat du GC"
+      }
     }
   },
   "metrics": {

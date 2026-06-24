@@ -62,19 +62,20 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
                                                               ▼
         MetricsService.getXxxMetrics(filters)  ──►  /api/metrics/* endpoints  ──►  parseRequestFilters()
                                                               │
-                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals })
+                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals, ...citations })
 ```
 
 - **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 7 parallel metric
   fetches (usage, sessions, expert, ai, public feedback, departments, technical)
-  plus a best-effort tail round (blocked queries always; **top referrals only
-  when `useDashboardMetrics({ includeReferrals: true })`** — partner dashboard
-  opts in, exec does not, so exec pays nothing for the list it doesn't render),
-  abort, loading/error. `fetchMetrics(filters)` takes a **filters object** and
-  passes it through unchanged; both filter components supply a superset/subset of
-  `{ startDate, endDate, department, userType, ... }`. The two tail fetches each
-  fall back to their empty shape on failure, so one bad endpoint can't blank the
-  rest of the dashboard.
+  plus a best-effort tail round (blocked queries always; **top referrals and top
+  citations only when opted in via `useDashboardMetrics({ includeReferrals: true,
+  includeCitations: true })`** — partner dashboard opts in, exec does not, so
+  exec pays nothing for lists it doesn't render), abort, loading/error.
+  `fetchMetrics(filters)` takes a **filters object** and passes it through
+  unchanged; both filter components supply a superset/subset of `{ startDate,
+  endDate, department, userType, ... }`. The tail fetches each fall back to their
+  empty shape on failure, so one bad endpoint can't blank the rest of the
+  dashboard.
 - **`src/services/MetricsService.js`** — `_fetchMetric` serializes the whole
   filters object to query params (`new URLSearchParams(filters)`).
 - **`api/metrics/*.js`** — each endpoint calls `parseRequestFilters(req)`
@@ -144,6 +145,11 @@ metrics.blockedQueries.<type>.{ total, en, fr } // from metrics-blocked; type: t
 metrics.topReferrals[]                          // from metrics-referrals (partner only); ranked
                                                 //   [{ url, count }], top 20, normalized page key,
                                                 //   count = distinct CONVERSATIONS (not questions)
+metrics.topCitations[]                          // from metrics-citations (partner only); ranked
+                                                //   [{ url, count }], top 20, normalized page key,
+                                                //   count = QUESTIONS that cited the page
+metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' } // question counts
+                                                //   per answer type; `normal` = the answers with a citation
 ```
 
 ### What each metric counts
@@ -177,7 +183,9 @@ come from `src/constants/dashboardColours.js`.
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
 | `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on both dashboards. |
 | `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the exec dashboard uses a `StatCard` + `HBarCard` instead. Row order from `src/constants/blockedQueryTypes.js`. |
-| `ReferralUrlsCard.js` | Collapsible (`<details>`) two-column table (referring page / click-throughs) for the top-referral-pages list. **Partner dashboard only.** URLs open in a new tab (`https://` is prepended to the normalized page key). Labels/title are passed in as resolved strings (locale-free component). |
+| `CountTable.js` | Plain two-column "label / count" table with row dividers, shared by the collapsible list cards. `rows` = `[{ key, label, count, href? }]` — `href` renders the label as a new-tab link. Locale-free (labels passed in resolved). |
+| `ReferralUrlsCard.js` | Collapsible (`<details>`) card wrapping a `CountTable` (referring page / click-throughs) for the top-referral-pages list. **Partner dashboard only.** URLs open in a new tab (`https://` prepended to the normalized page key). |
+| `CitationPagesCard.js` | Collapsible (`<details>`) card with **two** `CountTable`s: top citation pages (cited page / questions) and the answer-type breakdown (answer type / questions). **Partner dashboard only.** |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 
@@ -288,6 +296,36 @@ Which pages on a partner's site drove the most click-throughs to AI Answers.
   here — same rationale as the blocked counter (partners see their own admin
   testing traffic too). Tests: `__tests__/normalizeReferralUrl.test.js`,
   `__tests__/api.metrics-referrals.test.js`.
+
+## Top citation pages + answer-type breakdown (partner dashboard only)
+
+Which GC pages AI Answers cited most, plus how questions split across answer
+types. Citations live in a separate `citations` collection
+(`providedCitationUrl`, falling back to `aiCitationUrl`) referenced from
+`answer.citation`; only `normal` answers carry one.
+
+- **Counting unit = QUESTIONS (interactions).** Each question that produced a
+  citation URL counts once toward that page (and a question can sit in only one
+  answer-type bucket).
+- **Endpoint:** `api/metrics/metrics-citations.js` → `metrics.topCitations`
+  (`[{ url, count }]`, top 20) **and** `metrics.answerTypeBreakdown`
+  (`{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }`). One aggregation
+  groups by `(answerType, citationUrl)`; Node sums per answer type and
+  merges/ranks the URLs (reusing `normalizeReferralUrl`). Honours date range,
+  userType/url filters, and department (scoped when a partner is selected).
+- **Uncapped on purpose:** the answer-type totals need every group, so unlike the
+  referral list there's no `RAW_URL_CAP`. The `(answerType, url)` grouping still
+  collapses to ~`distinct citation URLs + one row per non-citation answer type`,
+  which is bounded like the referral list. If citation-URL cardinality ever
+  explodes, split the breakdown into its own lightweight aggregation and cap the
+  URL one.
+- **Citation list counts any cited question, not just `answerType === 'normal'`:**
+  the URL list keys off a non-empty citation URL, so it's robust to legacy/empty
+  answerType values; the breakdown separately tallies the four known types.
+- **UI:** `CitationPagesCard` (collapsible, partner-only) renders the citation
+  `CountTable` then the answer-type `CountTable`. Opted in via
+  `useDashboardMetrics({ includeCitations: true })`. Tests:
+  `__tests__/api.metrics-citations.test.js`.
 
 ## Local preview with mock data
 

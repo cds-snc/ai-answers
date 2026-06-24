@@ -91,4 +91,19 @@ export const MOCK_METRICS = {
     { url: 'canada.ca/fr/immigration-refugies-citoyennete/services/visiter-canada.html', count: 21 },
     { url: 'canada.ca/en/services/jobs/opportunities.html', count: 14 },
   ],
+  topCitations: [
+    { url: 'canada.ca/en/revenue-agency/services/tax/individuals.html', count: 87 },
+    { url: 'canada.ca/en/services/benefits/ei/ei-regular-benefit.html', count: 61 },
+    { url: 'canada.ca/fr/agence-revenu/services/impot/particuliers.html', count: 44 },
+    { url: 'canada.ca/en/immigration-refugees-citizenship/services/application.html', count: 33 },
+    { url: 'canada.ca/en/services/benefits/publicpensions/cpp/cpp-benefit.html', count: 25 },
+    { url: 'canada.ca/fr/services/prestations/ae.html', count: 18 },
+    { url: 'canada.ca/en/health-canada/services/health-products.html', count: 11 },
+  ],
+  answerTypeBreakdown: {
+    normal: 1240,
+    'clarifying-question': 186,
+    'pt-muni': 73,
+    'not-gc': 41,
+  },
 };

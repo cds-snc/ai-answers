@@ -8,6 +8,7 @@ import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
+import CitationPagesCard from './dashboard/CitationPagesCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
@@ -18,7 +19,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
@@ -130,6 +131,20 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // Already normalized, merged and ranked server-side; scoped to the selected
   // department when a partner is applied, otherwise the global top pages.
   const topReferrals = metrics.topReferrals || [];
+
+  // Top citation pages (GC pages AI Answers cited, by question) + the answer-type
+  // breakdown (how many questions got a citation vs. a non-citation answer type).
+  // Both come from metrics-citations; `normal` answers are the ones with a citation.
+  const topCitations = metrics.topCitations || [];
+  const answerTypeRows = useMemo(() => {
+    const bd = metrics.answerTypeBreakdown || {};
+    return [
+      { key: 'normal', type: 'normal' },
+      { key: 'clarifying-question', type: 'clarifyingQuestion' },
+      { key: 'pt-muni', type: 'ptMuni' },
+      { key: 'not-gc', type: 'notGc' },
+    ].map(({ key, type }) => ({ key, label: t(`partnerDashboard.citations.types.${type}`), count: bd[key] || 0 }));
+  }, [metrics.answerTypeBreakdown, t]);
 
   // Operations metrics. Median response time comes from the technical metrics
   // endpoint (milliseconds, shown in seconds); token totals come from usage.
@@ -279,6 +294,26 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             urlColLabel={t('partnerDashboard.referrals.colUrl')}
             countColLabel={t('partnerDashboard.referrals.colCount')}
             noDataLabel={t('partnerDashboard.charts.noData')}
+            lang={lang}
+          />
+        </div>
+      )}
+
+      {/* Top citation pages — collapsible list of the GC pages AI Answers cited
+          most (by question), plus an answer-type breakdown. Hidden when there
+          are no citations and no answer-type counts to show. */}
+      {(topCitations.length > 0 || answerTypeRows.some((r) => r.count > 0)) && (
+        <div className="dashboard-section">
+          <CitationPagesCard
+            title={t('partnerDashboard.citations.title')}
+            subtitle={t('partnerDashboard.citations.subtitle')}
+            citations={topCitations}
+            urlColLabel={t('partnerDashboard.citations.colUrl')}
+            countColLabel={t('partnerDashboard.citations.colCount')}
+            answerTypesTitle={t('partnerDashboard.citations.answerTypesTitle')}
+            answerTypeColLabel={t('partnerDashboard.citations.answerTypeColLabel')}
+            answerTypeRows={answerTypeRows}
+            noDataLabel={t('partnerDashboard.citations.noCitations')}
             lang={lang}
           />
         </div>

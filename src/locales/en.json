@@ -1336,6 +1336,21 @@
       "subtitle": "Pages that sent the most visitors to AI Answers, counted by conversation.",
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
+    },
+    "citations": {
+      "title": "Top citation pages",
+      "subtitle": "Government of Canada pages AI Answers cited most often, counted by question.",
+      "colUrl": "Cited page",
+      "colCount": "Questions",
+      "noCitations": "No citations in this period.",
+      "answerTypesTitle": "Answer types",
+      "answerTypeColLabel": "Answer type",
+      "types": {
+        "normal": "GC answers (with citation)",
+        "clarifyingQuestion": "Clarifying questions",
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Not in GC scope answers"
+      }
     }
   },
   "metrics": {
