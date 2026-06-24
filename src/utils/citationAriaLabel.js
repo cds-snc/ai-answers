@@ -128,6 +128,9 @@ export function buildAriaLabel(url, lang = 'en') {
 
   // Strip www. prefix so registry lookups work for both www.canada.ca and canada.ca
   const hostname = parsed.hostname.replace(/^www\./, '');
+  // Spoken form for screen readers: "canada dot ca" rather than relying on each
+  // reader's punctuation-handling to expand the dot correctly.
+  const spokenHostname = hostname.replace(/\./g, ' dot ');
 
   // C3: decode percent-encoded path characters (e.g. %C3%A9 → é) so slug labels
   // are readable. Falls back to the raw encoded form if decoding fails.
@@ -141,7 +144,7 @@ export function buildAriaLabel(url, lang = 'en') {
   // Tier 1: readable path slug — no govCa prefix, the domain already signals GC origin
   const slugLabel = extractSlugLabel(pathname);
   if (slugLabel) {
-    return `${slugLabel} — ${hostname} ${s.opensInNewTab} ${url}`;
+    return `${slugLabel} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
   }
 
   // Tier 2: domain in registry
@@ -151,9 +154,9 @@ export function buildAriaLabel(url, lang = 'en') {
     // with an opaque path), avoid repeating it: "Government of Canada — canada.ca"
     // rather than "Government of Canada — Government of Canada — canada.ca".
     if (deptName === s.govCa) {
-      return `${s.govCa} — ${hostname} ${s.opensInNewTab} ${url}`;
+      return `${s.govCa} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
     }
-    return `${s.govCa} — ${deptName} — ${hostname} ${s.opensInNewTab} ${url}`;
+    return `${s.govCa} — ${deptName} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
   }
 
   // Tier 3: always prefix GC domains with "Government of Canada" so something
@@ -161,8 +164,8 @@ export function buildAriaLabel(url, lang = 'en') {
   // not produce a readable slug — including indigenous language paths and any
   // other language prefix not covered by SKIP_SEGMENTS.
   if (isGcDomain(hostname)) {
-    return `${s.govCa} — ${hostname} ${s.opensInNewTab} ${url}`;
+    return `${s.govCa} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
   }
 
-  return `${hostname} ${s.opensInNewTab} ${url}`;
+  return `${spokenHostname} ${s.opensInNewTab} ${url}`;
 }
