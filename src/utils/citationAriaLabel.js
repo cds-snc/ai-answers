@@ -138,10 +138,10 @@ export function buildAriaLabel(url, lang = 'en') {
     pathname = parsed.pathname;
   }
 
-  // Tier 1: readable path slug
+  // Tier 1: readable path slug — no govCa prefix, the domain already signals GC origin
   const slugLabel = extractSlugLabel(pathname);
   if (slugLabel) {
-    return `${s.govCa} — ${slugLabel} — ${hostname} ${s.opensInNewTab} ${url}`;
+    return `${slugLabel} — ${hostname} ${s.opensInNewTab} ${url}`;
   }
 
   // Tier 2: domain in registry
