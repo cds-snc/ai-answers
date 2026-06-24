@@ -42,20 +42,19 @@ function isGcDomain(hostname) {
     hostname.endsWith('.gc.ca');
 }
 
-// Converts a slug string to a readable label.
-// EN: title-case (each word capitalised — appropriate for program/page names).
-// FR: sentence case (first word only — French typographic convention).
-function toReadableLabel(slug, lang) {
+// Converts a slug string to a readable label using sentence case.
+// Casing has no effect on screen readers since this is only used in aria-label.
+// Note: if this were ever rendered as visible text (see Option 1 above), proper
+// program-name capitalisation would need to be solved — e.g. "Employment Insurance"
+// and "CPP" have official forms a slug transform cannot reliably reproduce.
+function toReadableLabel(slug) {
   const words = slug.replace(/[-_]/g, ' ');
-  if (lang === 'fr') {
-    return words.charAt(0).toUpperCase() + words.slice(1);
-  }
-  return words.replace(/\b\w/g, c => c.toUpperCase());
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 // Derives a human-readable label from URL path segments, or returns null if
 // no readable slug is found.
-function extractSlugLabel(pathname, lang) {
+function extractSlugLabel(pathname) {
   const rawSegments = pathname
     .split('/')
     .map(s => s.replace(/\.[a-z]{2,5}$/i, '')) // strip file extension
@@ -81,7 +80,7 @@ function extractSlugLabel(pathname, lang) {
   // Must contain at least one letter — rules out any remaining numeric-only values
   if (!/[a-zA-Z]/.test(last)) return null;
 
-  return toReadableLabel(last, lang);
+  return toReadableLabel(last);
 }
 
 // Builds a descriptive aria-label for a GC citation link.
@@ -140,7 +139,7 @@ export function buildAriaLabel(url, lang = 'en') {
   }
 
   // Tier 1: readable path slug
-  const slugLabel = extractSlugLabel(pathname, lang);
+  const slugLabel = extractSlugLabel(pathname);
   if (slugLabel) {
     return `${s.govCa} — ${slugLabel} — ${hostname} ${s.opensInNewTab} ${url}`;
   }

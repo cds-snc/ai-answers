@@ -6,10 +6,10 @@ describe('buildAriaLabel', () => {
     it('derives label from last readable slug (en)', () => {
       expect(
         buildAriaLabel('https://www.canada.ca/en/services/benefits/employment-insurance.html', 'en')
-      ).toBe('Government of Canada — Employment Insurance — canada.ca (opens in new tab) https://www.canada.ca/en/services/benefits/employment-insurance.html');
+      ).toBe('Government of Canada — Employment insurance — canada.ca (opens in new tab) https://www.canada.ca/en/services/benefits/employment-insurance.html');
     });
 
-    it('derives label from last readable slug (fr) — sentence case', () => {
+    it('derives label from last readable slug (fr)', () => {
       expect(
         buildAriaLabel('https://www.canada.ca/fr/services/prestations/ae/assurance-emploi.html', 'fr')
       ).toBe("Gouvernement du Canada — Assurance emploi — canada.ca (s'ouvre dans un nouvel onglet) https://www.canada.ca/fr/services/prestations/ae/assurance-emploi.html");
@@ -18,25 +18,25 @@ describe('buildAriaLabel', () => {
     it('strips locale prefix segments', () => {
       expect(
         buildAriaLabel('https://canada.ca/en/immigration-refugees-citizenship.html', 'en')
-      ).toBe('Government of Canada — Immigration Refugees Citizenship — canada.ca (opens in new tab) https://canada.ca/en/immigration-refugees-citizenship.html');
+      ).toBe('Government of Canada — Immigration refugees citizenship — canada.ca (opens in new tab) https://canada.ca/en/immigration-refugees-citizenship.html');
     });
 
-    it('strips file extension before title-casing', () => {
+    it('strips file extension before slug conversion', () => {
       expect(
         buildAriaLabel('https://canada.ca/en/services/child-family-services.html', 'en')
-      ).toBe('Government of Canada — Child Family Services — canada.ca (opens in new tab) https://canada.ca/en/services/child-family-services.html');
+      ).toBe('Government of Canada — Child family services — canada.ca (opens in new tab) https://canada.ca/en/services/child-family-services.html');
     });
 
     it('strips www. from hostname in the label', () => {
       expect(
         buildAriaLabel('https://www.canada.ca/en/services/employment-insurance.html', 'en')
-      ).toBe('Government of Canada — Employment Insurance — canada.ca (opens in new tab) https://www.canada.ca/en/services/employment-insurance.html');
+      ).toBe('Government of Canada — Employment insurance — canada.ca (opens in new tab) https://www.canada.ca/en/services/employment-insurance.html');
     });
 
     it('converts underscores to spaces', () => {
       expect(
         buildAriaLabel('https://canada.ca/en/services/cpp_retirement_pension.html', 'en')
-      ).toBe('Government of Canada — Cpp Retirement Pension — canada.ca (opens in new tab) https://canada.ca/en/services/cpp_retirement_pension.html');
+      ).toBe('Government of Canada — Cpp retirement pension — canada.ca (opens in new tab) https://canada.ca/en/services/cpp_retirement_pension.html');
     });
 
     it('decodes percent-encoded path characters (C3)', () => {
@@ -98,7 +98,7 @@ describe('buildAriaLabel', () => {
     it('handles protocol-relative URLs (C1)', () => {
       expect(
         buildAriaLabel('//canada.ca/en/services/employment-insurance.html', 'en')
-      ).toBe('Government of Canada — Employment Insurance — canada.ca (opens in new tab) //canada.ca/en/services/employment-insurance.html');
+      ).toBe('Government of Canada — Employment insurance — canada.ca (opens in new tab) //canada.ca/en/services/employment-insurance.html');
     });
   });
 });
