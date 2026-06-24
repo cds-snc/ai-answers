@@ -87,20 +87,32 @@ function extractSlugLabel(pathname, lang) {
 // Builds a descriptive aria-label for a GC citation link.
 //
 // Tier 1 — readable slug in path:
-//   "Government of Canada — Employment Insurance — canada.ca (opens in new tab)"
+//   "Government of Canada — Employment Insurance — canada.ca (opens in new tab) https://…"
 // Tier 2 — opaque/numeric path, domain in registry:
-//   "Government of Canada — Indigenous Services Canada — sac-isc.gc.ca (opens in new tab)"
+//   "Government of Canada — Indigenous Services Canada — sac-isc.gc.ca (opens in new tab) https://…"
 // Tier 3 — unregistered GC domain with opaque path:
-//   "Government of Canada — travel.gc.ca (opens in new tab)"
+//   "Government of Canada — travel.gc.ca (opens in new tab) https://…"
 // Tier 3 — non-GC domain (unexpected; upstream validation should prevent this):
-//   "example.com (opens in new tab)"
+//   "example.com (opens in new tab) https://…"
+//
+// Accessibility approach:
+//   WCAG 2.4.4 (Link Purpose): the descriptive prefix ("Government of Canada —
+//   Employment Insurance") gives screen reader users meaningful link context without
+//   reading surrounding text.
+//
+//   WCAG 2.5.3 (Label in Name): voice-control users activate links by speaking what
+//   they see. The visible text is the raw URL, so the raw URL is appended at the end
+//   of the aria-label — after "(opens in new tab)" — so voice control can match it.
+//   Screen reader users hear the descriptive prefix first and can move on before the
+//   raw URL is announced.
+//
+//   Alternative considered (Option 1): render the derived label as the visible link
+//   text and use a sr-only span for "(opens in new tab)". This satisfies both 2.4.4
+//   and 2.5.3 cleanly but hides the raw URL from sighted users, reducing destination
+//   transparency on a government service. Revisit if design requirements change.
 //
 // C7 note: Tier 1 prepends "Government of Canada" to any domain with a readable
 // slug. This relies on upstream URL validation ensuring only GC URLs reach here.
-//
-// WCAG 2.5.3 note: the aria-label differs from the visible link text (raw URL).
-// This is intentional — 2.5.3 targets speech-input activation of named controls,
-// not descriptive overlays on URLs — but flag for accessibility audit if needed.
 export function buildAriaLabel(url, lang = 'en') {
   const s = STRINGS[lang];
 
@@ -130,7 +142,7 @@ export function buildAriaLabel(url, lang = 'en') {
   // Tier 1: readable path slug
   const slugLabel = extractSlugLabel(pathname, lang);
   if (slugLabel) {
-    return `${s.govCa} — ${slugLabel} — ${hostname} ${s.opensInNewTab}`;
+    return `${s.govCa} — ${slugLabel} — ${hostname} ${s.opensInNewTab} ${url}`;
   }
 
   // Tier 2: domain in registry
@@ -140,9 +152,9 @@ export function buildAriaLabel(url, lang = 'en') {
     // with an opaque path), avoid repeating it: "Government of Canada — canada.ca"
     // rather than "Government of Canada — Government of Canada — canada.ca".
     if (deptName === s.govCa) {
-      return `${s.govCa} — ${hostname} ${s.opensInNewTab}`;
+      return `${s.govCa} — ${hostname} ${s.opensInNewTab} ${url}`;
     }
-    return `${s.govCa} — ${deptName} — ${hostname} ${s.opensInNewTab}`;
+    return `${s.govCa} — ${deptName} — ${hostname} ${s.opensInNewTab} ${url}`;
   }
 
   // Tier 3: always prefix GC domains with "Government of Canada" so something
@@ -150,8 +162,8 @@ export function buildAriaLabel(url, lang = 'en') {
   // not produce a readable slug — including indigenous language paths and any
   // other language prefix not covered by SKIP_SEGMENTS.
   if (isGcDomain(hostname)) {
-    return `${s.govCa} — ${hostname} ${s.opensInNewTab}`;
+    return `${s.govCa} — ${hostname} ${s.opensInNewTab} ${url}`;
   }
 
-  return `${hostname} ${s.opensInNewTab}`;
+  return `${hostname} ${s.opensInNewTab} ${url}`;
 }
