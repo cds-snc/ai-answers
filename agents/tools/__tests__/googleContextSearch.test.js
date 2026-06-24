@@ -27,8 +27,9 @@ describe('googleContextSearch', () => {
     const error = new Error(
       'Invalid response body while trying to fetch https://customsearch.googleapis.com/customsearch/v1?cx=engine-id&q=SCIS%20definition&key=secret123&lr=lang_en: Premature close'
     );
-    listMock.mockRejectedValueOnce(error);
+    listMock.mockRejectedValue(error);
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await contextSearch('SCIS definition', 'en');
 
@@ -42,5 +43,39 @@ describe('googleContextSearch', () => {
     expect(JSON.stringify(loggedPayload)).not.toContain('secret123');
 
     consoleSpy.mockRestore();
+  });
+
+  it('retries on a transient "Premature close" error and then succeeds', async () => {
+    const transientError = new Error(
+      'Invalid response body while trying to fetch https://customsearch.googleapis.com/customsearch/v1?key=secret123: Premature close'
+    );
+    listMock
+      .mockRejectedValueOnce(transientError)
+      .mockResolvedValueOnce({
+        data: {
+          items: [
+            { link: 'https://canada.ca/a', title: 'A', snippet: 'snippet a' },
+          ],
+        },
+      });
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await contextSearch('child benefits rural', 'en');
+
+    expect(listMock).toHaveBeenCalledTimes(2);
+    expect(result.provider).toBe('google');
+    expect(result.results).toContain('https://canada.ca/a');
+    expect(result.results).not.toContain('Search failed:');
+  });
+
+  it('does not retry on a non-transient error', async () => {
+    const clientError = Object.assign(new Error('Request failed'), { code: 400 });
+    listMock.mockRejectedValue(clientError);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await contextSearch('child benefits rural', 'en');
+
+    expect(listMock).toHaveBeenCalledTimes(1);
+    expect(result.results).toContain('Search failed:');
   });
 });
