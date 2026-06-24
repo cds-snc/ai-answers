@@ -28,19 +28,21 @@ const ReferralUrlsCard = ({
           <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left' }}>{urlColLabel}</th>
-                <th style={{ textAlign: 'right' }}>{countColLabel}</th>
+                <th style={{ textAlign: 'left', borderBottom: '2px solid #e0e0e0', padding: '8px 8px' }}>{urlColLabel}</th>
+                <th style={{ textAlign: 'right', borderBottom: '2px solid #e0e0e0', padding: '8px 8px' }}>{countColLabel}</th>
               </tr>
             </thead>
             <tbody>
               {data.map((row) => (
                 <tr key={row.url}>
-                  <td style={{ wordBreak: 'break-all' }}>
+                  <td style={{ wordBreak: 'break-all', borderBottom: '1px solid #e0e0e0', padding: '8px 8px' }}>
                     <a href={`https://${row.url}`} target="_blank" rel="noopener noreferrer">
                       {row.url}
                     </a>
                   </td>
-                  <td style={{ textAlign: 'right' }}>{fmtN(row.count)}</td>
+                  <td style={{ textAlign: 'right', borderBottom: '1px solid #e0e0e0', padding: '8px 8px', whiteSpace: 'nowrap' }}>
+                    {fmtN(row.count)}
+                  </td>
                 </tr>
               ))}
             </tbody>

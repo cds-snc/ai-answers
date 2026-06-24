@@ -1333,7 +1333,7 @@
     },
     "referrals": {
       "title": "Top referral pages",
-      "subtitle": "Pages that sent the most visitors to AI Answers, counted by conversation. Select an institution above to see its pages only.",
+      "subtitle": "Pages that sent the most visitors to AI Answers, counted by conversation.",
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
     }
