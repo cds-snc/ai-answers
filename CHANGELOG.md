@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.151.1](https://github.com/cds-snc/ai-answers/compare/v1.151.0...v1.151.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* add retry for search to prevent premature close ([2cb576d](https://github.com/cds-snc/ai-answers/commit/2cb576d52174a1eaa1c1c0fa884f9691512a9492))
+* add retry for search to prevent premature close ([978a468](https://github.com/cds-snc/ai-answers/commit/978a46840875f82036c81b50b450f40bb765c066))
+
 ## [1.151.0](https://github.com/cds-snc/ai-answers/compare/v1.150.0...v1.151.0) (2026-06-24)
 
 
