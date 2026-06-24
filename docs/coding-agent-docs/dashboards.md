@@ -62,14 +62,19 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
                                                               ▼
         MetricsService.getXxxMetrics(filters)  ──►  /api/metrics/* endpoints  ──►  parseRequestFilters()
                                                               │
-                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked })
+                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals })
 ```
 
-- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 8 parallel metric
-  fetches (usage, sessions, expert, ai, public feedback, departments, technical,
-  blocked), abort, loading/error. `fetchMetrics(filters)` takes a **filters
-  object** and passes it through unchanged; both filter components supply a
-  superset/subset of `{ startDate, endDate, department, userType, ... }`.
+- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 7 parallel metric
+  fetches (usage, sessions, expert, ai, public feedback, departments, technical)
+  plus a best-effort tail round (blocked queries always; **top referrals only
+  when `useDashboardMetrics({ includeReferrals: true })`** — partner dashboard
+  opts in, exec does not, so exec pays nothing for the list it doesn't render),
+  abort, loading/error. `fetchMetrics(filters)` takes a **filters object** and
+  passes it through unchanged; both filter components supply a superset/subset of
+  `{ startDate, endDate, department, userType, ... }`. The two tail fetches each
+  fall back to their empty shape on failure, so one bad endpoint can't blank the
+  rest of the dashboard.
 - **`src/services/MetricsService.js`** — `_fetchMetric` serializes the whole
   filters object to query params (`new URLSearchParams(filters)`).
 - **`api/metrics/*.js`** — each endpoint calls `parseRequestFilters(req)`
@@ -82,7 +87,7 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
 | Component | Used by | Notes |
 |-----------|---------|-------|
 | `FilterPanel.js` | **Partner** | Full filter (date-range picker, dept, userType, advanced: answerType/partnerEval/aiEval/url). Pass `autoApply` to load on mount; `defaultUserType="all"`. Also used by `MetricsDashboard`. |
-| `DashboardFilterBar.js` | **Exec** | Preset bar (Last 30 days / Current quarter / All time / Custom). Auto-fires `onApply` on mount. No userType selector — ExecDashboard fixes `userType: 'public'` on every fetch (see below). |
+| `DashboardFilterBar.js` | **Exec** | Preset bar (Last 30 days / Current quarter / All time / Custom) **plus a partner-institution/department selector** (the "By partner institution" dropdown, from `PARTNER_DEPARTMENTS`). Auto-fires `onApply` on mount and on department change. No userType selector — ExecDashboard fixes `userType: 'public'` on every fetch (see below). The institution selector is **not** locked to a viewing partner's own institution — partners (who now have access) see the all-institutions default and can select any institution. |
 
 `FilterPanel` owns its own default range (last 7 days). End dates cap at yesterday (23:59:59) to match the backend, which queries `createdAt` up to midnight — today's data is never returned.
 
@@ -136,6 +141,9 @@ metrics.blockedQueries.<type>.{ total, en, fr } // from metrics-blocked; type: t
                                                 //   piStage1, piStage2, profanity, threat,
                                                 //   manipulation, azureGuardrail,
                                                 //   unsupportedLanguage, plus a `total` bucket
+metrics.topReferrals[]                          // from metrics-referrals (partner only); ranked
+                                                //   [{ url, count }], top 20, normalized page key,
+                                                //   count = distinct CONVERSATIONS (not questions)
 ```
 
 ### What each metric counts
@@ -169,6 +177,7 @@ come from `src/constants/dashboardColours.js`.
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
 | `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on both dashboards. |
 | `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the exec dashboard uses a `StatCard` + `HBarCard` instead. Row order from `src/constants/blockedQueryTypes.js`. |
+| `ReferralUrlsCard.js` | Collapsible (`<details>`) two-column table (referring page / click-throughs) for the top-referral-pages list. **Partner dashboard only.** URLs open in a new tab (`https://` is prepended to the normalized page key). Labels/title are passed in as resolved strings (locale-free component). |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 
@@ -231,14 +240,54 @@ the only record of them. End-to-end:
 - **Endpoint:** `api/metrics/metrics-blocked.js` → `metrics.blockedQueries`
   (per-type `{ total, en, fr }`). It honours date range + `userType`, and
   **ignores department on purpose** (blocks happen before the department is known).
-- **UI:** exec = `StatCard` (total) + `HBarCard` (by type, fixed pipeline order,
-  zero rows dropped); technical = `BlockedQueriesTable`. Both dashboards track the
-  applied department and **hide the blocked-query view when a department is
-  selected** (showing `blockedQueries.deptNote` instead) — it can't be
-  department-scoped. Type order/labels: `src/constants/blockedQueryTypes.js` +
-  `blockedQueries.types.*` locale keys.
+- **UI:** exec **and** partner = `StatCard` (total) + `HBarCard` (by type, fixed
+  pipeline order, zero rows dropped); technical = `BlockedQueriesTable`. All three
+  card dashboards track the applied department and **hide the blocked-query view
+  when a department is selected** (showing `blockedQueries.deptNote` instead) — it
+  can't be department-scoped. Type order/labels:
+  `src/constants/blockedQueryTypes.js` + `blockedQueries.types.*` locale keys.
+- **Partner userType is deliberately NOT forced to public.** Exec fixes
+  `userType: 'public'` on every fetch, so its blocked counter excludes admin/
+  partner test traffic. The partner dashboard intentionally does **not** do this —
+  it respects the `FilterPanel` userType selector (`defaultUserType="all"`) so
+  partners can see their own admin testing progress alongside public usage. Do not
+  "fix" the partner blocked counter to public-only to match exec.
 - **No backfill:** counts accrue from deploy forward; historical blocks were never
   recorded. Tests: `__tests__/blockedQueryService.test.js`.
+
+## Top referral pages (partner dashboard only)
+
+Which pages on a partner's site drove the most click-throughs to AI Answers.
+`referringUrl` is stored per interaction (indexed). End-to-end:
+
+- **Counting unit = CONVERSATIONS, not questions.** Counting interactions would
+  bias toward pages whose visitors happen to ask longer (multi-question)
+  sessions. The pipeline collapses to distinct `(referringUrl, chat)` pairs
+  first, then counts pairs per URL — so a 3-question session from one page counts
+  once. (This is one of the few intentional chat-level counts; see [What each
+  metric counts](#what-each-metric-counts).) Two-stage grouping (pair → count)
+  also avoids a large `$addToSet` of chat IDs, which is DocumentDB-friendly.
+- **Endpoint:** `api/metrics/metrics-referrals.js` → `metrics.topReferrals`
+  (`[{ url, count }]`, top 20). Honours date range, userType/url filters, and
+  **department** — when a partner is selected the list is scoped to that
+  department (unlike blocked queries, which can't be); when none is selected it's
+  the global top pages and the `contexts` lookup is skipped entirely (lighter).
+- **Normalization:** `api/util/normalizeReferralUrl.js` reduces each raw referrer
+  to a stable page key (strip protocol / leading `www.` / query / fragment /
+  trailing slash; lowercase host). Counts for variants of the same page merge.
+  Returns `null` to drop blanks and AI Answers self-referrals (in-app
+  language-switch / navigation), reusing `SELF_REFERRAL_LABELS` from
+  `chat-filters.js`.
+- **`RAW_URL_CAP` (500):** the DB returns the top 500 raw URLs by count before
+  Node normalizes + merges. Since normalization only ever merges rows, the
+  top-20 is accurate in practice; the only blind spot is a single page split
+  across hundreds of low-count variants (pathological). Raise the cap if that
+  ever happens.
+- **Why partner-only:** opted in via `useDashboardMetrics({ includeReferrals: true })`
+  so the exec dashboard doesn't fetch it. Usertype is **not** forced to public
+  here — same rationale as the blocked counter (partners see their own admin
+  testing traffic too). Tests: `__tests__/normalizeReferralUrl.test.js`,
+  `__tests__/api.metrics-referrals.test.js`.
 
 ## Local preview with mock data
 

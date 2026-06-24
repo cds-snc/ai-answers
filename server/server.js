@@ -68,6 +68,7 @@ import publicFeedbackMetricsHandler from '../api/metrics/metrics-public-feedback
 import departmentMetricsHandler from '../api/metrics/metrics-departments.js';
 import technicalMetricsHandler from '../api/metrics/metrics-technical.js';
 import blockedMetricsHandler from '../api/metrics/metrics-blocked.js';
+import referralMetricsHandler from '../api/metrics/metrics-referrals.js';
 import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
@@ -305,6 +306,7 @@ app.get('/api/metrics/metrics-public-feedback', publicFeedbackMetricsHandler);
 app.get('/api/metrics/metrics-departments', departmentMetricsHandler);
 app.get('/api/metrics/metrics-technical', technicalMetricsHandler);
 app.get('/api/metrics/metrics-blocked', blockedMetricsHandler);
+app.get('/api/metrics/metrics-referrals', referralMetricsHandler);
 app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
 app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);

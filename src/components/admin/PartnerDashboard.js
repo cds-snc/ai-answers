@@ -7,7 +7,9 @@ import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
+import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
+import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const PartnerDashboard = ({ lang = 'en' }) => {
@@ -16,15 +18,21 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
+  const [appliedDepartment, setAppliedDepartment] = useState('');
   const handleApplyFilters = (filters) => {
     if (autoApplyFired.current) {
       // Second+ call is user-triggered: mark as applied so FilterPanel can collapse.
       setHasUserApplied(true);
     }
     autoApplyFired.current = true;
+    setAppliedDepartment(filters?.department || '');
+    fetchMetrics(filters);
+  };
+  const handleClearFilters = (filters) => {
+    setAppliedDepartment(filters?.department || '');
     fetchMetrics(filters);
   };
 
@@ -71,6 +79,32 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const harmful = metrics.expertScored?.harmful || {};
   const contentIssue = metrics.expertScored?.hasContentIssue || {};
 
+  // Blocked queries (safety counter). Total card + ranked bar breakdown by type.
+  // Can't be department-scoped (blocks happen before the department is known),
+  // so the blocked view is hidden when a department filter is applied.
+  const blockedTotal = metrics.blockedQueries?.total || {};
+  const blockedBarData = useMemo(() => {
+    const bq = metrics.blockedQueries || {};
+    return BLOCK_QUERY_TYPES
+      .map((type) => {
+        const row = bq[type] || {};
+        return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
+      })
+      .filter((d) => d.value > 0);
+  }, [metrics.blockedQueries, t]);
+
+  const BlockedBarTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0].payload;
+    return (
+      <div className="chart-tooltip">
+        <div className="chart-tooltip__title">{row.name}</div>
+        <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
+        <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
+      </div>
+    );
+  };
+
   // User feedback split into helpful / not helpful, classified by score (not
   // the raw yes/no click) so notWanted counts as helpful.
   const pfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
@@ -92,6 +126,11 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
   ].filter(d => d.value > 0) : [];
 
+  // Top referring pages (distinct conversations / click-throughs per page).
+  // Already normalized, merged and ranked server-side; scoped to the selected
+  // department when a partner is applied, otherwise the global top pages.
+  const topReferrals = metrics.topReferrals || [];
+
   // Operations metrics. Median response time comes from the technical metrics
   // endpoint (milliseconds, shown in seconds); token totals come from usage.
   const responseTime = metrics.responseTime || {};
@@ -106,7 +145,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
-          onClearFilters={fetchMetrics}
+          onClearFilters={handleClearFilters}
           isVisible={true}
           autoApply={true}
           applyDisabled={loading}
@@ -228,6 +267,23 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
       )}
 
+      {/* Top referral pages — collapsible list of the partner site pages that
+          drove the most click-throughs (conversations) to AI Answers. Hidden
+          when there are no referrals to show. */}
+      {topReferrals.length > 0 && (
+        <div className="dashboard-section">
+          <ReferralUrlsCard
+            title={t('partnerDashboard.referrals.title')}
+            subtitle={t('partnerDashboard.referrals.subtitle')}
+            data={topReferrals}
+            urlColLabel={t('partnerDashboard.referrals.colUrl')}
+            countColLabel={t('partnerDashboard.referrals.colCount')}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            lang={lang}
+          />
+        </div>
+      )}
+
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
           the usage endpoint. */}
@@ -266,17 +322,56 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       <h2 className="dashboard-section-title">
         {t('partnerDashboard.safety.title')}
       </h2>
-      <div className="dashboard-row">
-        <div className="dashboard-col-third">
-          <StatCard
-            label={t('partnerDashboard.kpi.harmful')}
-            value={fmtN(harmful.total)}
-            sub={t('partnerDashboard.kpi.harmfulSub')
-              .replace('{en}', fmtN(harmful.en))
-              .replace('{fr}', fmtN(harmful.fr))}
-          />
+      {/* Blocked queries — global safety counter, can't be department-scoped,
+          so hidden when a department filter is applied.
+          Layout: left column has blocked total + harmful stacked; chart fills the right. */}
+      {appliedDepartment ? (
+        <>
+          <p className="font-size-text-small mb-300">
+            {t('blockedQueries.deptNote')}
+          </p>
+          <div className="dashboard-row">
+            <div className="dashboard-col-third">
+              <StatCard
+                label={t('partnerDashboard.kpi.harmful')}
+                value={fmtN(harmful.total)}
+                sub={t('partnerDashboard.kpi.harmfulSub')
+                  .replace('{en}', fmtN(harmful.en))
+                  .replace('{fr}', fmtN(harmful.fr))}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="dashboard-row">
+          <div className="dashboard-col-third dashboard-col--equal-height">
+            <StatCard
+              label={t('blockedQueries.totalCardLabel')}
+              value={fmtN(blockedTotal.total)}
+              sub={t('blockedQueries.langSub')
+                .replace('{en}', fmtN(blockedTotal.en))
+                .replace('{fr}', fmtN(blockedTotal.fr))}
+            />
+            <StatCard
+              label={t('partnerDashboard.kpi.harmful')}
+              value={fmtN(harmful.total)}
+              sub={t('partnerDashboard.kpi.harmfulSub')
+                .replace('{en}', fmtN(harmful.en))
+                .replace('{fr}', fmtN(harmful.fr))}
+            />
+          </div>
+          <div className="dashboard-chart-wide">
+            <HBarCard
+              title={t('blockedQueries.byTypeTitle')}
+              data={blockedBarData}
+              height={Math.max(240, blockedBarData.length * 60)}
+              lang={lang}
+              tooltipContent={BlockedBarTooltip}
+              noDataLabel={t('blockedQueries.noData')}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

@@ -1330,6 +1330,12 @@
     },
     "safety": {
       "title": "Mesures de sécurité"
+    },
+    "referrals": {
+      "title": "Principales pages référentes",
+      "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation. Sélectionnez une institution ci-dessus pour voir uniquement ses pages.",
+      "colUrl": "Page référente",
+      "colCount": "Redirections"
     }
   },
   "metrics": {

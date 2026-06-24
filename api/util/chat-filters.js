@@ -260,7 +260,7 @@ const EXCLUDED_CANADA_CA_SUBDOMAINS = [
 // label rather than the environment subdomain, so the exclusion survives the
 // eventual alpha retirement and any domain move (ai-answers.alpha.canada.ca
 // today → ai-answers.canada.ca later). The EN and FR apps run on separate hosts.
-const SELF_REFERRAL_LABELS = [
+export const SELF_REFERRAL_LABELS = [
   'ai-answers',   // English
   'reponses-ia',  // French
 ];

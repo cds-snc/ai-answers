@@ -26,6 +26,7 @@ const INITIAL_METRICS = {
   publicFeedbackReasons: { yes: {}, no: {} },
   byDepartment: {},
   blockedQueries: {},
+  topReferrals: [],
 };
 
 // Fetches the shared dashboard metric bundle (usage, sessions, expert feedback,
@@ -39,7 +40,12 @@ const INITIAL_METRICS = {
 // filter keys (department, userType, answerType, …) are passed straight through
 // to the endpoints. The returned `metrics` is always the full shape above, so
 // consumers can read fields without guarding for undefined.
-export function useDashboardMetrics() {
+// `includeReferrals` opts in to the extra top-referral-pages fetch (partner
+// dashboard only). The exec dashboard omits it, so it pays nothing for a list
+// it doesn't render. Like blocked queries, it's best-effort: a failure leaves
+// an empty list rather than taking down the whole dashboard.
+export function useDashboardMetrics(options = {}) {
+  const { includeReferrals = false } = options;
   const [metrics, setMetrics] = useState(INITIAL_METRICS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -77,17 +83,26 @@ export function useDashboardMetrics() {
         MetricsService.getDepartmentMetrics(filters, signal),
         MetricsService.getTechnicalMetrics(filters, signal),
       ]);
-      const blocked = await MetricsService.getBlockedMetrics(filters, signal)
-        .catch(() => ({ blockedQueries: INITIAL_METRICS.blockedQueries }));
+      // Best-effort tail fetches run together: blocked queries always, top
+      // referrals only when opted in. Each falls back to its empty shape so one
+      // failing endpoint can't blank the rest of the dashboard.
+      const [blocked, referrals] = await Promise.all([
+        MetricsService.getBlockedMetrics(filters, signal)
+          .catch(() => ({ blockedQueries: INITIAL_METRICS.blockedQueries })),
+        includeReferrals
+          ? MetricsService.getReferralMetrics(filters, signal)
+              .catch(() => ({ topReferrals: INITIAL_METRICS.topReferrals }))
+          : Promise.resolve({ topReferrals: INITIAL_METRICS.topReferrals }),
+      ]);
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, []);
+  }, [includeReferrals]);
 
   return { metrics, loading, error, fetchMetrics };
 }

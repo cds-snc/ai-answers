@@ -79,4 +79,16 @@ export const MOCK_METRICS = {
     azureGuardrail:      { total: 1,  en: 1,  fr: 0  },
     unsupportedLanguage: { total: 0,  en: 0,  fr: 0  },
   },
+  topReferrals: [
+    { url: 'canada.ca/en/services/taxes/income-tax.html', count: 142 },
+    { url: 'canada.ca/en/revenue-agency/services/payments.html', count: 98 },
+    { url: 'canada.ca/fr/agence-revenu/services/paiements.html', count: 71 },
+    { url: 'canada.ca/en/immigration-refugees-citizenship/services/study-canada.html', count: 64 },
+    { url: 'canada.ca/en/employment-social-development/programs/ei.html', count: 53 },
+    { url: 'canada.ca/fr/services/impots/declaration.html', count: 47 },
+    { url: 'canada.ca/en/services/benefits/publicpensions/cpp.html', count: 39 },
+    { url: 'canada.ca/en/health-canada/services/drugs-medication.html', count: 28 },
+    { url: 'canada.ca/fr/immigration-refugies-citoyennete/services/visiter-canada.html', count: 21 },
+    { url: 'canada.ca/en/services/jobs/opportunities.html', count: 14 },
+  ],
 };

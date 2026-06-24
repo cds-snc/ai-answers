@@ -98,6 +98,11 @@ const AdminPage = ({ lang = 'en' }) => {
                 {t('admin.navigation.batches', 'View and manage batches')}
               </GcdsLink>
             </li>
+            <li>
+              <GcdsLink href={getPath('exec-dashboard', lang)}>
+                {t('admin.navigation.execDashboard')}
+              </GcdsLink>
+            </li>
           </ul>
         </section>
 
@@ -126,11 +131,6 @@ const AdminPage = ({ lang = 'en' }) => {
               <li>
                 <GcdsLink href={getPath('auto-eval-dashboard', lang)}>
                   {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
-                </GcdsLink>
-              </li>
-              <li>
-                <GcdsLink href={getPath('exec-dashboard', lang)}>
-                  {t('admin.navigation.execDashboard')}
                 </GcdsLink>
               </li>
               <li>
