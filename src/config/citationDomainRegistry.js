@@ -16,3 +16,21 @@ export const DOMAIN_REGISTRY = {
   // Only needed for domains with opaque or numeric URL paths — domains with
   // readable slugs (e.g. travel.gc.ca) are handled automatically by Tier 1.
 };
+
+// Slug registry — optional extension for Tier 1.
+//
+// The generic slug converter (sentence case, hyphens → spaces) works well for
+// most GC URLs but cannot recover conjunctions, commas, or acronyms that were
+// dropped when the URL slug was created. If a high-traffic slug produces a
+// misleading or incomplete label, add it here and check it in extractSlugLabel
+// before falling back to the generic conversion.
+//
+// Example entry (not yet wired up — add import + lookup in citationAriaLabel.js
+// when the first real case warrants it):
+//
+// export const SLUG_REGISTRY = {
+//   'immigration-refugees-citizenship': {
+//     en: 'Immigration, Refugees and Citizenship',
+//     fr: 'Immigration, Réfugiés et Citoyenneté',
+//   },
+// };
