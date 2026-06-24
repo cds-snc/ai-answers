@@ -77,15 +77,12 @@ const FilterPanel = ({
     return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
-  // End is yesterday 23:59 to match backend behaviour: the API queries
-  // createdAt up to midnight (start of today), so today always returns empty.
-  // Capping the picker at yesterday keeps the UI honest — what you select is
-  // what you get. Individual conversations from today are findable by chat ID
-  // in the Chat Viewer.
+  // End is today 23:59 so the current day's data is included. The API queries
+  // createdAt up to the end date that's sent, so today returns normally — there
+  // is no backend cap at yesterday.
   const getDefaultDates = () => {
     const end = new Date();
-    end.setDate(end.getDate() - 1); // yesterday
-    end.setHours(23, 59, 59, 0);
+    end.setHours(23, 59, 59, 0); // today, end of day
     const start = new Date();
     start.setDate(start.getDate() - 7);
     start.setHours(0, 0, 0, 0);
@@ -155,7 +152,7 @@ const FilterPanel = ({
       endDate: endDateObj ? moment(endDateObj) : moment(),
       opens: 'right',
       alwaysShowCalendars: true,
-      maxDate: moment().subtract(1, 'day').endOf('day'),
+      maxDate: moment().endOf('day'),
       locale: {
         format: 'YYYY/MM/DD',
         separator: ' - ',
@@ -174,10 +171,11 @@ const FilterPanel = ({
         firstDay: isFrench ? 1 : 0
       },
       ranges: {
+        [isFrench ? "Aujourd'hui" : 'Today']: [moment().startOf('day'), moment().endOf('day')],
         [isFrench ? 'Hier' : 'Yesterday']: [moment().subtract(1, 'days').startOf('day'), moment().subtract(1, 'days').endOf('day')],
-        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(7, 'days').startOf('day'), moment().subtract(1, 'day').endOf('day')],
-        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(30, 'days').startOf('day'), moment().subtract(1, 'day').endOf('day')],
-        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().subtract(1, 'day').endOf('day')],
+        [isFrench ? '7 derniers jours' : 'Last 7 Days']: [moment().subtract(6, 'days').startOf('day'), moment().endOf('day')],
+        [isFrench ? '30 derniers jours' : 'Last 30 Days']: [moment().subtract(29, 'days').startOf('day'), moment().endOf('day')],
+        [isFrench ? 'Ce mois-ci' : 'This Month']: [moment().startOf('month'), moment().endOf('day')],
         [isFrench ? 'Le mois dernier' : 'Last Month']: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
       }
     };
