@@ -26,7 +26,7 @@ const ExecDashboardPage = ({ lang = 'en' }) => {
 
 export default function ProtectedExecDashboardPage(props) {
   return (
-    <RoleProtectedRoute roles={['admin']} lang={props.lang}>
+    <RoleProtectedRoute roles={['admin', 'partner']} lang={props.lang}>
       <ExecDashboardPage {...props} />
     </RoleProtectedRoute>
   );

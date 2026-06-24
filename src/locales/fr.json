@@ -1219,7 +1219,7 @@
     "dateRange": "Plage de dates",
     "last30": "30 derniers jours",
     "currentQuarter": "Trimestre en cours",
-    "allTime": "Toutes les données",
+    "allTime": "Les 12 derniers mois",
     "custom": "Personnalisé",
     "startDate": "Date de début",
     "endDate": "Date de fin",
@@ -1330,6 +1330,27 @@
     },
     "safety": {
       "title": "Mesures de sécurité"
+    },
+    "referrals": {
+      "title": "Principales pages référentes",
+      "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation.",
+      "colUrl": "Page référente",
+      "colCount": "Redirections"
+    },
+    "citations": {
+      "title": "Principales pages citées",
+      "subtitle": "Pages du gouvernement du Canada les plus souvent citées par Réponses IA, calculé par question.",
+      "colUrl": "Page citée",
+      "colCount": "Questions",
+      "noCitations": "Aucune citation pour cette période.",
+      "answerTypesTitle": "Types de réponses",
+      "answerTypeColLabel": "Type de réponse",
+      "types": {
+        "normal": "Réponses GC (avec citation)",
+        "clarifyingQuestion": "Questions de clarification",
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Réponses hors du mandat du GC"
+      }
     }
   },
   "metrics": {
