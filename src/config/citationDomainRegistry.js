@@ -11,7 +11,8 @@ export const DOMAIN_REGISTRY = {
     en: 'Indigenous Services Canada',
     fr: 'Services aux Autochtones Canada',
   },
-
-
-
+  // Add further GC domains here as they appear in citation results.
+  // Each entry needs both 'en' and 'fr' department names.
+  // Only needed for domains with opaque or numeric URL paths — domains with
+  // readable slugs (e.g. travel.gc.ca) are handled automatically by Tier 1.
 };
