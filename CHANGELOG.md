@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.151.0](https://github.com/cds-snc/ai-answers/compare/v1.150.0...v1.151.0) (2026-06-24)
+
+
+### Features
+
+* add refer urls for partners ([7a87dca](https://github.com/cds-snc/ai-answers/commit/7a87dca56d3eb2f5c1c38600e77a1b9093af07ba))
+* citation table ([000a1db](https://github.com/cds-snc/ai-answers/commit/000a1db74557b0e693fa15e28e3b56c949b7fc48))
+
+
+### Bug Fixes
+
+* add loading state for partner dash ([c3c7b70](https://github.com/cds-snc/ai-answers/commit/c3c7b70ec130e47c651e19ab9f70128099728e93))
+* add today back into filter panel ([61ebe6d](https://github.com/cds-snc/ai-answers/commit/61ebe6d60cdfc140333b8d09ca700afa5ab66160))
+* change All data label to "Last 12 months" ([09f5605](https://github.com/cds-snc/ai-answers/commit/09f5605dbe3f31bb5ee2f10a033e8d645c58182b))
+* design tweaks ([f567687](https://github.com/cds-snc/ai-answers/commit/f567687ba61335c2f03db4129785500e9fa892a8))
+
 ## [1.150.0](https://github.com/cds-snc/ai-answers/compare/v1.149.0...v1.150.0) (2026-06-23)
 
 
