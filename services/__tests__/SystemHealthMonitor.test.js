@@ -121,7 +121,7 @@ describe('SystemHealthMonitor', () => {
     }));
   });
 
-  it('switches to the fast interval while confirming a possible outage and returns to the slow interval on recovery', async () => {
+  it('stays on the fast interval until the failure window expires without reaching the threshold', async () => {
     const { monitor, dependencyChecks } = createMonitor();
     dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
 
@@ -130,6 +130,12 @@ describe('SystemHealthMonitor', () => {
 
     dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'connected' });
     await monitor.runCycle(2000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(30000);
+
+    await monitor.runCycle(6000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(30000);
+
+    await monitor.runCycle(6001);
     expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(1800000);
   });
 

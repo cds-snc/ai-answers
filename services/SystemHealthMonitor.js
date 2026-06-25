@@ -222,11 +222,6 @@ class SystemHealthMonitor {
     return category;
   }
 
-  clearFailures(category) {
-    if (!category) return;
-    this.failures.delete(category);
-  }
-
   async runCycle(now = Date.now()) {
     const config = this.getHealthConfig();
     if (!config.enabled) {
@@ -246,8 +241,6 @@ class SystemHealthMonitor {
           message: failure.message || `${category} connectivity failure`,
           source: 'probe',
         }, config.windowMs);
-      } else {
-        this.clearFailures(category);
       }
     }
 
