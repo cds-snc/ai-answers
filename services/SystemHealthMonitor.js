@@ -20,11 +20,13 @@ const HEALTH_SETTING_KEYS = {
   databaseEnabled: 'systemHealth.checks.database.enabled',
   searchEnabled: 'systemHealth.checks.search.enabled',
   llmEnabled: 'systemHealth.checks.llm.enabled',
+  autoDisableOnError: 'systemHealth.autoDisableOnError',
   failureThreshold: 'systemHealth.failureThreshold',
   failureWindowMinutes: 'systemHealth.failureWindowMinutes',
   intervalMinutes: 'systemHealth.intervalMinutes',
   alertRecipients: 'systemHealth.alertRecipients',
   alertTemplateId: 'systemHealth.alertTemplateId',
+  errorTemplateId: 'systemHealth.errorTemplateId',
 };
 
 const CATEGORY = {
@@ -176,8 +178,10 @@ class SystemHealthMonitor {
         [CATEGORY.SEARCH]: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.searchEnabled, 'true'), true),
         [CATEGORY.LLM]: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.llmEnabled, 'true'), true),
       },
+      autoDisableOnError: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.autoDisableOnError, 'true'), true),
       alertRecipients: parseRecipients(this.readSetting(HEALTH_SETTING_KEYS.alertRecipients, '')),
       alertTemplateId: String(this.readSetting(HEALTH_SETTING_KEYS.alertTemplateId, '') || '').trim(),
+      errorTemplateId: String(this.readSetting(HEALTH_SETTING_KEYS.errorTemplateId, '') || '').trim(),
     };
   }
 
@@ -241,8 +245,18 @@ class SystemHealthMonitor {
       if (!config.checks[category]) continue;
       const count = this.getFailureCount(category, now, config.windowMs);
       if (count < config.threshold) continue;
-      await this.markUnavailable(category, count, config);
-      return { statusChanged: true, category, count };
+      if (config.autoDisableOnError) {
+        await this.markUnavailable(category, count, config);
+        return { statusChanged: true, category, count };
+      }
+
+      await this.sendErrorEmail(category, count, this.getLatestFailure(category), config);
+      await this.loggingService.error('System health monitor detected failure without disabling site', 'system', {
+        category,
+        count,
+        windowMs: config.windowMs,
+      });
+      return { statusChanged: false };
     }
     return { statusChanged: false };
   }
@@ -347,6 +361,33 @@ class SystemHealthMonitor {
       })));
     } catch (error) {
       await this.loggingService.error('System health outage email failed', 'system', error);
+    }
+  }
+
+  async sendErrorEmail(category, count, failure = null, config = this.getHealthConfig()) {
+    if (!config.alertRecipients.length || !config.errorTemplateId) return;
+
+    const payload = {
+      templateId: config.errorTemplateId,
+      reference: `system-health-error-${category}-${Date.now()}`,
+      personalisation: {
+        environment: getRuntimeEnvironment(),
+        service: category,
+        serviceName: 'AI Answers',
+        cause: category,
+        count: String(count),
+        interval: String(Math.round(config.windowMs / 1000)),
+        errorMessage: failure?.message || `${category} connectivity failure`,
+      },
+    };
+
+    try {
+      await Promise.all(config.alertRecipients.map((email) => this.notifyService.sendEmail({
+        ...payload,
+        email,
+      })));
+    } catch (error) {
+      await this.loggingService.error('System health error email failed', 'system', error);
     }
   }
 

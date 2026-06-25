@@ -991,11 +991,13 @@
       "databaseEnabledLabel": "Check database health",
       "searchEnabledLabel": "Check search health",
       "llmEnabledLabel": "Check LLM health",
+      "autoDisableOnErrorLabel": "Automatically disable site on error",
+      "errorTemplateId": "GC Notify error template ID",
       "failureThreshold": "Failure threshold",
       "failureWindowMinutes": "Failure window (seconds)",
       "intervalMinutes": "Check interval (seconds)",
       "alertRecipients": "Alert recipients",
-      "alertTemplateId": "GC Notify alert template ID"
+      "alertTemplateId": "GC Notify outage template ID"
     },
     "statusLabel": "Service status",
     "statuses": {

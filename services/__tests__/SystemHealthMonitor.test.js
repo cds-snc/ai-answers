@@ -10,8 +10,10 @@ function createMonitor(overrides = {}) {
     cache: {
       siteStatus: 'available',
       'systemHealth.enabled': 'true',
+      'systemHealth.autoDisableOnError': 'true',
       'systemHealth.alertRecipients': 'ops@example.com;admin@example.com',
       'systemHealth.alertTemplateId': 'tpl-health',
+      'systemHealth.errorTemplateId': 'tpl-error',
     },
     set: vi.fn(async (key, value) => {
       settingsService.cache[key] = value;
@@ -95,6 +97,27 @@ describe('SystemHealthMonitor', () => {
     });
     expect(settingsService.cache.siteStatus).toBe('unavailable');
     expect(settingsService.set).toHaveBeenCalledWith('siteStatus', 'unavailable');
+  });
+
+  it('sends outage emails without disabling the site when auto-disable is off', async () => {
+    const { monitor, settingsService, dependencyChecks, notifyService } = createMonitor();
+    settingsService.cache['systemHealth.autoDisableOnError'] = 'false';
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
+
+    await expect(monitor.runCycle(1000)).resolves.toEqual({ statusChanged: false });
+    await expect(monitor.runCycle(2000)).resolves.toEqual({ statusChanged: false });
+
+    expect(settingsService.cache.siteStatus).toBe('available');
+    expect(settingsService.set).not.toHaveBeenCalledWith('siteStatus', 'unavailable');
+    expect(notifyService.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
+      templateId: 'tpl-error',
+      personalisation: expect.objectContaining({
+        interval: '5',
+        count: '2',
+        serviceName: 'AI Answers',
+        cause: SYSTEM_HEALTH_CATEGORY.LLM,
+      }),
+    }));
   });
 
   it('clears stale failures for healthy categories so another category can trigger the outage', async () => {

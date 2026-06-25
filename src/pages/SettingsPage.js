@@ -44,6 +44,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingHealthSearchEnabled, setSavingHealthSearchEnabled] = useState(false);
   const [healthLlmEnabled, setHealthLlmEnabled] = useState('true');
   const [savingHealthLlmEnabled, setSavingHealthLlmEnabled] = useState(false);
+  const [healthAutoDisableOnError, setHealthAutoDisableOnError] = useState('true');
+  const [savingHealthAutoDisableOnError, setSavingHealthAutoDisableOnError] = useState(false);
+  const [healthErrorTemplateId, setHealthErrorTemplateId] = useState('');
+  const [savingHealthErrorTemplateId, setSavingHealthErrorTemplateId] = useState(false);
   const [healthFailureThreshold, setHealthFailureThreshold] = useState(5);
   const [savingHealthFailureThreshold, setSavingHealthFailureThreshold] = useState(false);
   const [healthFailureWindowMinutes, setHealthFailureWindowMinutes] = useState(5);
@@ -126,6 +130,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       setHealthSearchEnabled(String(healthSearchSetting ?? 'true'));
       const healthLlmSetting = await DataStoreService.getSetting('systemHealth.checks.llm.enabled', 'true');
       setHealthLlmEnabled(String(healthLlmSetting ?? 'true'));
+      const healthAutoDisableSetting = await DataStoreService.getSetting('systemHealth.autoDisableOnError', 'true');
+      setHealthAutoDisableOnError(String(healthAutoDisableSetting ?? 'true'));
+      const healthErrorTemplateSetting = await DataStoreService.getSetting('systemHealth.errorTemplateId', '');
+      setHealthErrorTemplateId(healthErrorTemplateSetting ?? '');
       const healthThresholdSetting = await DataStoreService.getSetting('systemHealth.failureThreshold', '5');
       setHealthFailureThreshold(Number(healthThresholdSetting));
       const healthWindowSetting = await DataStoreService.getSetting('systemHealth.failureWindowMinutes', '5');
@@ -465,6 +473,28 @@ const SettingsPage = ({ lang = 'en' }) => {
     readTransform: (v) => String(v ?? 'true'),
   });
 
+  const handleHealthAutoDisableOnErrorChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.autoDisableOnError',
+    value: e.target.value,
+    setValue: setHealthAutoDisableOnError,
+    setSaving: setSavingHealthAutoDisableOnError,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthErrorTemplateIdChange = (e) => {
+    setHealthErrorTemplateId(e.target.value);
+  };
+
+  const handleHealthErrorTemplateIdBlur = async () => {
+    setSavingHealthErrorTemplateId(true);
+    try {
+      const current = await saveAndVerify('systemHealth.errorTemplateId', healthErrorTemplateId, (v) => v ?? '');
+      setHealthErrorTemplateId(current);
+    } finally {
+      setSavingHealthErrorTemplateId(false);
+    }
+  };
+
   const handleHealthFailureThresholdChange = async (e) => saveHealthSetting({
     key: 'systemHealth.failureThreshold',
     value: String(Number(e.target.value)),
@@ -745,6 +775,51 @@ const SettingsPage = ({ lang = 'en' }) => {
           <option value="false">{t('common.no')}</option>
         </select>
 
+        <label htmlFor="health-auto-disable" className="mb-200 display-block mt-400">
+          {t('settings.health.autoDisableOnErrorLabel')}
+        </label>
+        <select
+          id="health-auto-disable"
+          value={healthAutoDisableOnError}
+          onChange={handleHealthAutoDisableOnErrorChange}
+          disabled={savingHealthAutoDisableOnError}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <div className="health-template-grid mt-400">
+          <div className="health-template-column">
+            <label htmlFor="health-error-template" className="mb-200 display-block">
+              {t('settings.health.errorTemplateId')}
+            </label>
+            <input
+              id="health-error-template"
+              type="text"
+              value={healthErrorTemplateId}
+              onChange={handleHealthErrorTemplateIdChange}
+              onBlur={handleHealthErrorTemplateIdBlur}
+              disabled={savingHealthErrorTemplateId}
+              className="w-full"
+            />
+          </div>
+
+          <div className="health-template-column">
+            <label htmlFor="health-alert-template" className="mb-200 display-block">
+              {t('settings.health.alertTemplateId')}
+            </label>
+            <input
+              id="health-alert-template"
+              type="text"
+              value={healthAlertTemplateId}
+              onChange={handleHealthAlertTemplateIdChange}
+              onBlur={handleHealthAlertTemplateIdBlur}
+              disabled={savingHealthAlertTemplateId}
+              className="w-full"
+            />
+          </div>
+        </div>
+
         <label htmlFor="health-failure-threshold" className="mb-200 display-block mt-400">
           {t('settings.health.failureThreshold')}
         </label>
@@ -791,19 +866,6 @@ const SettingsPage = ({ lang = 'en' }) => {
           onChange={handleHealthAlertRecipientsChange}
           onBlur={handleHealthAlertRecipientsBlur}
           disabled={savingHealthAlertRecipients}
-          className="w-full"
-        />
-
-        <label htmlFor="health-alert-template" className="mb-200 display-block mt-400">
-          {t('settings.health.alertTemplateId')}
-        </label>
-        <input
-          id="health-alert-template"
-          type="text"
-          value={healthAlertTemplateId}
-          onChange={handleHealthAlertTemplateIdChange}
-          onBlur={handleHealthAlertTemplateIdBlur}
-          disabled={savingHealthAlertTemplateId}
           className="w-full"
         />
       </GcdsDetails>

@@ -20,6 +20,8 @@ const { mockGetSetting, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(
     'systemHealth.checks.database.enabled': 'true',
     'systemHealth.checks.search.enabled': 'true',
     'systemHealth.checks.llm.enabled': 'true',
+    'systemHealth.autoDisableOnError': 'true',
+    'systemHealth.errorTemplateId': 'tpl-error',
     'systemHealth.failureThreshold': '5',
     'systemHealth.failureWindowMinutes': '5',
     'systemHealth.intervalMinutes': '1',
@@ -97,6 +99,8 @@ describe('SettingsPage health section', () => {
     expect(screen.getByLabelText('settings.health.databaseEnabledLabel')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.searchEnabledLabel')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.llmEnabledLabel')).toBeTruthy();
+    expect(screen.getByLabelText('settings.health.autoDisableOnErrorLabel')).toBeTruthy();
+    expect(screen.getByLabelText('settings.health.errorTemplateId')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.failureThreshold')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.failureWindowMinutes')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.intervalMinutes')).toBeTruthy();
@@ -108,6 +112,8 @@ describe('SettingsPage health section', () => {
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.database.enabled')).toBe(true);
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.search.enabled')).toBe(true);
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.llm.enabled')).toBe(true);
+      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.autoDisableOnError')).toBe(true);
+      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.errorTemplateId')).toBe(true);
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.alertRecipients')).toBe(true);
     });
   });

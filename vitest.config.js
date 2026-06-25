@@ -1,6 +1,31 @@
 import { defineConfig } from 'vitest/config';
+import { transform } from 'esbuild';
+
+const jsAsJsx = {
+  name: 'js-as-jsx',
+  enforce: 'pre',
+  async transform(code, id) {
+    const normalizedId = id.replace(/\\/g, '/');
+    if (!normalizedId.includes('/src/') || !normalizedId.endsWith('.js')) {
+      return null;
+    }
+
+    const result = await transform(code, {
+      loader: 'jsx',
+      jsx: 'automatic',
+      sourcefile: id,
+      sourcemap: true,
+    });
+
+    return {
+      code: result.code,
+      map: result.map,
+    };
+  },
+};
 
 export default defineConfig({
+  plugins: [jsAsJsx],
   esbuild: {
     loader: 'jsx',
     include: /src\/.*\.(js|jsx)$/,
