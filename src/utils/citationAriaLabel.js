@@ -41,9 +41,9 @@ function isGcDomain(hostname) {
 
 // Converts a slug string to a readable label using sentence case.
 // Casing has no effect on screen readers since this is only used in aria-label.
-// Note: if this were ever rendered as visible text (see Option 1 above), proper
-// program-name capitalisation would need to be solved — e.g. "Employment Insurance"
-// and "CPP" have official forms a slug transform cannot reliably reproduce.
+// If this label is ever rendered as visible text, program-name capitalisation
+// would need to be revisited — slugs cannot reliably reproduce official forms
+// like "Employment Insurance" or "CPP".
 function toReadableLabel(slug) {
   const words = slug.replace(/[-_]/g, ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
@@ -83,7 +83,7 @@ function extractSlugLabel(pathname) {
 // Builds a descriptive aria-label for a GC citation link.
 //
 // Tier 1 — readable slug in path:
-//   "Government of Canada — Employment Insurance — canada.ca (opens in new tab) https://…"
+//   "Employment insurance — canada dot ca (opens in new tab) https://…"
 // Tier 2 — opaque/numeric path, domain in registry:
 //   "Government of Canada — Indigenous Services Canada — sac-isc.gc.ca (opens in new tab) https://…"
 // Tier 3 — unregistered GC domain with opaque path:
@@ -107,13 +107,11 @@ function extractSlugLabel(pathname) {
 //   and 2.5.3 cleanly but hides the raw URL from sighted users, reducing destination
 //   transparency on a government service. Revisit if design requirements change.
 //
-// C7 note: Tier 1 prepends "Government of Canada" to any domain with a readable
-// slug. This relies on upstream URL validation ensuring only GC URLs reach here.
 export function buildAriaLabel(url, lang = 'en') {
   const s = STRINGS[lang];
 
-  // C1: normalise protocol-relative URLs (//canada.ca/...) so new URL() can
-  // parse them — safeHttpHref allows these through but new URL() requires a scheme.
+  // Normalise protocol-relative URLs (//canada.ca/...) so new URL() can parse
+  // them — safeHttpHref allows these through but new URL() requires a scheme.
   const normalized = typeof url === 'string' && url.startsWith('//') ? `https:${url}` : url;
 
   let parsed;
@@ -129,7 +127,7 @@ export function buildAriaLabel(url, lang = 'en') {
   // reader's punctuation-handling to expand the dot correctly.
   const spokenHostname = hostname.replace(/\./g, ' dot ');
 
-  // C3: decode percent-encoded path characters (e.g. %C3%A9 → é) so slug labels
+  // Decode percent-encoded path characters (e.g. %C3%A9 → é) so slug labels
   // are readable. Falls back to the raw encoded form if decoding fails.
   let pathname;
   try {
