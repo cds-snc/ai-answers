@@ -3,9 +3,6 @@ import { DOMAIN_REGISTRY } from '../config/citationDomainRegistry.js';
 // Static bilingual strings — kept inline rather than in locale files because
 // this is a pure utility with no React context. These strings are stable; if
 // they ever need to change, update both EN and FR variants here together.
-//
-// C8 note: lang is expected to be 'en' or 'fr' only — this app's two official
-// languages. Passing any other value will produce undefined behaviour.
 const STRINGS = {
   en: {
     opensInNewTab: '(opens in new tab)',
