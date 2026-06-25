@@ -14,6 +14,7 @@ function createMonitor(overrides = {}) {
       'systemHealth.alertRecipients': 'ops@example.com;admin@example.com',
       'systemHealth.alertTemplateId': 'tpl-health',
       'systemHealth.errorTemplateId': 'tpl-error',
+      'systemHealth.fastIntervalSeconds': '30',
     },
     set: vi.fn(async (key, value) => {
       settingsService.cache[key] = value;
@@ -83,6 +84,48 @@ describe('SystemHealthMonitor', () => {
     expect(dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM]).toHaveBeenCalledTimes(1);
   });
 
+  it('logs dependency check state to the console in development', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { monitor, dependencyChecks } = createMonitor();
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
+
+    try {
+      await monitor.runCycle(1000);
+
+      expect(consoleLog).toHaveBeenCalledWith(
+        '[SystemHealthMonitor] dependency check',
+        expect.objectContaining({
+          category: SYSTEM_HEALTH_CATEGORY.LLM,
+          status: 'error',
+          siteStatus: 'available',
+          pollingTier: 'fast',
+          failureCount: 1,
+          threshold: 2,
+          autoDisableOnError: true,
+        })
+      );
+    } finally {
+      consoleLog.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('does not log dependency check state outside development', async () => {
+    vi.stubEnv('NODE_ENV', 'test');
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { monitor } = createMonitor();
+
+    try {
+      await monitor.runCycle(1000);
+
+      expect(consoleLog).not.toHaveBeenCalled();
+    } finally {
+      consoleLog.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('does not disable the site until the threshold is reached and the dependency check fails', async () => {
     const { monitor, settingsService, dependencyChecks } = createMonitor();
     dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
@@ -118,6 +161,24 @@ describe('SystemHealthMonitor', () => {
         cause: SYSTEM_HEALTH_CATEGORY.LLM,
       }),
     }));
+  });
+
+  it('stays on the fast interval until the failure window expires without reaching the threshold', async () => {
+    const { monitor, dependencyChecks } = createMonitor();
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
+
+    await monitor.runCycle(1000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(30000);
+
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'connected' });
+    await monitor.runCycle(2000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(30000);
+
+    await monitor.runCycle(6000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(30000);
+
+    await monitor.runCycle(6001);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(1800000);
   });
 
   it('clears stale failures for healthy categories so another category can trigger the outage', async () => {

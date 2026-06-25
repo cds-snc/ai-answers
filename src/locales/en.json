@@ -992,6 +992,7 @@
       "llmEnabledLabel": "Check LLM health",
       "autoDisableOnErrorLabel": "Automatically disable site on error",
       "errorTemplateId": "GC Notify error template ID",
+      "fastIntervalSeconds": "Fast interval (seconds)",
       "failureThreshold": "Failure threshold",
       "failureWindowMinutes": "Failure window (seconds)",
       "intervalMinutes": "Check interval (seconds)",

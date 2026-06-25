@@ -25,6 +25,7 @@ const { mockGetSetting, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(
     'systemHealth.failureThreshold': '5',
     'systemHealth.failureWindowMinutes': '5',
     'systemHealth.intervalMinutes': '1',
+    'systemHealth.fastIntervalSeconds': '30',
     'systemHealth.alertRecipients': 'ops@example.com;admin@example.com',
     'systemHealth.alertTemplateId': 'tpl-health',
     'twoFA.enabled': 'false',
@@ -104,6 +105,7 @@ describe('SettingsPage health section', () => {
     expect(screen.getByLabelText('settings.health.failureThreshold')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.failureWindowMinutes')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.intervalMinutes')).toBeTruthy();
+    expect(screen.getByLabelText('settings.health.fastIntervalSeconds')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.alertRecipients')).toBeTruthy();
     expect(screen.getByLabelText('settings.health.alertTemplateId')).toBeTruthy();
 
@@ -114,6 +116,7 @@ describe('SettingsPage health section', () => {
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.llm.enabled')).toBe(true);
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.autoDisableOnError')).toBe(true);
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.errorTemplateId')).toBe(true);
+      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.fastIntervalSeconds')).toBe(true);
       expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.alertRecipients')).toBe(true);
     });
   });

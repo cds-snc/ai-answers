@@ -50,10 +50,12 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingHealthErrorTemplateId, setSavingHealthErrorTemplateId] = useState(false);
   const [healthFailureThreshold, setHealthFailureThreshold] = useState(5);
   const [savingHealthFailureThreshold, setSavingHealthFailureThreshold] = useState(false);
-  const [healthFailureWindowMinutes, setHealthFailureWindowMinutes] = useState(5);
-  const [savingHealthFailureWindowMinutes, setSavingHealthFailureWindowMinutes] = useState(false);
-  const [healthIntervalMinutes, setHealthIntervalMinutes] = useState(1);
-  const [savingHealthIntervalMinutes, setSavingHealthIntervalMinutes] = useState(false);
+  const [healthFailureWindowSeconds, setHealthFailureWindowSeconds] = useState(5);
+  const [savingHealthFailureWindowSeconds, setSavingHealthFailureWindowSeconds] = useState(false);
+  const [healthIntervalSeconds, setHealthIntervalSeconds] = useState(1);
+  const [savingHealthIntervalSeconds, setSavingHealthIntervalSeconds] = useState(false);
+  const [healthFastIntervalSeconds, setHealthFastIntervalSeconds] = useState(30);
+  const [savingHealthFastIntervalSeconds, setSavingHealthFastIntervalSeconds] = useState(false);
   const [healthAlertRecipients, setHealthAlertRecipients] = useState('');
   const [savingHealthAlertRecipients, setSavingHealthAlertRecipients] = useState(false);
   const [healthAlertTemplateId, setHealthAlertTemplateId] = useState('');
@@ -137,9 +139,11 @@ const SettingsPage = ({ lang = 'en' }) => {
       const healthThresholdSetting = await DataStoreService.getSetting('systemHealth.failureThreshold', '5');
       setHealthFailureThreshold(Number(healthThresholdSetting));
       const healthWindowSetting = await DataStoreService.getSetting('systemHealth.failureWindowMinutes', '5');
-      setHealthFailureWindowMinutes(Number(healthWindowSetting));
+      setHealthFailureWindowSeconds(Number(healthWindowSetting));
       const healthIntervalSetting = await DataStoreService.getSetting('systemHealth.intervalMinutes', '1');
-      setHealthIntervalMinutes(Number(healthIntervalSetting));
+      setHealthIntervalSeconds(Number(healthIntervalSetting));
+      const healthFastIntervalSetting = await DataStoreService.getSetting('systemHealth.fastIntervalSeconds', '30');
+      setHealthFastIntervalSeconds(Number(healthFastIntervalSetting));
       const healthAlertRecipientsSetting = await DataStoreService.getSetting('systemHealth.alertRecipients', '');
       setHealthAlertRecipients(healthAlertRecipientsSetting ?? '');
       const healthAlertTemplateSetting = await DataStoreService.getSetting('systemHealth.alertTemplateId', '');
@@ -503,19 +507,27 @@ const SettingsPage = ({ lang = 'en' }) => {
     readTransform: (v) => Number(v),
   });
 
-  const handleHealthFailureWindowMinutesChange = async (e) => saveHealthSetting({
+  const handleHealthFailureWindowSecondsChange = async (e) => saveHealthSetting({
     key: 'systemHealth.failureWindowMinutes',
     value: String(Number(e.target.value)),
-    setValue: setHealthFailureWindowMinutes,
-    setSaving: setSavingHealthFailureWindowMinutes,
+    setValue: setHealthFailureWindowSeconds,
+    setSaving: setSavingHealthFailureWindowSeconds,
     readTransform: (v) => Number(v),
   });
 
-  const handleHealthIntervalMinutesChange = async (e) => saveHealthSetting({
+  const handleHealthIntervalSecondsChange = async (e) => saveHealthSetting({
     key: 'systemHealth.intervalMinutes',
     value: String(Number(e.target.value)),
-    setValue: setHealthIntervalMinutes,
-    setSaving: setSavingHealthIntervalMinutes,
+    setValue: setHealthIntervalSeconds,
+    setSaving: setSavingHealthIntervalSeconds,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthFastIntervalSecondsChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.fastIntervalSeconds',
+    value: String(Number(e.target.value)),
+    setValue: setHealthFastIntervalSeconds,
+    setSaving: setSavingHealthFastIntervalSeconds,
     readTransform: (v) => Number(v),
   });
 
@@ -839,9 +851,9 @@ const SettingsPage = ({ lang = 'en' }) => {
           id="health-failure-window"
           type="number"
           min="1"
-          value={healthFailureWindowMinutes}
-          onChange={handleHealthFailureWindowMinutesChange}
-          disabled={savingHealthFailureWindowMinutes}
+          value={healthFailureWindowSeconds}
+          onChange={handleHealthFailureWindowSecondsChange}
+          disabled={savingHealthFailureWindowSeconds}
         />
 
         <label htmlFor="health-interval" className="mb-200 display-block mt-400">
@@ -851,9 +863,21 @@ const SettingsPage = ({ lang = 'en' }) => {
           id="health-interval"
           type="number"
           min="1"
-          value={healthIntervalMinutes}
-          onChange={handleHealthIntervalMinutesChange}
-          disabled={savingHealthIntervalMinutes}
+          value={healthIntervalSeconds}
+          onChange={handleHealthIntervalSecondsChange}
+          disabled={savingHealthIntervalSeconds}
+        />
+
+        <label htmlFor="health-fast-interval" className="mb-200 display-block mt-400">
+          {t('settings.health.fastIntervalSeconds')}
+        </label>
+        <input
+          id="health-fast-interval"
+          type="number"
+          min="1"
+          value={healthFastIntervalSeconds}
+          onChange={handleHealthFastIntervalSecondsChange}
+          disabled={savingHealthFastIntervalSeconds}
         />
 
         <label htmlFor="health-alert-recipients" className="mb-200 display-block mt-400">

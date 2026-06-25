@@ -992,6 +992,7 @@
       "llmEnabledLabel": "Vérifier la santé du LLM",
       "autoDisableOnErrorLabel": "Désactiver automatiquement le site en cas d'erreur",
       "errorTemplateId": "ID du modèle GC Notify pour les erreurs",
+      "fastIntervalSeconds": "Intervalle rapide (secondes)",
       "failureThreshold": "Seuil d'échec",
       "failureWindowMinutes": "Fenêtre d'échec (secondes)",
       "intervalMinutes": "Intervalle de vérification (secondes)",

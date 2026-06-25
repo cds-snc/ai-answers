@@ -7,6 +7,18 @@ import {
   testGoogleSearch,
 } from './ConnectivityService.js';
 
+/*
+ * System health strategy:
+ * - While the site is available, poll on the slower interval to limit health-check traffic.
+ * - The first failed dependency probe opens a confirmation window and switches future polls
+ *   to the fast interval. Successful probes do not clear that window; failures age out only
+ *   when they leave the configured rolling failure window.
+ * - If failures for a dependency reach the threshold inside the window, auto-disable mode
+ *   marks the site unavailable and sends the outage template. When auto-disable is off, the
+ *   site stays available and the error template is sent instead.
+ * - While the site is unavailable, polling uses the existing exponential backoff. Once the
+ *   site is available again and the failure window has cooled off, polling returns to slow.
+ */
 const DEFAULT_THRESHOLD = 5;
 const DEFAULT_WINDOW_SECONDS = 5;
 const DEFAULT_INTERVAL_SECONDS = 1;
@@ -24,6 +36,7 @@ const HEALTH_SETTING_KEYS = {
   failureThreshold: 'systemHealth.failureThreshold',
   failureWindowMinutes: 'systemHealth.failureWindowMinutes',
   intervalMinutes: 'systemHealth.intervalMinutes',
+  fastIntervalSeconds: 'systemHealth.fastIntervalSeconds',
   alertRecipients: 'systemHealth.alertRecipients',
   alertTemplateId: 'systemHealth.alertTemplateId',
   errorTemplateId: 'systemHealth.errorTemplateId',
@@ -99,6 +112,10 @@ function getRuntimeEnvironment() {
   return process.env.NODE_ENV || process.env.APP_ENV || process.env.RUNTIME_ENV || 'unknown';
 }
 
+function isDevelopmentEnvironment() {
+  return getRuntimeEnvironment() === 'development';
+}
+
 class SystemHealthMonitor {
   constructor({
     threshold = parsePositiveInteger(process.env.SYSTEM_HEALTH_FAILURE_THRESHOLD, DEFAULT_THRESHOLD),
@@ -124,6 +141,7 @@ class SystemHealthMonitor {
     this.timer = null;
     this.activeOutageCategory = null;
     this.unavailableBackoffExponent = 0;
+    this.confirmingOutageActive = false;
     this.isRunningCycle = false;
     this.stopped = false;
   }
@@ -155,13 +173,17 @@ class SystemHealthMonitor {
   }
 
   getHealthConfig() {
-    const windowSeconds = parsePositiveInteger(
+    const failureWindowSeconds = parsePositiveInteger(
       this.readSetting(HEALTH_SETTING_KEYS.failureWindowMinutes, DEFAULT_WINDOW_SECONDS),
       DEFAULT_WINDOW_SECONDS
     );
     const intervalSeconds = parsePositiveInteger(
       this.readSetting(HEALTH_SETTING_KEYS.intervalMinutes, DEFAULT_INTERVAL_SECONDS),
       DEFAULT_INTERVAL_SECONDS
+    );
+    const fastIntervalSeconds = parsePositiveInteger(
+      this.readSetting(HEALTH_SETTING_KEYS.fastIntervalSeconds, 30),
+      30
     );
     const threshold = parsePositiveInteger(
       this.readSetting(HEALTH_SETTING_KEYS.failureThreshold, this.defaultThreshold),
@@ -171,8 +193,12 @@ class SystemHealthMonitor {
     return {
       enabled: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.enabled, 'false'), false),
       threshold,
-      windowMs: windowSeconds * 1000,
+      windowSeconds: failureWindowSeconds,
+      windowMs: failureWindowSeconds * 1000,
+      intervalSeconds,
       intervalMs: intervalSeconds * 1000,
+      fastIntervalSeconds,
+      fastIntervalMs: fastIntervalSeconds * 1000,
       checks: {
         [CATEGORY.DATABASE]: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.databaseEnabled, 'true'), true),
         [CATEGORY.SEARCH]: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.searchEnabled, 'true'), true),
@@ -212,11 +238,6 @@ class SystemHealthMonitor {
     return category;
   }
 
-  clearFailures(category) {
-    if (!category) return;
-    this.failures.delete(category);
-  }
-
   async runCycle(now = Date.now()) {
     const config = this.getHealthConfig();
     if (!config.enabled) {
@@ -236,20 +257,25 @@ class SystemHealthMonitor {
           message: failure.message || `${category} connectivity failure`,
           source: 'probe',
         }, config.windowMs);
-      } else {
-        this.clearFailures(category);
       }
+      this.logDevelopmentCheckState(category, failure, config, now);
     }
 
+    let hasOpenFailures = false;
     for (const category of Object.values(CATEGORY)) {
       if (!config.checks[category]) continue;
       const count = this.getFailureCount(category, now, config.windowMs);
+      if (count > 0) {
+        hasOpenFailures = true;
+      }
       if (count < config.threshold) continue;
       if (config.autoDisableOnError) {
+        this.confirmingOutageActive = false;
         await this.markUnavailable(category, count, config);
         return { statusChanged: true, category, count };
       }
 
+      this.confirmingOutageActive = true;
       await this.sendErrorEmail(category, count, this.getLatestFailure(category), config);
       await this.loggingService.error('System health monitor detected failure without disabling site', 'system', {
         category,
@@ -258,6 +284,7 @@ class SystemHealthMonitor {
       });
       return { statusChanged: false };
     }
+    this.confirmingOutageActive = hasOpenFailures;
     return { statusChanged: false };
   }
 
@@ -269,7 +296,9 @@ class SystemHealthMonitor {
 
     if (siteStatus !== UNAVAILABLE_STATUS) {
       this.unavailableBackoffExponent = 0;
-      return baseDelay;
+      return this.confirmingOutageActive && Number.isFinite(config.fastIntervalMs) && config.fastIntervalMs > 0
+        ? config.fastIntervalMs
+        : baseDelay;
     }
 
     this.unavailableBackoffExponent = Math.min(this.unavailableBackoffExponent + 1, 8);
@@ -278,6 +307,32 @@ class SystemHealthMonitor {
 
   async evaluate(now = Date.now()) {
     return this.runCycle(now);
+  }
+
+  logDevelopmentCheckState(category, failure, config, now = Date.now()) {
+    if (!isDevelopmentEnvironment()) return;
+
+    const siteStatus = String(this.readSetting(SITE_STATUS_KEY, 'available'));
+    const failureCount = this.getFailureCount(category, now, config.windowMs);
+    const nextPollingTier = siteStatus === UNAVAILABLE_STATUS
+      ? 'unavailable-backoff'
+      : failureCount > 0 || this.confirmingOutageActive
+        ? 'fast'
+        : 'slow';
+
+    console.log('[SystemHealthMonitor] dependency check', {
+      category,
+      status: failure ? 'error' : 'connected',
+      siteStatus,
+      pollingTier: nextPollingTier,
+      confirmingOutageActive: this.confirmingOutageActive,
+      failureCount,
+      threshold: config.threshold,
+      windowSeconds: config.windowSeconds,
+      intervalSeconds: config.intervalSeconds,
+      fastIntervalSeconds: config.fastIntervalSeconds,
+      autoDisableOnError: config.autoDisableOnError,
+    });
   }
 
   async checkCategory(category) {
@@ -310,6 +365,7 @@ class SystemHealthMonitor {
     if (!this.activeOutageCategory) {
       this.activeOutageCategory = category;
     }
+    this.confirmingOutageActive = false;
     const outageCategory = this.activeOutageCategory || category;
     if (!wasUnavailable) {
       this.settingsService.cache[SITE_STATUS_KEY] = UNAVAILABLE_STATUS;
@@ -433,6 +489,7 @@ class SystemHealthMonitor {
     this.failures.clear();
     this.activeOutageCategory = null;
     this.unavailableBackoffExponent = 0;
+    this.confirmingOutageActive = false;
   }
 }
 
