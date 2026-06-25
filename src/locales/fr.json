@@ -984,6 +984,21 @@
     "indigenousLanguageBlocking": {
       "label": "Blocage des langues autochtones du Canada"
     },
+    "health": {
+      "title": "Vérifications de santé",
+      "description": "Contrôlez le moniteur de santé automatisé et ses vérifications des dépendances.",
+      "enabledLabel": "Activer la surveillance de santé",
+      "databaseEnabledLabel": "Vérifier la santé de la base de données",
+      "searchEnabledLabel": "Vérifier la santé de la recherche",
+      "llmEnabledLabel": "Vérifier la santé du LLM",
+      "autoDisableOnErrorLabel": "Désactiver automatiquement le site en cas d'erreur",
+      "errorTemplateId": "ID du modèle GC Notify pour les erreurs",
+      "failureThreshold": "Seuil d'échec",
+      "failureWindowMinutes": "Fenêtre d'échec (secondes)",
+      "intervalMinutes": "Intervalle de vérification (secondes)",
+      "alertRecipients": "Destinataires de l'alerte",
+      "alertTemplateId": "ID du modèle GC Notify pour les pannes"
+    },
     "statusLabel": "Statut du service",
     "statuses": {
       "available": "Disponible",
@@ -1704,6 +1719,17 @@
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
     "testing": "Test des connexions...",
+    "simulation": {
+      "title": "Simulation de panne",
+      "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",
+      "enable": "Simuler l'échec",
+      "disable": "Effacer la simulation",
+      "labels": {
+        "database": "Base de données",
+        "search": "Recherche",
+        "llm": "LLM"
+      }
+    },
     "connected": "Connecté",
     "errors": "Erreurs",
     "warnings": "Avertissements",

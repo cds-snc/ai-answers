@@ -8,7 +8,31 @@ const SETTING_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',
+  'systemHealth.enabled': 'false',
+  'systemHealth.checks.database.enabled': 'true',
+  'systemHealth.checks.search.enabled': 'true',
+  'systemHealth.checks.llm.enabled': 'true',
+  'systemHealth.autoDisableOnError': 'true',
+  'systemHealth.failureThreshold': '5',
+  'systemHealth.failureWindowMinutes': '5',
+  'systemHealth.intervalMinutes': '1',
+  'systemHealth.alertRecipients': '',
+  'systemHealth.alertTemplateId': '',
+  'systemHealth.errorTemplateId': '',
+  'connectivity.simulation.database': 'false',
+  'connectivity.simulation.search': 'false',
+  'connectivity.simulation.llm': 'false',
 };
+
+const EMPTY_ALLOWED_SETTINGS = new Set([
+  'systemHealth.alertRecipients',
+  'systemHealth.alertTemplateId',
+  'systemHealth.errorTemplateId',
+  'site.baseUrl',
+  'session.maxActiveSessions',
+  'twoFA.templateId',
+  'notify.resetTemplateId',
+]);
 
 class SettingsServiceClass {
   constructor() {
@@ -46,6 +70,13 @@ class SettingsServiceClass {
 
   async set(key, value) {
     key = requireLiteralString(key, 'setting key');
+    if (value === '' && EMPTY_ALLOWED_SETTINGS.has(key)) {
+      this.cache[key] = '';
+      await dbConnect();
+      await Setting.findOneAndUpdate({ key }, { value: '' }, { upsert: true });
+      return;
+    }
+
     value = requireString(value, 'setting value');
     // Update cache immediately
     this.cache[key] = value;

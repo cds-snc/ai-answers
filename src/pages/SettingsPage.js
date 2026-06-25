@@ -35,6 +35,30 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [indigenousLanguageBlocking, setIndigenousLanguageBlocking] = useState('true');
   const [savingIndigenousLanguageBlocking, setSavingIndigenousLanguageBlocking] = useState(false);
 
+  // Health monitoring settings
+  const [healthEnabled, setHealthEnabled] = useState('false');
+  const [savingHealthEnabled, setSavingHealthEnabled] = useState(false);
+  const [healthDatabaseEnabled, setHealthDatabaseEnabled] = useState('true');
+  const [savingHealthDatabaseEnabled, setSavingHealthDatabaseEnabled] = useState(false);
+  const [healthSearchEnabled, setHealthSearchEnabled] = useState('true');
+  const [savingHealthSearchEnabled, setSavingHealthSearchEnabled] = useState(false);
+  const [healthLlmEnabled, setHealthLlmEnabled] = useState('true');
+  const [savingHealthLlmEnabled, setSavingHealthLlmEnabled] = useState(false);
+  const [healthAutoDisableOnError, setHealthAutoDisableOnError] = useState('true');
+  const [savingHealthAutoDisableOnError, setSavingHealthAutoDisableOnError] = useState(false);
+  const [healthErrorTemplateId, setHealthErrorTemplateId] = useState('');
+  const [savingHealthErrorTemplateId, setSavingHealthErrorTemplateId] = useState(false);
+  const [healthFailureThreshold, setHealthFailureThreshold] = useState(5);
+  const [savingHealthFailureThreshold, setSavingHealthFailureThreshold] = useState(false);
+  const [healthFailureWindowMinutes, setHealthFailureWindowMinutes] = useState(5);
+  const [savingHealthFailureWindowMinutes, setSavingHealthFailureWindowMinutes] = useState(false);
+  const [healthIntervalMinutes, setHealthIntervalMinutes] = useState(1);
+  const [savingHealthIntervalMinutes, setSavingHealthIntervalMinutes] = useState(false);
+  const [healthAlertRecipients, setHealthAlertRecipients] = useState('');
+  const [savingHealthAlertRecipients, setSavingHealthAlertRecipients] = useState(false);
+  const [healthAlertTemplateId, setHealthAlertTemplateId] = useState('');
+  const [savingHealthAlertTemplateId, setSavingHealthAlertTemplateId] = useState(false);
+
 
 
   // Two-factor authentication settings
@@ -98,6 +122,29 @@ const SettingsPage = ({ lang = 'en' }) => {
       const indigenousBlockingSetting = await DataStoreService.getSetting('guardrail.indigenousLanguageBlocking', 'true');
       setIndigenousLanguageBlocking(String(indigenousBlockingSetting ?? 'true'));
 
+      const healthEnabledSetting = await DataStoreService.getSetting('systemHealth.enabled', 'false');
+      setHealthEnabled(String(healthEnabledSetting ?? 'false'));
+      const healthDatabaseSetting = await DataStoreService.getSetting('systemHealth.checks.database.enabled', 'true');
+      setHealthDatabaseEnabled(String(healthDatabaseSetting ?? 'true'));
+      const healthSearchSetting = await DataStoreService.getSetting('systemHealth.checks.search.enabled', 'true');
+      setHealthSearchEnabled(String(healthSearchSetting ?? 'true'));
+      const healthLlmSetting = await DataStoreService.getSetting('systemHealth.checks.llm.enabled', 'true');
+      setHealthLlmEnabled(String(healthLlmSetting ?? 'true'));
+      const healthAutoDisableSetting = await DataStoreService.getSetting('systemHealth.autoDisableOnError', 'true');
+      setHealthAutoDisableOnError(String(healthAutoDisableSetting ?? 'true'));
+      const healthErrorTemplateSetting = await DataStoreService.getSetting('systemHealth.errorTemplateId', '');
+      setHealthErrorTemplateId(healthErrorTemplateSetting ?? '');
+      const healthThresholdSetting = await DataStoreService.getSetting('systemHealth.failureThreshold', '5');
+      setHealthFailureThreshold(Number(healthThresholdSetting));
+      const healthWindowSetting = await DataStoreService.getSetting('systemHealth.failureWindowMinutes', '5');
+      setHealthFailureWindowMinutes(Number(healthWindowSetting));
+      const healthIntervalSetting = await DataStoreService.getSetting('systemHealth.intervalMinutes', '1');
+      setHealthIntervalMinutes(Number(healthIntervalSetting));
+      const healthAlertRecipientsSetting = await DataStoreService.getSetting('systemHealth.alertRecipients', '');
+      setHealthAlertRecipients(healthAlertRecipientsSetting ?? '');
+      const healthAlertTemplateSetting = await DataStoreService.getSetting('systemHealth.alertTemplateId', '');
+      setHealthAlertTemplateId(healthAlertTemplateSetting ?? '');
+
       const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
       setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
       const twoFATemplateSetting = await DataStoreService.getSetting('twoFA.templateId', '');
@@ -145,6 +192,18 @@ const SettingsPage = ({ lang = 'en' }) => {
     await DataStoreService.setSetting(key, value);
     const current = await DataStoreService.getSetting(key, value);
     return readTransform(current);
+  };
+
+  const saveHealthSetting = async ({ key, value, setValue, setSaving, readTransform = (v) => v }) => {
+    setValue(value);
+    setSaving(true);
+    try {
+      const current = await saveAndVerify(key, value, readTransform);
+      setValue(current);
+      return current;
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Session handlers
@@ -382,6 +441,112 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleHealthEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.enabled',
+    value: e.target.value,
+    setValue: setHealthEnabled,
+    setSaving: setSavingHealthEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthDatabaseEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.checks.database.enabled',
+    value: e.target.value,
+    setValue: setHealthDatabaseEnabled,
+    setSaving: setSavingHealthDatabaseEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthSearchEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.checks.search.enabled',
+    value: e.target.value,
+    setValue: setHealthSearchEnabled,
+    setSaving: setSavingHealthSearchEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthLlmEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.checks.llm.enabled',
+    value: e.target.value,
+    setValue: setHealthLlmEnabled,
+    setSaving: setSavingHealthLlmEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthAutoDisableOnErrorChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.autoDisableOnError',
+    value: e.target.value,
+    setValue: setHealthAutoDisableOnError,
+    setSaving: setSavingHealthAutoDisableOnError,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthErrorTemplateIdChange = (e) => {
+    setHealthErrorTemplateId(e.target.value);
+  };
+
+  const handleHealthErrorTemplateIdBlur = async () => {
+    setSavingHealthErrorTemplateId(true);
+    try {
+      const current = await saveAndVerify('systemHealth.errorTemplateId', healthErrorTemplateId, (v) => v ?? '');
+      setHealthErrorTemplateId(current);
+    } finally {
+      setSavingHealthErrorTemplateId(false);
+    }
+  };
+
+  const handleHealthFailureThresholdChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.failureThreshold',
+    value: String(Number(e.target.value)),
+    setValue: setHealthFailureThreshold,
+    setSaving: setSavingHealthFailureThreshold,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthFailureWindowMinutesChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.failureWindowMinutes',
+    value: String(Number(e.target.value)),
+    setValue: setHealthFailureWindowMinutes,
+    setSaving: setSavingHealthFailureWindowMinutes,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthIntervalMinutesChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.intervalMinutes',
+    value: String(Number(e.target.value)),
+    setValue: setHealthIntervalMinutes,
+    setSaving: setSavingHealthIntervalMinutes,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthAlertRecipientsChange = (e) => {
+    setHealthAlertRecipients(e.target.value);
+  };
+
+  const handleHealthAlertRecipientsBlur = async () => {
+    setSavingHealthAlertRecipients(true);
+    try {
+      const current = await saveAndVerify('systemHealth.alertRecipients', healthAlertRecipients, (v) => v ?? '');
+      setHealthAlertRecipients(current);
+    } finally {
+      setSavingHealthAlertRecipients(false);
+    }
+  };
+
+  const handleHealthAlertTemplateIdChange = (e) => {
+    setHealthAlertTemplateId(e.target.value);
+  };
+
+  const handleHealthAlertTemplateIdBlur = async () => {
+    setSavingHealthAlertTemplateId(true);
+    try {
+      const current = await saveAndVerify('systemHealth.alertTemplateId', healthAlertTemplateId, (v) => v ?? '');
+      setHealthAlertTemplateId(current);
+    } finally {
+      setSavingHealthAlertTemplateId(false);
+    }
+  };
+
   const handleResetTemplateIdChange = (e) => {
     setResetTemplateId(e.target.value);
   };
@@ -553,6 +718,156 @@ const SettingsPage = ({ lang = 'en' }) => {
           </select>
 
         </div>
+      </GcdsDetails>
+
+      <GcdsDetails detailsTitle={t('settings.health.title')} className="mt-600 mb-200" tabIndex="0">
+        <p className="mb-400">{t('settings.health.description')}</p>
+
+        <label htmlFor="health-enabled" className="mb-200 display-block mt-200">
+          {t('settings.health.enabledLabel')}
+        </label>
+        <select
+          id="health-enabled"
+          value={healthEnabled}
+          onChange={handleHealthEnabledChange}
+          disabled={savingHealthEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-database-enabled" className="mb-200 display-block mt-400">
+          {t('settings.health.databaseEnabledLabel')}
+        </label>
+        <select
+          id="health-database-enabled"
+          value={healthDatabaseEnabled}
+          onChange={handleHealthDatabaseEnabledChange}
+          disabled={savingHealthDatabaseEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-search-enabled" className="mb-200 display-block mt-400">
+          {t('settings.health.searchEnabledLabel')}
+        </label>
+        <select
+          id="health-search-enabled"
+          value={healthSearchEnabled}
+          onChange={handleHealthSearchEnabledChange}
+          disabled={savingHealthSearchEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-llm-enabled" className="mb-200 display-block mt-400">
+          {t('settings.health.llmEnabledLabel')}
+        </label>
+        <select
+          id="health-llm-enabled"
+          value={healthLlmEnabled}
+          onChange={handleHealthLlmEnabledChange}
+          disabled={savingHealthLlmEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-auto-disable" className="mb-200 display-block mt-400">
+          {t('settings.health.autoDisableOnErrorLabel')}
+        </label>
+        <select
+          id="health-auto-disable"
+          value={healthAutoDisableOnError}
+          onChange={handleHealthAutoDisableOnErrorChange}
+          disabled={savingHealthAutoDisableOnError}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <div className="health-template-grid mt-400">
+          <div className="health-template-column">
+            <label htmlFor="health-error-template" className="mb-200 display-block">
+              {t('settings.health.errorTemplateId')}
+            </label>
+            <input
+              id="health-error-template"
+              type="text"
+              value={healthErrorTemplateId}
+              onChange={handleHealthErrorTemplateIdChange}
+              onBlur={handleHealthErrorTemplateIdBlur}
+              disabled={savingHealthErrorTemplateId}
+              className="w-full"
+            />
+          </div>
+
+          <div className="health-template-column">
+            <label htmlFor="health-alert-template" className="mb-200 display-block">
+              {t('settings.health.alertTemplateId')}
+            </label>
+            <input
+              id="health-alert-template"
+              type="text"
+              value={healthAlertTemplateId}
+              onChange={handleHealthAlertTemplateIdChange}
+              onBlur={handleHealthAlertTemplateIdBlur}
+              disabled={savingHealthAlertTemplateId}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <label htmlFor="health-failure-threshold" className="mb-200 display-block mt-400">
+          {t('settings.health.failureThreshold')}
+        </label>
+        <input
+          id="health-failure-threshold"
+          type="number"
+          min="1"
+          value={healthFailureThreshold}
+          onChange={handleHealthFailureThresholdChange}
+          disabled={savingHealthFailureThreshold}
+        />
+
+        <label htmlFor="health-failure-window" className="mb-200 display-block mt-400">
+          {t('settings.health.failureWindowMinutes')}
+        </label>
+        <input
+          id="health-failure-window"
+          type="number"
+          min="1"
+          value={healthFailureWindowMinutes}
+          onChange={handleHealthFailureWindowMinutesChange}
+          disabled={savingHealthFailureWindowMinutes}
+        />
+
+        <label htmlFor="health-interval" className="mb-200 display-block mt-400">
+          {t('settings.health.intervalMinutes')}
+        </label>
+        <input
+          id="health-interval"
+          type="number"
+          min="1"
+          value={healthIntervalMinutes}
+          onChange={handleHealthIntervalMinutesChange}
+          disabled={savingHealthIntervalMinutes}
+        />
+
+        <label htmlFor="health-alert-recipients" className="mb-200 display-block mt-400">
+          {t('settings.health.alertRecipients')}
+        </label>
+        <input
+          id="health-alert-recipients"
+          type="text"
+          value={healthAlertRecipients}
+          onChange={handleHealthAlertRecipientsChange}
+          onBlur={handleHealthAlertRecipientsBlur}
+          disabled={savingHealthAlertRecipients}
+          className="w-full"
+        />
       </GcdsDetails>
 
 
