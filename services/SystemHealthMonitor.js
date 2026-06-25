@@ -112,6 +112,10 @@ function getRuntimeEnvironment() {
   return process.env.NODE_ENV || process.env.APP_ENV || process.env.RUNTIME_ENV || 'unknown';
 }
 
+function isDevelopmentEnvironment() {
+  return getRuntimeEnvironment() === 'development';
+}
+
 class SystemHealthMonitor {
   constructor({
     threshold = parsePositiveInteger(process.env.SYSTEM_HEALTH_FAILURE_THRESHOLD, DEFAULT_THRESHOLD),
@@ -254,6 +258,7 @@ class SystemHealthMonitor {
           source: 'probe',
         }, config.windowMs);
       }
+      this.logDevelopmentCheckState(category, failure, config, now);
     }
 
     let hasOpenFailures = false;
@@ -302,6 +307,32 @@ class SystemHealthMonitor {
 
   async evaluate(now = Date.now()) {
     return this.runCycle(now);
+  }
+
+  logDevelopmentCheckState(category, failure, config, now = Date.now()) {
+    if (!isDevelopmentEnvironment()) return;
+
+    const siteStatus = String(this.readSetting(SITE_STATUS_KEY, 'available'));
+    const failureCount = this.getFailureCount(category, now, config.windowMs);
+    const nextPollingTier = siteStatus === UNAVAILABLE_STATUS
+      ? 'unavailable-backoff'
+      : failureCount > 0 || this.confirmingOutageActive
+        ? 'fast'
+        : 'slow';
+
+    console.log('[SystemHealthMonitor] dependency check', {
+      category,
+      status: failure ? 'error' : 'connected',
+      siteStatus,
+      pollingTier: nextPollingTier,
+      confirmingOutageActive: this.confirmingOutageActive,
+      failureCount,
+      threshold: config.threshold,
+      windowSeconds: config.windowSeconds,
+      intervalSeconds: config.intervalSeconds,
+      fastIntervalSeconds: config.fastIntervalSeconds,
+      autoDisableOnError: config.autoDisableOnError,
+    });
   }
 
   async checkCategory(category) {

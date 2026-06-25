@@ -84,6 +84,48 @@ describe('SystemHealthMonitor', () => {
     expect(dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM]).toHaveBeenCalledTimes(1);
   });
 
+  it('logs dependency check state to the console in development', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { monitor, dependencyChecks } = createMonitor();
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
+
+    try {
+      await monitor.runCycle(1000);
+
+      expect(consoleLog).toHaveBeenCalledWith(
+        '[SystemHealthMonitor] dependency check',
+        expect.objectContaining({
+          category: SYSTEM_HEALTH_CATEGORY.LLM,
+          status: 'error',
+          siteStatus: 'available',
+          pollingTier: 'fast',
+          failureCount: 1,
+          threshold: 2,
+          autoDisableOnError: true,
+        })
+      );
+    } finally {
+      consoleLog.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('does not log dependency check state outside development', async () => {
+    vi.stubEnv('NODE_ENV', 'test');
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { monitor } = createMonitor();
+
+    try {
+      await monitor.runCycle(1000);
+
+      expect(consoleLog).not.toHaveBeenCalled();
+    } finally {
+      consoleLog.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('does not disable the site until the threshold is reached and the dependency check fails', async () => {
     const { monitor, settingsService, dependencyChecks } = createMonitor();
     dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
