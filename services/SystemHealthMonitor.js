@@ -24,6 +24,7 @@ const HEALTH_SETTING_KEYS = {
   failureThreshold: 'systemHealth.failureThreshold',
   failureWindowMinutes: 'systemHealth.failureWindowMinutes',
   intervalMinutes: 'systemHealth.intervalMinutes',
+  fastIntervalSeconds: 'systemHealth.fastIntervalSeconds',
   alertRecipients: 'systemHealth.alertRecipients',
   alertTemplateId: 'systemHealth.alertTemplateId',
   errorTemplateId: 'systemHealth.errorTemplateId',
@@ -124,6 +125,7 @@ class SystemHealthMonitor {
     this.timer = null;
     this.activeOutageCategory = null;
     this.unavailableBackoffExponent = 0;
+    this.confirmingOutageActive = false;
     this.isRunningCycle = false;
     this.stopped = false;
   }
@@ -155,13 +157,17 @@ class SystemHealthMonitor {
   }
 
   getHealthConfig() {
-    const windowSeconds = parsePositiveInteger(
+    const failureWindowSeconds = parsePositiveInteger(
       this.readSetting(HEALTH_SETTING_KEYS.failureWindowMinutes, DEFAULT_WINDOW_SECONDS),
       DEFAULT_WINDOW_SECONDS
     );
     const intervalSeconds = parsePositiveInteger(
       this.readSetting(HEALTH_SETTING_KEYS.intervalMinutes, DEFAULT_INTERVAL_SECONDS),
       DEFAULT_INTERVAL_SECONDS
+    );
+    const fastIntervalSeconds = parsePositiveInteger(
+      this.readSetting(HEALTH_SETTING_KEYS.fastIntervalSeconds, 30),
+      30
     );
     const threshold = parsePositiveInteger(
       this.readSetting(HEALTH_SETTING_KEYS.failureThreshold, this.defaultThreshold),
@@ -171,8 +177,12 @@ class SystemHealthMonitor {
     return {
       enabled: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.enabled, 'false'), false),
       threshold,
-      windowMs: windowSeconds * 1000,
+      windowSeconds: failureWindowSeconds,
+      windowMs: failureWindowSeconds * 1000,
+      intervalSeconds,
       intervalMs: intervalSeconds * 1000,
+      fastIntervalSeconds,
+      fastIntervalMs: fastIntervalSeconds * 1000,
       checks: {
         [CATEGORY.DATABASE]: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.databaseEnabled, 'true'), true),
         [CATEGORY.SEARCH]: this.toBoolean(this.readSetting(HEALTH_SETTING_KEYS.searchEnabled, 'true'), true),
@@ -241,15 +251,21 @@ class SystemHealthMonitor {
       }
     }
 
+    let hasOpenFailures = false;
     for (const category of Object.values(CATEGORY)) {
       if (!config.checks[category]) continue;
       const count = this.getFailureCount(category, now, config.windowMs);
+      if (count > 0) {
+        hasOpenFailures = true;
+      }
       if (count < config.threshold) continue;
       if (config.autoDisableOnError) {
+        this.confirmingOutageActive = false;
         await this.markUnavailable(category, count, config);
         return { statusChanged: true, category, count };
       }
 
+      this.confirmingOutageActive = true;
       await this.sendErrorEmail(category, count, this.getLatestFailure(category), config);
       await this.loggingService.error('System health monitor detected failure without disabling site', 'system', {
         category,
@@ -258,6 +274,7 @@ class SystemHealthMonitor {
       });
       return { statusChanged: false };
     }
+    this.confirmingOutageActive = hasOpenFailures;
     return { statusChanged: false };
   }
 
@@ -269,7 +286,9 @@ class SystemHealthMonitor {
 
     if (siteStatus !== UNAVAILABLE_STATUS) {
       this.unavailableBackoffExponent = 0;
-      return baseDelay;
+      return this.confirmingOutageActive && Number.isFinite(config.fastIntervalMs) && config.fastIntervalMs > 0
+        ? config.fastIntervalMs
+        : baseDelay;
     }
 
     this.unavailableBackoffExponent = Math.min(this.unavailableBackoffExponent + 1, 8);
@@ -310,6 +329,7 @@ class SystemHealthMonitor {
     if (!this.activeOutageCategory) {
       this.activeOutageCategory = category;
     }
+    this.confirmingOutageActive = false;
     const outageCategory = this.activeOutageCategory || category;
     if (!wasUnavailable) {
       this.settingsService.cache[SITE_STATUS_KEY] = UNAVAILABLE_STATUS;
@@ -433,6 +453,7 @@ class SystemHealthMonitor {
     this.failures.clear();
     this.activeOutageCategory = null;
     this.unavailableBackoffExponent = 0;
+    this.confirmingOutageActive = false;
   }
 }
 

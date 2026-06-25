@@ -14,6 +14,7 @@ function createMonitor(overrides = {}) {
       'systemHealth.alertRecipients': 'ops@example.com;admin@example.com',
       'systemHealth.alertTemplateId': 'tpl-health',
       'systemHealth.errorTemplateId': 'tpl-error',
+      'systemHealth.fastIntervalSeconds': '30',
     },
     set: vi.fn(async (key, value) => {
       settingsService.cache[key] = value;
@@ -118,6 +119,18 @@ describe('SystemHealthMonitor', () => {
         cause: SYSTEM_HEALTH_CATEGORY.LLM,
       }),
     }));
+  });
+
+  it('switches to the fast interval while confirming a possible outage and returns to the slow interval on recovery', async () => {
+    const { monitor, dependencyChecks } = createMonitor();
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'error' });
+
+    await monitor.runCycle(1000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(30000);
+
+    dependencyChecks[SYSTEM_HEALTH_CATEGORY.LLM].mockResolvedValue({ status: 'connected' });
+    await monitor.runCycle(2000);
+    expect(monitor.getNextRunDelay({ intervalMs: 1800000, fastIntervalMs: 30000 })).toBe(1800000);
   });
 
   it('clears stale failures for healthy categories so another category can trigger the outage', async () => {

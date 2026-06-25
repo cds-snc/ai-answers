@@ -16,6 +16,7 @@ const SETTING_DEFAULTS = {
   'systemHealth.failureThreshold': '5',
   'systemHealth.failureWindowMinutes': '5',
   'systemHealth.intervalMinutes': '1',
+  'systemHealth.fastIntervalSeconds': '30',
   'systemHealth.alertRecipients': '',
   'systemHealth.alertTemplateId': '',
   'systemHealth.errorTemplateId': '',
