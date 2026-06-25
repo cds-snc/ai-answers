@@ -7,6 +7,18 @@ import {
   testGoogleSearch,
 } from './ConnectivityService.js';
 
+/*
+ * System health strategy:
+ * - While the site is available, poll on the slower interval to limit health-check traffic.
+ * - The first failed dependency probe opens a confirmation window and switches future polls
+ *   to the fast interval. Successful probes do not clear that window; failures age out only
+ *   when they leave the configured rolling failure window.
+ * - If failures for a dependency reach the threshold inside the window, auto-disable mode
+ *   marks the site unavailable and sends the outage template. When auto-disable is off, the
+ *   site stays available and the error template is sent instead.
+ * - While the site is unavailable, polling uses the existing exponential backoff. Once the
+ *   site is available again and the failure window has cooled off, polling returns to slow.
+ */
 const DEFAULT_THRESHOLD = 5;
 const DEFAULT_WINDOW_SECONDS = 5;
 const DEFAULT_INTERVAL_SECONDS = 1;
