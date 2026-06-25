@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.152.0](https://github.com/cds-snc/ai-answers/compare/v1.151.1...v1.152.0) (2026-06-25)
+
+
+### Features
+
+* add auto-disable on error setting and error template ID to system health configuration ([da39c14](https://github.com/cds-snc/ai-answers/commit/da39c14aae21f4df7022d93f9dce3eb0df9ab2cd))
+* add detailed comments to SystemHealthMonitor for clarity on health strategy ([b688a4f](https://github.com/cds-snc/ai-answers/commit/b688a4f1c17a439e31267bc60d560c05521e654a))
+* add fast interval setting to system health configuration and up… ([9bd9254](https://github.com/cds-snc/ai-answers/commit/9bd9254d33e4bb65b22fd372182f7ef7c216a43c))
+* add fast interval setting to system health configuration and update related components ([d9e3a9c](https://github.com/cds-snc/ai-answers/commit/d9e3a9cc5e13b9cde100192297ab12a1b8011179))
+* add health monitoring settings to SettingsPage and implement Sy… ([d5b2fd5](https://github.com/cds-snc/ai-answers/commit/d5b2fd5d173aaa24c36464a1f041e62c0a44c287))
+* add logging of dependency check state in development environment ([5e1b64e](https://github.com/cds-snc/ai-answers/commit/5e1b64e19e5368bf2576e2127feed1eb633d5c56))
+* adjust for canada.ca domain ([b188917](https://github.com/cds-snc/ai-answers/commit/b188917d084f6b65fc32d0b12e7ab842b88d30bf))
+* canada dot ca for sr consistency ([6cb1382](https://github.com/cds-snc/ai-answers/commit/6cb13824f6f99024522e92850c80030cea41da82))
+* cleanup note ([0ecabdc](https://github.com/cds-snc/ai-answers/commit/0ecabdc527b208d7300a7aa0fd637bf215769f8d))
+* note ([ca90080](https://github.com/cds-snc/ai-answers/commit/ca900809822bfe3e922e0de06db86d058e4a2b88))
+* note, clean up ([61ee4d4](https://github.com/cds-snc/ai-answers/commit/61ee4d401c98abcbcd66eb95e68e4feab03db861))
+* refinement ([8030def](https://github.com/cds-snc/ai-answers/commit/8030def3209c25a166e9aea1b118f3da97a6833a))
+* rmv note, fixed ([51dfe1d](https://github.com/cds-snc/ai-answers/commit/51dfe1d5ccf53c881570bab45f420b44ddb26929))
+* update SystemHealthMonitor to disable clearFailures logic and adjust test case for fast interval behavior ([1f27dcd](https://github.com/cds-snc/ai-answers/commit/1f27dcda5749ccf45a6f6031c4c7bc46dee777f1))
+
 ## [1.151.1](https://github.com/cds-snc/ai-answers/compare/v1.151.0...v1.151.1) (2026-06-24)
 
 
