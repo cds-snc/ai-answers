@@ -10,6 +10,7 @@ import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
+import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -735,6 +736,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                       href={safeHttpHref(displayUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      aria-label={buildAriaLabel(displayUrl, lang) || undefined}
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
@@ -765,7 +767,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                             return (
                               <>
                                 {displayUrl}
-                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                                 <svg
                                   width="12"
                                   height="12"
@@ -794,7 +795,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                             return (
                               <>
                                 {displayUrl}
-                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                                 <svg
                                   width="12"
                                   height="12"
@@ -821,7 +821,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                               {beforeWrap.replace(/-/g, '\u2011')}
                               <span style={{ whiteSpace: 'nowrap' }}>
                                 {insideWrap}
-                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                                 <svg
                                   width="12"
                                   height="12"
