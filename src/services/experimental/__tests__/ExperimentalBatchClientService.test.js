@@ -59,4 +59,33 @@ describe('ExperimentalBatchClientService', () => {
                 .rejects.toThrow('Failed to export batch: 500 Internal Server Error');
         });
     });
+
+    describe('exportChatLogs', () => {
+        it('should request the comparison export and return a blob', async () => {
+            const mockBlob = new Blob(['test'], { type: 'application/vnd.ms-excel' });
+            AuthService.fetch.mockResolvedValue({
+                ok: true,
+                blob: vi.fn().mockResolvedValue(mockBlob)
+            });
+
+            const result = await ExperimentalBatchClientService.exportChatLogs('current-batch', 'baseline-batch');
+
+            expect(AuthService.fetch).toHaveBeenCalledWith(
+                expect.stringContaining('experimental-batch-chat-logs-export/current-batch?baselineRunId=baseline-batch')
+            );
+            expect(result).toBeInstanceOf(Blob);
+        });
+
+        it('should throw a helpful error when export fails', async () => {
+            AuthService.fetch.mockResolvedValue({
+                ok: false,
+                status: 500,
+                statusText: 'Internal Server Error',
+                json: vi.fn().mockResolvedValue({ error: 'Export failed' })
+            });
+
+            await expect(ExperimentalBatchClientService.exportChatLogs('current-batch'))
+                .rejects.toThrow('Export failed');
+        });
+    });
 });

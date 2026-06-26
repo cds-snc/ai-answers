@@ -7,7 +7,7 @@ import {
     withProtection
 } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
-import { requireObjectIdString } from '../util/db-query.js';
+import { requireObjectIdString, requireString } from '../util/db-query.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';
@@ -51,6 +51,22 @@ const parseFallbackDate = (value) => {
     if (!value) return null;
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const parseChatIdList = (value) => {
+    if (!value) return [];
+    const rawValues = Array.isArray(value) ? value : String(value).split(',');
+    const chatIds = [];
+    const seen = new Set();
+
+    for (const rawValue of rawValues) {
+        const trimmed = String(rawValue || '').trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        seen.add(trimmed);
+        chatIds.push(requireString(trimmed, 'chatId'));
+    }
+
+    return chatIds;
 };
 
 const buildDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
@@ -412,7 +428,7 @@ function flattenInteraction(chat, interaction, view) {
     return merged;
 }
 
-async function chatExportHandler(req, res) {
+export async function chatExportHandler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
@@ -427,6 +443,8 @@ async function chatExportHandler(req, res) {
             format = 'xlsx'
         } = req.query;
         let { batchId } = req.query;
+        const requestedChatIds = parseChatIdList(req.query.chatIds);
+        const useExplicitChatIds = requestedChatIds.length > 0;
 
         if (!VIEW_DEFINITIONS[view]) {
             return res.status(400).json({ error: `Invalid view: ${view}` });
@@ -468,18 +486,24 @@ async function chatExportHandler(req, res) {
         }
 
         const dateFilter = {};
-        if (startDate && endDate) {
-            const range = buildDateRange({ startDate, endDate, timezoneOffsetMinutes });
-            if (!range) return res.status(400).json({ error: 'Invalid dates' });
-            dateFilter.createdAt = range;
-        } else {
-            const now = new Date();
-            const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
-            dateFilter.createdAt = { $gte: start, $lte: now };
+        if (!useExplicitChatIds) {
+            if (startDate && endDate) {
+                const range = buildDateRange({ startDate, endDate, timezoneOffsetMinutes });
+                if (!range) return res.status(400).json({ error: 'Invalid dates' });
+                dateFilter.createdAt = range;
+            } else {
+                const now = new Date();
+                const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
+                dateFilter.createdAt = { $gte: start, $lte: now };
+            }
         }
 
         if (userType === 'public' || userType === 'referredPublic') dateFilter.user = { $exists: false };
         else if (userType === 'admin') dateFilter.user = { $exists: true };
+
+        if (useExplicitChatIds) {
+            dateFilter.chatId = { $in: requestedChatIds };
+        }
 
         const chatPopulate = getPopulateOptions(view);
         let chats;
@@ -507,8 +531,9 @@ async function chatExportHandler(req, res) {
         //    For aggregate, we already define lookups.
         //    I will need to ADD conditional lookups to the pipeline based on `view`.
 
-        const isAggregate = department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval
-            || userType === 'referredPublic';
+        const isAggregate = !useExplicitChatIds && (
+            department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic'
+        );
 
         if (isAggregate) {
             const pipeline = [];
@@ -643,7 +668,7 @@ async function chatExportHandler(req, res) {
 
         } else {
             // Non-Aggregate Optimized Path - used when no filters are specified
-            if (batchId) {
+            if (!useExplicitChatIds && batchId) {
                 batchId = requireObjectIdString(batchId, 'batchId');
                 const bItems = await BatchItem.find({ batch: batchId }).select('chat');
                 const bIds = bItems.map(i => i.chat);
@@ -653,6 +678,13 @@ async function chatExportHandler(req, res) {
             chats = await Chat.find(dateFilter)
                 .populate(chatPopulate)
                 .lean(); // Use lean for performance since we flatten anyway
+
+            if (useExplicitChatIds) {
+                const chatOrder = new Map(requestedChatIds.map((chatId, index) => [chatId, index]));
+                chats = chats
+                    .slice()
+                    .sort((a, b) => (chatOrder.get(a.chatId) ?? Number.MAX_SAFE_INTEGER) - (chatOrder.get(b.chatId) ?? Number.MAX_SAFE_INTEGER));
+            }
         }
 
         // Flatten & Headers

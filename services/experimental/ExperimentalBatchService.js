@@ -204,6 +204,7 @@ class ExperimentalBatchService {
                         data.baselineAnalysisResults = match.analysisResults || {};
                         data.baselineMatch = match.match;
                         data.baselineFlagged = match.flagged;
+                        data.baselineChatId = match.chatId || '';
                         data.chatId = data.chatId || match.chatId || '';
 
                         // If we are NOT in 'batch' mode (generation), the 'answer' to analyze
@@ -234,6 +235,7 @@ class ExperimentalBatchService {
             baselineAnalysisResults: item.baselineAnalysisResults || {},
             baselineMatch: item.baselineMatch,
             baselineFlagged: item.baselineFlagged,
+            baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
             referringUrl: item.referringUrl || item.ReferringUrl || item.referringurl || '',
             chatId: item.chatId || item.ChatId || item.chatid || '',
             originalData: item,

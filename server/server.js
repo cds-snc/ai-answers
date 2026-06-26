@@ -24,6 +24,7 @@ import experimentalBatchListHandler from '../api/experimental/experimental-batch
 import experimentalBatchProcessHandler from '../api/experimental/experimental-batch-process.js';
 import experimentalBatchStatusHandler from '../api/experimental/experimental-batch-status.js';
 import experimentalBatchExportHandler from '../api/experimental/experimental-batch-export.js';
+import experimentalBatchChatLogsExportHandler from '../api/experimental/experimental-batch-chat-logs-export.js';
 import experimentalBatchDeleteHandler from '../api/experimental/experimental-batch-delete.js';
 import experimentalAnalyzersListHandler from '../api/experimental/experimental-analyzers-list.js';
 import experimentalBatchCancelHandler from '../api/experimental/experimental-batch-cancel.js';
@@ -296,6 +297,7 @@ app.get('/api/experimental/experimental-batch-list', experimentalBatchListHandle
 app.post('/api/experimental/experimental-batch-process/:id', experimentalBatchProcessHandler);
 app.get('/api/experimental/experimental-batch-status/:id', experimentalBatchStatusHandler);
 app.get('/api/experimental/experimental-batch-export/:id', experimentalBatchExportHandler);
+app.get('/api/experimental/experimental-batch-chat-logs-export/:id', experimentalBatchChatLogsExportHandler);
 app.delete('/api/experimental/experimental-batch-delete/:id', experimentalBatchDeleteHandler);
 app.get('/api/experimental/experimental-analyzers', experimentalAnalyzersListHandler);
 app.post('/api/experimental/experimental-batch-cancel/:id', experimentalBatchCancelHandler);

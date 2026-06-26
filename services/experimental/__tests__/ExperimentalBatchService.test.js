@@ -242,6 +242,7 @@ describe('ExperimentalBatchService', () => {
 
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id }).lean();
             expect(item.chatId).toBe('chat-baseline-123');
+            expect(item.baselineChatId).toBe('chat-baseline-123');
             expect(item.answer).toBe('A baseline');
             expect(item.baselineAnswer).toBe('A baseline');
         });

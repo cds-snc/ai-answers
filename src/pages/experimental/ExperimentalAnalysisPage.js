@@ -21,6 +21,14 @@ const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId
     ].filter(Boolean).join(' · ');
 };
 
+const sanitizeFileName = (value) => String(value || '')
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001F]+/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'analysis-run';
+
 const isActivelyRunningBatch = (batch) => {
     if (batch?.status !== 'processing') {
         return false;
@@ -268,6 +276,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         } catch (err) {
             console.error('Export error:', err);
             alert('Failed to export batch');
+        }
+    };
+
+    const handleExportChatLogs = async (batch) => {
+        try {
+            const blob = await ExperimentalBatchClientService.exportChatLogs(batch._id, baselineBatchId);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chat-logs-${sanitizeFileName(batch.name || batch._id)}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export chat logs error:', err);
+            alert(t('experimental.analysis.messages.exportChatLogsError'));
         }
     };
 
@@ -551,7 +574,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-200">
                                     <div className="flex gap-200">
                                         {batch.status !== 'processing' && (
-                                            <GcdsButton size="small" onClick={() => handleExport(batch._id)}>Export</GcdsButton>
+                                            <GcdsButton size="small" onClick={() => handleExport(batch._id)}>
+                                                {t('experimental.analysis.export')}
+                                            </GcdsButton>
+                                        )}
+                                        {batch.status !== 'processing' && (
+                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>
+                                                {t('experimental.analysis.exportChatLogs')}
+                                            </GcdsButton>
                                         )}
                                         {batch.status === 'processing' && !isActivelyRunningBatch(batch) && (
                                             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>

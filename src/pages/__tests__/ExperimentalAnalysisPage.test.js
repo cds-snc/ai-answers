@@ -16,7 +16,8 @@ const {
     mockCreateBatch,
     mockProcessBatch,
     mockDeleteBatch,
-    mockExportBatch
+    mockExportBatch,
+    mockExportChatLogs
 } = vi.hoisted(() => ({
     mockListAnalyzers: vi.fn(),
     mockListDatasets: vi.fn(),
@@ -24,7 +25,8 @@ const {
     mockCreateBatch: vi.fn(),
     mockProcessBatch: vi.fn(),
     mockDeleteBatch: vi.fn(),
-    mockExportBatch: vi.fn()
+    mockExportBatch: vi.fn(),
+    mockExportChatLogs: vi.fn()
 }));
 
 vi.mock('../../hooks/useTranslations.js', () => ({
@@ -45,7 +47,8 @@ vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => (
         createBatch: mockCreateBatch,
         processBatch: mockProcessBatch,
         deleteBatch: mockDeleteBatch,
-        exportBatch: mockExportBatch
+        exportBatch: mockExportBatch,
+        exportChatLogs: mockExportChatLogs
     }
 }));
 
@@ -74,6 +77,7 @@ describe('ExperimentalAnalysisPage', () => {
         mockProcessBatch.mockReset();
         mockDeleteBatch.mockReset();
         mockExportBatch.mockReset();
+        mockExportChatLogs.mockReset();
     });
 
     afterEach(() => {
@@ -220,6 +224,60 @@ describe('ExperimentalAnalysisPage', () => {
         expect(baselineButtons[1].disabled).toBe(true);
     });
 
+    it('shows and triggers export chat logs for completed runs when a baseline is selected', async () => {
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-1',
+                    name: 'Analysis - baseline',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-2',
+                    name: 'Analysis - current',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-04T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                }
+            ]
+        });
+        mockExportChatLogs.mockResolvedValue(new Blob(['test'], { type: 'application/vnd.ms-excel' }));
+
+        const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:chat-logs');
+        const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'Use as Baseline' })[0]);
+        fireEvent.click(screen.getAllByRole('button', { name: 'experimental.analysis.exportChatLogs' })[1]);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(mockExportChatLogs).toHaveBeenCalledWith('batch-2', 'batch-1');
+        expect(createObjectURL).toHaveBeenCalled();
+        expect(clickSpy).toHaveBeenCalled();
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:chat-logs');
+
+        createObjectURL.mockRestore();
+        revokeObjectURL.mockRestore();
+        clickSpy.mockRestore();
+    });
+
     it('shows workflow and model family values from saved batch config and falls back to N/A when missing', async () => {
         mockListBatches.mockResolvedValueOnce({
             data: [
@@ -297,7 +355,7 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getAllByRole('button', { name: 'Export' })).toHaveLength(1);
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' })).toHaveLength(1);
         expect(screen.queryByRole('button', { name: 'experimental.analysis.resume' })).toBeNull();
     });
 });
