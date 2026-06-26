@@ -113,7 +113,8 @@ function getRuntimeEnvironment() {
 }
 
 function isDevelopmentEnvironment() {
-  return getRuntimeEnvironment() === 'development';
+  return [process.env.NODE_ENV, process.env.APP_ENV, process.env.RUNTIME_ENV]
+    .some((value) => String(value || '').trim().toLowerCase() === 'development');
 }
 
 class SystemHealthMonitor {
@@ -222,6 +223,25 @@ class SystemHealthMonitor {
     return entries.length;
   }
 
+  getFailureWindowState(category, now = Date.now(), windowMs = this.defaultWindowMs) {
+    const entries = this.prune(this.failures.get(category) || [], now, windowMs);
+    this.failures.set(category, entries);
+
+    const agesSeconds = entries.map((entry) => Math.max(0, Math.round((now - entry.at) / 1000)));
+    const oldestFailureAgeSeconds = agesSeconds.length ? Math.max(...agesSeconds) : null;
+    const newestFailureAgeSeconds = agesSeconds.length ? Math.min(...agesSeconds) : null;
+    const windowSeconds = Math.round(windowMs / 1000);
+
+    return {
+      count: entries.length,
+      oldestFailureAgeSeconds,
+      newestFailureAgeSeconds,
+      failureWindowRemainingSeconds: oldestFailureAgeSeconds === null
+        ? null
+        : Math.max(0, windowSeconds - oldestFailureAgeSeconds),
+    };
+  }
+
   recordFailure(category, details = {}, windowMs = this.defaultWindowMs) {
     if (!category) return null;
 
@@ -248,9 +268,11 @@ class SystemHealthMonitor {
       this.activeOutageCategory = null;
     }
 
+    const checkResults = new Map();
     for (const category of Object.values(CATEGORY)) {
       if (!config.checks[category]) continue;
       const failure = await this.checkCategory(category);
+      checkResults.set(category, failure);
       if (failure) {
         this.recordFailure(category, {
           now,
@@ -258,33 +280,37 @@ class SystemHealthMonitor {
           source: 'probe',
         }, config.windowMs);
       }
-      this.logDevelopmentCheckState(category, failure, config, now);
     }
 
-    let hasOpenFailures = false;
+    const failureWindowStates = new Map();
+    const activeFailureCategories = [];
     for (const category of Object.values(CATEGORY)) {
       if (!config.checks[category]) continue;
-      const count = this.getFailureCount(category, now, config.windowMs);
-      if (count > 0) {
-        hasOpenFailures = true;
+      const failureWindowState = this.getFailureWindowState(category, now, config.windowMs);
+      failureWindowStates.set(category, failureWindowState);
+      if (failureWindowState.count > 0) {
+        activeFailureCategories.push(category);
       }
-      if (count < config.threshold) continue;
+      if (failureWindowState.count < config.threshold) continue;
       if (config.autoDisableOnError) {
         this.confirmingOutageActive = false;
-        await this.markUnavailable(category, count, config);
-        return { statusChanged: true, category, count };
+        this.logDevelopmentCheckStates(checkResults, failureWindowStates, activeFailureCategories, config, now);
+        await this.markUnavailable(category, failureWindowState.count, config);
+        return { statusChanged: true, category, count: failureWindowState.count };
       }
 
       this.confirmingOutageActive = true;
-      await this.sendErrorEmail(category, count, this.getLatestFailure(category), config);
+      this.logDevelopmentCheckStates(checkResults, failureWindowStates, activeFailureCategories, config, now);
+      await this.sendErrorEmail(category, failureWindowState.count, this.getLatestFailure(category), config);
       await this.loggingService.error('System health monitor detected failure without disabling site', 'system', {
         category,
-        count,
+        count: failureWindowState.count,
         windowMs: config.windowMs,
       });
       return { statusChanged: false };
     }
-    this.confirmingOutageActive = hasOpenFailures;
+    this.confirmingOutageActive = activeFailureCategories.length > 0;
+    this.logDevelopmentCheckStates(checkResults, failureWindowStates, activeFailureCategories, config, now);
     return { statusChanged: false };
   }
 
@@ -309,14 +335,40 @@ class SystemHealthMonitor {
     return this.runCycle(now);
   }
 
-  logDevelopmentCheckState(category, failure, config, now = Date.now()) {
+  logDevelopmentCheckStates(
+    checkResults,
+    failureWindowStates,
+    activeFailureCategories,
+    config,
+    now = Date.now()
+  ) {
     if (!isDevelopmentEnvironment()) return;
 
+    for (const [category, failure] of checkResults) {
+      this.logDevelopmentCheckState(
+        category,
+        failure,
+        failureWindowStates.get(category),
+        activeFailureCategories,
+        config,
+        now
+      );
+    }
+  }
+
+  logDevelopmentCheckState(
+    category,
+    failure,
+    failureWindowState,
+    activeFailureCategories,
+    config,
+    now = Date.now()
+  ) {
     const siteStatus = String(this.readSetting(SITE_STATUS_KEY, 'available'));
-    const failureCount = this.getFailureCount(category, now, config.windowMs);
+    const categoryFailureWindowState = failureWindowState || this.getFailureWindowState(category, now, config.windowMs);
     const nextPollingTier = siteStatus === UNAVAILABLE_STATUS
       ? 'unavailable-backoff'
-      : failureCount > 0 || this.confirmingOutageActive
+      : activeFailureCategories.length > 0
         ? 'fast'
         : 'slow';
 
@@ -325,8 +377,13 @@ class SystemHealthMonitor {
       status: failure ? 'error' : 'connected',
       siteStatus,
       pollingTier: nextPollingTier,
-      confirmingOutageActive: this.confirmingOutageActive,
-      failureCount,
+      confirmingOutageActive: activeFailureCategories.length > 0,
+      categoryHasOpenFailures: categoryFailureWindowState.count > 0,
+      activeFailureCategories,
+      failureCount: categoryFailureWindowState.count,
+      oldestFailureAgeSeconds: categoryFailureWindowState.oldestFailureAgeSeconds,
+      newestFailureAgeSeconds: categoryFailureWindowState.newestFailureAgeSeconds,
+      failureWindowRemainingSeconds: categoryFailureWindowState.failureWindowRemainingSeconds,
       threshold: config.threshold,
       windowSeconds: config.windowSeconds,
       intervalSeconds: config.intervalSeconds,
