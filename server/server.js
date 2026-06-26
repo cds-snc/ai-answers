@@ -184,8 +184,7 @@ app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
-  const appVersion = process.env.APP_VERSION || process.env.npm_package_version || 'unknown';
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},APP_VERSION:${JSON.stringify(appVersion)},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
 });
 
 // Ensure `/api` never caches anything

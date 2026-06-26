@@ -32,6 +32,7 @@ vi.mock('../../../agents/graphs/registry.js', () => ({
 
 describe('ExperimentalBatchService', () => {
     const userId = new mongoose.Types.ObjectId();
+    const originalAppVersion = process.env.APP_VERSION;
 
     beforeAll(async () => {
         const dbConnect = (await import('../../../api/db/db-connect.js')).default;
@@ -43,6 +44,11 @@ describe('ExperimentalBatchService', () => {
         await ExperimentalBatchItem.deleteMany({});
         await ExperimentalDataset.deleteMany({});
         await ExperimentalDatasetRow.deleteMany({});
+        if (originalAppVersion === undefined) {
+            delete process.env.APP_VERSION;
+        } else {
+            process.env.APP_VERSION = originalAppVersion;
+        }
         vi.clearAllMocks();
     });
 
@@ -59,6 +65,18 @@ describe('ExperimentalBatchService', () => {
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
             expect(items).toHaveLength(2);
             expect(ExperimentalQueueService.enqueue).not.toHaveBeenCalled();
+        });
+
+        it('should persist the app version on new batches', async () => {
+            process.env.APP_VERSION = 'v-test-batch';
+            const batchData = { name: 'Versioned Batch', type: 'batch', createdBy: userId };
+            const itemsData = [{ question: 'Q1' }];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const saved = await ExperimentalBatch.findById(batch._id).lean();
+
+            expect(batch.appVersion).toBe('v-test-batch');
+            expect(saved.appVersion).toBe('v-test-batch');
         });
 
         it('should load items from a dataset if itemsData is empty and datasetId is provided', async () => {

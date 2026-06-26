@@ -6,6 +6,7 @@ const ExperimentalBatchSchema = new mongoose.Schema({
 
     // 'batch' (generation), 'analysis' (comparison/evaluator)
     type: { type: String, required: true, enum: ['batch', 'analysis'] },
+    appVersion: { type: String, default: '' },
 
     status: {
         type: String,

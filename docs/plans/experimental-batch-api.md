@@ -98,7 +98,7 @@ async _processItem(batchId, itemId) {
       pageLanguage: batch.config.pageLanguage || 'en',
       aiProvider: batch.config.aiProvider || 'azure',
       referringUrl: batch.config.referringUrl,
-      skipPersist: true, // Don't save to MongoDB in batch mode
+      // Persistence is now enabled for batch processing; the `skipPersist` option is no longer used.
     };
 
     await graphRequestContext.run({ headers: {}, user: null }, async () => {

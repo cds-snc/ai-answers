@@ -106,6 +106,7 @@ const VIEW_DEFINITIONS = {
 const DEFAULT_HEADER_ORDER = [
     'uniqueID',
     'chatId',
+    'appVersion',
     'userEmail',
     'createdAt',
     'pageLanguage',
@@ -311,6 +312,7 @@ function flattenInteraction(chat, interaction, view) {
         return {
             uniqueID,
             chatId: chat.chatId || '',
+            appVersion: get(interaction, 'appVersion') || chat.appVersion || '',
             userEmail: get(chat, 'user.email'),
             createdAt: interaction.createdAt ? new Date(interaction.createdAt).toISOString() : (chat.createdAt ? new Date(chat.createdAt).toISOString() : ''),
 
@@ -383,6 +385,7 @@ function flattenInteraction(chat, interaction, view) {
     const base = {
         uniqueID,
         chatId: chat.chatId || '',
+        appVersion: get(interaction, 'appVersion') || chat.appVersion || '',
         pageLanguage: chat.pageLanguage || get(interaction, 'context.pageLanguage') || '',
         aiService: chat.aiProvider || '',
         searchService: chat.searchProvider || '',
@@ -548,7 +551,8 @@ export async function chatExportHandler(req, res) {
                     createdAt: 1,
                     pageLanguage: 1,
                     aiProvider: 1,
-                    searchProvider: 1
+                    searchProvider: 1,
+                    appVersion: 1
                 }
             });
 
@@ -660,7 +664,8 @@ export async function chatExportHandler(req, res) {
                     createdAt: '$doc.createdAt',
                     pageLanguage: '$doc.pageLanguage',
                     aiProvider: '$doc.aiProvider',
-                    searchProvider: '$doc.searchProvider'
+                    searchProvider: '$doc.searchProvider',
+                    appVersion: '$doc.appVersion'
                 }
             });
 

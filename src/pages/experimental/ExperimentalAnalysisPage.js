@@ -334,6 +334,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return model?.labelKey ? t(model.labelKey) : t('common.na');
     };
 
+    const getAppVersionLabel = (batch) => {
+        const appVersion = String(batch?.appVersion || '').trim();
+        return appVersion ? appVersion.slice(-10) : t('common.na');
+    };
+
     const baselineOptions = batches.filter(batch =>
         batch.status === 'completed' &&
         (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
@@ -537,6 +542,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <th className="p-300">{t('experimental.analysis.columns.analyzer')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.workflow')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.modelFamily')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.appVersion')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.status')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.completed')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.failed')}</th>
@@ -554,6 +560,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-200">{getAnalyzerLabel(batch)}</td>
                                 <td className="p-200">{getWorkflowLabel(batch)}</td>
                                 <td className="p-200">{getModelLabel(batch)}</td>
+                                <td className="p-200" title={batch.appVersion || ''}>{getAppVersionLabel(batch)}</td>
                                 <td className="p-300">
                                     <span style={{
                                         color: batch.status === 'completed' ? 'green' : (batch.status === 'failed' ? 'red' : 'orange'),

@@ -1823,6 +1823,7 @@
         "analyzer": "Analyzer",
         "workflow": "Workflow",
         "modelFamily": "Model family",
+        "appVersion": "App version",
         "status": "Status",
         "completed": "Completed",
         "failed": "Failed",

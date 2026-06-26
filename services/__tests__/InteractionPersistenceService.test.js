@@ -34,6 +34,7 @@ import EmbeddingService from '../EmbeddingService.js';
 import EvaluationService from '../EvaluationService.js';
 
 describe('InteractionPersistenceService', () => {
+    const originalAppVersion = process.env.APP_VERSION;
     let initialPayload;
     let user;
     let createdChatIDs = [];
@@ -116,6 +117,11 @@ describe('InteractionPersistenceService', () => {
         createdContextIDs     = [];
         createdInteractionIDs = [];
         createdChatIDs        = [];
+        if (originalAppVersion === undefined) {
+            delete process.env.APP_VERSION;
+        } else {
+            process.env.APP_VERSION = originalAppVersion;
+        }
  
         vi.clearAllMocks();
     });
@@ -180,6 +186,20 @@ describe('InteractionPersistenceService', () => {
 
         // Embeddings invoked
         expect(EmbeddingService.createEmbedding).toHaveBeenCalled();
+    });
+
+    it('persists the app version on the chat and interaction', async () => {
+        process.env.APP_VERSION = 'v-test-version';
+
+        await InteractionPersistenceService.persistInteraction(initialPayload, user);
+
+        const { chat, interaction } = await trackCreatedDocuments(
+            initialPayload.chatId,
+            initialPayload.userMessageId,
+        );
+
+        expect(chat.appVersion).toBe('v-test-version');
+        expect(interaction.appVersion).toBe('v-test-version');
     });
 
     it('handles embedding generation errors gracefully (logs and continues)', async () => {

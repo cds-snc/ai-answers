@@ -134,7 +134,6 @@ const input = {
     pageLanguage: batch.config.pageLanguage || 'en',
     aiProvider: batch.config.aiProvider || 'azure',
     referringUrl: item.referringUrl || batch.config.referringUrl || '',
-    skipPersist: true,
 };
 ```
 

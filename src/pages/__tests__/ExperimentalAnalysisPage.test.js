@@ -314,6 +314,7 @@ describe('ExperimentalAnalysisPage', () => {
                     status: 'completed',
                     summary: { completed: 1, failed: 0, total: 1 },
                     analyzerSummary: {},
+                    appVersion: '1234567890abcdef',
                     config: {
                         analyzerIds: ['bias-detection'],
                         workflow: 'GenericGraph',
@@ -343,7 +344,9 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.workflow' })).toBeTruthy();
         expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' })).toBeTruthy();
+        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' })).toBeTruthy();
         expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
+        expect(screen.getByText('7890abcdef')).toBeTruthy();
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
     });

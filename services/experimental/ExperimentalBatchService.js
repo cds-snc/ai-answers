@@ -9,6 +9,7 @@ import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
+import { getPersistedAppVersion } from '../AppVersionService.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -221,6 +222,7 @@ class ExperimentalBatchService {
 
         const batch = await ExperimentalBatch.create({
             ...batchData,
+            appVersion: batchData.appVersion || getPersistedAppVersion(),
             status: 'pending',
             summary: { total: finalItems.length, completed: 0, failed: 0, matches: 0 }
         });
@@ -339,7 +341,6 @@ class ExperimentalBatchService {
                     selectedAI: batch.config.aiProvider || 'azure',
                     searchProvider: batch.config.searchProvider || 'google',
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
-                    skipPersist: true,
                 };
 
                 await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {

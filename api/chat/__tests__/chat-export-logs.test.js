@@ -59,9 +59,11 @@ describe('chat-export-logs API', () => {
         const mockChats = [
             {
                 chatId: 'test-chat',
+                appVersion: 'v-chat-version',
                 interactions: [
                     {
                         interactionId: 'i1',
+                        appVersion: 'v-interaction-version',
                         context: {
                             searchQuery: 'test query content',
                             searchResults: '[]'
@@ -111,6 +113,8 @@ describe('chat-export-logs API', () => {
 
         expect(row).toHaveProperty('context.searchQuery');
         expect(row['context.searchQuery']).toBe('test query content');
+        expect(row).toHaveProperty('appVersion');
+        expect(row.appVersion).toBe('v-interaction-version');
     });
 
     it('should include context.searchQuery in the tools view export', async () => {

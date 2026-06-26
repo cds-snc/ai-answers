@@ -1823,6 +1823,7 @@
         "analyzer": "Analyseur",
         "workflow": "Flux de travail",
         "modelFamily": "Famille de mod?les",
+        "appVersion": "Version de l'application",
         "status": "Statut",
         "completed": "Terminées",
         "failed": "Échouées",
