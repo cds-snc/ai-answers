@@ -19,7 +19,7 @@ RUN GENERATE_SOURCEMAP=false npm run build
 # -------------------------------------------------
 # Runtime Stage (Amazon Linux 2023 - Lambda)
 # -------------------------------------------------
-FROM public.ecr.aws/lambda/nodejs:20
+FROM public.ecr.aws/lambda/nodejs:24
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
