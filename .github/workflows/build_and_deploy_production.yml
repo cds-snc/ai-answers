@@ -32,9 +32,12 @@ jobs:
 
       - name: Read release version
         run: |
-          APP_VERSION=$(tr -d '\r\n' < version.txt)
-          if [ -z "$APP_VERSION" ]; then
-            APP_VERSION="${GITHUB_REF_NAME#v}"
+          APP_VERSION="${{ github.event.release.tag_name }}"
+          if [ -z "$APP_VERSION" ] || [ "$APP_VERSION" = "null" ]; then
+            APP_VERSION="$(tr -d '\r\n' < version.txt)"
+            if [ -n "$APP_VERSION" ] && [ "${APP_VERSION#v}" = "$APP_VERSION" ]; then
+              APP_VERSION="v$APP_VERSION"
+            fi
           fi
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
