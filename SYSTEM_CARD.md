@@ -192,6 +192,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Failover planning**: System designed for model independence with multiple AI providers
 - **Rate limiting**: Prevents system overload and abuse
 - **Outage setting**: Turn system off and show outage message via Admin panel
+- **Automated health monitoring**: A background monitor continuously probes the system's core dependencies (database, search, and AI model). When a dependency fails repeatedly within a short rolling window, the monitor sends an alert email to the operations team and — if auto-disable is enabled — automatically sets the site to unavailable so users see the outage message instead of failing responses. Polling speeds up while failures are being confirmed and backs off once the dependency recovers, and the site returns to available automatically when the failures clear.
 
 ### Bias and Fairness Considerations
 
@@ -225,7 +226,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
   - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
   - **Weighted Total Score**: 75% sentence scores + 25% citation score for comprehensive quality assessment
   - **Embedding Generation**: Expert feedback creates embeddings that enable automated AI evaluations for similar questions
-  - **Future Enhancement**: These embeddings will soon assist in answering questions quickly and accurately
+  - **Answering questions (in development)**: These expert evaluations are being introduced as feedback into live answer generation to make answers more accurate — see [Using evaluations to improve answers](#using-evaluations-to-improve-answers) below for current status
 
 - **Separate Public User Feedback**: 
   - **Simple Interface**: "Was this helpful?" with Yes/No options for all users
@@ -233,6 +234,17 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
   - **Positive Reasons**: No call needed, no visit needed, saved time, other
   - **Negative Reasons**: Irrelevant, confusing, not detailed enough, not what they wanted, other
   - **Survey Integration**: Links to external surveys for additional feedback collection
+
+### Using evaluations to improve answers
+
+Expert evaluations of past answers are not only used for reporting — they can also be fed back into live answer generation. Two mechanisms have been built for this, both drawing on the same store of expert-rated question/answer pairs. **The current production pipeline uses neither yet** — it runs the baseline graph that generates every answer fresh, with no eval-driven steps. The status of each mechanism is noted below.
+
+- **Eval-informed answering (similar questions) — entering a production trial**: Before the AI generates an answer, the system retrieves a few of the most similar expert-rated past pairs and includes them in the model's instructions as worked examples — perfect-score pairs to follow, and flagged-mistake pairs (with the expert's sentence-by-sentence notes and the corrected citation) so the model can avoid repeating known errors. A similarity floor ensures only genuinely related examples are used; when no relevant example exists, none is injected. This is the next step planned for production, introduced through a controlled trial of an updated pipeline variant.
+- **Instant verified answers (short-circuit serving) — experimental, not in production**: When a new question very closely matches a past question whose answer an expert scored a perfect 100/100, the system would serve that verified answer directly and skip the AI model, reducing cost and latency. Only perfect-score answers would be eligible, and the match must be very close to avoid serving the wrong answer. In testing this approach has not yet performed reliably enough to deploy, so it remains off in production.
+
+Both mechanisms are implemented as selectable pipeline variants ("graphs"), require that expert feedback exists for a past answer, and are designed to degrade gracefully — if the lookup is unavailable, answer generation proceeds normally without examples.
+
+**For full technical detail, see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 
 ### Current Performance
 - **Response Time**: Under 10 seconds for most queries
