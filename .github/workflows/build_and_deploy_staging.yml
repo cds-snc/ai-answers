@@ -44,6 +44,7 @@ jobs:
         working-directory: ./
         run: |
           docker build \
+          --build-arg APP_VERSION=$GITHUB_SHA \
           -t $REGISTRY/ai-answers:$GITHUB_SHA-`date '+%Y-%m-%d'` \
           -t $REGISTRY/ai-answers:latest .
 
