@@ -1,4 +1,4 @@
-FROM node:lts
+FROM node:24.18.0
 
 # Install basic development tools
 RUN apt-get update && apt-get install -y \

@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "packageManager": "npm@11.16.0",
+  "engines": {
+    "node": "24.18.0",
+    "npm": "11.16.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
     "@aws-sdk/client-bedrock-runtime": "^3.981.0",
