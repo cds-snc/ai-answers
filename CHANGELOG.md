@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.153.0](https://github.com/cds-snc/ai-answers/compare/v1.152.0...v1.153.0) (2026-06-26)
+
+
+### Features
+
+* enhance SystemHealthMonitor with detailed logging and failure w… ([b4190af](https://github.com/cds-snc/ai-answers/commit/b4190aff18921ea8ba349b1bb25fb1469688167b))
+* enhance SystemHealthMonitor with detailed logging and failure window management ([454b8d6](https://github.com/cds-snc/ai-answers/commit/454b8d61f34c7c7a81c68dc2d4cbdc3e3870dd4d))
+* pin Node.js version to 24.18.0 in Dockerfiles and package-lock.… ([7657c40](https://github.com/cds-snc/ai-answers/commit/7657c402ec44408e3c9daeabfd79460776d59d38))
+* pin Node.js version to 24.18.0 in Dockerfiles and package-lock.json ([f1277ce](https://github.com/cds-snc/ai-answers/commit/f1277ce993d1b0d06faedeb7fa87f27ccc3cbf9f))
+* update package dependencies and add unit tests for ExperimentalDatasetsPage ([3a5d9a1](https://github.com/cds-snc/ai-answers/commit/3a5d9a1f01052c7afd4cf51bbc998fbb27e758db))
+
+
+### Miscellaneous Chores
+
+* pin node to 24.18.0 ([5d4f661](https://github.com/cds-snc/ai-answers/commit/5d4f66160a96be3595f850df1f13e03619f4b62e))
+
 ## [1.152.0](https://github.com/cds-snc/ai-answers/compare/v1.151.1...v1.152.0) (2026-06-25)
 
 

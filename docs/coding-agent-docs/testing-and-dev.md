@@ -75,6 +75,16 @@ npm run dev
 
 Runs concurrently: in-memory MongoDB + backend server + React frontend.
 
+### Testing with a referring URL locally
+
+The chat receives a referring URL via the `ref` query parameter (URL-encoded). To simulate this locally, append it to the dev URL:
+
+```
+http://localhost:3000/en?ref=https%3A%2F%2Fwww.canada.ca%2Fen%2Frevenue-agency%2Fservices%2Fe-services%2Fcra-login-services.html
+```
+
+The referring URL will pre-populate in the chat input. This is how the real embed passes the page URL to the chat.
+
 ### Docker (optional)
 
 `docker-compose.yml` provides MongoDB (27017) and Qdrant (6333).
