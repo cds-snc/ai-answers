@@ -7,6 +7,7 @@ import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workf
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
+const NO_ANALYZER_ID = 'no-analyzer';
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -204,20 +205,20 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
 
             // Create Batch
-            const batchData = {
-                name: runName,
-                description: `Analyzer: ${selectedAnalyzerId}`,
-                type: 'analysis',
-                config: {
-                    analyzerId: selectedAnalyzerId,
-                    analyzerIds: [selectedAnalyzerId],
-                    workflow: normalizeWorkflow(selectedWorkflow),
-                    aiProvider: selectedModel || undefined,
-                    datasetId: selectedDatasetId || undefined,
-                    baselineRunId: baselineBatchId || undefined,
-                    pageLanguage: 'en',
-                }
-            };
+        const batchData = {
+            name: runName,
+            description: `Analyzer: ${selectedAnalyzerId}`,
+            type: 'analysis',
+            config: {
+                analyzerId: selectedAnalyzerId,
+                analyzerIds: [selectedAnalyzerId],
+                workflow: normalizeWorkflow(selectedWorkflow),
+                aiProvider: selectedModel || undefined,
+                datasetId: selectedDatasetId || undefined,
+                baselineRunId: selectedAnalyzerId === NO_ANALYZER_ID ? undefined : baselineBatchId || undefined,
+                pageLanguage: 'en',
+            }
+        };
 
             const result = await ExperimentalBatchClientService.createBatch(batchData);
 

@@ -28,12 +28,16 @@ describe('ExperimentalAnalyzerRegistry', () => {
         await ExperimentalAnalyzerRegistry.initialize();
         const all = await ExperimentalAnalyzerRegistry.getAll();
 
-        // We expect at least the ones we saw earlier: safety, bias-detection, expert-scorer
-        expect(all.length).toBeGreaterThanOrEqual(3);
+        // We expect at least the existing analyzers plus the no-op option.
+        expect(all.length).toBeGreaterThanOrEqual(4);
 
         const safety = await ExperimentalAnalyzerRegistry.get('safety');
         expect(safety).toBeDefined();
         expect(safety.name).toBe('Safety Evaluator');
+
+        const noAnalyzer = await ExperimentalAnalyzerRegistry.get('no-analyzer');
+        expect(noAnalyzer).toBeDefined();
+        expect(noAnalyzer.name).toBe('No analyzer');
     });
 
     it('should return undefined for unknown analyzer', async () => {
