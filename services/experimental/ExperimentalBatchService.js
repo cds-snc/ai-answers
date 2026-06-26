@@ -204,6 +204,7 @@ class ExperimentalBatchService {
                         data.baselineAnalysisResults = match.analysisResults || {};
                         data.baselineMatch = match.match;
                         data.baselineFlagged = match.flagged;
+                        data.chatId = data.chatId || match.chatId || '';
 
                         // If we are NOT in 'batch' mode (generation), the 'answer' to analyze
                         // should be the one from the dataset itself (or the baseline being re-evaluated).

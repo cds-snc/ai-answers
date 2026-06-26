@@ -204,6 +204,47 @@ describe('ExperimentalBatchService', () => {
                 )
             ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
         });
+
+        it('should copy baseline chatId onto comparison rows when creating analysis runs', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Baseline Chat DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: ds._id,
+                rowIndex: 1,
+                data: { question: 'Q baseline' }
+            });
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline chat run',
+                type: 'analysis',
+                config: { analyzerId: 'bias-detection', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create({
+                experimentalBatch: baselineBatch._id,
+                rowIndex: 1,
+                question: 'Q baseline',
+                answer: 'A baseline',
+                chatId: 'chat-baseline-123',
+                status: 'completed'
+            });
+
+            const batch = await ExperimentalBatchService.createBatch(
+                {
+                    name: 'Comparison run',
+                    type: 'analysis',
+                    config: {
+                        analyzerId: 'bias-detection',
+                        datasetId: ds._id.toString(),
+                        baselineRunId: baselineBatch._id.toString()
+                    }
+                },
+                []
+            );
+
+            const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id }).lean();
+            expect(item.chatId).toBe('chat-baseline-123');
+            expect(item.answer).toBe('A baseline');
+            expect(item.baselineAnswer).toBe('A baseline');
+        });
     });
 
     describe('cancelBatch', () => {
