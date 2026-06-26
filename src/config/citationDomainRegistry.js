@@ -11,10 +11,17 @@ export const DOMAIN_REGISTRY = {
     en: 'Indigenous Services Canada',
     fr: 'Services aux Autochtones Canada',
   },
+  'statcan.gc.ca': {
+    en: 'Statistics Canada',
+    fr: 'Statistique Canada',
+  },
   // Add further GC domains here as they appear in citation results.
   // Each entry needs both 'en' and 'fr' department names.
-  // Only needed for domains with opaque or numeric URL paths — domains with
-  // readable slugs (e.g. travel.gc.ca) are handled automatically by Tier 1.
+  // Registry entries serve two purposes:
+  //   Tier 1 enhancement — when a readable slug is found on a department domain,
+  //     the dept name is prepended: "Statistics Canada — The Daily — …"
+  //   Tier 2 fallback — when the path is fully opaque/numeric, the dept name is
+  //     used alone: "Government of Canada — Statistics Canada — …"
 };
 
 // Slug registry — optional extension for Tier 1.

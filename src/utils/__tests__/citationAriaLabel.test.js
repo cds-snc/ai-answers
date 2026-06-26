@@ -39,6 +39,42 @@ describe('buildAriaLabel', () => {
       ).toBe('Cpp retirement pension — canada dot ca (opens in new tab) https://canada.ca/en/services/cpp_retirement_pension.html');
     });
 
+    it('resolves bilingual slug daily-quotidien to The Daily in English without dept prefix', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/daily-quotidien/250429/dq250429b-eng.htm', 'en')
+      ).toBe('The Daily — statcan dot gc dot ca (opens in new tab) https://www150.statcan.gc.ca/n1/daily-quotidien/250429/dq250429b-eng.htm');
+    });
+
+    it('resolves bilingual slug daily-quotidien to Le Quotidien in French without dept prefix', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/daily-quotidien/250429/dq250429b-fra.htm', 'fr')
+      ).toBe("Le Quotidien — statcan dot gc dot ca (s'ouvre dans un nouvel onglet) https://www150.statcan.gc.ca/n1/daily-quotidien/250429/dq250429b-fra.htm");
+    });
+
+    it('falls back to readable slug after filtering locale-suffixed opaque codes and catalog numbers, prefixed with dept name', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/pub/11-008-x/2008001/article/10517-eng.htm', 'en')
+      ).toBe('Statistics Canada — Article — statcan dot gc dot ca (opens in new tab) https://www150.statcan.gc.ca/n1/pub/11-008-x/2008001/article/10517-eng.htm');
+    });
+
+    it('resolves bilingual slug dai-quo to The Daily in English', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/dai-quo/index-eng.htm', 'en')
+      ).toBe('The Daily — statcan dot gc dot ca (opens in new tab) https://www150.statcan.gc.ca/n1/dai-quo/index-eng.htm');
+    });
+
+    it('resolves bilingual slug dai-quo to Le Quotidien in French', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/dai-quo/index-fra.htm', 'fr')
+      ).toBe("Le Quotidien — statcan dot gc dot ca (s'ouvre dans un nouvel onglet) https://www150.statcan.gc.ca/n1/dai-quo/index-fra.htm");
+    });
+
+    it('keeps readable digit-containing slugs like covid-19', () => {
+      expect(
+        buildAriaLabel('https://canada.ca/en/public-health/services/diseases/covid-19.html', 'en')
+      ).toBe('Covid 19 — canada dot ca (opens in new tab) https://canada.ca/en/public-health/services/diseases/covid-19.html');
+    });
+
     it('decodes percent-encoded path characters (C3)', () => {
       expect(
         buildAriaLabel('https://canada.ca/fr/services/b%C3%A9n%C3%A9fices-emploi.html', 'fr')
@@ -51,6 +87,12 @@ describe('buildAriaLabel', () => {
       expect(
         buildAriaLabel('https://sac-isc.gc.ca/en/12345', 'en')
       ).toBe('Government of Canada — Indigenous Services Canada — sac-isc dot gc dot ca (opens in new tab) https://sac-isc.gc.ca/en/12345');
+    });
+
+    it('uses registry for opaque statcan path (en)', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/1310009601', 'en')
+      ).toBe('Government of Canada — Statistics Canada — statcan dot gc dot ca (opens in new tab) https://www150.statcan.gc.ca/n1/1310009601');
     });
 
     it('returns "Government of Canada — canada.ca" for opaque canada.ca path', () => {
