@@ -7,7 +7,7 @@ Implement single-analyzer analysis runs with strict baseline compatibility and a
 1. Enforce one analyzer per analysis batch
 - Validate create-batch payload to require exactly one analyzer id.
 - Update analysis UI to single-select analyzer.
-- Keep read compatibility for old multi-analyzer rows; block new multi-analyzer creates.
+- Keep read compatibility for legacy analyzer-id array payloads with one entry; reject creates with more than one analyzer id.
 
 2. Strict baseline compatibility
 - If a baseline run is selected, require `baseline.analyzerId === current.analyzerId`.
@@ -38,7 +38,7 @@ Implement single-analyzer analysis runs with strict baseline compatibility and a
 - Persist minimal shared run snapshot plus analyzer-produced export fields only.
 
 ## Test plan
-1. Creating analysis batch with multiple analyzers fails.
+1. Creating analysis batch with more than one analyzer id fails.
 2. Single analyzer create succeeds and processes normally.
 3. Baseline mismatch analyzer id is rejected.
 4. Baseline match succeeds and comparison fields populate.

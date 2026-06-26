@@ -244,14 +244,14 @@ class ExperimentalAnalyzerRegistry {
   // ... rest of registry methods
 }
 
-#### Multi-Analyzer Batch Runs
+#### Single-Analyzer Batch Runs
 
-- Support running multiple analyzers (evaluators and/or comparators) for each batch item.
-- Batch creation API and batch config will accept an `analyzers` array with stable IDs: `[{ id: 'safety', config: {...} }, { id: 'expert-scorer', config: {...} }]`.
-- `ExperimentalAnalyzerRegistry` will expose a `getProcessor(analyzerId)` method that returns a callable processor for that analyzer (the processor should accept `{ item, batch, config }` and return the analyzer output object).
+- The current implementation runs exactly one analyzer per analysis batch item.
+- Batch creation API and batch config accept a single `analyzerId`; a one-element `analyzerIds` array is still accepted for backward compatibility.
+- `ExperimentalAnalyzerRegistry` exposes a `getProcessor(analyzerId)` method for the selected analyzer.
 - `ExperimentalBatchService` changes:
-  - After generating or retrieving an item's `answer`, call all configured analyzers for that item (in parallel where safe), collecting each analyzer's output.
-  - Persist analyzer outputs in a uniform shape under `item.analysisResults.<analyzerId>`, e.g.:
+  - After generating or retrieving an item's `answer`, call the selected analyzer for that item.
+  - Persist analyzer output in a uniform shape under `item.analysisResults.<analyzerId>`, e.g.:
 
 ```json
 {
@@ -279,30 +279,6 @@ class ExperimentalAnalyzerRegistry {
   - For CSV/flat export use a flattened naming scheme prefixed by analyzer id, e.g. `safety_score`, `expert-scorer_verdict`.
   - Ensure per-analyzer errors are recorded separately on the item (e.g. `item.analysisErrors = { safety: { code: 'timeout', message: '...' } }`) so a failing analyzer doesn't fail the whole item.
 
-- Comparator pairing flow:
-  - Add `pairKey` to dataset rows.
-  - On upload, derive `pairKey` from a selected shared key column when provided.
-  - If no shared key column is provided, derive `pairKey` from normalized `question` text hash.
-  - Comparator batches pair baseline/comparison rows by `pairKey`.
-  - Unmatched rows are persisted as `skipped` with a deterministic reason code.
-
-- **Question-number pairing for ExpertScorer:**
-  - Extract question number prefix from Problem Details / question column using regex: `/^(\d{1,3})\.\s*/`
-  - Use extracted number (zero-padded) as `pairKey`
-  - Fallback: normalized question text hash (existing plan behavior)
-  - Pairing runs client-side in `ExperimentalAnalysisPage.js` before batch creation
-
-- **Downloaded page content extraction:**
-  - From batch output xlsx, extract `answer.tools.*.output` columns (the `downloadWebPage` results)
-  - Truncate each page to 8,000 characters (~2K tokens)
-  - Max 3 pages per row
-  - Store in `originalData.downloadedPages` on the batch item
-  - Total token budget per ExpertScorer call: ~10K input, ~500 output
-
-- Concurrency & throttling:
-  - Analyzer invocations should respect analyzer-specific concurrency limits (configurable) and the global `BATCH_CONCURRENCY` to avoid overloading LLMs.
-  - Registry entries may include an optional `concurrency` hint (integer) on each analyzer definition. `ExperimentalBatchService` reads this hint when running analyzers for an item and uses a `p-limit` semaphore (or equivalent) **per analyzer** to cap parallel invocations across all concurrent batch items. If no hint is set, the global `BATCH_CONCURRENCY` cap applies.
-
 - Retry & timeout for analyzer calls:
   - Each analyzer invocation is wrapped in a retry loop: **3 attempts** with **exponential backoff** (1s, 2s, 4s).
   - Each individual attempt has a **60-second timeout**.
@@ -310,20 +286,20 @@ class ExperimentalAnalyzerRegistry {
 
 - Batch-level analyzer summary:
   - `ExperimentalBatch` persists a top-level `analyzerSummary: { [analyzerId]: { completed, failed, skipped } }` field, updated each time `_updateBatchSummary` runs.
-  - The SSE endpoint reads this field directly — no re-aggregation from items needed per event.
-  - SSE `batch-progress` events include: `{ summary: { completed: X, failed: Y }, analyzerSummary: { safety: { completed: a, failed: b }, 'expert-scorer': { completed: c, failed: d } } }`.
+  - The SSE endpoint reads this field directly.
+  - SSE `batch-progress` events include the selected analyzer's summary alongside the batch summary.
 
 - Promotion & dataset rows:
-  - When promoting a batch to a dataset, include analyzer outputs in the dataset rows either as a nested `analysis` object or as flattened prefixed fields depending on `promoteOptions.flattenAnalyzerOutput`.
-  - Default promote behavior: keep analyzer outputs nested under `analysis.{analyzerId}` in Mongo rows and provide an export utility to flatten fields for CSV/Excel.
+  - When promoting a batch to a dataset, include analyzer output in the dataset rows under `analysis.{analyzerId}`.
+  - Provide an export utility to flatten fields for CSV/Excel.
 
 - API surface & UI:
   - `POST /api/experimental/batches` (new alias) and existing `POST /api/experimental/batch-create` are both supported during migration.
-  - The batch-edit UI will allow selecting multiple analyzers and per-analyzer configuration.
-  - The `ExperimentalAnalysisPage` UI will show per-analyzer progress and results; allow toggling which analyzer columns to display in the results table.
+  - The batch-edit UI allows selecting a single analyzer and its configuration.
+  - The `ExperimentalAnalysisPage` UI shows the selected analyzer's progress and results.
 
 - Tests:
-  - Add tests to verify multiple analyzers run for each item and their outputs are stored under `analysisResults`.
+  - Add tests to verify the selected analyzer runs for each item and its output is stored under `analysisResults`.
   - Add tests to verify analyzer retry behavior: 1 failure then success = stored in `analysisResults`; 3 failures = stored in `analysisErrors`.
   - Test exporter to ensure prefixed/flattened fields match expected names.
 
@@ -1612,4 +1588,3 @@ Manual walkthrough can still be run for UX confidence, but implementation is con
 -   **Batch-mode Graph Variant**: Create a dedicated `BatchModeGraph` that skips certain nodes (like persist) to improve throughput.
 -   **Webhook Notifications**: Allow users to configure webhooks for batch completion notifications.
 -   **Export Formats**: Add CSV/Excel export for analysis results (in addition to existing functionality).
-
