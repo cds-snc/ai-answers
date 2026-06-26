@@ -377,7 +377,15 @@ class ExperimentalBatchService {
                             baselineMatch: item.baselineMatch,
                             baselineFlagged: item.baselineFlagged,
                             config: { ...(batch.config.analyzerConfig || {}), aiProvider: batch.config.aiProvider },
-                            originalData: item.originalData
+                            originalData: {
+                                ...(item.originalData || {}),
+                                status: item.status,
+                                error: item.error,
+                                outcomeStatus: item.status,
+                                outcomeText: item.error || item.cancellationReason || item.skipReason || item.originalData?.outcomeText || null,
+                                cancellationReason: item.cancellationReason || item.originalData?.cancellationReason || null,
+                                skipReason: item.skipReason || item.originalData?.skipReason || null
+                            }
                         });
 
                         if (!item.analysisResults) item.analysisResults = {};
