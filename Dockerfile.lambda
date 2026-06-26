@@ -1,7 +1,7 @@
 # -------------------------------------------------
 # Build Stage (Debian-based, safe for building)
 # -------------------------------------------------
-FROM node:lts AS build
+FROM node:24.18.0 AS build
 
 WORKDIR /app
 
