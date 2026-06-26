@@ -30,6 +30,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
+      - name: Read release version
+        run: |
+          APP_VERSION=$(tr -d '\r\n' < version.txt)
+          if [ -z "$APP_VERSION" ]; then
+            APP_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
       - name: Configure aws credentials using OIDC
         uses: aws-actions/configure-aws-credentials@master
         with:
@@ -45,6 +53,7 @@ jobs:
         working-directory: ./
         run: |
           docker build \
+          --build-arg APP_VERSION=$APP_VERSION \
           -t $REGISTRY/ai-answers:$GITHUB_SHA-`date '+%Y-%m-%d'` \
           -t $REGISTRY/ai-answers:latest .
 
@@ -79,7 +88,7 @@ jobs:
         if: steps.ecs_wait.outcome == 'success'
         uses: cds-snc/sentinel-forward-data-action@main
         with:
-          input_data: '{"product": "ai-answers", "version": "${{ github.sha }}", "repository": "${{ github.repository }}", "environment": "production"}'
+          input_data: '{"product": "ai-answers", "version": "${{ env.APP_VERSION }}", "repository": "${{ github.repository }}", "environment": "production"}'
           log_type: CDS_Product_Deployment_Data
           log_analytics_workspace_id: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
           log_analytics_workspace_key: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}

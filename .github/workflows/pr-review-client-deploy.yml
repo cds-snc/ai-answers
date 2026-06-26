@@ -48,6 +48,7 @@ jobs:
         run: |
           export DOCKER_BUILDKIT=0
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ env.PR_NUMBER }} \
+            --build-arg APP_VERSION=${{ github.sha }} \
             -f Dockerfile.lambda .
 
       - name: Push Docker image to ECR

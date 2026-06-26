@@ -20,6 +20,9 @@ FROM node:24.18.0
 # Set working directory
 WORKDIR /app
 
+ARG APP_VERSION=unknown
+ENV APP_VERSION=${APP_VERSION}
+
 RUN apt-get update \
  && apt-get install -y socat \
  && apt-get clean \

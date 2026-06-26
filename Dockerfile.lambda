@@ -23,6 +23,9 @@ FROM public.ecr.aws/lambda/nodejs:24
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
+ARG APP_VERSION=unknown
+ENV APP_VERSION=${APP_VERSION}
+
 # Ensure CA certs are present (AL2023 minimal image)
 RUN dnf install -y ca-certificates \
   && dnf clean all
