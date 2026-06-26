@@ -366,15 +366,16 @@ const FilterPanel = ({
   const removeFilter = (key, value) => {
     const next = { ...appliedFilters };
     if (key === 'date') {
-      // Open the panel and pop the calendar so the user can pick a new range
-      // rather than silently resetting to the 7-day default.
-      setIsOpen(true);
-      setTimeout(() => {
-        if (dateRangePickerInstance.current) {
-          dateRangePickerInstance.current.show();
-        }
-      }, 50);
-      return;
+      const d = getDefaultDates();
+      setDateRange(d);
+      const s = parseDateTimeLocal(d.startDate);
+      const e = parseDateTimeLocal(d.endDate);
+      if (dateRangePickerInstance.current && s && e) {
+        dateRangePickerInstance.current.setStartDate(moment(s));
+        dateRangePickerInstance.current.setEndDate(moment(e));
+      }
+      next.startDate = s ? s.toISOString() : undefined;
+      next.endDate = e ? e.toISOString() : undefined;
     } else if (key === 'department') { setDepartment(''); next.department = ''; }
     else if (key === 'userType') { setUserType(defaultUserType); next.userType = defaultUserType; }
     else if (key === 'urlEn') { setUrlEn(''); next.urlEn = ''; }
