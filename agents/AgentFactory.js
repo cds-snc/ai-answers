@@ -418,8 +418,8 @@ const createJudgeLLM = async (agentType = 'openai') => {
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
-        temperature: 0,
+        reasoning: cfg.reasoning,
+        temperature: undefined,
         maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
@@ -468,8 +468,8 @@ const createSafetyLLM = async (agentType = 'azure') => {
         azureOpenAIApiDeploymentName: cfg.name,
         azureOpenAIApiVersion: "2025-04-01-preview",
         model: cfg.model,
-        reasoning: cfg.reasoningeffort,
-        temperature: 0,
+        reasoning: cfg.reasoning,
+        temperature: undefined,
         maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
