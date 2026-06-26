@@ -64,6 +64,7 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
 describe('ExperimentalAnalysisPage', () => {
     beforeEach(() => {
         vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-05-05T00:10:00.000Z'));
         mockListAnalyzers.mockReset().mockResolvedValue([{ id: 'analyzer-1', name: 'Analyzer 1' }]);
         mockListDatasets.mockReset().mockResolvedValue({
             data: [{ _id: 'dataset-1', name: 'Dataset 1', description: 'Dataset description', rowCount: 1 }]
@@ -257,5 +258,43 @@ describe('ExperimentalAnalysisPage', () => {
         expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
+    });
+
+    it('hides export and resume actions for actively updating processing batches', async () => {
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-active',
+                    name: 'Analysis - active',
+                    status: 'processing',
+                    updatedAt: '2026-05-05T00:09:30.000Z',
+                    summary: { completed: 3, failed: 1, total: 10 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-finished',
+                    name: 'Analysis - finished',
+                    status: 'completed',
+                    updatedAt: '2026-05-05T00:01:00.000Z',
+                    summary: { completed: 10, failed: 0, total: 10 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-04T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                }
+            ]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.getAllByRole('button', { name: 'Export' })).toHaveLength(1);
+        expect(screen.queryByRole('button', { name: 'experimental.analysis.resume' })).toBeNull();
     });
 });

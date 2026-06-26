@@ -130,17 +130,6 @@ const sendLightweightNotFound = (res) => {
   res.status(404).end();
 };
 
-const routePathMatches = (routePath, pathName) => {
-  const normalizedPath = normalizePath(pathName);
-  if (typeof routePath === 'string') {
-    return normalizePath(routePath) === normalizedPath;
-  }
-  if (Array.isArray(routePath)) {
-    return routePath.some((pathItem) => routePathMatches(pathItem, normalizedPath));
-  }
-  return false;
-};
-
 const routeAllowsMethod = (route, method) => {
   const normalizedMethod = method.toLowerCase();
   if (normalizedMethod === 'options') return true;
@@ -150,10 +139,25 @@ const routeAllowsMethod = (route, method) => {
 
 const isRegisteredApiRoute = (method, pathName) => {
   const stack = app._router?.stack || [];
+  const normalizedPath = normalizePath(pathName);
   return stack.some((layer) => {
     if (!layer.route) return false;
-    if (!routePathMatches(layer.route.path, pathName)) return false;
-    return routeAllowsMethod(layer.route, method);
+    if (!routeAllowsMethod(layer.route, method)) return false;
+
+    if (layer.regexp instanceof RegExp) {
+      return layer.regexp.test(normalizedPath);
+    }
+
+    const routePath = layer.route.path;
+    if (typeof routePath === 'string') {
+      return normalizePath(routePath) === normalizedPath;
+    }
+
+    if (Array.isArray(routePath)) {
+      return routePath.some((pathItem) => normalizePath(pathItem) === normalizedPath);
+    }
+
+    return false;
   });
 };
 
@@ -357,6 +361,9 @@ const PORT = process.env.PORT || 3001;
 
 (async () => {
   try {
+    const { default: ExperimentalBatchService } = await import('../services/experimental/ExperimentalBatchService.js');
+    await ExperimentalBatchService.initialize();
+
     await dbConnect();
     console.log("Database service started...");
 

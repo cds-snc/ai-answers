@@ -6,10 +6,28 @@ import { useSearchParams } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
+const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
 );
+
+const isActivelyRunningBatch = (batch) => {
+    if (batch?.status !== 'processing') {
+        return false;
+    }
+
+    if (!batch?.updatedAt) {
+        return false;
+    }
+
+    const updatedAtMs = new Date(batch.updatedAt).getTime();
+    if (Number.isNaN(updatedAtMs)) {
+        return false;
+    }
+
+    return (Date.now() - updatedAtMs) < ACTIVE_BATCH_WINDOW_MS;
+};
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -505,8 +523,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-300">{new Date(batch.createdAt).toLocaleDateString()}</td>
                                 <td className="p-200">
                                     <div className="flex gap-200">
-                                        <GcdsButton size="small" onClick={() => handleExport(batch._id)}>Export</GcdsButton>
-                                        {batch.status === 'processing' && (
+                                        {batch.status !== 'processing' && (
+                                            <GcdsButton size="small" onClick={() => handleExport(batch._id)}>Export</GcdsButton>
+                                        )}
+                                        {batch.status === 'processing' && !isActivelyRunningBatch(batch) && (
                                             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>
                                                 {t('experimental.analysis.resume')}
                                             </GcdsButton>

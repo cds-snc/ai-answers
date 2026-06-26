@@ -61,10 +61,15 @@ const resolveWorkflowName = (workflow = '') => {
 class ExperimentalBatchService {
     constructor() {
         this.analyzerQueues = new Map(); // analyzerId -> PQueue
-        this._initializeProcessor();
+        this.processorInitialized = false;
     }
 
-    _initializeProcessor() {
+    async initialize() {
+        if (this.processorInitialized) return;
+
+        const mode = process.env.REDIS_URL ? 'redis' : 'in-memory';
+        console.log(`[ExperimentalBatchService] Initializing experimental batch processor (${mode} mode)`);
+
         ExperimentalQueueService.registerProcessor(QUEUE_NAME, async (job) => {
             const { batchId, itemId } = job.data;
             return await this._processItem(batchId, itemId);
@@ -76,6 +81,8 @@ class ExperimentalBatchService {
                 await this._updateBatchSummary(returnvalue.batchId);
             }
         });
+
+        this.processorInitialized = true;
     }
 
     _getAnalyzerQueue(analyzerId, concurrency) {
