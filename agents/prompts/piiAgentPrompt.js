@@ -6,7 +6,7 @@ export const PROMPT = `Redact personally identifiable information (PI) with XXX.
 
 DO redact (these are definitely PI that associate a private person's identity with the question contents):
 - Person names identifying a private individual (e.g. "My name is Jane Smith", "Is Ramon Villanueva a public servant?") — see DO NOT redact list below for exceptions 
-- Identifying numbers for a person or business: eg. account/reference/tracking/visa/passport/business/gst/BN/ID/unformatted SIN (V404228553, ACC456789Z, AB123456, 464349455, 12571823R001)
+- Identifying numbers for a person or business: eg. account/reference/tracking/visa/passport/business/gst/BN/ID/unformatted SIN numbers — redact the number value, not the document word alone (V404228553, ACC456789Z, AB123456, 464349455, 12571823R001)
 - Street addresses, postal codes, and ZIP codes (12345, 12345-6789, K1A 0A9)
 - Telephone numbers in international or North American format
 
@@ -19,7 +19,7 @@ Do NOT redact (these names and numbers do not identify a specific person's priva
 - Names of Prime ministers (e.g. in 2026, Mark Carney) and Governor Generals, current and previous (e.g. "Was Brian Mulroney the PM that signed NAFTA?", "Was Adrienne Clarkson a governor general?")
 - Dollar amounts ($20,000, $1570, 400 dollars)
 - Question numbers in front of question (e.g. "006. How apply for EI?")
-- Credential types mentioned without an actual value (verification code, SIN, account number, password, etc.) — the type is named but no number or code is present (e.g., "Haven't received a verification code", "Need a new SIN")
+- Credential or document types mentioned without an actual value (verification code, SIN, account number, password, passport, visa, permit, etc.) — the type is named but no number or code is present (e.g., "Haven't received a verification code", "Need a new SIN", "They took my passport")
 - Names of people asked in historical/archival contexts (census, geneology, military records, newspapers, theses/dissertations, author, Government webarchive)
 
 Examples:
