@@ -366,16 +366,15 @@ const FilterPanel = ({
   const removeFilter = (key, value) => {
     const next = { ...appliedFilters };
     if (key === 'date') {
-      const d = getDefaultDates();
-      setDateRange(d);
-      const s = parseDateTimeLocal(d.startDate);
-      const e = parseDateTimeLocal(d.endDate);
-      if (dateRangePickerInstance.current && s && e) {
-        dateRangePickerInstance.current.setStartDate(moment(s));
-        dateRangePickerInstance.current.setEndDate(moment(e));
-      }
-      next.startDate = s ? s.toISOString() : undefined;
-      next.endDate = e ? e.toISOString() : undefined;
+      // Open the panel and pop the calendar so the user can pick a new range
+      // rather than silently resetting to the 7-day default.
+      setIsOpen(true);
+      setTimeout(() => {
+        if (dateRangePickerInstance.current) {
+          dateRangePickerInstance.current.show();
+        }
+      }, 50);
+      return;
     } else if (key === 'department') { setDepartment(''); next.department = ''; }
     else if (key === 'userType') { setUserType(defaultUserType); next.userType = defaultUserType; }
     else if (key === 'urlEn') { setUrlEn(''); next.urlEn = ''; }
@@ -415,7 +414,10 @@ const FilterPanel = ({
         const d = new Date(iso);
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       };
-      const isDefaultDate =
+      // Only show as a non-closable info pill on dashboards that auto-load with
+      // defaults (autoApply=true, i.e. PartnerDashboard). All other dashboards
+      // always show the date pill with an X so the user can change it.
+      const isDefaultDate = autoApply &&
         isoToLocalDate(appliedFilters.startDate) === defaults.startDate.substring(0, 10) &&
         isoToLocalDate(appliedFilters.endDate) === defaults.endDate.substring(0, 10);
       const s = new Date(appliedFilters.startDate).toLocaleDateString(locale, dateOpts);
