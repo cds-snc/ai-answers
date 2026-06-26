@@ -12,6 +12,15 @@ const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
 );
 
+const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId, workflowLabel, modelLabel }) => {
+    return [
+        analyzerName || analyzerId || '',
+        datasetName || datasetId || '',
+        workflowLabel || '',
+        modelLabel || ''
+    ].filter(Boolean).join(' · ');
+};
+
 const isActivelyRunningBatch = (batch) => {
     if (batch?.status !== 'processing') {
         return false;
@@ -74,6 +83,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     completed,
                     failed,
                     total,
+                    name: batch.name || '',
                     percentComplete: total > 0
                         ? Math.round(((completed + failed) / total) * 100)
                         : 0,
@@ -162,8 +172,22 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             return;
         }
 
+        const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
+        const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+        const selectedWorkflowLabel = WORKFLOWS.find(item => item.value === normalizeWorkflow(selectedWorkflow));
+        const selectedModelLabel = AVAILABLE_MODELS.find(item => item.value === selectedModel);
+        const runName = buildAnalysisRunName({
+            analyzerName: selectedAnalyzer?.name || '',
+            analyzerId: selectedAnalyzerId,
+            datasetName: selectedDataset?.name || '',
+            datasetId: selectedDatasetId,
+            workflowLabel: selectedWorkflowLabel ? t(selectedWorkflowLabel.labelKey) : '',
+            modelLabel: selectedModelLabel ? t(selectedModelLabel.labelKey) : '',
+        });
+
         setLoading(true);
         setStartingRun({
+            name: runName,
             status: t('experimental.analysis.startingRun'),
             message: t('experimental.analysis.messages.startingRun')
         });
@@ -173,7 +197,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
             // Create Batch
             const batchData = {
-                name: `Analysis - ${new Date().toLocaleString()}`,
+                name: runName,
                 description: `Analyzer: ${selectedAnalyzerId}`,
                 type: 'analysis',
                 config: {
@@ -444,13 +468,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                             {startingRun && (
                                 <div className="border p-200 mb-200 rounded bg-light">
+                                    {startingRun.name && (
+                                        <div><strong>{startingRun.name}</strong></div>
+                                    )}
                                     <div><strong>{startingRun.status}</strong></div>
                                     <GcdsText className="mt-200">{startingRun.message}</GcdsText>
                                 </div>
                             )}
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                    <div><strong>Batch {id.slice(-6)}</strong>: {prog.status}</div>
+                                    <div><strong>{prog.name || `Batch ${id.slice(-6)}`}</strong>: {prog.status}</div>
                                     <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
                                         <div style={{
                                             width: `${prog.percentComplete}%`,

@@ -69,6 +69,24 @@ describe('ExpertScorerAnalyzer', () => {
         expect(result.confidence).toBe(0.95);
     });
 
+    it('should map openai-gpt51 to a supported judge model token', async () => {
+        const mockLLM = {
+            invoke: vi.fn().mockResolvedValue({
+                content: '{"verdict": "pass", "confidence": 0.95, "explanation": "Perfect match"}'
+            })
+        };
+        createJudgeLLM.mockResolvedValue(mockLLM);
+
+        const analyzer = new ExpertScorerAnalyzer({ aiProvider: 'openai-gpt51' });
+        await analyzer.analyze({
+            question: 'Q',
+            answer: 'A',
+            baselineAnswer: 'A'
+        });
+
+        expect(createJudgeLLM).toHaveBeenCalledWith('openai-gpt5-mini');
+    });
+
     describe('_getAnswerType', () => {
         const analyzer = new ExpertScorerAnalyzer();
 

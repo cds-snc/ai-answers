@@ -2,6 +2,18 @@ import AnalyzerBase from './AnalyzerBase.js';
 import { createJudgeLLM } from '../../../agents/AgentFactory.js';
 import { EXPERT_SCORER_PROMPT } from '../../../agents/prompts/judges/ExpertScorerPrompt.js';
 
+const normalizeJudgeProvider = (aiProvider = 'azure') => {
+    const value = String(aiProvider || '').trim();
+    if (!value) return 'azure';
+    if (value === 'openai-gpt51' || value === 'openai-gpt51-chat') {
+        return 'openai-gpt5-mini';
+    }
+    if (value === 'azure' || value === 'openai' || value === 'openai-gpt5-mini' || value === 'azure-gpt5-mini') {
+        return value;
+    }
+    return 'azure';
+};
+
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
     static name = 'Expert Scorer';
@@ -16,7 +28,7 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
 
     async _getLLM() {
         if (!this.llm) {
-            this.llm = await createJudgeLLM(this.config.aiProvider || 'azure');
+            this.llm = await createJudgeLLM(normalizeJudgeProvider(this.config.aiProvider));
         }
         return this.llm;
     }

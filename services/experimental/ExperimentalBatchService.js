@@ -19,6 +19,47 @@ const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
 
+const extractAnswerText = (answer) => {
+    if (typeof answer === 'string') {
+        return answer.trim();
+    }
+
+    if (answer && typeof answer === 'object' && typeof answer.content === 'string') {
+        return answer.content.trim();
+    }
+
+    return '';
+};
+
+const findAnswerInUpdate = (value) => {
+    if (!value || typeof value !== 'object') {
+        return '';
+    }
+
+    if (Array.isArray(value)) {
+        for (const entry of value) {
+            const found = findAnswerInUpdate(entry);
+            if (found) return found;
+        }
+        return '';
+    }
+
+    if (Object.prototype.hasOwnProperty.call(value, 'result')) {
+        const result = value.result;
+        if (result && typeof result === 'object' && Object.prototype.hasOwnProperty.call(result, 'answer')) {
+            const found = extractAnswerText(result.answer);
+            if (found) return found;
+        }
+    }
+
+    for (const entry of Object.values(value)) {
+        const found = findAnswerInUpdate(entry);
+        if (found) return found;
+    }
+
+    return '';
+};
+
 const pickNormalizedAnswer = (item = {}) => {
     for (const key of ANSWER_ALIASES) {
         const value = item[key];
@@ -304,10 +345,9 @@ class ExperimentalBatchService {
                 await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
-                        if (update.result?.answer) {
-                            item.answer = typeof update.result.answer === 'string'
-                                ? update.result.answer
-                                : update.result.answer.content;
+                        const answerText = findAnswerInUpdate(update);
+                        if (answerText) {
+                            item.answer = answerText;
                         }
                     }
                 });

@@ -515,7 +515,15 @@ describe('ExperimentalBatchService', () => {
 
             const mockStream = {
                 async *[Symbol.asyncIterator]() {
-                    yield { result: { answer: 'Generated analysis answer' } };
+                    yield {
+                        verifyNode: {
+                            result: {
+                                answer: {
+                                    content: 'Generated analysis answer'
+                                }
+                            }
+                        }
+                    };
                 }
             };
             const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
