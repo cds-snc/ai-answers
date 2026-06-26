@@ -57,6 +57,18 @@ describe('buildAriaLabel', () => {
       ).toBe('Statistics Canada — Article — statcan dot gc dot ca (opens in new tab) https://www150.statcan.gc.ca/n1/pub/11-008-x/2008001/article/10517-eng.htm');
     });
 
+    it('resolves bilingual slug dai-quo to The Daily in English', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/dai-quo/index-eng.htm', 'en')
+      ).toBe('The Daily — statcan dot gc dot ca (opens in new tab) https://www150.statcan.gc.ca/n1/dai-quo/index-eng.htm');
+    });
+
+    it('resolves bilingual slug dai-quo to Le Quotidien in French', () => {
+      expect(
+        buildAriaLabel('https://www150.statcan.gc.ca/n1/dai-quo/index-fra.htm', 'fr')
+      ).toBe("Le Quotidien — statcan dot gc dot ca (s'ouvre dans un nouvel onglet) https://www150.statcan.gc.ca/n1/dai-quo/index-fra.htm");
+    });
+
     it('keeps readable digit-containing slugs like covid-19', () => {
       expect(
         buildAriaLabel('https://canada.ca/en/public-health/services/diseases/covid-19.html', 'en')

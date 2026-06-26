@@ -34,6 +34,15 @@ const OPAQUE_PATTERNS = [
 
 function isOpaque(segment) {
   if (OPAQUE_PATTERNS.some(p => p.test(segment))) return true;
+  // Segments ending in a locale suffix (-eng, -fra): strip the suffix and
+  // re-check the base. Catches "index-eng" (base "index" is a skip segment)
+  // and digit-based codes like "10517-eng" / "dq250429b-fra" even without digits
+  // in the suffix itself.
+  const localeMatch = segment.match(/^(.+)-(eng|fra)$/i);
+  if (localeMatch) {
+    const base = localeMatch[1];
+    if (SKIP_SEGMENTS.has(base.toLowerCase()) || isOpaque(base)) return true;
+  }
   // A segment containing digits is opaque unless at least one hyphen/underscore-
   // separated part is a multi-letter all-alpha non-locale word. This catches
   // locale-suffixed codes (10517-eng, dq250429b-fra) and catalog numbers
@@ -52,6 +61,7 @@ function isOpaque(segment) {
 // forms. Resolved to the correct language rather than producing a mixed label.
 const BILINGUAL_SEGMENTS = {
   'daily-quotidien': { en: 'The Daily', fr: 'Le Quotidien' },
+  'dai-quo':         { en: 'The Daily', fr: 'Le Quotidien' },
 };
 
 // Returns true for GC-owned domains (.gc.ca and canada.ca including subdomains).
