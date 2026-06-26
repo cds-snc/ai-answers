@@ -408,9 +408,16 @@ const FilterPanel = ({
 
     if (appliedFilters.startDate && appliedFilters.endDate) {
       const defaults = getDefaultDates();
+      // appliedFilters dates are ISO UTC strings; extract local date for comparison
+      // against the datetime-local strings in defaults (T23:59 local = next UTC day
+      // in UTC- timezones, so substring on the raw ISO string gives the wrong date).
+      const isoToLocalDate = (iso) => {
+        const d = new Date(iso);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
       const isDefaultDate =
-        appliedFilters.startDate.substring(0, 10) === defaults.startDate.substring(0, 10) &&
-        appliedFilters.endDate.substring(0, 10) === defaults.endDate.substring(0, 10);
+        isoToLocalDate(appliedFilters.startDate) === defaults.startDate.substring(0, 10) &&
+        isoToLocalDate(appliedFilters.endDate) === defaults.endDate.substring(0, 10);
       const s = new Date(appliedFilters.startDate).toLocaleDateString(locale, dateOpts);
       const e = new Date(appliedFilters.endDate).toLocaleDateString(locale, dateOpts);
       pills.push({ key: 'date', label: `${s} – ${e}`, info: isDefaultDate });
