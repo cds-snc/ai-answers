@@ -30,6 +30,8 @@ const FilterPanel = ({
   // Set to true by handleClear so the auto-close effect doesn't immediately
   // re-close the panel after the clear re-fetch completes.
   const skipNextAutoClose = useRef(false);
+  // Holds the previously applied date range so cancel on the picker restores it.
+  const datePickerCancelRestoreRef = useRef(null);
 
   // Collapse when results load successfully; keep open on error or no results.
   // Skipped once after a Clear so the panel stays open for the user to re-filter.
@@ -188,6 +190,7 @@ const FilterPanel = ({
 
     // Handle date selection - convert moment to local time string
     $picker.on('apply.daterangepicker', function (ev, picker) {
+      datePickerCancelRestoreRef.current = null;
       const startDate = picker.startDate.toDate();
       const endDate = picker.endDate.toDate();
       startDate.setHours(0, 0, 0, 0);
@@ -198,10 +201,22 @@ const FilterPanel = ({
       });
     });
 
+    // Restore previously applied dates if user cancels after clicking the date pill X
+    $picker.on('cancel.daterangepicker', function () {
+      if (datePickerCancelRestoreRef.current) {
+        const { startDate, endDate } = datePickerCancelRestoreRef.current;
+        dateRangePickerInstance.current.setStartDate(moment(new Date(startDate)));
+        dateRangePickerInstance.current.setEndDate(moment(new Date(endDate)));
+        setDateRange({ startDate: formatDateTimeLocal(new Date(startDate)), endDate: formatDateTimeLocal(new Date(endDate)) });
+        datePickerCancelRestoreRef.current = null;
+      }
+    });
+
     // Cleanup
     return () => {
       if ($picker.data('daterangepicker')) {
         $picker.off('apply.daterangepicker');
+        $picker.off('cancel.daterangepicker');
         $picker.data('daterangepicker').remove();
         dateRangePickerInstance.current = null;
       }
@@ -366,6 +381,11 @@ const FilterPanel = ({
   const removeFilter = (key, value) => {
     const next = { ...appliedFilters };
     if (key === 'date') {
+      // Save applied dates so cancel can restore them — pill must always match what's in effect.
+      datePickerCancelRestoreRef.current = {
+        startDate: appliedFilters.startDate,
+        endDate: appliedFilters.endDate,
+      };
       const d = getDefaultDates();
       setDateRange(d);
       const s = parseDateTimeLocal(d.startDate);
