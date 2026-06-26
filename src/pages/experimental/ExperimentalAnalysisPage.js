@@ -310,9 +310,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
 
+    const getRunLabel = (batch) => batch?.name || `Batch ${String(batch?._id || '').slice(-6)}`;
+
     const getAnalyzerLabel = (batch) => {
         const id = resolveBatchAnalyzerId(batch);
-        if (!id) return batch.name;
+        if (!id) return batch?.name || '';
         return analyzers.find(a => a.id === id)?.name || id;
     };
 
@@ -473,7 +475,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     <option value="">{t('experimental.analysis.noBaseline') || '-- No baseline (Standalone Evaluation) --'}</option>
                                     {baselineOptions.map(batch => (
                                         <option key={batch._id} value={batch._id}>
-                                            {getAnalyzerLabel(batch)} - {new Date(batch.createdAt).toLocaleString()}
+                                            {getRunLabel(batch)} - {new Date(batch.createdAt).toLocaleString()}
                                         </option>
                                     ))}
                                 </select>
@@ -547,7 +549,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     <tbody>
                         {batches.map(batch => (
                             <tr key={batch._id} style={{ borderBottom: '1px solid #eee' }}>
-                                <td className="p-200">{batch.name}</td>
+                                <td className="p-200">{getRunLabel(batch)}</td>
                                 <td className="p-200">{getAnalyzerLabel(batch)}</td>
                                 <td className="p-200">{getWorkflowLabel(batch)}</td>
                                 <td className="p-200">{getModelLabel(batch)}</td>

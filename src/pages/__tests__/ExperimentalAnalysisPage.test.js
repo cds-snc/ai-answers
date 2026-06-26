@@ -278,6 +278,33 @@ describe('ExperimentalAnalysisPage', () => {
         clickSpy.mockRestore();
     });
 
+    it('shows the same run name in the baseline dropdown as the history table', async () => {
+        const expectedDate = new Date('2026-05-05T00:00:00.000Z').toLocaleString();
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-1',
+                    name: 'Analysis - baseline',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                }
+            ]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.getByText('Analysis - baseline')).toBeTruthy();
+        expect(screen.getByRole('option', { name: `Analysis - baseline - ${expectedDate}` })).toBeTruthy();
+    });
+
     it('shows workflow and model family values from saved batch config and falls back to N/A when missing', async () => {
         mockListBatches.mockResolvedValueOnce({
             data: [
