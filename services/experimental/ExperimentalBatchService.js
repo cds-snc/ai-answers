@@ -207,11 +207,8 @@ class ExperimentalBatchService {
                         data.baselineChatId = match.chatId || '';
                         data.chatId = data.chatId || match.chatId || '';
 
-                        // If we are NOT in 'batch' mode (generation), the 'answer' to analyze
-                        // should be the one from the dataset itself (or the baseline being re-evaluated).
-                        if (batchData.type === 'analysis' && !data.answer) {
-                            data.answer = match.answer;
-                        }
+                        // Keep baseline output separate from the current answer. If the
+                        // dataset row has no answer, processing will generate a fresh one.
                     }
                 }
                 return data;

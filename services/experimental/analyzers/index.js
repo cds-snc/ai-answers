@@ -3,6 +3,7 @@ import ExpertScorerAnalyzer from './ExpertScorerAnalyzer.js';
 import NoOpAnalyzer from './NoOpAnalyzer.js';
 import RefusalAnalyzer from './RefusalAnalyzer.js';
 import SafetyEvaluator from './SafetyEvaluator.js';
+import SimilarAnswerAnalyzer from './SimilarAnswerAnalyzer.js';
 
 export const analyzerClasses = [
     BiasEvaluator,
@@ -10,6 +11,7 @@ export const analyzerClasses = [
     NoOpAnalyzer,
     RefusalAnalyzer,
     SafetyEvaluator,
+    SimilarAnswerAnalyzer,
 ];
 
 export default analyzerClasses;

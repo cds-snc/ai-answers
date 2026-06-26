@@ -38,6 +38,10 @@ describe('ExperimentalAnalyzerRegistry', () => {
         const noAnalyzer = await ExperimentalAnalyzerRegistry.get('no-analyzer');
         expect(noAnalyzer).toBeDefined();
         expect(noAnalyzer.name).toBe('No analyzer');
+
+        const similarAnswer = await ExperimentalAnalyzerRegistry.get('similar-answer');
+        expect(similarAnswer).toBeDefined();
+        expect(similarAnswer.name).toBe('Similar Answer Analyzer');
     });
 
     it('should return undefined for unknown analyzer', async () => {

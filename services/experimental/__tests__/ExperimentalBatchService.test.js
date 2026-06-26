@@ -205,7 +205,7 @@ describe('ExperimentalBatchService', () => {
             ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
         });
 
-        it('should copy baseline chatId onto comparison rows when creating analysis runs', async () => {
+        it('should copy baseline metadata without treating the baseline answer as the current answer', async () => {
             const ds = await ExperimentalDataset.create({ name: 'Baseline Chat DS', type: 'question-only' });
             await ExperimentalDatasetRow.create({
                 experimentalDataset: ds._id,
@@ -243,7 +243,7 @@ describe('ExperimentalBatchService', () => {
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id }).lean();
             expect(item.chatId).toBe('chat-baseline-123');
             expect(item.baselineChatId).toBe('chat-baseline-123');
-            expect(item.answer).toBe('A baseline');
+            expect(item.answer).toBe('');
             expect(item.baselineAnswer).toBe('A baseline');
         });
     });
@@ -585,6 +585,59 @@ describe('ExperimentalBatchService', () => {
             expect(processor).toHaveBeenCalledWith(expect.objectContaining({
                 question: 'How to find job in Canada?',
                 answer: 'Generated analysis answer'
+            }));
+        });
+
+        it('should generate a fresh answer before comparing against a baseline answer', async () => {
+            const batch = await ExperimentalBatch.create({
+                name: 'Baseline Comparison Analysis Batch',
+                type: 'analysis',
+                config: { analyzerId: 'similar-answer', workflow: 'TestGraph' }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'When is the deadline?',
+                answer: '',
+                baselineAnswer: 'The deadline is June 1, 2026.'
+            });
+
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield {
+                        answerNode: {
+                            result: {
+                                answer: {
+                                    content: 'The deadline is July 1, 2026.'
+                                }
+                            }
+                        }
+                    };
+                }
+            };
+            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
+            getGraphApp.mockResolvedValue(mockApp);
+
+            const processor = vi.fn().mockResolvedValue({
+                status: 'flagged',
+                differenceFound: true,
+                flagged: true
+            });
+            ExperimentalAnalyzerRegistry.get.mockResolvedValue({
+                id: 'similar-answer',
+                processor
+            });
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            const updatedItem = await ExperimentalBatchItem.findById(item._id);
+            expect(updatedItem.status).toBe('completed');
+            expect(updatedItem.answer).toBe('The deadline is July 1, 2026.');
+            expect(updatedItem.baselineAnswer).toBe('The deadline is June 1, 2026.');
+            expect(processor).toHaveBeenCalledWith(expect.objectContaining({
+                question: 'When is the deadline?',
+                answer: 'The deadline is July 1, 2026.',
+                baselineAnswer: 'The deadline is June 1, 2026.'
             }));
         });
     });

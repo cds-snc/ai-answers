@@ -130,6 +130,45 @@ describe('experimental-batch-export API', () => {
         expect(res.end).toHaveBeenCalled();
     });
 
+    it('should stringify nested analyzer output for Excel cells', async () => {
+        req.query.format = 'excel';
+        const mockItems = [{
+            rowIndex: 1,
+            question: 'A',
+            'analysisResults.similar-answer.changedFacts': [
+                {
+                    type: 'date',
+                    baseline: 'June 1, 2026',
+                    current: 'July 1, 2026',
+                    impact: 'Different filing deadline.'
+                }
+            ],
+            createdAt: new Date('2026-05-06T12:00:00.000Z')
+        }];
+        const findMock = {
+            sort: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue(mockItems)
+        };
+        ExperimentalBatchItem.find.mockReturnValue(findMock);
+
+        await handler(req, res);
+
+        expect(mockWorksheet.addRows).toHaveBeenCalledWith([
+            expect.objectContaining({
+                rowIndex: 1,
+                question: 'A',
+                'analysisResults.similar-answer.changedFacts': JSON.stringify([
+                    {
+                        type: 'date',
+                        baseline: 'June 1, 2026',
+                        current: 'July 1, 2026',
+                        impact: 'Different filing deadline.'
+                    }
+                ])
+            })
+        ]);
+    });
+
     it('should handle errors gracefully', async () => {
         const findMock = {
             sort: vi.fn().mockReturnThis(),

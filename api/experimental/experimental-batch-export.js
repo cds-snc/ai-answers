@@ -1,6 +1,49 @@
 import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
+const stringifyComplexValue = (value) => {
+    try {
+        return JSON.stringify(value, (_key, innerValue) => {
+            if (innerValue instanceof Date) {
+                return innerValue.toISOString();
+            }
+            if (typeof innerValue === 'bigint') {
+                return innerValue.toString();
+            }
+            return innerValue;
+        });
+    } catch (_err) {
+        return String(value);
+    }
+};
+
+const normalizeExcelValue = (value) => {
+    if (value === null || value === undefined) {
+        return value;
+    }
+
+    if (Buffer.isBuffer(value)) {
+        return null;
+    }
+
+    if (value instanceof Date) {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        return stringifyComplexValue(value);
+    }
+
+    if (typeof value === 'object') {
+        if (typeof value.toHexString === 'function' || value._bsontype === 'ObjectId') {
+            return value.toString();
+        }
+        return stringifyComplexValue(value);
+    }
+
+    return value;
+};
+
 /**
  * GET /api/experimental/batch-export/:id
  */
@@ -34,15 +77,7 @@ async function handler(req, res) {
                         if (key === '_id' || key === 'experimentalBatch' || key === '__v') continue;
                         if (Buffer.isBuffer(val)) continue;
 
-                        if (val !== null && typeof val === 'object' && val.toString) {
-                            if (!(val instanceof Date)) {
-                                filtered[key] = val.toString();
-                            } else {
-                                filtered[key] = val;
-                            }
-                        } else {
-                            filtered[key] = val;
-                        }
+                        filtered[key] = normalizeExcelValue(val);
                     }
                     return filtered;
                 });
