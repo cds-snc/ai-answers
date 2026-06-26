@@ -114,7 +114,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         };
 
     return (
-        <GcdsContainer size="xl" centered className="my-400">
+        <GcdsContainer layout="page" tag="main" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.title')}</GcdsHeading>
             <div className="mb-400">
                 <GcdsLink href={`/${lang}/admin`}>
