@@ -273,7 +273,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
 
     return (
-        <GcdsContainer size="xl" centered className="my-400">
+        <GcdsContainer layout="page" tag="main" className="mb-600">
             <header className="mb-400">
                 <GcdsHeading tag="h1">
                     {selectedDataset?.name || t('experimental.analysis.title')}
