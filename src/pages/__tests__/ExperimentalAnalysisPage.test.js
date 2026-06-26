@@ -16,7 +16,8 @@ const {
     mockCreateBatch,
     mockProcessBatch,
     mockDeleteBatch,
-    mockExportBatch
+    mockExportBatch,
+    mockExportChatLogs
 } = vi.hoisted(() => ({
     mockListAnalyzers: vi.fn(),
     mockListDatasets: vi.fn(),
@@ -24,7 +25,8 @@ const {
     mockCreateBatch: vi.fn(),
     mockProcessBatch: vi.fn(),
     mockDeleteBatch: vi.fn(),
-    mockExportBatch: vi.fn()
+    mockExportBatch: vi.fn(),
+    mockExportChatLogs: vi.fn()
 }));
 
 vi.mock('../../hooks/useTranslations.js', () => ({
@@ -45,7 +47,8 @@ vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => (
         createBatch: mockCreateBatch,
         processBatch: mockProcessBatch,
         deleteBatch: mockDeleteBatch,
-        exportBatch: mockExportBatch
+        exportBatch: mockExportBatch,
+        exportChatLogs: mockExportChatLogs
     }
 }));
 
@@ -64,6 +67,7 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
 describe('ExperimentalAnalysisPage', () => {
     beforeEach(() => {
         vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-05-05T00:10:00.000Z'));
         mockListAnalyzers.mockReset().mockResolvedValue([{ id: 'analyzer-1', name: 'Analyzer 1' }]);
         mockListDatasets.mockReset().mockResolvedValue({
             data: [{ _id: 'dataset-1', name: 'Dataset 1', description: 'Dataset description', rowCount: 1 }]
@@ -73,6 +77,7 @@ describe('ExperimentalAnalysisPage', () => {
         mockProcessBatch.mockReset();
         mockDeleteBatch.mockReset();
         mockExportBatch.mockReset();
+        mockExportChatLogs.mockReset();
     });
 
     afterEach(() => {
@@ -162,6 +167,9 @@ describe('ExperimentalAnalysisPage', () => {
             fireEvent.click(screen.getByRole('button', { name: 'experimental.analysis.run' }));
         });
 
+        const expectedRunName = 'Analyzer 1 · Dataset 1 · workflows.generic · models.gpt51';
+        expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ name: expectedRunName }));
+        expect(screen.getByText(expectedRunName)).toBeTruthy();
         expect(screen.getByText('experimental.analysis.messages.startingRun')).toBeTruthy();
 
         resolveCreateBatch({
@@ -216,6 +224,87 @@ describe('ExperimentalAnalysisPage', () => {
         expect(baselineButtons[1].disabled).toBe(true);
     });
 
+    it('shows and triggers export chat logs for completed runs when a baseline is selected', async () => {
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-1',
+                    name: 'Analysis - baseline',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-2',
+                    name: 'Analysis - current',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-04T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                }
+            ]
+        });
+        mockExportChatLogs.mockResolvedValue(new Blob(['test'], { type: 'application/vnd.ms-excel' }));
+
+        const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:chat-logs');
+        const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'Use as Baseline' })[0]);
+        fireEvent.click(screen.getAllByRole('button', { name: 'experimental.analysis.exportChatLogs' })[1]);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(mockExportChatLogs).toHaveBeenCalledWith('batch-2', 'batch-1');
+        expect(createObjectURL).toHaveBeenCalled();
+        expect(clickSpy).toHaveBeenCalled();
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:chat-logs');
+
+        createObjectURL.mockRestore();
+        revokeObjectURL.mockRestore();
+        clickSpy.mockRestore();
+    });
+
+    it('shows the same run name in the baseline dropdown as the history table', async () => {
+        const expectedDate = new Date('2026-05-05T00:00:00.000Z').toLocaleString();
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-1',
+                    name: 'Analysis - baseline',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                }
+            ]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.getByText('Analysis - baseline')).toBeTruthy();
+        expect(screen.getByRole('option', { name: `Analysis - baseline - ${expectedDate}` })).toBeTruthy();
+    });
+
     it('shows workflow and model family values from saved batch config and falls back to N/A when missing', async () => {
         mockListBatches.mockResolvedValueOnce({
             data: [
@@ -225,6 +314,7 @@ describe('ExperimentalAnalysisPage', () => {
                     status: 'completed',
                     summary: { completed: 1, failed: 0, total: 1 },
                     analyzerSummary: {},
+                    appVersion: '1234567890abcdef',
                     config: {
                         analyzerIds: ['bias-detection'],
                         workflow: 'GenericGraph',
@@ -254,8 +344,48 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.workflow' })).toBeTruthy();
         expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' })).toBeTruthy();
+        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' })).toBeTruthy();
         expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
+        expect(screen.getByText('7890abcdef')).toBeTruthy();
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
+    });
+
+    it('hides export and resume actions for actively updating processing batches', async () => {
+        mockListBatches.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'batch-active',
+                    name: 'Analysis - active',
+                    status: 'processing',
+                    updatedAt: '2026-05-05T00:09:30.000Z',
+                    summary: { completed: 3, failed: 1, total: 10 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-05T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-finished',
+                    name: 'Analysis - finished',
+                    status: 'completed',
+                    updatedAt: '2026-05-05T00:01:00.000Z',
+                    summary: { completed: 10, failed: 0, total: 10 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-04T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
+                }
+            ]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' })).toHaveLength(1);
+        expect(screen.queryByRole('button', { name: 'experimental.analysis.resume' })).toBeNull();
     });
 });

@@ -32,6 +32,7 @@ vi.mock('../../../agents/graphs/registry.js', () => ({
 
 describe('ExperimentalBatchService', () => {
     const userId = new mongoose.Types.ObjectId();
+    const originalAppVersion = process.env.APP_VERSION;
 
     beforeAll(async () => {
         const dbConnect = (await import('../../../api/db/db-connect.js')).default;
@@ -43,6 +44,11 @@ describe('ExperimentalBatchService', () => {
         await ExperimentalBatchItem.deleteMany({});
         await ExperimentalDataset.deleteMany({});
         await ExperimentalDatasetRow.deleteMany({});
+        if (originalAppVersion === undefined) {
+            delete process.env.APP_VERSION;
+        } else {
+            process.env.APP_VERSION = originalAppVersion;
+        }
         vi.clearAllMocks();
     });
 
@@ -59,6 +65,18 @@ describe('ExperimentalBatchService', () => {
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
             expect(items).toHaveLength(2);
             expect(ExperimentalQueueService.enqueue).not.toHaveBeenCalled();
+        });
+
+        it('should persist the app version on new batches', async () => {
+            process.env.APP_VERSION = 'v-test-batch';
+            const batchData = { name: 'Versioned Batch', type: 'batch', createdBy: userId };
+            const itemsData = [{ question: 'Q1' }];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const saved = await ExperimentalBatch.findById(batch._id).lean();
+
+            expect(batch.appVersion).toBe('v-test-batch');
+            expect(saved.appVersion).toBe('v-test-batch');
         });
 
         it('should load items from a dataset if itemsData is empty and datasetId is provided', async () => {
@@ -203,6 +221,48 @@ describe('ExperimentalBatchService', () => {
                     []
                 )
             ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+        });
+
+        it('should copy baseline metadata without treating the baseline answer as the current answer', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Baseline Chat DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: ds._id,
+                rowIndex: 1,
+                data: { question: 'Q baseline' }
+            });
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline chat run',
+                type: 'analysis',
+                config: { analyzerId: 'bias-detection', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create({
+                experimentalBatch: baselineBatch._id,
+                rowIndex: 1,
+                question: 'Q baseline',
+                answer: 'A baseline',
+                chatId: 'chat-baseline-123',
+                status: 'completed'
+            });
+
+            const batch = await ExperimentalBatchService.createBatch(
+                {
+                    name: 'Comparison run',
+                    type: 'analysis',
+                    config: {
+                        analyzerId: 'bias-detection',
+                        datasetId: ds._id.toString(),
+                        baselineRunId: baselineBatch._id.toString()
+                    }
+                },
+                []
+            );
+
+            const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id }).lean();
+            expect(item.chatId).toBe('chat-baseline-123');
+            expect(item.baselineChatId).toBe('chat-baseline-123');
+            expect(item.answer).toBe('');
+            expect(item.baselineAnswer).toBe('A baseline');
         });
     });
 
@@ -515,7 +575,15 @@ describe('ExperimentalBatchService', () => {
 
             const mockStream = {
                 async *[Symbol.asyncIterator]() {
-                    yield { result: { answer: 'Generated analysis answer' } };
+                    yield {
+                        verifyNode: {
+                            result: {
+                                answer: {
+                                    content: 'Generated analysis answer'
+                                }
+                            }
+                        }
+                    };
                 }
             };
             const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
@@ -535,6 +603,59 @@ describe('ExperimentalBatchService', () => {
             expect(processor).toHaveBeenCalledWith(expect.objectContaining({
                 question: 'How to find job in Canada?',
                 answer: 'Generated analysis answer'
+            }));
+        });
+
+        it('should generate a fresh answer before comparing against a baseline answer', async () => {
+            const batch = await ExperimentalBatch.create({
+                name: 'Baseline Comparison Analysis Batch',
+                type: 'analysis',
+                config: { analyzerId: 'similar-answer', workflow: 'TestGraph' }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'When is the deadline?',
+                answer: '',
+                baselineAnswer: 'The deadline is June 1, 2026.'
+            });
+
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield {
+                        answerNode: {
+                            result: {
+                                answer: {
+                                    content: 'The deadline is July 1, 2026.'
+                                }
+                            }
+                        }
+                    };
+                }
+            };
+            const mockApp = { stream: vi.fn().mockResolvedValue(mockStream) };
+            getGraphApp.mockResolvedValue(mockApp);
+
+            const processor = vi.fn().mockResolvedValue({
+                status: 'flagged',
+                differenceFound: true,
+                flagged: true
+            });
+            ExperimentalAnalyzerRegistry.get.mockResolvedValue({
+                id: 'similar-answer',
+                processor
+            });
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            const updatedItem = await ExperimentalBatchItem.findById(item._id);
+            expect(updatedItem.status).toBe('completed');
+            expect(updatedItem.answer).toBe('The deadline is July 1, 2026.');
+            expect(updatedItem.baselineAnswer).toBe('The deadline is June 1, 2026.');
+            expect(processor).toHaveBeenCalledWith(expect.objectContaining({
+                question: 'When is the deadline?',
+                answer: 'The deadline is July 1, 2026.',
+                baselineAnswer: 'The deadline is June 1, 2026.'
             }));
         });
     });

@@ -68,6 +68,26 @@ describe('RefusalAnalyzer', () => {
         expect(result.flagged).toBe(true);
     });
 
+    it('flags an application short-query block as a refusal', async () => {
+        const analyzer = new RefusalAnalyzer();
+
+        const result = await analyzer.analyze({
+            question: 'Form AP-576291',
+            answer: '',
+            originalData: {
+                status: 'failed',
+                error: 'Short query detected'
+            }
+        });
+
+        expect(result.status).toBe('flagged');
+        expect(result.label).toBe('refusal-error');
+        expect(result.refusalDetected).toBe(true);
+        expect(result.refusalMode).toBe('error');
+        expect(result.matchedPhrase.toLowerCase()).toContain('short query');
+        expect(result.flagged).toBe(true);
+    });
+
     it('flags when refusal behavior differs from the baseline result', async () => {
         const analyzer = new RefusalAnalyzer();
 

@@ -5,6 +5,7 @@ import ServerLoggingService from './ServerLoggingService.js';
 import EvaluationService from './EvaluationService.js';
 import { Setting } from '../models/setting.js';
 import { requireString } from '../api/util/db-query.js';
+import { getPersistedAppVersion } from './AppVersionService.js';
 
 export const InteractionPersistenceService = {
     async persistInteraction(arg1, arg2, arg3, arg4) {
@@ -45,6 +46,7 @@ export const InteractionPersistenceService = {
 
         ServerLoggingService.info('[InteractionPersistenceService] Start - chatId:', chatId);
         let chat = await Chat.findOne({ chatId });
+        const appVersion = interaction.appVersion || getPersistedAppVersion();
 
         if (!chat) {
             chat = new Chat();
@@ -53,6 +55,9 @@ export const InteractionPersistenceService = {
         chat.aiProvider = interaction.selectedAI;
         chat.searchProvider = interaction.searchProvider;
         chat.pageLanguage = interaction.pageLanguage;
+        if (appVersion && !chat.appVersion) {
+            chat.appVersion = appVersion;
+        }
 
         // Assign user to chat if authenticated and not already set
         if (user && user.userId && !chat.user) {
@@ -69,6 +74,7 @@ export const InteractionPersistenceService = {
         dbInteraction.instantAnswerInteractionId = interaction.instantAnswerInteractionId || '';
         // Persist workflow name when provided by callers
         dbInteraction.workflow = interaction.workflow || '';
+        dbInteraction.appVersion = appVersion;
 
         const context = new Context(interaction.context || {});
         // Object.assign(context, interaction.context || {});

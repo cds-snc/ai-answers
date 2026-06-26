@@ -9,6 +9,7 @@ import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
+import { getPersistedAppVersion } from '../AppVersionService.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -17,6 +18,47 @@ const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
 const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
+};
+
+const extractAnswerText = (answer) => {
+    if (typeof answer === 'string') {
+        return answer.trim();
+    }
+
+    if (answer && typeof answer === 'object' && typeof answer.content === 'string') {
+        return answer.content.trim();
+    }
+
+    return '';
+};
+
+const findAnswerInUpdate = (value) => {
+    if (!value || typeof value !== 'object') {
+        return '';
+    }
+
+    if (Array.isArray(value)) {
+        for (const entry of value) {
+            const found = findAnswerInUpdate(entry);
+            if (found) return found;
+        }
+        return '';
+    }
+
+    if (Object.prototype.hasOwnProperty.call(value, 'result')) {
+        const result = value.result;
+        if (result && typeof result === 'object' && Object.prototype.hasOwnProperty.call(result, 'answer')) {
+            const found = extractAnswerText(result.answer);
+            if (found) return found;
+        }
+    }
+
+    for (const entry of Object.values(value)) {
+        const found = findAnswerInUpdate(entry);
+        if (found) return found;
+    }
+
+    return '';
 };
 
 const pickNormalizedAnswer = (item = {}) => {
@@ -61,10 +103,15 @@ const resolveWorkflowName = (workflow = '') => {
 class ExperimentalBatchService {
     constructor() {
         this.analyzerQueues = new Map(); // analyzerId -> PQueue
-        this._initializeProcessor();
+        this.processorInitialized = false;
     }
 
-    _initializeProcessor() {
+    async initialize() {
+        if (this.processorInitialized) return;
+
+        const mode = process.env.REDIS_URL ? 'redis' : 'in-memory';
+        console.log(`[ExperimentalBatchService] Initializing experimental batch processor (${mode} mode)`);
+
         ExperimentalQueueService.registerProcessor(QUEUE_NAME, async (job) => {
             const { batchId, itemId } = job.data;
             return await this._processItem(batchId, itemId);
@@ -76,6 +123,8 @@ class ExperimentalBatchService {
                 await this._updateBatchSummary(returnvalue.batchId);
             }
         });
+
+        this.processorInitialized = true;
     }
 
     _getAnalyzerQueue(analyzerId, concurrency) {
@@ -156,12 +205,11 @@ class ExperimentalBatchService {
                         data.baselineAnalysisResults = match.analysisResults || {};
                         data.baselineMatch = match.match;
                         data.baselineFlagged = match.flagged;
+                        data.baselineChatId = match.chatId || '';
+                        data.chatId = data.chatId || match.chatId || '';
 
-                        // If we are NOT in 'batch' mode (generation), the 'answer' to analyze
-                        // should be the one from the dataset itself (or the baseline being re-evaluated).
-                        if (batchData.type === 'analysis' && !data.answer) {
-                            data.answer = match.answer;
-                        }
+                        // Keep baseline output separate from the current answer. If the
+                        // dataset row has no answer, processing will generate a fresh one.
                     }
                 }
                 return data;
@@ -174,6 +222,7 @@ class ExperimentalBatchService {
 
         const batch = await ExperimentalBatch.create({
             ...batchData,
+            appVersion: batchData.appVersion || getPersistedAppVersion(),
             status: 'pending',
             summary: { total: finalItems.length, completed: 0, failed: 0, matches: 0 }
         });
@@ -185,6 +234,7 @@ class ExperimentalBatchService {
             baselineAnalysisResults: item.baselineAnalysisResults || {},
             baselineMatch: item.baselineMatch,
             baselineFlagged: item.baselineFlagged,
+            baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
             referringUrl: item.referringUrl || item.ReferringUrl || item.referringurl || '',
             chatId: item.chatId || item.ChatId || item.chatid || '',
             originalData: item,
@@ -291,16 +341,14 @@ class ExperimentalBatchService {
                     selectedAI: batch.config.aiProvider || 'azure',
                     searchProvider: batch.config.searchProvider || 'google',
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
-                    skipPersist: true,
                 };
 
                 await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
-                        if (update.result?.answer) {
-                            item.answer = typeof update.result.answer === 'string'
-                                ? update.result.answer
-                                : update.result.answer.content;
+                        const answerText = findAnswerInUpdate(update);
+                        if (answerText) {
+                            item.answer = answerText;
                         }
                     }
                 });
@@ -327,7 +375,15 @@ class ExperimentalBatchService {
                             baselineMatch: item.baselineMatch,
                             baselineFlagged: item.baselineFlagged,
                             config: { ...(batch.config.analyzerConfig || {}), aiProvider: batch.config.aiProvider },
-                            originalData: item.originalData
+                            originalData: {
+                                ...(item.originalData || {}),
+                                status: item.status,
+                                error: item.error,
+                                outcomeStatus: item.status,
+                                outcomeText: item.error || item.cancellationReason || item.skipReason || item.originalData?.outcomeText || null,
+                                cancellationReason: item.cancellationReason || item.originalData?.cancellationReason || null,
+                                skipReason: item.skipReason || item.originalData?.skipReason || null
+                            }
                         });
 
                         if (!item.analysisResults) item.analysisResults = {};

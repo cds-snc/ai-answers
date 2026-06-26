@@ -24,6 +24,7 @@ import experimentalBatchListHandler from '../api/experimental/experimental-batch
 import experimentalBatchProcessHandler from '../api/experimental/experimental-batch-process.js';
 import experimentalBatchStatusHandler from '../api/experimental/experimental-batch-status.js';
 import experimentalBatchExportHandler from '../api/experimental/experimental-batch-export.js';
+import experimentalBatchChatLogsExportHandler from '../api/experimental/experimental-batch-chat-logs-export.js';
 import experimentalBatchDeleteHandler from '../api/experimental/experimental-batch-delete.js';
 import experimentalAnalyzersListHandler from '../api/experimental/experimental-analyzers-list.js';
 import experimentalBatchCancelHandler from '../api/experimental/experimental-batch-cancel.js';
@@ -130,17 +131,6 @@ const sendLightweightNotFound = (res) => {
   res.status(404).end();
 };
 
-const routePathMatches = (routePath, pathName) => {
-  const normalizedPath = normalizePath(pathName);
-  if (typeof routePath === 'string') {
-    return normalizePath(routePath) === normalizedPath;
-  }
-  if (Array.isArray(routePath)) {
-    return routePath.some((pathItem) => routePathMatches(pathItem, normalizedPath));
-  }
-  return false;
-};
-
 const routeAllowsMethod = (route, method) => {
   const normalizedMethod = method.toLowerCase();
   if (normalizedMethod === 'options') return true;
@@ -150,10 +140,25 @@ const routeAllowsMethod = (route, method) => {
 
 const isRegisteredApiRoute = (method, pathName) => {
   const stack = app._router?.stack || [];
+  const normalizedPath = normalizePath(pathName);
   return stack.some((layer) => {
     if (!layer.route) return false;
-    if (!routePathMatches(layer.route.path, pathName)) return false;
-    return routeAllowsMethod(layer.route, method);
+    if (!routeAllowsMethod(layer.route, method)) return false;
+
+    if (layer.regexp instanceof RegExp) {
+      return layer.regexp.test(normalizedPath);
+    }
+
+    const routePath = layer.route.path;
+    if (typeof routePath === 'string') {
+      return normalizePath(routePath) === normalizedPath;
+    }
+
+    if (Array.isArray(routePath)) {
+      return routePath.some((pathItem) => normalizePath(pathItem) === normalizedPath);
+    }
+
+    return false;
   });
 };
 
@@ -179,8 +184,7 @@ app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
-  const appVersion = process.env.APP_VERSION || process.env.npm_package_version || 'unknown';
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},APP_VERSION:${JSON.stringify(appVersion)},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
 });
 
 // Ensure `/api` never caches anything
@@ -293,6 +297,7 @@ app.get('/api/experimental/experimental-batch-list', experimentalBatchListHandle
 app.post('/api/experimental/experimental-batch-process/:id', experimentalBatchProcessHandler);
 app.get('/api/experimental/experimental-batch-status/:id', experimentalBatchStatusHandler);
 app.get('/api/experimental/experimental-batch-export/:id', experimentalBatchExportHandler);
+app.get('/api/experimental/experimental-batch-chat-logs-export/:id', experimentalBatchChatLogsExportHandler);
 app.delete('/api/experimental/experimental-batch-delete/:id', experimentalBatchDeleteHandler);
 app.get('/api/experimental/experimental-analyzers', experimentalAnalyzersListHandler);
 app.post('/api/experimental/experimental-batch-cancel/:id', experimentalBatchCancelHandler);
@@ -358,6 +363,9 @@ const PORT = process.env.PORT || 3001;
 
 (async () => {
   try {
+    const { default: ExperimentalBatchService } = await import('../services/experimental/ExperimentalBatchService.js');
+    await ExperimentalBatchService.initialize();
+
     await dbConnect();
     console.log("Database service started...");
 

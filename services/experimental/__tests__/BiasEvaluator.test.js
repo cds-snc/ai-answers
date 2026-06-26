@@ -71,4 +71,16 @@ describe('BiasEvaluator', () => {
         expect(createSafetyLLM).toHaveBeenCalledWith('azure');
         expect(createSafetyLLM).not.toHaveBeenCalledWith('openai');
     });
+
+    it('should map openai-gpt51 to a supported safety model token', async () => {
+        const mockLLM = {
+            invoke: vi.fn().mockResolvedValue({ content: '{"status": "pass", "score": 0.0, "label": "none"}' })
+        };
+        createSafetyLLM.mockResolvedValue(mockLLM);
+
+        const analyzer = new BiasEvaluator({ aiProvider: 'openai-gpt51' });
+        await analyzer.analyze({ question: 'test', answer: 'test' });
+
+        expect(createSafetyLLM).toHaveBeenCalledWith('openai-gpt5-mini');
+    });
 });

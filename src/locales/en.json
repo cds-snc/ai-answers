@@ -1823,6 +1823,7 @@
         "analyzer": "Analyzer",
         "workflow": "Workflow",
         "modelFamily": "Model family",
+        "appVersion": "App version",
         "status": "Status",
         "completed": "Completed",
         "failed": "Failed",
@@ -1835,6 +1836,7 @@
       },
       "baseline": "BASELINE",
       "export": "Export",
+      "exportChatLogs": "Export chat logs",
       "useAsBaseline": "Use as Baseline",
       "delete": "Delete",
       "empty": "No previous runs found for this dataset.",
@@ -1847,7 +1849,8 @@
         "resumeStarted": "Resume requested.",
         "confirmDelete": "Are you sure you want to delete this batch?",
         "deleteError": "Failed to delete batch",
-        "exportError": "Failed to export batch"
+        "exportError": "Failed to export batch",
+        "exportChatLogsError": "Failed to export chat logs"
       }
     }
   }

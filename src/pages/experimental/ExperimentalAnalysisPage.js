@@ -6,10 +6,46 @@ import { useSearchParams } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
+const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
+const NO_ANALYZER_ID = 'no-analyzer';
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
 );
+
+const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId, workflowLabel, modelLabel }) => {
+    return [
+        analyzerName || analyzerId || '',
+        datasetName || datasetId || '',
+        workflowLabel || '',
+        modelLabel || ''
+    ].filter(Boolean).join(' · ');
+};
+
+const sanitizeFileName = (value) => String(value || '')
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001F]+/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'analysis-run';
+
+const isActivelyRunningBatch = (batch) => {
+    if (batch?.status !== 'processing') {
+        return false;
+    }
+
+    if (!batch?.updatedAt) {
+        return false;
+    }
+
+    const updatedAtMs = new Date(batch.updatedAt).getTime();
+    if (Number.isNaN(updatedAtMs)) {
+        return false;
+    }
+
+    return (Date.now() - updatedAtMs) < ACTIVE_BATCH_WINDOW_MS;
+};
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -56,6 +92,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     completed,
                     failed,
                     total,
+                    name: batch.name || '',
                     percentComplete: total > 0
                         ? Math.round(((completed + failed) / total) * 100)
                         : 0,
@@ -144,8 +181,22 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             return;
         }
 
+        const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
+        const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+        const selectedWorkflowLabel = WORKFLOWS.find(item => item.value === normalizeWorkflow(selectedWorkflow));
+        const selectedModelLabel = AVAILABLE_MODELS.find(item => item.value === selectedModel);
+        const runName = buildAnalysisRunName({
+            analyzerName: selectedAnalyzer?.name || '',
+            analyzerId: selectedAnalyzerId,
+            datasetName: selectedDataset?.name || '',
+            datasetId: selectedDatasetId,
+            workflowLabel: selectedWorkflowLabel ? t(selectedWorkflowLabel.labelKey) : '',
+            modelLabel: selectedModelLabel ? t(selectedModelLabel.labelKey) : '',
+        });
+
         setLoading(true);
         setStartingRun({
+            name: runName,
             status: t('experimental.analysis.startingRun'),
             message: t('experimental.analysis.messages.startingRun')
         });
@@ -154,20 +205,20 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
 
             // Create Batch
-            const batchData = {
-                name: `Analysis - ${new Date().toLocaleString()}`,
-                description: `Analyzer: ${selectedAnalyzerId}`,
-                type: 'analysis',
-                config: {
-                    analyzerId: selectedAnalyzerId,
-                    analyzerIds: [selectedAnalyzerId],
-                    workflow: normalizeWorkflow(selectedWorkflow),
-                    aiProvider: selectedModel || undefined,
-                    datasetId: selectedDatasetId || undefined,
-                    baselineRunId: baselineBatchId || undefined,
-                    pageLanguage: 'en',
-                }
-            };
+        const batchData = {
+            name: runName,
+            description: `Analyzer: ${selectedAnalyzerId}`,
+            type: 'analysis',
+            config: {
+                analyzerId: selectedAnalyzerId,
+                analyzerIds: [selectedAnalyzerId],
+                workflow: normalizeWorkflow(selectedWorkflow),
+                aiProvider: selectedModel || undefined,
+                datasetId: selectedDatasetId || undefined,
+                baselineRunId: selectedAnalyzerId === NO_ANALYZER_ID ? undefined : baselineBatchId || undefined,
+                pageLanguage: 'en',
+            }
+        };
 
             const result = await ExperimentalBatchClientService.createBatch(batchData);
 
@@ -229,6 +280,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
+    const handleExportChatLogs = async (batch) => {
+        try {
+            const blob = await ExperimentalBatchClientService.exportChatLogs(batch._id, baselineBatchId);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chat-logs-${sanitizeFileName(batch.name || batch._id)}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export chat logs error:', err);
+            alert(t('experimental.analysis.messages.exportChatLogsError'));
+        }
+    };
+
     const handleResumeBatch = async (batchId) => {
         try {
             setLoading(true);
@@ -245,9 +311,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
 
+    const getRunLabel = (batch) => batch?.name || `Batch ${String(batch?._id || '').slice(-6)}`;
+
     const getAnalyzerLabel = (batch) => {
         const id = resolveBatchAnalyzerId(batch);
-        if (!id) return batch.name;
+        if (!id) return batch?.name || '';
         return analyzers.find(a => a.id === id)?.name || id;
     };
 
@@ -264,6 +332,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         if (modelId === 'azure') return t('common.na');
         const model = AVAILABLE_MODELS.find(item => item.value === modelId);
         return model?.labelKey ? t(model.labelKey) : t('common.na');
+    };
+
+    const getAppVersionLabel = (batch) => {
+        const appVersion = String(batch?.appVersion || '').trim();
+        return appVersion ? appVersion.slice(-10) : t('common.na');
     };
 
     const baselineOptions = batches.filter(batch =>
@@ -408,7 +481,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     <option value="">{t('experimental.analysis.noBaseline') || '-- No baseline (Standalone Evaluation) --'}</option>
                                     {baselineOptions.map(batch => (
                                         <option key={batch._id} value={batch._id}>
-                                            {getAnalyzerLabel(batch)} - {new Date(batch.createdAt).toLocaleString()}
+                                            {getRunLabel(batch)} - {new Date(batch.createdAt).toLocaleString()}
                                         </option>
                                     ))}
                                 </select>
@@ -426,13 +499,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                             {startingRun && (
                                 <div className="border p-200 mb-200 rounded bg-light">
+                                    {startingRun.name && (
+                                        <div><strong>{startingRun.name}</strong></div>
+                                    )}
                                     <div><strong>{startingRun.status}</strong></div>
                                     <GcdsText className="mt-200">{startingRun.message}</GcdsText>
                                 </div>
                             )}
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                    <div><strong>Batch {id.slice(-6)}</strong>: {prog.status}</div>
+                                    <div><strong>{prog.name || `Batch ${id.slice(-6)}`}</strong>: {prog.status}</div>
                                     <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
                                         <div style={{
                                             width: `${prog.percentComplete}%`,
@@ -466,6 +542,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <th className="p-300">{t('experimental.analysis.columns.analyzer')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.workflow')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.modelFamily')}</th>
+                            <th className="p-300">{t('experimental.analysis.columns.appVersion')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.status')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.completed')}</th>
                             <th className="p-300">{t('experimental.analysis.columns.failed')}</th>
@@ -479,10 +556,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     <tbody>
                         {batches.map(batch => (
                             <tr key={batch._id} style={{ borderBottom: '1px solid #eee' }}>
-                                <td className="p-200">{batch.name}</td>
+                                <td className="p-200">{getRunLabel(batch)}</td>
                                 <td className="p-200">{getAnalyzerLabel(batch)}</td>
                                 <td className="p-200">{getWorkflowLabel(batch)}</td>
                                 <td className="p-200">{getModelLabel(batch)}</td>
+                                <td className="p-200" title={batch.appVersion || ''}>{getAppVersionLabel(batch)}</td>
                                 <td className="p-300">
                                     <span style={{
                                         color: batch.status === 'completed' ? 'green' : (batch.status === 'failed' ? 'red' : 'orange'),
@@ -505,8 +583,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-300">{new Date(batch.createdAt).toLocaleDateString()}</td>
                                 <td className="p-200">
                                     <div className="flex gap-200">
-                                        <GcdsButton size="small" onClick={() => handleExport(batch._id)}>Export</GcdsButton>
-                                        {batch.status === 'processing' && (
+                                        {batch.status !== 'processing' && (
+                                            <GcdsButton size="small" onClick={() => handleExport(batch._id)}>
+                                                {t('experimental.analysis.export')}
+                                            </GcdsButton>
+                                        )}
+                                        {batch.status !== 'processing' && (
+                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>
+                                                {t('experimental.analysis.exportChatLogs')}
+                                            </GcdsButton>
+                                        )}
+                                        {batch.status === 'processing' && !isActivelyRunningBatch(batch) && (
                                             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>
                                                 {t('experimental.analysis.resume')}
                                             </GcdsButton>

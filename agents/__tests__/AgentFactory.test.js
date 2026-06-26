@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // We mock the LLM constructors so no real network calls or env var checks happen
 vi.mock('@langchain/openai', () => ({
-    ChatOpenAI: vi.fn().mockImplementation(() => ({ _type: 'openai' })),
-    AzureChatOpenAI: vi.fn().mockImplementation(() => ({ _type: 'azure' }))
+    ChatOpenAI: vi.fn().mockImplementation(function ChatOpenAI() { return { _type: 'openai' }; }),
+    AzureChatOpenAI: vi.fn().mockImplementation(function AzureChatOpenAI() { return { _type: 'azure' }; })
 }));
 
 // Import AFTER mocking so the mocks are in place when AgentFactory initializes
@@ -38,6 +38,18 @@ describe('createSafetyLLM', () => {
 
         expect(AzureChatOpenAI).toHaveBeenCalledTimes(1);
         expect(ChatOpenAI).not.toHaveBeenCalled();
+    });
+
+    it('uses GPT-5 mini without forcing temperature', async () => {
+        await createSafetyLLM('openai-gpt5-mini');
+
+        expect(AzureChatOpenAI).toHaveBeenCalledTimes(1);
+        expect(ChatOpenAI).not.toHaveBeenCalled();
+        expect(AzureChatOpenAI.mock.calls[0][0]).toEqual(expect.objectContaining({
+            model: 'gpt-5-mini',
+            temperature: undefined,
+            maxCompletionTokens: 4096
+        }));
     });
 
     it('throws for unknown provider', async () => {

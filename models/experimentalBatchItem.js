@@ -22,6 +22,7 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
     // For 'batch' generation results
     answer: { type: String },   // Generated answer
     chatId: { type: String },   // Added for reference
+    baselineChatId: { type: String },   // Chat id of the baseline comparison row
     referringUrl: { type: String }, // Per-row referring URL context
 
     // For 'comparison' inputs

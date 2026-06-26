@@ -1823,6 +1823,7 @@
         "analyzer": "Analyseur",
         "workflow": "Flux de travail",
         "modelFamily": "Famille de mod?les",
+        "appVersion": "Version de l'application",
         "status": "Statut",
         "completed": "Terminées",
         "failed": "Échouées",
@@ -1835,6 +1836,7 @@
       },
       "baseline": "R?F?RENCE",
       "export": "Exporter",
+      "exportChatLogs": "Exporter les journaux de clavardage",
       "useAsBaseline": "Utiliser comme r?f?rence",
       "delete": "Supprimer",
       "empty": "Aucune ex?cution pr?c?dente trouv?e pour cet ensemble de donn?es.",
@@ -1847,7 +1849,8 @@
         "resumeStarted": "La reprise a ?t? demand?e.",
         "confirmDelete": "?tes-vous s?r de vouloir supprimer ce lot??",
         "deleteError": "?chec de la suppression du lot",
-        "exportError": "?chec de l'exportation du lot"
+        "exportError": "?chec de l'exportation du lot",
+        "exportChatLogsError": "?chec de l'exportation des journaux de clavardage"
       }
     }
   }

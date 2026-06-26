@@ -92,6 +92,22 @@ export const ExperimentalBatchClientService = {
         return await res.json();
     },
 
+    async exportChatLogs(id, baselineRunId = '') {
+        const query = new URLSearchParams();
+        if (baselineRunId) {
+            query.set('baselineRunId', baselineRunId);
+        }
+
+        const url = getApiUrl(`experimental-batch-chat-logs-export/${encodeURIComponent(id)}${query.toString() ? `?${query.toString()}` : ''}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to export chat logs: ${res.status} ${res.statusText}`);
+        }
+
+        return await res.blob();
+    },
+
     /**
      * Delete a batch
      * @param {string} id 

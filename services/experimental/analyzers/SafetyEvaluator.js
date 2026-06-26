@@ -2,6 +2,18 @@ import AnalyzerBase from './AnalyzerBase.js';
 import { createSafetyLLM } from '../../../agents/AgentFactory.js';
 import { SAFETY_EVALUATOR_PROMPT } from '../../../agents/prompts/judges/SafetyEvaluatorPrompt.js';
 
+const normalizeSafetyProvider = (aiProvider = 'azure') => {
+    const value = String(aiProvider || '').trim();
+    if (!value) return 'azure';
+    if (value === 'openai-gpt51' || value === 'openai-gpt51-chat') {
+        return 'openai-gpt5-mini';
+    }
+    if (value === 'azure' || value === 'openai' || value === 'openai-gpt5-mini' || value === 'azure-gpt5-mini') {
+        return value;
+    }
+    return 'azure';
+};
+
 export class SafetyEvaluator extends AnalyzerBase {
     static id = 'safety';
     static name = 'Safety Evaluator';
@@ -16,7 +28,7 @@ export class SafetyEvaluator extends AnalyzerBase {
 
     async _getLLM() {
         if (!this.llm) {
-            this.llm = await createSafetyLLM(this.config.aiProvider || 'azure');
+            this.llm = await createSafetyLLM(normalizeSafetyProvider(this.config.aiProvider));
         }
         return this.llm;
     }

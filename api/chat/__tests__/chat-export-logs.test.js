@@ -59,9 +59,11 @@ describe('chat-export-logs API', () => {
         const mockChats = [
             {
                 chatId: 'test-chat',
+                appVersion: 'v-chat-version',
                 interactions: [
                     {
                         interactionId: 'i1',
+                        appVersion: 'v-interaction-version',
                         context: {
                             searchQuery: 'test query content',
                             searchResults: '[]'
@@ -111,6 +113,8 @@ describe('chat-export-logs API', () => {
 
         expect(row).toHaveProperty('context.searchQuery');
         expect(row['context.searchQuery']).toBe('test query content');
+        expect(row).toHaveProperty('appVersion');
+        expect(row.appVersion).toBe('v-interaction-version');
     });
 
     it('should include context.searchQuery in the tools view export', async () => {
@@ -154,5 +158,56 @@ describe('chat-export-logs API', () => {
 
         expect(row).toHaveProperty('context.searchQuery');
         expect(row['context.searchQuery']).toBe('tools query');
+    });
+
+    it('should export explicit chatIds in the requested order', async () => {
+        req.query.format = 'json';
+        req.query.chatIds = 'chat-b,chat-a';
+
+        const mockChats = [
+            {
+                chatId: 'chat-a',
+                interactions: [
+                    {
+                        interactionId: 'a1',
+                        context: { searchQuery: 'a query' },
+                        answer: { content: 'a answer' },
+                        question: { question: 'qa' },
+                        expertFeedback: {},
+                        publicFeedback: {},
+                        autoEval: { expertFeedback: { totalScore: 1 } }
+                    }
+                ]
+            },
+            {
+                chatId: 'chat-b',
+                interactions: [
+                    {
+                        interactionId: 'b1',
+                        context: { searchQuery: 'b query' },
+                        answer: { content: 'b answer' },
+                        question: { question: 'qb' },
+                        expertFeedback: {},
+                        publicFeedback: {},
+                        autoEval: { expertFeedback: { totalScore: 1 } }
+                    }
+                ]
+            }
+        ];
+
+        Chat.find.mockReturnValue({
+            populate: vi.fn().mockReturnValue({
+                lean: vi.fn().mockResolvedValue(mockChats)
+            })
+        });
+
+        await handler(req, res);
+
+        expect(Chat.find).toHaveBeenCalledWith(expect.objectContaining({
+            chatId: { $in: ['chat-b', 'chat-a'] }
+        }));
+        expect(res.json).toHaveBeenCalled();
+        const responseData = res.json.mock.calls[0][0];
+        expect(responseData.map((row) => row.chatId)).toEqual(['chat-b', 'chat-a']);
     });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ExperimentalBatchItem } from '../../../models/experimentalBatchItem.js';
+import { ExperimentalBatch } from '../../../models/experimentalBatch.js';
 import handler from '../experimental-batch-export.js';
 
 // Hoist the mock objects so they are available to vi.mock
@@ -26,6 +27,12 @@ const { mockWorkbookInstance, mockWorksheet } = vi.hoisted(() => {
 vi.mock('../../../models/experimentalBatchItem.js', () => ({
     ExperimentalBatchItem: {
         find: vi.fn()
+    }
+}));
+
+vi.mock('../../../models/experimentalBatch.js', () => ({
+    ExperimentalBatch: {
+        findById: vi.fn()
     }
 }));
 
@@ -79,17 +86,23 @@ describe('experimental-batch-export API', () => {
 
         // Setup default mock responses
         const mockItems = [{ rowIndex: 1, question: 'A' }];
+        const batchFindMock = {
+            select: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue({ appVersion: 'v1.153.0' })
+        };
         const findMock = {
             sort: vi.fn().mockReturnThis(),
             lean: vi.fn().mockResolvedValue(mockItems)
         };
+        ExperimentalBatch.findById.mockReturnValue(batchFindMock);
         ExperimentalBatchItem.find.mockReturnValue(findMock);
     });
 
     it('should export items as JSON by default', async () => {
         await handler(req, res);
+        expect(ExperimentalBatch.findById).toHaveBeenCalledWith('batch-123');
         expect(ExperimentalBatchItem.find).toHaveBeenCalledWith({ experimentalBatch: 'batch-123' });
-        expect(res.json).toHaveBeenCalledWith([{ rowIndex: 1, question: 'A' }]);
+        expect(res.json).toHaveBeenCalledWith([{ rowIndex: 1, question: 'A', appVersion: 'v1.153.0' }]);
     });
 
     it('should export items as Excel when format=excel', async () => {
@@ -119,6 +132,7 @@ describe('experimental-batch-export API', () => {
         // Verify workbook and worksheet usage
         expect(mockWorkbookInstance.addWorksheet).toHaveBeenCalledWith('Batch Results');
         expect(mockWorksheet.columns.map((column) => column.key)).toEqual([
+            'appVersion',
             'rowIndex',
             'question',
             'answer',
@@ -128,6 +142,45 @@ describe('experimental-batch-export API', () => {
         ]);
         expect(mockWorkbookInstance.xlsx.write).toHaveBeenCalledWith(res);
         expect(res.end).toHaveBeenCalled();
+    });
+
+    it('should stringify nested analyzer output for Excel cells', async () => {
+        req.query.format = 'excel';
+        const mockItems = [{
+            rowIndex: 1,
+            question: 'A',
+            'analysisResults.similar-answer.changedFacts': [
+                {
+                    type: 'date',
+                    baseline: 'June 1, 2026',
+                    current: 'July 1, 2026',
+                    impact: 'Different filing deadline.'
+                }
+            ],
+            createdAt: new Date('2026-05-06T12:00:00.000Z')
+        }];
+        const findMock = {
+            sort: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue(mockItems)
+        };
+        ExperimentalBatchItem.find.mockReturnValue(findMock);
+
+        await handler(req, res);
+
+        expect(mockWorksheet.addRows).toHaveBeenCalledWith([
+            expect.objectContaining({
+                rowIndex: 1,
+                question: 'A',
+                'analysisResults.similar-answer.changedFacts': JSON.stringify([
+                    {
+                        type: 'date',
+                        baseline: 'June 1, 2026',
+                        current: 'July 1, 2026',
+                        impact: 'Different filing deadline.'
+                    }
+                ])
+            })
+        ]);
     });
 
     it('should handle errors gracefully', async () => {

@@ -3,7 +3,7 @@ import PQueue from 'p-queue';
 import Redis from 'ioredis';
 import { EventEmitter } from 'events';
 
-const useRedis = !!process.env.REDIS_URL;
+const hasRedisUrl = () => !!String(process.env.REDIS_URL || '').trim();
 
 class ExperimentalQueueService extends EventEmitter {
     constructor() {
@@ -21,7 +21,7 @@ class ExperimentalQueueService extends EventEmitter {
     createQueue(name, options = {}) {
         if (this.queues.has(name)) return this.queues.get(name);
 
-        if (useRedis) {
+        if (hasRedisUrl()) {
             const connection = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
             const queue = new Queue(name, { connection, ...options });
             this.queues.set(name, queue);
@@ -48,7 +48,7 @@ class ExperimentalQueueService extends EventEmitter {
             queue = this.createQueue(queueName);
         }
 
-        if (useRedis) {
+        if (hasRedisUrl()) {
             const jobName = options.jobId || `job-${Date.now()}`;
             return await queue.add(jobName, data, options);
         } else {
@@ -107,7 +107,7 @@ class ExperimentalQueueService extends EventEmitter {
      * @param {object} options 
      */
     registerProcessor(queueName, processorFn, options = {}) {
-        if (useRedis) {
+        if (hasRedisUrl()) {
             const connection = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
             const worker = new Worker(queueName, processorFn, {
                 connection,
@@ -142,7 +142,7 @@ class ExperimentalQueueService extends EventEmitter {
     }
 
     async close() {
-        if (useRedis) {
+        if (hasRedisUrl()) {
             for (const worker of this.workers.values()) {
                 await worker.close();
             }

@@ -1,5 +1,49 @@
 import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
+import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+
+const stringifyComplexValue = (value) => {
+    try {
+        return JSON.stringify(value, (_key, innerValue) => {
+            if (innerValue instanceof Date) {
+                return innerValue.toISOString();
+            }
+            if (typeof innerValue === 'bigint') {
+                return innerValue.toString();
+            }
+            return innerValue;
+        });
+    } catch (_err) {
+        return String(value);
+    }
+};
+
+const normalizeExcelValue = (value) => {
+    if (value === null || value === undefined) {
+        return value;
+    }
+
+    if (Buffer.isBuffer(value)) {
+        return null;
+    }
+
+    if (value instanceof Date) {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        return stringifyComplexValue(value);
+    }
+
+    if (typeof value === 'object') {
+        if (typeof value.toHexString === 'function' || value._bsontype === 'ObjectId') {
+            return value.toString();
+        }
+        return stringifyComplexValue(value);
+    }
+
+    return value;
+};
 
 /**
  * GET /api/experimental/batch-export/:id
@@ -9,10 +53,19 @@ async function handler(req, res) {
         const { id } = req.params;
         const { format } = req.query;
 
+        const batch = await ExperimentalBatch.findById(id)
+            .select('appVersion')
+            .lean();
+        const appVersion = batch?.appVersion || '';
+
         // Fetch all items
         const items = await ExperimentalBatchItem.find({ experimentalBatch: id })
             .sort({ rowIndex: 1 })
             .lean();
+        const exportItems = items.map(item => ({
+            ...item,
+            appVersion
+        }));
 
         if (format === 'excel') {
             const ExcelJS = (await import('exceljs')).default;
@@ -21,28 +74,21 @@ async function handler(req, res) {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Batch Results');
 
-            if (items.length > 0) {
+            if (exportItems.length > 0) {
                 // Flatten and filter internal/buffer fields
-                const flattenedItems = items.map(item => {
+                const flattenedItems = exportItems.map(item => {
                     const flatItem = flatten(item, { safe: true });
-                    const filtered = {};
+                    const filtered = { appVersion };
 
                     for (const key in flatItem) {
                         const val = flatItem[key];
 
                         // Exclude internal Mongo fields and buffer fields
+                        if (key === 'appVersion') continue;
                         if (key === '_id' || key === 'experimentalBatch' || key === '__v') continue;
                         if (Buffer.isBuffer(val)) continue;
 
-                        if (val !== null && typeof val === 'object' && val.toString) {
-                            if (!(val instanceof Date)) {
-                                filtered[key] = val.toString();
-                            } else {
-                                filtered[key] = val;
-                            }
-                        } else {
-                            filtered[key] = val;
-                        }
+                        filtered[key] = normalizeExcelValue(val);
                     }
                     return filtered;
                 });
@@ -89,7 +135,7 @@ async function handler(req, res) {
             return;
         }
 
-        res.json(items);
+        res.json(exportItems);
     } catch (error) {
         console.error('Batch Export Error:', error);
         res.status(500).json({ error: 'Failed to export batch' });

@@ -1,5 +1,20 @@
 ﻿# Experimental Batch API & Dataset Management
 
+## Status
+
+**IMPLEMENTED & WORKING**:
+- Core batch service with generation and analysis phases
+- Multi-turn chat support via `chatId` field
+- Single-analyzer per batch with retry/timeout
+- Dataset upload, batch creation, promotion, and deletion
+- Batch cancellation and status tracking
+- App version tracking for audit
+
+**IN PROGRESS / PROPOSED**:
+- Advanced judge/comparator analyzers (ExpertScorer, SafetyEvaluator, BiasEvaluator)
+- Comparator row-pairing and baseline comparison workflows
+- SSE real-time progress streaming (basic polling available)
+
 ## Overview
 
 This feature implements a comprehensive backend for batch processing and automated evaluation of LLM outputs. It introduces a data-centric workflow where users can upload **Datasets** (questions, QA pairs), run **Batches** of processing against them (using specific Graphs or Evaluators), and verify the results using **Evaluators** (for safety/bias) or **Comparators** (for semantic checking).
@@ -7,7 +22,7 @@ This feature implements a comprehensive backend for batch processing and automat
 The core philosophy is **Iterative Improvement**:
 1.  **Ingest**: Users upload raw data (e.g., a CSV of questions) as a reusable `ExperimentalDataset`.
 2.  **Process**: A `Batch` is created to process a Dataset using a specific Graph Workflow (e.g., "Generate Answers"). The system uses a queue-based architecture to handle scale.
-3.  **Evaluate**: Results are analyzed using LLM-as-a-Judge agents. **Comparators** check for semantic drift against baselines, while **Evaluators** check for safety and bias.
+3.  **Evaluate**: Results are analyzed using registered analyzers. Analysis runs after generation (or on pre-existing answers for analysis-type batches).
 4.  **Promote**: High-quality results from a Batch can be promoted into a NEW `ExperimentalDataset`. This allows the output of "Run 1" to become the baseline for "Run 2", enabling regression testing and continuous improvement.
 
 ## Notes
@@ -16,7 +31,10 @@ The core philosophy is **Iterative Improvement**:
 > **Concurrency Control**: To prevent resource starvation, operators should tune `BATCH_CONCURRENCY` env var (default: 2) alongside `EVAL_CONCURRENCY` (default: `numCPUs-1`). This effectively partitions the server's capacity between user-facing evaluations and background batch processing.
 
 > [!NOTE]
-> The current implementation of `ExperimentalBatchService` will generate a standard UUID for `chatId` (using `crypto.randomUUID()`) for each batch item. This ensures compatibility with all downstream services (`ServerLoggingService`, `ToolTrackingHandler`) that expect unique identifiers, while still avoiding the creation of `Chat` documents in MongoDB.
+> **Multi-Turn Chat Support**: If batch items include a `chatId` field, rows with the same `chatId` are processed sequentially in `rowIndex` order. The service automatically builds `conversationHistory` from previous completed turns in the same group and passes it to the graph. Only the first turn of each group is enqueued initially; subsequent turns are enqueued after prior completion. Rows without `chatId` are processed independently/concurrently.
+
+> [!NOTE]
+> **App Version Tracking**: Each batch persists `appVersion` (from `process.env.APP_VERSION` or `package.json` version) at creation time, stored on both `ExperimentalBatch` and individual `ExperimentalBatchItem` records for audit and regression testing.
 
 > [!IMPORTANT]
 > **Graph Integration**: Batch processing MUST use the LangGraph pipeline directly via `getGraphApp()` and `graphRequestContext`, NOT `AnswerGenerationService`. Using `AnswerGenerationService` bypasses critical pipeline stages (PII redaction, translation, context matching, citation verification, persistence).
@@ -75,7 +93,7 @@ import crypto from 'crypto';
 
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 
-// In _processItem for 'batch' type:
+// In _processItem:
 async _processItem(batchId, itemId) {
   const item = await ExperimentalBatchItem.findById(itemId);
   const batch = await ExperimentalBatch.findById(batchId);
@@ -87,31 +105,88 @@ async _processItem(batchId, itemId) {
     return { batchId, itemId, status: 'cancelled' };
   }
   
-  if (batch.type === 'batch') {
-    const graphName = batch.config.workflow || 'GenericWorkflowGraph';
+  // Generation Phase: Always for batch runs; for analysis, only if no answer exists
+  const shouldGenerateAnswer = batch.type === 'batch' || (batch.type === 'analysis' && !item.answer);
+  if (shouldGenerateAnswer) {
+    const graphName = resolveWorkflowName(batch.config.workflow || 'DefaultGraph');
     const app = await getGraphApp(graphName);
-    const chatId = crypto.randomUUID();
+    const chatId = item.chatId || crypto.randomUUID(); // Reuse if multi-turn, else generate
+    
+    // Build conversationHistory from previous completed turns in same chatId group
+    let conversationHistory = [];
+    if (item.chatId) {
+      const previousTurns = await ExperimentalBatchItem.find({
+        experimentalBatch: batchId,
+        chatId: item.chatId,
+        rowIndex: { $lt: item.rowIndex },
+        status: 'completed'
+      }).sort({ rowIndex: 1 }).lean();
+      
+      conversationHistory = previousTurns.flatMap(t => [
+        { role: 'user', content: t.question },
+        { role: 'assistant', content: t.answer }
+      ]);
+    }
 
     const input = {
       chatId,
-      message: item.question,
-      pageLanguage: batch.config.pageLanguage || 'en',
-      aiProvider: batch.config.aiProvider || 'azure',
-      referringUrl: batch.config.referringUrl,
-      skipPersist: true, // Don't save to MongoDB in batch mode
+      userMessage: item.question,
+      conversationHistory,
+      lang: batch.config.pageLanguage || 'en',
+      selectedAI: batch.config.aiProvider || 'azure',
+      searchProvider: batch.config.searchProvider || 'google',
+      referringUrl: item.referringUrl || batch.config.referringUrl || '', // Per-item URL takes priority
+      // Persistence is enabled; chats are saved to MongoDB
     };
 
-    await graphRequestContext.run({ headers: {}, user: null }, async () => {
+    const batchUser = batch.createdBy ? { userId: batch.createdBy.toString() } : null;
+    await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
       const stream = await app.stream(input, { streamMode: 'updates' });
       for await (const update of stream) {
-        if (update.result?.answer) {
-          item.answer = update.result.answer.content;
-          item.chatId = chatId; // Store for reference
-        }
+        const answerText = findAnswerInUpdate(update);
+        if (answerText) item.answer = answerText;
       }
     });
+    item.chatId = chatId;
   }
-  // ... analysis type handling unchanged
+  
+  // Analysis Phase: Single analyzer per batch item
+  const analyzerId = resolveSelectedAnalyzerId(batch.config || {});
+  if (analyzerId) {
+    const analyzerDef = await ExperimentalAnalyzerRegistry.get(analyzerId);
+    if (!analyzerDef) {
+      if (!item.analysisErrors) item.analysisErrors = {};
+      item.analysisErrors[analyzerId] = { code: 'NOT_FOUND', message: `Analyzer ${analyzerId} not found` };
+    } else {
+      try {
+        const result = await this._runAnalyzer(analyzerDef, { question: item.question, answer: item.answer || '', baselineAnswer: item.baselineAnswer, ... });
+        if (!item.analysisResults) item.analysisResults = {};
+        item.analysisResults[analyzerId] = result;
+        // Propagate legacy fields for UI
+        if (result.match !== undefined) item.match = result.match;
+        if (result.flagged === true) item.flagged = true;
+      } catch (err) {
+        if (!item.analysisErrors) item.analysisErrors = {};
+        item.analysisErrors[analyzerId] = { code: 'ANALYSIS_FAILED', message: err.message };
+      }
+    }
+  }
+  
+  item.status = 'completed';
+  await item.save();
+  
+  // Auto-enqueue next turn in same chatId group
+  if (item.chatId) {
+    const nextItem = await ExperimentalBatchItem.findOne({
+      experimentalBatch: batchId,
+      chatId: item.chatId,
+      rowIndex: { $gt: item.rowIndex },
+      status: 'pending'
+    }).sort({ rowIndex: 1 });
+    if (nextItem) {
+      await ExperimentalQueueService.enqueue(QUEUE_NAME, { batchId: batchId.toString(), itemId: nextItem._id.toString() });
+    }
+  }
 }
 ```
 
@@ -127,73 +202,70 @@ ExperimentalQueueService.registerProcessor(QUEUE_NAME, processor, {
 - **`cancelBatch(batchId)`** â€” Mark batch as cancelled, stop processing pending items
 - **`promoteToDataset(batchId, details)`** â€” Create new dataset from all batch rows, preserving completion/refusal/error outcomes for evaluator use
 
-**Promotion with Transaction**:
+**Promotion Logic**:
 ```javascript
 async promoteToDataset(batchId, details) {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
-  try {
-    const batch = await ExperimentalBatch.findById(batchId).session(session);
-    if (!['completed', 'failed', 'cancelled'].includes(batch.status)) {
-      throw new Error('Cannot promote batch while it is still running');
-    }
-    
-    // Check for duplicate dataset name
-    const existing = await ExperimentalDataset.findOne({ name: details.name }).session(session);
-    if (existing) {
-      throw new Error(`Dataset "${details.name}" already exists`);
-    }
-    
-    const dataset = await ExperimentalDataset.create([{
-      name: details.name,
-      description: details.description || `Promoted from batch: ${batch.name}`,
-      type: 'batch-output',
-      sourceType: 'promoted-from-batch',
-      sourceBatchId: batchId,
-      createdBy: details.userId,
-    }], { session });
-    
-    const items = await ExperimentalBatchItem.find({
-      experimentalBatch: batchId
-    }).sort({ rowIndex: 1 }).session(session);
-    
-    const rows = items.map((item, idx) => ({
-      experimentalDataset: dataset[0]._id,
-      rowIndex: idx + 1,
-      data: {
-        sourceRowIndex: item.rowIndex,
-        outcomeStatus: item.status, // completed | refused | failed | cancelled | skipped
-        outcomeCode: item.outcomeCode || null, // standardized reason code
-        outcomeText: item.outcomeText || item.error || item.cancellationReason || item.skipReason || null,
-        isProcessable: item.status === 'completed',
-        question: item.question,
-        answer: item.answer || null,
-        ...(item.similarityScore !== undefined && { similarityScore: item.similarityScore }),
-        ...(item.evaluatorOutput && { evaluatorOutput: item.evaluatorOutput }),
-        ...(item.analysisResults && { analysisResults: item.analysisResults }),
-      }
-    }));
-    
-    await ExperimentalDatasetRow.insertMany(rows, { session });
-    
-    // Update dataset row count
-    dataset[0].rowCount = rows.length;
-    await dataset[0].save({ session });
-    
-    await session.commitTransaction();
-    return {
-      dataset: dataset[0],
-      warning: {
-        code: rows.some(r => r.data.outcomeStatus !== 'completed') ? 'NON_COMPLETED_ROWS_INCLUDED' : null
-      }
-    };
-  } catch (err) {
-    await session.abortTransaction();
-    throw err;
-  } finally {
-    session.endSession();
+  const batch = await ExperimentalBatch.findById(batchId);
+  if (!batch) throw makeError('Batch not found', 'NOT_FOUND', 404);
+  if (!['completed', 'failed', 'cancelled'].includes(batch.status)) {
+    throw makeError('Cannot promote batch while it is still running', 'INVALID_STATE', 409);
   }
+  
+  // Check for duplicate dataset name
+  const existing = await ExperimentalDataset.findOne({
+    name: { $regex: `^${escapeRegex(details.name)}$`, $options: 'i' }
+  });
+  if (existing) {
+    throw makeError(`Dataset "${details.name}" already exists`, 'DUPLICATE', 409);
+  }
+  
+  const dataset = new ExperimentalDataset({
+    name: details.name,
+    description: details.description || `Promoted from batch: ${batch.name}`,
+    type: 'batch-output',
+    sourceType: 'promoted-from-batch',
+    sourceBatchId: batchId,
+    createdBy: details.userId,
+  });
+  await dataset.save();
+  
+  const items = await ExperimentalBatchItem.find({
+    experimentalBatch: batchId
+  }).sort({ rowIndex: 1 });
+  
+  const rows = items.map((item, idx) => ({
+    experimentalDataset: dataset._id,
+    rowIndex: idx + 1,
+    data: {
+      sourceRowIndex: item.rowIndex,
+      outcomeStatus: item.status, // completed | refused | failed | cancelled | skipped
+      outcomeCode: item.outcomeCode || null,
+      outcomeText: item.outcomeText || item.error || item.cancellationReason || item.skipReason || null,
+      isProcessable: item.status === 'completed',
+      question: item.question,
+      answer: item.answer || null,
+      ...(item.similarityScore !== undefined && { similarityScore: item.similarityScore }),
+      ...(item.evaluatorOutput && { evaluatorOutput: item.evaluatorOutput }),
+      ...(item.analysisResults && { analysisResults: item.analysisResults }),
+      ...(item.referringUrl && { referringUrl: item.referringUrl }),  // Preserve per-row URL
+      ...(item.chatId && { chatId: item.chatId }),  // Preserve chatId for multi-turn batches
+    }
+  }));
+  
+  await ExperimentalDatasetRow.insertMany(rows);
+  
+  await ExperimentalDataset.updateOne(
+    { _id: dataset._id },
+    { rowCount: rows.length }
+  );
+  dataset.rowCount = rows.length;
+  
+  return {
+    dataset,
+    warning: {
+      code: rows.some(r => r.data.outcomeStatus !== 'completed') ? 'NON_COMPLETED_ROWS_INCLUDED' : null
+    }
+  };
 }
 ```
 
@@ -244,14 +316,17 @@ class ExperimentalAnalyzerRegistry {
   // ... rest of registry methods
 }
 
-#### Multi-Analyzer Batch Runs
+#### Single-Analyzer Batch Runs
 
-- Support running multiple analyzers (evaluators and/or comparators) for each batch item.
-- Batch creation API and batch config will accept an `analyzers` array with stable IDs: `[{ id: 'safety', config: {...} }, { id: 'expert-scorer', config: {...} }]`.
-- `ExperimentalAnalyzerRegistry` will expose a `getProcessor(analyzerId)` method that returns a callable processor for that analyzer (the processor should accept `{ item, batch, config }` and return the analyzer output object).
-- `ExperimentalBatchService` changes:
-  - After generating or retrieving an item's `answer`, call all configured analyzers for that item (in parallel where safe), collecting each analyzer's output.
-  - Persist analyzer outputs in a uniform shape under `item.analysisResults.<analyzerId>`, e.g.:
+- **Exactly one analyzer** per analysis batch (configured in `batch.config.analyzerId`).
+- Batch creation validates that `analyzerIds` (if provided) contains exactly one ID; `analyzerId` is normalized and stored.
+- For analysis batches, the generation phase runs only if the item has no pre-existing `answer`.
+- Each item calls the analyzer with **retry logic**: 3 attempts with **exponential backoff** (1s, 2s, 4s) and **60-second timeout per attempt**.
+- Analyzer failures are recorded per-item under `analysisErrors.<analyzerId>` and do **not** fail the batch item itself.
+- Per-batch `analyzerSummary` tracks counts of completed, failed, and skipped analyzers, updated via `_updateBatchSummary`.
+
+**Output Persistence**:
+  - Analyzer output stored in uniform shape under `item.analysisResults.<analyzerId>`:
 
 ```json
 {
@@ -276,54 +351,30 @@ class ExperimentalAnalyzerRegistry {
 }
 ```
 
-  - For CSV/flat export use a flattened naming scheme prefixed by analyzer id, e.g. `safety_score`, `expert-scorer_verdict`.
-  - Ensure per-analyzer errors are recorded separately on the item (e.g. `item.analysisErrors = { safety: { code: 'timeout', message: '...' } }`) so a failing analyzer doesn't fail the whole item.
+  - Legacy fields (`match`, `flagged`, `explanation`, `similarityScore`) are copied to item level for UI/export compatibility.
+  - For CSV/flat export, flatten by prefixing analyzer id, e.g. `safety_score`, `expert-scorer_verdict`.
+  - Per-analyzer errors recorded separately under `item.analysisErrors.<analyzerId>` so one analyzer failure doesn't block the item.
 
-- Comparator pairing flow:
-  - Add `pairKey` to dataset rows.
-  - On upload, derive `pairKey` from a selected shared key column when provided.
-  - If no shared key column is provided, derive `pairKey` from normalized `question` text hash.
-  - Comparator batches pair baseline/comparison rows by `pairKey`.
-  - Unmatched rows are persisted as `skipped` with a deterministic reason code.
+**Per-Batch Analyzer Summary**:
+  - Computed dynamically during `_updateBatchSummary()` by iterating items and counting analyzer presence/errors.
+  - Stored on `ExperimentalBatch.analyzerSummary: { [analyzerId]: { completed, failed, skipped } }`.
+  - Included in SSE batch-progress events for UI progress display.
 
-- **Question-number pairing for ExpertScorer:**
-  - Extract question number prefix from Problem Details / question column using regex: `/^(\d{1,3})\.\s*/`
-  - Use extracted number (zero-padded) as `pairKey`
-  - Fallback: normalized question text hash (existing plan behavior)
-  - Pairing runs client-side in `ExperimentalAnalysisPage.js` before batch creation
+**Multi-Turn Chat Batches**:
+  - If batch items include a `chatId` field (column in dataset upload), rows with the same `chatId` are grouped and processed sequentially.
+  - Only the **first turn** (lowest `rowIndex`) of each group is enqueued initially.
+  - After each turn completes, `_processItem` automatically enqueues the next turn in the group.
+  - Prior to processing, the service builds `conversationHistory` from all completed prior turns with the same `chatId`, sorted by `rowIndex`.
+  - Rows without `chatId` are processed independently/concurrently (existing behavior preserved).
+  - Multi-turn `chatId` and `referringUrl` are preserved when promoting batches to datasets.
 
-- **Downloaded page content extraction:**
-  - From batch output xlsx, extract `answer.tools.*.output` columns (the `downloadWebPage` results)
-  - Truncate each page to 8,000 characters (~2K tokens)
-  - Max 3 pages per row
-  - Store in `originalData.downloadedPages` on the batch item
-  - Total token budget per ExpertScorer call: ~10K input, ~500 output
-
-- Concurrency & throttling:
-  - Analyzer invocations should respect analyzer-specific concurrency limits (configurable) and the global `BATCH_CONCURRENCY` to avoid overloading LLMs.
-  - Registry entries may include an optional `concurrency` hint (integer) on each analyzer definition. `ExperimentalBatchService` reads this hint when running analyzers for an item and uses a `p-limit` semaphore (or equivalent) **per analyzer** to cap parallel invocations across all concurrent batch items. If no hint is set, the global `BATCH_CONCURRENCY` cap applies.
-
-- Retry & timeout for analyzer calls:
-  - Each analyzer invocation is wrapped in a retry loop: **3 attempts** with **exponential backoff** (1s, 2s, 4s).
-  - Each individual attempt has a **60-second timeout**.
-  - All 3 attempts failing records a structured error under `item.analysisErrors.<analyzerId>` (see above) and does **not** fail the batch item itself.
-
-- Batch-level analyzer summary:
-  - `ExperimentalBatch` persists a top-level `analyzerSummary: { [analyzerId]: { completed, failed, skipped } }` field, updated each time `_updateBatchSummary` runs.
-  - The SSE endpoint reads this field directly — no re-aggregation from items needed per event.
-  - SSE `batch-progress` events include: `{ summary: { completed: X, failed: Y }, analyzerSummary: { safety: { completed: a, failed: b }, 'expert-scorer': { completed: c, failed: d } } }`.
-
-- Promotion & dataset rows:
-  - When promoting a batch to a dataset, include analyzer outputs in the dataset rows either as a nested `analysis` object or as flattened prefixed fields depending on `promoteOptions.flattenAnalyzerOutput`.
-  - Default promote behavior: keep analyzer outputs nested under `analysis.{analyzerId}` in Mongo rows and provide an export utility to flatten fields for CSV/Excel.
-
-- API surface & UI:
-  - `POST /api/experimental/batches` (new alias) and existing `POST /api/experimental/batch-create` are both supported during migration.
-  - The batch-edit UI will allow selecting multiple analyzers and per-analyzer configuration.
-  - The `ExperimentalAnalysisPage` UI will show per-analyzer progress and results; allow toggling which analyzer columns to display in the results table.
+**App Version & Audit**:
+  - `ExperimentalBatch.appVersion` captures the app version at batch creation time.
+  - `ExperimentalBatchItem.appVersion` stored per-item for turn-level audit (inherits from batch).
+  - Both populated from `process.env.APP_VERSION` or fallback to npm `package.json` version.
 
 - Tests:
-  - Add tests to verify multiple analyzers run for each item and their outputs are stored under `analysisResults`.
+  - Add tests to verify the selected analyzer runs for each item and its output is stored under `analysisResults`.
   - Add tests to verify analyzer retry behavior: 1 failure then success = stored in `analysisResults`; 3 failures = stored in `analysisErrors`.
   - Test exporter to ensure prefixed/flattened fields match expected names.
 
@@ -858,10 +909,32 @@ Mapping precedence (first match wins):
 
 ---
 
-### Progress Events
+## Current Implemented Endpoints
 
-#### Server-Sent Events (SSE) — Push Architecture
-Progress events are **pushed from `ExperimentalBatchService`** using Node's built-in `EventEmitter` — no DB polling per open connection.
+All endpoints are admin-only and protected with `authMiddleware` + `adminMiddleware`.
+
+- **POST /api/experimental/batch-create** — Create a new batch (type: `batch` or `analysis`)
+- **POST /api/experimental/batch-process** — Enqueue batch items for processing
+- **GET /api/experimental/batch-status** — Get batch status and summary
+- **GET /api/experimental/batch-progress** — Poll batch progress (returns current state)
+- **POST /api/experimental/batch-cancel/:id** — Cancel batch and pending items
+- **GET /api/experimental/batch-export** — Export batch results as CSV/JSON
+- **POST /api/experimental/batch-delete** — Delete batch
+- **GET /api/experimental/batch-list** — List batches with filters
+- **GET /api/experimental/batch-chat-logs-export** — Export chat/interaction logs for batch
+- **POST /api/experimental/experimental-dataset-upload** — Upload dataset (CSV/Excel)
+- **GET /api/experimental/experimental-dataset-list** — List datasets
+- **GET /api/experimental/experimental-dataset-rows** — Paginated access to dataset rows
+- **POST /api/experimental/experimental-dataset-delete** — Delete dataset
+- **GET /api/experimental/experimental-analyzers-list** — List registered analyzers
+
+---
+
+## Proposed Future Features
+
+The sections below document enhancements planned but not yet fully implemented:
+
+### Advanced Judge/Comparator Analyzers
 
 **Service-side (emit on every summary update):**
 ```javascript
@@ -1425,6 +1498,77 @@ export default withAdmin(async function handler(req, res) {
 - Duplicate-content warning path (non-blocking).
 
 #### [NEW] [api/experimental/__tests__/dataset-delete.test.js](file:///c:/Users/hymary/repos/ai-answers/api/experimental/__tests__/dataset-delete.test.js)
+- Hard delete removes dataset and all rows.
+- Rejects delete on non-existent dataset.
+- Returns count of deleted rows.
+
+---
+
+## Summary of Current Implementation
+
+This document has been updated to reflect the working experimental batch system as of 2026-06-26.
+
+### What Works Now
+
+1. **Batch Creation & Processing**
+   - Create batches from direct items or from uploaded datasets
+   - Support `batch` (generation-only) and `analysis` (generation + single analyzer) types
+   - Process items using LangGraph directly via `getGraphApp()` and `graphRequestContext`
+   - Proper persistence to MongoDB (chats are saved)
+
+2. **Multi-Turn Chat Batches**
+   - Support multi-turn conversations by grouping rows with the same `chatId`
+   - Automatic building of `conversationHistory` from completed prior turns
+   - Sequential processing within chat groups (first turn enqueued initially, then next turns automatically)
+   - Rows without `chatId` processed independently/concurrently
+
+3. **Analysis & Evaluation**
+   - Single analyzer per batch with retry logic (3 attempts, exponential backoff, 60s timeout)
+   - Structured error tracking per analyzer (doesn't fail the whole item)
+   - Results stored uniformly under `analysisResults.<analyzerId>`
+
+4. **Dataset Management**
+   - Upload CSV/Excel datasets with question-only or QA-pair formats
+   - Automatic column inference and validation
+   - Case-insensitive duplicate name detection
+   - Hard delete with cascading cleanup
+
+5. **Batch Promotion**
+   - Promote completed/partial batches to new datasets
+   - Preserve outcome metadata (status, code, text, analysis results)
+   - Preserve multi-turn metadata (`chatId`, `referringUrl`)
+   - Returns warning for non-completed rows
+
+6. **Auditing & Monitoring**
+   - App version tracking on batch creation
+   - Per-item app version for turn-level audit
+   - Batch cancellation with `cancellationReason`
+   - Status polling via `/api/experimental/batch-progress`
+   - Per-item retry tracking and timestamps
+
+7. **Authorization**
+   - All endpoints admin-only
+   - Proper auth middleware integration
+
+### Key Implementation Details
+
+- **rowIndex**: Deterministic ordering for rows (not interactionId), ensures predictable multi-turn sequencing
+- **Concurrency**: `BATCH_CONCURRENCY` env var controls max concurrent batch workers (default: 2)
+- **No Transactions on Promotion**: Promotion uses sequential saves, not Mongoose transactions
+- **Graph Input Params**: Uses `userMessage`, `conversationHistory`, `lang`, `selectedAI`, `searchProvider`, `referringUrl`
+- **Testing**: 29 tests in `ExperimentalBatchService.test.js` all passing
+
+### What's Not Yet Implemented
+
+- Advanced comparator analyzers (ExpertScorer, baseline matching logic)
+- Judge/evaluator LLM implementations (SafetyEvaluator, BiasEvaluator)
+- EventEmitter-based SSE (current: simple polling)
+- Outcome code mapping pipeline (planned but not wired into graph)
+- Comparator row-pairing by `pairKey`
+
+---
+
+**Last Updated**: 2026-06-26 — Docs aligned with working implementation. All core features tested and verified.
 - Hard delete removes dataset + rows.
 - Delete requires explicit confirmation flag in request contract.
 - Returns conflict/error when dataset not found.
@@ -1612,4 +1756,3 @@ Manual walkthrough can still be run for UX confidence, but implementation is con
 -   **Batch-mode Graph Variant**: Create a dedicated `BatchModeGraph` that skips certain nodes (like persist) to improve throughput.
 -   **Webhook Notifications**: Allow users to configure webhooks for batch completion notifications.
 -   **Export Formats**: Add CSV/Excel export for analysis results (in addition to existing functionality).
-
