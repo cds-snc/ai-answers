@@ -10,6 +10,8 @@
     "@aws-sdk/client-sts": "^3.981.0",
     "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@cdssnc/gcds-components": "^0.26.1",
+    "@cdssnc/gcds-components-react": "^0.34.3",
     "@gcds-core/components": "^1.2.0",
     "@gcds-core/components-react": "^1.2.0",
     "@cdssnc/gcds-utility": "^1.4.0",
@@ -34,6 +36,7 @@
     "bcryptjs": "^3.0.2",
     "bot-detector": "^1.0.5",
     "buffer": "^6.0.3",
+    "bullmq": "^5.66.5",
     "cheerio": "^1.0.0",
     "cohere-ai": "^2.3.0",
     "compromise": "^14.14.4",
@@ -74,6 +77,7 @@
     "notifications-node-client": "^8.2.1",
     "openai": "^4.73.1",
     "otplib": "^12.0.1",
+    "p-queue": "^9.1.0",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "piscina": "^5.2.0",
@@ -105,6 +109,7 @@
     "start-server": "node server/server.js",
     "start-server:watch": "nodemon --watch server --watch api --watch agents --watch services --watch models --watch middleware --ext js,json --exec node server/server.js",
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",
+    "dev:server": "nodemon --watch server --watch api --watch middleware --watch services --ext js,json --exec node server/server.js",
     "dev:quick": "node scripts/start-quick.js",
     "lint": "cross-env NODE_ENV=development dotenv -e .env eslint \"src/**/*.{js,jsx}\"",
     "test:e2e": "cross-env NODE_ENV=test dotenv -e .env -- powershell ./scripts/run-e2e-tests.ps1",
@@ -152,6 +157,7 @@
     "esbuild": "^0.28.1",
     "get-port": "^7.1.0",
     "mongodb-memory-server": "^10.1.4",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "nodemon": "^3.0.1"
   }
 }
