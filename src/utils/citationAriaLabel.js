@@ -20,6 +20,10 @@ const STRINGS = {
 // are also meaningless.
 const SKIP_SEGMENTS = new Set(['en', 'fr', 'eng', 'fra', 'default', 'index']);
 
+// Locale codes used to distinguish real words from language suffixes when
+// deciding whether a digit-containing segment is opaque (e.g. "10517-eng").
+const LOCALE_CODES = new Set(['en', 'fr', 'eng', 'fra']);
+
 // Segments that look like identifiers rather than readable slugs.
 const OPAQUE_PATTERNS = [
   /^\d+$/, // purely numeric: /12345/
@@ -29,8 +33,26 @@ const OPAQUE_PATTERNS = [
 ];
 
 function isOpaque(segment) {
-  return OPAQUE_PATTERNS.some(p => p.test(segment));
+  if (OPAQUE_PATTERNS.some(p => p.test(segment))) return true;
+  // A segment containing digits is opaque unless at least one hyphen/underscore-
+  // separated part is a multi-letter all-alpha non-locale word. This catches
+  // locale-suffixed codes (10517-eng, dq250429b-fra) and catalog numbers
+  // (11-008-x) without entries for each, while keeping readable slugs like
+  // "covid-19" or "2024-budget" intact.
+  if (/\d/.test(segment)) {
+    const parts = segment.split(/[-_]/);
+    return !parts.some(
+      p => p.length >= 2 && /^[a-zA-Z]+$/.test(p) && !LOCALE_CODES.has(p.toLowerCase())
+    );
+  }
+  return false;
 }
+
+// Known bilingual path segments where the slug concatenates both language
+// forms. Resolved to the correct language rather than producing a mixed label.
+const BILINGUAL_SEGMENTS = {
+  'daily-quotidien': { en: 'The Daily', fr: 'Le Quotidien' },
+};
 
 // Returns true for GC-owned domains (.gc.ca and canada.ca including subdomains).
 function isGcDomain(hostname) {
@@ -51,7 +73,7 @@ function toReadableLabel(slug) {
 
 // Derives a human-readable label from URL path segments, or returns null if
 // no readable slug is found.
-function extractSlugLabel(pathname) {
+function extractSlugLabel(pathname, lang = 'en') {
   const rawSegments = pathname
     .split('/')
     .map(s => s.replace(/\.[a-z]{2,5}$/i, '')) // strip file extension
@@ -74,10 +96,13 @@ function extractSlugLabel(pathname) {
 
   const last = filtered[filtered.length - 1];
 
+  const bilingual = BILINGUAL_SEGMENTS[last?.toLowerCase()];
+  if (bilingual) return { label: bilingual[lang] ?? bilingual.en, isBilingual: true };
+
   // Must contain at least one letter — rules out any remaining numeric-only values
   if (!/[a-zA-Z]/.test(last)) return null;
 
-  return toReadableLabel(last);
+  return { label: toReadableLabel(last), isBilingual: false };
 }
 
 // Builds a descriptive aria-label for a GC citation link.
@@ -121,8 +146,9 @@ export function buildAriaLabel(url, lang = 'en') {
     return '';
   }
 
-  // Strip www. prefix so registry lookups work for both www.canada.ca and canada.ca
-  const hostname = parsed.hostname.replace(/^www\./, '');
+  // Strip www / www<N> prefix so registry lookups work for www.canada.ca,
+  // canada.ca, www150.statcan.gc.ca, etc. all resolving to the base domain.
+  const hostname = parsed.hostname.replace(/^www\d*\./, '');
   // Spoken form for screen readers: "canada dot ca" rather than relying on each
   // reader's punctuation-handling to expand the dot correctly.
   const spokenHostname = hostname.replace(/\./g, ' dot ');
@@ -136,9 +162,17 @@ export function buildAriaLabel(url, lang = 'en') {
     pathname = parsed.pathname;
   }
 
-  // Tier 1: readable path slug — no govCa prefix, the domain already signals GC origin
-  const slugLabel = extractSlugLabel(pathname);
-  if (slugLabel) {
+  // Tier 1: readable path slug. For specific department domains (registry entry
+  // that isn't "Government of Canada"), prepend the dept name when the slug is
+  // generic (e.g. "Statistics Canada — Article — …"). Skip the prefix when the
+  // slug already names the content specifically (e.g. "The Daily — …").
+  const slugResult = extractSlugLabel(pathname, lang);
+  if (slugResult) {
+    const { label: slugLabel, isBilingual } = slugResult;
+    const deptName = DOMAIN_REGISTRY[hostname]?.[lang];
+    if (!isBilingual && deptName && deptName !== s.govCa) {
+      return `${deptName} — ${slugLabel} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
+    }
     return `${slugLabel} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
   }
 
