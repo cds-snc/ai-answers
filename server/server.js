@@ -63,6 +63,7 @@ import dbDeleteSystemLogsHandler from '../api/db/db-delete-system-logs.js';
 import dbIntegrityChecksHandler from '../api/db/db-integrity-checks.js';
 import settingHandler from '../api/setting/setting-handler.js';
 import settingPublicHandler from '../api/setting/setting-public-handler.js';
+import settingRefreshCacheHandler from '../api/setting/setting-refresh-cache.js';
 import dbPublicEvalListHandler from '../api/db/db-public-eval-list.js';
 import evalGetHandler from '../api/eval/eval-get.js';
 import evalDeleteHandler from '../api/eval/eval-delete.js';
@@ -78,6 +79,10 @@ import expertMetricsHandler from '../api/metrics/metrics-expert-feedback.js';
 import aiEvalMetricsHandler from '../api/metrics/metrics-ai-eval.js';
 import publicFeedbackMetricsHandler from '../api/metrics/metrics-public-feedback.js';
 import departmentMetricsHandler from '../api/metrics/metrics-departments.js';
+import technicalMetricsHandler from '../api/metrics/metrics-technical.js';
+import blockedMetricsHandler from '../api/metrics/metrics-blocked.js';
+import referralMetricsHandler from '../api/metrics/metrics-referrals.js';
+import citationMetricsHandler from '../api/metrics/metrics-citations.js';
 import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
@@ -87,8 +92,11 @@ import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
+import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadata.js';
+import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
+import vectorDocdb8CapabilityTestHandler from '../api/vector/vector-docdb8-capability-test.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
@@ -98,6 +106,7 @@ import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
+import systemHealthMonitor from '../services/SystemHealthMonitor.js';
 
 
 
@@ -108,16 +117,70 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 
+const normalizePath = (pathName) => pathName.replace(/\/+$/, '') || '/';
+
+const UI_ROUTE_PATTERNS = [
+  /^\/$/,
+  /^\/(?:en|fr)(?:\/.*)?$/,
+];
+
+const isUiRoutePath = (pathName) => UI_ROUTE_PATTERNS.some((pattern) => pattern.test(normalizePath(pathName)));
+
+const sendLightweightNotFound = (res) => {
+  res.status(404).end();
+};
+
+const routePathMatches = (routePath, pathName) => {
+  const normalizedPath = normalizePath(pathName);
+  if (typeof routePath === 'string') {
+    return normalizePath(routePath) === normalizedPath;
+  }
+  if (Array.isArray(routePath)) {
+    return routePath.some((pathItem) => routePathMatches(pathItem, normalizedPath));
+  }
+  return false;
+};
+
+const routeAllowsMethod = (route, method) => {
+  const normalizedMethod = method.toLowerCase();
+  if (normalizedMethod === 'options') return true;
+  if (normalizedMethod === 'head' && route.methods.get) return true;
+  return !!route.methods[normalizedMethod];
+};
+
+const isRegisteredApiRoute = (method, pathName) => {
+  const stack = app._router?.stack || [];
+  return stack.some((layer) => {
+    if (!layer.route) return false;
+    if (!routePathMatches(layer.route.path, pathName)) return false;
+    return routeAllowsMethod(layer.route, method);
+  });
+};
+
 app.use(cors({
   origin: true,
   credentials: true
 }));
 
+// Reject unknown API routes before body parsing, sessions, Passport, and API middleware.
+app.use('/api', (req, res, next) => {
+  if (!isRegisteredApiRoute(req.method, req.originalUrl.split('?')[0])) {
+    sendLightweightNotFound(res);
+    return;
+  }
+  next();
+});
 
-app.use(bodyParser.json({ limit: '100mb' }));
-app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+app.use('/api', bodyParser.json({ limit: '100mb' }));
+app.use('/api', bodyParser.urlencoded({ limit: '100mb', extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../build"), { index: false }));
+
+app.get("/config.js", (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
+});
 
 // Ensure `/api` never caches anything
 app.use('/api', (req, res, next) => {
@@ -133,6 +196,20 @@ app.use('/api', (req, res, next) => {
 app.use((req, res, next) => {
   if (req.method === 'GET' && req.path === '/health') {
     res.status(200).json({ status: 'Healthy' });
+    return;
+  }
+  next();
+});
+
+// Static files have already had a chance to resolve. Anything else outside the
+// known UI route surface should not create/touch sessions or receive the SPA.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/config.js' || req.path === '/health') {
+    next();
+    return;
+  }
+  if (!isUiRoutePath(req.path)) {
+    sendLightweightNotFound(res);
     return;
   }
   next();
@@ -167,15 +244,14 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} request to ${req.url}`);
   next();
 });
-app.get("/config.js", (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
-});
 
 app.get(/.*/, (req, res, next) => {
   if (req.url.startsWith("/api")) {
     next();
+    return;
+  }
+  if (!isUiRoutePath(req.path)) {
+    sendLightweightNotFound(res);
     return;
   }
   res.sendFile(path.join(__dirname, "../build", "index.html"));
@@ -183,8 +259,11 @@ app.get(/.*/, (req, res, next) => {
 
 
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
+app.post('/api/vector/vector-backfill-metadata', vectorBackfillMetadataHandler);
+app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
+app.get('/api/vector/vector-docdb8-capability-test', vectorDocdb8CapabilityTestHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);
@@ -245,6 +324,7 @@ app.all('/api/db/db-database-management', dbDatabaseManagementHandler);
 app.delete('/api/db/db-delete-system-logs', dbDeleteSystemLogsHandler);
 app.all('/api/db/db-integrity-checks', dbIntegrityChecksHandler);
 app.all('/api/setting/setting-handler', settingHandler);
+app.post('/api/setting/setting-refresh-cache', settingRefreshCacheHandler);
 app.get('/api/setting/setting-public-handler', settingPublicHandler);
 app.get('/api/db/db-expert-feedback-count', dbExpertFeedbackCountHandler);
 app.get('/api/db/db-eval-metrics', dbEvalMetricsHandler);
@@ -254,6 +334,10 @@ app.get('/api/metrics/metrics-expert-feedback', expertMetricsHandler);
 app.get('/api/metrics/metrics-ai-eval', aiEvalMetricsHandler);
 app.get('/api/metrics/metrics-public-feedback', publicFeedbackMetricsHandler);
 app.get('/api/metrics/metrics-departments', departmentMetricsHandler);
+app.get('/api/metrics/metrics-technical', technicalMetricsHandler);
+app.get('/api/metrics/metrics-blocked', blockedMetricsHandler);
+app.get('/api/metrics/metrics-referrals', referralMetricsHandler);
+app.get('/api/metrics/metrics-citations', citationMetricsHandler);
 app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
 app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
@@ -263,6 +347,10 @@ app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
 app.get('/api/util/util-connectivity', connectivityHandler);
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'not_found' });
+});
 
 
 const PORT = process.env.PORT || 3001;
@@ -274,6 +362,9 @@ const PORT = process.env.PORT || 3001;
 
     await SettingsService.loadAll();
     console.log("Settings service started...");
+
+    systemHealthMonitor.start();
+    console.log("System health monitor started...");
 
     // Initialize rate limiter middleware (depends on settings).
     // The middleware registered above will wait for this promise to resolve.
@@ -310,6 +401,3 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
-
-
-

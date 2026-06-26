@@ -1,5 +1,6 @@
 import dbConnect from './db-connect.js';
 import EvaluationService from '../../services/EvaluationService.js';
+import { requireString } from '../util/db-query.js';
 import {
   authMiddleware,
   partnerOrAdminMiddleware,
@@ -12,10 +13,11 @@ async function deleteExpertEvalHandler(req, res) {
   }
   try {
     await dbConnect();
-    const { chatId } = req.body;
+    let { chatId } = req.body;
     if (!chatId) {
       return res.status(400).json({ error: 'chatId is required' });
     }
+    chatId = requireString(chatId, 'chatId');
     // Use EvaluationService to delete expert feedback for a chat
     const result = await EvaluationService.deleteExpertFeedbackForChat(chatId);
     if (result.error) {

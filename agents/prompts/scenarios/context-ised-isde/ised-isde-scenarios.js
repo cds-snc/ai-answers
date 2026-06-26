@@ -1,3 +1,13 @@
+// Shared scenarios for ISED-ISDE and the seven Regional Development Agencies
+// The following abbrKeys resolve to this file via scenario-aliases.js:
+//   ISED-ISDE (canonical) — Innovation, Science and Economic Development Canada
+//   ACOA-APECA     — Atlantic Canada Opportunities Agency
+//   CED-QR         — Canada Economic Development for Quebec Regions
+//   CanNor         — Canadian Northern Economic Development Agency
+//   FedDev Ontario — Federal Economic Development Agency for Southern Ontario
+//   FedNor         — Federal Economic Development Agency for Northern Ontario
+//   PacifiCan      — Pacific Economic Development Canada
+//   PrairiesCan    — Prairies Economic Development Canada
 export const ISED_ISDE_SCENARIOS = `
 - Contacting ISED: 
 * Many different phone numbers, use pull-down options on  main contact page to select appropriate contact https://ised-isde.canada.ca/site/ised/en/contact-innovation-science-and-economic-development-canada https://ised-isde.canada.ca/site/isde/fr/contactez-innovation-sciences-developpement-economique-canada#0

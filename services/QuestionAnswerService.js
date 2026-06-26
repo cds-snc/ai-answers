@@ -32,8 +32,41 @@ function formatSentenceFeedback(ef) {
       parts.push(`S${idx}: ${bits.join('; ')}`);
     }
   }
-  if (parts.length === 0 && ef.answerImprovement) {
-    parts.push(`Improvement: ${ef.answerImprovement}`);
+  return parts.join(' | ');
+}
+
+function formatCitationFeedback(ef) {
+  if (!ef) return '';
+
+  // Citation-specific expert feedback. expertCitationUrl is the URL the expert says
+  // should have been used when the AI's original citation was wrong. Surface it
+  // explicitly so the model can prefer it over the AI's original citation.
+  const cscore = ef.citationScore;
+  const cexpl = ef.citationExplanation;
+  const correctUrl = ef.expertCitationUrl;
+  const hasCitationFeedback =
+    (cscore !== null && cscore !== undefined) ||
+    (cexpl && cexpl.trim().length) ||
+    (correctUrl && correctUrl.trim().length);
+
+  if (!hasCitationFeedback) return '';
+
+  const bits = [];
+  if (cscore !== null && cscore !== undefined) bits.push(`score=${cscore}`);
+  if (cexpl && cexpl.trim().length) bits.push(`note=${cexpl.trim()}`);
+  if (correctUrl && correctUrl.trim().length) bits.push(`correct-url=${correctUrl.trim()}`);
+  return `Citation: ${bits.join('; ')}`;
+}
+
+function formatOverallFeedback(ef) {
+  if (!ef) return '';
+
+  const parts = [];
+  if (ef.answerImprovement && ef.answerImprovement.trim().length) {
+    parts.push(`Improvement: ${ef.answerImprovement.trim()}`);
+  }
+  if (ef.feedback && ef.feedback.trim().length) {
+    parts.push(`Overall: ${ef.feedback.trim()}`);
   }
   return parts.join(' | ');
 }
@@ -75,19 +108,38 @@ class QuestionAnswerService {
   }
 
   async getSimilarQuestionsContext(question, opts = {}) {
-    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, provider = null } = opts;
+    const { k = 3, threshold = 0.8, expertFeedbackRating = null, expertFeedbackComparison = 'lt', language = null, maxAnswerChars = 400, includeQuestionFlow = true, recencyDays = 365, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
+    const interactionLanguage = opts.interactionLanguage || null;
     if (!question || typeof question !== 'string') return '';
 
     try {
       await dbConnect();
       const vectorService = await initVectorService();
-      const matches = await vectorService.matchQuestions([question], { provider, k, threshold, expertFeedbackRating, expertFeedbackComparison, language });
+      // The legacy post-filter path over-fetches because metadata filters happen
+      // after vector search. The DocDB 8 denormalized path applies those filters
+      // before ANN, so it can ask for the actual number of examples needed.
+      const vectorK = useDenormalizedPreFilter ? k : Math.min(k * 3, 15);
+      const vectorResponse = await vectorService.matchQuestions([question], {
+        provider: 'azure',
+        modelName: 'text-embedding-3-large',
+        k: vectorK,
+        threshold,
+        expertFeedbackRating,
+        expertFeedbackComparison,
+        language,
+        interactionLanguage,
+        recencyDays,
+        useDenormalizedPreFilter,
+        returnDebugData,
+      });
+      const matches = returnDebugData ? vectorResponse?.results : vectorResponse;
+      const debugCandidates = returnDebugData ? (Array.isArray(vectorResponse?.debug?.[0]) ? vectorResponse.debug[0] : []) : [];
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
       const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);
-      if (!filtered.length) return '';
 
-      const interactionIds = [...new Set(filtered.map((h) => h.interactionId))];
+      const debugInteractionIds = returnDebugData ? [...new Set(debugCandidates.map((h) => h.interactionId).filter(Boolean))] : [];
+      const interactionIds = [...new Set([...filtered.map((h) => h.interactionId), ...debugInteractionIds])];
       const interactions = await Interaction.find({ _id: { $in: interactionIds } })
         .select('question answer expertFeedback')
         .populate({ path: 'question', model: Question })
@@ -96,18 +148,52 @@ class QuestionAnswerService {
         .lean();
 
       const interById = new Map(interactions.map((i) => [i._id.toString(), i]));
+      const chatDocs = returnDebugData
+        ? await Chat.find({ interactions: { $in: interactionIds } }).select('chatId interactions').lean()
+        : [];
+      const chatIdByInteractionId = new Map();
+      for (const chat of chatDocs) {
+        for (const iid of chat.interactions || []) {
+          chatIdByInteractionId.set(iid.toString(), chat.chatId || null);
+        }
+      }
+
+      const cutoff = typeof recencyDays === 'number' && recencyDays > 0
+        ? Date.now() - (recencyDays * 24 * 60 * 60 * 1000)
+        : null;
 
       const lines = [];
-      for (const hit of filtered.slice(0, k)) {
+      const matchedDebugRecords = [];
+      for (const hit of filtered) {
+        if (lines.length >= k) break;
         const inter = interById.get(hit.interactionId.toString());
         if (!inter || !inter.answer || !inter.expertFeedback) continue;
 
+        if (cutoff !== null) {
+          const ef = inter.expertFeedback;
+          const neverStale = ef.neverStale === true || String(ef.neverStale) === 'true';
+          // Treat missing OR unparseable createdAt the same way: unknown age → drop
+          // (unless flagged neverStale). Without this, `new Date('garbage').getTime()`
+          // would return NaN and silently pass the recency check.
+          const efCreated = ef.createdAt ? new Date(ef.createdAt).getTime() : NaN;
+          const isFresh = Number.isFinite(efCreated) && efCreated >= cutoff;
+          if (!neverStale && !isFresh) continue;
+        }
+
         const questionText = inter.question?.redactedQuestion || inter.question?.englishQuestion || '';
         const answerText = inter.answer.content || inter.answer.englishAnswer || '';
-        const feedbackText = formatSentenceFeedback(inter.expertFeedback);
+        const sentenceFeedbackText = formatSentenceFeedback(inter.expertFeedback);
+        const citationFeedbackText = formatCitationFeedback(inter.expertFeedback);
+        const overallFeedbackText = formatOverallFeedback(inter.expertFeedback);
+        const feedbackText = [sentenceFeedbackText, citationFeedbackText, overallFeedbackText].filter(Boolean).join(' | ');
         const totalScore = typeof inter.expertFeedback.totalScore === 'number' ? inter.expertFeedback.totalScore : null;
         const citationText = formatCitation(inter.answer.citation);
         const flowText = includeQuestionFlow ? await this.buildQuestionFlow(inter._id) : '';
+        const efCreatedAt = inter.expertFeedback.createdAt ? new Date(inter.expertFeedback.createdAt) : null;
+        const dateStr = efCreatedAt && Number.isFinite(efCreatedAt.getTime())
+          ? efCreatedAt.toISOString().slice(0, 10)
+          : null;
+        const chatId = chatIdByInteractionId.get(hit.interactionId.toString()) || null;
 
         if (!questionText || !answerText) continue;
 
@@ -116,13 +202,52 @@ class QuestionAnswerService {
         if (flowText) blockParts.push(`Flow: ${flowText}`);
         blockParts.push(`A: ${truncate(answerText, maxAnswerChars)}`);
         if (totalScore !== null) blockParts.push(`Score: ${totalScore}/100 (expert feedback)`);
+        if (dateStr) blockParts.push(`Date: ${dateStr}`);
         if (feedbackText) blockParts.push(`Feedback: ${feedbackText}`);
         if (citationText) blockParts.push(`Citation: ${citationText}`);
 
         lines.push(blockParts.join('\n'));
+        if (returnDebugData) {
+          matchedDebugRecords.push({
+            interactionId: hit.interactionId?.toString?.() || hit.interactionId || null,
+            chatId,
+            similarity: hit.similarity ?? null,
+            cosineSimilarity: hit.similarity ?? null,
+            questionText,
+            answerText,
+            thresholdPassed: true,
+          });
+        }
       }
 
-      return lines.length ? lines.join('\n\n') : '';
+      if (!returnDebugData) {
+        if (!filtered.length) return '';
+        return lines.length ? lines.join('\n\n') : '';
+      }
+
+      const preThresholdRecords = debugCandidates.map((hit) => {
+        const inter = interById.get(hit.interactionId?.toString?.() || hit.interactionId);
+        const chatId = chatIdByInteractionId.get(hit.interactionId?.toString?.() || hit.interactionId) || null;
+        const questionText = inter?.question?.redactedQuestion || inter?.question?.englishQuestion || '';
+        const answerText = inter?.answer?.content || inter?.answer?.englishAnswer || '';
+        return {
+          interactionId: hit.interactionId?.toString?.() || hit.interactionId || null,
+          chatId,
+          similarity: hit.similarity ?? null,
+          cosineSimilarity: hit.similarity ?? null,
+          questionText,
+          answerText,
+          thresholdPassed: typeof hit.similarity === 'number' ? hit.similarity >= threshold : false,
+        };
+      });
+
+      return {
+        text: lines.length ? lines.join('\n\n') : '',
+        debug: {
+          preThresholdRecords,
+          matchedRecords: matchedDebugRecords,
+        },
+      };
     } catch (err) {
       ServerLoggingService.error('QuestionAnswerService.getSimilarQuestionsContext error', '', err);
       return '';

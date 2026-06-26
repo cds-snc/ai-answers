@@ -4,6 +4,7 @@ import { Eval } from '../models/eval.js';
 import { ExpertFeedback } from '../models/expertFeedback.js';
 import { Embedding } from '../models/embedding.js';
 import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
+import { requireObjectIdString } from '../api/util/db-query.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createSentenceCompareAgent, createFallbackCompareAgent } from '../agents/AgentFactory.js';
@@ -1168,7 +1169,7 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai-gpt
     }
     try {
         recordStage(EvaluationStages.FETCH_INTERACTION, 'started', 'fetch_interaction', 'Fetching interaction document', { interactionId });
-        const interaction = await Interaction.findById(interactionId)
+        const interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId'))
             .populate('question')
             .populate({
                 path: 'answer',

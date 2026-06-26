@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../EmbeddingService.js', () => ({
   default: {
     formatQuestionsForEmbedding: (qs) => qs,
+    buildQuestionsEmbeddingText: (qs) => Array.isArray(qs) ? qs.join('\n') : '',
     createEmbeddingClient: () => ({
       embedDocuments: async (arr) => arr.map(() => [0.1, 0.2, 0.3]),
     }),
@@ -41,7 +42,7 @@ describe('IMVectorService', () => {
     expect(out[0].similarity).toBeGreaterThanOrEqual(out[1].similarity);
   });
 
-  it('matchQuestions() promotes the first expert-feedback-backed result to the front', async () => {
+  it('matchQuestions() returns results in similarity order without promoting expert-feedback hits', async () => {
     // Make questionsDB present so matchQuestions will choose it
     svc.questionsDB = {
       size: () => 1,
@@ -52,7 +53,7 @@ describe('IMVectorService', () => {
       ],
     };
 
-    // Mark 'q' as having expert feedback
+    // 'q' has expert feedback but is NOT the most similar — it must not be hoisted.
     svc.qaMeta.set('p', { interactionId: 'i10', expertFeedbackId: null });
     svc.qaMeta.set('q', { interactionId: 'i11', expertFeedbackId: 'ef-1', expertFeedbackScore: 100 });
     svc.qaMeta.set('r', { interactionId: 'i12', expertFeedbackId: null });
@@ -61,10 +62,43 @@ describe('IMVectorService', () => {
     expect(Array.isArray(resultsPerQuestion)).toBe(true);
     expect(resultsPerQuestion.length).toBe(1);
     const mapped = resultsPerQuestion[0];
-    // The first item should be the expert-feedback-backed id 'q'
-    expect(mapped[0].id).toBe('q');
-    // The rest should be present and length <= k
-    expect(mapped.length).toBeGreaterThanOrEqual(1);
-    expect(mapped.length).toBeLessThanOrEqual(3);
+    // Order is by similarity desc: p (0.95), q (0.9), r (0.85) — no promotion of 'q'.
+    expect(mapped.map(m => m.id)).toEqual(['p', 'q', 'r']);
+  });
+
+  it('matchQuestions() drops candidates below the similarity threshold', async () => {
+    svc.questionsDB = {
+      size: () => 1,
+      query: async (emb, k) => [
+        { document: { id: 'p' }, similarity: 0.95 },
+        { document: { id: 'q' }, similarity: 0.9 },
+        { document: { id: 'r' }, similarity: 0.85 },
+      ],
+    };
+    svc.qaMeta.set('p', { interactionId: 'i10', expertFeedbackId: null });
+    svc.qaMeta.set('q', { interactionId: 'i11', expertFeedbackId: null });
+    svc.qaMeta.set('r', { interactionId: 'i12', expertFeedbackId: null });
+
+    const resultsPerQuestion = await svc.matchQuestions(['why is x'], { provider: 'openai', k: 3, threshold: 0.88 });
+    const mapped = resultsPerQuestion[0];
+    // Only p (0.95) and q (0.9) clear the 0.88 floor; r (0.85) is dropped.
+    expect(mapped.map(m => m.id)).toEqual(['p', 'q']);
+  });
+
+  it('matchQuestions() applies no similarity floor when threshold is null', async () => {
+    svc.questionsDB = {
+      size: () => 1,
+      query: async (emb, k) => [
+        { document: { id: 'p' }, similarity: 0.95 },
+        { document: { id: 'q' }, similarity: 0.2 },
+      ],
+    };
+    svc.qaMeta.set('p', { interactionId: 'i10', expertFeedbackId: null });
+    svc.qaMeta.set('q', { interactionId: 'i11', expertFeedbackId: null });
+
+    const resultsPerQuestion = await svc.matchQuestions(['why is x'], { provider: 'openai', k: 3, threshold: null });
+    const mapped = resultsPerQuestion[0];
+    // threshold null = short-circuit caller behaviour: keep everything.
+    expect(mapped.map(m => m.id)).toEqual(['p', 'q']);
   });
 });

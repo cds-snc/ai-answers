@@ -7,6 +7,17 @@
   outline: none;
 }
 
+/* Custom non-responsive font sizes */
+.font-size-text-xsm-nr {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.5em;
+}
+
+.font-size-text-xxs-nr {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.2em;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -255,6 +266,7 @@ gcds-container:first-of-type {
   width: 1em;
   height: 4em;
   animation-delay: -0.16s;
+  transform-origin: center;
 }
 .loading-animation:before,
 .loading-animation:after {
@@ -266,6 +278,7 @@ gcds-container:first-of-type {
   width: 1em;
   height: 4em;
   animation: escaleY 1s infinite ease-in-out;
+  transform-origin: center;
 }
 .loading-animation:before {
   left: -2em;
@@ -276,12 +289,10 @@ gcds-container:first-of-type {
   0%,
   80%,
   100% {
-    box-shadow: 0 0;
-    height: 4em;
+    transform: scaleY(1);
   }
   40% {
-    box-shadow: 0 -2em;
-    height: 5em;
+    transform: scaleY(1.25) translateY(-1em);
   }
 }
 
@@ -299,6 +310,8 @@ details[open] {
 }
 
 details summary {
+  display: flex !important;
+  align-items: center;
   border: 1px solid #ddd;
   border-radius: 4px;
   color: #295376;
@@ -313,20 +326,26 @@ details > summary {
 
 /* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
 summary {
-  display: list-item !important;
-  list-style-type: none;
-  list-style-type: disclosure-closed;
+  display: block !important;
+  list-style: none;
   visibility: visible !important;
-}
-
-summary {
   cursor: pointer;
 }
 
-details > summary:first-of-type {
-  display: list-item;
-  counter-increment: list-item 0;
-  list-style: inside disclosure-closed;
+summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::before {
+  content: '►';
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 0.75em;
+  line-height: 1;
+}
+
+details[open] > summary::before {
+  content: '▼';
 }
 
 /* buttons */
@@ -1030,4 +1049,9 @@ fieldset.gc-chckbxrdio {
     outline: 10px solid #444;
     outline-offset: -20px;
   }
+}
+
+/* Suppress Edge's native password reveal button only where the custom toggle is present */
+.auth-password-wrapper input::-ms-reveal {
+  display: none;
 }

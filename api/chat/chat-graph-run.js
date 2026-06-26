@@ -5,8 +5,15 @@ import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES } from '../../src/config/workflows.js';
+import BlockedQueryService from '../../services/BlockedQueryService.js';
 
 const REQUIRED_METHOD = 'POST';
+const DEFAULT_CHAT_TRANSPORT = 'sse';
+const NDJSON_CHAT_TRANSPORT = 'ndjson';
+
+function normalizeChatTransport(value) {
+  return value === NDJSON_CHAT_TRANSPORT ? NDJSON_CHAT_TRANSPORT : DEFAULT_CHAT_TRANSPORT;
+}
 
 function writeEvent(res, event, data) {
   try {
@@ -16,6 +23,51 @@ function writeEvent(res, event, data) {
     // Client may have disconnected after receiving the result; ignore write
     // failures so the graph can finish running (notably persistNode).
   }
+}
+
+export function setStreamingHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+
+  // Make sure Node pushes small SSE frames immediately.
+  res.socket?.setNoDelay?.(true);
+  res.flushHeaders?.();
+}
+
+export function setNdjsonHeaders(res) {
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+
+  res.socket?.setNoDelay?.(true);
+  res.flushHeaders?.();
+}
+
+function createGraphEventWriter(res, transport) {
+  if (transport === NDJSON_CHAT_TRANSPORT) {
+    setNdjsonHeaders(res);
+    return (event, data) => {
+      try {
+        res.write(`${JSON.stringify({ event, data })}\n`);
+      } catch (_e) {
+        // Client may have disconnected after receiving the result.
+      }
+    };
+  }
+
+  setStreamingHeaders(res);
+  return (event, data) => writeEvent(res, event, data);
 }
 
 function buildGraphErrorPayload(error) {
@@ -142,18 +194,30 @@ async function handler(req, res) {
   const appToRun = graphApp || await getGraphApp('DefaultWithVectorGraph');
 
   const forwardedHeaders = buildForwardedHeaders(req.headers || {});
+  let eventSequence = 0;
+  const transport = normalizeChatTransport(SettingsService.get('chat.transport'));
+  const writeGraphEvent = createGraphEventWriter(res, transport);
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
+  if (transport === NDJSON_CHAT_TRANSPORT) {
+    writeGraphEvent('connected', { graph: graphName, serverSentAt: Date.now() });
+  } else {
+    res.write(': connected\n\n');
+  }
 
-  res.write(': connected\n\n');
-
-  // Send periodic SSE comments to prevent proxies (e.g. Akamai) from dropping
-  // idle connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
+  // Send periodic status events to prevent proxies (e.g. Akamai) from dropping
+  // idle stream connections during long LLM calls (GPT-5.1 reasoning can take 60-120s).
   let keepAliveTimer = setInterval(() => {
-    try { res.write(': ping\n\n'); } catch (_e) { clearInterval(keepAliveTimer); }
+    try {
+      writeGraphEvent('status', {
+        status: 'keepalive',
+        graph: graphName,
+        heartbeat: true,
+        serverSentAt: Date.now(),
+        sequence: ++eventSequence,
+      });
+    } catch (_e) {
+      clearInterval(keepAliveTimer);
+    }
   }, 15000);
 
   let resultSent = false;
@@ -162,14 +226,19 @@ async function handler(req, res) {
   const handlers = {
     onStatus: (status) => {
       if (status) {
-        writeEvent(res, 'status', { status, graph: graphName });
+        writeGraphEvent('status', {
+          status,
+          graph: graphName,
+          serverSentAt: Date.now(),
+          sequence: ++eventSequence,
+        });
       }
     },
     onResult: (result) => {
       if (!resultSent && result && result.answer && result.answer.answerType) {
         resultSent = true;
         // Include server-generated chatId so client can store it
-        writeEvent(res, 'result', { ...result, chatId: req.chatId });
+        writeGraphEvent('result', { ...result, chatId: req.chatId });
       }
     },
   };
@@ -180,7 +249,7 @@ async function handler(req, res) {
     if (req.user) {
       store.graphEventWriter = (eventName, data) => {
         try {
-          writeEvent(res, eventName, data);
+          writeGraphEvent(eventName, data);
         } catch (_err) {
           // ignore writer errors
         }
@@ -200,6 +269,25 @@ async function handler(req, res) {
     });
   } catch (err) {
     streamError = err;
+
+    // Text-free safety counter: a blocked query never reaches persistence, so
+    // this is the only record of it. err.blockType is set at the guardrail throw
+    // sites (agents/graphs/guardrails/*). Fire-and-forget — record()
+    // never throws, and we don't await so the error response isn't delayed.
+    // WARNING: this relies on a long-running server (Express) where the write
+    // finishes on the event loop after res.end(). If this handler is ever moved
+    // to a serverless runtime (Vercel/Lambda), the function may freeze or be
+    // killed right after the response, dropping the un-awaited write — await it
+    // (or flush before responding) in that environment.
+    if (err?.blockType) {
+      BlockedQueryService.record({
+        blockType: err.blockType,
+        lang: input.lang,
+        user: req.user,
+        referringUrl: input.referringUrl,
+      });
+    }
+
     if (!resultSent) {
       try {
         // If the graph error did not include a server-signed historySignature,
@@ -215,17 +303,17 @@ async function handler(req, res) {
             // ignore signature generation failures
           }
         }
-        writeEvent(res, 'error', buildGraphErrorPayload(err));
+        writeGraphEvent('error', buildGraphErrorPayload(err));
       } catch (_e) {
         // fallback to minimal message if serialization fails
-        writeEvent(res, 'error', { message: err?.message || 'Graph execution failed' });
+        writeGraphEvent('error', { message: err?.message || 'Graph execution failed' });
       }
       resultSent = true;
     }
   } finally {
     clearInterval(keepAliveTimer);
     if (!resultSent && !streamError) {
-      writeEvent(res, 'error', { message: 'Graph completed without result payload' });
+      writeGraphEvent('error', { message: 'Graph completed without result payload' });
     }
     res.end();
   }

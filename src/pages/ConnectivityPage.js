@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsContainer, GcdsButton, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
+import DataStoreService from '../services/DataStoreService.js';
 
 const StatusBadge = ({ status }) => {
     const colors = {
@@ -79,11 +80,54 @@ const ServiceCard = ({ service, t }) => {
     );
 };
 
+const SIMULATION_SETTINGS = [
+    { key: 'connectivity.simulation.database', service: 'database' },
+    { key: 'connectivity.simulation.search', service: 'search' },
+    { key: 'connectivity.simulation.llm', service: 'llm' },
+];
+
 const ConnectivityPage = ({ lang = 'en' }) => {
     const { t } = useTranslations(lang);
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [simulatedFailures, setSimulatedFailures] = useState({
+        database: false,
+        search: false,
+        llm: false,
+    });
+    const [savingSimulation, setSavingSimulation] = useState({});
+
+    React.useEffect(() => {
+        let active = true;
+        async function loadSimulationSettings() {
+            const entries = await Promise.all(SIMULATION_SETTINGS.map(async ({ key, service }) => ([
+                service,
+                String(await DataStoreService.getSetting(key, 'false')) === 'true',
+            ])));
+            if (!active) return;
+            setSimulatedFailures(Object.fromEntries(entries));
+        }
+        loadSimulationSettings();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    const toggleSimulation = useCallback(async (service) => {
+        const setting = SIMULATION_SETTINGS.find((entry) => entry.service === service);
+        if (!setting) return;
+
+        const nextValue = !simulatedFailures[service];
+        setSavingSimulation((current) => ({ ...current, [service]: true }));
+        try {
+            await DataStoreService.setSetting(setting.key, String(nextValue));
+            const saved = await DataStoreService.getSetting(setting.key, 'false');
+            setSimulatedFailures((current) => ({ ...current, [service]: String(saved) === 'true' }));
+        } finally {
+            setSavingSimulation((current) => ({ ...current, [service]: false }));
+        }
+    }, [simulatedFailures]);
 
     const runTests = useCallback(async () => {
         setLoading(true);
@@ -111,10 +155,16 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     }, []);
 
     return (
-        <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+        <GcdsContainer layout="page" tag="main" className="mb-600">
             <h1 className="mb-400">
                 {t('connectivity.title', 'Service Connectivity Dashboard')}
             </h1>
+
+            <nav className="mb-400">
+                <a href={`/${lang}/admin`}>
+                    {t('common.backToAdmin')}
+                </a>
+            </nav>
 
             <GcdsText className="mb-400">
                 {t('connectivity.description',
@@ -131,6 +181,28 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                         : t('connectivity.runTests', 'Run Connectivity Tests')}
                 </GcdsButton>
             </div>
+
+            <section className="mb-400">
+                <h2 className="mb-300">{t('connectivity.simulation.title')}</h2>
+                <GcdsText className="mb-300">{t('connectivity.simulation.description')}</GcdsText>
+
+                {SIMULATION_SETTINGS.map(({ service }) => (
+                    <div key={service} className="mb-200">
+                        <span className="mr-200">{t(`connectivity.simulation.labels.${service}`)}</span>
+                        <GcdsButton
+                            onClick={() => toggleSimulation(service)}
+                            disabled={Boolean(savingSimulation[service])}
+                            aria-label={`${t(`connectivity.simulation.labels.${service}`)} ${simulatedFailures[service]
+                                ? t('connectivity.simulation.disable')
+                                : t('connectivity.simulation.enable')}`}
+                        >
+                            {simulatedFailures[service]
+                                ? t('connectivity.simulation.disable')
+                                : t('connectivity.simulation.enable')}
+                        </GcdsButton>
+                    </div>
+                ))}
+            </section>
 
             {error && (
                 <div style={{

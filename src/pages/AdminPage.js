@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
-import { GcdsContainer, GcdsLink, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsLink, GcdsButton } from '@gcds-core/components-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
 import DeleteChatSection from '../components/admin/DeleteChatSection.js';
@@ -33,7 +33,7 @@ const AdminPage = ({ lang = 'en' }) => {
   const isPartner = currentUser?.role === 'partner';
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">
         {isPartner
           ? t('admin.partnerTitle', 'AI Answers Partner Dashboard')
@@ -54,7 +54,7 @@ const AdminPage = ({ lang = 'en' }) => {
           </h2>
           <ul className="list-none p-0">
             <li>
-              <GcdsLink href={`/${lang}`}>
+              <GcdsLink href={`/${lang}`} target="_blank" rel="noopener noreferrer">
                 {t('admin.navigation.aiAnswers', 'AI Answers')}
               </GcdsLink>
             </li>
@@ -74,6 +74,16 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
+              <GcdsLink href={getPath('partner-dashboard', lang)}>
+                {t('admin.navigation.partnerDashboard')}
+              </GcdsLink>
+            </li>
+            <li>
+              <GcdsLink href={getPath('technical-metrics', lang)}>
+                {t('admin.navigation.technicalMetrics')}
+              </GcdsLink>
+            </li>
+            <li>
               <GcdsLink href={getPath('scenario-overrides', lang)}>
                 {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
               </GcdsLink>
@@ -86,6 +96,11 @@ const AdminPage = ({ lang = 'en' }) => {
             <li>
               <GcdsLink href={getPath('batch', lang)}>
                 {t('admin.navigation.batches', 'View and manage batches')}
+              </GcdsLink>
+            </li>
+            <li>
+              <GcdsLink href={getPath('exec-dashboard', lang)}>
+                {t('admin.navigation.execDashboard')}
               </GcdsLink>
             </li>
           </ul>

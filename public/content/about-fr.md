@@ -8,31 +8,32 @@ ogImage: "og-about-fr.png"
 
 ## Aperçu
 
-Canada.ca Réponses IA est un agent de discussion IA spécialisé conçu pour aider les utilisateurs des sites Web du gouvernement du Canada. Chaque jour, des milliers de personnes nous disent via l'outil de rétroaction sur la page qu'elles ne trouvent pas les réponses dont elles ont besoin sur Canada.ca. Ce service d'IA personnalisé peut fournir de brèves réponses aux questions des utilisateurs provenant de l'ensemble de l'écosystème en ligne des services, programmes et sites Web du gouvernement fédéral.
+Canada.ca Réponses IA est une plateforme de discussion IA spécialisée conçue pour aider les utilisateurs des sites Web du gouvernement du Canada. Ce service d'IA personnalisé peut fournir de brèves réponses aux questions des utilisateurs provenant de l'ensemble de l'écosystème en ligne des services, programmes et sites Web du gouvernement fédéral.
 
-Le service Réponses IA a débuté comme une expérience à la fin de 2024 par le Bureau de l'expérience Canada.ca. Par la suite, lors d'essais sur invitation sur des pages sélectionnées de Canada.ca pendant l'été et l'automne 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à plus de 4 600 questions. Le taux de précision de 94,5 % a été évalué par des experts du gouvernement.  
+Le service Réponses IA a débuté comme une expérience à la fin de 2024 par le Bureau de l'expérience Canada.ca et le Service numérique canadien. Par la suite, lors d'essais sur des pages sélectionnées de Canada.ca en 2025, le service a puisé dans le contenu de plus de 60 institutions fédérales pour répondre à des milliers de questions.  
 
-Les essais bêta en collaboration avec les organisations partenaires ont commencé en novembre 2025 et se poursuivent vers un déploiement élargi en 2026.
-
-Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation humaine, les métriques, la gestion des utilisateurs et les paramètres. Le système d'évaluation innovant tire parti des évaluations d'experts en la matière (EM) des questions et réponses. Les évaluations sont utilisées pour améliorer la qualité des réponses et pour produire des évaluations IA automatisées de questions similaires.
+Canada.ca Réponses IA est construite avec la convivialité, la vie privée et la précision comme principes fondamentaux. Une interface d'administration complète prend en charge l'évaluation humaine des réponses par des experts en la matière des institutions partenaires. Les évaluations sont utilisées pour améliorer la qualité des réponses et pour produire des évaluations IA automatisées de questions similaires.
 
 ## Accessibilité et convivialité
 
 Les utilisateurs sont submergés par les longues pages contenant plusieurs instructions et ont de la difficulté à choisir entre les liens. Beaucoup visitent les sites Web gouvernementaux depuis des téléphones mobiles. Réponses IA produit un maximum de quatre phrases par réponse, soigneusement conçues pour être aussi claires que possible. Un seul lien de citation est fourni pour vous permettre de passer à l'étape suivante et de vérifier la réponse, réduisant la surcharge de choix. Des réponses plus courtes avec une seule citation augmentent également la précision.
 
-Ces choix de conception sont basés sur des données provenant de plus de 50 tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.
+Ces choix de conception sont basés sur des données provenant de tests d'utilisabilité menés en anglais et en français pendant le processus de conception de Réponses IA, y compris des tests avec des personnes aveugles utilisant une gamme de lecteurs d'écran.
 
 Le service respecte les normes WCAG 2.1 AA pour l'accessibilité du contenu Web.
 
 ## Confidentialité et conditions d'utilisation de l'IA
 
 ### Stockage
-Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.
+Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Ces questions et d'autres questions bloquées (par exemple, les questions contenant des grossièretés ou rédigées dans une langue ou un code non reconnu) ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.
 
 ### Avertissement
 Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.
 
 Nous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.
+
+### Prestation de services dans les langues officielles du Canada
+La [Loi sur les langues officielles](https://laws-lois.justice.gc.ca/fra/lois/O-3.01/), le [Règlement sur les langues officielles – communications avec le public et prestation des services](https://laws-lois.justice.gc.ca/fra/reglements/DORS-92-48/index.html) et les exigences des politiques du Conseil du Trésor prévoient les circonstances où nous employons le français et l'anglais dans la prestation des services au public. Choisissez le bouton de langue anglaise ou française en haut de la page pour utiliser la version d'AI Answers dans la langue officielle correspondante. Les questions posées et répondues dans une langue autre que l'anglais ou le français sont offertes à titre gracieux aux visiteurs de notre site Web.
 
 ### Conditions
 Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.
@@ -40,7 +41,7 @@ Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gou
 Votre utilisation de ce système et de toute information générée est également soumise aux [Conditions d'utilisation de Canada.ca](https://www.canada.ca/fr/transparence/avis.html).
 
 ## Billets de blogue sur Réponses IA
-- [Réponses IA&nbsp;: Mise à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
+- [Réponses IA&nbsp;: Mises à l'essai à l'échelle de l'organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 - [Résultats de l'étude sur la confiance envers l'IA sur Canada.ca](https://blogue.canada.ca/2025/02/18/confiance-ia.html)
 
 ## Documentation de la fiche système

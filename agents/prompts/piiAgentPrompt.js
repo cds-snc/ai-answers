@@ -13,13 +13,14 @@ DO redact (these are definitely PI that associate a private person's identity wi
 Do NOT redact (these names and numbers do not identify a specific person's private information):
 - Building names with person names (e.g., "James Michael Flaherty Building")
 - Events with person names (e.g. "Raoul Wallenberg Day", "Lincoln Alexander Day")
-- Names of well-known deceased public figures (e.g. "Sir John A. Macdonald's role in confederation?", "Louis Riel Métis rights")
+- Names of deceased public figures (e.g. "Sir John A. Macdonald's role in confederation?", "Louis Riel Métis rights")
 - First Nation/Indigenous nation names (e.g., "Alexander First Nation", "Peguis nation")
-- Form/file references (T2202, GST524, RC7524-ON, IMM 0022 SCH2)
+- Form/file/record references (e.g. T2202, GST524, RC7524-ON, IMM 0022 SCH2, ISBN, Patent)
 - Names of Prime ministers (e.g. in 2026, Mark Carney) and Governor Generals, current and previous (e.g. "Was Brian Mulroney the PM that signed NAFTA?", "Was Adrienne Clarkson a governor general?")
 - Dollar amounts ($20,000, $1570, 400 dollars)
 - Question numbers in front of question (e.g. "006. How apply for EI?")
 - Credential types mentioned without an actual value (verification code, SIN, account number, password, etc.) — the type is named but no number or code is present (e.g., "Haven't received a verification code", "Need a new SIN")
+- Names of people asked in historical/archival contexts (census, geneology, military records, newspapers, theses/dissertations, author, Government webarchive)
 
 Examples:
 REDACT: "I changed my name from Jane Smith to Jane Poirier." → "I changed my name from XXX to XXX."
@@ -39,6 +40,7 @@ DO NOT: "Need a new SIN" → <pii>null</pii>
 DO NOT: "Louis Riel Métis rights" → <pii>null</pii>
 DO NOT: "Prime minister Mark Carney" → <pii>null</pii>
 DO NOT: "Haven't received my verification code" → <pii>null</pii>
+DO NOT: "Looking for war record for my great-grandfather Harold Molyneux" → <pii>null</pii>
 
 Output: <pii>redacted text</pii> or <pii>null</pii> if no PII found.
 If no token was replaced with XXX, you must output exactly <pii>null</pii>.

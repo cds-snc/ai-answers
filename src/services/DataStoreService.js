@@ -42,8 +42,24 @@ class DataStoreService {
       throw error;
     }
   }
+
+  static async refreshSettingsCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-refresh-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to refresh settings cache');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error refreshing settings cache:', error);
+      throw error;
+    }
+  }
   static async checkDatabaseConnection() {
-    if (process.env.REACT_APP_ENV !== 'production') {
+    if (!import.meta.env.PROD) {
       console.log('Skipping database connection check in development environment');
       return true;
     }
@@ -233,5 +249,3 @@ class DataStoreService {
 }
 
 export default DataStoreService;
-
-

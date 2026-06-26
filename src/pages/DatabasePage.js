@@ -1,11 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { formatNumber } from '../utils/numberFormat.js';
+import {
+  ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
+  EXPERT_EVAL_CHATS_EXPORT,
+  getDatabaseExportCollections,
+  getDatabaseExportFilenameTag
+} from '../utils/database/exportCollections.js';
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
@@ -71,24 +78,13 @@ const DatabasePage = ({ lang }) => {
       setMessage('');
 
       // Use selectedCollection for export
-      let collectionsToExport = collections;
-      if (selectedCollection && selectedCollection !== 'All' && selectedCollection !== 'AllButLogs') {
-        collectionsToExport = [selectedCollection];
-      } else if (selectedCollection === 'AllButLogs') {
-        // filter out collections whose names end with 'log' or 'logs'
-        collectionsToExport = (collections || []).filter(col => {
-          const n = String(col || '').toLowerCase();
-          return !(n.endsWith('log') || n.endsWith('logs'));
-        });
-      }
+      const collectionsToExport = getDatabaseExportCollections(selectedCollection, collections);
       if (!collectionsToExport || !Array.isArray(collectionsToExport) || collectionsToExport.length === 0) {
         throw new Error('No collections found');
       }
 
       // Step 2: Stream each collection as it is fetched (JSONL format)
-      const collectionTag = selectedCollection === 'AllButLogs'
-        ? 'all-but-logs-'
-        : (selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : '');
+      const collectionTag = getDatabaseExportFilenameTag(selectedCollection);
       const filename = `database-backup-${collectionTag}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
@@ -112,6 +108,7 @@ const DatabasePage = ({ lang }) => {
               if (lastId) url += `&lastId=${encodeURIComponent(lastId)}`;
               if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
               if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+              if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) url += '&exportScope=expertEvalChats';
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
               const timeout = setTimeout(() => controller.abort(), 300000); // 5 minutes
@@ -468,7 +465,7 @@ const DatabasePage = ({ lang }) => {
 
 
   return (
-    <GcdsContainer size="xl" centered>
+    <GcdsContainer layout="page">
       <GcdsHeading tag="h1">{t('admin.database.title')}</GcdsHeading>
       <nav className="mb-400">
         <GcdsLink href={`/${lang}/admin`}>
@@ -491,7 +488,7 @@ const DatabasePage = ({ lang }) => {
               {Object.entries(tableCounts).map(([table, count]) => (
                 <tr key={table}>
                   <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</td>
-                  <td style={{ textAlign: 'right' }}>{count}</td>
+                  <td style={{ textAlign: 'right' }}>{formatNumber(count, lang)}</td>
                 </tr>
               ))}
             </tbody>
@@ -511,6 +508,8 @@ const DatabasePage = ({ lang }) => {
           >
             <option value="All">{t('admin.database.collections.all')}</option>
             <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
+            <option value={ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT}>{t('admin.database.collections.allButLogsAndEmbeddings')}</option>
+            <option value={EXPERT_EVAL_CHATS_EXPORT}>{t('admin.database.collections.expertEvalChats')}</option>
             {collections.map((col) => (
               <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
             ))}

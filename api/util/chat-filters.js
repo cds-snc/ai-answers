@@ -249,16 +249,44 @@ const EXCLUDED_CANADA_CA_SUBDOMAINS = [
   'digital', 'numerique',
   'design', 'conception',
   // Pre-production / internal
-  'alpha',                    // includes ai-answers.alpha.canada.ca
+  'alpha',
   'staging',
   'test',
 ];
 
-// Build exclusion regex from the list (exact subdomain match only)
-// Anchored to ://, . or ^ to handle URLs with or without protocol prefix
+// Host labels of the AI Answers app itself. Self-referrals (a user switching
+// language within the app, or navigating between answers) are not a public GC
+// page and must never count as "Public Referred". Matched by the app's own host
+// label rather than the environment subdomain, so the exclusion survives the
+// eventual alpha retirement and any domain move (ai-answers.alpha.canada.ca
+// today → ai-answers.canada.ca later). The EN and FR apps run on separate hosts.
+export const SELF_REFERRAL_LABELS = [
+  'ai-answers',   // English
+  'reponses-ia',  // French
+];
+
+// Build the exclusion regex. Two cases share a leading host boundary (://, ., or
+// start-of-string): a CDS/internal subdomain immediately before .canada.ca
+// (exact subdomain match only), OR the AI Answers app's own host label in any
+// environment (the label must be a full host segment — followed by ., :, /, or
+// end — so paths like /en/ai-answers on a real public page are not excluded).
 const _excluded = EXCLUDED_CANADA_CA_SUBDOMAINS.map(s => escapeRegex(s)).join('|');
+const _selfLabels = SELF_REFERRAL_LABELS.map(s => escapeRegex(s)).join('|');
 const REFERRED_PUBLIC_EXCLUSION_REGEX =
-  `(://|\\.|^)(${_excluded})\\.canada\\.ca(/|$)`;
+  `(://|\\.|^)((${_excluded})\\.canada\\.ca(/|$)|(${_selfLabels})(\\.|:|/|$))`;
+
+// Matches a canada.ca / gc.ca referrer that counts as "referred public" — i.e.
+// the question came from a public GC page, excluding CDS/internal subdomains.
+// Single source of truth for the same logic the userType filter applies in
+// getChatFilterConditions, reused by the blocked-query counter classification.
+const REFERRED_PUBLIC_DOMAIN_REGEX = /(:\/\/|\.|^)(canada\.ca|gc\.ca)(\/|$)/i;
+const REFERRED_PUBLIC_EXCLUSION_RE = new RegExp(REFERRED_PUBLIC_EXCLUSION_REGEX, 'i');
+
+export function isReferredPublicUrl(referringUrl) {
+  if (!referringUrl || typeof referringUrl !== 'string') return false;
+  return REFERRED_PUBLIC_DOMAIN_REGEX.test(referringUrl)
+    && !REFERRED_PUBLIC_EXCLUSION_RE.test(referringUrl);
+}
 
 export function getChatFilterConditions(filters, options = {}) {
   const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;

@@ -1,9 +1,14 @@
 import ServerLoggingService from '../../../services/ServerLoggingService.js';
-import { redactionService } from '../services/redactionService.js';
 import { ScenarioOverrideService } from '../../../services/ScenarioOverrideService.js';
-import { checkPII } from '../services/piiService.js';
-import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
-import { translateQuestion as translateService } from '../services/translationService.js';
+import {
+  RedactionError,
+  ShortQueryValidation,
+  runInitialPiiGuardrail,
+  runPostTranslationGuardrail,
+  runRedactionGuardrail,
+  translateWithGuardrail,
+  validateShortQueryOrThrow,
+} from '../guardrails/index.js';
 import { parseResponse, parseSentences } from '../services/answerService.js';
 import { parseContextMessage } from '../services/contextService.js';
 
@@ -16,50 +21,24 @@ import { InteractionPersistenceService } from '../../../services/InteractionPers
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
 
-// RedactionError class
-class RedactionError extends Error {
-  constructor(message, redactedText, redactedItems) {
-    super(message);
-    this.name = 'RedactionError';
-    this.redactedText = redactedText;
-    this.redactedItems = redactedItems;
-  }
-}
-
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
     validateShortQueryOrThrow(conversationHistory, userMessage, lang, department);
   }
 
   async processRedaction(userMessage, lang, chatId, selectedAI) {
-    await redactionService.ensureInitialized(lang);
-    const { redactedText, redactedItems } = redactionService.redactText(userMessage, lang);
-
-    // Check if any blocking-type redactions were applied (profanity, threat, manipulation)
-    const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
-    const hasBlockingRedaction = redactedItems.some(item => blockingTypes.includes(item.type));
-    if (hasBlockingRedaction) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
-    }
-
-    const piiResult = await checkPII({ chatId, message: userMessage, agentType: selectedAI });
-    if (piiResult.blocked) {
-      throw new RedactionError('Blocked content detected in translation', '#############', redactedItems);
-    }
-    if (piiResult.pii !== null) {
-      // Use the PII-aware redaction string returned by the PII checker
-      throw new RedactionError('PII detected in user message', piiResult.pii, redactedItems);
-    }
-    return { redactedText, redactedItems };
+    const result = await runRedactionGuardrail(userMessage, lang);
+    await runInitialPiiGuardrail({
+      chatId,
+      message: userMessage,
+      selectedAI,
+      redactedItems: result.redactedItems,
+    });
+    return result;
   }
 
   async translateQuestion(text, lang, selectedAI, translationContext = []) {
-    const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
-    if (resp && resp.blocked === true) {
-      await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
-      throw new RedactionError('Blocked content detected in translation', '#############', null);
-    }
-    return resp;
+    return translateWithGuardrail(text, lang, selectedAI, translationContext);
   }
 
   // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on
@@ -67,44 +46,18 @@ export class GraphWorkflowHelper {
   // other than EN/FR are still caught. AI PII check only runs when the source
   // language is not EN/FR (cost gate); it fails open on errors so a flaky PII
   // agent can't take down the pipeline — stage 1 already ran on the original.
+  // Two source-language signals are hard-blocked here:
+  //   - 'zxx' = encoded/obfuscated input (Morse/Base64/leetspeak/etc). Working
+  //     assumption: legitimate users don't submit coded text, so the label is
+  //     the signal.
+  //   - 'und' = unsupported language (currently Canadian Indigenous languages).
+  //     Translation quality is too poor to proceed safely until approved
+  //     mechanisms are in place. Logged separately so we can monitor false
+  //     positives independently from the zxx case.
+  // Both blocks are only as good as the translator's labeling — false positives
+  // will reject legit users, which is why we log every trigger for auditing.
   async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
-    const translatedText = translationData?.translatedText;
-    if (!translatedText) return;
-
-    const previousLang = redactionService.currentLang;
-    try {
-      await redactionService.ensureInitialized('en');
-      const { redactedItems } = redactionService.redactText(translatedText, 'en');
-      const blockingTypes = ['profanity', 'threat', 'manipulation', 'private'];
-      if (redactedItems.some(item => blockingTypes.includes(item.type))) {
-        throw new RedactionError('Blocked content detected after translation', '#############', redactedItems);
-      }
-    } finally {
-      if (previousLang && previousLang !== 'en') {
-        await redactionService.ensureInitialized(previousLang);
-      }
-    }
-
-    const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
-    const isEnOrFr = ['en', 'eng', 'fr', 'fra'].includes(sourceLang);
-    if (isEnOrFr) return;
-
-    let piiResult;
-    try {
-      piiResult = await checkPII({ chatId, message: translatedText, agentType: selectedAI });
-    } catch (error) {
-      await ServerLoggingService.warn('postTranslateGuard checkPII failed - failing open', chatId, {
-        error: error?.message || String(error),
-      });
-      return;
-    }
-
-    if (piiResult?.blocked) {
-      throw new RedactionError('Blocked content detected after translation', '#############', null);
-    }
-    if (typeof piiResult?.pii === 'string' && piiResult.pii.length > 0) {
-      throw new RedactionError('PII detected in user message', piiResult.pii, null);
-    }
+    return runPostTranslationGuardrail(translationData, chatId, selectedAI, originalLang);
   }
 
   // Build translation context for server workflows: previous user messages (strings), excluding the most recent
@@ -115,9 +68,8 @@ export class GraphWorkflowHelper {
       .map(m => m.text || '');
   }
 
-  determineOutputLang(pageLang, translationData) {
-    const originalLang = translationData?.originalLanguage || 'eng';
-    return pageLang === 'fr' ? 'fra' : originalLang;
+  determineOutputLang(translationData) {
+    return translationData?.originalLanguage || 'eng';
   }
 
   async applyScenarioOverride({ context, departmentKey, overrideUserId, chatId }) {
@@ -185,7 +137,7 @@ export class GraphWorkflowHelper {
       searchQuery: searchResult.query || searchResult.searchQuery || contextPayload.searchResults?.query || '',
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
-      outputLang: this.determineOutputLang(lang, translationData),
+      outputLang: this.determineOutputLang(translationData),
       originalLang: translationData?.originalLanguage || lang,
       originalUserMessage: userMessage,
     };
@@ -220,7 +172,7 @@ export class GraphWorkflowHelper {
       const context = { ...lastMessage.interaction.context };
       context.translatedQuestion = translationData?.translatedText || userMessage;
       context.originalLang = translationData?.originalLanguage || lang;
-      context.outputLang = this.determineOutputLang(lang, translationData);
+      context.outputLang = this.determineOutputLang(translationData);
       const departmentKey = department || context.department;
       const updatedContext = await this.applyScenarioOverride({
         context,
@@ -308,9 +260,10 @@ export class GraphWorkflowHelper {
       selectedAI,
       pageLanguage: lang || null,
       detectedLanguage: detectedLang || null,
-    }); // removed searchProvider arg as service didn't seem to take it, or it was implicit? original helper passed it.
-    // Checked service: findSimilarAnswer({ chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage })
-    // It does NOT take searchProvider. So that's fine.
+      // Short-circuit must only fire on perfect-score (100) past answers. The vector layer
+      // defaults to expertFeedbackComparison='eq', so this is an exact-match filter.
+      requestedRating: 100,
+    });
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;

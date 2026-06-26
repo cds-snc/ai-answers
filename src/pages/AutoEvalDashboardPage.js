@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -35,19 +35,13 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
   const [dataTableReady, setDataTableReady] = useState(false);
-  const [recordsTotal, setRecordsTotal] = useState(0);
-  const [recordsFiltered, setRecordsFiltered] = useState(0);
+  const [pageResultCount, setPageResultCount] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
-    [lang]
-  );
 
   const formatDate = useCallback((dateStr) => {
     if (!dateStr) return '';
@@ -78,8 +72,9 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     };
     filtersRef.current = normalized;
     setHasAppliedFilters(true);
+    setLoading(true);
     try {
-      if (tableApiRef.current) tableApiRef.current.ajax.reload();
+      if (tableApiRef.current) tableApiRef.current.ajax.reload(null, true);
       else setTableKey((prev) => prev + 1);
     } catch (e) { void e; }
   }, []);
@@ -92,18 +87,8 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     } catch (e) { void e; }
     setTableKey((prev) => prev + 1);
     filtersRef.current = getDefaultEvalFilters();
-    try { if (tableApiRef.current) tableApiRef.current.ajax.reload(); } catch (e) { void e; }
+    try { if (tableApiRef.current) tableApiRef.current.ajax.reload(null, true); } catch (e) { void e; }
   }, [LOCAL_TABLE_STORAGE_KEY]);
-
-  const resultsSummary = useMemo(() => {
-    const template = t('admin.autoEvalDashboard.resultsSummary', 'Total matching evaluations: {count}');
-    return template.replace('{count}', numberFormatter.format(recordsFiltered));
-  }, [numberFormatter, recordsFiltered, t]);
-
-  const totalSummary = useMemo(() => {
-    const template = t('admin.autoEvalDashboard.totalCount', 'Total eval rows in range: {total}');
-    return template.replace('{total}', numberFormatter.format(recordsTotal));
-  }, [numberFormatter, recordsTotal, t]);
 
   // Columns: Chat ID, Interaction ID, Department, Page Language, AutoEval, Processed, Has matches, Fallback, No-match reason, Date
   const columns = useMemo(() => ([
@@ -117,9 +102,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         const interactionId = row.interactionId || row._id || '';
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
-        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       },
       searchable: true,
       orderable: true
@@ -142,7 +125,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
   ]), [formatDate, t]);
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" tag="main" className="mb-600">
       <h1 className="mb-400">{t('admin.autoEvalDashboard.title', 'Auto-Evaluation dashboard')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
@@ -151,9 +134,10 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-0 small-text">{t('admin.autoEvalDashboard.description', 'Filter auto-evaluations and explore details in the table below.')}</p>
-
-      <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} />
+      <h2 className="mt-400 mb-400">{t('admin.autoEvalDashboard.timeRangeTitle')}</h2>
+      <div className="mb-600">
+        <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={pageResultCount} hasAppliedFilters={hasAppliedFilters} />
+      </div>
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -166,9 +150,15 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
       {error && (<div className="mt-400 error" role="alert">{t('admin.autoEvalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
 
+      {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
+        </div>
+      )}
+
       {hasAppliedFilters && (
         <div className="mt-200">
-          <div className="chat-dashboard-summary" role="status" aria-live="polite"><output>{resultsSummary}</output><output>{totalSummary}</output></div>
           {dataTableReady && (
             <div className="chat-dashboard-table-container">
             <DataTable
@@ -181,9 +171,24 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 paging: true,
                 searching: true,
                 ordering: true,
+                info: true,
                 autoWidth: false,
                 order: [[8, 'desc']],
                 stateSave: true,
+                layout: {
+                  topStart: {
+                    features: ['info', 'pageLength']
+                  },
+                  topEnd: 'paging',
+                  bottomStart: {
+                    features: ['info', 'pageLength']
+                  },
+                  bottomEnd: 'paging'
+                },
+                infoCallback: function (_settings, start, end, _max, _total, _pre) {
+                  const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
+                  return `${t('common.page', 'Page')} ${pageNumber}`;
+                },
                 language: {
                   ...dataTableLanguage(lang),
                   search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
@@ -217,7 +222,8 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                         const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
                         const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
                         sel.addEventListener('change', function () {
-                          column.search(this.value).draw();
+                          column.search(this.value);
+                          api.page('first').draw('page');
                         });
                         filterContainer.appendChild(sel);
                       } else {
@@ -226,7 +232,8 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                         input.className = 'dt-col-search';
                         input.placeholder = t('admin.autoEvalDashboard.columnFilterPlaceholder', 'Filter');
                         input.addEventListener('input', debounce(function (e) {
-                          column.search(e.target.value).draw();
+                          column.search(e.target.value);
+                          api.page('first').draw('page');
                         }, 350));
                         filterContainer.appendChild(input);
                       }
@@ -234,9 +241,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                       filterContainer.addEventListener('click', stopSort);
                       filterContainer.addEventListener('mousedown', stopSort);
                       headerEl.appendChild(filterContainer);
-                    });
-                    api.on('xhr.dt', function (_e, _settings, json) {
-                      try { setRecordsTotal((json && json.recordsTotal) || 0); setRecordsFiltered((json && json.recordsFiltered) || 0); } catch (e) { /* ignore */ }
                     });
                   } catch (e) { /* ignore initComplete errors */ }
                 },
@@ -270,12 +274,16 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     if (searchValue) query.search = searchValue;
                     if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
                     const result = await EvaluationService.getEvalDashboard(query);
-                    setRecordsTotal(result?.recordsTotal || 0);
-                    setRecordsFiltered(result?.recordsFiltered || 0);
-                    callback({ draw: dtParams.draw || 0, recordsTotal: result?.recordsTotal || 0, recordsFiltered: result?.recordsFiltered || 0, data: Array.isArray(result?.data) ? result.data : [] });
+                    const rows = Array.isArray(result?.data) ? result.data : [];
+                    const start = Number.isFinite(Number(dtParams.start)) ? Number(dtParams.start) : 0;
+                    const hasMore = result?.hasMore === true;
+                    const syntheticCount = start + rows.length + (hasMore ? 1 : 0);
+                    setPageResultCount(syntheticCount);
+                    callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load auto-eval dashboard data', err);
                     setError(err.message || String(err));
+                    setPageResultCount(0);
                     callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                   } finally {
                     setLoading(false);

@@ -61,8 +61,9 @@
     },
     "privacy": {
       "title": "Confidentialité et conditions d'utilisation de l'IA",
-      "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Les questions bloquées ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
+      "storage": "Pour protéger votre vie privée, les questions contenant des renseignements personnels (comme des numéros de téléphone ou des adresses courriel) sont bloquées. Vous verrez le contenu sensible marqué avec XXX et il vous sera demandé de reformuler. Ces questions et d'autres questions bloquées (par exemple, les questions contenant des grossièretés ou rédigées dans une langue ou un code non reconnu) ne sont pas envoyées à notre service d'IA ni stockées. Toutes les autres questions, réponses et vos commentaires sont stockés pour améliorer les performances du système.",
       "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.\n\nNous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
+      "language": "La Loi sur les langues officielles, le Règlement sur les langues officielles – communications avec le public et prestation des services et les exigences des politiques du Conseil du Trésor prévoient les circonstances où nous employons le français et l'anglais dans la prestation des services au public. Choisissez le bouton de langue anglaise ou française en haut de la page pour utiliser la version d'AI Answers dans la langue officielle correspondante. Les questions posées et répondues dans une langue autre que l'anglais ou le français sont offertes à titre gracieux aux visiteurs de notre site Web.",
       "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.\n\nVotre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
     },
@@ -89,8 +90,7 @@
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
         "referringPage": "Page où vous étiez :",
         "referringURL": "URL de référence :",
-        "disclaimer": "L'IA peut faire des erreurs, vérifiez la réponse ou posez une question de suivi ci-dessous.",
-        "opensInNewTab": "s'ouvre dans un nouvel onglet"
+        "disclaimer": "L'IA peut faire des erreurs, vérifiez la réponse ou posez une question de suivi ci-dessous."
       },
       "textarea": {
         "title": "Posez votre question ici.",
@@ -135,7 +135,7 @@
         "thinkingMore": "Toujours en train de générer la réponse...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
-        "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
+        "blockedContent": "Votre question contenait une langue ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
         "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Demandez à nouveau ci-dessous sans mentionner de noms ou d'autres détails permettant d'identifier la personne.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
@@ -147,6 +147,7 @@
         "generatingAnswer": "Génération de la réponse...",
         "buildingContext": "Construction du contexte...",
         "readingWebPages": "Lecture des pages Web du gouvernement...",
+        "searchingOpenData": "Recherche dans le portail de données ouvertes...",
         "verifyingCitation": "Test du lien de citation",
         "moderatingAnswer": "Modération de la réponse...",
         "moderatingQuestion": "Évaluation de la question",
@@ -169,7 +170,7 @@
       },
       "citation": {
         "fallbackText": "Impossible de trouver une citation - utilisez la recherche Canada.ca",
-        "heading": "Continuez avec ce lien\u00a0:"
+        "heading": "Continuez avec ce lien :"
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
@@ -233,7 +234,8 @@
         "step1b": "Les questions peuvent être numérotées avec un espace avant le texte — p. ex. 001.  Comment faire une demande d'AE",
         "step1c": "Votre fichier CSV peut contenir d'autres colonnes (p. ex. avec des réponses précédentes) — les numéros de questions vous aident à les associer par la suite.",
         "step1d": "Vous aurez besoin de fichiers séparés pour les questions en anglais à poser/répondre comme si elles étaient sur une page anglaise, et les questions en français à poser/répondre sur la page française de Réponses IA.",
-        "step2": "Attribuez un nom, choisissez le flux de travail (habituellement Défaut) et la famille de modèles (habituellement déjà sélectionnée).",
+        "step1e": "Un lot peut contenir un maximum de 200 questions. Divisez les ensembles plus volumineux en plusieurs fichiers.",
+        "step2": "Attribuez un nom et laissez le flux de travail et la famille de modèles aux sélections par défaut.",
         "step3": "Sélectionnez la langue du fichier de lot (c.-à-d. la langue de la page que le lot simule).",
         "step4": "Choisissez votre fichier CSV et cliquez sur le bouton Télécharger qui apparaît.",
         "step5": "Cliquez sur le bouton Traiter une fois que le fichier apparaît dans la section Lots incomplets.",
@@ -268,9 +270,12 @@
         "noFile": "Veuillez sélectionner un fichier d'abord.",
         "nameRequired": "Veuillez entrer un nom de lot.",
         "invalidFile": "Type de fichier non valide. Veuillez télécharger un fichier .csv.",
+        "invalidCsv": "Le fichier CSV est vide ou invalide.",
+        "missingQuestionColumn": "La colonne de question requise est introuvable dans le fichier CSV. Valeurs attendues : Problem Details, ProblemDetails, Question, Redacted Question.",
         "noValidRows": "Aucune ligne valide trouvée dans le fichier CSV. Vérifiez que l'en-tête de la colonne de questions est l'un des suivants : Problem Details, Question, Redacted Question.",
         "readFailed": "Impossible de lire le fichier. Veuillez réessayer de le télécharger.",
-        "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer."
+        "saveFailed": "Impossible d'enregistrer le lot sur le serveur. Veuillez réessayer.",
+        "tooManyRows": "Ce fichier contient plus de 200 questions. Un lot peut contenir un maximum de 200 questions. Veuillez le diviser en fichiers plus petits et les téléverser séparément."
       }
     },
     "list": {
@@ -312,8 +317,9 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "refresh": "Afficher les journaux par niveau",
+    "refresh": "Actualiser",
     "refreshPending": "Patientez...",
+    "download": "Télécharger les journaux (JSON)",
     "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",
     "level": "Niveau",
@@ -329,7 +335,22 @@
     "noLogs": "Aucun journal disponible",
     "metadataDetails": "Détails des métadonnées",
     "expand": "Développer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "timeline": {
+      "title": "Chronologie des étapes du pipeline",
+      "graph": "Graphe",
+      "step": "Étape",
+      "start": "Début (ms)",
+      "end": "Fin (ms)",
+      "duration": "Durée (ms)",
+      "pctOfTotal": "% du total",
+      "skipped": "ignorée",
+      "incomplete": "aucun événement de fin",
+      "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux.",
+      "downloads": "téléchargements",
+      "generation": "génération",
+      "userPerceived": "Temps de réponse perçu par l'utilisateur"
+    }
   },
   "admin": {
     "title": "Administration de Réponses IA",
@@ -349,6 +370,9 @@
       "dataAnalysis": "Analyse de données",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
+      "execDashboard": "Tableau de bord exécutif",
+      "partnerDashboard": "Tableau de bord partenaire",
+      "technicalMetrics": "Voir les métriques techniques",
       "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
@@ -387,6 +411,8 @@
       "collections": {
         "all": "Tout",
         "allButLogs": "Tout sauf les journaux",
+        "allButLogsAndEmbeddings": "Tout sauf les journaux et les embeddings",
+        "expertEvalChats": "Clavardages avec évaluations d'experts",
         "interaction": "Interaction",
         "question": "Question",
         "answer": "Réponse",
@@ -619,8 +645,8 @@
       }
     },
     "filters": {
-      "title": "Filtres - sélectionnez puis Appliquer pour voir",
-      "clearAll": "Effacer",
+      "title": "Filtres",
+      "clearAll": "Tout effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
@@ -650,8 +676,9 @@
       "evalHasError": "Erreur",
       "evalHasCitationError": "Erreur de citation",
       "evalHarmful": "Nuisible",
-      "filterOptions": "Options de filtre",
-      "showAdvanced": "Plus d'options de filtre"
+      "advancedTitle": "Filtres avancés",
+      "advancedAll": "Avancé : Tous",
+      "showAdvanced": "Plus de filtres"
     },
     "publicEval": {
       "title": "Évaluation publique",
@@ -681,6 +708,7 @@
     "chatDashboard": {
       "title": "Tableau de bord de chat",
       "description": "Filtrez les interactions de chat et explorez les détails dans le tableau ci-dessous.",
+      "timeRangeTitle": "Obtenir les interactions de clavardage pour la période sélectionnée",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
@@ -737,6 +765,7 @@
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
       "description": "Filtrez les évaluations et explorez les détails dans le tableau ci-dessous.",
+      "timeRangeTitle": "Obtenir les évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
@@ -766,6 +795,7 @@
     "autoEvalDashboard": {
       "title": "Tableau de bord des évaluations automatiques",
       "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
+      "timeRangeTitle": "Obtenir les auto-évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
@@ -861,7 +891,9 @@
       "send": "Envoyer le code de vérification",
       "sendError": "Impossible d'envoyer le code de vérification",
       "invalidCode": "Code de vérification invalide"
-    }
+    },
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "reset": {
     "request": {
@@ -925,7 +957,8 @@
   "workflows": {
     "generic": "Générique",
     "defaultWithVector": "Réponse instantanée ACTIVÉE",
-    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE"
+    "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE",
+    "genericWithQA": "Contexte de Q-R antérieures ACTIVÉ"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",
@@ -942,6 +975,32 @@
     "defaultModel": {
       "label": "Famille de modèles par défaut"
     },
+    "chatTransport": {
+      "label": "Transport des événements de clavardage",
+      "options": {
+        "sse": "Événements envoyés par le serveur",
+        "ndjson": "Flux NDJSON"
+      }
+    },
+    "indigenousLanguageBlocking": {
+      "label": "Blocage des langues autochtones du Canada"
+    },
+    "health": {
+      "title": "Vérifications de santé",
+      "description": "Contrôlez le moniteur de santé automatisé et ses vérifications des dépendances.",
+      "enabledLabel": "Activer la surveillance de santé",
+      "databaseEnabledLabel": "Vérifier la santé de la base de données",
+      "searchEnabledLabel": "Vérifier la santé de la recherche",
+      "llmEnabledLabel": "Vérifier la santé du LLM",
+      "autoDisableOnErrorLabel": "Désactiver automatiquement le site en cas d'erreur",
+      "errorTemplateId": "ID du modèle GC Notify pour les erreurs",
+      "fastIntervalSeconds": "Intervalle rapide (secondes)",
+      "failureThreshold": "Seuil d'échec",
+      "failureWindowMinutes": "Fenêtre d'échec (secondes)",
+      "intervalMinutes": "Intervalle de vérification (secondes)",
+      "alertRecipients": "Destinataires de l'alerte",
+      "alertTemplateId": "ID du modèle GC Notify pour les pannes"
+    },
     "statusLabel": "Statut du service",
     "statuses": {
       "available": "Disponible",
@@ -957,6 +1016,12 @@
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
+    },
+    "refreshCache": {
+      "label": "Rafraîchir le cache des paramètres",
+      "loading": "Rafraîchissement du cache...",
+      "success": "Cache des paramètres rafraîchi.",
+      "error": "Échec du rafraîchissement du cache des paramètres : {error}"
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
@@ -1021,9 +1086,13 @@
     "loading": "Chargement...",
     "processing": "Traitement...",
     "error": "Erreur",
+    "page": "Page",
     "yes": "Oui",
     "no": "Non",
-    "na": "S.O."
+    "on": "Activé",
+    "off": "Désactivé",
+    "na": "S.O.",
+    "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés."
   },
   "eval": {
     "metric": "Métrique",
@@ -1161,6 +1230,146 @@
     "deleteEvaluation": "Supprimer l'évaluation",
     "runEvaluation": "Lancer l'évaluation"
   },
+  "dashboardFilter": {
+    "department": "Par institution partenaire",
+    "allPartners": "Tous les partenaires",
+    "dateRange": "Plage de dates",
+    "last30": "30 derniers jours",
+    "currentQuarter": "Trimestre en cours",
+    "allTime": "Les 12 derniers mois",
+    "custom": "Personnalisé",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "showing": "Résultats :",
+    "removeFilter": "Supprimer le filtre",
+    "apply": "Appliquer",
+    "loading": "Chargement..."
+  },
+  "blockedQueries": {
+    "title": "Requêtes bloquées",
+    "byTypeTitle": "Requêtes bloquées par type",
+    "totalCardLabel": "Total de requêtes bloquées",
+    "langSub": "EN : {en} · FR : {fr}",
+    "noData": "Aucune requête bloquée pour cette période.",
+    "note": "Questions arrêtées par les mesures de sûreté et de sécurité avant d'atteindre l'étape de la réponse. Le texte de la question n'est jamais conservé — seul le nombre par type l'est. Données présentées pour l'ensemble des institutions (les blocages surviennent avant l'identification de l'institution).",
+    "deptNote": "Les requêtes bloquées ne peuvent pas être ventilées par institution, car les blocages surviennent avant l'identification de l'institution. Retirez le filtre d'institution pour voir le nombre de requêtes bloquées.",
+    "colType": "Type de blocage",
+    "colTotal": "Total",
+    "colEn": "EN",
+    "colFr": "FR",
+    "totalRow": "Total bloqué",
+    "types": {
+      "tooShort": "Trop courte (1–2 mots)",
+      "threat": "Mots menaçants",
+      "manipulation": "Mots de manipulation",
+      "profanity": "Grossièretés",
+      "piStage1": "Renseignements personnels : par programme",
+      "piStage2": "Renseignements personnels : détection par IA",
+      "azureGuardrail": "Mesures de protection Azure",
+      "unsupportedLanguage": "Langue non prise en charge"
+    }
+  },
+  "execDashboard": {
+    "title": "Tableau de bord exécutif Réponses IA",
+    "description": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
+    "overviewTitle": "Aperçu",
+    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",
+    "kpi": {
+      "evaluated": "Évaluées par des experts",
+      "evaluatedSub": "{pct} des questions",
+      "questionsAsked": "Questions posées",
+      "questionsSub": "EN : {en} · FR : {fr}",
+      "partnerCount": "Institutions avec des questions",
+      "harmful": "Nuisible",
+      "harmfulSub": "EN : {en} · FR : {fr}"
+    },
+    "charts": {
+      "accuracyDonutTitle": "Exactitude des réponses",
+      "accuracyCentre": "précision",
+      "accurate": "Exactes",
+      "hasError": "Contient une erreur",
+      "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
+      "departmentsTitle": "Principales institutions par volume de questions",
+      "noData": "Aucune donnée"
+    },
+    "ops": {
+      "title": "Mesures opérationnelles",
+      "medianResponseTime": "Temps de réponse médian",
+      "responseTimeValue": "{n} s",
+      "responseTimeSub": "P95 : {p95} s",
+      "inputTokens": "Total des jetons d'entrée",
+      "outputTokens": "Total des jetons de sortie",
+      "tokensSub": "EN : {en} · FR : {fr}"
+    },
+    "safety": {
+      "title": "Mesures de sécurité"
+    }
+  },
+  "partnerDashboard": {
+    "title": "Tableau de bord partenaire",
+    "overviewTitle": "Vue d'ensemble",
+    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "kpi": {
+      "questionsAsked": "Questions posées",
+      "questionsSub": "EN : {en} · FR : {fr}",
+      "evaluated": "Évaluées par des experts",
+      "evaluatedSub": "{pct} des questions",
+      "accuracyRate": "Taux d'exactitude",
+      "accuracySub": "EN : {en} · FR : {fr}",
+      "harmful": "Nuisible",
+      "harmfulSub": "EN : {en} · FR : {fr}",
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
+    },
+    "charts": {
+      "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
+      "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
+      "satisfactionCentre": "sur {total} réponses",
+      "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
+      "engagementTitle": "Longueur des conversations",
+      "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3 questions et plus",
+      "noData": "Aucune donnée"
+    },
+    "ops": {
+      "title": "Mesures opérationnelles",
+      "medianResponseTime": "Temps de réponse médian",
+      "responseTimeValue": "{n} s",
+      "responseTimeSub": "P95 : {p95} s",
+      "inputTokens": "Total des jetons d'entrée",
+      "outputTokens": "Total des jetons de sortie",
+      "tokensSub": "EN : {en} · FR : {fr}"
+    },
+    "safety": {
+      "title": "Mesures de sécurité"
+    },
+    "referrals": {
+      "title": "Principales pages référentes",
+      "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation.",
+      "colUrl": "Page référente",
+      "colCount": "Redirections"
+    },
+    "citations": {
+      "title": "Principales pages citées",
+      "subtitle": "Pages du gouvernement du Canada les plus souvent citées par Réponses IA, calculé par question.",
+      "colUrl": "Page citée",
+      "colCount": "Questions",
+      "noCitations": "Aucune citation pour cette période.",
+      "answerTypesTitle": "Types de réponses",
+      "answerTypeColLabel": "Type de réponse",
+      "types": {
+        "normal": "Réponses GC (avec citation)",
+        "clarifyingQuestion": "Questions de clarification",
+        "ptMuni": "Provincial/municipal",
+        "notGc": "Réponses hors du mandat du GC"
+      }
+    }
+  },
   "metrics": {
     "title": "Tableau de bord des métriques",
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
@@ -1202,12 +1411,20 @@
         "hasError": "Contient une erreur de réponse",
         "hasCitationError": "Problème de citation"
       },
+      "qualityBar": {
+        "correct": "Correct",
+        "needsImprovement": "Correct - nécessite une amélioration",
+        "hasCitationError": "Correct - problème de citation",
+        "hasError": "Contient une erreur de réponse"
+      },
       "userScored": {
         "title": "Rétroaction des utilisateurs (publique)",
         "description": "Rétroaction oui-non des utilisateurs finaux",
         "total": "Total des questions avec rétroaction",
         "helpful": "Utile (oui)",
         "unhelpful": "Problème (non)",
+        "positive": "Utile",
+        "negative": "Non utile",
         "reasonTableTitle": "Répartition des raisons des commentaires publics",
         "reason": "Raison",
         "otherYes": "Autre (oui)",
@@ -1238,6 +1455,7 @@
       },
       "tokens": {
         "title": "Jetons",
+        "note": "Inclut uniquement les jetons utilisés lors des appels de réponse et de contexte, et non ceux utilisés dans les autres étapes du pipeline (par exemple la rédaction de RP ou la traduction).",
         "totalInput": "Total des jetons d'entrée",
         "contextInput": "Jetons d'entrée du contexte",
         "answerInput": "Jetons d'entrée de la réponse",
@@ -1251,6 +1469,36 @@
         "department": "Institution",
         "noContextDept": "Aucun contexte d'institution",
         "pctEvaluated": "% évalué"
+      }
+    }
+  },
+  "technicalMetrics": {
+    "title": "Métriques techniques",
+    "timeRangeTitle": "Obtenir les métriques techniques pour la période sélectionnée",
+    "dashboard": {
+      "title": "Résultats",
+      "metric": "Métrique",
+      "responseTime": {
+        "title": "Temps de réponse total",
+        "note": "Délai entre la soumission de la question par l'utilisateur et la disponibilité de la réponse, en millisecondes. N'inclut pas l'auto-évaluation effectuée après l'affichage de la réponse.",
+        "totalLabel": "Temps de réponse total (ms)",
+        "count": "Questions",
+        "median": "Médiane",
+        "p90": "P90",
+        "p95": "P95",
+        "max": "Max",
+        "maxChatId": "ID de chat pour le max"
+      },
+      "tools": {
+        "title": "Appels de l'outil downloadWebPage",
+        "note": "La plupart des questions déclenchent un seul appel à downloadWebPage. Chaque ligne affiche les statistiques pour le Nᵉ appel dans une question (1 = premier appel, 2 = deuxième appel, etc.). Les positions vides indiquent qu'aucune question n'a fait autant d'appels. Les erreurs sont principalement des dépassements de délai.",
+        "callNumber": "N° d'appel",
+        "totalCount": "Questions avec cet appel",
+        "completedCount": "Complétés",
+        "errorCount": "Erreurs",
+        "errorPercent": "% d'erreurs",
+        "median": "Médiane des complétés (ms)",
+        "p95": "P95 des complétés (ms)"
       }
     }
   },
@@ -1270,6 +1518,93 @@
     "processing": "Traitement...",
     "remaining": "Restant",
     "autoProcessingActive": "Traitement automatique actif",
+    "metadataBackfillTitle": "Remplissage des métadonnées des incorporations",
+    "metadataBackfillDescription": "Remplir les métadonnées des incorporations utilisées par la récupération préfiltrée des questions-réponses.",
+    "metadataBatchSizeLabel": "Taille de lot du remplissage des métadonnées",
+    "metadataBatchSizeHelp": "Utilisez une valeur entre 1 et 500. Les petits lots peuvent être plus stables en prévisualisation.",
+    "metadataBatchSizeInvalid": "La taille du lot doit être un nombre entier entre 1 et 500.",
+    "startMetadataBackfill": "Démarrer le remplissage des métadonnées",
+    "resumeMetadataBackfill": "Reprendre le remplissage des métadonnées",
+    "restartMetadataBackfill": "Redémarrer le remplissage des métadonnées",
+    "stopMetadataBackfill": "Arrêter le remplissage des métadonnées",
+    "metadataBackfillStopped": "Arrêté",
+    "metadataProcessed": "Traité dans le dernier lot",
+    "metadataResumeFromId": "ID de reprise enregistré : {id}",
+    "metadataBackfillFailed": "Échec du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
+    "metadataBatchResultsTitle": "Diagnostic des métadonnées du dernier lot",
+    "metadataBatchResultsDescription": "Chaque ligne montre ce que le remplissage des métadonnées a fait pour un embedding traité dans le dernier lot.",
+    "metadataBatchSummary": "{updated} ont reçu des métadonnées, {cleared} supprimées ou modifiées",
+    "metadataBatchResults": {
+      "emptyValue": "(aucune)",
+      "columns": {
+        "embeddingId": "ID de l'embedding",
+        "storedInteractionId": "ID d'interaction enregistrée",
+        "resolvedInteractionId": "ID d'interaction résolue",
+        "action": "Action",
+        "reason": "Raison",
+        "feedbackType": "Type de rétroaction",
+        "pageLanguage": "Langue de la page",
+        "interactionLanguage": "Langue de l'interaction",
+        "expertFeedbackId": "ID de rétroaction experte",
+        "totalScore": "Score total",
+        "modifiedCount": "Nombre modifié"
+      },
+      "actions": {
+        "updated": "Mis à jour",
+        "cleared": "Effacé",
+        "skipped": "Ignoré",
+        "unknown": "Inconnu"
+      },
+      "reasons": {
+        "none": "Aucune raison",
+        "interactionNotFound": "Interaction introuvable",
+        "missingFeedback": "Rétroaction experte manquante sur l'interaction",
+        "missingFeedbackDocument": "Document de rétroaction experte manquant",
+        "autoEvalFeedback": "Rétroaction d'auto-évaluation exclue",
+        "allMetadataReset": "Toutes les métadonnées réinitialisées",
+        "unknown": "Inconnu"
+      }
+    },
+    "metadataLookup": {
+      "title": "Recherche des métadonnées des incorporations",
+      "description": "Consulter les métadonnées actuelles des incorporations pour chaque interaction d’un clavardage.",
+      "chatIdLabel": "ID du clavardage",
+      "chatIdRequired": "Veuillez entrer un ID de clavardage.",
+      "lookup": "Rechercher les métadonnées",
+      "loading": "Recherche des métadonnées...",
+      "failed": "Échec de la recherche des métadonnées des incorporations.",
+      "chatSummary": {
+        "chatId": "ID du clavardage",
+        "pageLanguage": "Langue de la page",
+        "interactions": "Interactions",
+        "embeddings": "Incorporations"
+      },
+      "columns": {
+        "row": "Ligne",
+        "status": "État",
+        "interactionObjectId": "ID objet de l’interaction",
+        "interactionDisplayId": "ID affiché de l’interaction",
+        "embeddingId": "ID de l’incorporation",
+        "embeddingInteractionId": "ID d’interaction de l’incorporation",
+        "attachedExpertFeedbackId": "ID de rétroaction experte attachée",
+        "metadataExpertFeedbackId": "ID de rétroaction experte des métadonnées",
+        "attachedScore": "Score attaché",
+        "metadataScore": "Score des métadonnées",
+        "chatPageLanguage": "Langue de la page du clavardage",
+        "metadataPageLanguage": "Langue de page des métadonnées",
+        "interactionLanguage": "Langue de l’interaction",
+        "metadataInteractionLanguage": "Langue d’interaction des métadonnées",
+        "neverStale": "Jamais obsolète"
+      },
+      "statuses": {
+        "metadataMatches": "Les métadonnées correspondent",
+        "missingMetadata": "Métadonnées manquantes",
+        "staleFeedbackId": "ID de rétroaction obsolète",
+        "unexpectedMetadata": "Métadonnées inattendues",
+        "missingEmbedding": "Incorporation manquante",
+        "unknown": "Inconnu"
+      }
+    },
     "similarChats": "Trouver des chats similaires",
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
     "chatIdPlaceholder": "Entrez l'ID du chat",
@@ -1288,7 +1623,62 @@
     "allEmbeddingsGenerated": "Tous les incorporations ont été générées !",
     "generateEmbeddingsFailed": "Échec de la génération des incorporations. Vérifiez la console pour plus de détails.",
     "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
-    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !"
+    "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !",
+    "docdb8Capability": {
+      "title": "Test des capacités de recherche vectorielle de DocumentDB 8",
+      "description": "Exécutez des tests d'agrégation dans DocumentDB 8 pour vérifier si les filtres peuvent réduire l'ensemble des candidats avant la recherche vectorielle.",
+      "run": "Exécuter le test des capacités",
+      "running": "Exécution du test des capacités...",
+      "pass": "Réussite",
+      "fail": "Échec",
+      "yes": "Oui",
+      "no": "Non",
+      "noError": "Aucune erreur",
+      "notAvailable": "Non disponible",
+      "estimatedFeedbackSelectivity": "Sélectivité estimée des rétroactions",
+      "recommendedStrategy": "Stratégie recommandée",
+      "rawResults": "Résultats diagnostiques bruts",
+      "durationMs": "{ms} ms",
+      "scoreRange": "{min} à {max}",
+      "oversamplingHint": "Avec une sélectivité des rétroactions de {selectivity}, le post-filtrage doit examiner environ {candidates} candidats vectoriels pour retourner 10 résultats avec rétroaction.",
+      "counts": {
+        "totalEmbeddings": "Nombre total d'embeddings de questions",
+        "embeddingsWithInteraction": "Embeddings avec interactions",
+        "interactionsWithFeedback": "Interactions avec rétroaction",
+        "embeddingsWithFeedbackInteraction": "Embeddings joints à une rétroaction",
+        "estimatedCandidatesForTenFeedbackResults": "Candidats estimés pour 10 résultats avec rétroaction"
+      },
+      "table": {
+        "capability": "Capacité",
+        "status": "État",
+        "resultCount": "Nombre de résultats",
+        "preFilter": "Préfiltre",
+        "score": "Plage des scores",
+        "duration": "Durée",
+        "error": "Erreur"
+      },
+      "capabilities": {
+        "vectorSearchBasicSupport": "Prise en charge de base de $vectorSearch",
+        "vectorSearchScoreSupport": "Prise en charge de $meta vectorSearchScore",
+        "postFilterAfterVectorSearch": "Filtre après la recherche vectorielle",
+        "simpleMatchBeforeVectorSearch": "$match simple avant la recherche vectorielle",
+        "feedbackLookupFilterBeforeVectorSearch": "Recherche et filtre des rétroactions avant la recherche vectorielle"
+      },
+      "recommendations": {
+        "annPostFilter": "Utiliser d'abord la recherche ANN avec post-filtrage, puis augmenter candidateLimit selon la sélectivité des rétroactions.",
+        "lookupPreFilter": "Utiliser un préfiltre d'agrégation avec recherche des rétroactions avant $vectorSearch.",
+        "denormalizedPreFilter": "Dénormaliser les champs de rétroaction dans les embeddings, puis utiliser $match avant $vectorSearch.",
+        "dedicatedFeedbackCollection": "Utiliser une collection et un index distincts pour les embeddings avec rétroaction afin d'éviter de rechercher les enregistrements sans rétroaction."
+      },
+      "singleProbeDescription": "Chaque bouton exécute un seul test une fois et conserve seulement ce résultat.",
+      "probes": {
+        "annAllThenFeedbackPostFilter": "Exécuter le post-filtrage ANN",
+        "exactAfterFeedbackLookupMatch": "Exécuter le préfiltre avec recherche des rétroactions",
+        "exactAfterDenormalizedMatch": "Exécuter le préfiltre dénormalisé",
+        "annFeedbackOnlyCollection": "Exécuter la collection de rétroactions",
+        "nodeBruteforceFeedbackSubset": "Exécuter la ligne de base en force brute"
+      }
+    }
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
@@ -1331,7 +1721,18 @@
     "description": "Tester la connectivit? ? tous les services externes et fournisseurs d'IA utilis?s par R?ponses IA.",
     "runTests": "Ex?cuter les tests de connectivit?",
     "testing": "Test des connexions...",
-    "connected": "Connect?",
+    "simulation": {
+      "title": "Simulation de panne",
+      "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",
+      "enable": "Simuler l'échec",
+      "disable": "Effacer la simulation",
+      "labels": {
+        "database": "Base de données",
+        "search": "Recherche",
+      "llm": "LLM"
+      }
+    },
+    "connected": "Connecté",
     "errors": "Erreurs",
     "warnings": "Avertissements",
     "notConfigured": "Non configur?",

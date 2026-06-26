@@ -38,7 +38,9 @@ vi.mock('../../../middleware/auth.js', () => ({
 
 // Mock the exceljs and flat modules
 vi.mock('exceljs', () => {
-    const Workbook = vi.fn(() => mockWorkbookInstance);
+    const Workbook = vi.fn(function Workbook() {
+        return mockWorkbookInstance;
+    });
     return {
         default: { Workbook },
         Workbook

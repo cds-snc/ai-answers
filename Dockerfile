@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+RUN npm ci
 
 # Copy the rest of the application
 COPY . .
@@ -30,7 +30,7 @@ RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
-RUN npm install -omit=dev
+RUN npm ci --omit=dev
 
 # Copy built frontend and backend code
 COPY --from=build /app/build /app/build

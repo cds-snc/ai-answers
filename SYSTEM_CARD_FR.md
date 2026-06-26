@@ -43,7 +43,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 </details>
 
 ## État actuel
-- **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en janvier 2026.
+- **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en fevrier 2026.
 - **[Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)**
 - **Production** : https://reponses-ia.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Évaluation** : Collection continue de commentaires d'experts et notation de réponses alimentant les évaluations IA et réponses
@@ -67,9 +67,8 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 
 ### Support linguistique
 - Support bilingue complet (pages anglaises/françaises, y compris l'administration) pour la conformité aux langues officielles
-- Sur la page anglaise : Les utilisateurs peuvent poser des questions dans n'importe quelle langue et recevoir des réponses dans la même langue qu'ils ont posée
-- Sur la page française : Les utilisateurs reçoivent des réponses en français quelle que soit la langue dans laquelle la question a été posée
-- Citation correspond à la langue de la page
+- Les utilisateurs peuvent poser des questions dans n'importe quelle langue et reçoivent des réponses dans la même langue que celle de leur question
+- La citation correspond à la langue de la page
 ## Architecture technique
 
 ### Composants du système
@@ -177,7 +176,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 - **Tests de lecteur d'écran** : Sessions d'utilisabilité itératives tenues avec une gamme d'utilisateurs de lecteurs d'écran pour tester et améliorer
 - **Conformité WCAG 2.1 AA** : Implémentation complète des normes d'accessibilité
 - **Support bilingue** : Support complet anglais/français avec conformité aux langues officielles
-- **Saisie multilingue** : Sur la page anglaise, les utilisateurs peuvent poser des questions dans plusieurs langues et recevoir une réponse dans la même langue posée. Sur la page française, les utilisateurs reçoivent des réponses en français quelle que soit la langue de la question. Le support des langues autochtones est planifié
+- **Saisie multilingue** : Les utilisateurs peuvent poser des questions dans de nombreuses langues et reçoivent une réponse dans la même langue que celle de leur question. Le support des langues autochtones sera planifié et assuré par Services aux Autochtones Canada.
 - **Langage simple** : Les réponses utilisent un langage clair et simple correspondant aux normes Canada.ca, tests d'utilisabilité itératifs extensifs
 
 #### **Risques de fiabilité du système**

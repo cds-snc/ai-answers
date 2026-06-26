@@ -1,5 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function usersHandler(req, res) {
@@ -29,7 +30,7 @@ async function usersHandler(req, res) {
                 }
                 await dbConnect();
                 const user = await User.findByIdAndUpdate(
-                    userId,
+                    requireObjectIdString(userId, 'user ID'),
                     updateFields,
                     { new: true, select: '-password' }
                 );
@@ -47,12 +48,12 @@ async function usersHandler(req, res) {
 
         case 'DELETE':
             try {
-                const userId = req.query.userId;
+                const { userId } = req.query;
                 if (!userId || typeof userId !== 'string') {
                     return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
                 await dbConnect();
-                const user = await User.findByIdAndDelete(userId);
+                const user = await User.findByIdAndDelete(requireObjectIdString(userId, 'user ID'));
                 if (!user) {
                     return res.status(404).json({ message: 'User not found' });
                 }

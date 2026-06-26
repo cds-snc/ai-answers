@@ -1,4 +1,4 @@
-import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 
 const NotFoundPage = ({ lang = 'en' }) => {
@@ -6,7 +6,7 @@ const NotFoundPage = ({ lang = 'en' }) => {
   const homeHref = `/${lang}`;
 
   return (
-    <GcdsContainer size="xl" centered tag="article" className="mt-400">
+    <GcdsContainer layout="page" tag="article" className="mt-400">
       <h1>{t('notFound.title')}</h1>
       <GcdsText>{t('notFound.message')}</GcdsText>
       <GcdsText>

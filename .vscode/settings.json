@@ -5,6 +5,10 @@
         "git commit": true,
         "git push": true,
         "git rebase": true,
-        "npx vitest": true
+        "npx vitest": true,
+        "/^npm install --no-audit --no-fund$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

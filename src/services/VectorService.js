@@ -16,8 +16,31 @@ const VectorService = {
     return await response.json();
   },
 
+  async backfillMetadata({ lastProcessedId = null, limit = 100, includeDetails = false, phase = 'clear' } = {}) {
+    const response = await AuthService.fetch(getApiUrl('vector-backfill-metadata'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lastProcessedId, limit, includeDetails, phase }),
+    });
+    if (!response.ok) throw new Error('Failed to backfill embedding metadata');
+    return await response.json();
+  },
+
   async getSimilarChats(chatId) {
     const response = await AuthService.fetch(getApiUrl(`vector-similar-chats?chatId=${encodeURIComponent(chatId)}`));
+    return await response.json();
+  },
+
+  async lookupMetadata(chatId) {
+    const response = await AuthService.fetch(getApiUrl(`vector-metadata-lookup?chatId=${encodeURIComponent(chatId)}`));
+    if (!response.ok) throw new Error('Failed to look up embedding metadata');
+    return await response.json();
+  },
+
+  async runDocdb8CapabilityTest(probe) {
+    const query = probe ? `?probe=${encodeURIComponent(probe)}` : '';
+    const response = await AuthService.fetch(getApiUrl(`vector-docdb8-capability-test${query}`));
+    if (!response.ok) throw new Error('Failed to run DocumentDB 8 vector capability test');
     return await response.json();
   },
   // Add more methods as needed for other endpoints

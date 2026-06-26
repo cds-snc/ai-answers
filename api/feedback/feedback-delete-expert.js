@@ -1,18 +1,21 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
+import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
 
 async function feedbackDeleteExpertHandler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   try {
-    await dbConnect();
-    const { interactionId } = req.body;
+    let { interactionId } = req.body || {};
     if (!interactionId) {
       return res.status(400).json({ error: 'interactionId is required' });
     }
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
+    await dbConnect();
 
     // Try to find by _id first, then by interactionId field
     let interaction = null;
@@ -37,6 +40,7 @@ async function feedbackDeleteExpertHandler(req, res) {
     // Unset the expertFeedback reference on the interaction
     interaction.expertFeedback = undefined;
     await interaction.save();
+    await EmbeddingMetadataService.clearForInteraction(interaction._id);
 
     // Delete the expert feedback document
     const result = await ExpertFeedback.deleteOne({ _id: efId });

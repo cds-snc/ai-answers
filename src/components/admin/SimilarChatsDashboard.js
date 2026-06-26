@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -60,9 +60,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
                 data: 'chatId',
                 render: function(data) {
                   const url = `/${lang}?chat=${data}&review=1`;
-                  // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
-                  // Admin users prefer target="_blank" — restore once VPN issue is resolved.
-                  return `<a href="${url}">${data}</a>`;
+                  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${data}</a>`;
                 }
               },
               { title: t('vector.columns.similarity'), data: 'similarity' },

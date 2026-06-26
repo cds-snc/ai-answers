@@ -8,7 +8,8 @@ Read this before backend, pipeline, agent, or service work.
 |-----------|---------|
 | `agents/graphs/` | LangGraph state-machine workflows (nodes, edges, state) |
 | `agents/graphs/workflows/` | `GraphWorkflowHelper.js` — shared node implementations |
-| `agents/graphs/services/` | Graph-internal services (redaction, short-query) |
+| `agents/graphs/services/` | Graph-internal services (redaction, translation, answer/context helpers) |
+| `agents/graphs/guardrails/` | Query-blocking guardrails and shared block-type errors/constants |
 | `agents/prompts/` | System prompt assembly and base prompt text |
 | `agents/prompts/scenarios/` | `scenarios-all.js` (global rules) + `context-{abbrKey}/` (per-dept) |
 | `agents/strategies/` | Strategy pattern implementations (e.g. sentence compare) |
@@ -46,8 +47,9 @@ START → init → validate → redact → translate → contextNode → answerN
 | File | UI label | How it works |
 |------|----------|-------------|
 | `GenericGraph.js` | Generic | Full pipeline: redact → translate → context → answer → verify → persist. No short-circuit. |
-| `DefaultWithVectorGraph.js` | Instant answer ON | Same as GenericGraph, but after translation checks `SimilarAnswerService.findSimilarAnswer()` for a vector-similarity match against previously answered questions. If a high-confidence match is found, **reuses the previous answer verbatim** and skips the full context → answer pipeline. Falls through to the full pipeline if no match. |
-| `InstantAndQAGraph.js` | Instant answer with context ON | Same short-circuit check, but uses `QuestionAnswerService.getSimilarQuestionsContext()` which returns **rich context** from expert-reviewed interactions: the matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer rather than replacing it. |
+| `DefaultWithVectorGraph.js` | Instant answer ON | Same as GenericGraph, but after translation checks `SimilarAnswerService.findSimilarAnswer()` for a vector-similarity match against previously answered questions **with an expert score of 100**. If a perfect-score match is reranker-certified, **reuses the previous answer verbatim** and skips the full context → answer pipeline. Falls through to the full pipeline if no match. |
+| `InstantAndQAGraph.js` | Instant answer with context ON | Same score-100 short-circuit check, and also runs `QuestionAnswerService.getSimilarQuestionsContext()` (score < 100) to inject **rich context** from expert-reviewed interactions: matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer when the short-circuit doesn't fire. |
+| `GenericWithQAGraph.js` | Past Q&A context ON | Like GenericGraph (no short-circuit) but inserts a `similarQuestions` node between context and answer that injects past imperfect (score < 100) Q&A as context via `QuestionAnswerService.getSimilarQuestionsContext()`. Lets you test the "learn from past mistakes" idea without any risk of serving a past answer verbatim. |
 | `registry.js` | — | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
 
 Model selection is decoupled from workflow — the `model.default` setting controls which model family is used. `SettingsService` (`services/SettingsService.js`) is the single source of truth: it loads all settings from the database on startup and seeds required defaults (defined in `SETTING_DEFAULTS`) if missing. The server injects the model into the graph input at request time (`chat-graph-run.js`). All UI pages fetch the default from the Settings API — never hardcode model defaults in components. See [Model family routing](#model-family-routing-agentfactoryjs) for how each pipeline step maps to a specific model within the family.
@@ -142,6 +144,5 @@ Each file exports `async function handler(req, res)`. Organised by domain:
 | `api/user/` | User management |
 | `api/vector/` | Vector reinitialise, similar chats, stats |
 | `api/util/` | Shared utilities (backoff, cookies, connectivity, URL check) |
-
 
 

@@ -4,6 +4,7 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatCohere } from '@langchain/cohere';
 import downloadWebPageTool from './tools/downloadWebPage.js';
 import checkUrlStatusTool from './tools/checkURL.js';
+import searchOpenDataTool from './tools/searchOpenData.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
 import dotenv from 'dotenv';
@@ -31,6 +32,7 @@ const createTools = (chatId = 'system', agentType = 'openai') => {
     tools: [
       wrapToolWithCallbacks(downloadWebPageTool),
       wrapToolWithCallbacks(checkUrlStatusTool),
+      wrapToolWithCallbacks(searchOpenDataTool),
       // generateContext tool removed from answer agent — context is already
       // derived by the pipeline's contextNode before the answer agent runs.
       // Tool code kept in agents/tools/contextAgentTool.js for future use.
@@ -44,6 +46,9 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
   const isGPT5 = modelConfig.name === 'openai-gpt51' ||
     modelConfig.name === 'openai-gpt51-chat';
 
+  if (isGPT5) {
+    console.log('[AgentFactory] answer agent reasoning config:', JSON.stringify(modelConfig.reasoning));
+  }
   const openai = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
     azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
@@ -62,7 +67,7 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
     llm: openai, tools,
     agentConfig: {
       handleParsingErrors: true,
-      maxIterations: 25,
+      maxIterations: 10,
       returnIntermediateSteps: true,
       parallel_tool_calls: false
     }
@@ -106,7 +111,9 @@ const createClaudeAgent = async (chatId = 'system') => {
 const createContextAgent = async (agentType, chatId = 'system') => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       const azureConfig = getModelConfig('azure');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -118,22 +125,6 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         timeout: azureConfig.timeoutMs,
       });
       console.log('Creating Azure OpenAI context agent with model:', azureConfig.name);
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const azureConfig = getModelConfig('azure', agentType);
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: azureConfig.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: azureConfig.model,
-        reasoning: azureConfig.reasoning,
-        maxCompletionTokens: azureConfig.maxTokens,
-        timeout: azureConfig.timeoutMs,
-      });
-      console.log('Creating GPT5.1 Azure OpenAI context agent with model:', azureConfig.name);
       break;
     }
     case 'cohere': {
@@ -215,7 +206,9 @@ const createPIIAgent = async (agentType, chatId = 'system') => {
 const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       const azureConfig = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -224,21 +217,6 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
         azureOpenAIApiDeploymentName: azureConfig.name,
         temperature: azureConfig.temperature,
         maxTokens: azureConfig.maxTokens,
-        timeout: azureConfig.timeoutMs,
-      });
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const azureConfig = getModelConfig('azure', 'openai-gpt5-mini');
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: azureConfig.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: azureConfig.model,
-        reasoning: azureConfig.reasoning,
-        maxCompletionTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
       break;
@@ -254,7 +232,9 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
 const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       // Use the Azure deployment mapped to the mini variant when available
       const cfg = getModelConfig('azure', 'openai-gpt41');
       llm = new AzureChatOpenAI({
@@ -264,21 +244,6 @@ const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') 
         azureOpenAIApiDeploymentName: cfg.name,
         temperature: cfg.temperature,
         maxTokens: 4000,
-        timeout: cfg.timeoutMs,
-      });
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: cfg.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: cfg.model,
-        reasoning: cfg.reasoning,
-        maxCompletionTokens: 4000,
         timeout: cfg.timeoutMs,
       });
       break;
@@ -295,7 +260,9 @@ const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') 
 const createTranslationAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       const cfg = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -304,21 +271,6 @@ const createTranslationAgent = async (agentType = 'openai-gpt51', chatId = 'syst
         azureOpenAIApiDeploymentName: cfg.name,
         temperature: 0,
         maxTokens: cfg.maxTokens,
-        timeout: cfg.timeoutMs,
-      });
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: cfg.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: cfg.model,
-        reasoning: cfg.reasoning,
-        maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
       break;
@@ -336,7 +288,9 @@ const createTranslationAgent = async (agentType = 'openai-gpt51', chatId = 'syst
 const createSentenceCompareAgent = async (agentType = 'openai-gpt51', chatId = 'system', maxTokens = undefined) => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       const cfg = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -345,21 +299,6 @@ const createSentenceCompareAgent = async (agentType = 'openai-gpt51', chatId = '
         azureOpenAIApiDeploymentName: cfg.name,
         temperature: cfg.temperature,
         maxTokens: maxTokens ?? cfg.maxTokens,
-        timeout: cfg.timeoutMs,
-      });
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: cfg.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: cfg.model,
-        reasoning: cfg.reasoning,
-        maxCompletionTokens: maxTokens ?? cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
       break;
@@ -376,7 +315,9 @@ const createSentenceCompareAgent = async (agentType = 'openai-gpt51', chatId = '
 const createFallbackCompareAgent = async (agentType = 'openai-gpt51', chatId = 'system', maxTokens = undefined) => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       const cfg = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -385,21 +326,6 @@ const createFallbackCompareAgent = async (agentType = 'openai-gpt51', chatId = '
         azureOpenAIApiDeploymentName: cfg.name,
         temperature: cfg.temperature,
         maxTokens: maxTokens ?? cfg.maxTokens,
-        timeout: cfg.timeoutMs,
-      });
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: cfg.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: cfg.model,
-        reasoning: cfg.reasoning,
-        maxCompletionTokens: maxTokens ?? cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
       break;
@@ -416,7 +342,9 @@ const createFallbackCompareAgent = async (agentType = 'openai-gpt51', chatId = '
 const createDetectLanguageAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
   switch (agentType) {
-    case 'azure': {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
       const cfg = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -425,21 +353,6 @@ const createDetectLanguageAgent = async (agentType = 'openai-gpt51', chatId = 's
         azureOpenAIApiDeploymentName: cfg.name,
         temperature: 0,
         maxTokens: cfg.maxTokens,
-        timeout: cfg.timeoutMs,
-      });
-      break;
-    }
-    case 'openai-gpt51':
-    case 'openai-gpt51-chat': {
-      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
-      llm = new AzureChatOpenAI({
-        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        azureOpenAIApiDeploymentName: cfg.name,
-        azureOpenAIApiVersion: "2025-04-01-preview",
-        model: cfg.model,
-        reasoning: cfg.reasoning,
-        maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
       break;

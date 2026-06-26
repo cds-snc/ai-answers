@@ -11,6 +11,7 @@ import Piscina from 'piscina';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { requireObjectIdString, requireString } from '../api/util/db-query.js';
 
 
 let pool;
@@ -82,6 +83,7 @@ class EvaluationService {
             if (!chatId) {
                 return { error: 'chatId is required', status: 400 };
             }
+            chatId = requireString(chatId, 'chatId');
             const chat = await Chat.findOne({ chatId }).populate('interactions');
             if (!chat) {
                 return { error: 'Chat not found', status: 404 };
@@ -270,25 +272,25 @@ class EvaluationService {
 
     // Check if an interaction already has an evaluation
     async hasExistingEvaluation(interactionId) {
-        await dbConnect();
         try {
-            const interaction = await Interaction.findById(interactionId).populate('autoEval');
+            await dbConnect();
+            const interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId')).populate('autoEval');
             ServerLoggingService.debug(`Checked for existing evaluation`, interactionId.toString(), {
                 exists: !!interaction?.autoEval
             });
             return !!interaction?.autoEval;
         } catch (error) {
-            ServerLoggingService.error('Error checking for existing evaluation', interactionId.toString(), error);
+            ServerLoggingService.error('Error checking for existing evaluation', interactionId?.toString?.() || String(interactionId), error);
             return false;
         }
     }
 
     // Get evaluation for a specific interaction
     async getEvaluationForInteraction(interactionId) {
-        await dbConnect();
         try {
+            await dbConnect();
             // Populate nested expertFeedback so clients can access totalScore and other fields
-            const interaction = await Interaction.findById(interactionId).populate({
+            const interaction = await Interaction.findById(requireObjectIdString(interactionId, 'interactionId')).populate({
                 path: 'autoEval',
                 populate: { path: 'expertFeedback' }
             });
@@ -317,7 +319,7 @@ class EvaluationService {
             }
             return evalObj;
         } catch (error) {
-            ServerLoggingService.error('Error retrieving evaluation', interactionId.toString(), error);
+            ServerLoggingService.error('Error retrieving evaluation', interactionId?.toString?.() || String(interactionId), error);
             return null;
         }
     }

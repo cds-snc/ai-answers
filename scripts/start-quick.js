@@ -60,12 +60,10 @@ async function start() {
         shell: true
     });
 
-    const frontend = spawn("npm", ["start"], { // react-scripts start
+    const frontend = spawn("npm", ["start"], { // Vite dev server
         cwd: rootDir,
         env: {
             ...process.env,
-            // React app needs to know where API is if it's not proxied by default
-            // But package.json proxy "http://localhost:3001" handles this usually.
             PORT: "3000"
         },
         shell: true
