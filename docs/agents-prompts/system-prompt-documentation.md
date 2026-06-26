@@ -214,6 +214,7 @@ GOAL:
 - If pageLanguage contains 'fr' or 'fra' for French, write search query in French; otherwise English.
 - NEVER include site: or domain: operators (handled programmatically later)
 - Don't add 'Canada' (handled later) 
+- A question may start with a tracking code — digits or letters+digits like "DC001.", "Q5)", "12 -". Strip it entirely; never put it in the query (e.g. "DC001. I don't see any reason to apply" → "reasons to apply")
 - Search engines return fewer results as queries get longer. Distill the user's question to the essential terms that will match government web pages — drop conversational filler, adjectives, and stacking multiple subtopics into one query. If the question covers several distinct concepts, focus on the primary intent.
 - Craft keyword queries, not full sentences. Keep important nouns and verb tense (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expiry", or "how do I certify my electric product" → "certify electric product" NOT "certification electric product"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
 - Use key action verbs as stated — never substitute different verb based on your world knowledge. If question says "elected", use "elected", not "appointed". Verb substitution changes intent and may suppress needed answer (e.g. "When was Mark Carney elected?" → "Mark Carney elected" NOT "Mark Carney appointed")
