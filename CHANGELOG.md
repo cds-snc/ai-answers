@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.154.0](https://github.com/cds-snc/ai-answers/compare/v1.153.0...v1.154.0) (2026-06-26)
+
+
+### Features
+
+* add APP_VERSION handling in workflows and server configuration ([a8b6558](https://github.com/cds-snc/ai-answers/commit/a8b6558ee22d016df466e3b5cfcfb2cdfed7f474))
+* add APP_VERSION handling in workflows and server configuration ([45c3b0e](https://github.com/cds-snc/ai-answers/commit/45c3b0eb7741daab388803c95f94e885cec83928))
+* add appVersion handling across chat and experimental batch APIs, including updates to models, services, and tests ([eeb7746](https://github.com/cds-snc/ai-answers/commit/eeb77463f11877c08547a78cd91f9d617c35bce2))
+* add run label utility for consistent batch naming in UI components ([760a05c](https://github.com/cds-snc/ai-answers/commit/760a05cae211b7c980c2fb371a3bf5cf7864e9b0))
+* enhance APP_VERSION retrieval logic in deployment workflow ([9f45027](https://github.com/cds-snc/ai-answers/commit/9f45027e3118da268e6c6026de6a6f9871d5c8d6))
+* enhance experimental batch API with multi-turn chat support and app version tracking for auditing ([af24aa1](https://github.com/cds-snc/ai-answers/commit/af24aa1cda48d16ee766feb809d7b83d68f0dec7))
+* enhance RefusalAnalyzer to detect short-query refusals and update description ([407b57d](https://github.com/cds-snc/ai-answers/commit/407b57df7fb1ff3db2410a712a12856e67c17aa7))
+* implement NoOpAnalyzer and update related tests and configurations ([b362f67](https://github.com/cds-snc/ai-answers/commit/b362f676e95d5354b456754eab4572bd0c6038b2))
+* implement SimilarAnswerAnalyzer and related tests for answer comparison and drift detection ([4751eed](https://github.com/cds-snc/ai-answers/commit/4751eedb10a88824dd437097864a65ce94e7ada9))
+* referring url chat ([f2b7d31](https://github.com/cds-snc/ai-answers/commit/f2b7d31a18028977548f4e23720bff7665151078))
+* refinements based on actual urls ([449c8c9](https://github.com/cds-snc/ai-answers/commit/449c8c962a7869ee92bf4335fa5ee6ddf16ee1d3))
+* statcan label ([af7deec](https://github.com/cds-snc/ai-answers/commit/af7deecba0140ec219873b5441d8886fe85ce3e7))
+* update package dependencies and add unit tests for Experimental… ([acb4dee](https://github.com/cds-snc/ai-answers/commit/acb4deed8114e04e288e4a20b0c30db38d44914b))
+
+
+### Bug Fixes
+
+* address zero search results issue ([af8179d](https://github.com/cds-snc/ai-answers/commit/af8179d425c5ca4adf3dbddc35b43b3cc3d3b21c))
+* revise new line to codes not just question numbers ([67c2e47](https://github.com/cds-snc/ai-answers/commit/67c2e47a289629509a13f90958a6d8b980490863))
+* tell it to ignore question numbers ([eb0510b](https://github.com/cds-snc/ai-answers/commit/eb0510b2f6a02899b962fe42cb7553a2a2aa711a))
+
 ## [1.153.0](https://github.com/cds-snc/ai-answers/compare/v1.152.0...v1.153.0) (2026-06-26)
 
 
