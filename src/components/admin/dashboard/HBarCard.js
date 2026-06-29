@@ -14,9 +14,9 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null, yAxisWidth = 160, yAxisTextAlign = 'left', marginLeft = 8 }) => {
   const fmtVal = (v) => (percent ? formatPercent(v, lang) : formatNumber(v, lang));
   const lineH = 18;
-  const CHAR_PX = 7.0;
+  const CHAR_PX = 8.0;
   const YAXIS_W = yAxisWidth;
-  const charsPerLine = Math.floor((YAXIS_W - 8) / CHAR_PX); // ~20 chars
+  const charsPerLine = Math.floor((YAXIS_W - 8) / CHAR_PX);
   const wrapLines = (text) => {
     const words = (text || '').split(' ');
     const lines = [];
@@ -33,7 +33,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
   const maxLines = allWrapped.length > 0 ? Math.max(...allWrapped.map(ls => ls.length)) : 1;
   const maxLineLen = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => l.length))) : 10;
   const barPx = Math.max(40, maxLines * lineH + 16);
-  const xOffset = Math.min(maxLineLen * CHAR_PX + 8, YAXIS_W - 4);
+  const xOffset = Math.min(maxLineLen * CHAR_PX + 8, YAXIS_W - 6);
   // When right-aligned, only allocate as much axis space as the text needs.
   const effectiveYAxisWidth = yAxisTextAlign === 'right'
     ? Math.min(YAXIS_W, maxLineLen * CHAR_PX + 16)

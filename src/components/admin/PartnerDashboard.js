@@ -413,6 +413,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               data={blockedBarData}
               height={Math.max(240, blockedBarData.length * 60)}
               lang={lang}
+              yAxisWidth={220}
               tooltipContent={BlockedBarTooltip}
               noDataLabel={t('blockedQueries.noData')}
             />
