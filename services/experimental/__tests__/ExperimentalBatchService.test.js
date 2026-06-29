@@ -141,6 +141,24 @@ describe('ExperimentalBatchService', () => {
             expect(item.chatId).toBe('chat-123');
         });
 
+        it('should normalize chatId and referringUrl aliases when creating items', async () => {
+            const batchData = { name: 'Alias Extraction', type: 'batch' };
+            const itemsData = [{
+                originalData: {
+                    'Problem Details': 'Q1',
+                    ChatId: 'chat-alias-123',
+                    URL: 'https://alias.test'
+                }
+            }];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id });
+
+            expect(item.question).toBe('Q1');
+            expect(item.referringUrl).toBe('https://alias.test');
+            expect(item.chatId).toBe('chat-alias-123');
+        });
+
         it('should not enqueue items during createBatch (queued by batch-process)', async () => {
             const batchData = { name: 'Grouping Test', type: 'batch' };
             const itemsData = [
@@ -431,8 +449,156 @@ describe('ExperimentalBatchService', () => {
             expect(mockApp.stream).toHaveBeenCalledWith(
                 expect.objectContaining({
                     conversationHistory: [
-                        { role: 'user', content: 'First Q' },
-                        { role: 'assistant', content: 'First A' }
+                        {
+                            sender: 'ai',
+                            text: 'First A',
+                            interaction: {
+                                question: 'First Q',
+                                answer: { content: 'First A' },
+                                context: null
+                            }
+                        }
+                    ]
+                }),
+                expect.any(Object)
+            );
+        });
+
+        it('should preserve original dataset chatId when creating a baseline comparison run', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Original Chat DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: ds._id,
+                rowIndex: 1,
+                data: { question: 'What is SCIS?', ChatId: '1234' }
+            });
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline run',
+                type: 'analysis',
+                config: { analyzerId: 'similar-answer', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create({
+                experimentalBatch: baselineBatch._id,
+                rowIndex: 1,
+                question: 'What is SCIS?',
+                answer: 'Baseline answer',
+                chatId: 'generated-baseline-chat-id',
+                status: 'completed'
+            });
+
+            const comparisonBatch = await ExperimentalBatchService.createBatch(
+                {
+                    name: 'Comparison run',
+                    type: 'analysis',
+                    config: {
+                        analyzerId: 'similar-answer',
+                        datasetId: ds._id.toString(),
+                        baselineRunId: baselineBatch._id.toString()
+                    }
+                },
+                []
+            );
+
+            const item = await ExperimentalBatchItem.findOne({ experimentalBatch: comparisonBatch._id }).lean();
+            expect(item.chatId).toBe('1234');
+            expect(item.baselineChatId).toBe('generated-baseline-chat-id');
+        });
+
+        it('should pass prior turns to the workflow in a multi-turn baseline comparison with similar-answer analyzer', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Multi Turn Comparison DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create([
+                {
+                    experimentalDataset: ds._id,
+                    rowIndex: 1,
+                    data: { question: 'What is SCIS?', ChatId: '1234', URL: 'https://www.sac-isc.gc.ca' }
+                },
+                {
+                    experimentalDataset: ds._id,
+                    rowIndex: 2,
+                    data: { question: 'Where do I find the forms?', ChatId: '1234', URL: 'https://www.sac-isc.gc.ca' }
+                }
+            ]);
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline multi-turn run',
+                type: 'analysis',
+                config: { analyzerId: 'similar-answer', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create([
+                {
+                    experimentalBatch: baselineBatch._id,
+                    rowIndex: 1,
+                    question: 'What is SCIS?',
+                    answer: 'Baseline answer 1',
+                    chatId: 'generated-baseline-chat-1',
+                    status: 'completed'
+                },
+                {
+                    experimentalBatch: baselineBatch._id,
+                    rowIndex: 2,
+                    question: 'Where do I find the forms?',
+                    answer: 'Baseline answer 2',
+                    chatId: 'generated-baseline-chat-2',
+                    status: 'completed'
+                }
+            ]);
+
+            const comparisonBatch = await ExperimentalBatchService.createBatch(
+                {
+                    name: 'Comparison multi-turn run',
+                    type: 'analysis',
+                    config: {
+                        analyzerId: 'similar-answer',
+                        workflow: 'TestGraph',
+                        datasetId: ds._id.toString(),
+                        baselineRunId: baselineBatch._id.toString()
+                    }
+                },
+                []
+            );
+
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: comparisonBatch._id }).sort({ rowIndex: 1 });
+            expect(items.map(item => item.chatId)).toEqual(['1234', '1234']);
+            expect(items.map(item => item.baselineChatId)).toEqual(['generated-baseline-chat-1', 'generated-baseline-chat-2']);
+
+            const mockApp = {
+                stream: vi.fn()
+                    .mockResolvedValueOnce({
+                        async *[Symbol.asyncIterator]() {
+                            yield { result: { answer: { content: 'Current answer 1' } } };
+                        }
+                    })
+                    .mockResolvedValueOnce({
+                        async *[Symbol.asyncIterator]() {
+                            yield { result: { answer: { content: 'Current answer 2' } } };
+                        }
+                    })
+            };
+            getGraphApp.mockResolvedValue(mockApp);
+            ExperimentalAnalyzerRegistry.get.mockResolvedValue({
+                id: 'similar-answer',
+                processor: vi.fn().mockResolvedValue({ status: 'pass', differenceFound: false })
+            });
+
+            await ExperimentalBatchService._processItem(comparisonBatch._id, items[0]._id);
+            await ExperimentalBatchService._processItem(comparisonBatch._id, items[1]._id);
+
+            expect(mockApp.stream).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({
+                    chatId: '1234',
+                    userMessage: 'Where do I find the forms?',
+                    referringUrl: 'https://www.sac-isc.gc.ca',
+                    conversationHistory: [
+                        {
+                            sender: 'ai',
+                            text: 'Current answer 1',
+                            interaction: {
+                                question: 'What is SCIS?',
+                                answer: { content: 'Current answer 1' },
+                                context: null
+                            }
+                        }
                     ]
                 }),
                 expect.any(Object)

@@ -5,8 +5,8 @@
 export class AnalyzerBase {
     // Required static properties - subclasses must override
     static id = '';           // e.g., 'expert-scorer'
-    static name = '';         // e.g., 'Expert Scorer'
-    static description = '';  // Human-readable description
+    static nameKey = '';      // e.g., 'experimental.analysis.analyzers.expert-scorer.name'
+    static descriptionKey = '';  // e.g., 'experimental.analysis.analyzers.expert-scorer.description'
     static inputType = '';    // 'single' | 'comparison' | 'universal'
     static outputColumns = []; // e.g., ['verdict', 'confidence', 'explanation']
 

@@ -31,7 +31,33 @@ const {
 
 vi.mock('../../hooks/useTranslations.js', () => ({
     useTranslations: () => ({
-        t: (key, defaultValue) => defaultValue || key
+        t: (key, defaultValue) => ({
+            'experimental.analysis.analyzerDetailsTitle': 'Analyzer details',
+            'experimental.analysis.configuration': 'Configuration',
+            'experimental.analysis.useExistingDatasetLabel': 'Use existing dataset',
+            'experimental.analysis.datasetSelectPlaceholder': '-- Select an existing dataset --',
+            'experimental.analysis.datasetHelper': 'Upload and manage datasets through the Datasets page, then select one here.',
+            'experimental.analysis.useAsBaseline': 'Use as baseline',
+            'experimental.analysis.baselineSelected': 'Baseline selected',
+            'experimental.analysis.delete': 'Delete',
+            'experimental.analysis.previousRuns': 'Previous runs',
+            'experimental.analysis.batchPrefix': 'Batch',
+            'experimental.analysis.datasetRows': 'rows',
+            'experimental.analysis.progressSummary': 'Completed: {completed} | Failed: {failed} | Total: {total}',
+            'experimental.analysis.statuses.processing': 'Processing',
+            'experimental.analysis.statuses.completed': 'Completed',
+            'experimental.analysis.statuses.failed': 'Failed',
+            'experimental.analysis.messages.selectDataset': 'Please select an existing dataset before starting analysis.',
+            'experimental.analysis.messages.processingStarted': 'Processing started.',
+            'experimental.analysis.messages.startProcessingError': 'Failed to start processing.',
+            'experimental.analysis.messages.startAnalysisFailed': 'Failed to start analysis.',
+            'experimental.analysis.messages.resumeFailed': 'Failed to resume batch.',
+            'experimental.analysis.messages.deleteFailed': 'Failed to delete batch.',
+            'experimental.analysis.messages.exportFailed': 'Failed to export batch.',
+            'experimental.analysis.analyzerPrefix': 'Analyzer',
+            'experimental.analysis.analyzers.analyzer-1.name': 'Analyzer 1',
+            'experimental.analysis.analyzers.analyzer-1.description': 'Analyzer 1 description'
+        }[key] || defaultValue || key)
     })
 }));
 
@@ -61,14 +87,20 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
         </button>
     ),
     GcdsText: ({ children }) => <div>{children}</div>,
-    GcdsLink: ({ children, href }) => <a href={href}>{children}</a>
+    GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
+    GcdsDetails: ({ children, detailsTitle }) => (
+        <section>
+            <div>{detailsTitle}</div>
+            <div>{children}</div>
+        </section>
+    )
 }));
 
 describe('ExperimentalAnalysisPage', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-05-05T00:10:00.000Z'));
-        mockListAnalyzers.mockReset().mockResolvedValue([{ id: 'analyzer-1', name: 'Analyzer 1' }]);
+        mockListAnalyzers.mockReset().mockResolvedValue([{ id: 'analyzer-1', nameKey: 'experimental.analysis.analyzers.analyzer-1.name', descriptionKey: 'experimental.analysis.analyzers.analyzer-1.description' }]);
         mockListDatasets.mockReset().mockResolvedValue({
             data: [{ _id: 'dataset-1', name: 'Dataset 1', description: 'Dataset description', rowCount: 1 }]
         });
@@ -119,7 +151,7 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getByText(/processing/, { selector: 'div' })).toBeTruthy();
+        expect(screen.getByText(/Processing/, { selector: 'div' })).toBeTruthy();
         expect(screen.getByText(/Completed: 3 \| Failed: 1 \| Total: 10/)).toBeTruthy();
 
         await act(async () => {
@@ -142,6 +174,21 @@ describe('ExperimentalAnalysisPage', () => {
         expect(screen.getByRole('link', { name: 'experimental.datasets.backToList' }).getAttribute('href')).toBe(
             '/en/experimental/datasets'
         );
+    });
+
+    it('shows the selected analyzer details in a collapsible control', async () => {
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
+            target: { value: 'analyzer-1' }
+        });
+
+        expect(screen.getByText('Analyzer details')).toBeTruthy();
+        expect(screen.getByText('Analyzer 1 description')).toBeTruthy();
     });
 
     it('shows a starting status card immediately when analysis is launched', async () => {
@@ -218,7 +265,7 @@ describe('ExperimentalAnalysisPage', () => {
             target: { value: 'analyzer-1' }
         });
 
-        const baselineButtons = screen.getAllByRole('button', { name: 'Use as Baseline' });
+        const baselineButtons = screen.getAllByRole('button', { name: 'Use as baseline' });
         expect(baselineButtons).toHaveLength(2);
         expect(baselineButtons[0].disabled).toBe(false);
         expect(baselineButtons[1].disabled).toBe(true);
@@ -261,7 +308,7 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        fireEvent.click(screen.getAllByRole('button', { name: 'Use as Baseline' })[0]);
+        fireEvent.click(screen.getAllByRole('button', { name: 'Use as baseline' })[0]);
         fireEvent.click(screen.getAllByRole('button', { name: 'experimental.analysis.exportChatLogs' })[1]);
 
         await act(async () => {
@@ -279,7 +326,7 @@ describe('ExperimentalAnalysisPage', () => {
     });
 
     it('shows the same run name in the baseline dropdown as the history table', async () => {
-        const expectedDate = new Date('2026-05-05T00:00:00.000Z').toLocaleString();
+        const expectedDate = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date('2026-05-05T00:00:00.000Z'));
         mockListBatches.mockResolvedValueOnce({
             data: [
                 {

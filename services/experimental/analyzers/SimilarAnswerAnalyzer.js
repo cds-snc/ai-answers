@@ -45,8 +45,6 @@ const toBoolean = (value) => {
 
 export class SimilarAnswerAnalyzer extends AnalyzerBase {
     static id = 'similar-answer';
-    static name = 'Similar Answer Analyzer';
-    static description = 'Compares answers from a current run against a baseline run and flags meaningful answer drift, especially changed dates, numbers, objects, eligibility details, steps, and other concrete facts.';
     static inputType = 'universal';
     static outputColumns = [
         'status',

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
@@ -47,8 +48,12 @@ const isActivelyRunningBatch = (batch) => {
     return (Date.now() - updatedAtMs) < ACTIVE_BATCH_WINDOW_MS;
 };
 
+const getAnalyzerTranslationKey = (analyzerId, field) => `experimental.analysis.analyzers.${analyzerId}.${field}`;
+const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${String(status || '').toLowerCase()}`;
+
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
     const [searchParams] = useSearchParams();
     const datasetIdParam = searchParams.get('datasetId');
 
@@ -162,6 +167,32 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
+    const getLocalizedAnalyzerText = (analyzer, field) => {
+        if (!analyzer?.id) {
+            return '';
+        }
+
+        const key = analyzer?.[`${field}Key`] || getAnalyzerTranslationKey(analyzer.id, field);
+        const translated = t(key);
+        if (translated === key) {
+            if (field === 'name') {
+                return analyzer?.id || '';
+            }
+            return '';
+        }
+
+        return translated;
+    };
+
+    const getAnalyzerDisplayName = (analyzer) => getLocalizedAnalyzerText(analyzer, 'name');
+    const getAnalyzerDescription = (analyzer) => getLocalizedAnalyzerText(analyzer, 'description');
+
+    const getStatusLabel = (status) => {
+        const key = getStatusTranslationKey(status);
+        const translated = t(key);
+        return translated === key ? String(status || '') : translated;
+    };
+
     const resolveBatchAnalyzerId = (batch) => {
         if (batch?.config?.analyzerId) return batch.config.analyzerId;
         if (Array.isArray(batch?.config?.analyzerIds) && batch.config.analyzerIds.length > 0) {
@@ -177,16 +208,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
 
         if (!selectedDatasetId) {
-            setMessage('Please select an existing dataset before starting analysis.');
+            setMessage(t('experimental.analysis.messages.selectDataset'));
             return;
         }
 
-        const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
         const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+        const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
         const selectedWorkflowLabel = WORKFLOWS.find(item => item.value === normalizeWorkflow(selectedWorkflow));
         const selectedModelLabel = AVAILABLE_MODELS.find(item => item.value === selectedModel);
         const runName = buildAnalysisRunName({
-            analyzerName: selectedAnalyzer?.name || '',
+            analyzerName: getAnalyzerDisplayName(selectedAnalyzer),
             analyzerId: selectedAnalyzerId,
             datasetName: selectedDataset?.name || '',
             datasetId: selectedDatasetId,
@@ -207,7 +238,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             // Create Batch
         const batchData = {
             name: runName,
-            description: `Analyzer: ${selectedAnalyzerId}`,
+            description: `${t('experimental.analysis.analyzerPrefix')}: ${selectedAnalyzerId}`,
             type: 'analysis',
             config: {
                 analyzerId: selectedAnalyzerId,
@@ -216,7 +247,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 aiProvider: selectedModel || undefined,
                 datasetId: selectedDatasetId || undefined,
                 baselineRunId: selectedAnalyzerId === NO_ANALYZER_ID ? undefined : baselineBatchId || undefined,
-                pageLanguage: 'en',
+                pageLanguage: String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en',
             }
         };
 
@@ -226,27 +257,26 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 // For multiple results, kick off processing for each and track progress.
                 for (const b of result.batches) {
                     try {
-                        const resp = await ExperimentalBatchClientService.processBatch(b._id);
-                        // Show server message for first batch to aid debugging
-                        if (!message) setMessage(resp.message || `Processing started for ${b._id}`);
+                        await ExperimentalBatchClientService.processBatch(b._id);
+                        if (!message) setMessage(t('experimental.analysis.messages.processingStarted'));
                     } catch (err) {
                         console.error('Process batch error:', err);
-                        setMessage(`Error starting processing: ${err.message}`);
+                        setMessage(t('experimental.analysis.messages.startProcessingError'));
                     }
                 }
-                setMessage(t('experimental.analysis.messages.startedCount', { count: result.batches.length }) || `Started ${result.batches.length} analysis runs.`);
+                setMessage(t('experimental.analysis.messages.startedCount').replace('{count}', result.batches.length));
             } else {
                 try {
-                    const procResp = await ExperimentalBatchClientService.processBatch(result._id);
-                    setMessage(procResp.message || 'Processing started');
+                    await ExperimentalBatchClientService.processBatch(result._id);
+                    setMessage(t('experimental.analysis.messages.processingStarted'));
                 } catch (err) {
                     console.error('Process batch error:', err);
-                    setMessage(`Error starting processing: ${err.message}`);
+                    setMessage(t('experimental.analysis.messages.startProcessingError'));
                 }
             }
         } catch (err) {
             console.error(err);
-                    setMessage(`Error: ${err.message || 'Failed to start analysis'}`);
+                    setMessage(t('experimental.analysis.messages.startAnalysisFailed'));
         } finally {
             setStartingRun(null);
             setLoading(false);
@@ -255,13 +285,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     const handleDeleteBatch = async (batchId) => {
-        if (!window.confirm('Are you sure you want to delete this batch?')) return;
+        if (!window.confirm(t('experimental.analysis.messages.confirmDelete'))) return;
         try {
             await ExperimentalBatchClientService.deleteBatch(batchId);
             await loadBatches(selectedDatasetId);
         } catch (err) {
             console.error('Delete error:', err);
-            alert('Failed to delete batch');
+            alert(t('experimental.analysis.messages.deleteFailed'));
         }
     };
 
@@ -276,7 +306,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Export error:', err);
-            alert('Failed to export batch');
+            alert(t('experimental.analysis.messages.exportFailed'));
         }
     };
 
@@ -298,12 +328,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const handleResumeBatch = async (batchId) => {
         try {
             setLoading(true);
-            const resp = await ExperimentalBatchClientService.processBatch(batchId, true);
-            setMessage(resp.message || t('experimental.analysis.messages.resumeStarted'));
+            await ExperimentalBatchClientService.processBatch(batchId, true);
+            setMessage(t('experimental.analysis.messages.resumeStarted'));
             await loadBatches(selectedDatasetId);
         } catch (err) {
             console.error('Resume batch error:', err);
-            setMessage(`Error: ${err.message || 'Failed to resume batch'}`);
+            setMessage(t('experimental.analysis.messages.resumeFailed'));
         } finally {
             setLoading(false);
         }
@@ -311,12 +341,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
 
-    const getRunLabel = (batch) => batch?.name || `Batch ${String(batch?._id || '').slice(-6)}`;
+    const getRunLabel = (batch) => batch?.name || `${t('experimental.analysis.batchPrefix')} ${String(batch?._id || '').slice(-6)}`;
 
     const getAnalyzerLabel = (batch) => {
         const id = resolveBatchAnalyzerId(batch);
         if (!id) return batch?.name || '';
-        return analyzers.find(a => a.id === id)?.name || id;
+        return getAnalyzerDisplayName(analyzers.find(a => a.id === id)) || id;
     };
 
     const getWorkflowLabel = (batch) => {
@@ -344,6 +374,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+    const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
         <GcdsContainer layout="page" tag="main" className="mb-600">
@@ -364,7 +395,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
             
                     <section>
-                        <GcdsHeading tag="h2">Configuration</GcdsHeading>
+                        <GcdsHeading tag="h2">{t('experimental.analysis.configuration')}</GcdsHeading>
 
                         {/* Analyzer selector */}
                         <div className="mb-400">
@@ -397,14 +428,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <option value="">{t('experimental.analysis.messages.selectAnalyzer')}</option>
                                 {analyzers.map(a => (
                                     <option key={a.id} value={a.id}>
-                                        {a.name}
+                                        {getAnalyzerDisplayName(a)}
                                     </option>
                                 ))}
                             </select>
-                            {selectedAnalyzerId && (
-                                <GcdsText className="mt-200">
-                                    {analyzers.find(a => a.id === selectedAnalyzerId)?.description || ''}
-                                </GcdsText>
+                            {selectedAnalyzerId && selectedAnalyzer && (
+                                <GcdsDetails detailsTitle={t('experimental.analysis.analyzerDetailsTitle')} className="mt-200">
+                                    <GcdsText className="mb-200">
+                                        <strong>{getAnalyzerDisplayName(selectedAnalyzer)}</strong>
+                                    </GcdsText>
+                                    <GcdsText>{getAnalyzerDescription(selectedAnalyzer)}</GcdsText>
+                                </GcdsDetails>
                             )}
                         </div>
 
@@ -447,7 +481,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         {/* Dataset Selection */}
                         <div className="mb-400">
                             <label htmlFor="dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                                Use Existing Dataset
+                                {t('experimental.analysis.useExistingDatasetLabel')}
                             </label>
                             <select
                                 id="dataset-select"
@@ -455,14 +489,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 onChange={(e) => setSelectedDatasetId(e.target.value)}
                                 style={{ padding: '8px', width: '100%' }}
                             >
-                                <option value="">-- Select an existing dataset --</option>
+                                <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
                                 {datasets.map(ds => (
-                                    <option key={ds._id} value={ds._id}>{ds.name} ({ds.rowCount} rows)</option>
+                                    <option key={ds._id} value={ds._id}>
+                                        {ds.name} ({formatNumber(ds.rowCount, lang)} {t('experimental.analysis.datasetRows')})
+                                    </option>
                                 ))}
                             </select>
                             {!selectedDatasetId && (
                                 <GcdsText className="mt-200">
-                                    Upload and manage datasets through the Datasets page, then select one here.
+                                    {t('experimental.analysis.datasetHelper')}
                                 </GcdsText>
                             )}
                         </div>
@@ -470,7 +506,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         {selectedDatasetId && (
                             <div className="mb-400">
                                 <label htmlFor="baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                                    {t('experimental.analysis.selectBaseline') || 'Select Baseline Run (Comparison)'}
+                                    {t('experimental.analysis.selectBaseline')}
                                 </label>
                                 <select
                                     id="baseline-select"
@@ -478,10 +514,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     onChange={(e) => setBaselineBatchId(e.target.value)}
                                     style={{ padding: '8px', width: '100%' }}
                                 >
-                                    <option value="">{t('experimental.analysis.noBaseline') || '-- No baseline (Standalone Evaluation) --'}</option>
+                                    <option value="">{t('experimental.analysis.noBaseline')}</option>
                                     {baselineOptions.map(batch => (
                                         <option key={batch._id} value={batch._id}>
-                                            {getRunLabel(batch)} - {new Date(batch.createdAt).toLocaleString()}
+                                            {getRunLabel(batch)} - {new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(batch.createdAt))}
                                         </option>
                                     ))}
                                 </select>
@@ -500,7 +536,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             {startingRun && (
                                 <div className="border p-200 mb-200 rounded bg-light">
                                     {startingRun.name && (
-                                        <div><strong>{startingRun.name}</strong></div>
+                                    <div><strong>{startingRun.name}</strong></div>
                                     )}
                                     <div><strong>{startingRun.status}</strong></div>
                                     <GcdsText className="mt-200">{startingRun.message}</GcdsText>
@@ -508,7 +544,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             )}
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                    <div><strong>{prog.name || `Batch ${id.slice(-6)}`}</strong>: {prog.status}</div>
+                                    <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
                                     <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
                                         <div style={{
                                             width: `${prog.percentComplete}%`,
@@ -518,7 +554,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         }}></div>
                                     </div>
                                     <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
-                                        Completed: {prog.completed} | Failed: {prog.failed} | Total: {prog.total}
+                                        {t('experimental.analysis.progressSummary')
+                                            .replace('{completed}', formatNumber(prog.completed, lang))
+                                            .replace('{failed}', formatNumber(prog.failed, lang))
+                                            .replace('{total}', formatNumber(prog.total, lang))}
                                     </div>
                                 </div>
                             ))}
@@ -533,7 +572,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             {/* History List */}
             <section style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
                 <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
-                    <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns') || 'Previous Runs'}</GcdsHeading>
+                    <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns')}</GcdsHeading>
                     <div className="overflow-auto">
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -566,21 +605,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         color: batch.status === 'completed' ? 'green' : (batch.status === 'failed' ? 'red' : 'orange'),
                                         fontWeight: 'bold'
                                     }}>
-                                        {batch.status}
+                                        {getStatusLabel(batch.status)}
                                     </span>
                                 </td>
-                                <td className="p-300">{batch.summary?.completed ?? 0}</td>
-                                <td className="p-300">{batch.summary?.failed ?? 0}</td>
-                                <td className="p-300">{batch.summary?.total ?? 0}</td>
+                                <td className="p-300">{formatNumber(batch.summary?.completed, lang)}</td>
+                                <td className="p-300">{formatNumber(batch.summary?.failed, lang)}</td>
+                                <td className="p-300">{formatNumber(batch.summary?.total, lang)}</td>
                                 <td className="p-300">{batch.createdBy?.email || t('common.na')}</td>
                                 <td className="p-300">
                                     {batch.summary?.flagged > 0 ? (
-                                        <span style={{ color: '#d30800', fontWeight: 'bold' }}>⚠ {batch.summary.flagged}</span>
+                                        <span style={{ color: '#d30800', fontWeight: 'bold' }}>⚠ {formatNumber(batch.summary.flagged, lang)}</span>
                                     ) : (
                                         <span>0</span>
                                     )}
                                 </td>
-                                <td className="p-300">{new Date(batch.createdAt).toLocaleDateString()}</td>
+                                <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(batch.createdAt))}</td>
                                 <td className="p-200">
                                     <div className="flex gap-200">
                                         {batch.status !== 'processing' && (
@@ -605,10 +644,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                                 disabled={!!selectedAnalyzerId && resolveBatchAnalyzerId(batch) !== selectedAnalyzerId}
                                                 onClick={() => handleUseAsBaseline(batch._id)}
                                             >
-                                                {baselineBatchId === batch._id ? 'Baseline Selected' : 'Use as Baseline'}
+                                                {baselineBatchId === batch._id
+                                                    ? t('experimental.analysis.baselineSelected')
+                                                    : t('experimental.analysis.useAsBaseline')}
                                             </GcdsButton>
                                         )}
-                                        <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>Delete</GcdsButton>
+                                        <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>
+                                            {t('experimental.analysis.delete')}
+                                        </GcdsButton>
                                     </div>
                                 </td>
                             </tr>

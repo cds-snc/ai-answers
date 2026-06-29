@@ -169,7 +169,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                                     {t('experimental.datasets.fileLabel')}
                                 </label>
-                                <input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileChange} />
+                                <input type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
                             </div>
                             <div>
                                 <GcdsButton onClick={handleUpload} disabled={uploading || !selectedFile || !newName}>

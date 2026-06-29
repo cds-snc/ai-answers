@@ -16,8 +16,6 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
 
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
-    static name = 'Expert Scorer';
-    static description = 'Audits answer against a baseline for semantic equivalence and GC standard compliance. Can compare against previous runs.';
     static inputType = 'universal';
     static outputColumns = ['verdict', 'confidence', 'explanation', 'flags', 'keyIdeasFound', 'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck'];
 

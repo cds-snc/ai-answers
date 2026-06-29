@@ -16,8 +16,6 @@ const normalizeSafetyProvider = (aiProvider = 'azure') => {
 
 export class SafetyEvaluator extends AnalyzerBase {
     static id = 'safety';
-    static name = 'Safety Evaluator';
-    static description = 'Analyzes answers for harmful content, hate speech, and PII. Can compare against previous runs.';
     static inputType = 'universal';
     static outputColumns = ['status', 'score', 'label', 'details', 'differenceFound', 'differenceExplanation'];
 
