@@ -126,7 +126,7 @@ describe('ExperimentalBatchService', () => {
             expect(saved.config.aiProvider).toBeUndefined();
         });
 
-        it('should extract referringUrl and chatId from provided data', async () => {
+        it('should generate current chatId without overwriting source chatId in originalData', async () => {
             const batchData = { name: 'Field Extraction', type: 'batch' };
             const itemsData = [{
                 question: 'Q1',
@@ -138,7 +138,9 @@ describe('ExperimentalBatchService', () => {
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id });
 
             expect(item.referringUrl).toBe('https://test.ca');
-            expect(item.chatId).toBe('chat-123');
+            expect(item.originalData.chatId).toBe('chat-123');
+            expect(item.chatId).toBeTruthy();
+            expect(item.chatId).not.toBe('chat-123');
         });
 
         it('should normalize chatId and referringUrl aliases when creating items', async () => {
@@ -156,7 +158,9 @@ describe('ExperimentalBatchService', () => {
 
             expect(item.question).toBe('Q1');
             expect(item.referringUrl).toBe('https://alias.test');
-            expect(item.chatId).toBe('chat-alias-123');
+            expect(item.originalData.originalData.ChatId).toBe('chat-alias-123');
+            expect(item.chatId).toBeTruthy();
+            expect(item.chatId).not.toBe('chat-alias-123');
         });
 
         it('should not enqueue items during createBatch (queued by batch-process)', async () => {
@@ -277,7 +281,8 @@ describe('ExperimentalBatchService', () => {
             );
 
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id }).lean();
-            expect(item.chatId).toBe('chat-baseline-123');
+            expect(item.chatId).toBeTruthy();
+            expect(item.chatId).not.toBe('chat-baseline-123');
             expect(item.baselineChatId).toBe('chat-baseline-123');
             expect(item.answer).toBe('');
             expect(item.baselineAnswer).toBe('A baseline');
@@ -500,7 +505,10 @@ describe('ExperimentalBatchService', () => {
             );
 
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: comparisonBatch._id }).lean();
-            expect(item.chatId).toBe('1234');
+            expect(item.originalData.chatId || item.originalData.ChatId).toBe('1234');
+            expect(item.chatId).toBeTruthy();
+            expect(item.chatId).not.toBe('1234');
+            expect(item.chatId).not.toBe('generated-baseline-chat-id');
             expect(item.baselineChatId).toBe('generated-baseline-chat-id');
         });
 
@@ -558,7 +566,12 @@ describe('ExperimentalBatchService', () => {
             );
 
             const items = await ExperimentalBatchItem.find({ experimentalBatch: comparisonBatch._id }).sort({ rowIndex: 1 });
-            expect(items.map(item => item.chatId)).toEqual(['1234', '1234']);
+            expect(items.map(item => item.originalData.chatId || item.originalData.ChatId)).toEqual(['1234', '1234']);
+            expect(items[0].chatId).toBeTruthy();
+            expect(items[0].chatId).toBe(items[1].chatId);
+            expect(items[0].chatId).not.toBe('1234');
+            expect(items[0].chatId).not.toBe('generated-baseline-chat-1');
+            expect(items[0].chatId).not.toBe('generated-baseline-chat-2');
             expect(items.map(item => item.baselineChatId)).toEqual(['generated-baseline-chat-1', 'generated-baseline-chat-2']);
 
             const mockApp = {
@@ -586,7 +599,7 @@ describe('ExperimentalBatchService', () => {
             expect(mockApp.stream).toHaveBeenNthCalledWith(
                 2,
                 expect.objectContaining({
-                    chatId: '1234',
+                    chatId: items[0].chatId,
                     userMessage: 'Where do I find the forms?',
                     referringUrl: 'https://www.sac-isc.gc.ca',
                     conversationHistory: [
