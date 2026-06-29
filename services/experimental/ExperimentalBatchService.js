@@ -20,6 +20,7 @@ const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
 const CHAT_ID_ALIASES = ['chatid'];
+const SOURCE_CHAT_ID_ALIASES = ['chatid'];
 const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 
@@ -93,6 +94,25 @@ const pickFirstField = (sources, keys) => {
         }
     }
     return '';
+};
+
+const resolveSourceChatId = (item) => pickFirstField([item, item?.originalData], SOURCE_CHAT_ID_ALIASES);
+
+const createRunChatIdResolver = () => {
+    const runChatIdsBySourceChatId = new Map();
+
+    return (sourceChatId) => {
+        const normalizedSourceChatId = String(sourceChatId || '').trim();
+        if (!normalizedSourceChatId) {
+            return crypto.randomUUID();
+        }
+
+        if (!runChatIdsBySourceChatId.has(normalizedSourceChatId)) {
+            runChatIdsBySourceChatId.set(normalizedSourceChatId, crypto.randomUUID());
+        }
+
+        return runChatIdsBySourceChatId.get(normalizedSourceChatId);
+    };
 };
 
 const buildConversationHistoryEntry = (turn) => ({
@@ -242,9 +262,6 @@ class ExperimentalBatchService {
                         data.baselineMatch = match.match;
                         data.baselineFlagged = match.flagged;
                         data.baselineChatId = match.chatId || '';
-                        if (!pickFirstField([data], CHAT_ID_ALIASES)) {
-                            data.chatId = match.chatId || '';
-                        }
 
                         // Keep baseline output separate from the current answer. If the
                         // dataset row has no answer, processing will generate a fresh one.
@@ -265,22 +282,26 @@ class ExperimentalBatchService {
             summary: { total: finalItems.length, completed: 0, failed: 0, matches: 0 }
         });
 
-        const items = finalItems.map((item, index) => ({
-            question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
-            answer: pickNormalizedAnswer(item),
-            baselineAnswer: item.baselineAnswer || item.baseline || item.GoldenAnswer || '',
-            baselineAnalysisResults: item.baselineAnalysisResults || {},
-            baselineMatch: item.baselineMatch,
-            baselineFlagged: item.baselineFlagged,
-            baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
-            referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
-            chatId: pickFirstField([item, item.originalData], CHAT_ID_ALIASES),
-            originalData: item,
-            experimentalBatch: batch._id,
-            rowIndex: index + 1,
-            status: 'pending',
-            retryCount: 0
-        }));
+        const resolveRunChatId = createRunChatIdResolver();
+        const items = finalItems.map((item, index) => {
+            const sourceChatId = resolveSourceChatId(item);
+            return {
+                question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
+                answer: pickNormalizedAnswer(item),
+                baselineAnswer: item.baselineAnswer || item.baseline || item.GoldenAnswer || '',
+                baselineAnalysisResults: item.baselineAnalysisResults || {},
+                baselineMatch: item.baselineMatch,
+                baselineFlagged: item.baselineFlagged,
+                baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
+                referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
+                chatId: resolveRunChatId(sourceChatId),
+                originalData: item,
+                experimentalBatch: batch._id,
+                rowIndex: index + 1,
+                status: 'pending',
+                retryCount: 0
+            };
+        });
 
         await ExperimentalBatchItem.insertMany(items);
 
