@@ -1,6 +1,7 @@
 import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import ExperimentalAnalyzerRegistry from '../../services/experimental/ExperimentalAnalyzerRegistry.js';
 
 const stringifyComplexValue = (value) => {
     try {
@@ -45,6 +46,80 @@ const normalizeExcelValue = (value) => {
     return value;
 };
 
+const CORE_HEADERS = ['appVersion', 'question', 'answer', 'baselineAnswer', 'flagged'];
+const ANALYZER_DEBUG_COLUMNS = new Set(['flagged', 'differenceFound']);
+
+const resolveAnalyzerId = (config = {}) => {
+    if (typeof config.analyzerId === 'string' && config.analyzerId.trim()) {
+        return config.analyzerId.trim();
+    }
+
+    if (Array.isArray(config.analyzerIds)) {
+        const firstAnalyzerId = config.analyzerIds
+            .map((id) => String(id || '').trim())
+            .find(Boolean);
+        if (firstAnalyzerId) {
+            return firstAnalyzerId;
+        }
+    }
+
+    return '';
+};
+
+const buildOrderedHeaders = (flattenedItems, analyzerId = '', analyzerOutputColumns = []) => {
+    const headerList = [];
+    const headerSet = new Set();
+
+    flattenedItems.forEach((item) => {
+        Object.keys(item).forEach((key) => {
+            if (!headerSet.has(key)) {
+                headerSet.add(key);
+                headerList.push(key);
+            }
+        });
+    });
+
+    const priorityHeaders = CORE_HEADERS.filter((header) => headerSet.has(header));
+    const analysisPrefix = analyzerId ? `analysisResults.${analyzerId}.` : '';
+    const analysisHeaders = [];
+
+    if (analysisPrefix) {
+        const orderedAnalyzerColumns = [
+            ...analyzerOutputColumns.filter((column) => !ANALYZER_DEBUG_COLUMNS.has(column)),
+            ...analyzerOutputColumns.filter((column) => ANALYZER_DEBUG_COLUMNS.has(column))
+        ];
+        const analysisSeen = new Set();
+
+        orderedAnalyzerColumns.forEach((column) => {
+            const header = `${analysisPrefix}${column}`;
+            if (headerSet.has(header) && !analysisSeen.has(header)) {
+                analysisHeaders.push(header);
+                analysisSeen.add(header);
+            }
+        });
+
+        headerList.forEach((header) => {
+            if (header.startsWith(analysisPrefix) && !analysisSeen.has(header)) {
+                analysisHeaders.push(header);
+                analysisSeen.add(header);
+            }
+        });
+    }
+
+    const usedHeaders = new Set([...priorityHeaders, ...analysisHeaders]);
+    const remainingHeaders = headerList.filter((header) => !usedHeaders.has(header));
+    const dateHeaders = remainingHeaders.filter((header) =>
+        flattenedItems.some((item) => item[header] instanceof Date)
+    );
+    const nonDateHeaders = remainingHeaders.filter((header) => !dateHeaders.includes(header));
+    const tailHeaders = nonDateHeaders.filter((header) =>
+        (header.startsWith('baseline') && header !== 'baselineAnswer') || header.startsWith('originalData')
+    );
+    const regularHeaders = nonDateHeaders.filter((header) => !tailHeaders.includes(header));
+
+    return [...priorityHeaders, ...analysisHeaders, ...regularHeaders, ...tailHeaders, ...dateHeaders];
+};
+
 /**
  * GET /api/experimental/batch-export/:id
  */
@@ -54,7 +129,7 @@ async function handler(req, res) {
         const { format } = req.query;
 
         const batch = await ExperimentalBatch.findById(id)
-            .select('appVersion')
+            .select('appVersion config.analyzerId config.analyzerIds')
             .lean();
         const appVersion = batch?.appVersion || '';
 
@@ -75,6 +150,19 @@ async function handler(req, res) {
             const worksheet = workbook.addWorksheet('Batch Results');
 
             if (exportItems.length > 0) {
+                const analyzerId = resolveAnalyzerId(batch?.config || {});
+                let analyzerOutputColumns = [];
+                if (analyzerId) {
+                    try {
+                        const analyzerDef = await ExperimentalAnalyzerRegistry.get(analyzerId);
+                        analyzerOutputColumns = Array.isArray(analyzerDef?.outputColumns)
+                            ? analyzerDef.outputColumns
+                            : [];
+                    } catch (lookupError) {
+                        console.warn('Batch export analyzer metadata lookup failed:', lookupError);
+                    }
+                }
+
                 // Flatten and filter internal/buffer fields
                 const flattenedItems = exportItems.map(item => {
                     const flatItem = flatten(item, { safe: true });
@@ -93,16 +181,7 @@ async function handler(req, res) {
                     return filtered;
                 });
 
-                // Extract all unique headers
-                const headers = new Set();
-                flattenedItems.forEach(item => Object.keys(item).forEach(k => headers.add(k)));
-
-                const headerList = Array.from(headers);
-                const dateHeaders = headerList.filter((header) =>
-                    flattenedItems.some((item) => item[header] instanceof Date)
-                );
-                const nonDateHeaders = headerList.filter((header) => !dateHeaders.includes(header));
-                const orderedHeaders = [...nonDateHeaders, ...dateHeaders];
+                const orderedHeaders = buildOrderedHeaders(flattenedItems, analyzerId, analyzerOutputColumns);
 
                 const columnConfigs = orderedHeaders.map(h => ({ header: h, key: h }));
                 worksheet.columns = columnConfigs;
