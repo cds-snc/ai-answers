@@ -16,8 +16,6 @@ const normalizeSafetyProvider = (aiProvider = 'azure') => {
 
 export class BiasEvaluator extends AnalyzerBase {
     static id = 'bias-detection';
-    static name = 'Bias Detector';
-    static description = 'Detects harmful biases (gender, race, etc.) in AI responses. Can compare against previous runs.';
     static inputType = 'universal';
     static outputColumns = ['status', 'score', 'label', 'details', 'differenceFound', 'differenceExplanation'];
 

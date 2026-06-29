@@ -1716,10 +1716,10 @@
       "defaultMissing": "Texte par défaut indisponible."
     }
   },
-  "connectivity": {
-    "title": "Tableau de bord de connectivit? du service",
-    "description": "Tester la connectivit? ? tous les services externes et fournisseurs d'IA utilis?s par R?ponses IA.",
-    "runTests": "Ex?cuter les tests de connectivit?",
+    "connectivity": {
+    "title": "Tableau de bord de connectivité du service",
+    "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
+    "runTests": "Exécuter les tests de connectivité",
     "testing": "Test des connexions...",
     "simulation": {
       "title": "Simulation de panne",
@@ -1729,17 +1729,17 @@
       "labels": {
         "database": "Base de données",
         "search": "Recherche",
-      "llm": "LLM"
+        "llm": "LLM"
       }
     },
     "connected": "Connecté",
     "errors": "Erreurs",
     "warnings": "Avertissements",
-    "notConfigured": "Non configur?",
-    "lastRun": "Derni?re ex?cution",
-    "serviceDetails": "D?tails du service",
+    "notConfigured": "Non configuré",
+    "lastRun": "Dernière exécution",
+    "serviceDetails": "Détails du service",
     "latency": "Latence",
-    "details": "D?tails",
+    "details": "Détails",
     "error": "Erreur"
   },
   "validation": {
@@ -1747,48 +1747,48 @@
     "emailInvalid": "Veuillez entrer une adresse courriel valide."
   },
   "notFound": {
-    "breadcrumb": "R?ponses IA",
+    "breadcrumb": "Réponses IA",
     "title": "Page introuvable",
     "message": "Nous ne trouvons pas la page que vous cherchez.",
-    "homeLink": "Retourner ? R?ponses IA"
+    "homeLink": "Retourner à Réponses IA"
   },
   "experimental": {
     "datasets": {
-      "title": "Ensembles de donn?es exp?rimentaux",
+      "title": "Ensembles de données expérimentaux",
       "analyze": "Analyser",
-      "uploadNew": "T?l?charger un nouvel ensemble de donn?es",
-      "hideUpload": "Masquer le t?l?chargement",
-      "upload": "T?l?charger un ensemble de donn?es",
-      "uploading": "T?l?chargement en cours...",
-      "uploadSuccess": "Ensemble de donn?es t?l?charg? avec succ?s?!",
-      "uploadFailed": "Le t?l?chargement a ?chou?",
+      "uploadNew": "Téléverser un nouvel ensemble de données",
+      "hideUpload": "Masquer le téléversement",
+      "upload": "Téléverser un ensemble de données",
+      "uploading": "Téléversement en cours...",
+      "uploadSuccess": "Ensemble de données téléversé avec succès!",
+      "uploadFailed": "Le téléversement a échoué",
       "readFailed": "Impossible de lire le fichier",
-      "delete": "Supprimer l'ensemble de donn?es",
-      "view": "Voir les donn?es",
-      "viewing": "Affichage des donn?es : {name}",
+      "delete": "Supprimer l'ensemble de données",
+      "view": "Voir les données",
+      "viewing": "Affichage des données : {name}",
       "backToList": "Retour aux ensembles",
-      "errorLoadingRows": "?chec du chargement des donn?es.",
-      "confirmDelete": "?tes-vous s?r de vouloir supprimer cet ensemble de donn?es?? Cette action est irr?versible.",
-      "inUse": "Cet ensemble de donn?es est utilis? par des lots actifs et ne peut pas ?tre supprim?.",
-      "nameLabel": "Nom de l'ensemble de donn?es",
+      "errorLoadingRows": "Échec du chargement des données.",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données? Cette action est irréversible.",
+      "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
+      "nameLabel": "Nom de l'ensemble de données",
       "descLabel": "Description",
-      "typeLabel": "Type d'ensemble de donn?es",
-      "uploadedBy": "T?l?vers? par",
+      "typeLabel": "Type d'ensemble de données",
+      "uploadedBy": "Téléversé par",
       "fileLabel": "Fichier XLSX / CSV",
       "requiredColumns": "Colonnes requises",
       "uploadDescriptions": {
-        "questionOnly": "Importez uniquement les questions. Toutes les colonnes de r?ponse seront ignor?es.",
-        "qaPair": "Importez les questions avec leurs r?ponses existantes. La colonne de r?ponse sera conserv?e."
+        "questionOnly": "Importez uniquement les questions. Toutes les colonnes de réponse seront ignorées.",
+        "qaPair": "Importez les questions avec leurs réponses existantes. La colonne de réponse sera conservée."
       },
       "uploadColumns": {
         "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
         "qaPair": "question et answer (requis), referringUrl (optionnel), chatId (optionnel)"
       },
       "rowCount": "Lignes",
-      "created": "Cr?? le",
-      "existing": "Ensembles de donn?es existants",
-      "loading": "Chargement des ensembles de donn?es...",
-      "empty": "Aucun ensemble de donn?es trouv?.",
+      "created": "Créé le",
+      "existing": "Ensembles de données existants",
+      "loading": "Chargement des ensembles de données...",
+      "empty": "Aucun ensemble de données trouvé.",
       "actions": "Actions",
       "type": {
         "questionOnly": "Question seulement",
@@ -1798,59 +1798,107 @@
     },
     "analysis": {
       "title": "Analyse par lot",
-      "datasetLabel": "Ensemble de donn?es :",
-      "changeDataset": "Changer d'ensemble de donn?es",
+      "datasetLabel": "Ensemble de données :",
+      "changeDataset": "Changer d'ensemble de données",
       "configuration": "Configuration",
-      "selectAnalyzers": "S?lectionner un analyseur",
+      "selectAnalyzers": "Sélectionner un analyseur",
+      "analyzerDetailsTitle": "Détails de l'analyseur",
+      "analyzerPrefix": "Analyseur",
       "workflowLabel": "Flux de travail",
-      "selectBaseline": "S?lectionner une ex?cution de r?f?rence (comparaison)",
-      "baselineHint": "Choisissez une analyse pr?c?dente comme r?f?rence. Les ex?cutions suivantes seront compar?es aux r?ponses de celle-ci.",
-      "noBaseline": "-- Aucune r?f?rence (?valuation autonome) --",
-      "useExistingDataset": "Utiliser un ensemble de donn?es existant",
-      "uploadInstead": "-- T?l?charger un nouveau fichier ? la place --",
-      "orUpload": "Ou t?l?charger de nouvelles donn?es :",
-      "inputFile": "Fichier d'entr?e (Excel/CSV)",
-      "comparisonFile": "Fichier de comparaison (optionnel)",
+      "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
+      "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
+      "noBaseline": "-- Aucune référence (évaluation autonome) --",
+      "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
+      "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",
+      "datasetHelper": "Téléversez et gérez les ensembles de données dans la page des ensembles de données, puis sélectionnez-en un ici.",
+      "datasetRows": "lignes",
+      "uploadInstead": "-- Téléverser un nouveau fichier à la place --",
+      "orUpload": "Ou téléverser de nouvelles données :",
+      "inputFile": "Fichier d'entrée (Excel/CSV)",
+      "comparisonFile": "Fichier de comparaison (facultatif)",
       "run": "Lancer l'analyse",
-      "starting": "D?marrage...",
-      "startingRun": "D?marrage de l'analyse...",
+      "starting": "Démarrage...",
+      "startingRun": "Démarrage de l'analyse...",
       "resume": "Reprendre",
-      "runningStatus": "Statut de l'ex?cution",
-      "noActiveRuns": "Aucune ex?cution active n'est actuellement suivie.",
-      "previousRuns": "Ex?cutions pr?c?dentes",
+      "runningStatus": "Statut de l'exécution",
+      "noActiveRuns": "Aucune exécution active n'est actuellement suivie.",
+      "previousRuns": "Exécutions précédentes",
+      "batchPrefix": "Lot",
+      "progressSummary": "Terminées : {completed} | Échouées : {failed} | Total : {total}",
       "columns": {
-        "name": "Nom de l'ex?cution",
+        "name": "Nom de l'exécution",
         "analyzer": "Analyseur",
         "workflow": "Flux de travail",
-        "modelFamily": "Famille de mod?les",
+        "modelFamily": "Famille de modèles",
         "appVersion": "Version de l'application",
         "status": "Statut",
         "completed": "Terminées",
         "failed": "Échouées",
         "totalQuestions": "Total des questions",
         "createdBy": "Créé par",
-        "issues": "Probl?mes",
-        "flagged": "Signal?s",
+        "issues": "Problèmes",
+        "flagged": "Signalés",
         "date": "Date",
         "actions": "Actions"
       },
-      "baseline": "R?F?RENCE",
+      "baseline": "Référence",
       "export": "Exporter",
       "exportChatLogs": "Exporter les journaux de clavardage",
-      "useAsBaseline": "Utiliser comme r?f?rence",
+      "useAsBaseline": "Utiliser comme référence",
+      "baselineSelected": "Référence sélectionnée",
       "delete": "Supprimer",
-      "empty": "Aucune ex?cution pr?c?dente trouv?e pour cet ensemble de donn?es.",
+      "empty": "Aucune exécution précédente trouvée pour cet ensemble de données.",
+      "statuses": {
+        "pending": "En attente",
+        "processing": "En cours",
+        "completed": "Terminée",
+        "failed": "Échouée",
+        "cancelled": "Annulée"
+      },
       "messages": {
-        "selectAnalyzer": "Veuillez s?lectionner un analyseur.",
-        "selectData": "Veuillez s?lectionner un ensemble de donn?es ou t?l?charger un fichier.",
-        "comparisonRequired": "L'analyse de comparaison n?cessite un deuxi?me fichier ou un type d'ensemble de donn?es sp?cifique.",
-        "startingRun": "D?marrage de votre analyse. Veuillez patienter un instant.",
-        "startedCount": "{count} ex?cutions d'analyse lanc?es.",
-        "resumeStarted": "La reprise a ?t? demand?e.",
-        "confirmDelete": "?tes-vous s?r de vouloir supprimer ce lot??",
-        "deleteError": "?chec de la suppression du lot",
-        "exportError": "?chec de l'exportation du lot",
-        "exportChatLogsError": "?chec de l'exportation des journaux de clavardage"
+        "selectAnalyzer": "Veuillez sélectionner un analyseur.",
+        "selectData": "Veuillez sélectionner un ensemble de données ou téléverser un fichier.",
+        "selectDataset": "Veuillez sélectionner un ensemble de données existant avant de commencer l'analyse.",
+        "comparisonRequired": "L'analyse de comparaison nécessite un deuxième fichier ou un type d'ensemble de données spécifique.",
+        "startingRun": "Démarrage de votre analyse. Veuillez patienter un instant.",
+        "startedCount": "{count} exécutions d'analyse lancées.",
+        "resumeStarted": "La reprise a été demandée.",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot?",
+        "processingStarted": "Traitement démarré.",
+        "startProcessingError": "Échec du démarrage du traitement.",
+        "startAnalysisFailed": "Échec du démarrage de l'analyse.",
+        "resumeFailed": "Échec de la reprise du lot.",
+        "deleteFailed": "Échec de la suppression du lot.",
+        "exportFailed": "Échec de l'exportation du lot.",
+        "deleteError": "Échec de la suppression du lot",
+        "exportError": "Échec de l'exportation du lot",
+        "exportChatLogsError": "Échec de l'exportation des journaux de clavardage"
+      },
+      "analyzers": {
+        "no-analyzer": {
+          "name": "Aucun analyseur",
+          "description": "Cette option exécute le lot sans étape de notation. Elle est utile pour valider le pipeline du lot, les exportations ou le chemin de stockage sans comparer les réponses ni produire d'indicateurs. Comme rien n'est évalué, le statut reste pass et flagged demeure false. Il n'y a ni comparaison à une référence, ni détection de dérive, ni logique de régression. Utilisez ce mode uniquement pour vérifier que le flux peut déplacer les données de l'entrée à la sortie, et non pour analyser la qualité des réponses."
+        },
+        "bias-detection": {
+          "name": "Détecteur de biais",
+          "description": "Cet analyseur vérifie si la réponse introduit ou renforce un biais nuisible, par exemple un biais lié au genre, à la race, à l'âge, au handicap ou à d'autres caractéristiques protégées. Il recherche les formulations qui stéréotypent, excluent ou traitent un groupe de façon injuste, et il peut aussi comparer l'exécution actuelle à un lot de référence afin de déterminer si le biais s'est amélioré, aggravé ou maintenu. Un résultat signalé signifie que la réponse contient un signal de biais qui mérite une vérification, ou que la réponse actuelle est sensiblement plus biaisée que la référence. En l'absence de référence, l'analyseur agit comme une revue de sécurité autonome et évalue seulement la réponse courante. Utilisez-le pour surveiller les formulations nuisibles, les hypothèses injustes et les régressions subtiles de ton ou de vocabulaire."
+        },
+        "expert-scorer": {
+          "name": "Évaluateur expert",
+          "description": "Cet analyseur vérifie si la réponse conserve le même sens que la référence tout en respectant les attentes de qualité du gouvernement du Canada. Il compare la réponse courante à la référence pour l'équivalence sémantique, les idées clés manquantes, les changements de type de réponse et la conformité aux normes GC. Un résultat signalé signifie que la réponse a dérivé d'une manière qui devrait être revue, par exemple en perdant un point important, en changeant la recommandation ou en régressant d'une réponse normale vers une clarification ou une réponse plus faible. Lorsqu'une référence existe, l'analyseur vérifie l'amélioration, la régression ou l'absence de changement significatif; lorsqu'aucune référence n'est fournie, il devient une revue de qualité autonome de la réponse courante. Utilisez-le lorsque vous voulez un jugement global sur la qualité plutôt qu'une comparaison point par point."
+        },
+        "refusal": {
+          "name": "Analyseur de refus",
+          "description": "Cet analyseur détecte les réponses de type refus ou les réponses bloquées, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que le système a refusé, bloqué ou rejeté la demande d'une manière qui mérite d'être examinée. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante, par exemple si le système est passé d'une réponse normale à un refus, ou d'un refus à une réponse. C'est utile pour suivre les moments où le système cesse d'aider l'utilisateur et pour déterminer si ce changement était voulu, sûr ou régressif."
+        },
+        "safety": {
+          "name": "Évaluateur de sécurité",
+          "description": "Cet analyseur examine la réponse pour repérer du contenu nuisible, des propos haineux, des instructions dangereuses, des fuites de renseignements personnels et tout autre contenu qui ne devrait pas être diffusé tel quel. Un résultat signalé signifie que la réponse a franchi une limite de sécurité ou qu'elle a exposé du contenu qui devrait être examiné avant de considérer l'exécution comme acceptable. Lorsqu'une référence est fournie, l'analyseur compare les deux exécutions et indique si la sécurité s'est améliorée, détériorée ou maintenue. Utilisez cet analyseur pour surveiller la qualité de la modération, repérer rapidement les sorties à risque et vérifier que les changements apportés au système rendent les réponses plus sûres, et non moins sûres."
+        },
+        "similar-answer": {
+          "name": "Analyseur de réponses similaires",
+          "description": "Cet analyseur est conçu pour détecter la dérive des réponses. Il compare la réponse courante à une réponse de référence et recherche les changements significatifs dans les dates, les nombres, les règles d'admissibilité, les étapes, les programmes ou documents nommés, la portée, les URL et tout autre fait concret qui pourrait modifier l'action à prendre par l'utilisateur. Un résultat signalé signifie que la nouvelle réponse diffère de façon importante et peut changer les conseils donnés, même si la formulation semble proche. Les reformulations sans conséquence, les points équivalents présentés dans un autre ordre et les changements de mise en forme sont ignorés. Si l'analyseur ne peut pas déterminer si une différence est importante, il peut renvoyer needs-review afin qu'une personne examine le cas. Utilisez-le pour repérer les régressions subtiles qu'un simple score de similarité manquerait."
+        }
       }
     }
   }

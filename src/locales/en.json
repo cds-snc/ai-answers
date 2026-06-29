@@ -1797,29 +1797,36 @@
       }
     },
     "analysis": {
-      "title": "Batch Analysis",
+      "title": "Batch analysis",
       "datasetLabel": "Dataset:",
-      "changeDataset": "Change Dataset",
+      "changeDataset": "Change dataset",
       "configuration": "Configuration",
       "selectAnalyzers": "Select analyzer",
+      "analyzerDetailsTitle": "Analyzer details",
+      "analyzerPrefix": "Analyzer",
       "workflowLabel": "Workflow",
-      "selectBaseline": "Select Baseline Run (Comparison)",
+      "selectBaseline": "Select baseline run (comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
-      "noBaseline": "-- No baseline (Standalone Evaluation) --",
-      "useExistingDataset": "Use Existing Dataset",
+      "noBaseline": "-- No baseline (standalone evaluation) --",
+      "useExistingDatasetLabel": "Use existing dataset",
+      "datasetSelectPlaceholder": "-- Select an existing dataset --",
+      "datasetHelper": "Upload and manage datasets through the Datasets page, then select one here.",
+      "datasetRows": "rows",
       "uploadInstead": "-- Upload a new file instead --",
       "orUpload": "Or upload new data:",
       "inputFile": "Input File (Excel/CSV)",
       "comparisonFile": "Comparison File (Optional)",
-      "run": "Run Analysis",
+      "run": "Run analysis",
       "starting": "Starting...",
       "startingRun": "Starting analysis...",
       "resume": "Resume",
-      "runningStatus": "Running Status",
+      "runningStatus": "Running status",
       "noActiveRuns": "No active runs currently tracked.",
-      "previousRuns": "Previous Runs",
+      "previousRuns": "Previous runs",
+      "batchPrefix": "Batch",
+      "progressSummary": "Completed: {completed} | Failed: {failed} | Total: {total}",
       "columns": {
-        "name": "Run Name",
+        "name": "Run name",
         "analyzer": "Analyzer",
         "workflow": "Workflow",
         "modelFamily": "Model family",
@@ -1837,20 +1844,61 @@
       "baseline": "BASELINE",
       "export": "Export",
       "exportChatLogs": "Export chat logs",
-      "useAsBaseline": "Use as Baseline",
+      "useAsBaseline": "Use as baseline",
+      "baselineSelected": "Baseline selected",
       "delete": "Delete",
       "empty": "No previous runs found for this dataset.",
+      "statuses": {
+        "pending": "Pending",
+        "processing": "Processing",
+        "completed": "Completed",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
       "messages": {
         "selectAnalyzer": "Please select an analyzer.",
         "selectData": "Please select a dataset or upload a file.",
+        "selectDataset": "Please select an existing dataset before starting analysis.",
         "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
         "startingRun": "Starting your analysis run. Please wait a moment.",
         "startedCount": "Started {count} analysis runs.",
         "resumeStarted": "Resume requested.",
         "confirmDelete": "Are you sure you want to delete this batch?",
+        "processingStarted": "Processing started.",
+        "startProcessingError": "Failed to start processing.",
+        "startAnalysisFailed": "Failed to start analysis.",
+        "resumeFailed": "Failed to resume batch.",
+        "deleteFailed": "Failed to delete batch.",
+        "exportFailed": "Failed to export batch.",
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch",
         "exportChatLogsError": "Failed to export chat logs"
+      },
+      "analyzers": {
+        "no-analyzer": {
+          "name": "No analyzer",
+          "description": "This option runs the batch without any scoring pass. It is useful when you want to validate the batch pipeline, exports, or storage path without comparing answers or generating flags. Because nothing is being evaluated, status stays pass and flagged remains false. There is no baseline comparison, no drift detection, and no regression logic. Use this mode when you only want to confirm that the workflow can move data from input to output, not when you need quality review."
+        },
+        "bias-detection": {
+          "name": "Bias detector",
+          "description": "This analyzer checks whether the answer introduces or reinforces harmful bias, for example bias tied to gender, race, age, disability, or other protected characteristics. It looks for language that stereotypes, excludes, or treats a group unfairly, and it can also compare the current run with a baseline run to see if the bias got better, worse, or stayed the same. A flagged result means the answer contains a bias signal that deserves review, or that the current answer is materially more biased than the baseline. If no baseline exists, the analyzer behaves like a standalone safety review and reports the result of the current answer only. Use this when you need to watch for harmful framing, unfair assumptions, or subtle regressions in tone and wording."
+        },
+        "expert-scorer": {
+          "name": "Expert scorer",
+          "description": "This analyzer judges whether the answer still matches the baseline meaning while staying aligned with Government of Canada quality expectations. It compares the current answer against the baseline for semantic equivalence, missing key ideas, answer-type changes, and GC standard compliance. A flagged result means the answer drifted in a way that should be reviewed, such as losing an important point, changing the recommendation, or regressing from a normal answer to a clarification or other weaker response. When a baseline is available, the analyzer checks for improvement, regression, or no meaningful change; when no baseline is supplied, it works as a standalone quality review for the current answer. Use this when you want a broader quality judgment rather than a narrow fact-by-fact comparison."
+        },
+        "refusal": {
+          "name": "Refusal analyzer",
+          "description": "This analyzer detects refusal-style or blocked responses, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the system refused, blocked, or denied the request in a way that is worth reviewing. In comparison mode, it checks whether refusal behaviour changed between the baseline and the current run, for example from answering normally to refusing, or from refusing to answering. This makes it useful for tracking where the system stops helping the user and whether that change was intentional, safe, or a regression."
+        },
+        "safety": {
+          "name": "Safety evaluator",
+          "description": "This analyzer reviews the answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is. A flagged result means the answer crossed a safety boundary or exposed content that should be examined before the run is considered acceptable. When a baseline is provided, the analyzer compares the two runs and reports whether safety improved, regressed, or stayed stable. Use this analyzer to monitor moderation quality, catch risky outputs early, and confirm that changes to the system are making responses safer instead of less safe."
+        },
+        "similar-answer": {
+          "name": "Similar answer analyzer",
+          "description": "This analyzer is designed for answer-drift detection. It compares the current answer with a baseline answer and looks for meaningful changes in dates, numbers, eligibility rules, steps, named programs or documents, scope, URLs, and other concrete facts that would change what a user should do. A flagged result means the new answer is materially different in a way that could affect guidance, even if the wording still sounds close. Harmless rephrasing, reordered but equivalent points, and formatting-only changes are ignored. If the analyzer cannot tell whether a difference matters, it can return needs-review so a human can inspect it. Use this when you want to catch subtle regressions that a simple similarity score would miss."
+        }
       }
     }
   }

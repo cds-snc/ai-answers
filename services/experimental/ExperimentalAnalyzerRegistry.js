@@ -13,8 +13,8 @@ class ExperimentalAnalyzerRegistry {
             try {
                 if (AnalyzerClass && AnalyzerClass.id) {
                     this.register(AnalyzerClass.id, {
-                        name: AnalyzerClass.name,
-                        description: AnalyzerClass.description,
+                        nameKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.name`,
+                        descriptionKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.description`,
                         inputType: AnalyzerClass.inputType,
                         outputColumns: AnalyzerClass.outputColumns,
                         concurrency: AnalyzerClass.concurrency, // Optional hint

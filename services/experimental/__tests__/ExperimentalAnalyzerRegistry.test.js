@@ -15,8 +15,8 @@ describe('ExperimentalAnalyzerRegistry', () => {
 
     it('should register an analyzer manually', () => {
         const config = {
-            name: 'Test',
-            description: 'Desc',
+            nameKey: 'test.name',
+            descriptionKey: 'test.description',
             inputType: 'single',
             processor: async () => 'result'
         };
@@ -33,15 +33,16 @@ describe('ExperimentalAnalyzerRegistry', () => {
 
         const safety = await ExperimentalAnalyzerRegistry.get('safety');
         expect(safety).toBeDefined();
-        expect(safety.name).toBe('Safety Evaluator');
+        expect(safety.nameKey).toBe('experimental.analysis.analyzers.safety.name');
+        expect(safety.descriptionKey).toBe('experimental.analysis.analyzers.safety.description');
 
         const noAnalyzer = await ExperimentalAnalyzerRegistry.get('no-analyzer');
         expect(noAnalyzer).toBeDefined();
-        expect(noAnalyzer.name).toBe('No analyzer');
+        expect(noAnalyzer.nameKey).toBe('experimental.analysis.analyzers.no-analyzer.name');
 
         const similarAnswer = await ExperimentalAnalyzerRegistry.get('similar-answer');
         expect(similarAnswer).toBeDefined();
-        expect(similarAnswer.name).toBe('Similar Answer Analyzer');
+        expect(similarAnswer.nameKey).toBe('experimental.analysis.analyzers.similar-answer.name');
     });
 
     it('should return undefined for unknown analyzer', async () => {

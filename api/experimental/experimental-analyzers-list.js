@@ -6,8 +6,8 @@ async function handler(req, res) {
     // Return only metadata needed by UI
     const metadata = analyzers.map(a => ({
         id: a.id,
-        name: a.name,
-        description: a.description,
+        nameKey: a.nameKey,
+        descriptionKey: a.descriptionKey,
         inputType: a.inputType,
         outputColumns: a.outputColumns
     }));

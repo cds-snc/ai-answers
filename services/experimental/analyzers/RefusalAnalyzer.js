@@ -2,8 +2,6 @@ import AnalyzerBase from './AnalyzerBase.js';
 
 export class RefusalAnalyzer extends AnalyzerBase {
     static id = 'refusal';
-    static name = 'Refusal Analyzer';
-    static description = 'Detects refusal-class answers and application blocks, including safety, harm, short-query, out-of-scope, and prompt-tagged refusals (<not-gc> and <pt-muni>), and flags changes versus a baseline run.';
     static inputType = 'universal';
     static outputColumns = [
         'status',
