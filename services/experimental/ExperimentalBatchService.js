@@ -19,6 +19,9 @@ const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer',
 const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
+const CHAT_ID_ALIASES = ['chatid'];
+const REFERRING_URL_ALIASES = ['referringurl', 'url'];
+const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 
 const extractAnswerText = (answer) => {
     if (typeof answer === 'string') {
@@ -70,6 +73,39 @@ const pickNormalizedAnswer = (item = {}) => {
     }
     return '';
 };
+
+const normalizeFieldKey = (input = '') => String(input)
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+    .trim();
+
+const pickFirstField = (sources, keys) => {
+    const normalizedKeys = keys.map(normalizeFieldKey);
+    for (const source of sources) {
+        if (!source || typeof source !== 'object') continue;
+        for (const [key, value] of Object.entries(source)) {
+            if (!normalizedKeys.includes(normalizeFieldKey(key))) {
+                continue;
+            }
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                return value;
+            }
+        }
+    }
+    return '';
+};
+
+const buildConversationHistoryEntry = (turn) => ({
+    sender: 'ai',
+    text: turn.answer || '',
+    interaction: {
+        question: turn.question || '',
+        answer: {
+            content: turn.answer || ''
+        },
+        context: turn.context || null
+    }
+});
 
 const makeError = (message, code, statusCode) => {
     const err = new Error(message);
@@ -206,7 +242,9 @@ class ExperimentalBatchService {
                         data.baselineMatch = match.match;
                         data.baselineFlagged = match.flagged;
                         data.baselineChatId = match.chatId || '';
-                        data.chatId = data.chatId || match.chatId || '';
+                        if (!pickFirstField([data], CHAT_ID_ALIASES)) {
+                            data.chatId = match.chatId || '';
+                        }
 
                         // Keep baseline output separate from the current answer. If the
                         // dataset row has no answer, processing will generate a fresh one.
@@ -228,15 +266,15 @@ class ExperimentalBatchService {
         });
 
         const items = finalItems.map((item, index) => ({
-            question: item.question || item.Question || item.REDACTEDQUESTION || item.Prompt || '',
+            question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
             answer: pickNormalizedAnswer(item),
             baselineAnswer: item.baselineAnswer || item.baseline || item.GoldenAnswer || '',
             baselineAnalysisResults: item.baselineAnalysisResults || {},
             baselineMatch: item.baselineMatch,
             baselineFlagged: item.baselineFlagged,
             baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
-            referringUrl: item.referringUrl || item.ReferringUrl || item.referringurl || '',
-            chatId: item.chatId || item.ChatId || item.chatid || '',
+            referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
+            chatId: pickFirstField([item, item.originalData], CHAT_ID_ALIASES),
             originalData: item,
             experimentalBatch: batch._id,
             rowIndex: index + 1,
@@ -327,10 +365,7 @@ class ExperimentalBatchService {
                         status: 'completed'
                     }).sort({ rowIndex: 1 }).lean();
 
-                    conversationHistory = previousTurns.flatMap(t => [
-                        { role: 'user', content: t.question },
-                        { role: 'assistant', content: t.answer }
-                    ]);
+                    conversationHistory = previousTurns.map(buildConversationHistoryEntry);
                 }
 
                 const input = {

@@ -138,6 +138,28 @@ describe('ExperimentalDatasetService', () => {
             expect(rows[0].data).not.toHaveProperty('NewAnswer');
         });
 
+        it('should normalize chatId and referringUrl aliases from spreadsheet uploads', async () => {
+            const buffer = await createCsvBuffer([
+                'ChatId,URL,Problem Details',
+                '1234,https://www.sac-isc.gc.ca,What is SCIS?'
+            ].join('\n'));
+            const metadata = { name: 'Multi Turn Dataset', type: 'question-only' };
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'text/csv',
+                metadata,
+                userId,
+                'multi-turn.csv'
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows).toHaveLength(1);
+            expect(rows[0].data).toHaveProperty('question', 'What is SCIS?');
+            expect(rows[0].data).toHaveProperty('chatId', '1234');
+            expect(rows[0].data).toHaveProperty('referringUrl', 'https://www.sac-isc.gc.ca');
+        });
+
         it('should drop answer columns for question-only uploads', async () => {
             const data = [
                 { question: 'What is IA?', answer: 'Intelligence Artificielle' }

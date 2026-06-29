@@ -7,6 +7,8 @@ import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const QUESTION_ALIASES = ['question', 'problemdetails', 'problem details'];
+const CHAT_ID_ALIASES = ['chatid'];
+const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 
 export class ValidationError extends Error {
     constructor(errors) {
@@ -341,6 +343,22 @@ class ExperimentalDatasetService {
                 }
             } else {
                 delete normalized[answerKey];
+            }
+        }
+
+        const chatIdKey = this._findColumnKey(normalized, CHAT_ID_ALIASES);
+        if (chatIdKey) {
+            normalized.chatId = normalized[chatIdKey];
+            if (chatIdKey !== 'chatId') {
+                delete normalized[chatIdKey];
+            }
+        }
+
+        const referringUrlKey = this._findColumnKey(normalized, REFERRING_URL_ALIASES);
+        if (referringUrlKey) {
+            normalized.referringUrl = normalized[referringUrlKey];
+            if (referringUrlKey !== 'referringUrl') {
+                delete normalized[referringUrlKey];
             }
         }
 
