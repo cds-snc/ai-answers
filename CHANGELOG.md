@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.156.0](https://github.com/cds-snc/ai-answers/compare/v1.155.0...v1.156.0) (2026-06-29)
+
+
+### Features
+
+* add support for chatId and referringUrl aliases in batch processing and dataset uploads ([2eb4a32](https://github.com/cds-snc/ai-answers/commit/2eb4a3269cae10daa4e235c4eee968832fbbf23a))
+* fix date pills ([387a7f2](https://github.com/cds-snc/ai-answers/commit/387a7f254307f5a22875f51f3af9f89b62e7c54a))
+* update file upload handling to support XLSX and CSV formats with improved parsing and validation ([174db30](https://github.com/cds-snc/ai-answers/commit/174db30093126bb88bc551dd6fe7ac6588effc83))
+
+
+### Bug Fixes
+
+* update French translations for connectivity and experimental analysis pages ([6bf4eb9](https://github.com/cds-snc/ai-answers/commit/6bf4eb9fa1880a9bbafc1db3f0b819f1132ad260))
+
 ## [1.155.0](https://github.com/cds-snc/ai-answers/compare/v1.154.0...v1.155.0) (2026-06-29)
 
 
