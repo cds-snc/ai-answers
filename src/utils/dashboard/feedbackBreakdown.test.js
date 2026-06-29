@@ -43,9 +43,10 @@ describe('buildQualityBarData', () => {
     ]);
   });
 
-  it('keeps rare categories that round below 1% (count > 0) and never includes harmful', () => {
+  it('keeps rare categories that round below 1% (count > 0) and folds harmful into hasError', () => {
     // 1 citation issue out of 500 = 0.2% → rounds to 0 but stays because count > 0.
-    // harmful is excluded from this chart — it lives on its own safety card.
+    // harmful is a mutually exclusive category (higher priority than hasError) so it
+    // is folded into the hasError bar — harmful never gets its own bar.
     const expert = scored({ total: 500, correct: 499, hasCitationError: 1, harmful: 5 });
     const rows = buildQualityBarData(expert, scored({ total: 0 }), t);
     const names = rows.map((r) => r.name);
@@ -54,6 +55,9 @@ describe('buildQualityBarData', () => {
     expect(names).not.toContain('needsImprovement');
     const citation = rows.find((r) => r.name === 'hasCitationError');
     expect(citation).toMatchObject({ value: 0, count: 1, colour: COLOURS.hasCitationError });
+    // harmful (5) folds into hasError bar (0 hasError + 5 harmful = 5)
+    const errorBar = rows.find((r) => r.name === 'hasError');
+    expect(errorBar).toMatchObject({ count: 5, colour: COLOURS.hasError });
   });
 });
 
