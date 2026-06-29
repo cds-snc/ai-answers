@@ -4,7 +4,7 @@ import { ExperimentalBatch } from '../../../models/experimentalBatch.js';
 import handler from '../experimental-batch-export.js';
 
 // Hoist the mock objects so they are available to vi.mock
-const { mockWorkbookInstance, mockWorksheet } = vi.hoisted(() => {
+const { mockWorkbookInstance, mockWorksheet, mockAnalyzerRegistry } = vi.hoisted(() => {
     const columnMock = {
         eachCell: vi.fn()
     };
@@ -20,7 +20,15 @@ const { mockWorkbookInstance, mockWorksheet } = vi.hoisted(() => {
             write: vi.fn(() => Promise.resolve())
         }
     };
-    return { mockWorkbookInstance: workbookInstance, mockWorksheet: worksheet, mockColumn: columnMock };
+    const analyzerRegistry = {
+        get: vi.fn().mockResolvedValue(null)
+    };
+    return {
+        mockWorkbookInstance: workbookInstance,
+        mockWorksheet: worksheet,
+        mockAnalyzerRegistry: analyzerRegistry,
+        mockColumn: columnMock
+    };
 });
 
 // Mock models
@@ -41,6 +49,10 @@ vi.mock('../../../middleware/auth.js', () => ({
     authMiddleware: vi.fn((req, res, next) => next()),
     adminMiddleware: vi.fn((req, res, next) => next()),
     withProtection: vi.fn((handlerFn) => handlerFn)
+}));
+
+vi.mock('../../../services/experimental/ExperimentalAnalyzerRegistry.js', () => ({
+    default: mockAnalyzerRegistry
 }));
 
 // Mock the exceljs and flat modules
@@ -83,12 +95,14 @@ describe('experimental-batch-export API', () => {
         };
         vi.clearAllMocks();
         mockWorksheet.columns = [];
+        mockAnalyzerRegistry.get.mockReset();
+        mockAnalyzerRegistry.get.mockResolvedValue(null);
 
         // Setup default mock responses
         const mockItems = [{ rowIndex: 1, question: 'A' }];
         const batchFindMock = {
             select: vi.fn().mockReturnThis(),
-            lean: vi.fn().mockResolvedValue({ appVersion: 'v1.153.0' })
+            lean: vi.fn().mockResolvedValue({ appVersion: 'v1.153.0', config: {} })
         };
         const findMock = {
             sort: vi.fn().mockReturnThis(),
@@ -133,15 +147,91 @@ describe('experimental-batch-export API', () => {
         expect(mockWorkbookInstance.addWorksheet).toHaveBeenCalledWith('Batch Results');
         expect(mockWorksheet.columns.map((column) => column.key)).toEqual([
             'appVersion',
-            'rowIndex',
             'question',
             'answer',
+            'rowIndex',
             'createdAt',
             'updatedAt',
             'lastAttemptAt'
         ]);
         expect(mockWorkbookInstance.xlsx.write).toHaveBeenCalledWith(res);
         expect(res.end).toHaveBeenCalled();
+    });
+
+    it('should prioritize core fields and analyzer columns before debug fields', async () => {
+        req.query.format = 'excel';
+        const mockItems = [{
+            rowIndex: 7,
+            status: 'completed',
+            question: 'How did the answer change?',
+            answer: 'Current answer',
+            baselineAnswer: 'Baseline answer',
+            flagged: true,
+            'analysisResults.similar-answer.status': 'flagged',
+            'analysisResults.similar-answer.label': 'meaning-drift',
+            'analysisResults.similar-answer.flagged': true,
+            'analysisResults.similar-answer.differenceFound': true,
+            'analysisResults.similar-answer.confidence': 0.91,
+            'analysisResults.similar-answer.differenceExplanation': 'A deadline changed.',
+            'analysisResults.similar-answer.changedFacts': [{ type: 'date', baseline: 'June 1, 2026', current: 'July 1, 2026' }],
+            'analysisResults.similar-answer.baselineOnlyFacts': ['Baseline fact'],
+            'analysisResults.similar-answer.currentOnlyFacts': ['Current fact'],
+            'analysisResults.similar-answer.ignoredDifferences': ['Tone'],
+            baselineAnalysisResults: { debug: true },
+            originalData: { raw: true },
+            createdAt: new Date('2026-05-06T12:00:00.000Z')
+        }];
+        const findMock = {
+            sort: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue(mockItems)
+        };
+        ExperimentalBatch.findById.mockReturnValue({
+            select: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue({
+                appVersion: 'v2.0.0',
+                config: { analyzerId: 'similar-answer' }
+            })
+        });
+        ExperimentalBatchItem.find.mockReturnValue(findMock);
+        mockAnalyzerRegistry.get.mockResolvedValue({
+            outputColumns: [
+                'status',
+                'label',
+                'flagged',
+                'differenceFound',
+                'confidence',
+                'differenceExplanation',
+                'changedFacts',
+                'baselineOnlyFacts',
+                'currentOnlyFacts',
+                'ignoredDifferences'
+            ]
+        });
+
+        await handler(req, res);
+
+        expect(mockWorksheet.columns.map((column) => column.key)).toEqual([
+            'appVersion',
+            'question',
+            'answer',
+            'baselineAnswer',
+            'flagged',
+            'analysisResults.similar-answer.status',
+            'analysisResults.similar-answer.label',
+            'analysisResults.similar-answer.confidence',
+            'analysisResults.similar-answer.differenceExplanation',
+            'analysisResults.similar-answer.changedFacts',
+            'analysisResults.similar-answer.baselineOnlyFacts',
+            'analysisResults.similar-answer.currentOnlyFacts',
+            'analysisResults.similar-answer.ignoredDifferences',
+            'analysisResults.similar-answer.flagged',
+            'analysisResults.similar-answer.differenceFound',
+            'rowIndex',
+            'status',
+            'baselineAnalysisResults',
+            'originalData',
+            'createdAt'
+        ]);
     });
 
     it('should stringify nested analyzer output for Excel cells', async () => {
