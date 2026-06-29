@@ -1,5 +1,7 @@
 import crypto from 'crypto';
-import xlsx from 'xlsx';
+import ExcelJS from 'exceljs';
+import { parseString } from 'fast-csv';
+import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 
@@ -25,9 +27,9 @@ class ExperimentalDatasetService {
     /**
      * Validate uploaded file and create dataset with rows.
      */
-    async createFromUpload(fileBuffer, mimetype, metadata, userId) {
+    async createFromUpload(fileBuffer, mimetype, metadata, userId, fileName = '') {
         // Parse file
-        const parsedRows = this._parseFile(fileBuffer, mimetype);
+        const parsedRows = await this._parseFile(fileBuffer, mimetype, fileName);
         const rows = parsedRows.map(row => this._normalizeUploadedRow(row, metadata.type));
 
         // Validate structure
@@ -87,32 +89,171 @@ class ExperimentalDatasetService {
         }
     }
 
-    _parseFile(buffer, mimetype) {
+    async _parseFile(buffer, mimetype, fileName = '') {
         try {
-            const workbook = xlsx.read(buffer, { type: 'buffer' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const rawRows = xlsx.utils.sheet_to_json(worksheet);
+            const format = this._detectUploadFormat(mimetype, fileName);
+            const rawRows = format === 'xlsx'
+                ? await this._parseXlsx(buffer)
+                : await this._parseCsv(buffer);
 
-            // DocumentDB/MongoDB 5.0+ don't permit top-level Mixed keys with dots or dollars
-            // We must rewrite any offending column headers to underscores.
-            return rawRows.map(row => {
-                const sanitizedRow = {};
-                for (const [key, value] of Object.entries(row)) {
-                    // Replace dots and dollars, and remove all whitespace from header names
-                    // so headers like "Problem Details" become "ProblemDetails" or
-                    // without spaces depending on normalization elsewhere.
-                    const safeKey = String(key).replace(/[.$]/g, '_').trim();
-                    if (!this._shouldImportColumn(safeKey, value)) {
-                        continue;
-                    }
-                    sanitizedRow[safeKey] = value;
-                }
-                return sanitizedRow;
-            });
+            return this._sanitizeParsedRows(rawRows);
         } catch (err) {
             throw new Error(`Failed to parse file: ${err.message}`);
         }
+    }
+
+    _detectUploadFormat(mimetype, fileName = '') {
+        const extension = extname(String(fileName || '')).toLowerCase();
+        if (extension === '.xls') {
+            throw new Error('Legacy .xls files are not supported. Please upload .xlsx or .csv.');
+        }
+
+        if (extension === '.xlsx') {
+            return 'xlsx';
+        }
+
+        if (extension === '.csv') {
+            return 'csv';
+        }
+
+        const normalizedMime = String(mimetype || '').toLowerCase();
+        if (normalizedMime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+            return 'xlsx';
+        }
+
+        if (normalizedMime === 'text/csv' || normalizedMime === 'application/csv') {
+            return 'csv';
+        }
+
+        throw new Error('Only .xlsx and .csv files are supported');
+    }
+
+    async _parseXlsx(buffer) {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) {
+            return [];
+        }
+
+        const headerRow = worksheet.getRow(1);
+        const columnCount = Math.max(headerRow.actualCellCount || 0, worksheet.columnCount || 0);
+        if (columnCount === 0) {
+            return [];
+        }
+
+        const headers = [];
+        for (let col = 1; col <= columnCount; col++) {
+            headers.push(this._sanitizeImportedKey(headerRow.getCell(col).value));
+        }
+
+        const rows = [];
+        const lastRow = worksheet.actualRowCount || worksheet.rowCount || 0;
+        for (let rowNumber = 2; rowNumber <= lastRow; rowNumber++) {
+            const row = worksheet.getRow(rowNumber);
+            const rawRow = {};
+            for (let col = 0; col < headers.length; col++) {
+                const header = headers[col];
+                if (!header) {
+                    continue;
+                }
+
+                rawRow[header] = this._normalizeCellValue(row.getCell(col + 1).value);
+            }
+            rows.push(rawRow);
+        }
+
+        return rows;
+    }
+
+    async _parseCsv(buffer) {
+        const text = buffer.toString('utf8').replace(/^\uFEFF/, '');
+
+        return await new Promise((resolve, reject) => {
+            const rawRows = [];
+            let headers = null;
+
+            parseString(text, { headers: false, ignoreEmpty: true })
+                .on('error', reject)
+                .on('data', (row) => {
+                    if (!headers) {
+                        headers = row.map(header => this._sanitizeImportedKey(header));
+                        return;
+                    }
+
+                    const rawRow = {};
+                    for (let i = 0; i < headers.length; i++) {
+                        const header = headers[i];
+                        if (!header) {
+                            continue;
+                        }
+
+                        rawRow[header] = this._normalizeCellValue(row[i]);
+                    }
+                    rawRows.push(rawRow);
+                })
+                .on('end', () => resolve(rawRows));
+        });
+    }
+
+    _sanitizeParsedRows(rows) {
+        return rows.map(row => {
+            const sanitizedRow = {};
+            for (const [key, value] of Object.entries(row)) {
+                const safeKey = this._sanitizeImportedKey(key);
+                if (!this._shouldImportColumn(safeKey, value)) {
+                    continue;
+                }
+                sanitizedRow[safeKey] = value;
+            }
+            return sanitizedRow;
+        }).filter(row => Object.keys(row).length > 0);
+    }
+
+    _sanitizeImportedKey(input = '') {
+        const normalized = this._normalizeCellValue(input);
+        if (normalized === undefined || normalized === null || typeof normalized === 'object') {
+            return '';
+        }
+
+        return String(normalized).replace(/[.$]/g, '_').trim();
+    }
+
+    _normalizeCellValue(value) {
+        if (value === undefined || value === null) {
+            return value;
+        }
+
+        if (value instanceof Date) {
+            return value;
+        }
+
+        if (Array.isArray(value)) {
+            return value.map(item => this._normalizeCellValue(item));
+        }
+
+        if (typeof value !== 'object') {
+            return value;
+        }
+
+        if (Array.isArray(value.richText)) {
+            return value.richText.map(part => part?.text ?? '').join('');
+        }
+
+        if (value.text !== undefined && value.text !== null) {
+            return value.text;
+        }
+
+        if (value.hyperlink && value.text !== undefined) {
+            return value.text;
+        }
+
+        if (value.result !== undefined) {
+            return this._normalizeCellValue(value.result);
+        }
+
+        return value;
     }
 
     _validateRows(rows, type) {

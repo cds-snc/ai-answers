@@ -1774,7 +1774,7 @@
       "descLabel": "Description",
       "typeLabel": "Type d'ensemble de donn?es",
       "uploadedBy": "T?l?vers? par",
-      "fileLabel": "Fichier Excel / CSV",
+      "fileLabel": "Fichier XLSX / CSV",
       "requiredColumns": "Colonnes requises",
       "uploadDescriptions": {
         "questionOnly": "Importez uniquement les questions. Toutes les colonnes de r?ponse seront ignor?es.",

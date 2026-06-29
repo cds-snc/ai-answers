@@ -1774,7 +1774,7 @@
       "descLabel": "Description",
       "typeLabel": "Dataset Type",
       "uploadedBy": "Uploaded by",
-      "fileLabel": "Excel / CSV File",
+      "fileLabel": "XLSX / CSV file",
       "requiredColumns": "Required columns",
       "uploadDescriptions": {
         "questionOnly": "Upload questions only. Any answer columns will be ignored.",

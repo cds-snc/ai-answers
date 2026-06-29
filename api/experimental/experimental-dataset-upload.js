@@ -17,7 +17,8 @@ async function handler(req, res) {
                 buffer,
                 mimetype || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 metadata,
-                req.user?.userId
+                req.user?.userId,
+                fileName
             );
         } else {
             return res.status(400).json({ error: 'fileContent must be a base64 string' });
