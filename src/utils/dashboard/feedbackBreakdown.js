@@ -61,21 +61,25 @@ export const buildQualityBarData = (expertScored, aiScored, t) => {
   const pct = (n) => Math.round((n / total) * 100);
   // Fixed order = top→bottom in the horizontal bar (recharts renders the first
   // row at the top). "Has answer error" is intentionally last so it always
-  // sits at the bottom of the chart. Harmful is excluded here — it's a subset
-  // of "has answer error" and lives on its own harmful/content-issues card.
+  // sits at the bottom of the chart. Harmful is a separate, mutually exclusive
+  // category (higher priority than hasError), so it must be added to the
+  // hasError bar explicitly — it does not fall through to hasError on its own.
   return [
     { key: 'correct',          colour: COLOURS.correct },
     { key: 'needsImprovement', colour: COLOURS.needsImprovement, stroke: COLOURS.qualityBorder },
     { key: 'hasCitationError', colour: COLOURS.hasCitationError, stroke: COLOURS.qualityBorder },
     { key: 'hasError',         colour: COLOURS.hasError },
   ]
-    .map(({ key, colour, stroke }) => ({
-      name: t(`metrics.dashboard.qualityBar.${key}`),
-      value: pct(sum(key)),
-      colour,
-      ...(stroke && { stroke, strokeWidth: 1 }),
-      count: sum(key),
-    }))
+    .map(({ key, colour, stroke }) => {
+      const count = sum(key) + (key === 'hasError' ? sum('harmful') : 0);
+      return {
+        name: t(`metrics.dashboard.qualityBar.${key}`),
+        value: pct(count),
+        colour,
+        ...(stroke && { stroke, strokeWidth: 1 }),
+        count,
+      };
+    })
     .filter(d => d.count > 0);
 };
 

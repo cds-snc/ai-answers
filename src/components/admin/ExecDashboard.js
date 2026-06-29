@@ -65,10 +65,12 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const expertTotal = metrics.expertScored?.total?.total || 0;
   const evaluatedPct = expertTotal > 0 && totalQuestions > 0 ? Math.round((expertTotal / totalQuestions) * 100) : 0;
 
-  // Accuracy donut (expert + AI evals combined; only hasError counts against accuracy)
+  // Accuracy donut (expert + AI evals combined; hasError AND harmful count against accuracy —
+  // they are mutually exclusive categories, so harmful must be added separately)
   const aiTotal = metrics.aiScored?.total?.total || 0;
   const evalTotal = expertTotal + aiTotal;
-  const hasError = (metrics.expertScored?.hasError?.total || 0) + (metrics.aiScored?.hasError?.total || 0);
+  const hasError = (metrics.expertScored?.hasError?.total || 0) + (metrics.aiScored?.hasError?.total || 0)
+    + (metrics.expertScored?.harmful?.total || 0) + (metrics.aiScored?.harmful?.total || 0);
   const accuracyPct = evalTotal > 0 ? 100 - Math.round((hasError / evalTotal) * 100) : null;
   const accuracyDonutData = evalTotal > 0 ? [
     { name: t('execDashboard.charts.accurate'), value: evalTotal - hasError },
