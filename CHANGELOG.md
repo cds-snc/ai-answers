@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.155.0](https://github.com/cds-snc/ai-answers/compare/v1.154.0...v1.155.0) (2026-06-29)
+
+
+### Features
+
+* enhance experimental batch export with analyzer integration and dynamic header ordering ([ed0a9c4](https://github.com/cds-snc/ai-answers/commit/ed0a9c43575bbebc5dcb02b1459c6e1576b8a1c9))
+* enhance experimental batch export with analyzer integration and… ([bd06957](https://github.com/cds-snc/ai-answers/commit/bd06957647f3390694d3db14d759f2846e9d2882))
+
 ## [1.154.0](https://github.com/cds-snc/ai-answers/compare/v1.153.0...v1.154.0) (2026-06-26)
 
 
