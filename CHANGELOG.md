@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.156.1](https://github.com/cds-snc/ai-answers/compare/v1.156.0...v1.156.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* update chatId handling to generate current run chatId without ov… ([8cb5dea](https://github.com/cds-snc/ai-answers/commit/8cb5dea9afbbdd3f04b61033216f21faf797e061))
+* update chatId handling to generate current run chatId without overwriting source chatId ([7ad49ce](https://github.com/cds-snc/ai-answers/commit/7ad49ce774c51673c86b764e4516941438d0513f))
+
 ## [1.156.0](https://github.com/cds-snc/ai-answers/compare/v1.155.0...v1.156.0) (2026-06-29)
 
 
