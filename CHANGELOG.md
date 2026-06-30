@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.158.1](https://github.com/cds-snc/ai-answers/compare/v1.158.0...v1.158.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* button styling and focus fixes ([60471d9](https://github.com/cds-snc/ai-answers/commit/60471d992abace8d522a28694d1dae298cb95b09))
+
 ## [1.158.0](https://github.com/cds-snc/ai-answers/compare/v1.157.0...v1.158.0) (2026-06-30)
 
 
