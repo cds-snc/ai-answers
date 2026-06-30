@@ -20,6 +20,7 @@ Do NOT redact (these names and numbers do not identify a specific person's priva
 - Dollar amounts ($20,000, $1570, 400 dollars)
 - Question numbers in front of question (e.g. "006. How apply for EI?")
 - Credential or document types mentioned without an actual value (verification code, SIN, account number, password, passport, visa, permit, etc.) — the type is named but no number or code is present (e.g., "Haven't received a verification code", "Need a new SIN", "They took my passport")
+- References to a business, company, or trade name when no actual name is given — the concept is named but no identifying name value is present (e.g., "Is my business name available?", "Where do I check if my proposed business name is already in use?", "How do I register a company name?")
 - Names of people asked in historical/archival contexts (census, geneology, military records, newspapers, theses/dissertations, author, Government webarchive)
 
 Examples:
@@ -40,6 +41,7 @@ DO NOT: "Need a new SIN" → <pii>null</pii>
 DO NOT: "Louis Riel Métis rights" → <pii>null</pii>
 DO NOT: "Prime minister Mark Carney" → <pii>null</pii>
 DO NOT: "Haven't received my verification code" → <pii>null</pii>
+DO NOT: "Where do I check if my proposed business name is already in use?" → <pii>null</pii>
 DO NOT: "Looking for war record for my great-grandfather Harold Molyneux" → <pii>null</pii>
 
 Output: <pii>redacted text</pii> or <pii>null</pii> if no PII found.
