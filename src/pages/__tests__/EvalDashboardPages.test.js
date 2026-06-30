@@ -67,9 +67,13 @@ describe('eval dashboard pages', () => {
     });
 
     expect(lastDataTableProps?.options?.layout).toEqual({
-      topStart: 'search',
-      topEnd: 'pageLength',
-      bottomStart: 'info',
+      topStart: {
+        features: ['search', 'info', 'pageLength']
+      },
+      topEnd: 'paging',
+      bottomStart: {
+        features: ['info', 'pageLength']
+      },
       bottomEnd: 'paging'
     });
   });

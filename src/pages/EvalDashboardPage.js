@@ -200,9 +200,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 order: [[11, 'desc']],
                 stateSave: true,
                 layout: {
-                  topStart: 'search',
-                  topEnd: 'pageLength',
-                  bottomStart: 'info',
+                  topStart: {
+                    features: ['info', 'pageLength']
+                  },
+                  topEnd: { features: ['search', 'paging'] },
+                  bottomStart: {
+                    features: ['info', 'pageLength']
+                  },
                   bottomEnd: 'paging'
                 },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
