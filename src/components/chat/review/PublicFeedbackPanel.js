@@ -45,7 +45,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
     const publicTitle = baseTitle + publicTitleSuffix;
 
     return (
-        <GcdsDetails detailsTitle={publicTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <GcdsDetails detailsTitle={publicTitle} className="review-details" onGcdsClick={(e) => {
             try {
                 // Call handleToggle when the details panel is opened (e.target.open === true)
                 if (e && e.target && !e.target.open) {

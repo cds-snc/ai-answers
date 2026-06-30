@@ -590,7 +590,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         </GcdsButton>
         {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
       </div>
-      <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400">
         <div>
           <label htmlFor="site-status" className="mb-200 display-block">
             {t('settings.statusLabel')}
@@ -732,7 +732,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         </div>
       </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.health.title')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.health.title')} className="mt-600 mb-200">
         <p className="mb-400">{t('settings.health.description')}</p>
 
         <label htmlFor="health-enabled" className="mb-200 display-block mt-200">
@@ -896,7 +896,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
 
 
-      <GcdsDetails detailsTitle={t('settings.twoFA.title')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.twoFA.title')} className="mt-600 mb-200">
         <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
           {t('settings.twoFA.enabledLabel')}
         </label>
@@ -935,7 +935,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         />
       </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.session.title')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.session.title')} className="mt-600 mb-200">
         <label htmlFor="session-management-enabled" className="mb-200 display-block mt-200">
           {t('settings.session.managementEnabled')}
         </label>
@@ -996,7 +996,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         {/* session.persistence moved to rate-limiting section (stored as session.rateLimitPersistence) */}
       </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.rateLimiting.title')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.rateLimiting.title')} className="mt-600 mb-200">
         <label htmlFor="session-rate-persistence" className="mb-200 display-block mt-200">
           {t('settings.rateLimiting.persistence.label')}
         </label>
@@ -1025,7 +1025,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
       </GcdsDetails>
-      <GcdsDetails detailsTitle={t('settings.redaction.title')} className="mt-600 mb-200" tabIndex="0">
+      <GcdsDetails detailsTitle={t('settings.redaction.title')} className="mt-600 mb-200">
         <p className="mb-400">{t('settings.redaction.description')}</p>
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>

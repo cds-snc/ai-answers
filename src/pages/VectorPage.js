@@ -394,7 +394,7 @@ const VectorPage = ({ lang = 'en' }) => {
                 ))}
               </tbody>
             </table>
-            <GcdsDetails detailsTitle={t('vector.docdb8Capability.rawResults')} className="mb-400" tabIndex="0">
+            <GcdsDetails detailsTitle={t('vector.docdb8Capability.rawResults')} className="mb-400">
               <pre>{JSON.stringify(docdb8CapabilityResults, null, 2)}</pre>
             </GcdsDetails>
           </div>

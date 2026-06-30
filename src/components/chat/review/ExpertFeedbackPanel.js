@@ -166,7 +166,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
     const expertTitle = baseTitle + expertTitleSuffix;
 
     return (
-        <GcdsDetails detailsTitle={expertTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <GcdsDetails detailsTitle={expertTitle} className="review-details" onGcdsClick={(e) => {
             // e.target should be the gcds-details web component; check its open property
             try {
                 // call load when panel is being opened

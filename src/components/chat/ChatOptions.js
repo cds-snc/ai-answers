@@ -17,7 +17,7 @@ const ChatOptions = ({
   return (
     // Make the entire details panel visible to admin and partner; inside, restrict some controls to admin only
     <RoleBasedContent roles={["admin", "partner"]}>
-      <GcdsDetails className="hr" detailsTitle={safeT('homepage.chat.options.title')} tabIndex="0">
+      <GcdsDetails className="hr" detailsTitle={safeT('homepage.chat.options.title')}>
         {/* Admin-only controls */}
         <RoleBasedContent roles={['admin']}>
           <div className="workflow-select">

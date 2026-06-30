@@ -165,7 +165,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
     {/* Accessibility and Usability Section */}
     {sections[sectionKeys.accessibility] && (
-      <details tabIndex={0}>
+      <details>
         <summary>{sections[sectionKeys.accessibility].heading}</summary>
         <ReactMarkdown
           components={{
@@ -180,7 +180,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
     {/* Privacy & Terms Section */}
     {sections[sectionKeys.privacy] && (
-      <details tabIndex={0}>
+      <details>
         <summary>{sections[sectionKeys.privacy].heading}</summary>
         <ReactMarkdown
           components={{
