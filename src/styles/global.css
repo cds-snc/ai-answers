@@ -401,6 +401,7 @@ details[open] > summary::before {
 summary:focus,
 .close-icon:focus {
   background-color: var(--gcds-details-focus-background);
+  border-color: var(--gcds-details-focus-background);
   border-radius: var(--gcds-details-focus-border-radius);
   box-shadow: var(--gcds-details-focus-box-shadow);
   color: var(--gcds-details-focus-text);
