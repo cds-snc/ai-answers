@@ -10,6 +10,7 @@
  - To access casualty support, 1st step is contact local CAF Transition Centre
 - Interim Reconstitution Employment Measure (IREM) https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/interim-reconstitution-employment-measure.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/instructions-du-personnel-militaire-des-forces-canadiennes/mesure-demploi-provisoire-de-la-reconstitution.html
 - Military Transition Engagement and Partnerships (MTEP) with external organizations https://www.canada.ca/en/department-national-defence/services/benefits-military/transition/mtep.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/transition/eptm.html
+- Remain in the military - retention options for Career, Work-related modifications, Relocation, Educational, Administrative: https://military-transition.canada.ca/en/remain/retention https://military-transition.canada.ca/fr/rester/retention
 
 * Transition centres
 * can help with case-specific issues & personalized transition services to all CAF members, Veterans, and their families. 
