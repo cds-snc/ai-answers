@@ -87,6 +87,17 @@ describe('Metrics Pipeline Projection Tests', () => {
             expect(fields).toContain('answerId');
             expect(fields).toContain('autoEvalId');
         });
+
+        it('counts harmful expert evaluations as answer errors in the aggregate', async () => {
+            await expertHandler(baseReq, mockRes());
+
+            const pipeline = ChatModel.Chat.aggregate.mock.calls[0][0];
+            const groupStage = pipeline.find(stage => stage.$group);
+
+            expect(groupStage.$group.hasError.$sum.$cond[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
+            expect(groupStage.$group.hasErrorEn.$sum.$cond[0].$and[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
+            expect(groupStage.$group.hasErrorFr.$sum.$cond[0].$and[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
+        });
     });
 
     describe('metrics-ai-eval', () => {
@@ -104,6 +115,17 @@ describe('Metrics Pipeline Projection Tests', () => {
             expect(fields).toContain('category');
             expect(fields).toContain('answerId');
             expect(fields).toContain('expertFeedbackId');
+        });
+
+        it('counts harmful AI evaluations as answer errors in the aggregate', async () => {
+            await aiEvalHandler(baseReq, mockRes());
+
+            const pipeline = ChatModel.Chat.aggregate.mock.calls[0][0];
+            const groupStage = pipeline.find(stage => stage.$group);
+
+            expect(groupStage.$group.hasError.$sum.$cond[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
+            expect(groupStage.$group.hasErrorEn.$sum.$cond[0].$and[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
+            expect(groupStage.$group.hasErrorFr.$sum.$cond[0].$and[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
         });
     });
 
@@ -146,6 +168,15 @@ describe('Metrics Pipeline Projection Tests', () => {
             expect(fields).toContain('category');
             expect(fields).toContain('answerId');
             expect(fields).toContain('autoEvalId');
+        });
+
+        it('counts harmful expert evaluations as answer errors by department', async () => {
+            await departmentsHandler(baseReq, mockRes());
+
+            const pipeline = ChatModel.Chat.aggregate.mock.calls[0][0];
+            const groupStage = pipeline.find(stage => stage.$group);
+
+            expect(groupStage.$group.expertScoredHasError.$sum.$cond[0]).toEqual({ $in: ['$category', ['hasError', 'harmful']] });
         });
     });
 });

@@ -191,7 +191,9 @@ come from `src/constants/dashboardColours.js`.
 
 - `buildQualityBarData(expertScored, aiScored, t)` — answer-quality bar rows as
   **% of combined expert+AI evals**, fixed order, **"Has answer error" last**,
-  per-category colour. **Harmful is excluded** (own card).
+  per-category colour. Harmful is not shown as its own bar here; the metrics API
+  folds harmful incorrect answers into the returned `hasError` count, while the
+  harmful card/row still reports them separately.
 - `splitPublicFeedbackTotals(totals, noReasonsByScore)` — reclassifies public
   feedback to positive/negative **by score, not the yes/no click** (see rules).
 - `buildFeedbackSplitData(totals, reasons, t)` — donut rows (helpful / not helpful).
@@ -208,12 +210,17 @@ Colours: `src/constants/dashboardColours.js` (single source of truth).
 
 ## Domain rules that are easy to get wrong
 
-- **Accuracy** counts only `hasError` (answer errors). Citation issues and
-  needs-improvement do **not** lower accuracy. `accuracy = 100 − round(hasError/total)`.
+- **Accuracy** counts the returned `hasError` metric (answer errors). The metrics
+  API includes both `hasError` and `harmful` categories in that returned count,
+  because the review UI only allows harmful after selecting Incorrect (0).
+  Citation issues and needs-improvement do **not** lower accuracy.
+  `accuracy = 100 − round(hasError/total)`.
 - **Category is mutually exclusive, priority `harmful > hasCitationError >
   hasError > needsImprovement > correct`** (`getPartnerEvalAggregationExpression`
-  in `api/util/chat-filters.js`). So a harmful answer is categorized `harmful`,
-  not `hasError` — harmful is genuinely additive, not a subset double-counted.
+  in `api/util/chat-filters.js`). So a harmful answer is categorized `harmful`
+  for filters and the separate harmful row/card. The metrics API folds that
+  category into the returned `hasError` count anywhere accuracy needs answer
+  errors.
 - **Citation errors are NOT answer errors** and can't carry harmful/content
   flags. The "answer error" signal is sentence/total score `0` only (never
   `citationScore`). `totalScore = sentenceComponent + citationComponent`, so
