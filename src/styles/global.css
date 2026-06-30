@@ -353,7 +353,7 @@ details[open] > summary::before {
   padding: var(--gcds-button-small-padding);
   background: var(--gcds-button-primary-default-background);
   color: var(--gcds-button-primary-default-text);
-  border: var(--gcds-button-border-width) solid var(--gcds-button-primary-default-background);
+  border: var(--gcds-button-border-width) solid transparent;
   border-radius: var(--gcds-button-border-radius);
   font: var(--gcds-button-small-font-desktop);
   cursor: pointer;
@@ -387,7 +387,6 @@ details[open] > summary::before {
 .btn-primary:hover:not(:disabled),
 .btn-primary-send:hover:not(:disabled) {
   background: var(--gcds-button-primary-hover-background);
-  border-color: var(--gcds-button-primary-hover-background);
 }
 
 .btn-secondary-sm:hover {
