@@ -281,6 +281,15 @@ const ChatInterface = ({
     return typeof initial === "object" ? initial.text : initial;
   };
 
+  const getSRLabelForInput = () => {
+    if (turnCount >= 1) {
+      const followUp = t("homepage.chat.input.followUp");
+      return typeof followUp === "object" ? followUp.ariaLabel : followUp;
+    }
+    const initial = t("homepage.chat.input.initial");
+    return typeof initial === "object" ? initial.ariaLabel : initial;
+  };
+
   // TOOD is there a difference between paragraphs and sentrences?
   const getLastMessageSentenceCount = () => {
     const lastAiMessage = messages.filter((m) => m.sender === "ai").pop();
@@ -717,23 +726,11 @@ const ChatInterface = ({
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
-                <label
-                  htmlFor="message"
-                  aria-label={
-                    turnCount === 0
-                      ? typeof t("homepage.chat.input.initial") === "object"
-                        ? t("homepage.chat.input.initial").ariaLabel
-                        : undefined
-                      : typeof t("homepage.chat.input.followUp") === "object"
-                        ? t("homepage.chat.input.followUp").ariaLabel
-                        : undefined
-                  }
-                >
-                  <span className="aria-hidden" aria-hidden="true">
-                    {getLabelForInput()}
-                  </span>
+                <label htmlFor="message">
+                  <span aria-hidden="true">{getLabelForInput()}</span>
+                  <span className="sr-only">{getSRLabelForInput()}</span>
                 </label>
-                <span className="hint-text">
+                <span className="hint-text" id="chat-input-hint">
                   <img
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray}
                     className="ai-icon"
@@ -762,11 +759,7 @@ const ChatInterface = ({
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
                     onFocus={handleTextareaFocus}
-                    aria-label={
-                      turnCount === 0
-                        ? safeT("homepage.chat.textarea.ariaLabel.first")
-                        : safeT("homepage.chat.textarea.ariaLabel.followon")
-                    }
+                    aria-describedby="chat-input-hint"
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}

@@ -613,7 +613,7 @@
 .btn-primary-send {
   margin: 0;
   padding: 8px 18px;
-  background-color: #26374a !important;
+  background-color: #26374a;
   font-weight: 500;
   color: white;
   border: none;
@@ -622,9 +622,22 @@
   font-size: 20px;
   line-height: 1.55em;
   font-family: "Noto Sans";
-  height: 70px;
-  align-self: flex-start;
+  align-self: stretch;
   display: none;
+}
+
+.form-group:has(.btn-primary-send:focus) {
+  overflow: visible;
+}
+
+.btn-primary-send:focus {
+  background-color: var(--gcds-details-focus-background);
+  border-radius: 0;
+  box-shadow: var(--gcds-details-focus-box-shadow);
+  color: var(--gcds-details-focus-text);
+  outline: var(--gcds-details-focus-outline);
+  outline-offset: var(--gcds-details-focus-outline-offset);
+  text-decoration: none;
 }
 
 /* Show button with transition */
@@ -675,7 +688,7 @@
 }
 
 /* Focus states */
-.form-group:focus-within {
+.form-group:has(textarea:focus) {
   border-color: #0535d2;
   outline: 3px solid #0535d2;
   outline-offset: 0.225rem;

@@ -34,7 +34,7 @@
       "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
-      "send": "Send",
+      "send": "Send feedback",
       "question": "Was this helpful?",
       "yes": {
         "question": "Tell us more. Select the best option below. (required)",
@@ -95,8 +95,6 @@
       "textarea": {
         "title": "Ask your question here.",
         "ariaLabel": {
-          "first": "Ask a Canada dot CA question",
-          "followon": "Ask a follow-up question or reply",
           "skipfo": "Skip to ask follow-up question"
         }
       },

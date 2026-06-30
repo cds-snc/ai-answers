@@ -34,7 +34,7 @@
       "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
-      "send": "Envoyer",
+      "send": "Envoyer la rétroaction",
       "question": "C'était utile?",
       "yes": {
         "question": "Dites-nous plus. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
@@ -80,7 +80,7 @@
       "input": {
         "initial": {
           "text": "Posez une question sur Canada.ca",
-          "ariaLabel": "Posez une question sur Canada point ca"
+          "ariaLabel": "Posez une question sur Canada point CA"
         },
         "followUp": {
           "text": "Posez une question de suivi ou répondez",
@@ -95,8 +95,6 @@
       "textarea": {
         "title": "Posez votre question ici.",
         "ariaLabel": {
-          "first": "Posez une question sur Canada point ca",
-          "followon": "Posez une question de suivi ou répondez",
           "skipfo": "Passer pour poser une autre question"
         }
       },

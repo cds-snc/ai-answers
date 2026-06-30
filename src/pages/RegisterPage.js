@@ -83,7 +83,7 @@ const RegisterPage = ({ lang = 'en' }) => {
           autoComplete="new-password"
           lang={lang}
         />
-        <button type="submit" disabled={isLoading} className="auth-submit-button">
+        <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">
           {isLoading ? t('signup.submitting') : t('signup.submit')}
         </button>
       </form>

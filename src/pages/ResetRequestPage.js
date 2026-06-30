@@ -45,7 +45,7 @@ const ResetRequestPage = ({ lang = 'en' }) => {
             disabled={isLoading}
           />
         </div>
-        <button type="submit" className="auth-submit-button" disabled={isLoading}>{isLoading ? t('reset.request.sending') : t('reset.request.send')}</button>
+        <button type="submit" className="btn-primary-sm auth-submit-button" disabled={isLoading}>{isLoading ? t('reset.request.sending') : t('reset.request.send')}</button>
       </form>
       <div className="auth-links">
         <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
