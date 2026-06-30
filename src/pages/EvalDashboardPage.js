@@ -201,7 +201,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 stateSave: true,
                 layout: {
                   topStart: {
-                    features: ['info', 'pageLength']
+                    features: ['search', 'info', 'pageLength']
                   },
                   topEnd: 'paging',
                   bottomStart: {

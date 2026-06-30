@@ -133,13 +133,14 @@ const sendLightweightNotFound = (res) => {
 
 const routeAllowsMethod = (route, method) => {
   const normalizedMethod = method.toLowerCase();
+  if (route.methods._all || route.methods.all) return true;
   if (normalizedMethod === 'options') return true;
   if (normalizedMethod === 'head' && route.methods.get) return true;
   return !!route.methods[normalizedMethod];
 };
 
 const isRegisteredApiRoute = (method, pathName) => {
-  const stack = app._router?.stack || [];
+  const stack = app._router?.stack || app.router?.stack || [];
   const normalizedPath = normalizePath(pathName);
   return stack.some((layer) => {
     if (!layer.route) return false;
