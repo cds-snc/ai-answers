@@ -611,7 +611,7 @@
 .btn-primary-send {
   margin: 0;
   padding: 8px 18px;
-  background-color: #26374a;
+  background-color: var(--gcds-color-blue-muted);
   font-weight: 500;
   color: white;
   border: none;
