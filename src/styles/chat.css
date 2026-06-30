@@ -628,6 +628,13 @@
   overflow: visible;
 }
 
+/* Fallback for browsers without :has() support (e.g. Firefox < 121) */
+@supports not selector(:has(a)) {
+  .form-group:focus-within {
+    overflow: visible;
+  }
+}
+
 .btn-primary-send:focus,
 .btn-primary-send:focus:hover {
   background-color: var(--gcds-details-focus-background);
@@ -692,6 +699,21 @@
   outline: 3px solid var(--gcds-details-focus-background);
   outline-offset: 0.225rem;
   box-shadow: 0 0 0 0.125rem #fff;
+}
+
+/* Fallback for browsers without :has() support (e.g. Firefox < 121) */
+@supports not selector(:has(a)) {
+  .field-container:focus-within .hint-text,
+  .field-container:focus-within label {
+    color: var(--gcds-details-focus-background);
+  }
+
+  .form-group:focus-within {
+    border-color: var(--gcds-details-focus-background);
+    outline: 3px solid var(--gcds-details-focus-background);
+    outline-offset: 0.225rem;
+    box-shadow: 0 0 0 0.125rem #fff;
+  }
 }
 
 /* Make text inputs appear below their labels */
@@ -941,4 +963,12 @@ textarea:focus {
 .field-container:has(textarea:focus) .referring-url-chat,
 .field-container:has(textarea:focus) #displayReferringURL {
   color: var(--gcds-details-focus-background);
+}
+
+/* Fallback for browsers without :has() support (e.g. Firefox < 121) */
+@supports not selector(:has(a)) {
+  .field-container:focus-within .referring-url-chat,
+  .field-container:focus-within #displayReferringURL {
+    color: var(--gcds-details-focus-background);
+  }
 }
