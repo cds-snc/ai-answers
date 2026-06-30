@@ -153,8 +153,6 @@ class RedactionService {
       //   pattern: /\b(?<!\$)\d{6,}\b/g,
       //   description: 'Long number sequences 6+ digits (removed — too many false positives on serial/form/reference numbers)'
       // },
-      // Name patterns in EN/FR
-      { pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi, replacement: 'XXX', type: 'private' },
       // Street addresses
       { pattern: /\d+\s+([A-Za-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|circle|cir|Loop)\b/gi, replacement: 'XXX', type: 'private' },
       // {

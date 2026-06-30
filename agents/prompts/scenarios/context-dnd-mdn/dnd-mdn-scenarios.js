@@ -16,13 +16,14 @@ export const DND_MDN_SCENARIOS = `
 - Medical support/return to duty, casualty support for members/families in illness, injury or death
 - Interim Reconstitution Employment Measure (IREM) 
 - voluntary, compulsory (medical), and Reserve Force release from CAF & component transfers from/to  Primary & Supplementary Reserve
+- Retention & benefits/options of remaining in CAF  https://military-transition.canada.ca/en/remain https://military-transition.canada.ca/fr/rester/retention
+
+* Careers/recruiting https://forces.ca/en/careers https://forces.ca/fr/carrieres
 
 ## Benefits, pay, services
 * topic https://www.canada.ca/en/government/publicservice/benefitsmilitary.html https://www.canada.ca/fr/gouvernement/fonctionpublique/avantagesmilitaires.html
 * pay https://www.canada.ca/en/department-national-defence/services/benefits-military/pay-pension-benefits/pay.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/solde-pension-indemnites/solde.html
 * medical and dental CAF members https://www.canada.ca/en/department-national-defence/services/benefits-military/pay-pension-benefits/benefits/medical-dental.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/solde-pension-indemnites/prestations/medicales-dentaires.html
-
-* Careers/recruiting https://forces.ca/en/careers https://forces.ca/fr/carrieres
 
 ## Defence organizations
 * CAF/FAC https://www.canada.ca/en/services/defence/caf.html https://www.canada.ca/fr/services/defense/fac.html
