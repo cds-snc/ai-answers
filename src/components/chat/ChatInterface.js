@@ -272,22 +272,11 @@ const ChatInterface = ({
     }
   }, [isLoading]);
 
-  const getLabelForInput = () => {
-    if (turnCount >= 1) {
-      const followUp = t("homepage.chat.input.followUp");
-      return typeof followUp === "object" ? followUp.text : followUp;
-    }
-    const initial = t("homepage.chat.input.initial");
-    return typeof initial === "object" ? initial.text : initial;
-  };
-
-  const getSRLabelForInput = () => {
-    if (turnCount >= 1) {
-      const followUp = t("homepage.chat.input.followUp");
-      return typeof followUp === "object" ? followUp.ariaLabel : followUp;
-    }
-    const initial = t("homepage.chat.input.initial");
-    return typeof initial === "object" ? initial.ariaLabel : initial;
+  const getInputCopy = () => {
+    const value = turnCount >= 1
+      ? t("homepage.chat.input.followUp")
+      : t("homepage.chat.input.initial");
+    return typeof value === "object" ? value : { text: value, ariaLabel: value };
   };
 
   // TOOD is there a difference between paragraphs and sentrences?
@@ -379,6 +368,8 @@ const ChatInterface = ({
   const handleTextareaFocus = () => {
     setIsTextareaFocused(true);
   };
+
+  const { text: inputLabel, ariaLabel: inputSRLabel } = getInputCopy();
 
   return (
 <div className="chat-container">
@@ -727,8 +718,8 @@ const ChatInterface = ({
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
                 <label htmlFor="message">
-                  <span aria-hidden="true">{getLabelForInput()}</span>
-                  <span className="sr-only">{getSRLabelForInput()}</span>
+                  <span aria-hidden="true">{inputLabel}</span>
+                  <span className="sr-only">{inputSRLabel}</span>
                 </label>
                 <span className="hint-text" id="chat-input-hint">
                   <img
