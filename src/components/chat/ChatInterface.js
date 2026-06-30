@@ -526,6 +526,20 @@ const ChatInterface = ({
 
                 {/* Panels will be rendered immediately after the FeedbackComponent below so they appear under the "How was this answer?" area */}
 
+                {/* Show which department(s) this turn was assigned to, in review mode, above the "How was this answer?" area */}
+                {readOnly &&
+                  message.sender === "ai" &&
+                  !message.error &&
+                  message.interaction && (
+                    <div className="department-assigned-label">
+                      <span className="label normal">
+                        {safeT("homepage.chat.review.department")}:{" "}
+                        {message.interaction.context?.department ||
+                          safeT("homepage.chat.review.noDepartment")}
+                      </span>
+                    </div>
+                  )}
+
                 {/* Show feedback component in review mode for all answers/interactions that do not have expertFeedback */}
                 {readOnly &&
                   message.sender === "ai" &&
