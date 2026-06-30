@@ -32,6 +32,10 @@ const FilterPanel = ({
   const skipNextAutoClose = useRef(false);
   // Holds the previously applied date range so cancel on the picker restores it.
   const datePickerCancelRestoreRef = useRef(null);
+  // Tracks the start date clicked when only one date has been selected so far.
+  // If the user clicks outside the picker before picking an end date, we apply
+  // a same-day range rather than reverting to the previous selection.
+  const pendingStartRef = useRef(null);
 
   // Collapse when results load successfully; keep open on error or no results.
   // Skipped once after a Clear so the panel stays open for the user to re-filter.
@@ -187,9 +191,23 @@ const FilterPanel = ({
 
     // Store instance
     dateRangePickerInstance.current = $picker.data('daterangepicker');
+    pendingStartRef.current = null;
+
+    // When the user clicks a date cell, track whether an end date was also set.
+    // If only a start was clicked (endDate is null), save it so outsideClick can
+    // apply it as a same-day range instead of reverting.
+    const instance = dateRangePickerInstance.current;
+    instance.container.on('mouseup.singleclick', 'td.available', function () {
+      if (!instance.endDate) {
+        pendingStartRef.current = instance.startDate ? instance.startDate.clone() : null;
+      } else {
+        pendingStartRef.current = null;
+      }
+    });
 
     // Handle date selection - convert moment to local time string
     $picker.on('apply.daterangepicker', function (ev, picker) {
+      pendingStartRef.current = null;
       datePickerCancelRestoreRef.current = null;
       const startDate = picker.startDate.toDate();
       const endDate = picker.endDate.toDate();
@@ -203,6 +221,7 @@ const FilterPanel = ({
 
     // Restore previously applied dates if user cancels after clicking the date pill X
     $picker.on('cancel.daterangepicker', function () {
+      pendingStartRef.current = null;
       if (datePickerCancelRestoreRef.current) {
         const { startDate, endDate } = datePickerCancelRestoreRef.current;
         dateRangePickerInstance.current.setStartDate(moment(new Date(startDate)));
@@ -212,11 +231,30 @@ const FilterPanel = ({
       }
     });
 
+    // If the user clicked one date but didn't pick an end before clicking outside,
+    // apply that single date as a same-day range instead of reverting.
+    $picker.on('outsideClick.daterangepicker', function () {
+      const pending = pendingStartRef.current;
+      pendingStartRef.current = null;
+      if (pending) {
+        const dateObj = pending.toDate();
+        const start = new Date(dateObj);
+        const end = new Date(dateObj);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 0);
+        setDateRange({
+          startDate: formatDateTimeLocal(start),
+          endDate: formatDateTimeLocal(end)
+        });
+      }
+    });
+
     // Cleanup
     return () => {
       if ($picker.data('daterangepicker')) {
         $picker.off('apply.daterangepicker');
         $picker.off('cancel.daterangepicker');
+        $picker.off('outsideClick.daterangepicker');
         $picker.data('daterangepicker').remove();
         dateRangePickerInstance.current = null;
       }
