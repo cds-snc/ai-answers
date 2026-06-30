@@ -472,6 +472,7 @@
 .filter-panel-summary:focus,
 .filter-panel-summary:focus:hover,
 .filter-button-primary:focus,
+.filter-button-primary:focus:hover,
 .filter-button-secondary:focus,
 .filter-pills__clear-all:focus {
   background-color: var(--gcds-details-focus-background);
@@ -514,9 +515,6 @@
     width: 100%;
   }
 
-  .quick-set-buttons {
-    justify-content: center;
-  }
 }
 
 /* Table container with horizontal scrolling - full width breakout */

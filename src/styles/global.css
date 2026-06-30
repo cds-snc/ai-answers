@@ -383,9 +383,9 @@ details[open] > summary::before {
   font-family: "Noto Sans";
 }
 
-.btn-primary-sm:hover,
-.btn-primary:hover,
-.btn-primary-send:hover {
+.btn-primary-sm:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-primary-send:hover:not(:disabled) {
   background: var(--gcds-button-primary-hover-background);
   border-color: var(--gcds-button-primary-hover-background);
 }
