@@ -124,6 +124,114 @@ async function buildExpertEvalChatsExportScope(collections, { startDate, endDate
   return { byCollection };
 }
 
+async function buildIndexStatusResponse(connection, collections) {
+  const indexStatus = [];
+
+  // First, check for any in-progress index builds using currentOp
+  let buildingIndexes = {};
+  try {
+    const db = connection.connection.db;
+    // Query currentOp for index build operations
+    const currentOps = await db.admin().command({
+      currentOp: true,
+      $or: [
+        { 'command.createIndexes': { $exists: true } },
+        { 'msg': { $regex: /Index Build/i } }
+      ]
+    });
+
+    // Map building indexes by collection name
+    if (currentOps && currentOps.inprog) {
+      for (const op of currentOps.inprog) {
+        const ns = op.ns || '';
+        const collName = ns.split('.').pop();
+        if (collName) {
+          if (!buildingIndexes[collName]) {
+            buildingIndexes[collName] = [];
+          }
+          buildingIndexes[collName].push({
+            indexName: op.command?.indexes?.[0]?.name || op.msg || 'unknown',
+            progress: op.progress ? Math.round((op.progress.done / op.progress.total) * 100) : null
+          });
+        }
+      }
+    }
+  } catch (opErr) {
+    // currentOp may not be available on all MongoDB/DocumentDB versions
+    console.warn('Could not check currentOp for index builds:', opErr.message);
+  }
+
+  for (const model of Object.values(collections)) {
+    try {
+      const indexes = await model.collection.indexes();
+      // Get expected indexes from schema
+      const schemaIndexes = model.schema.indexes() || [];
+      const expectedCount = schemaIndexes.length + 1; // +1 for _id index
+
+      // Check if this collection has indexes building
+      const collName = model.collection.collectionName;
+      const building = buildingIndexes[collName] || [];
+      const isBuilding = building.length > 0;
+
+      // Find which schema-defined indexes are missing
+      const actualIndexKeys = indexes.map(idx => Object.keys(idx.key || {}).sort().join(','));
+      const missingIndexes = [];
+      for (const [schemaIdx] of schemaIndexes) {
+        const expectedKeys = Object.keys(schemaIdx).sort().join(',');
+        if (!actualIndexKeys.includes(expectedKeys)) {
+          missingIndexes.push(Object.keys(schemaIdx).join(', '));
+        }
+      }
+
+      let status;
+      if (isBuilding) {
+        status = 'building';
+      } else if (indexes.length >= expectedCount && missingIndexes.length === 0) {
+        status = 'complete';
+      } else {
+        status = 'incomplete';
+      }
+
+      indexStatus.push({
+        collection: model.modelName,
+        currentIndexCount: indexes.length,
+        expectedIndexCount: expectedCount,
+        indexes: indexes.map(idx => ({
+          name: idx.name,
+          keys: Object.keys(idx.key || {})
+        })),
+        missingIndexes: missingIndexes.length > 0 ? missingIndexes : undefined,
+        building: isBuilding ? building : undefined,
+        status
+      });
+    } catch (error) {
+      indexStatus.push({
+        collection: model.modelName,
+        error: error.message,
+        status: 'error'
+      });
+    }
+  }
+
+  const allComplete = indexStatus.every(s => s.status === 'complete');
+  const anyBuilding = indexStatus.some(s => s.status === 'building');
+  let message;
+  if (anyBuilding) {
+    message = 'Some indexes are currently building';
+  } else if (allComplete) {
+    message = 'All indexes are complete';
+  } else {
+    message = 'Some indexes may be incomplete';
+  }
+
+  return {
+    message,
+    allComplete,
+    anyBuilding,
+    collections: indexStatus
+  };
+}
+
 async function databaseManagementHandler(req, res) {
   if (!['GET', 'POST', 'DELETE', 'PUT', 'PATCH'].includes(req.method)) {
     res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']);
@@ -142,8 +250,11 @@ async function databaseManagementHandler(req, res) {
     if (req.method === 'GET') {
       // Efficient chunked export using lastId (id-based pagination)
       // Treat collection=All as no collection filter (return list of collections)
-      const { collection, limit = 1000, startDate, endDate, lastId, exportScope } = req.query;
+      const { collection, limit = 1000, startDate, endDate, lastId, exportScope, action } = req.query;
       console.log(`Exporting collection: ${collection}, limit: ${limit}, startDate: ${startDate}, endDate: ${endDate}, lastId: ${lastId}, exportScope: ${exportScope}`);
+      if (action === 'indexStatus') {
+        return res.status(200).json(await buildIndexStatusResponse(connection, collections));
+      }
       const dateField = 'updatedAt';
       if (!collection || collection === 'All') {
         // Return list of available collections
@@ -292,112 +403,7 @@ async function databaseManagementHandler(req, res) {
         results
       });
     } else if (req.method === 'PATCH') {
-      // Check index status for all collections
-      const indexStatus = [];
-
-      // First, check for any in-progress index builds using currentOp
-      let buildingIndexes = {};
-      try {
-        const db = connection.connection.db;
-        // Query currentOp for index build operations
-        const currentOps = await db.admin().command({
-          currentOp: true,
-          $or: [
-            { 'command.createIndexes': { $exists: true } },
-            { 'msg': { $regex: /Index Build/i } }
-          ]
-        });
-
-        // Map building indexes by collection name
-        if (currentOps && currentOps.inprog) {
-          for (const op of currentOps.inprog) {
-            const ns = op.ns || '';
-            const collName = ns.split('.').pop();
-            if (collName) {
-              if (!buildingIndexes[collName]) {
-                buildingIndexes[collName] = [];
-              }
-              buildingIndexes[collName].push({
-                indexName: op.command?.indexes?.[0]?.name || op.msg || 'unknown',
-                progress: op.progress ? Math.round((op.progress.done / op.progress.total) * 100) : null
-              });
-            }
-          }
-        }
-      } catch (opErr) {
-        // currentOp may not be available on all MongoDB/DocumentDB versions
-        console.warn('Could not check currentOp for index builds:', opErr.message);
-      }
-
-      for (const model of Object.values(collections)) {
-        try {
-          const indexes = await model.collection.indexes();
-          // Get expected indexes from schema
-          const schemaIndexes = model.schema.indexes() || [];
-          const expectedCount = schemaIndexes.length + 1; // +1 for _id index
-
-          // Check if this collection has indexes building
-          const collName = model.collection.collectionName;
-          const building = buildingIndexes[collName] || [];
-          const isBuilding = building.length > 0;
-
-          // Find which schema-defined indexes are missing
-          const actualIndexKeys = indexes.map(idx => Object.keys(idx.key || {}).sort().join(','));
-          const missingIndexes = [];
-          for (const [schemaIdx] of schemaIndexes) {
-            const expectedKeys = Object.keys(schemaIdx).sort().join(',');
-            if (!actualIndexKeys.includes(expectedKeys)) {
-              missingIndexes.push(Object.keys(schemaIdx).join(', '));
-            }
-          }
-
-          let status;
-          if (isBuilding) {
-            status = 'building';
-          } else if (indexes.length >= expectedCount && missingIndexes.length === 0) {
-            status = 'complete';
-          } else {
-            status = 'incomplete';
-          }
-
-          indexStatus.push({
-            collection: model.modelName,
-            currentIndexCount: indexes.length,
-            expectedIndexCount: expectedCount,
-            indexes: indexes.map(idx => ({
-              name: idx.name,
-              keys: Object.keys(idx.key || {})
-            })),
-            missingIndexes: missingIndexes.length > 0 ? missingIndexes : undefined,
-            building: isBuilding ? building : undefined,
-            status
-          });
-        } catch (error) {
-          indexStatus.push({
-            collection: model.modelName,
-            error: error.message,
-            status: 'error'
-          });
-        }
-      }
-
-      const allComplete = indexStatus.every(s => s.status === 'complete');
-      const anyBuilding = indexStatus.some(s => s.status === 'building');
-      let message;
-      if (anyBuilding) {
-        message = 'Some indexes are currently building';
-      } else if (allComplete) {
-        message = 'All indexes are complete';
-      } else {
-        message = 'Some indexes may be incomplete';
-      }
-
-      return res.status(200).json({
-        message,
-        allComplete,
-        anyBuilding,
-        collections: indexStatus
-      });
+      return res.status(200).json(await buildIndexStatusResponse(connection, collections));
     }
   } catch (error) {
     console.error('Database management error:', error);
