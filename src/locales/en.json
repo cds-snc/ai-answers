@@ -172,7 +172,9 @@
       },
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
-        "referringUrl": "Referring URL:"
+        "referringUrl": "Referring URL:",
+        "department": "Department(s) assigned",
+        "noDepartment": "No department matched"
       },
       "section": {
         "heading": "Chat conversation"

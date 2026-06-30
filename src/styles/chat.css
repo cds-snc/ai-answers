@@ -801,6 +801,11 @@ textarea:focus {
   max-width: 100%;
 }
 
+.department-assigned-label {
+  margin-top: var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-100);
+}
+
 /* QA: cleanup — .explanation-field is defined again further down with more properties (padding, border-radius, background); that second definition supersedes this one. Delete this block. */
 .expert-rating-container .explanation-field {
   margin-top: 10px;

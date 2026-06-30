@@ -172,7 +172,9 @@
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
-        "referringUrl": "URL de provenance :"
+        "referringUrl": "URL de provenance :",
+        "department": "Ministère(s) attribué(s)",
+        "noDepartment": "Aucun ministère attribué"
       },
       "section": {
         "heading": "Conversation par clavardage"
