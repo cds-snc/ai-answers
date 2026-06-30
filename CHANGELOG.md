@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.158.2](https://github.com/cds-snc/ai-answers/compare/v1.158.1...v1.158.2) (2026-06-30)
+
+
+### Bug Fixes
+
+* military transition from email ([c83d25e](https://github.com/cds-snc/ai-answers/commit/c83d25e8d0104aaa971e5d7ca3cca35a609cc0f0))
+* more detail for retention ([70b269f](https://github.com/cds-snc/ai-answers/commit/70b269fade47a63d5ce012fcd607e0f97ae1e7c7))
+* move the retention urls ([c140ded](https://github.com/cds-snc/ai-answers/commit/c140dede30b202040b1e1da6f2b87a6f1e830358))
+* remove the danged regex ([dbf1408](https://github.com/cds-snc/ai-answers/commit/dbf14081ea043ba2d2492634533c9ad28c0c51a4))
+
 ## [1.158.1](https://github.com/cds-snc/ai-answers/compare/v1.158.0...v1.158.1) (2026-06-30)
 
 
