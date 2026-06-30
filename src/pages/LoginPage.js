@@ -97,7 +97,7 @@ const LoginPage = ({ lang = 'en' }) => {
             <input id="code" value={code} onChange={(e) => setCode(e.target.value)} disabled={isLoading} />
           </div>
           <div>
-            <button onClick={verifyTwoStep} disabled={isLoading} className="auth-submit-button">
+            <button onClick={verifyTwoStep} disabled={isLoading} className="btn-primary-sm auth-submit-button">
               {t('login.2fa.verify')}
             </button>
             <button onClick={requestTwoStep} disabled={isLoading || !email}>
@@ -136,7 +136,7 @@ const LoginPage = ({ lang = 'en' }) => {
               autoComplete="current-password"
               lang={lang}
             />
-            <button type="submit" disabled={isLoading} className="auth-submit-button">
+            <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">
               {isLoading ? t('login.form.submitting') : t('login.submit')}
             </button>
           </form>

@@ -349,33 +349,24 @@ details[open] > summary::before {
 }
 
 /* buttons */
-/* QA: cleanup — .btn-primary-sm and .btn-secondary-sm have 0 usages in JSX; confirm before deleting (also removes the hover/focus selectors that reference them below) */
 .btn-primary-sm {
-  margin-top: 10px;
-  padding: 6px 12px;
-  background-color: var(--gcds-color-blue-900);
-  font-weight: 500;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--gcds-button-small-padding);
+  background: var(--gcds-button-primary-default-background);
+  color: var(--gcds-button-primary-default-text);
+  border: var(--gcds-button-border-width) solid transparent;
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-small-font-desktop);
   cursor: pointer;
-  font-size: 18px;
-  line-height: 1.55em;
-  font-family: "Noto Sans";
 }
 
 .btn-secondary-sm {
-  margin-top: 10px;
-  padding: 6px 12px;
-  background-color: white;
-  font-weight: 500;
-  color: #26374a;
-  border: solid 2px var(--gcds-color-blue-900);
-  border-radius: 4px;
+  padding: var(--gcds-button-small-padding);
+  background: white;
+  color: var(--gcds-color-blue-900);
+  border: var(--gcds-button-border-width) solid var(--gcds-color-blue-900);
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-small-font-desktop);
   cursor: pointer;
-  font-size: 18px;
-  line-height: 1.55em;
-  font-family: "Noto Sans";
 }
 
 .btn-primary {
@@ -392,20 +383,24 @@ details[open] > summary::before {
   font-family: "Noto Sans";
 }
 
-.btn-primary-sm:hover,
-.btn-primary:hover,
-.btn-primary-send:hover {
-  background-color: var(--gcds-color-blue-700);
+.btn-primary-sm:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-primary-send:hover:not(:disabled) {
+  background: var(--gcds-button-primary-hover-background);
 }
 
 .btn-secondary-sm:hover {
-  background-color: var(--gcds-color-blue-100);
+  background: var(--gcds-color-blue-100);
 }
 
 .btn-primary-sm:focus,
+.btn-primary-sm:focus:hover,
+.btn-primary:focus,
+.btn-primary:focus:hover,
 summary:focus,
 .close-icon:focus {
   background-color: var(--gcds-details-focus-background);
+  border-color: var(--gcds-details-focus-background);
   border-radius: var(--gcds-details-focus-border-radius);
   box-shadow: var(--gcds-details-focus-box-shadow);
   color: var(--gcds-details-focus-text);
@@ -413,6 +408,11 @@ summary:focus,
   outline-offset: var(--gcds-details-focus-outline-offset);
   text-decoration: none;
 }
+
+.btn-primary:focus {
+  border-radius: var(--gcds-border-radius-md);
+}
+
 
 .hr {
   padding-top: 30px;
@@ -957,24 +957,24 @@ fieldset.gc-chckbxrdio {
 
 .gc-chckbxrdio input[type="checkbox"]:focus + label::before,
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
-  outline: 4px solid #0535d2;
+  outline: 4px solid var(--gcds-details-focus-background);
   outline-offset: 4px;
 }
 .gc-chckbxrdio.sm-v input[type="checkbox"]:focus:checked + label::after {
-  border-color: #0535d2;
+  border-color: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="checkbox"]:focus + label::before,
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
-  box-shadow: 0 0 0 2px #0535d2;
+  box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
-  background: #0535d2;
+  background: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"]:checked:focus + label::before {
-  background: #0535d2;
+  background: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"] + label::before {

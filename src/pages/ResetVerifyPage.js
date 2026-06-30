@@ -38,7 +38,7 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
           <p>{t('reset.verify.instructionsNoOtp')}</p>
 
           <div>
-            <button className="auth-submit-button" onClick={gotoSetPassword} disabled={isLoading}>{t('reset.verify.continue')}</button>
+            <button className="btn-primary-sm auth-submit-button" onClick={gotoSetPassword} disabled={isLoading}>{t('reset.verify.continue')}</button>
           </div>
 
           <div className="auth-links">

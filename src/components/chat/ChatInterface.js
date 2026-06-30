@@ -7,7 +7,7 @@ import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
 import DownloadPanel from "./review/DownloadPanel.js";
 import EvalPanel from "./review/EvalPanel.js";
 import aiStarsGray from '../../assets/ai-stars-333-90.png';
-import aiStarsBlue from '../../assets/ai-stars-0535d2-90.png';
+import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -272,13 +272,11 @@ const ChatInterface = ({
     }
   }, [isLoading]);
 
-  const getLabelForInput = () => {
-    if (turnCount >= 1) {
-      const followUp = t("homepage.chat.input.followUp");
-      return typeof followUp === "object" ? followUp.text : followUp;
-    }
-    const initial = t("homepage.chat.input.initial");
-    return typeof initial === "object" ? initial.text : initial;
+  const getInputCopy = () => {
+    const value = turnCount >= 1
+      ? t("homepage.chat.input.followUp")
+      : t("homepage.chat.input.initial");
+    return typeof value === "object" ? value : { text: value, ariaLabel: value };
   };
 
   // TOOD is there a difference between paragraphs and sentrences?
@@ -370,6 +368,8 @@ const ChatInterface = ({
   const handleTextareaFocus = () => {
     setIsTextareaFocused(true);
   };
+
+  const { text: inputLabel, ariaLabel: inputSRLabel } = getInputCopy();
 
   return (
 <div className="chat-container">
@@ -717,23 +717,11 @@ const ChatInterface = ({
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
-                <label
-                  htmlFor="message"
-                  aria-label={
-                    turnCount === 0
-                      ? typeof t("homepage.chat.input.initial") === "object"
-                        ? t("homepage.chat.input.initial").ariaLabel
-                        : undefined
-                      : typeof t("homepage.chat.input.followUp") === "object"
-                        ? t("homepage.chat.input.followUp").ariaLabel
-                        : undefined
-                  }
-                >
-                  <span className="aria-hidden" aria-hidden="true">
-                    {getLabelForInput()}
-                  </span>
+                <label htmlFor="message">
+                  <span aria-hidden="true">{inputLabel}</span>
+                  <span className="sr-only">{inputSRLabel}</span>
                 </label>
-                <span className="hint-text">
+                <span className="hint-text" id="chat-input-hint">
                   <img
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray}
                     className="ai-icon"
@@ -762,11 +750,7 @@ const ChatInterface = ({
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
                     onFocus={handleTextareaFocus}
-                    aria-label={
-                      turnCount === 0
-                        ? safeT("homepage.chat.textarea.ariaLabel.first")
-                        : safeT("homepage.chat.textarea.ariaLabel.followon")
-                    }
+                    aria-describedby="chat-input-hint"
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}

@@ -78,7 +78,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           lang={lang}
         />
 
-        <button type="submit" className="auth-submit-button" disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') : t('reset.complete.submit')}</button>
+        <button type="submit" className="btn-primary-sm auth-submit-button" disabled={isLoading || !code || !email}>{isLoading ? t('reset.request.sending') : t('reset.complete.submit')}</button>
       </form>
       <div className="auth-links">
         <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>

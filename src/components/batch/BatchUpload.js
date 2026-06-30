@@ -360,7 +360,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             )}
 
             {file && !fileUploaded && (
-              <button type="submit" className="primary-button force-style-button">
+              <button type="submit" className="btn-primary">
                 {t('batch.upload.buttons.upload')}
               </button>
             )}
