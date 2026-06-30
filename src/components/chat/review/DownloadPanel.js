@@ -26,7 +26,7 @@ const DownloadPanel = ({ message, t }) => {
     const title = (t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages') + indicator;
 
     return (
-        <GcdsDetails detailsTitle={title} className="review-details">
+        <GcdsDetails detailsTitle={title} className="review-details" tabIndex="0">
             <div className="review-panel download-panel">
                 {downloads.map((d, i) => {
                     const url = parseUrl(d.input);
