@@ -681,14 +681,13 @@
   display: block;
 }
 
-.field-container:focus-within .hint-text,
-.field-container:focus-within label {
+.field-container:has(textarea:focus) .hint-text,
+.field-container:has(textarea:focus) label {
   color: var(--gcds-details-focus-background);
 }
 
 /* Focus states */
-.form-group:has(textarea:focus),
-.form-group:has(.btn-primary-send:focus) {
+.form-group:has(textarea:focus) {
   border-color: var(--gcds-details-focus-background);
   outline: 3px solid var(--gcds-details-focus-background);
   outline-offset: 0.225rem;
@@ -939,7 +938,7 @@ textarea:focus {
   display: block;
   margin-bottom: 24px;
 }
-.field-container:focus-within .referring-url-chat,
-.field-container:focus-within #displayReferringURL {
+.field-container:has(textarea:focus) .referring-url-chat,
+.field-container:has(textarea:focus) #displayReferringURL {
   color: var(--gcds-details-focus-background);
 }
