@@ -18,7 +18,7 @@ export const DND_MDN_SCENARIOS = `
 - voluntary, compulsory (medical), and Reserve Force release from CAF & component transfers from/to  Primary & Supplementary Reserve
 
 * Careers/recruiting https://forces.ca/en/careers https://forces.ca/fr/carrieres
-* Retention https://military-transition.canada.ca/en/remain/retention https://military-transition.canada.ca/fr/rester/retention
+* Retention & benefits/options of remaining in CAF https://military-transition.canada.ca/en/remain/retention https://military-transition.canada.ca/fr/rester/retention
 
 ## Benefits, pay, services
 * topic https://www.canada.ca/en/government/publicservice/benefitsmilitary.html https://www.canada.ca/fr/gouvernement/fonctionpublique/avantagesmilitaires.html
