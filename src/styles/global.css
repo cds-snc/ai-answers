@@ -957,24 +957,24 @@ fieldset.gc-chckbxrdio {
 
 .gc-chckbxrdio input[type="checkbox"]:focus + label::before,
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
-  outline: 4px solid #0535d2;
+  outline: 4px solid var(--gcds-details-focus-background);
   outline-offset: 4px;
 }
 .gc-chckbxrdio.sm-v input[type="checkbox"]:focus:checked + label::after {
-  border-color: #0535d2;
+  border-color: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="checkbox"]:focus + label::before,
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
-  box-shadow: 0 0 0 2px #0535d2;
+  box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
-  background: #0535d2;
+  background: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"]:checked:focus + label::before {
-  background: #0535d2;
+  background: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"] + label::before {

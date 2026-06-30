@@ -683,14 +683,14 @@
 
 .field-container:focus-within .hint-text,
 .field-container:focus-within label {
-  color: #0535d2;
+  color: var(--gcds-details-focus-background);
 }
 
 /* Focus states */
 .form-group:has(textarea:focus),
 .form-group:has(.btn-primary-send:focus) {
-  border-color: #0535d2;
-  outline: 3px solid #0535d2;
+  border-color: var(--gcds-details-focus-background);
+  outline: 3px solid var(--gcds-details-focus-background);
   outline-offset: 0.225rem;
   box-shadow: 0 0 0 0.125rem #fff;
 }
@@ -711,8 +711,8 @@
 .expert-rating-container input[type="url"]:focus,
 .expert-rating-container input[type="text"]:focus,
 .expert-rating-container textarea:focus {
-  border-color: #0535d2 !important;
-  outline: 3px solid #0535d2 !important;
+  border-color: var(--gcds-details-focus-background) !important;
+  outline: 3px solid var(--gcds-details-focus-background) !important;
   outline-offset: 0.225rem !important;
   box-shadow: 0 0 0 0.125rem #fff !important;
   border-radius: 4px !important;
@@ -941,5 +941,5 @@ textarea:focus {
 }
 .field-container:focus-within .referring-url-chat,
 .field-container:focus-within #displayReferringURL {
-  color: #0535d2;
+  color: var(--gcds-details-focus-background);
 }
