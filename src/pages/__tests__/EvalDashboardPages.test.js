@@ -66,16 +66,10 @@ describe('eval dashboard pages', () => {
       expect(lastDataTableProps).toBeTruthy();
     });
 
-    expect(lastDataTableProps?.options?.layout).toEqual({
-      topStart: {
-        features: ['search', 'info', 'pageLength']
-      },
-      topEnd: 'paging',
-      bottomStart: {
-        features: ['info', 'pageLength']
-      },
-      bottomEnd: 'paging'
-    });
+    const departmentColumn = lastDataTableProps?.columns?.find((column) => column.data === 'department');
+    const referringUrlColumn = lastDataTableProps?.columns?.find((column) => column.data === 'referringUrl');
+    expect(departmentColumn?.searchable).toBe(false);
+    expect(referringUrlColumn?.searchable).toBe(false);
   });
 
   it('renders the auto-eval dashboard without crashing', async () => {
