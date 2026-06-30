@@ -148,6 +148,20 @@ class DataStoreService {
     }
   }
 
+  static async checkIndexStatus() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('db-database-management?action=indexStatus'));
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to check index status');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking index status:', error);
+      throw error;
+    }
+  }
+
 
 
   static async getTableCounts() {

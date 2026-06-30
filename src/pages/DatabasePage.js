@@ -768,11 +768,7 @@ const DatabasePage = ({ lang }) => {
               setIsCheckingIndexStatus(true);
               setIndexStatus(null);
               setMessage('');
-              const res = await AuthService.fetch(getApiUrl('db-database-management'), {
-                method: 'PATCH'
-              });
-              const json = await res.json();
-              if (!res.ok) throw new Error(json.message || 'Check failed');
+              const json = await DataStoreService.checkIndexStatus();
               setIndexStatus(json);
             } catch (err) {
               setMessage(t('admin.database.indexStatusError').replace('{error}', err.message));
