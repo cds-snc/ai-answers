@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.158.0](https://github.com/cds-snc/ai-answers/compare/v1.157.0...v1.158.0) (2026-06-30)
+
+
+### Features
+
+* add index status checking functionality to DataStoreService and update DatabasePage to use it ([818ee72](https://github.com/cds-snc/ai-answers/commit/818ee72a1df0b332b6d5a5c0faec9d840a363993))
+* add index status checking functionality to DataStoreService and… ([cebfa07](https://github.com/cds-snc/ai-answers/commit/cebfa075ac517bac498baca62e01aaac060da929))
+* enhance EvalDashboardPage with search feature and update aggregation logic for referredPublic chats ([de7ab01](https://github.com/cds-snc/ai-answers/commit/de7ab012671ab4520b08f4710d6429355ad34b35))
+
+
+### Bug Fixes
+
+* move eval dashboard search to top left ([8722866](https://github.com/cds-snc/ai-answers/commit/8722866a4abf4722139be91a5af76a431b8833fb))
+* update EvalDashboardPage to disable search functionality for department and referring URL columns ([95fc2a0](https://github.com/cds-snc/ai-answers/commit/95fc2a097267f973ffd087fab8bb9cca91b70b19))
+* update layout configuration for EvalDashboardPage to use feature objects ([629a396](https://github.com/cds-snc/ai-answers/commit/629a396bb66debd75e2210996106aade3a55acb8))
+
 ## [1.157.0](https://github.com/cds-snc/ai-answers/compare/v1.156.1...v1.157.0) (2026-06-30)
 
 
