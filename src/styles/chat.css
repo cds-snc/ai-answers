@@ -425,10 +425,8 @@
 }
 
 .feedback-link:hover {
-  text-decoration: underline;
-  color: var(--gcds-color-blue-850);
-  text-decoration-thickness: default;
-  text-underline-offset: default;
+  color: var(--gcds-link-hover);
+  text-decoration-thickness: var(--gcds-link-hover-decoration-thickness);
 }
 
 .feedback-separator {
