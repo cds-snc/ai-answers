@@ -628,7 +628,8 @@
   overflow: visible;
 }
 
-.btn-primary-send:focus {
+.btn-primary-send:focus,
+.btn-primary-send:focus:hover {
   background-color: var(--gcds-details-focus-background);
   border-radius: 0;
   box-shadow: var(--gcds-details-focus-box-shadow);
@@ -686,7 +687,8 @@
 }
 
 /* Focus states */
-.form-group:has(textarea:focus) {
+.form-group:has(textarea:focus),
+.form-group:has(.btn-primary-send:focus) {
   border-color: #0535d2;
   outline: 3px solid #0535d2;
   outline-offset: 0.225rem;

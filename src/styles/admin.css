@@ -18,16 +18,14 @@
 }
 
 .file-input-container input[type="file"]::file-selector-button {
-  padding: 6px 12px;
+  padding: var(--gcds-button-small-padding);
   background-color: white;
-  font-weight: 500;
   color: var(--gcds-color-blue-900);
-  border: solid 2px var(--gcds-color-blue-900);
-  border-radius: 4px;
+  border: var(--gcds-button-border-width) solid var(--gcds-color-blue-900);
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-small-font-desktop);
+  font-weight: 500;
   cursor: pointer;
-  font-size: 18px;
-  line-height: 1.55em;
-  font-family: "Noto Sans";
   margin-right: 8px;
 }
 
@@ -474,6 +472,7 @@
 .filter-button-primary:focus,
 .filter-button-primary:focus:hover,
 .filter-button-secondary:focus,
+.filter-button-secondary:focus:hover,
 .filter-pills__clear-all:focus {
   background-color: var(--gcds-details-focus-background);
   box-shadow: var(--gcds-details-focus-box-shadow);
@@ -488,7 +487,8 @@
   border-radius: var(--gcds-details-focus-border-radius);
 }
 
-.filter-button-primary:focus {
+.filter-button-primary:focus,
+.filter-button-primary:focus:hover {
   border-color: var(--gcds-details-focus-background);
 }
 

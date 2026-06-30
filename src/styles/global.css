@@ -395,7 +395,9 @@ details[open] > summary::before {
 }
 
 .btn-primary-sm:focus,
+.btn-primary-sm:focus:hover,
 .btn-primary:focus,
+.btn-primary:focus:hover,
 summary:focus,
 .close-icon:focus {
   background-color: var(--gcds-details-focus-background);
