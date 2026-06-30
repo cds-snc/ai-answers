@@ -7,7 +7,7 @@ import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
 import DownloadPanel from "./review/DownloadPanel.js";
 import EvalPanel from "./review/EvalPanel.js";
 import aiStarsGray from '../../assets/ai-stars-333-90.png';
-import aiStarsBlue from '../../assets/ai-stars-0535d2-90.png';
+import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
