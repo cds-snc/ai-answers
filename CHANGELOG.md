@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.157.0](https://github.com/cds-snc/ai-answers/compare/v1.156.1...v1.157.0) (2026-06-30)
+
+
+### Features
+
+* enhance EvalDashboardPage with search feature and update aggreg… ([e917d09](https://github.com/cds-snc/ai-answers/commit/e917d09beaabc10fd473f67f55c6a474f78eabeb))
+* enhance EvalDashboardPage with search feature and update aggregation logic for referredPublic chats ([de7ab01](https://github.com/cds-snc/ai-answers/commit/de7ab012671ab4520b08f4710d6429355ad34b35))
+
+
+### Bug Fixes
+
+* apply single-day range when clicking outside date picker ([a0c39c9](https://github.com/cds-snc/ai-answers/commit/a0c39c9e7d52e798320a5d054199aba67c4875c7))
+* apply single-day range when clicking outside date picker after one date selected ([69ce594](https://github.com/cds-snc/ai-answers/commit/69ce59483c7b87e912ab46f7b18e481fcb28a456))
+* move eval dashboard search to top left ([8722866](https://github.com/cds-snc/ai-answers/commit/8722866a4abf4722139be91a5af76a431b8833fb))
+* update EvalDashboardPage to disable search functionality for department and referring URL columns ([95fc2a0](https://github.com/cds-snc/ai-answers/commit/95fc2a097267f973ffd087fab8bb9cca91b70b19))
+* update guideline for shared semantics to centralize metric definitions ([ece07ba](https://github.com/cds-snc/ai-answers/commit/ece07ba877813e8b53850352236636e534500e84))
+* update layout configuration for EvalDashboardPage to use feature objects ([629a396](https://github.com/cds-snc/ai-answers/commit/629a396bb66debd75e2210996106aade3a55acb8))
+* update metrics to count harmful evaluations as answer errors ([24ac930](https://github.com/cds-snc/ai-answers/commit/24ac93034c1b93c37cd46536bd4fc01437b05162))
+* update metrics to count harmful evaluations as answer errors ([3541023](https://github.com/cds-snc/ai-answers/commit/354102312be7501714b63a436afd43020d044531))
+
 ## [1.156.1](https://github.com/cds-snc/ai-answers/compare/v1.156.0...v1.156.1) (2026-06-29)
 
 
