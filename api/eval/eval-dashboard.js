@@ -1,5 +1,5 @@
 import dbConnect from '../db/db-connect.js';
-import { Interaction } from '../../models/interaction.js';
+import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 
@@ -72,16 +72,52 @@ async function evalDashboardHandler(req, res) {
     const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
 
     const pipeline = [];
-    const initialMatch = {};
-    if (dateRange) initialMatch.createdAt = dateRange;
 
-    if (Object.keys(initialMatch).length) pipeline.push({ $match: initialMatch });
+    pipeline.push({
+      $project: {
+        chatId: 1,
+        user: 1,
+        pageLanguage: 1,
+        interactionIds: '$interactions'
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'interactions',
+        localField: 'interactionIds',
+        foreignField: '_id',
+        as: 'interactions'
+      }
+    });
+
+    pipeline.push({
+      $unwind: {
+        path: '$interactions',
+        preserveNullAndEmptyArrays: false
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        questionNumber: {
+          $add: [
+            { $indexOfArray: ['$interactionIds', '$interactions._id'] },
+            1
+          ]
+        }
+      }
+    });
+
+    if (dateRange) {
+      pipeline.push({ $match: { 'interactions.createdAt': dateRange } });
+    }
 
     // Lookup answer - only need answerType
     pipeline.push({
       $lookup: {
         from: 'answers',
-        localField: 'answer',
+        localField: 'interactions.answer',
         foreignField: '_id',
         as: 'answerDoc'
       }
@@ -90,7 +126,7 @@ async function evalDashboardHandler(req, res) {
     // Extract answerType and first tool ID immediately
     pipeline.push({
       $addFields: {
-        answerType: { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
+        'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
         firstToolId: { $arrayElemAt: [{ $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }, 0] }
       }
     });
@@ -119,7 +155,7 @@ async function evalDashboardHandler(req, res) {
     pipeline.push({
       $lookup: {
         from: 'evals',
-        localField: 'autoEval',
+        localField: 'interactions.autoEval',
         foreignField: '_id',
         as: 'evalDoc'
       }
@@ -139,35 +175,11 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Lookup parent chat - only need chatId, pageLanguage, user
-    pipeline.push({
-      $lookup: {
-        from: 'chats',
-        localField: '_id',
-        foreignField: 'interactions',
-        as: 'chatDoc'
-      }
-    });
-    // Extract only needed fields immediately
-    pipeline.push({
-      $addFields: {
-        chatId: { $ifNull: [{ $arrayElemAt: ['$chatDoc.chatId', 0] }, ''] },
-        pageLanguage: { $ifNull: [{ $arrayElemAt: ['$chatDoc.pageLanguage', 0] }, ''] },
-        chatUser: { $arrayElemAt: ['$chatDoc.user', 0] },
-        questionNumber: {
-          $add: [
-            { $indexOfArray: [{ $ifNull: [{ $arrayElemAt: ['$chatDoc.interactions', 0] }, []] }, '$_id'] },
-            1
-          ]
-        }
-      }
-    });
-
     // Lookup creator user - only need email
     pipeline.push({
       $lookup: {
         from: 'users',
-        localField: 'chatUser',
+        localField: 'user',
         foreignField: '_id',
         as: 'creatorDoc'
       }
@@ -182,7 +194,7 @@ async function evalDashboardHandler(req, res) {
     pipeline.push({
       $lookup: {
         from: 'contexts',
-        localField: 'context',
+        localField: 'interactions.context',
         foreignField: '_id',
         as: 'contextDoc'
       }
@@ -190,7 +202,7 @@ async function evalDashboardHandler(req, res) {
     // Extract only department immediately
     pipeline.push({
       $addFields: {
-        department: { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] }
+        'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] }
       }
     });
 
@@ -198,7 +210,7 @@ async function evalDashboardHandler(req, res) {
     pipeline.push({
       $lookup: {
         from: 'expertfeedbacks',
-        localField: 'expertFeedback',
+        localField: 'interactions.expertFeedback',
         foreignField: '_id',
         as: 'interactionExpertDocs'
       }
@@ -260,7 +272,7 @@ async function evalDashboardHandler(req, res) {
     pipeline.push({
       $lookup: {
         from: 'publicfeedbacks',
-        localField: 'publicFeedback',
+        localField: 'interactions.publicFeedback',
         foreignField: '_id',
         as: 'publicFeedbackDoc'
       }
@@ -276,7 +288,6 @@ async function evalDashboardHandler(req, res) {
       $project: {
         answerDoc: 0,
         evalDoc: 0,
-        chatDoc: 0,
         creatorDoc: 0,
         contextDoc: 0,
         interactionExpertDocs: 0,
@@ -290,8 +301,8 @@ async function evalDashboardHandler(req, res) {
     // Compute partnerEval and aiEval using the same shared helpers as ChatDashboard
     pipeline.push({
       $addFields: {
-        partnerEval: getPartnerEvalAggregationExpression('$expertFeedbackData'),
-        aiEval: getAiEvalAggregationExpression('$autoEvalFeedbackData')
+        'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackData'),
+        'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackData')
       }
     });
 
@@ -300,8 +311,8 @@ async function evalDashboardHandler(req, res) {
 
     if (onlyEmpty === 'true' || onlyEmpty === '1') {
       // interactions without an autoEval
-      andFilters.push({ autoEval: { $exists: false } });
-      andFilters.push({ autoEval: null });
+      andFilters.push({ 'interactions.autoEval': { $exists: false } });
+      andFilters.push({ 'interactions.autoEval': null });
     }
 
     if (typeof processed !== 'undefined' && processed !== '') {
@@ -332,7 +343,7 @@ async function evalDashboardHandler(req, res) {
       answerType,
       partnerEval,
       aiEval
-    }, { basePath: '', userField: 'chatUser' });
+    }, { basePath: 'interactions', userField: 'user' });
     if (sharedFilters.length) {
       andFilters.push(...sharedFilters);
     }
@@ -347,18 +358,18 @@ async function evalDashboardHandler(req, res) {
     pipeline.push({
       $project: {
         // include the human-facing interactionId (string) from the Interaction doc
-        interactionId: { $ifNull: ['$interactionId', ''] },
-        _id: 1,
-        createdAt: 1,
+        interactionId: { $ifNull: ['$interactions.interactionId', ''] },
+        _id: '$interactions._id',
+        createdAt: '$interactions.createdAt',
         chatId: 1,  // Already extracted at top level
         pageLanguage: 1,  // Already extracted at top level
-        department: 1,  // Already extracted at top level
-        referringUrl: { $ifNull: ['$referringUrl', ''] },
+        department: '$interactions.department',
+        referringUrl: { $ifNull: ['$interactions.referringUrl', ''] },
         questionNumber: 1,
         // Indicate whether an auto-generated eval exists for this interaction
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
-        partnerEval: 1,
-        aiEval: 1,
+        partnerEval: '$interactions.partnerEval',
+        aiEval: '$interactions.aiEval',
         // Only consider expert feedback attached directly to the interaction
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
@@ -459,7 +470,7 @@ async function evalDashboardHandler(req, res) {
       pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
     }
 
-    const results = await Interaction.aggregate(pipeline).allowDiskUse(true);
+    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
     const hasMore = isDataTablesMode && pageSize !== null && results.length > pageSize;
     const rows = isDataTablesMode && pageSize !== null ? results.slice(0, pageSize) : results;
 

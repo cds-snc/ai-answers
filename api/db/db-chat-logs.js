@@ -168,7 +168,7 @@ async function chatLogsHandler(req, res) {
     let totalCount = 0;
 
     // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
-    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval) {
+    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic') {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
