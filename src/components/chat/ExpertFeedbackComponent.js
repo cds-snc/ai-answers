@@ -34,14 +34,19 @@ const ExpertFeedbackComponent = ({
     citationExplanation: '',
     expertCitationUrl: '',
   });
-  const [error, setError] = useState(false);
+  // A counter rather than a boolean: setErrorCount(n => n + 1) always changes the
+  // value, even on back-to-back failed submits, so the focus effect below reliably
+  // re-fires and re-announces the error every time (a boolean re-set to `true` when
+  // already `true` is a no-op in React and would silently skip the refocus/re-announce).
+  const [errorCount, setErrorCount] = useState(0);
+  const hasError = errorCount > 0;
   const errorRef = useRef(null);
 
   useEffect(() => {
-    if (error) {
+    if (errorCount > 0) {
       errorRef.current?.focus();
     }
-  }, [error]);
+  }, [errorCount]);
 
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
@@ -52,6 +57,7 @@ const ExpertFeedbackComponent = ({
     };
 
     setExpertFeedback((prev) => ({ ...prev, ...updates }));
+    setErrorCount(0);
   };
 
   const handleInputChange = (event) => {
@@ -84,10 +90,10 @@ const ExpertFeedbackComponent = ({
     event.preventDefault();
 
     if (!hasAnyRating(expertFeedback)) {
-      setError(true);
+      setErrorCount((n) => n + 1);
       return;
     }
-    setError(false);
+    setErrorCount(0);
 
     const totalScore = computeTotalScore(expertFeedback);
 
@@ -141,9 +147,9 @@ const ExpertFeedbackComponent = ({
         tabIndex={0}
         aria-label="Close"
       />
-      <fieldset className={`gc-chckbxrdio sm-v${error ? ' has-error' : ''}`}>
+      <fieldset className={`gc-chckbxrdio sm-v${hasError ? ' has-error' : ''}`}>
         <h2 className="feedback-followup-title">{t('homepage.expertRating.intro')}</h2>
-        {error && (
+        {hasError && (
           <p
             className="feedback-inline-error"
             id="expert-feedback-error"

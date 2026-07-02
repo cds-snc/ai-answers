@@ -156,6 +156,10 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
       onGcdsClick={handleToggle}
     >
       <div className="review-panel eval-panel">
+        {/* TODO(a11y): Re-run / Delete Evaluation / Run evaluation buttons don't announce
+            which question/interaction they act on when multiple EvalPanels are open in
+            review mode — same "unlabelled context" issue fixed for the feedback buttons
+            elsewhere in this PR. Revisit as part of the planned eval/admin UI redesign. */}
         <div className="actions" style={{ marginBottom: '1rem' }}>
           <GcdsButton onClick={handleReRun} disabled={reRunning || deleting} className="hydrated">
             {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}

@@ -14,7 +14,12 @@ const PublicFeedbackComponent = ({
 }) => {
   const { t } = useTranslations(lang);
   const [selected, setSelected] = useState('');
-  const [error, setError] = useState(false);
+  // A counter rather than a boolean: setErrorCount(n => n + 1) always changes the
+  // value, even on back-to-back failed submits, so the focus effect below reliably
+  // re-fires and re-announces the error every time (a boolean re-set to `true` when
+  // already `true` is a no-op in React and would silently skip the refocus/re-announce).
+  const [errorCount, setErrorCount] = useState(0);
+  const hasError = errorCount > 0;
   const errorRef = useRef(null);
 
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
@@ -25,19 +30,19 @@ const PublicFeedbackComponent = ({
   }));
 
   useEffect(() => {
-    if (error) {
+    if (errorCount > 0) {
       errorRef.current?.focus();
     }
-  }, [error]);
+  }, [errorCount]);
 
   const handleOptionChange = (id) => {
     setSelected(id);
-    setError(false);
+    setErrorCount(0);
   };
 
   const handleSend = async () => {
     if (!selected) {
-      setError(true);
+      setErrorCount((n) => n + 1);
       return;
     }
 
@@ -72,9 +77,16 @@ const PublicFeedbackComponent = ({
       <h2 className="feedback-followup-title">
         {isPositive ? t('homepage.publicFeedback.yes.title') : t('homepage.publicFeedback.no.title')}
       </h2>
+      {/* TODO(a11y): what a screen reader reads here never identifies which chat/answer
+          is being rated — in review mode, with several messages on the page, there's no
+          way to be sure which one you're evaluating. Same gap as the EvalPanel buttons.
+          (The ids below are also hardcoded/non-unique, which compounds this if two
+          instances are ever mounted at once — but identifying which question is being
+          rated is the real fix.)
+          Revisit as part of the planned eval/admin UI redesign. */}
       <div className="feedback-reason-card">
         <fieldset
-          className={`gc-chckbxrdio feedback-reason-fieldset${error ? ' has-error' : ''}`}
+          className={`gc-chckbxrdio feedback-reason-fieldset${hasError ? ' has-error' : ''}`}
           aria-labelledby="public-feedback-legend public-feedback-hint"
         >
           <legend id="public-feedback-legend">
@@ -84,7 +96,7 @@ const PublicFeedbackComponent = ({
           <p className="feedback-reason-hint" id="public-feedback-hint">
             {isPositive ? t('homepage.publicFeedback.yes.hint') : t('homepage.publicFeedback.no.hint')}
           </p>
-          {error && (
+          {hasError && (
             <p
               className="feedback-inline-error"
               id="public-feedback-error"
