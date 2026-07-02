@@ -11,10 +11,11 @@ const FeedbackComponent = ({
   chatId,
   userMessageId,
   sentences = [],
-  // Add these new props for the skip button
-  showSkipButton = false, // Determines if skip button should be shown
-  onSkip = () => { }, // Function to call when skip button is clicked
-  skipButtonLabel = "", // Accessible label for the skip button
+  // Add these new props for the skip link
+  showSkipButton = false, // Determines if skip link should be shown
+  onSkip = () => { }, // Function to call when skip link is activated
+  skipButtonLabel = "", // Accessible label for the skip link
+  skipToId = "message", // id of the element the skip link navigates to
 }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
@@ -147,14 +148,14 @@ const FeedbackComponent = ({
         </span>
         {showSkipButton && (
           <>
-            <button
+            <a
               className="wb-inv"
+              href={`#${skipToId}`}
               onClick={onSkip}
               aria-label={skipButtonLabel}
-              tabIndex="0"
             >
               {skipButtonLabel}
-            </button>
+            </a>
           </>
         )}
       </div>
@@ -182,18 +183,18 @@ const FeedbackComponent = ({
         {t("homepage.feedback.notUseful")}
       </button>
 
-      {/* Add the skip button after the other buttons, in the same line */}
+      {/* Add the skip link after the other buttons, in the same line */}
       {showSkipButton && (
         <>
           <span className="feedback-separator"></span>
-          <button
+          <a
             className="wb-inv"
+            href={`#${skipToId}`}
             onClick={onSkip}
             aria-label={skipButtonLabel}
-            tabIndex="0"
           >
             {skipButtonLabel}
-          </button>
+          </a>
         </>
       )}
     </div>
