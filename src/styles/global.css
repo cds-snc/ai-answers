@@ -177,8 +177,6 @@ code {
   --gcds-header-brand-border-color: #ddd !important;
   --gcds-header-brand-border-width: 0.01rem !important;
   --gcds-link-underline-offset: 0.1rem !important;
-  --gcds-label-font-desktop: 600 1.45rem / 120% "Lato", sans-serif !important; /* want this to look like heading intentionally */
-  --gcds-label-font-mobile: 600 1.3rem / 120% "Lato", sans-serif !important;
   --gcds-text-size-body-desktop: 400 1.25rem / 160% "Noto Sans", sans-serif !important;
   --gcds-link-font-small-desktop: 400 1rem / 150% "Noto Sans", sans-serif !important;
 }
@@ -232,8 +230,11 @@ gcds-details {
   margin-top: 0px !important;
 }
 
-/* main page styles */
-h2:first-of-type {
+/* Homepage subtitle ("Get answers to your Canada.ca questions"). Was
+   h2:first-of-type — unscoped, so it silently applied to (and had to be
+   fought via !important elsewhere for) any other page's first h2, including
+   the feedback components' own headings. */
+h2.homepage-subtitle {
   font-size: 26px;
   margin-bottom: 10px;
   color: #333 !important;
@@ -457,24 +458,6 @@ fieldset.gc-chckbxrdio legend:first-of-type {
 legend {
   border: 0;
   padding: 0;
-}
-
-.gc-chckbxrdio legend {
-  display: block;
-  width: 100%;
-  padding: 0;
-  margin-bottom: 23px;
-  line-height: inherit;
-  color: #333;
-  border: 0;
-}
-
-/* QA: cleanup — .gc-chckbxrdio label is defined twice; the second definition (further down) overrides display to block and adds font-size. Merge both into one rule and delete this one. */
-.gc-chckbxrdio label {
-  display: inline-block;
-  max-width: 100%;
-  margin-bottom: 5px;
-  font-weight: 700;
 }
 
 input[type="search"] {
@@ -863,20 +846,21 @@ fieldset.gc-chckbxrdio {
   padding-top: 0;
 }
 
-/* QA: cleanup — duplicate .gc-chckbxrdio label; merge max-width/margin-bottom/font-weight from the first definition above into this one, then delete the first */
 .gc-chckbxrdio label {
   cursor: pointer;
   display: block;
-  font-size: 20px;
+  max-width: 100%;
+  color: var(--gcds-label-text);
+  font: var(--gcds-label-font-desktop);
+  font-weight: var(--gcds-font-weights-medium);
+  margin: var(--gcds-label-margin);
 }
 
-.gc-chckbxrdio legend {
-  float: none;
-  font-family: "Lato";
-  font-size: 1.625rem;
-  font-weight: 700;
-  margin-bottom: 15px;
-  margin-top: 0;
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio label {
+    font: var(--gcds-label-font-mobile);
+    font-weight: var(--gcds-font-weights-medium);
+  }
 }
 
 .gc-chckbxrdio input[type="checkbox"],
@@ -895,9 +879,21 @@ fieldset.gc-chckbxrdio {
 .gc-chckbxrdio input[type="checkbox"] + label,
 .gc-chckbxrdio input[type="radio"] + label {
   display: inline-block;
-  line-height: 2;
   margin-left: 40px;
   width: auto;
+  /* Wins over the generic .expert-rating-container label { font-size: 16px }
+     rule (same specificity, but chat.css loads later) that was shrinking
+     radio/checkbox option labels below the GC DS label token size. */
+  font: var(--gcds-label-font-desktop);
+  font-weight: var(--gcds-font-weights-medium);
+}
+
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio input[type="checkbox"] + label,
+  .gc-chckbxrdio input[type="radio"] + label {
+    font: var(--gcds-label-font-mobile);
+    font-weight: var(--gcds-font-weights-medium);
+  }
 }
 
 .gc-chckbxrdio.sm-v input[type="checkbox"] + label,
@@ -967,10 +963,6 @@ fieldset.gc-chckbxrdio {
 .gc-chckbxrdio input[type="checkbox"]:focus + label::before,
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
   box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
-}
-
-.gc-chckbxrdio input[type="radio"]:focus + label::before {
-  background: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"]:checked:focus + label::before {

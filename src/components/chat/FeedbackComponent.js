@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
 import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
 import { useHasAnyRole } from "../RoleBasedUI.js";
@@ -24,6 +24,13 @@ const FeedbackComponent = ({
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);
   const hasExpertRole = useHasAnyRole(["admin", "partner"]);
+  const thankYouRef = useRef(null);
+
+  useEffect(() => {
+    if (feedbackGiven) {
+      thankYouRef.current?.focus();
+    }
+  }, [feedbackGiven]);
 
   const handleFeedback = (isPositive) => {
     let feedbackPayload = null;
@@ -80,8 +87,8 @@ const FeedbackComponent = ({
 
   if (feedbackGiven) {
     return (
-      <p className="thank-you">
-        <span className="gcds-icon fa fa-solid fa-check-circle"></span>
+      <p className="thank-you" role="status" ref={thankYouRef} tabIndex={-1}>
+        <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
         {t("homepage.feedback.thankYou")}
       </p>
     );
@@ -134,6 +141,7 @@ const FeedbackComponent = ({
             className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(true)}
             tabIndex="0"
+            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.yes", "Yes")}`}
           >
             {t("common.yes", "Yes")}
           </button>
@@ -142,6 +150,7 @@ const FeedbackComponent = ({
             className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(false)}
             tabIndex="0"
+            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.no", "No")}`}
           >
             {t("common.no", "No")}
           </button>
@@ -169,6 +178,7 @@ const FeedbackComponent = ({
         className="feedback-link button-as-link"
         onClick={() => handleFeedback(true)}
         tabIndex="0"
+        aria-label={`${t("homepage.feedback.question")} ${t("homepage.feedback.useful")}`}
       >
         {t("homepage.feedback.useful")}
       </button>
@@ -179,6 +189,7 @@ const FeedbackComponent = ({
         className="feedback-link button-as-link"
         onClick={() => handleFeedback(false)}
         tabIndex="0"
+        aria-label={`${t("homepage.feedback.question")} ${t("homepage.feedback.notUseful")}`}
       >
         {t("homepage.feedback.notUseful")}
       </button>

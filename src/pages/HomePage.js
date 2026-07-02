@@ -198,7 +198,7 @@ const HomePage = ({ lang = "en" }) => {
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
         <h2
-          className="mt-400 mb-400"
+          className="homepage-subtitle mt-400"
           aria-label={t("homepage.subtitle.ariaLabel")}
         >
           <span className="aria-hidden">{t("homepage.subtitle.text")}</span>

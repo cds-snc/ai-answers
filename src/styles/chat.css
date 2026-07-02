@@ -385,11 +385,6 @@
   border-radius: 0.5rem;
 }
 
-.expert-rating-container h2:first-of-type {
-  font-size: 20px;
-  text-wrap: wrap;
-  max-width: none;
-}
 .expert-rating-container h3 {
   font-size: 18px;
   color: #333;
@@ -416,7 +411,7 @@
 }
 
 .feedback-link {
-  color: #284162;
+  color: var(--gcds-link-default);
   margin-right: 8px;
   margin-left: 8px;
   text-decoration-thickness: var(--gcds-link-decoration-thickness);
@@ -467,6 +462,16 @@
   color: var(--gcds-details-focus-text);
   outline: var(--gcds-details-focus-outline);
   outline-offset: var(--gcds-details-focus-outline-offset);
+  text-decoration: none;
+}
+
+/* .feedback-link:hover and .button-as-link:focus have equal specificity, so
+   which one wins the `color` property when both states are active at once
+   (tab to focus, then hover with the mouse) depends on source order alone.
+   State it explicitly so the focus-style pairing (light text on the blue
+   focus background) always wins and stays contrast-safe. */
+.feedback-link.button-as-link:focus:hover {
+  color: var(--gcds-details-focus-text);
   text-decoration: none;
 }
 
@@ -544,6 +549,12 @@
   font-weight: 500;
   font-size: 18px;
   margin: 1em 1em 1em 1em;
+}
+
+.feedback-inline-error {
+  color: var(--gcds-error-message-text-color);
+  font-weight: var(--gcds-font-weights-bold);
+  font-size: 18px;
 }
 
 /* Add spacing between sections */
@@ -762,7 +773,7 @@ textarea:focus {
   .hint-text {
     font: var(--gcds-font-text-mobile) !important;
   }
-  h2:first-of-type {
+  h2.homepage-subtitle {
     font: var(--gcds-heading-h4-mobile) !important;
   }
   .field-container label {
@@ -833,8 +844,107 @@ textarea:focus {
   line-height: 1.4;
 }
 
-.expert-rating-container legend {
-  margin-bottom: 10px;
+/* Public feedback: section title sits above the white option-picker card,
+   not inside its fieldset/legend — it's a page heading, not a form control. */
+.expert-rating-container h2.feedback-followup-title {
+  font: var(--gcds-font-h4);
+  margin: 0 0 var(--gcds-spacing-150);
+  text-wrap: wrap;
+  max-width: none;
+}
+
+/* White card holding the radio/checkbox options, distinct from the grey
+   .expert-rating-container it sits inside. The border/background live on this
+   wrapping div rather than on the <fieldset> itself: a <fieldset> with a
+   visible border makes the browser carve a notch out of it wherever the
+   <legend> sits, and when the legend wraps to two lines (long text, narrow
+   viewport, "(required)" pushed to its own line) only the first line gets
+   the notch treatment — the rest renders outside the border entirely. With
+   no border on the fieldset there's no notch to compute, so wrapped legend
+   text just flows normally inside this div's padding. */
+.feedback-reason-card {
+  background-color: var(--gcds-bg-white);
+  border: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+  padding: 0 var(--gcds-spacing-300) var(--gcds-spacing-300);
+}
+
+fieldset.feedback-reason-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* Shared error ring for both feedback flows: PublicFeedbackComponent's
+   fieldset and ExpertFeedbackComponent's fieldset both carry .gc-chckbxrdio,
+   so one rule covers the .has-error state for either. */
+.gc-chckbxrdio.has-error input[type="checkbox"] + label::before,
+.gc-chckbxrdio.has-error input[type="radio"] + label::before {
+  box-shadow: 0 0 0 2px var(--gcds-danger-border);
+}
+
+/* Without .sm-v (removed so public feedback keeps the larger touch-target
+   radio circles), items fall back to .gc-chckbxrdio .radio's default
+   spacing — margin-bottom: 26px, line-height: 2.8em — which reads as too
+   loose. Tighten spacing only, independent of the sm-v/default circle size. */
+.feedback-reason-fieldset li.checkbox,
+.feedback-reason-fieldset li.radio {
+  margin-top: 0;
+  margin-bottom: var(--gcds-spacing-200);
+  line-height: 1.4;
+}
+
+/* The circle is a 45px box (19px content + 13px white border each side,
+   content-box), positioned absolute with top:2px in the base .gc-chckbxrdio
+   rule — tuned for that rule's own much taller default line-height/spacing.
+   Against our tightened spacing it centers on the whole (possibly 2-line)
+   label instead of its first line, reading as sitting too low relative to
+   the text. Scoped to this fieldset only so ExpertFeedbackComponent, which
+   still uses the default spacing, is unaffected. */
+fieldset.feedback-reason-fieldset input[type="checkbox"] + label::before,
+fieldset.feedback-reason-fieldset input[type="radio"] + label::before {
+  top: -8px;
+}
+
+/* All gc-chckbxrdio legends (PublicFeedbackComponent's feedback-reason-fieldset
+   and ExpertFeedbackComponent's sentence/citation-rating-group legends alike)
+   share this GC DS fieldset-legend styling (h5 scale: 24px/700 desktop,
+   22px/700 mobile). */
+fieldset.gc-chckbxrdio legend {
+  width: auto;
+  color: var(--gcds-checkbox-default-text);
+  font: var(--gcds-fieldset-legend-size-h5-desktop);
+  margin: var(--gcds-fieldset-legend-margin);
+}
+
+@media only screen and (width < 48em) {
+  fieldset.gc-chckbxrdio legend {
+    font: var(--gcds-fieldset-legend-size-h5-mobile);
+  }
+}
+
+/* Matches the GC DS gcds-fieldset/gcds-hint pattern: the hint is a sibling of
+   the legend, not nested inside it. */
+.feedback-reason-hint {
+  font-family: var(--gcds-font-families-body);
+  font-weight: var(--gcds-font-weights-regular);
+  color: var(--gcds-hint-text);
+  margin: 0 0 var(--gcds-spacing-500);
+}
+
+/* Matches GC DS gcds-checkboxes' legend required-suffix styling exactly
+   (that rule lives in the component's shadow DOM, so it doesn't reach our
+   plain <legend>). No checkbox-specific required-margin token exists, so
+   spacing reuses --gcds-label-required-margin, the same value gcds-date-input
+   uses for its own required suffix. */
+.gc-chckbxrdio legend .label--required {
+  font: var(--gcds-checkbox-legend-required-font-desktop);
+  margin: var(--gcds-label-required-margin);
+}
+
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio legend .label--required {
+    font: var(--gcds-checkbox-legend-required-font-mobile);
+  }
 }
 
 .expert-rating-container .explanation-field {

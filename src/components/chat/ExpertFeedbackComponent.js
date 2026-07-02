@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -34,6 +34,14 @@ const ExpertFeedbackComponent = ({
     citationExplanation: '',
     expertCitationUrl: '',
   });
+  const [error, setError] = useState(false);
+  const errorRef = useRef(null);
+
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.focus();
+    }
+  }, [error]);
 
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
@@ -63,8 +71,23 @@ const ExpertFeedbackComponent = ({
     }
   };
 
+  const hasAnyRating = (feedback) =>
+    [
+      feedback.sentence1Score,
+      feedback.sentence2Score,
+      feedback.sentence3Score,
+      feedback.sentence4Score,
+      feedback.citationScore,
+    ].some((score) => score !== null);
+
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (!hasAnyRating(expertFeedback)) {
+      setError(true);
+      return;
+    }
+    setError(false);
 
     const totalScore = computeTotalScore(expertFeedback);
 
@@ -80,17 +103,8 @@ const ExpertFeedbackComponent = ({
   };
 
   const computeTotalScore = (feedback) => {
-    // Check if any ratings were provided at all
-    const hasAnyRating = [
-      feedback.sentence1Score,
-      feedback.sentence2Score,
-      feedback.sentence3Score,
-      feedback.sentence4Score,
-      feedback.citationScore,
-    ].some((score) => score !== null);
-
     // If no ratings were provided at all, return null
-    if (!hasAnyRating) return null;
+    if (!hasAnyRating(feedback)) return null;
 
     // Get scores for existing sentences (up to sentenceCount)
     const sentenceScores = [
@@ -127,14 +141,25 @@ const ExpertFeedbackComponent = ({
         tabIndex={0}
         aria-label="Close"
       />
-      <fieldset className="gc-chckbxrdio sm-v">
-        <h2>{t('homepage.expertRating.intro')}</h2>
+      <fieldset className={`gc-chckbxrdio sm-v${error ? ' has-error' : ''}`}>
+        <h2 className="feedback-followup-title">{t('homepage.expertRating.intro')}</h2>
+        {error && (
+          <p
+            className="feedback-inline-error"
+            id="expert-feedback-error"
+            role="alert"
+            ref={errorRef}
+            tabIndex={-1}
+          >
+            {t('homepage.expertRating.selectionRequired')}
+          </p>
+        )}
         <details className="answer-details" open>
           <summary>{t('homepage.expertRating.title')}</summary>
 
           {/* All sentences 1-4 */}
           {[...Array(Math.min(4, sentenceCount))].map((_, index) => (
-            <div key={index + 1} className="sentence-rating-group">
+            <fieldset key={index + 1} className="sentence-rating-group">
               <legend>
                 {t(`homepage.expertRating.sentence${index + 1}`)}
                 {sentences[index] && <div className="sentence-text">"{sentences[index]}"</div>}
@@ -233,13 +258,13 @@ const ExpertFeedbackComponent = ({
                     </label>
                   </div>
                 )}
-            </div>
+            </fieldset>
           ))}
         </details>
 
         <details className="citation-details">
           <summary>{t('homepage.expertRating.citation')}</summary>
-          <div className="citation-rating-group">
+          <fieldset className="citation-rating-group">
             <legend>{t('homepage.expertRating.citation')}</legend>
             <ul className="list-unstyled lst-spcd-2">
               <li className="radio">
@@ -294,7 +319,7 @@ const ExpertFeedbackComponent = ({
                 </label>
               </div>
             )}
-          </div>
+          </fieldset>
 
           <div className="mrgn-bttm-lg">
             <label className="expert-citation-url" htmlFor="expert-citation-url">
