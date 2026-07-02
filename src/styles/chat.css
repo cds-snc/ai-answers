@@ -286,8 +286,7 @@
   margin-top: 10px;
   margin-bottom: 10px;
 }
-.feedback-text,
-.feedback-link {
+.feedback-text {
   font-size: 18px !important;
   padding-right: 10px;
 }
@@ -383,6 +382,7 @@
   background-color: #f5f5f5;
   border: 1px solid #e3e3e3;
   border-radius: 0.5rem;
+  position: relative;
 }
 
 .expert-rating-container h3 {
@@ -411,6 +411,8 @@
 }
 
 .feedback-link {
+  font-size: 18px !important;
+  padding-right: 10px;
   color: var(--gcds-link-default);
   margin-right: 8px;
   margin-left: 8px;
@@ -523,11 +525,6 @@
 
 .radio-group input[type="radio"] {
   margin-right: 8px;
-}
-
-/* QA: cleanup — duplicate .expert-rating-container; fold position: relative into the first definition above and delete this block */
-.expert-rating-container {
-  position: relative;
 }
 
 .thank-you span {
@@ -810,12 +807,6 @@ textarea:focus {
 .chat-id p {
   color: #555;
   max-width: 100%;
-}
-
-/* QA: cleanup — .explanation-field is defined again further down with more properties (padding, border-radius, background); that second definition supersedes this one. Delete this block. */
-.expert-rating-container .explanation-field {
-  margin-top: 10px;
-  margin-bottom: 20px;
 }
 
 .expert-rating-container .explanation-field textarea {

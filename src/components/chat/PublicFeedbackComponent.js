@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
 import FeedbackService from '../../services/FeedbackService.js';
 import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 
@@ -20,7 +21,7 @@ const PublicFeedbackComponent = ({
   // already `true` is a no-op in React and would silently skip the refocus/re-announce).
   const [errorCount, setErrorCount] = useState(0);
   const hasError = errorCount > 0;
-  const errorRef = useRef(null);
+  const errorRef = useFocusOnChange(errorCount);
 
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
     ...opt,
@@ -28,12 +29,6 @@ const PublicFeedbackComponent = ({
       ? t(`homepage.publicFeedback.yes.options.${opt.id}`)
       : t(`homepage.publicFeedback.no.options.${opt.id}`)
   }));
-
-  useEffect(() => {
-    if (errorCount > 0) {
-      errorRef.current?.focus();
-    }
-  }, [errorCount]);
 
   const handleOptionChange = (id) => {
     setSelected(id);

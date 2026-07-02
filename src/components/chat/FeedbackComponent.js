@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
 import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
 import { useHasAnyRole } from "../RoleBasedUI.js";
 import { useTranslations } from "../../hooks/useTranslations.js";
+import { useFocusOnChange } from "../../hooks/useFocusOnChange.js";
 import FeedbackService from "../../services/FeedbackService.js";
 
 const FeedbackComponent = ({
@@ -24,13 +25,7 @@ const FeedbackComponent = ({
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);
   const hasExpertRole = useHasAnyRole(["admin", "partner"]);
-  const thankYouRef = useRef(null);
-
-  useEffect(() => {
-    if (feedbackGiven) {
-      thankYouRef.current?.focus();
-    }
-  }, [feedbackGiven]);
+  const thankYouRef = useFocusOnChange(feedbackGiven);
 
   const handleFeedback = (isPositive) => {
     let feedbackPayload = null;

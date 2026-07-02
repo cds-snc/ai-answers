@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
@@ -40,13 +41,7 @@ const ExpertFeedbackComponent = ({
   // already `true` is a no-op in React and would silently skip the refocus/re-announce).
   const [errorCount, setErrorCount] = useState(0);
   const hasError = errorCount > 0;
-  const errorRef = useRef(null);
-
-  useEffect(() => {
-    if (errorCount > 0) {
-      errorRef.current?.focus();
-    }
-  }, [errorCount]);
+  const errorRef = useFocusOnChange(errorCount);
 
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
