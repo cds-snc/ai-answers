@@ -703,15 +703,6 @@ fieldset[disabled] .radio-inline {
   margin-left: 10px;
 }
 
-.form-inline .gc-chckbxrdio.checkbox input[type="checkbox"] {
-  position: absolute;
-}
-
-.form-inline.gc-chckbxrdio .checkbox input[type="checkbox"],
-.form-inline.gc-chckbxrdio .radio input[type="radio"] {
-  position: absolute;
-}
-
 fieldset.gc-chckbxrdio {
   border-top: 0;
   padding-top: 0;
@@ -878,14 +869,6 @@ fieldset.gc-chckbxrdio {
   -webkit-transform: rotate(45deg);
   transform: rotate(45deg);
   width: 13px;
-}
-
-.gc-chckbxrdio.form-inline .label-inline {
-  padding-right: 20px;
-}
-
-.gc-chckbxrdio.form-inline .label-inline label {
-  padding-left: 10px;
 }
 
 @media (prefers-contrast: more) {
