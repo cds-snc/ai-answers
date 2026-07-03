@@ -589,20 +589,13 @@
   margin-right: 0.25em;
 }
 
-/* One step down from body text (--gcds-text-size-body-desktop) on the GC DS
-   scale — used in place of the old non-responsive .font-size-text-xsm-nr.
+/* GC DS "text small" (18px), non-responsive — stays 18px on mobile rather than
+   shrinking, replacing the old non-responsive .font-size-text-xsm-nr.
    font-size only (not the full `font` shorthand): the token also bundles its
    own line-height/font-family, which fought with what this list already had. */
 .harmful-details p,
 .harmful-details li {
-  font-size: 1.1111111111111112rem;
-}
-
-@media only screen and (width < 48em) {
-  .harmful-details p,
-  .harmful-details li {
-    font-size: 0.8888888888888888rem;
-  }
+  font-size: var(--gcds-font-sizes-text-small);
 }
 
 .character-warning {

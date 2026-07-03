@@ -128,7 +128,11 @@ const ExpertFeedbackComponent = ({
 
     // Citation score defaults to 25 (good) in two cases:
     // 1. Citation exists but wasn't rated
-    // 2. Answer has no citation section at all
+    // 2. Answer has no citation section at all and the reviewer didn't rate the
+    //    absence either — an edge case, since whether "no citation" is good, needs
+    //    improvement, or incorrect depends on whether the answer warranted one.
+    //    The rating radios stay available either way so a reviewer CAN score the
+    //    absence explicitly; this default only covers the case where they didn't.
     const citationComponent = feedback.citationScore !== null ? feedback.citationScore : 25;
 
     const totalScore = sentenceComponent + citationComponent;
@@ -276,14 +280,13 @@ const ExpertFeedbackComponent = ({
           <fieldset className="citation-rating-group">
             <legend>
               {t('homepage.expertRating.citation')}
-              {citationUrl && <div className="citation-text">{citationUrl}</div>}
+              {/* The radios below still apply when there's no citation — a reviewer
+                  can rate its absence as good, needs improvement, or incorrect
+                  (e.g. an answer that should have cited a source but didn't). */}
+              <div className="citation-text">
+                {citationUrl || t('homepage.expertRating.citationNoneProvided')}
+              </div>
             </legend>
-            {/* TODO: TODISCUSS: when !citationUrl, there's nothing to rate — disable the three
-                radio options below (Good/Needs improvement/Incorrect) so a reviewer
-                can't score a citation that doesn't exist. Leave the "suggest a better
-                citation" URL input further down enabled regardless: a reviewer should
-                still be able to flag that an answer is missing a citation it should
-                have had, independent of rating one that already exists. */}
             <ul className="list-unstyled lst-spcd-2">
               <li className="radio">
                 <input

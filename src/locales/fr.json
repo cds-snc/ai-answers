@@ -190,6 +190,7 @@
       "sentence3": "Phrase 3",
       "sentence4": "Phrase 4",
       "citation": "Citation",
+      "citationNoneProvided": "Aucune fournie",
       "options": {
         "good": "Bonne",
         "needsImprovement": "Nécessite une amélioration",

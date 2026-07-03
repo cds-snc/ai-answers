@@ -11,6 +11,7 @@ import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
+import { getCitationUrl } from '../../utils/getCitationUrl.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -707,9 +708,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
     // Updated citation logic
     const answer = message.interaction?.answer || {};
-    const citation = answer.citation || {};
     // displayUrl is the citation URL to show and use for analytics
-    const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    const displayUrl = getCitationUrl(message.interaction);
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
     return (

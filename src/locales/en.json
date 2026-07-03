@@ -190,6 +190,7 @@
       "sentence3": "Sentence 3",
       "sentence4": "Sentence 4",
       "citation": "Citation",
+      "citationNoneProvided": "None provided",
       "options": {
         "good": "Good",
         "needsImprovement": "Needs improvement",
