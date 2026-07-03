@@ -180,7 +180,7 @@ const ExpertFeedbackComponent = ({
                 {t(`homepage.expertRating.sentence${index + 1}`)}
               </legend>
               {sentences[index] && (
-                <div className="sentence-text" id={`${uid}-sentence${index + 1}-text`}>
+                <div className="sentence-text mb-200" id={`${uid}-sentence${index + 1}-text`}>
                   "{sentences[index]}"
                 </div>
               )}
@@ -290,7 +290,7 @@ const ExpertFeedbackComponent = ({
             {/* The radios below still apply when there's no citation — a reviewer
                 can rate its absence as good, needs improvement, or incorrect
                 (e.g. an answer that should have cited a source but didn't). */}
-            <div className="citation-text" id={`${uid}-citation-text`}>
+            <div className="citation-text mb-200" id={`${uid}-citation-text`}>
               {citationUrl || t('homepage.expertRating.citationNoneProvided')}
             </div>
             <ul className="list-unstyled lst-spcd-2">
