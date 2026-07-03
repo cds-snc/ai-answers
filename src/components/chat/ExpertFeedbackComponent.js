@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
@@ -17,6 +17,9 @@ const ExpertFeedbackComponent = ({
   citationUrl,
 }) => {
   const { t } = useTranslations(lang);
+  // Namespaces every id in this component so multiple instances can render on
+  // one page (e.g. review mode, one per un-rated answer) without colliding.
+  const uid = useId();
   // Disambiguates identically-worded controls/headings when multiple ExpertFeedbackComponents
   // are open at once in admin/partner review mode (one per un-rated answer). Uses a colon
   // rather than parens so it isn't visually conflated with the score values shown in
@@ -153,7 +156,7 @@ const ExpertFeedbackComponent = ({
         </h2>
         {hasError && (
           <FeedbackInlineError
-            id="expert-feedback-error"
+            id={`${uid}-error`}
             message={t('homepage.expertRating.selectionRequired')}
             errorCount={errorCount}
             inputRef={errorRef}
@@ -174,12 +177,12 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="radio"
                     name={`sentence${index + 1}Score`}
-                    id={`sentence${index + 1}-100`}
+                    id={`${uid}-sentence${index + 1}-100`}
                     value="100"
                     checked={expertFeedback[`sentence${index + 1}Score`] === 100}
                     onChange={handleRadioChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-100`}>
+                  <label htmlFor={`${uid}-sentence${index + 1}-100`}>
                     {t('homepage.expertRating.options.good')} (100)
                   </label>
                 </li>
@@ -187,12 +190,12 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="radio"
                     name={`sentence${index + 1}Score`}
-                    id={`sentence${index + 1}-80`}
+                    id={`${uid}-sentence${index + 1}-80`}
                     value="80"
                     checked={expertFeedback[`sentence${index + 1}Score`] === 80}
                     onChange={handleRadioChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-80`}>
+                  <label htmlFor={`${uid}-sentence${index + 1}-80`}>
                     {t('homepage.expertRating.options.needsImprovement')} (80)
                   </label>
                 </li>
@@ -200,12 +203,12 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="radio"
                     name={`sentence${index + 1}Score`}
-                    id={`sentence${index + 1}-0`}
+                    id={`${uid}-sentence${index + 1}-0`}
                     value="0"
                     checked={expertFeedback[`sentence${index + 1}Score`] === 0}
                     onChange={handleRadioChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-0`}>
+                  <label htmlFor={`${uid}-sentence${index + 1}-0`}>
                     {t('homepage.expertRating.options.incorrect')} (0)
                   </label>
                 </li>
@@ -214,11 +217,11 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="checkbox"
                     name={`sentence${index + 1}ContentIssue`}
-                    id={`sentence${index + 1}-content-issue`}
+                    id={`${uid}-sentence${index + 1}-content-issue`}
                     checked={expertFeedback[`sentence${index + 1}ContentIssue`]}
                     onChange={handleCheckboxChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-content-issue`}
+                  <label htmlFor={`${uid}-sentence${index + 1}-content-issue`}
                   >{t('homepage.expertRating.options.contentIssue')}</label>
                 </li>
                 {expertFeedback[`sentence${index + 1}Score`] === 0 && (
@@ -226,15 +229,15 @@ const ExpertFeedbackComponent = ({
                     <input
                       type="checkbox"
                       name={`sentence${index + 1}Harmful`}
-                      id={`sentence${index + 1}-harmful`}
-                      aria-describedby={`sentence${index + 1}-harmful-details-summary`}
+                      id={`${uid}-sentence${index + 1}-harmful`}
+                      aria-describedby={`${uid}-sentence${index + 1}-harmful-details-summary`}
                       checked={expertFeedback[`sentence${index + 1}Harmful`]}
                       onChange={handleCheckboxChange}
                     />
-                    <label htmlFor={`sentence${index + 1}-harmful`}
+                    <label htmlFor={`${uid}-sentence${index + 1}-harmful`}
                     >{t('homepage.expertRating.options.harmful')} <span aria-hidden="true">*</span></label>
                     <details className="harmful-details mt-100 mb-200">
-                      <summary id={`sentence${index + 1}-harmful-details-summary`}><span aria-hidden="true" className="harmful-summary-marker">*</span>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
+                      <summary id={`${uid}-sentence${index + 1}-harmful-details-summary`}><span aria-hidden="true" className="harmful-summary-marker">*</span>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
                       <p className="mb-100 mt-100">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
                       <p className="mb-100">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
                       <ul className="mb-200 list-disc">
@@ -252,10 +255,10 @@ const ExpertFeedbackComponent = ({
               {(expertFeedback[`sentence${index + 1}Score`] === 80 ||
                 expertFeedback[`sentence${index + 1}Score`] === 0) && (
                   <div className="explanation-field">
-                    <label htmlFor={`sentence${index + 1}-explanation`}>
+                    <label htmlFor={`${uid}-sentence${index + 1}-explanation`}>
                       {t('homepage.expertRating.options.explanation')}
                       <textarea
-                        id={`sentence${index + 1}-explanation`}
+                        id={`${uid}-sentence${index + 1}-explanation`}
                         name={`sentence${index + 1}Explanation`}
                         value={expertFeedback[`sentence${index + 1}Explanation`]}
                         onChange={handleInputChange}
@@ -286,23 +289,23 @@ const ExpertFeedbackComponent = ({
                 <input
                   type="radio"
                   name="citationScore"
-                  id="citation-25"
+                  id={`${uid}-citation-25`}
                   value="25"
                   checked={expertFeedback.citationScore === 25}
                   onChange={handleRadioChange}
                 />
-                <label htmlFor="citation-25">{t('homepage.expertRating.options.good')} (25)</label>
+                <label htmlFor={`${uid}-citation-25`}>{t('homepage.expertRating.options.good')} (25)</label>
               </li>
               <li className="radio">
                 <input
                   type="radio"
                   name="citationScore"
-                  id="citation-20"
+                  id={`${uid}-citation-20`}
                   value="20"
                   checked={expertFeedback.citationScore === 20}
                   onChange={handleRadioChange}
                 />
-                <label htmlFor="citation-20">
+                <label htmlFor={`${uid}-citation-20`}>
                   {t('homepage.expertRating.options.needsImprovement')} (20)
                 </label>
               </li>
@@ -310,22 +313,22 @@ const ExpertFeedbackComponent = ({
                 <input
                   type="radio"
                   name="citationScore"
-                  id="citation-0"
+                  id={`${uid}-citation-0`}
                   value="0"
                   checked={expertFeedback.citationScore === 0}
                   onChange={handleRadioChange}
                 />
-                <label htmlFor="citation-0">
+                <label htmlFor={`${uid}-citation-0`}>
                   {t('homepage.expertRating.options.incorrect')} (0)
                 </label>
               </li>
             </ul>
             {(expertFeedback.citationScore === 20 || expertFeedback.citationScore === 0) && (
               <div className="explanation-field">
-                <label htmlFor="citation-explanation">
+                <label htmlFor={`${uid}-citation-explanation`}>
                   {t('homepage.expertRating.options.explanation')}
                   <textarea
-                    id="citation-explanation"
+                    id={`${uid}-citation-explanation`}
                     name="citationExplanation"
                     value={expertFeedback.citationExplanation}
                     onChange={handleInputChange}
@@ -337,11 +340,11 @@ const ExpertFeedbackComponent = ({
           </fieldset>
 
           <div className="explanation-field">
-            <label className="expert-citation-url" htmlFor="expert-citation-url">
+            <label className="expert-citation-url" htmlFor={`${uid}-expert-citation-url`}>
               {t('homepage.expertRating.options.betterCitation')}
               <input
                 type="url"
-                id="expert-citation-url"
+                id={`${uid}-expert-citation-url`}
                 name="expertCitationUrl"
                 value={expertFeedback.expertCitationUrl}
                 onChange={handleInputChange}
