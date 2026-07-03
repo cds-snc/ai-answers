@@ -872,14 +872,12 @@ textarea:focus {
   border-left: 3px solid #ddd;
   font-size: 0.95em;
   line-height: 1.4;
-}
-
-.sentence-text {
   font-style: italic;
-}
-
-.citation-text {
   overflow-wrap: break-word;
+  /* Was inherited from the parent <legend>'s bold font shorthand; these divs
+     moved out to be legend siblings (for aria-describedby), so it no longer
+     cascades in — restored explicitly. */
+  font-weight: var(--gcds-font-weights-bold);
 }
 
 /* Public feedback: section title sits above the white option-picker card,

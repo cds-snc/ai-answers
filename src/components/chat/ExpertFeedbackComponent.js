@@ -171,11 +171,19 @@ const ExpertFeedbackComponent = ({
 
           {/* All sentences 1-4 */}
           {[...Array(Math.min(4, sentenceCount))].map((_, index) => (
-            <fieldset key={index + 1} className="sentence-rating-group">
+            <fieldset
+              key={index + 1}
+              className="sentence-rating-group"
+              aria-describedby={sentences[index] ? `${uid}-sentence${index + 1}-text` : undefined}
+            >
               <legend>
                 {t(`homepage.expertRating.sentence${index + 1}`)}
-                {sentences[index] && <div className="sentence-text">"{sentences[index]}"</div>}
               </legend>
+              {sentences[index] && (
+                <div className="sentence-text" id={`${uid}-sentence${index + 1}-text`}>
+                  "{sentences[index]}"
+                </div>
+              )}
               <ul className="list-unstyled lst-spcd-2">
                 <li className="radio">
                   <input
@@ -277,16 +285,14 @@ const ExpertFeedbackComponent = ({
 
         <details className="citation-details">
           <summary>{withAnswerNumber(t('homepage.expertRating.citation'))}</summary>
-          <fieldset className="citation-rating-group">
-            <legend>
-              {t('homepage.expertRating.citation')}
-              {/* The radios below still apply when there's no citation — a reviewer
-                  can rate its absence as good, needs improvement, or incorrect
-                  (e.g. an answer that should have cited a source but didn't). */}
-              <div className="citation-text">
-                {citationUrl || t('homepage.expertRating.citationNoneProvided')}
-              </div>
-            </legend>
+          <fieldset className="citation-rating-group" aria-describedby={`${uid}-citation-text`}>
+            <legend>{t('homepage.expertRating.citation')}</legend>
+            {/* The radios below still apply when there's no citation — a reviewer
+                can rate its absence as good, needs improvement, or incorrect
+                (e.g. an answer that should have cited a source but didn't). */}
+            <div className="citation-text" id={`${uid}-citation-text`}>
+              {citationUrl || t('homepage.expertRating.citationNoneProvided')}
+            </div>
             <ul className="list-unstyled lst-spcd-2">
               <li className="radio">
                 <input

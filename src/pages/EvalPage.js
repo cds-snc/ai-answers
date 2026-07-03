@@ -333,7 +333,7 @@ const EvalPage = ({ lang = 'en' }) => {
           <GcdsButton 
             onClick={handleDeleteEvals}
             disabled={evalProgress?.loading || isAutoProcessingEvals}
-            variant="danger"
+            buttonRole="danger"
             className="mb-200 mr-200"
           >
             {t('admin.evalPage.button.deleteAll', 'Delete Evaluations')}
@@ -341,7 +341,7 @@ const EvalPage = ({ lang = 'en' }) => {
           <GcdsButton 
             onClick={handleDeleteEmptyEvals}
             disabled={evalProgress?.loading || isAutoProcessingEvals}
-            variant="danger"
+            buttonRole="danger"
             className="mb-200"
           >
             {t('admin.evalPage.button.deleteEmpty', 'Delete Empty Evaluations')}

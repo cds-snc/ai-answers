@@ -58,7 +58,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
         {!showConfirm ? (
           <GcdsButton 
             onClick={handleInitialDelete}
-            variant="danger"
+            buttonRole="danger"
             disabled={loading || !chatId.trim()}
             className="me-400 hydrated mrgn-tp-1r"
           >
@@ -70,7 +70,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
           <div className="flex gap-400">
             <GcdsButton 
               onClick={handleConfirmDelete}
-              variant="danger"
+              buttonRole="danger"
               disabled={loading}
               className="me-400 hydrated mrgn-tp-1r"
             >
@@ -80,7 +80,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
             </GcdsButton>
             <GcdsButton 
               onClick={handleCancel}
-              variant="secondary"
+              buttonRole="secondary"
               disabled={loading}
               className="hydrated mrgn-tp-1r"
             >

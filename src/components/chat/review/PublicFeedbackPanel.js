@@ -3,10 +3,18 @@ import { GcdsDetails } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
 
-const PublicFeedbackPanel = ({ message, t }) => {
+const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
+
+    // Disambiguates this panel when several review panels are open at once
+    // (one per message) — same pattern as ExpertFeedbackComponent's
+    // answerNumber/withAnswerNumber, reusing the same locale key.
+    const answerText = answerNumber
+        ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
+        : '';
+    const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
 
     const handleToggle = useCallback(async () => {
         try {
@@ -42,7 +50,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
         // Before fetch: publicFeedback is an ObjectId reference — just show checkmark
         publicTitleSuffix = ' \u2714';
     }
-    const publicTitle = baseTitle + publicTitleSuffix;
+    const publicTitle = withAnswerNumber(baseTitle + publicTitleSuffix);
 
     return (
         <GcdsDetails detailsTitle={publicTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {

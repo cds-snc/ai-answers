@@ -27,13 +27,22 @@ const renderChatLink = (chatId) => {
   );
 };
 
-const EvalPanel = ({ message, t, lang = 'en' }) => {
+const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   // Show panel in review mode as requested (no longer hidden)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [reRunning, setReRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Disambiguates this panel's buttons when multiple EvalPanels are open at once
+  // in review mode (one per message) — same pattern as ExpertFeedbackComponent's
+  // answerNumber/withAnswerNumber, reusing the same locale key.
+  const answerText = answerNumber
+    ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
+    : '';
+  const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
 
   const getInteractionId = useCallback(() => (
     (message.interaction && (message.interaction._id || message.interaction.id)) || message.id
@@ -89,7 +98,15 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
     }
   }, [getInteractionId, loadEval, message]);
 
-  const handleDelete = useCallback(async () => {
+  const handleInitialDelete = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setShowDeleteConfirm(false);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
     try {
       setDeleting(true);
       setError(null);
@@ -101,6 +118,7 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
       } else {
         message.autoEval = undefined;
       }
+      setShowDeleteConfirm(false);
     } catch (err) {
       setError(err.message || String(err));
     } finally {
@@ -146,7 +164,7 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
   if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
     evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
   }
-  const evalTitle = baseEvalTitle + evalTitleSuffix;
+  const evalTitle = withAnswerNumber(baseEvalTitle + evalTitleSuffix);
 
   return (
     <GcdsDetails
@@ -156,17 +174,50 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
       onGcdsClick={handleToggle}
     >
       <div className="review-panel eval-panel">
-        {/* TODO(a11y): Re-run / Delete Evaluation / Run evaluation buttons don't announce
-            which question/interaction they act on when multiple EvalPanels are open in
-            review mode — same "unlabelled context" issue fixed for the feedback buttons
-            elsewhere in this PR. Revisit as part of the planned eval/admin UI redesign. */}
         <div className="actions" style={{ marginBottom: '1rem' }}>
-          <GcdsButton onClick={handleReRun} disabled={reRunning || deleting} className="hydrated">
+          <GcdsButton
+            onClick={handleReRun}
+            disabled={reRunning || deleting}
+            className="hydrated"
+            aria-label={withAnswerNumber(reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run'))}
+          >
             {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
           </GcdsButton>
-          <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated" style={{ marginLeft: '0.5rem' }}>
-            {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
-          </GcdsButton>
+          {!showDeleteConfirm ? (
+            <GcdsButton
+              onClick={handleInitialDelete}
+              buttonRole="danger"
+              disabled={deleting}
+              className="hydrated"
+              style={{ marginLeft: '0.5rem' }}
+              aria-label={withAnswerNumber(t('reviewPanels.deleteEvaluation', 'Delete Evaluation'))}
+            >
+              {t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
+            </GcdsButton>
+          ) : (
+            <>
+              <GcdsButton
+                onClick={handleConfirmDelete}
+                buttonRole="danger"
+                disabled={deleting}
+                className="hydrated"
+                style={{ marginLeft: '0.5rem' }}
+                aria-label={withAnswerNumber(deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.confirmDelete', 'Confirm delete'))}
+              >
+                {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.confirmDelete', 'Confirm delete')}
+              </GcdsButton>
+              <GcdsButton
+                onClick={handleCancelDelete}
+                buttonRole="secondary"
+                disabled={deleting}
+                className="hydrated"
+                style={{ marginLeft: '0.5rem' }}
+                aria-label={withAnswerNumber(t('reviewPanels.cancel', 'Cancel'))}
+              >
+                {t('reviewPanels.cancel', 'Cancel')}
+              </GcdsButton>
+            </>
+          )}
         </div>
         {loading && <div>{t('common.loading', 'Loading...')}</div>}
         {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
@@ -600,7 +651,12 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
               <div>
                 {t('reviewPanels.noEvaluation', 'No evaluation available.')}
                 <div className="mt-200">
-                  <GcdsButton onClick={handleReRun} disabled={reRunning} className="hydrated">
+                  <GcdsButton
+                    onClick={handleReRun}
+                    disabled={reRunning}
+                    className="hydrated"
+                    aria-label={withAnswerNumber(reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation'))}
+                  >
                     {reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation')}
                   </GcdsButton>
                 </div>

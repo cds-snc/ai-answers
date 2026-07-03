@@ -1233,6 +1233,8 @@
     "modifiers": "Modificateurs",
     "reEvaluate": "Réévaluer",
     "deleteEvaluation": "Supprimer l'évaluation",
+    "confirmDelete": "Confirmer la suppression",
+    "cancel": "Annuler",
     "runEvaluation": "Lancer l'évaluation"
   },
   "dashboardFilter": {

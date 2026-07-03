@@ -599,14 +599,16 @@ const ChatInterface = ({
                           message={message}
                           extractSentences={extractSentences}
                           t={t}
+                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                         />
                         <PublicFeedbackPanel
                           message={message}
                           extractSentences={extractSentences}
                           t={t}
+                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                         />
-                        <DownloadPanel message={message} t={t} />
-                        <EvalPanel message={message} t={t} lang={lang} />
+                        <DownloadPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                        <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                       </div>
                     </>
                   )}

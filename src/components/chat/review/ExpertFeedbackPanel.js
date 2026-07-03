@@ -3,12 +3,21 @@ import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 
-const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
+const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [updatingNeverStale, setUpdatingNeverStale] = useState(false);
+
+    // Disambiguates this panel and its buttons when several review panels are
+    // open at once (one per message) — same pattern as ExpertFeedbackComponent's
+    // answerNumber/withAnswerNumber, reusing the same locale key.
+    const answerText = answerNumber
+        ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
+        : '';
+    const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
 
     const handleToggle = useCallback(async () => {
         try {
@@ -33,7 +42,15 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         }
     }, [data, message]);
 
-    const handleDelete = useCallback(async () => {
+    const handleInitialDelete = useCallback(() => {
+        setShowDeleteConfirm(true);
+    }, []);
+
+    const handleCancelDelete = useCallback(() => {
+        setShowDeleteConfirm(false);
+    }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
         try {
             setDeleting(true);
             setError(null);
@@ -48,6 +65,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                 message.expertFeedback = undefined;
             }
             await ClientLoggingService.info(interactionId, 'Expert feedback deleted', {});
+            setShowDeleteConfirm(false);
         } catch (err) {
             setError(err.message || String(err));
         } finally {
@@ -163,7 +181,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
             ? ` \u2714 ${expert.totalScore}`
             : ' \u2714')
         : '';
-    const expertTitle = baseTitle + expertTitleSuffix;
+    const expertTitle = withAnswerNumber(baseTitle + expertTitleSuffix);
 
     return (
         <GcdsDetails detailsTitle={expertTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
@@ -284,14 +302,38 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                     return (
                         <div className="mt-200">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <GcdsButton
-                                    onClick={handleDelete}
-                                    variant="danger"
-                                    disabled={deleting}
-                                    className="hydrated"
-                                >
-                                    {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
-                                </GcdsButton>
+                                {!showDeleteConfirm ? (
+                                    <GcdsButton
+                                        onClick={handleInitialDelete}
+                                        buttonRole="danger"
+                                        disabled={deleting}
+                                        className="hydrated"
+                                        aria-label={withAnswerNumber(t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
+                                    >
+                                        {t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback'}
+                                    </GcdsButton>
+                                ) : (
+                                    <>
+                                        <GcdsButton
+                                            onClick={handleConfirmDelete}
+                                            buttonRole="danger"
+                                            disabled={deleting}
+                                            className="hydrated"
+                                            aria-label={withAnswerNumber(deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.confirmDelete') || 'Confirm delete'))}
+                                        >
+                                            {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.confirmDelete') || 'Confirm delete')}
+                                        </GcdsButton>
+                                        <GcdsButton
+                                            onClick={handleCancelDelete}
+                                            buttonRole="secondary"
+                                            disabled={deleting}
+                                            className="hydrated"
+                                            aria-label={withAnswerNumber(t('reviewPanels.cancel') || 'Cancel')}
+                                        >
+                                            {t('reviewPanels.cancel') || 'Cancel'}
+                                        </GcdsButton>
+                                    </>
+                                )}
                                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                     <input
                                         type="checkbox"

@@ -626,7 +626,7 @@ const DatabasePage = ({ lang }) => {
                       }
                     }}
                     disabled={isRemovingDuplicates}
-                    variant="danger"
+                    buttonRole="danger"
                   >
                     {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
                   </GcdsButton>
@@ -750,7 +750,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleDropIndexes}
           disabled={isDroppingIndexes}
-          variant="danger"
+          buttonRole="danger"
           className="mb-200"
         >
           {isDroppingIndexes ? t('admin.database.droppingLabel') : t('admin.database.dropIndexesButton')}
@@ -832,7 +832,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleDeleteSystemLogs}
           disabled={isDeletingSystemLogs}
-          variant="danger"
+          buttonRole="danger"
           className="mb-200"
         >
           {isDeletingSystemLogs ? t('admin.database.deletingLabel') : t('admin.database.deleteSystemLogsButton')}
@@ -862,7 +862,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleDeleteAllBatches}
           disabled={isDeletingAllBatches}
-          variant="danger"
+          buttonRole="danger"
           className="mb-200"
         >
           {isDeletingAllBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllBatchesButton')}
