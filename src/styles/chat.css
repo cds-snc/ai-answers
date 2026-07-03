@@ -246,7 +246,7 @@
   flex-direction: column;
   gap: 20px;
 }
-@media (max-width: 768px) {
+@media only screen and (width < 48em) {
   .chat-container {
     padding: 0.5rem;
   }
@@ -266,7 +266,7 @@
     margin-top: 10px;
   }
 }
-@media (min-width: 769px) {
+@media only screen and (width >= 48em) {
   .chat-container {
     padding-left: 0;
     padding-right: 0;
@@ -378,7 +378,7 @@
 /* expert rating */
 .expert-rating-container {
   margin-top: 10px;
-  padding: 20px 20px 20px 20px;
+  padding: 20px;
   background-color: #f5f5f5;
   border: 1px solid #e3e3e3;
   border-radius: 0.5rem;

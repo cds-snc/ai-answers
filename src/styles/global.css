@@ -736,8 +736,9 @@ fieldset.gc-chckbxrdio {
   margin-left: 40px;
   width: auto;
   /* Wins over the generic .expert-rating-container label { font-size: 16px }
-     rule (same specificity, but chat.css loads later) that was shrinking
-     radio/checkbox option labels below the GC DS label token size. */
+     rule (chat.css) on specificity — two class-level selectors here vs one
+     there — that was shrinking radio/checkbox option labels below the GC DS
+     label token size. */
   font: var(--gcds-label-font-desktop);
   font-weight: var(--gcds-font-weights-medium);
 }
