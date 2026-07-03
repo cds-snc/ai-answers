@@ -402,6 +402,10 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
+          const citationUrl = message.interaction?.citationUrl
+            || message.interaction?.answer?.providedCitationUrl
+            || message.interaction?.answer?.citation?.providedCitationUrl
+            || '';
           const isLastErrorMessage =
             message.error && message.id === messages[messages.length - 1]?.id;
           return (
@@ -546,6 +550,8 @@ const ChatInterface = ({
                       }
                       chatId={chatId}
                       userMessageId={message.id}
+                      answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                      citationUrl={citationUrl}
                       showSkipButton={false}
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT(
@@ -625,6 +631,7 @@ const ChatInterface = ({
                       }
                       chatId={chatId}
                       userMessageId={message.id}
+                      answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                       showSkipButton={
                         !readOnly &&
                         turnCount < MAX_CONVERSATION_TURNS &&

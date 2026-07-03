@@ -211,7 +211,8 @@
         }
       },
       "submit": "Soumettre l'évaluation",
-      "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+      "intro": "Évaluez les phrases de la réponse et/ou la citation",
+      "answerNumberLabel": "Réponse {number}"
     }
   },
   "batch": {

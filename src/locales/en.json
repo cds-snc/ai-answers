@@ -211,7 +211,8 @@
         }
       },
       "submit": "Submit evaluation",
-      "intro": "Rate the sentences in the answer, or the citation, or both"
+      "intro": "Rate the answer sentences and/or citation",
+      "answerNumberLabel": "Answer {number}"
     }
   },
   "batch": {

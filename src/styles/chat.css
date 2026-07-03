@@ -397,7 +397,6 @@
 .expert-rating-container label {
   display: block;
   margin-bottom: 20px;
-  font-size: 16px;
 }
 .expert-rating-container input[type="checkbox"] {
   margin-right: 10px;
@@ -559,6 +558,51 @@
 .citation-rating-group,
 .answer-improvement {
   margin-bottom: 20px;
+}
+
+/* Expert feedback only — .md is scoped to ExpertFeedbackComponent's outer
+   fieldset (PublicFeedbackComponent dropped it, see .feedback-reason-fieldset
+   above). Indents each rating radio/checkbox row under its question text. */
+.gc-chckbxrdio.md .radio,
+.gc-chckbxrdio.md .checkbox {
+  margin-left: var(--gcds-spacing-300);
+  margin-right: var(--gcds-spacing-300);
+}
+
+/* .list-disc (gcds-utility) sets no spacing between <li> items, so the
+   "When to code as harmful" bullets read as one packed block. Scoped to
+   .harmful-details so the citation-link list elsewhere (also .list-disc)
+   is unaffected. */
+.harmful-details li {
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.harmful-details li:last-child {
+  margin-bottom: 0;
+}
+
+/* details summary has display: flex !important (global.css), which collapses
+   a trailing text-node space at the flex-item boundary — a literal space
+   after the asterisk gets swallowed. Use margin instead of relying on the
+   space character. */
+.harmful-summary-marker {
+  margin-right: 0.25em;
+}
+
+/* One step down from body text (--gcds-text-size-body-desktop) on the GC DS
+   scale — used in place of the old non-responsive .font-size-text-xsm-nr.
+   font-size only (not the full `font` shorthand): the token also bundles its
+   own line-height/font-family, which fought with what this list already had. */
+.harmful-details p,
+.harmful-details li {
+  font-size: 1.1111111111111112rem;
+}
+
+@media only screen and (width < 48em) {
+  .harmful-details p,
+  .harmful-details li {
+    font-size: 0.8888888888888888rem;
+  }
 }
 
 .character-warning {
@@ -809,23 +853,25 @@ textarea:focus {
   max-width: 100%;
 }
 
-.expert-rating-container .explanation-field textarea {
+.expert-rating-container .explanation-field textarea,
+.expert-rating-container .explanation-field input[type="url"] {
   width: 100%;
-  min-height: 60px;
   padding: 8px;
   margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 2px solid #333;
+  border-radius: 0;
+}
+
+.expert-rating-container .explanation-field textarea {
+  min-height: 60px;
 }
 
 .expert-rating-container .sentence-rating-group {
-  margin-bottom: 25px;
-  padding-bottom: 15px;
   border-bottom: 1px solid #eee;
 }
 
-.sentence-text {
-  font-style: italic;
+.sentence-text,
+.citation-text {
   color: #333;
   margin: 10px 0;
   padding: 10px;
@@ -835,6 +881,14 @@ textarea:focus {
   line-height: 1.4;
 }
 
+.sentence-text {
+  font-style: italic;
+}
+
+.citation-text {
+  overflow-wrap: break-word;
+}
+
 /* Public feedback: section title sits above the white option-picker card,
    not inside its fieldset/legend — it's a page heading, not a form control. */
 .expert-rating-container h2.feedback-followup-title {
@@ -842,6 +896,22 @@ textarea:focus {
   margin: 0 0 var(--gcds-spacing-150);
   text-wrap: wrap;
   max-width: none;
+}
+
+/* Puts the "Answer N" disambiguator on its own line under the heading text
+   (block instead of a <br>, so the line break lives in CSS, not markup).
+   h6 scale (bold, #333 via --gcds-checkbox-default-text) — smaller than the
+   h4 heading above it, but still reads as part of the same heading. */
+.feedback-answer-number {
+  display: block;
+  font: var(--gcds-heading-h6-desktop);
+  color: var(--gcds-checkbox-default-text);
+}
+
+@media only screen and (width < 48em) {
+  .feedback-answer-number {
+    font: var(--gcds-heading-h6-mobile);
+  }
 }
 
 /* White card holding the radio/checkbox options, distinct from the grey
@@ -873,10 +943,10 @@ fieldset.feedback-reason-fieldset {
   box-shadow: 0 0 0 2px var(--gcds-error-message-text-color);
 }
 
-/* Without .sm-v (removed so public feedback keeps the larger touch-target
+/* Without .md (removed so public feedback keeps the larger touch-target
    radio circles), items fall back to .gc-chckbxrdio .radio's default
    spacing — margin-bottom: 26px, line-height: 2.8em — which reads as too
-   loose. Tighten spacing only, independent of the sm-v/default circle size. */
+   loose. Tighten spacing only, independent of the md/default circle size. */
 .feedback-reason-fieldset li.checkbox,
 .feedback-reason-fieldset li.radio {
   margin-top: 0;
@@ -946,7 +1016,6 @@ fieldset.gc-chckbxrdio legend {
 }
 
 .expert-rating-container .explanation-field {
-  margin-top: 15px;
   margin-bottom: 20px;
   padding: 10px;
   border-radius: 4px;

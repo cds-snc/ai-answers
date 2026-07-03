@@ -12,6 +12,8 @@ const FeedbackComponent = ({
   chatId,
   userMessageId,
   sentences = [],
+  answerNumber,
+  citationUrl,
   // Add these new props for the skip link
   showSkipButton = false, // Determines if skip link should be shown
   onSkip = () => { }, // Function to call when skip link is activated
@@ -107,6 +109,8 @@ const FeedbackComponent = ({
         lang={lang}
         sentenceCount={sentenceCount}
         sentences={sentences}
+        answerNumber={answerNumber}
+        citationUrl={citationUrl}
       />
     );
   }

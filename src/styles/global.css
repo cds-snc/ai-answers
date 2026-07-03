@@ -632,7 +632,6 @@ textarea.form-control {
 .answer-improvement label,
 label.expert-citation-url {
   font-weight: 500 !important;
-  margin-top: 30px !important;
 }
 .gc-chckbxrdio .checkbox,
 .gc-chckbxrdio .radio {
@@ -643,10 +642,10 @@ label.expert-citation-url {
   line-height: 2.8em;
 }
 
-.gc-chckbxrdio.sm-v .checkbox,
-.gc-chckbxrdio.sm-v .radio {
-  margin-top: 10px;
-  margin-bottom: 18px;
+.gc-chckbxrdio.md .checkbox,
+.gc-chckbxrdio.md .radio {
+  margin-top: 5px;
+  margin-bottom: 5px;
   line-height: 1em;
 }
 
@@ -751,9 +750,9 @@ fieldset.gc-chckbxrdio {
   }
 }
 
-.gc-chckbxrdio.sm-v input[type="checkbox"] + label,
-.gc-chckbxrdio.sm-v input[type="radio"] + label {
-  margin-left: 32px;
+.gc-chckbxrdio.md input[type="checkbox"] + label,
+.gc-chckbxrdio.md input[type="radio"] + label {
+  margin-left: 26px;
 }
 
 .gc-chckbxrdio input[type="checkbox"] + label::before,
@@ -770,11 +769,11 @@ fieldset.gc-chckbxrdio {
   width: 19px;
 }
 
-.gc-chckbxrdio.sm-v input[type="checkbox"] + label::before,
-.gc-chckbxrdio.sm-v input[type="radio"] + label::before {
-  border: 10px solid #fff;
-  height: 16px;
-  width: 16px;
+.gc-chckbxrdio.md input[type="checkbox"] + label::before,
+.gc-chckbxrdio.md input[type="radio"] + label::before {
+  border: 8px solid #fff;
+  height: 14px;
+  width: 14px;
 }
 
 .gc-chckbxrdio input[type="checkbox"] + label:hover::before,
@@ -812,7 +811,7 @@ fieldset.gc-chckbxrdio {
   outline-offset: 4px;
   box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
 }
-.gc-chckbxrdio.sm-v input[type="checkbox"]:focus:checked + label::after {
+.gc-chckbxrdio.md input[type="checkbox"]:focus:checked + label::after {
   border-color: var(--gcds-details-focus-background);
 }
 
@@ -849,11 +848,11 @@ fieldset.gc-chckbxrdio {
   width: 9px;
 }
 
-.gc-chckbxrdio.sm-v input[type="checkbox"]:checked + label::after {
-  border-width: 0 5px 5px 0;
-  height: 20px;
-  left: 11px;
-  width: 9px;
+.gc-chckbxrdio.md input[type="checkbox"]:checked + label::after {
+  border-width: 0 4px 4px 0;
+  height: 18px;
+  left: 9px;
+  width: 8px;
 }
 
 .gc-chckbxrdio input[type="checkbox"]:checked + label::after {

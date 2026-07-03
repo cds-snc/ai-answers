@@ -13,8 +13,18 @@ const ExpertFeedbackComponent = ({
   lang = 'en',
   sentenceCount = 1,
   sentences = [],
+  answerNumber,
+  citationUrl,
 }) => {
   const { t } = useTranslations(lang);
+  // Disambiguates identically-worded controls/headings when multiple ExpertFeedbackComponents
+  // are open at once in admin/partner review mode (one per un-rated answer). Uses a colon
+  // rather than parens so it isn't visually conflated with the score values shown in
+  // parens elsewhere (e.g. "Good (100)").
+  const answerText = answerNumber
+    ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
+    : '';
+  const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
   const [expertFeedback, setExpertFeedback] = useState({
     sentence1Score: null,
     sentence1Explanation: '',
@@ -134,8 +144,13 @@ const ExpertFeedbackComponent = ({
         tabIndex={0}
         aria-label="Close"
       />
-      <fieldset className={`gc-chckbxrdio sm-v${hasError ? ' has-error' : ''}`}>
-        <h2 className="feedback-followup-title">{t('homepage.expertRating.intro')}</h2>
+      <fieldset className={`gc-chckbxrdio md${hasError ? ' has-error' : ''}`}>
+        <h2 className="feedback-followup-title">
+          {t('homepage.expertRating.intro')}
+          {answerNumber && (
+            <span className="feedback-answer-number">{answerText}</span>
+          )}
+        </h2>
         {hasError && (
           <FeedbackInlineError
             id="expert-feedback-error"
@@ -145,7 +160,7 @@ const ExpertFeedbackComponent = ({
           />
         )}
         <details className="answer-details" open>
-          <summary>{t('homepage.expertRating.title')}</summary>
+          <summary>{withAnswerNumber(t('homepage.expertRating.title'))}</summary>
 
           {/* All sentences 1-4 */}
           {[...Array(Math.min(4, sentenceCount))].map((_, index) => (
@@ -212,16 +227,17 @@ const ExpertFeedbackComponent = ({
                       type="checkbox"
                       name={`sentence${index + 1}Harmful`}
                       id={`sentence${index + 1}-harmful`}
+                      aria-describedby={`sentence${index + 1}-harmful-details-summary`}
                       checked={expertFeedback[`sentence${index + 1}Harmful`]}
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor={`sentence${index + 1}-harmful`}
-                    >{t('homepage.expertRating.options.harmful')}</label>
-                    <details className="harmful-details mt-100">
-                      <summary>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
-                      <p className="mb-100 mt-100 font-size-text-xsm-nr">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
-                      <p className="mb-100 font-size-text-xsm-nr">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
-                      <ul className="mb-200 list-disc font-size-text-xsm-nr">
+                    >{t('homepage.expertRating.options.harmful')} <span aria-hidden="true">*</span></label>
+                    <details className="harmful-details mt-100 mb-200">
+                      <summary id={`sentence${index + 1}-harmful-details-summary`}><span aria-hidden="true" className="harmful-summary-marker">*</span>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
+                      <p className="mb-100 mt-100">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
+                      <p className="mb-100">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
+                      <ul className="mb-200 list-disc">
                         <li>{t('homepage.expertRating.options.harmfulDetails.item1')}</li>
                         <li>{t('homepage.expertRating.options.harmfulDetails.item2')}</li>
                         <li>{t('homepage.expertRating.options.harmfulDetails.item3')}</li>
@@ -253,9 +269,18 @@ const ExpertFeedbackComponent = ({
         </details>
 
         <details className="citation-details">
-          <summary>{t('homepage.expertRating.citation')}</summary>
+          <summary>{withAnswerNumber(t('homepage.expertRating.citation'))}</summary>
           <fieldset className="citation-rating-group">
-            <legend>{t('homepage.expertRating.citation')}</legend>
+            <legend>
+              {t('homepage.expertRating.citation')}
+              {citationUrl && <div className="citation-text">{citationUrl}</div>}
+            </legend>
+            {/* TODO: TODISCUSS: when !citationUrl, there's nothing to rate — disable the three
+                radio options below (Good/Needs improvement/Incorrect) so a reviewer
+                can't score a citation that doesn't exist. Leave the "suggest a better
+                citation" URL input further down enabled regardless: a reviewer should
+                still be able to flag that an answer is missing a citation it should
+                have had, independent of rating one that already exists. */}
             <ul className="list-unstyled lst-spcd-2">
               <li className="radio">
                 <input
@@ -311,7 +336,7 @@ const ExpertFeedbackComponent = ({
             )}
           </fieldset>
 
-          <div className="mrgn-bttm-lg">
+          <div className="explanation-field">
             <label className="expert-citation-url" htmlFor="expert-citation-url">
               {t('homepage.expertRating.options.betterCitation')}
               <input
@@ -327,7 +352,7 @@ const ExpertFeedbackComponent = ({
         </details>
       </fieldset>
       <button type="submit" className="btn-primary mrgn-lft-sm">
-        {t('homepage.expertRating.submit')}
+        {withAnswerNumber(t('homepage.expertRating.submit'))}
       </button>
     </form>
   );
