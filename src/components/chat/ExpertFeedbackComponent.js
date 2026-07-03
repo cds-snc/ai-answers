@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
+import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import FeedbackInlineError from './FeedbackInlineError.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
@@ -35,13 +36,7 @@ const ExpertFeedbackComponent = ({
     citationExplanation: '',
     expertCitationUrl: '',
   });
-  // A counter rather than a boolean: setErrorCount(n => n + 1) always changes the
-  // value, even on back-to-back failed submits, so the focus effect below reliably
-  // re-fires and re-announces the error every time (a boolean re-set to `true` when
-  // already `true` is a no-op in React and would silently skip the refocus/re-announce).
-  const [errorCount, setErrorCount] = useState(0);
-  const hasError = errorCount > 0;
-  const errorRef = useFocusOnChange(errorCount);
+  const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
 
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
@@ -52,7 +47,7 @@ const ExpertFeedbackComponent = ({
     };
 
     setExpertFeedback((prev) => ({ ...prev, ...updates }));
-    setErrorCount(0);
+    clearError();
   };
 
   const handleInputChange = (event) => {
@@ -85,10 +80,10 @@ const ExpertFeedbackComponent = ({
     event.preventDefault();
 
     if (!hasAnyRating(expertFeedback)) {
-      setErrorCount((n) => n + 1);
+      triggerError();
       return;
     }
-    setErrorCount(0);
+    clearError();
 
     const totalScore = computeTotalScore(expertFeedback);
 
@@ -104,9 +99,6 @@ const ExpertFeedbackComponent = ({
   };
 
   const computeTotalScore = (feedback) => {
-    // If no ratings were provided at all, return null
-    if (!hasAnyRating(feedback)) return null;
-
     // Get scores for existing sentences (up to sentenceCount)
     const sentenceScores = [
       feedback.sentence1Score,
@@ -145,15 +137,12 @@ const ExpertFeedbackComponent = ({
       <fieldset className={`gc-chckbxrdio sm-v${hasError ? ' has-error' : ''}`}>
         <h2 className="feedback-followup-title">{t('homepage.expertRating.intro')}</h2>
         {hasError && (
-          <p
-            className="feedback-inline-error"
+          <FeedbackInlineError
             id="expert-feedback-error"
-            role="alert"
-            ref={errorRef}
-            tabIndex={-1}
-          >
-            {t('homepage.expertRating.selectionRequired')}
-          </p>
+            message={t('homepage.expertRating.selectionRequired')}
+            errorCount={errorCount}
+            inputRef={errorRef}
+          />
         )}
         <details className="answer-details" open>
           <summary>{t('homepage.expertRating.title')}</summary>

@@ -870,7 +870,7 @@ fieldset.feedback-reason-fieldset {
    so one rule covers the .has-error state for either. */
 .gc-chckbxrdio.has-error input[type="checkbox"] + label::before,
 .gc-chckbxrdio.has-error input[type="radio"] + label::before {
-  box-shadow: 0 0 0 2px var(--gcds-danger-border);
+  box-shadow: 0 0 0 2px var(--gcds-error-message-text-color);
 }
 
 /* Without .sm-v (removed so public feedback keeps the larger touch-target
@@ -898,18 +898,25 @@ fieldset.feedback-reason-fieldset input[type="radio"] + label::before {
 
 /* All gc-chckbxrdio legends (PublicFeedbackComponent's feedback-reason-fieldset
    and ExpertFeedbackComponent's sentence/citation-rating-group legends alike)
-   share this GC DS fieldset-legend styling (h5 scale: 24px/700 desktop,
-   22px/700 mobile). */
+   share this GC DS fieldset-legend styling. Hardcoded rather than var()'d:
+   our pinned @cdssnc/gcds-components (0.26.3) predates the gcds-radios
+   component and has no matching token — --gcds-fieldset-legend-size-h5-desktop
+   / -mobile referenced here previously don't exist in any GCDS version and
+   silently no-op. Values below are copied from @cdssnc/gcds-components@0.47.0's
+   --gcds-radio-legend-font-desktop / --gcds-radio-legend-font-mobile.
+   TODO: once gcds-components is upgraded past the version that ships
+   gcds-radios, replace with var(--gcds-radio-legend-font-desktop) /
+   var(--gcds-radio-legend-font-mobile). */
 fieldset.gc-chckbxrdio legend {
   width: auto;
   color: var(--gcds-checkbox-default-text);
-  font: var(--gcds-fieldset-legend-size-h5-desktop);
+  font: 700 1.25rem/160% "Noto Sans", sans-serif;
   margin: var(--gcds-fieldset-legend-margin);
 }
 
 @media only screen and (width < 48em) {
   fieldset.gc-chckbxrdio legend {
-    font: var(--gcds-fieldset-legend-size-h5-mobile);
+    font: 700 1.125rem/155% "Noto Sans", sans-serif;
   }
 }
 

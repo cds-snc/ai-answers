@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
+import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import FeedbackInlineError from './FeedbackInlineError.js';
 import FeedbackService from '../../services/FeedbackService.js';
 import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 
@@ -15,13 +16,7 @@ const PublicFeedbackComponent = ({
 }) => {
   const { t } = useTranslations(lang);
   const [selected, setSelected] = useState('');
-  // A counter rather than a boolean: setErrorCount(n => n + 1) always changes the
-  // value, even on back-to-back failed submits, so the focus effect below reliably
-  // re-fires and re-announces the error every time (a boolean re-set to `true` when
-  // already `true` is a no-op in React and would silently skip the refocus/re-announce).
-  const [errorCount, setErrorCount] = useState(0);
-  const hasError = errorCount > 0;
-  const errorRef = useFocusOnChange(errorCount);
+  const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
 
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
     ...opt,
@@ -32,12 +27,12 @@ const PublicFeedbackComponent = ({
 
   const handleOptionChange = (id) => {
     setSelected(id);
-    setErrorCount(0);
+    clearError();
   };
 
   const handleSend = async () => {
     if (!selected) {
-      setErrorCount((n) => n + 1);
+      triggerError();
       return;
     }
 
@@ -92,15 +87,12 @@ const PublicFeedbackComponent = ({
             {isPositive ? t('homepage.publicFeedback.yes.hint') : t('homepage.publicFeedback.no.hint')}
           </p>
           {hasError && (
-            <p
-              className="feedback-inline-error"
+            <FeedbackInlineError
               id="public-feedback-error"
-              role="alert"
-              ref={errorRef}
-              tabIndex={-1}
-            >
-              {t('homepage.publicFeedback.selectionRequired')}
-            </p>
+              message={t('homepage.publicFeedback.selectionRequired')}
+              errorCount={errorCount}
+              inputRef={errorRef}
+            />
           )}
           <ul className="list-unstyled lst-spcd-2">
             {options.map((opt) => (
