@@ -1840,6 +1840,7 @@
         "actions": "Actions"
       },
       "baseline": "Référence",
+      "viewResults": "Voir les résultats",
       "export": "Exporter",
       "exportChatLogs": "Exporter les journaux de clavardage",
       "useAsBaseline": "Utiliser comme référence",
@@ -1897,6 +1898,66 @@
           "name": "Analyseur de réponses similaires",
           "description": "Cet analyseur est conçu pour détecter la dérive des réponses. Il compare la réponse courante à une réponse de référence et recherche les changements significatifs dans les dates, les nombres, les règles d'admissibilité, les étapes, les programmes ou documents nommés, la portée, les URL et tout autre fait concret qui pourrait modifier l'action à prendre par l'utilisateur. Un résultat signalé signifie que la nouvelle réponse diffère de façon importante et peut changer les conseils donnés, même si la formulation semble proche. Les reformulations sans conséquence, les points équivalents présentés dans un autre ordre et les changements de mise en forme sont ignorés. Si l'analyseur ne peut pas déterminer si une différence est importante, il peut renvoyer needs-review afin qu'une personne examine le cas. Utilisez-le pour repérer les régressions subtiles qu'un simple score de similarité manquerait."
         }
+      }
+    },
+    "results": {
+      "title": "Résultats du lot",
+      "backToRuns": "Retour aux analyses",
+      "loading": "Chargement des résultats...",
+      "loadError": "Échec du chargement des résultats du lot.",
+      "summary": {
+        "total": "Éléments au total",
+        "attention": "Écarts",
+        "errors": "Erreurs",
+        "passRate": "Taux de réussite"
+      },
+      "filter": {
+        "label": "Afficher",
+        "attention": "Écarts seulement",
+        "all": "Tous les éléments",
+        "errors": "Erreurs seulement"
+      },
+      "table": {
+        "row": "Ligne",
+        "question": "Question",
+        "verdict": "Verdict",
+        "explanation": "Explication",
+        "actions": "Actions",
+        "view": "Voir",
+        "empty": "Aucun élément ne correspond à ce filtre."
+      },
+      "verdict": {
+        "pass": "Réussite",
+        "flagged": "Signalé",
+        "error": "Erreur",
+        "pending": "En attente",
+        "processing": "En traitement",
+        "cancelled": "Annulé",
+        "refused": "Refusé",
+        "skipped": "Ignoré"
+      },
+      "detail": {
+        "backToList": "Retour à la liste",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "position": "{current} de {total}",
+        "question": "Question",
+        "referringUrl": "URL de référence",
+        "itemError": "Erreur de traitement",
+        "goldenAnswer": "Réponse de référence (expert)",
+        "currentAnswer": "Réponse générée",
+        "noAnswer": "Aucune réponse n'a été générée.",
+        "legendRemoved": "Absent de la réponse générée",
+        "legendAdded": "Ajouté dans la réponse générée",
+        "viewChatLogs": "Voir les journaux de clavardage",
+        "viewBaselineChatLogs": "Voir les journaux de clavardage de référence",
+        "analyzerResults": "Résultats des évaluateurs",
+        "analyzerErrors": "Erreurs des analyseurs"
+      },
+      "pagination": {
+        "previous": "Page précédente",
+        "next": "Page suivante",
+        "page": "Page {page} de {pages}"
       }
     }
   }

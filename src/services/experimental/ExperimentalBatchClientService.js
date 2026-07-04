@@ -50,8 +50,24 @@ export const ExperimentalBatchClientService = {
     },
 
     /**
+     * Get paginated items for a batch (results drill-down)
+     * @param {string} id
+     * @param {object} options { page, limit, filter } filter: 'all' | 'attention' | 'errors'
+     */
+    async getBatchItems(id, { page = 1, limit = 25, filter = 'all' } = {}) {
+        const query = new URLSearchParams({ page: String(page), limit: String(limit), filter });
+        const url = getApiUrl(`experimental-batch-items/${encodeURIComponent(id)}?${query.toString()}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to get batch items: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+    },
+
+    /**
      * Trigger processing for a batch
-     * @param {string} id 
+     * @param {string} id
      */
     async processBatch(id, force = false) {
         const url = getApiUrl(`experimental-batch-process/${encodeURIComponent(id)}${force ? '?force=true' : ''}`);

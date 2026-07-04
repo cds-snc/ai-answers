@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 
@@ -55,6 +55,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const datasetIdParam = searchParams.get('datasetId');
 
     // State
@@ -623,7 +624,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-200">
                                     <div className="flex gap-200">
                                         {batch.status !== 'processing' && (
-                                            <GcdsButton size="small" onClick={() => handleExport(batch._id)}>
+                                            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
+                                                {t('experimental.analysis.viewResults')}
+                                            </GcdsButton>
+                                        )}
+                                        {batch.status !== 'processing' && (
+                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>
                                                 {t('experimental.analysis.export')}
                                             </GcdsButton>
                                         )}

@@ -1840,6 +1840,7 @@
         "actions": "Actions"
       },
       "baseline": "BASELINE",
+      "viewResults": "View results",
       "export": "Export",
       "exportChatLogs": "Export chat logs",
       "useAsBaseline": "Use as baseline",
@@ -1897,6 +1898,66 @@
           "name": "Similar answer analyzer",
           "description": "This analyzer is designed for answer-drift detection. It compares the current answer with a baseline answer and looks for meaningful changes in dates, numbers, eligibility rules, steps, named programs or documents, scope, URLs, and other concrete facts that would change what a user should do. A flagged result means the new answer is materially different in a way that could affect guidance, even if the wording still sounds close. Harmless rephrasing, reordered but equivalent points, and formatting-only changes are ignored. If the analyzer cannot tell whether a difference matters, it can return needs-review so a human can inspect it. Use this when you want to catch subtle regressions that a simple similarity score would miss."
         }
+      }
+    },
+    "results": {
+      "title": "Batch results",
+      "backToRuns": "Back to analysis runs",
+      "loading": "Loading results...",
+      "loadError": "Failed to load batch results.",
+      "summary": {
+        "total": "Total items",
+        "attention": "Deviations",
+        "errors": "Errors",
+        "passRate": "Pass rate"
+      },
+      "filter": {
+        "label": "Show",
+        "attention": "Deviations only",
+        "all": "All items",
+        "errors": "Errors only"
+      },
+      "table": {
+        "row": "Row",
+        "question": "Question",
+        "verdict": "Verdict",
+        "explanation": "Explanation",
+        "actions": "Actions",
+        "view": "View",
+        "empty": "No items match this filter."
+      },
+      "verdict": {
+        "pass": "Pass",
+        "flagged": "Flagged",
+        "error": "Error",
+        "pending": "Pending",
+        "processing": "Processing",
+        "cancelled": "Cancelled",
+        "refused": "Refused",
+        "skipped": "Skipped"
+      },
+      "detail": {
+        "backToList": "Back to list",
+        "previous": "Previous",
+        "next": "Next",
+        "position": "{current} of {total}",
+        "question": "Question",
+        "referringUrl": "Referring URL",
+        "itemError": "Processing error",
+        "goldenAnswer": "Golden answer (expert)",
+        "currentAnswer": "Generated answer",
+        "noAnswer": "No answer was generated.",
+        "legendRemoved": "Missing from generated answer",
+        "legendAdded": "Added in generated answer",
+        "viewChatLogs": "View chat logs",
+        "viewBaselineChatLogs": "View baseline chat logs",
+        "analyzerResults": "Judge results",
+        "analyzerErrors": "Analyzer errors"
+      },
+      "pagination": {
+        "previous": "Previous page",
+        "next": "Next page",
+        "page": "Page {page} of {pages}"
       }
     }
   }
