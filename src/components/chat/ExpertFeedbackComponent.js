@@ -1,6 +1,7 @@
 import React, { useState, useId } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import { useAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -20,14 +21,7 @@ const ExpertFeedbackComponent = ({
   // Namespaces every id in this component so multiple instances can render on
   // one page (e.g. review mode, one per un-rated answer) without colliding.
   const uid = useId();
-  // Disambiguates identically-worded controls/headings when multiple ExpertFeedbackComponents
-  // are open at once in admin/partner review mode (one per un-rated answer). Uses a colon
-  // rather than parens so it isn't visually conflated with the score values shown in
-  // parens elsewhere (e.g. "Good (100)").
-  const answerText = answerNumber
-    ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
-    : '';
-  const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
+  const { answerText, withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
   const [expertFeedback, setExpertFeedback] = useState({
     sentence1Score: null,
     sentence1Explanation: '',

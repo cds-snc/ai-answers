@@ -336,7 +336,7 @@ const VectorPage = ({ lang = 'en' }) => {
           <GcdsButton onClick={fetchVectorStats} disabled={loading} className="mb-200 mr-200">
             {loading ? t('vector.loading') : t('vector.fetchStats')}
           </GcdsButton>
-          <GcdsButton onClick={handleCreateVectorIndex} disabled={loading} variant="primary" className="mb-200 mr-200">
+          <GcdsButton onClick={handleCreateVectorIndex} disabled={loading} buttonRole="primary" className="mb-200 mr-200">
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>

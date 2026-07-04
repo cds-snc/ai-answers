@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
 import { formatDecimal } from '../../../utils/numberFormat.js';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
 const formatDate = (d) => {
   if (!d) return '';
@@ -34,15 +35,8 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   const [data, setData] = useState(null);
   const [reRunning, setReRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Disambiguates this panel's buttons when multiple EvalPanels are open at once
-  // in review mode (one per message) — same pattern as ExpertFeedbackComponent's
-  // answerNumber/withAnswerNumber, reusing the same locale key.
-  const answerText = answerNumber
-    ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
-    : '';
-  const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
+  const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
   const getInteractionId = useCallback(() => (
     (message.interaction && (message.interaction._id || message.interaction.id)) || message.id
@@ -98,15 +92,10 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
     }
   }, [getInteractionId, loadEval, message]);
 
-  const handleInitialDelete = useCallback(() => {
-    setShowDeleteConfirm(true);
-  }, []);
-
-  const handleCancelDelete = useCallback(() => {
-    setShowDeleteConfirm(false);
-  }, []);
-
-  const handleConfirmDelete = useCallback(async () => {
+  const handleDelete = useCallback(async () => {
+    if (!window.confirm(t('common.confirmDelete', 'Are you sure you want to delete this data?'))) {
+      return;
+    }
     try {
       setDeleting(true);
       setError(null);
@@ -118,13 +107,12 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
       } else {
         message.autoEval = undefined;
       }
-      setShowDeleteConfirm(false);
     } catch (err) {
       setError(err.message || String(err));
     } finally {
       setDeleting(false);
     }
-  }, [getInteractionId, message]);
+  }, [getInteractionId, message, t]);
 
   if (!message) return null;
 
@@ -183,41 +171,16 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
           >
             {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
           </GcdsButton>
-          {!showDeleteConfirm ? (
-            <GcdsButton
-              onClick={handleInitialDelete}
-              buttonRole="danger"
-              disabled={deleting}
-              className="hydrated"
-              style={{ marginLeft: '0.5rem' }}
-              aria-label={withAnswerNumber(t('reviewPanels.deleteEvaluation', 'Delete Evaluation'))}
-            >
-              {t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
-            </GcdsButton>
-          ) : (
-            <>
-              <GcdsButton
-                onClick={handleConfirmDelete}
-                buttonRole="danger"
-                disabled={deleting}
-                className="hydrated"
-                style={{ marginLeft: '0.5rem' }}
-                aria-label={withAnswerNumber(deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.confirmDelete', 'Confirm delete'))}
-              >
-                {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.confirmDelete', 'Confirm delete')}
-              </GcdsButton>
-              <GcdsButton
-                onClick={handleCancelDelete}
-                buttonRole="secondary"
-                disabled={deleting}
-                className="hydrated"
-                style={{ marginLeft: '0.5rem' }}
-                aria-label={withAnswerNumber(t('reviewPanels.cancel', 'Cancel'))}
-              >
-                {t('reviewPanels.cancel', 'Cancel')}
-              </GcdsButton>
-            </>
-          )}
+          <GcdsButton
+            onClick={handleDelete}
+            buttonRole="danger"
+            disabled={deleting}
+            className="hydrated"
+            style={{ marginLeft: '0.5rem' }}
+            aria-label={withAnswerNumber(deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation'))}
+          >
+            {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
+          </GcdsButton>
         </div>
         {loading && <div>{t('common.loading', 'Loading...')}</div>}
         {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}

@@ -1087,6 +1087,7 @@
   },
   "common": {
     "backToAdmin": "Back to admin",
+    "confirmDelete": "Are you sure you want to delete this data?",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
@@ -1218,8 +1219,6 @@
     "modifiers": "Modifiers",
     "reEvaluate": "Re-evaluate",
     "deleteEvaluation": "Delete evaluation",
-    "confirmDelete": "Confirm delete",
-    "cancel": "Cancel",
     "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
     "fallbackType": "Fallback type",
