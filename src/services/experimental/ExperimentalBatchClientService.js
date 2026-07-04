@@ -213,6 +213,19 @@ export const ExperimentalBatchClientService = {
     },
 
     /**
+     * Get the suite grid (runs x tests verdict matrix) for a dataset
+     */
+    async getSuiteGrid(datasetId) {
+        const url = getApiUrl(`experimental-suite-grid?datasetId=${encodeURIComponent(datasetId)}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to load suite grid: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+    },
+
+    /**
      * Get SSE progress URL
      */
     getBatchProgressUrl(id) {

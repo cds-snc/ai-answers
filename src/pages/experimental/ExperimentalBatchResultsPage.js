@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useExperimentalBatchItems } from '../../hooks/experimental/useExperimentalBatchItems.js';
@@ -23,6 +23,8 @@ const STAT_STYLE = {
 export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const { batchId } = useParams();
+    const [searchParams] = useSearchParams();
+    const openParam = parseInt(searchParams.get('open'), 10);
 
     const {
         batch,
@@ -43,7 +45,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         goPrev,
         hasNext,
         hasPrev
-    } = useExperimentalBatchItems(batchId);
+    } = useExperimentalBatchItems(batchId, Number.isInteger(openParam) && openParam > 0 ? { openRowIndex: openParam } : {});
 
     // Arrow-key navigation while reviewing an item.
     useEffect(() => {

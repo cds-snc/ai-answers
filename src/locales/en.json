@@ -1773,6 +1773,9 @@
       "typeLabel": "Dataset Type",
       "uploadedBy": "Uploaded by",
       "fileLabel": "XLSX / CSV file",
+      "categoryLabel": "Category (optional)",
+      "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
+      "suiteView": "Suite grid",
       "requiredColumns": "Required columns",
       "uploadDescriptions": {
         "questionOnly": "A fresh answer is generated for each question during analysis. To compare generated answers against a reference answer (for example, an expert-scored perfect answer), rename that column to GoldenAnswer before uploading — a column named answer will be ignored.",
@@ -1806,6 +1809,9 @@
       "selectBaseline": "Select baseline run (comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
       "goldenHint": "No baseline run is needed if your dataset has a GoldenAnswer column — it is used automatically as the reference answer.",
+      "runLabelLabel": "Run label (optional)",
+      "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
+      "suiteView": "Suite grid",
       "noBaseline": "-- No baseline (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
@@ -1959,6 +1965,29 @@
         "previous": "Previous page",
         "next": "Next page",
         "page": "Page {page} of {pages}"
+      }
+    },
+    "suite": {
+      "title": "Test suite",
+      "loading": "Loading suite grid...",
+      "loadError": "Failed to load suite grid.",
+      "noRuns": "No analysis runs yet for this dataset. Start one from the analysis page.",
+      "runColumn": "Run",
+      "scoreColumn": "Score",
+      "newRun": "New analysis run",
+      "categoryLabel": "Category",
+      "heldOutBadge": "Held-out set",
+      "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
+      "caseType": {
+        "control": "Control",
+        "edge": "Edge",
+        "boundary": "Boundary"
+      },
+      "verdict": {
+        "pass": "Pass",
+        "flagged": "Flagged",
+        "error": "Error",
+        "missing": "No result"
       }
     }
   }

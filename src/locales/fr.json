@@ -1773,6 +1773,9 @@
       "typeLabel": "Type d'ensemble de données",
       "uploadedBy": "Téléversé par",
       "fileLabel": "Fichier XLSX / CSV",
+      "categoryLabel": "Catégorie (optionnel)",
+      "categoryPlaceholder": "p. ex. cra, ircc, bias, pii, red-team",
+      "suiteView": "Grille de la suite",
       "requiredColumns": "Colonnes requises",
       "uploadDescriptions": {
         "questionOnly": "Une nouvelle réponse est générée pour chaque question pendant l'analyse. Pour comparer les réponses générées à une réponse de référence (par exemple, une réponse parfaite validée par un expert), renommez cette colonne GoldenAnswer avant l'importation — une colonne nommée answer sera ignorée.",
@@ -1806,6 +1809,9 @@
       "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
       "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
       "goldenHint": "Aucune exécution de référence n'est nécessaire si votre ensemble de données contient une colonne GoldenAnswer — elle est utilisée automatiquement comme réponse de référence.",
+      "runLabelLabel": "Étiquette d'exécution (optionnel)",
+      "runLabelPlaceholder": "p. ex. v2 – consignes de citation resserrées",
+      "suiteView": "Grille de la suite",
       "noBaseline": "-- Aucune référence (évaluation autonome) --",
       "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
       "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",
@@ -1959,6 +1965,29 @@
         "previous": "Page précédente",
         "next": "Page suivante",
         "page": "Page {page} de {pages}"
+      }
+    },
+    "suite": {
+      "title": "Suite de tests",
+      "loading": "Chargement de la grille de la suite...",
+      "loadError": "Échec du chargement de la grille de la suite.",
+      "noRuns": "Aucune analyse n'a encore été exécutée pour cet ensemble de données. Lancez-en une depuis la page d'analyse.",
+      "runColumn": "Exécution",
+      "scoreColumn": "Score",
+      "newRun": "Nouvelle analyse",
+      "categoryLabel": "Catégorie",
+      "heldOutBadge": "Ensemble réservé",
+      "columnsHint": "Les noms de colonnes proviennent d'une colonne facultative testName dans l'ensemble de données. Étiquetez les lignes avec une colonne caseType (control, edge, boundary) pour décrire le rôle de chaque test. Cliquez sur une cellule pour ouvrir cette réponse.",
+      "caseType": {
+        "control": "Contrôle",
+        "edge": "Cas limite",
+        "boundary": "Frontière"
+      },
+      "verdict": {
+        "pass": "Réussite",
+        "flagged": "Signalé",
+        "error": "Erreur",
+        "missing": "Aucun résultat"
       }
     }
   }

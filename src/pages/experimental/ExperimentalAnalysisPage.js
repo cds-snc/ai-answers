@@ -65,6 +65,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
     const [baselineBatchId, setBaselineBatchId] = useState('');
+    const [runLabel, setRunLabel] = useState('');
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
 
@@ -240,6 +241,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         const batchData = {
             name: runName,
             description: `${t('experimental.analysis.analyzerPrefix')}: ${selectedAnalyzerId}`,
+            runLabel: runLabel.trim(),
             type: 'analysis',
             config: {
                 analyzerId: selectedAnalyzerId,
@@ -388,9 +390,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         {selectedDataset.description}
                     </GcdsText>
                 )}
-                <GcdsLink href={`/${lang}/experimental/datasets`}>
-                    {t('experimental.datasets.backToList')}
-                </GcdsLink>
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                        {t('experimental.datasets.backToList')}
+                    </GcdsLink>
+                    {selectedDatasetId && (
+                        <GcdsLink href={`/${lang}/experimental/suites/${selectedDatasetId}`}>
+                            {t('experimental.analysis.suiteView')}
+                        </GcdsLink>
+                    )}
+                </div>
             </header>
             
 
@@ -527,6 +536,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 </GcdsText>
                             </div>
                         )}
+
+                        <div className="mb-400">
+                            <label htmlFor="run-label-input" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.runLabelLabel')}
+                            </label>
+                            <input
+                                id="run-label-input"
+                                type="text"
+                                value={runLabel}
+                                maxLength={200}
+                                onChange={(e) => setRunLabel(e.target.value)}
+                                placeholder={t('experimental.analysis.runLabelPlaceholder')}
+                                style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                            />
+                        </div>
 
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
                             {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}

@@ -8,13 +8,19 @@ const DEFAULT_LIMIT = 25;
  * review flow state: filter, page, and the currently selected item
  * (with next/previous that crosses page boundaries).
  */
-export function useExperimentalBatchItems(batchId, { initialFilter = 'attention', limit = DEFAULT_LIMIT } = {}) {
+export function useExperimentalBatchItems(batchId, { initialFilter = 'attention', limit = DEFAULT_LIMIT, openRowIndex = null } = {}) {
+    // Deep link (?open=<rowIndex>): land on the page containing that item,
+    // with the 'all' filter so the row is guaranteed present, and open it.
+    const openTarget = Number.isInteger(openRowIndex) && openRowIndex > 0 ? openRowIndex : null;
+    if (openTarget) {
+        initialFilter = 'all';
+    }
     const [batch, setBatch] = useState(null);
     const [items, setItems] = useState([]);
     const [counts, setCounts] = useState({ total: 0, attention: 0, errors: 0 });
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit });
     const [filter, setFilterState] = useState(initialFilter);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(openTarget ? Math.max(1, Math.ceil(openTarget / limit)) : 1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -22,6 +28,8 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     const [selectedIndex, setSelectedIndex] = useState(null);
     // 'first' | 'last' — where to land after a page change triggered by next/prev
     const pendingSelectRef = useRef(null);
+    // rowIndex to auto-open once, from the ?open deep link
+    const pendingOpenRef = useRef(openTarget);
 
     const load = useCallback(async () => {
         if (!batchId) return;
@@ -35,7 +43,11 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
             setPagination(result.pagination || { page: 1, pages: 1, total: 0, limit });
 
             const itemCount = (result.items || []).length;
-            if (pendingSelectRef.current && itemCount > 0) {
+            if (pendingOpenRef.current) {
+                const targetIdx = (result.items || []).findIndex(i => i.rowIndex === pendingOpenRef.current);
+                if (targetIdx >= 0) setSelectedIndex(targetIdx);
+                pendingOpenRef.current = null;
+            } else if (pendingSelectRef.current && itemCount > 0) {
                 setSelectedIndex(pendingSelectRef.current === 'last' ? itemCount - 1 : 0);
             } else if (pendingSelectRef.current) {
                 setSelectedIndex(null);

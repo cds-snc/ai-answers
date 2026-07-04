@@ -3,6 +3,9 @@ import mongoose from 'mongoose';
 const ExperimentalBatchSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String, default: '' },
+    // Free-text label telling the story of this run in the suite grid,
+    // e.g. "v2 – tightened citation instructions".
+    runLabel: { type: String, default: '', trim: true, maxLength: 200 },
 
     // 'batch' (generation), 'analysis' (comparison/evaluator)
     type: { type: String, required: true, enum: ['batch', 'analysis'] },

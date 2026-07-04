@@ -14,6 +14,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [newName, setNewName] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [newType, setNewType] = useState('question-only');
+    const [newCategory, setNewCategory] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
 
     const [showUpload, setShowUpload] = useState(false);
@@ -57,12 +58,13 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         base64,
                         selectedFile.type,
                         selectedFile.name,
-                        { name: newName, description: newDesc, type: newType }
+                        { name: newName, description: newDesc, type: newType, category: newCategory.trim() }
                     );
                     setMessage({ type: 'success', text: t('experimental.datasets.uploadSuccess') });
                     fetchDatasets();
                     setNewName('');
                     setNewDesc('');
+                    setNewCategory('');
                     setSelectedFile(null);
                     setShowUpload(false);
                 } catch (err) {
@@ -158,6 +160,20 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
                                 </select>
                             </div>
+                            <div>
+                                <label htmlFor="ds-category" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                    {t('experimental.datasets.categoryLabel')}
+                                </label>
+                                <input
+                                    id="ds-category"
+                                    type="text"
+                                    value={newCategory}
+                                    maxLength={100}
+                                    onChange={(e) => setNewCategory(e.target.value)}
+                                    placeholder={t('experimental.datasets.categoryPlaceholder')}
+                                    style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                                />
+                            </div>
                             <GcdsText className="mb-200">
                                 {typeInfo.description}
                             </GcdsText>
@@ -237,6 +253,13 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                         <div className="d-flex gap-200">
                                             <GcdsButton size="small" onClick={() => handleViewDataset(ds._id)}>
                                             {t('experimental.datasets.analyze')}
+                                            </GcdsButton>
+                                            <GcdsButton
+                                                size="small"
+                                                buttonRole="secondary"
+                                                onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }}
+                                            >
+                                                {t('experimental.datasets.suiteView')}
                                             </GcdsButton>
                                             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
                                                 {t('experimental.datasets.delete')}
