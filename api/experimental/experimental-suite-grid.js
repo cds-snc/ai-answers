@@ -45,7 +45,7 @@ async function handler(req, res) {
         // numbering ExperimentalBatchService uses when creating batch items.
         const tests = rows.map((row, idx) => ({
             position: idx + 1,
-            testName: String(row.data?.testName || '').trim() || `row-${idx + 1}`,
+            testName: String(row.data?.testName || '').trim() || `Q${idx + 1}`,
             caseType: normalizeCaseType(row.data?.caseType),
             question: String(row.data?.question || '')
         }));

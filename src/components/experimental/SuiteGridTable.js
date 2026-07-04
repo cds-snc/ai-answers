@@ -69,9 +69,9 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                             <th
                                 key={test.position}
                                 style={{ ...CELL_BASE, cursor: 'default', verticalAlign: 'bottom' }}
-                                title={test.question}
+                                title={`${test.testName} — ${test.question}`}
                             >
-                                <div>{test.testName}</div>
+                                <div style={{ whiteSpace: 'nowrap' }}>{truncate(test.testName, 14)}</div>
                                 {test.caseType && (
                                     <div style={{ fontWeight: 'normal', fontSize: '0.75rem', color: '#555' }}>
                                         {t(`experimental.suite.caseType.${test.caseType}`)}

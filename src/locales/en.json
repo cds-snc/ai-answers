@@ -1776,6 +1776,7 @@
       "categoryLabel": "Category (optional)",
       "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
       "suiteView": "Suite grid",
+      "runCountLabel": "Runs",
       "requiredColumns": "Required columns",
       "uploadDescriptions": {
         "questionOnly": "A fresh answer is generated for each question during analysis. To compare generated answers against a reference answer (for example, an expert-scored perfect answer), rename that column to GoldenAnswer before uploading — a column named answer will be ignored.",

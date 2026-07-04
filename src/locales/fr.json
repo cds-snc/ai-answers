@@ -1776,6 +1776,7 @@
       "categoryLabel": "Catégorie (facultatif)",
       "categoryPlaceholder": "p. ex. cra, ircc, bias, pii, red-team",
       "suiteView": "Grille de la suite",
+      "runCountLabel": "Exécutions",
       "requiredColumns": "Colonnes requises",
       "uploadDescriptions": {
         "questionOnly": "Une nouvelle réponse est générée pour chaque question pendant l'analyse. Pour comparer les réponses générées à une réponse de référence (par exemple, une réponse parfaite validée par un expert), renommez cette colonne GoldenAnswer avant l'importation — une colonne nommée answer sera ignorée.",

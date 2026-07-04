@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -226,6 +227,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 <th className="p-200">{t('experimental.datasets.typeLabel')}</th>
                                 <th className="p-200">{t('experimental.datasets.uploadedBy')}</th>
                                 <th className="p-200">{t('experimental.datasets.rowCount')}</th>
+                                <th className="p-200">{t('experimental.datasets.runCountLabel')}</th>
                                 <th className="p-200">{t('experimental.datasets.created')}</th>
                                 <th className="p-200">{t('experimental.datasets.actions')}</th>
                             </tr>
@@ -247,16 +249,25 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                                 : ds.type}
                                     </td>
                                     <td className="p-200">{ds.createdBy?.email || t('common.na')}</td>
-                                    <td className="p-200">{ds.rowCount}</td>
+                                    <td className="p-200">{formatNumber(ds.rowCount, lang)}</td>
+                                    <td className="p-200">
+                                        {ds.runCount > 0
+                                            ? <strong>{formatNumber(ds.runCount, lang)}</strong>
+                                            : formatNumber(0, lang)}
+                                    </td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
                                         <div className="d-flex gap-200">
-                                            <GcdsButton size="small" onClick={() => handleViewDataset(ds._id)}>
+                                            <GcdsButton
+                                                size="small"
+                                                buttonRole={ds.runCount > 0 ? 'secondary' : 'primary'}
+                                                onClick={() => handleViewDataset(ds._id)}
+                                            >
                                             {t('experimental.datasets.analyze')}
                                             </GcdsButton>
                                             <GcdsButton
                                                 size="small"
-                                                buttonRole="secondary"
+                                                buttonRole={ds.runCount > 0 ? 'primary' : 'secondary'}
                                                 onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }}
                                             >
                                                 {t('experimental.datasets.suiteView')}
@@ -270,7 +281,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                             ))}
                             {datasets.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
+                                    <td colSpan="7" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
                                 </tr>
                             )}
                         </tbody>

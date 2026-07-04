@@ -73,7 +73,7 @@ describe('experimental-suite-grid API', () => {
             dataset: { _id: DATASET_ID, name: 'CRA T2', category: 'cra' },
             tests: [
                 { position: 1, testName: 'control-1', caseType: 'control', question: 'Q1' },
-                { position: 2, testName: 'row-2', caseType: '', question: 'Q2' }
+                { position: 2, testName: 'Q2', caseType: '', question: 'Q2' }
             ],
             runs: [expect.objectContaining({ _id: RUN_ID })],
             cells: {

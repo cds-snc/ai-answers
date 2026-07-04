@@ -4,6 +4,7 @@ import { parseString } from 'fast-csv';
 import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
+import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const QUESTION_ALIASES = ['question', 'problemdetails', 'problem details'];
@@ -444,8 +445,22 @@ class ExperimentalDatasetService {
             ExperimentalDataset.countDocuments()
         ]);
 
+        // Analysis run counts per dataset, so the list can show which
+        // datasets have suite history at a glance.
+        const runCounts = data.length > 0
+            ? await ExperimentalBatch.aggregate([
+                { $match: { type: 'analysis', 'config.datasetId': { $in: data.map(d => d._id) } } },
+                { $group: { _id: '$config.datasetId', count: { $sum: 1 } } }
+            ])
+            : [];
+        const countByDatasetId = new Map(runCounts.map(rc => [String(rc._id), rc.count]));
+
         return {
-            data,
+            data: data.map(d => {
+                const obj = d.toObject();
+                obj.runCount = countByDatasetId.get(String(d._id)) || 0;
+                return obj;
+            }),
             total,
             page,
             limit,
