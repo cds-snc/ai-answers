@@ -42,7 +42,7 @@ export default function BatchItemsTable({ items, lang = 'en', onSelect }) {
                                 style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }}
                                 onClick={() => onSelect(index)}
                             >
-                                <td className="p-200">{formatNumber((item.rowIndex ?? index) + 1, lang)}</td>
+                                <td className="p-200">{formatNumber(item.rowIndex ?? (index + 1), lang)}</td>
                                 <td className="p-200">{truncate(item.question, 90)}</td>
                                 <td className="p-200">
                                     <span style={{ color: VERDICT_COLORS[verdict] || '#26374a', fontWeight: 'bold' }}>

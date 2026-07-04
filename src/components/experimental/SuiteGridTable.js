@@ -98,12 +98,22 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                             </td>
                             {tests.map(test => {
                                 const verdict = displayVerdict(cells[run._id]?.[test.position]);
+                                const clickable = verdict !== 'missing';
                                 return (
                                     <td
                                         key={test.position}
-                                        style={{ ...CELL_BASE, ...VERDICT_CELL_STYLES[verdict] }}
+                                        style={{ ...CELL_BASE, ...VERDICT_CELL_STYLES[verdict], cursor: clickable ? 'pointer' : 'default' }}
                                         title={`${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`}
-                                        onClick={() => verdict !== 'missing' && onCellClick(run, test)}
+                                        role={clickable ? 'button' : undefined}
+                                        tabIndex={clickable ? 0 : undefined}
+                                        aria-label={`${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`}
+                                        onClick={() => clickable && onCellClick(run, test)}
+                                        onKeyDown={(e) => {
+                                            if (clickable && (e.key === 'Enter' || e.key === ' ')) {
+                                                e.preventDefault();
+                                                onCellClick(run, test);
+                                            }
+                                        }}
                                     >
                                         {VERDICT_SYMBOLS[verdict]}
                                     </td>

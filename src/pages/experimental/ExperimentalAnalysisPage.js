@@ -277,6 +277,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     setMessage(t('experimental.analysis.messages.startProcessingError'));
                 }
             }
+            setRunLabel('');
         } catch (err) {
             console.error(err);
                     setMessage(t('experimental.analysis.messages.startAnalysisFailed'));
