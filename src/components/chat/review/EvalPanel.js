@@ -93,7 +93,12 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   }, [getInteractionId, loadEval, message]);
 
   const handleDelete = useCallback(async () => {
-    if (!window.confirm(t('common.confirmDelete', 'Are you sure you want to delete this data?'))) {
+    // Note: window.confirm()'s OK/Cancel buttons render in the browser/OS
+    // language, not the app's selected locale — only the message text above
+    // is translated. Matches existing precedent (VectorPage.js, UsersPage.js
+    // also use window.confirm() for destructive actions). Flagged as a known
+    // limitation, out of scope for this PR.
+    if (!window.confirm(t('common.confirmDelete'))) {
       return;
     }
     try {

@@ -582,7 +582,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       <div className="mb-400">
         <GcdsButton
           type="button"
-          variant="secondary"
+          buttonRole="secondary"
           onClick={handleRefreshSettingsCache}
           disabled={refreshingSettingsCache}
         >

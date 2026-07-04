@@ -1,7 +1,10 @@
 import React from 'react';
 import { GcdsDetails } from '@gcds-core/components-react';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
 const DownloadPanel = ({ message, t, answerNumber }) => {
+    const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
+
     if (!message) return null;
 
     const interaction = message.interaction || {};
@@ -23,13 +26,7 @@ const DownloadPanel = ({ message, t, answerNumber }) => {
     const hasSuccess = downloads.some(d => d.error === 'none');
     const indicator = hasSuccess ? ' \u2714' : ' \u2718';
 
-    // Disambiguates this panel when several review panels are open at once
-    // (one per message) — same pattern as ExpertFeedbackComponent's
-    // answerNumber/withAnswerNumber, reusing the same locale key.
-    const baseTitle = (t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages') + indicator;
-    const title = answerNumber
-        ? `${baseTitle}: ${t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)}`
-        : baseTitle;
+    const title = withAnswerNumber((t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages') + indicator);
 
     return (
         <GcdsDetails detailsTitle={title} className="review-details" tabIndex="0">

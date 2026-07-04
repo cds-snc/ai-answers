@@ -578,7 +578,7 @@ const DatabasePage = ({ lang }) => {
                     }
                   }}
                   disabled={!!checksRunning[check.id]}
-                  variant="secondary"
+                  buttonRole="secondary"
                 >
                   {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
                 </GcdsButton>
@@ -704,7 +704,7 @@ const DatabasePage = ({ lang }) => {
           <GcdsButton
             type="submit"
             disabled={isImporting}
-            variant="secondary"
+            buttonRole="secondary"
           >
             {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
           </GcdsButton>
@@ -719,7 +719,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleCreateIndexes}
           disabled={isCreatingIndexes}
-          variant="secondary"
+          buttonRole="secondary"
           className="mb-200"
         >
           {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
@@ -777,7 +777,7 @@ const DatabasePage = ({ lang }) => {
             }
           }}
           disabled={isCheckingIndexStatus}
-          variant="secondary"
+          buttonRole="secondary"
           className="mb-200"
         >
           {isCheckingIndexStatus ? t('admin.database.checkingLabel') : t('admin.database.checkIndexStatusButton')}
@@ -847,7 +847,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleRepairTimestamps}
           disabled={isRepairingTimestamps}
-          variant="secondary"
+          buttonRole="secondary"
           className="mb-200"
         >
           {isRepairingTimestamps ? t('admin.database.repairingLabel') : t('admin.database.repairTimestampsButton')}
@@ -877,7 +877,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleRepairExpertFeedback}
           disabled={isRepairingExpertFeedback}
-          variant="secondary"
+          buttonRole="secondary"
           className="mb-200"
         >
           {isRepairingExpertFeedback ? t('admin.database.repairingLabel') : t('admin.database.repairExpertFeedbackButton')}
@@ -892,7 +892,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton
           onClick={handleMigratePublicFeedback}
           disabled={isMigratingPublicFeedback}
-          variant="secondary"
+          buttonRole="secondary"
           className="mb-200"
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
