@@ -522,6 +522,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         </option>
                                     ))}
                                 </select>
+                                <GcdsText className="mt-200">
+                                    {t('experimental.analysis.goldenHint')}
+                                </GcdsText>
                             </div>
                         )}
 

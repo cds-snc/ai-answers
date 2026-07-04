@@ -104,7 +104,7 @@ describe('ExperimentalBatchService', () => {
             const itemsData = [{
                 Question: 'Standard Q',
                 Response: 'Standard A',
-                baseline: 'Base',
+                baselineAnswer: 'Base',
                 NewAnswer: 'Comp'
             }];
 
@@ -114,6 +114,42 @@ describe('ExperimentalBatchService', () => {
             expect(item.question).toBe('Standard Q');
             expect(item.answer).toBe('Standard A');
             expect(item.baselineAnswer).toBe('Base');
+        });
+
+        it('should map the accepted golden answer column names to baselineAnswer', async () => {
+            const batchData = { name: 'Golden Mapping Test', type: 'analysis', config: { analyzerId: 'expert-scorer' } };
+            const itemsData = [
+                { question: 'Q1', GoldenAnswer: 'Expert answer 1' },
+                { question: 'Q2', goldenAnswer: 'Expert answer 2' },
+                { question: 'Q3', BaselineAnswer: 'Expert answer 3' },
+                { question: 'Q4', baseline: 'Expert answer 4' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
+
+            expect(items.map(i => i.baselineAnswer)).toEqual([
+                'Expert answer 1',
+                'Expert answer 2',
+                'Expert answer 3',
+                'Expert answer 4'
+            ]);
+            // Golden answers must land in the reference slot only — the current
+            // answer stays empty so processing generates a fresh one to compare.
+            expect(items.every(i => !i.answer)).toBe(true);
+        });
+
+        it('should not map unrecognized golden column variants', async () => {
+            const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'expert-scorer' } };
+            const itemsData = [
+                { question: 'Q1', 'golden answer': 'Spaced name' },
+                { question: 'Q2', golden_answer: 'Underscored name' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
+
+            expect(items.every(i => !i.baselineAnswer)).toBe(true);
         });
 
         it('should not invent a model family when none is explicitly provided', async () => {

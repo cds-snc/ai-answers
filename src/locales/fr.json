@@ -1775,12 +1775,12 @@
       "fileLabel": "Fichier XLSX / CSV",
       "requiredColumns": "Colonnes requises",
       "uploadDescriptions": {
-        "questionOnly": "Importez uniquement les questions. Toutes les colonnes de réponse seront ignorées.",
-        "qaPair": "Importez les questions avec leurs réponses existantes. La colonne de réponse sera conservée."
+        "questionOnly": "Une nouvelle réponse est générée pour chaque question pendant l'analyse. Pour comparer les réponses générées à une réponse de référence (par exemple, une réponse parfaite validée par un expert), renommez cette colonne GoldenAnswer avant l'importation — une colonne nommée answer sera ignorée.",
+        "qaPair": "La colonne answer est traitée comme la réponse à évaluer — elle est analysée telle quelle et aucune nouvelle réponse n'est générée. Pour évaluer ces réponses par rapport à une référence, ajoutez une colonne GoldenAnswer."
       },
       "uploadColumns": {
-        "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
-        "qaPair": "question et answer (requis), referringUrl (optionnel), chatId (optionnel)"
+        "questionOnly": "question (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)",
+        "qaPair": "question et answer (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)"
       },
       "rowCount": "Lignes",
       "created": "Créé le",
@@ -1805,6 +1805,7 @@
       "workflowLabel": "Flux de travail",
       "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
       "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
+      "goldenHint": "Aucune exécution de référence n'est nécessaire si votre ensemble de données contient une colonne GoldenAnswer — elle est utilisée automatiquement comme réponse de référence.",
       "noBaseline": "-- Aucune référence (évaluation autonome) --",
       "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
       "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",

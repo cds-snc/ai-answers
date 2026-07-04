@@ -16,6 +16,9 @@ const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
+// Reference answer to compare against (exact column names). `baseline` is kept
+// for datasets created before the Golden* names existed.
+const BASELINE_ANSWER_ALIASES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
@@ -65,8 +68,8 @@ const findAnswerInUpdate = (value) => {
     return '';
 };
 
-const pickNormalizedAnswer = (item = {}) => {
-    for (const key of ANSWER_ALIASES) {
+const pickExactField = (item = {}, keys = []) => {
+    for (const key of keys) {
         const value = item[key];
         if (value !== undefined && value !== null && String(value).trim() !== '') {
             return value;
@@ -74,6 +77,8 @@ const pickNormalizedAnswer = (item = {}) => {
     }
     return '';
 };
+
+const pickNormalizedAnswer = (item = {}) => pickExactField(item, ANSWER_ALIASES);
 
 const normalizeFieldKey = (input = '') => String(input)
     .toLowerCase()
@@ -288,7 +293,7 @@ class ExperimentalBatchService {
             return {
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
-                baselineAnswer: item.baselineAnswer || item.baseline || item.GoldenAnswer || '',
+                baselineAnswer: pickExactField(item, BASELINE_ANSWER_ALIASES) || '',
                 baselineAnalysisResults: item.baselineAnalysisResults || {},
                 baselineMatch: item.baselineMatch,
                 baselineFlagged: item.baselineFlagged,

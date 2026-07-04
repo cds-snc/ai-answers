@@ -1775,12 +1775,12 @@
       "fileLabel": "XLSX / CSV file",
       "requiredColumns": "Required columns",
       "uploadDescriptions": {
-        "questionOnly": "Upload questions only. Any answer columns will be ignored.",
-        "qaPair": "Upload questions with their existing answers. The answer column will be kept."
+        "questionOnly": "A fresh answer is generated for each question during analysis. To compare generated answers against a reference answer (for example, an expert-scored perfect answer), rename that column to GoldenAnswer before uploading — a column named answer will be ignored.",
+        "qaPair": "The answer column is treated as the answer to be judged — it is analyzed as-is and no new answers are generated. To judge those answers against a reference, add a GoldenAnswer column."
       },
       "uploadColumns": {
-        "questionOnly": "question (required), referringUrl (optional), chatId (optional)",
-        "qaPair": "question and answer (required), referringUrl (optional), chatId (optional)"
+        "questionOnly": "question (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)",
+        "qaPair": "question and answer (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)"
       },
       "rowCount": "Rows",
       "created": "Created",
@@ -1805,6 +1805,7 @@
       "workflowLabel": "Workflow",
       "selectBaseline": "Select baseline run (comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
+      "goldenHint": "No baseline run is needed if your dataset has a GoldenAnswer column — it is used automatically as the reference answer.",
       "noBaseline": "-- No baseline (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
