@@ -334,7 +334,9 @@ function flattenInteraction(chat, interaction, view) {
             // Don't mistake this for a real shape that src/utils/getCitationUrl.js (the canonical
             // client-side citation-URL resolver) is missing — it deliberately omits the same
             // fallback for the same reason. Left in place rather than deleted to avoid scope creep
-            // on an unrelated file — validate with team before removing.
+            // on an unrelated file — validate this finding from Claude with team, out of scope for
+            // this PR. Documented here because Claude PR reviews kept flagging this line as a
+            // possible bug, requiring re-deriving the same schema/write-path trace each time.
             citationUrl: get(interaction, 'answer.citation.providedCitationUrl') || get(interaction, 'answer.citation.url') || '',
             englishAnswer: get(interaction, 'answer.englishAnswer'),
             answer: get(interaction, 'answer.content'),
