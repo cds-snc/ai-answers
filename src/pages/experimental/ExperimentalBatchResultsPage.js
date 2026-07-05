@@ -71,9 +71,16 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     {batch?.name || t('experimental.results.title')}
                 </GcdsHeading>
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
-                <GcdsLink href={`/${lang}/experimental/analysis`}>
-                    {t('experimental.results.backToRuns')}
-                </GcdsLink>
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <GcdsLink href={`/${lang}/experimental/analysis`}>
+                        {t('experimental.results.backToRuns')}
+                    </GcdsLink>
+                    {batch?.config?.datasetId && (
+                        <GcdsLink href={`/${lang}/experimental/suites/${batch.config.datasetId}`}>
+                            {t('experimental.analysis.suiteView')}
+                        </GcdsLink>
+                    )}
+                </div>
             </header>
 
             {error && (
