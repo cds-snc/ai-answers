@@ -108,6 +108,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     lang={lang}
                     position={positionInFilter}
                     totalInFilter={pagination.total}
+                    trialsCount={batch?.config?.trials || 1}
                     hasPrev={hasPrev}
                     hasNext={hasNext}
                     onPrev={goPrev}
@@ -138,7 +139,12 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                         <GcdsText>{t('experimental.results.loading')}</GcdsText>
                     ) : (
                         <>
-                            <BatchItemsTable items={items} lang={lang} onSelect={selectItem} />
+                            <BatchItemsTable
+                                items={items}
+                                lang={lang}
+                                onSelect={selectItem}
+                                showTrials={(batch?.config?.trials || 1) > 1}
+                            />
 
                             {pagination.pages > 1 && (
                                 <div className="mt-300" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

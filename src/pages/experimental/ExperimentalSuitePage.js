@@ -7,6 +7,7 @@ import SuiteGridTable from '../../components/experimental/SuiteGridTable.js';
 
 const LEGEND = [
     { verdict: 'pass', style: { backgroundColor: '#d8eeca', color: '#1d4d27' } },
+    { verdict: 'mixed', style: { backgroundColor: '#fbe9c6', color: '#7a5a00' } },
     { verdict: 'flagged', style: { backgroundColor: '#fdd7d9', color: '#a12622' } },
     { verdict: 'error', style: { backgroundColor: '#f3c4c6', color: '#7a1b16' } },
     { verdict: 'missing', style: { backgroundColor: '#f1f1f1', color: '#666' } }

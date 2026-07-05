@@ -1813,6 +1813,8 @@
       "runLabelLabel": "Étiquette d'exécution (facultatif)",
       "runLabelPlaceholder": "p. ex. v2 – consignes de citation resserrées",
       "suiteView": "Grille de la suite",
+      "trialsLabel": "Essais par question",
+      "trialsCostHint": "{rows} questions × {trials} essais = {total} exécutions du pipeline",
       "noBaseline": "-- Aucune référence (évaluation autonome) --",
       "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
       "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",
@@ -1927,6 +1929,7 @@
       },
       "table": {
         "row": "Ligne",
+        "trial": "Essai",
         "question": "Question",
         "verdict": "Verdict",
         "explanation": "Explication",
@@ -1949,6 +1952,7 @@
         "previous": "Précédent",
         "next": "Suivant",
         "position": "{current} de {total}",
+        "trial": "Essai {n} de {total}",
         "question": "Question",
         "referringUrl": "URL de référence",
         "itemError": "Erreur de traitement",
@@ -1975,6 +1979,8 @@
       "noRuns": "Aucune analyse n'a encore été exécutée pour cet ensemble de données. Lancez-en une depuis la page d'analyse.",
       "runColumn": "Exécution",
       "scoreColumn": "Score",
+      "scoreAll": "tous les essais",
+      "scoreAny": "au moins un essai",
       "newRun": "Nouvelle analyse",
       "categoryLabel": "Catégorie",
       "heldOutBadge": "Ensemble réservé",
@@ -1986,6 +1992,7 @@
       },
       "verdict": {
         "pass": "Réussite",
+        "mixed": "Mitigé",
         "flagged": "Signalé",
         "error": "Erreur",
         "missing": "Aucun résultat"

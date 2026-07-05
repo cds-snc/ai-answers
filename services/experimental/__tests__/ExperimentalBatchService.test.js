@@ -139,6 +139,46 @@ describe('ExperimentalBatchService', () => {
             expect(items.every(i => !i.answer)).toBe(true);
         });
 
+        it('should expand each question into n items when config.trials is set', async () => {
+            const batchData = {
+                name: 'Trials Test',
+                type: 'analysis',
+                config: { analyzerId: 'expert-scorer', trials: 3 }
+            };
+            const itemsData = [
+                { question: 'Q1', GoldenAnswer: 'Golden 1' },
+                { question: 'Q2', GoldenAnswer: 'Golden 2' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1, trialIndex: 1 });
+
+            expect(batch.summary.total).toBe(6);
+            expect(items).toHaveLength(6);
+            expect(items.map(i => [i.rowIndex, i.trialIndex])).toEqual([
+                [1, 1], [1, 2], [1, 3],
+                [2, 1], [2, 2], [2, 3]
+            ]);
+            // Every trial carries the golden answer but is its own conversation
+            expect(items.every(i => i.baselineAnswer.startsWith('Golden'))).toBe(true);
+            const chatIds = new Set(items.map(i => i.chatId));
+            expect(chatIds.size).toBe(6);
+        });
+
+        it('should clamp trials to the allowed range', async () => {
+            const batchData = {
+                name: 'Trials Clamp Test',
+                type: 'analysis',
+                config: { analyzerId: 'expert-scorer', trials: 99 }
+            };
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, [{ question: 'Q1' }]);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
+
+            expect(batch.config.trials).toBe(8);
+            expect(items).toHaveLength(8);
+        });
+
         it('should not map unrecognized golden column variants', async () => {
             const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'expert-scorer' } };
             const itemsData = [

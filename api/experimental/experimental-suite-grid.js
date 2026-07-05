@@ -63,15 +63,41 @@ async function handler(req, res) {
         const runIds = runs.map(run => run._id);
         const items = runIds.length > 0
             ? await ExperimentalBatchItem.find({ experimentalBatch: { $in: runIds } })
-                .select('experimentalBatch rowIndex flagged match status')
+                .select('experimentalBatch rowIndex trialIndex flagged match status')
+                .sort({ rowIndex: 1, trialIndex: 1 })
                 .lean()
             : [];
 
+        // A cell aggregates every trial of one question in one run:
+        // trials[] in trial order, passCount (k) and total (n) for k/n.
         const cells = {};
         for (const item of items) {
             const runId = String(item.experimentalBatch);
             if (!cells[runId]) cells[runId] = {};
-            cells[runId][item.rowIndex] = { verdict: getItemVerdict(item) };
+            const cell = cells[runId][item.rowIndex]
+                || (cells[runId][item.rowIndex] = { trials: [], passCount: 0, total: 0 });
+            const raw = getItemVerdict(item);
+            // Non-terminal trials (pending/processing/...) render as missing.
+            const verdict = ['pass', 'flagged', 'error'].includes(raw) ? raw : 'missing';
+            cell.trials.push(verdict);
+            cell.total += 1;
+            if (verdict === 'pass') cell.passCount += 1;
+        }
+
+        // Aggregate verdict per cell: pass = every trial passed (pass^n),
+        // mixed = some passed, flagged/error = none passed.
+        for (const runCells of Object.values(cells)) {
+            for (const cell of Object.values(runCells)) {
+                if (cell.trials.every(v => v === 'missing')) {
+                    cell.verdict = 'missing';
+                } else if (cell.passCount === cell.total) {
+                    cell.verdict = 'pass';
+                } else if (cell.passCount > 0) {
+                    cell.verdict = 'mixed';
+                } else {
+                    cell.verdict = cell.trials.includes('error') ? 'error' : 'flagged';
+                }
+            }
         }
 
         res.json({ dataset, tests, runs, cells });

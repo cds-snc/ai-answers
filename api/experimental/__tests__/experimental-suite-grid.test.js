@@ -62,9 +62,9 @@ describe('experimental-suite-grid API', () => {
         );
         ExperimentalBatchItem.find.mockReturnValue(
             chainResolving([
-                { experimentalBatch: RUN_ID, rowIndex: 1, status: 'completed', flagged: false, match: true },
-                { experimentalBatch: RUN_ID, rowIndex: 2, status: 'completed', flagged: true, match: false }
-            ], ['select'])
+                { experimentalBatch: RUN_ID, rowIndex: 1, trialIndex: 1, status: 'completed', flagged: false, match: true },
+                { experimentalBatch: RUN_ID, rowIndex: 2, trialIndex: 1, status: 'completed', flagged: true, match: false }
+            ], ['select', 'sort'])
         );
 
         await handler(req, res);
@@ -78,11 +78,40 @@ describe('experimental-suite-grid API', () => {
             runs: [expect.objectContaining({ _id: RUN_ID })],
             cells: {
                 [RUN_ID]: {
-                    1: { verdict: 'pass' },
-                    2: { verdict: 'flagged' }
+                    1: { verdict: 'pass', trials: ['pass'], passCount: 1, total: 1 },
+                    2: { verdict: 'flagged', trials: ['flagged'], passCount: 0, total: 1 }
                 }
             }
         });
+    });
+
+    it('aggregates multiple trials of a question into k/n cells', async () => {
+        ExperimentalDataset.findById.mockReturnValue(
+            chainResolving({ _id: DATASET_ID, name: 'Trials' }, ['select'])
+        );
+        ExperimentalDatasetRow.find.mockReturnValue(
+            chainResolving([{ rowIndex: 1, data: { question: 'Q1' } }], ['sort'])
+        );
+        ExperimentalBatch.find.mockReturnValue(
+            chainResolving([{ _id: RUN_ID, name: 'Run', status: 'completed', createdAt: new Date() }], ['select', 'sort', 'limit'])
+        );
+        ExperimentalBatchItem.find.mockReturnValue(
+            chainResolving([
+                { experimentalBatch: RUN_ID, rowIndex: 1, trialIndex: 1, status: 'completed', flagged: false, match: true },
+                { experimentalBatch: RUN_ID, rowIndex: 1, trialIndex: 2, status: 'completed', flagged: true, match: false },
+                { experimentalBatch: RUN_ID, rowIndex: 1, trialIndex: 3, status: 'completed', flagged: false, match: true }
+            ], ['select', 'sort'])
+        );
+
+        await handler(req, res);
+
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            cells: {
+                [RUN_ID]: {
+                    1: { verdict: 'mixed', trials: ['pass', 'flagged', 'pass'], passCount: 2, total: 3 }
+                }
+            }
+        }));
     });
 
     it('returns empty cells when the dataset has no runs', async () => {

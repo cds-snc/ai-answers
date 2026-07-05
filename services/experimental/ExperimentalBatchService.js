@@ -280,17 +280,23 @@ class ExperimentalBatchService {
             throw makeError('Batch has no rows to process', 'NO_ITEMS', 400);
         }
 
+        // Trials per question (clamped 1-8). Each trial becomes its own item.
+        const trials = Math.min(Math.max(parseInt(batchData?.config?.trials, 10) || 1, 1), 8);
+        if (batchData?.config) {
+            batchData.config.trials = trials;
+        }
+
         const batch = await ExperimentalBatch.create({
             ...batchData,
             appVersion: batchData.appVersion || getPersistedAppVersion(),
             status: 'pending',
-            summary: { total: finalItems.length, completed: 0, failed: 0, matches: 0 }
+            summary: { total: finalItems.length * trials, completed: 0, failed: 0, matches: 0 }
         });
 
         const resolveRunChatId = createRunChatIdResolver();
-        const items = finalItems.map((item, index) => {
+        const items = finalItems.flatMap((item, index) => {
             const sourceChatId = resolveSourceChatId(item);
-            return {
+            return Array.from({ length: trials }, (_, trialIdx) => ({
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
                 baselineAnswer: pickExactField(item, BASELINE_ANSWER_ALIASES) || '',
@@ -299,13 +305,16 @@ class ExperimentalBatchService {
                 baselineFlagged: item.baselineFlagged,
                 baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
                 referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
-                chatId: resolveRunChatId(sourceChatId),
+                // Each trial is an independent pipeline conversation: only
+                // trial 1 reuses the shared per-source mapping.
+                chatId: trialIdx === 0 ? resolveRunChatId(sourceChatId) : crypto.randomUUID(),
                 originalData: item,
                 experimentalBatch: batch._id,
                 rowIndex: index + 1,
+                trialIndex: trialIdx + 1,
                 status: 'pending',
                 retryCount: 0
-            };
+            }));
         });
 
         await ExperimentalBatchItem.insertMany(items);

@@ -54,8 +54,9 @@ export const ExperimentalBatchClientService = {
      * @param {string} id
      * @param {object} options { page, limit, filter } filter: 'all' | 'attention' | 'errors'
      */
-    async getBatchItems(id, { page = 1, limit = 25, filter = 'all' } = {}) {
+    async getBatchItems(id, { page = 1, limit = 25, filter = 'all', row = null } = {}) {
         const query = new URLSearchParams({ page: String(page), limit: String(limit), filter });
+        if (row) query.set('row', String(row));
         const url = getApiUrl(`experimental-batch-items/${encodeURIComponent(id)}?${query.toString()}`);
         const res = await AuthService.fetch(url);
         if (!res.ok) {

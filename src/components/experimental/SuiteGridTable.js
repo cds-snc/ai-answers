@@ -6,6 +6,7 @@ import { truncate } from '../../utils/experimental/batchItems.js';
 
 const VERDICT_CELL_STYLES = {
     pass: { backgroundColor: '#d8eeca', color: '#1d4d27' },
+    mixed: { backgroundColor: '#fbe9c6', color: '#7a5a00' },
     flagged: { backgroundColor: '#fdd7d9', color: '#a12622' },
     error: { backgroundColor: '#f3c4c6', color: '#7a1b16' },
     missing: { backgroundColor: '#f1f1f1', color: '#666' }
@@ -29,10 +30,26 @@ const CELL_BASE = {
 
 const displayVerdict = (cell) => {
     if (!cell) return 'missing';
-    if (cell.verdict === 'pass' || cell.verdict === 'flagged' || cell.verdict === 'error') {
+    if (['pass', 'mixed', 'flagged', 'error'].includes(cell.verdict)) {
         return cell.verdict;
     }
     return 'missing';
+};
+
+// Cell body: single trial keeps the plain ✓/✗ symbol; multiple trials show
+// k/n with a per-trial mini strip underneath.
+const renderCellContent = (cell, verdict) => {
+    if (!cell || cell.total <= 1) {
+        return VERDICT_SYMBOLS[verdict] || VERDICT_SYMBOLS.missing;
+    }
+    return (
+        <div>
+            <div>{cell.passCount}/{cell.total}</div>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>
+                {cell.trials.map(t => VERDICT_SYMBOLS[t] || VERDICT_SYMBOLS.missing).join('')}
+            </div>
+        </div>
+    );
 };
 
 /**
@@ -49,10 +66,14 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
 
     const runLabel = (run, index) => run.runLabel || run.name || `v${index}`;
 
-    const passCount = (run) => tests.reduce((count, test) => {
+    // pass^n: every trial passed. pass@n: at least one trial passed.
+    const runScores = (run) => tests.reduce((scores, test) => {
         const cell = cells[run._id]?.[test.position];
-        return count + (displayVerdict(cell) === 'pass' ? 1 : 0);
-    }, 0);
+        if (displayVerdict(cell) === 'pass') scores.all += 1;
+        if (cell?.passCount > 0) scores.any += 1;
+        if (cell?.total > 1) scores.hasTrials = true;
+        return scores;
+    }, { all: 0, any: 0, hasTrials: false });
 
     return (
         <div className="overflow-auto">
@@ -94,10 +115,22 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                 </div>
                             </td>
                             <td style={{ ...CELL_BASE, cursor: 'default' }}>
-                                {formatNumber(passCount(run), lang)}/{formatNumber(tests.length, lang)}
+                                {(() => {
+                                    const scores = runScores(run);
+                                    if (!scores.hasTrials) {
+                                        return `${formatNumber(scores.all, lang)}/${formatNumber(tests.length, lang)}`;
+                                    }
+                                    return (
+                                        <div style={{ fontWeight: 'normal', fontSize: '0.85rem' }}>
+                                            <div><strong>{formatNumber(scores.all, lang)}/{formatNumber(tests.length, lang)}</strong> {t('experimental.suite.scoreAll')}</div>
+                                            <div>{formatNumber(scores.any, lang)}/{formatNumber(tests.length, lang)} {t('experimental.suite.scoreAny')}</div>
+                                        </div>
+                                    );
+                                })()}
                             </td>
                             {tests.map(test => {
-                                const verdict = displayVerdict(cells[run._id]?.[test.position]);
+                                const cell = cells[run._id]?.[test.position];
+                                const verdict = displayVerdict(cell);
                                 const clickable = verdict !== 'missing';
                                 return (
                                     <td
@@ -115,7 +148,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                             }
                                         }}
                                     >
-                                        {VERDICT_SYMBOLS[verdict]}
+                                        {renderCellContent(cell, verdict)}
                                     </td>
                                 );
                             })}

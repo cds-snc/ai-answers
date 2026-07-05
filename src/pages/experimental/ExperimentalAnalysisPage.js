@@ -66,6 +66,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
     const [baselineBatchId, setBaselineBatchId] = useState('');
     const [runLabel, setRunLabel] = useState('');
+    const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
 
@@ -250,6 +251,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 aiProvider: selectedModel || undefined,
                 datasetId: selectedDatasetId || undefined,
                 baselineRunId: selectedAnalyzerId === NO_ANALYZER_ID ? undefined : baselineBatchId || undefined,
+                trials,
                 pageLanguage: String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en',
             }
         };
@@ -537,6 +539,30 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 </GcdsText>
                             </div>
                         )}
+
+                        <div className="mb-400">
+                            <label htmlFor="trials-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.trialsLabel')}
+                            </label>
+                            <select
+                                id="trials-select"
+                                value={trials}
+                                onChange={(e) => setTrials(parseInt(e.target.value, 10) || 1)}
+                                style={{ padding: '8px', maxWidth: '10rem' }}
+                            >
+                                {[1, 2, 3, 4, 6, 8].map(n => (
+                                    <option key={n} value={n}>{formatNumber(n, lang)}</option>
+                                ))}
+                            </select>
+                            {selectedDataset && (
+                                <GcdsText className="mt-200">
+                                    {t('experimental.analysis.trialsCostHint')
+                                        .replace('{rows}', formatNumber(selectedDataset.rowCount || 0, lang))
+                                        .replace('{trials}', formatNumber(trials, lang))
+                                        .replace('{total}', formatNumber((selectedDataset.rowCount || 0) * trials, lang))}
+                                </GcdsText>
+                            )}
+                        </div>
 
                         <div className="mb-400">
                             <label htmlFor="run-label-input" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>

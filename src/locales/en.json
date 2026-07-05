@@ -1813,6 +1813,8 @@
       "runLabelLabel": "Run label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
       "suiteView": "Suite grid",
+      "trialsLabel": "Trials per question",
+      "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline runs",
       "noBaseline": "-- No baseline (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
@@ -1927,6 +1929,7 @@
       },
       "table": {
         "row": "Row",
+        "trial": "Trial",
         "question": "Question",
         "verdict": "Verdict",
         "explanation": "Explanation",
@@ -1949,6 +1952,7 @@
         "previous": "Previous",
         "next": "Next",
         "position": "{current} of {total}",
+        "trial": "Trial {n} of {total}",
         "question": "Question",
         "referringUrl": "Referring URL",
         "itemError": "Processing error",
@@ -1975,6 +1979,8 @@
       "noRuns": "No analysis runs yet for this dataset. Start one from the analysis page.",
       "runColumn": "Run",
       "scoreColumn": "Score",
+      "scoreAll": "all trials",
+      "scoreAny": "any trial",
       "newRun": "New analysis run",
       "categoryLabel": "Category",
       "heldOutBadge": "Held-out set",
@@ -1986,6 +1992,7 @@
       },
       "verdict": {
         "pass": "Pass",
+        "mixed": "Mixed",
         "flagged": "Flagged",
         "error": "Error",
         "missing": "No result"

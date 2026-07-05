@@ -33,6 +33,9 @@ const ExperimentalBatchSchema = new mongoose.Schema({
         analyzerIds: [{ type: String }],
         datasetId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalDataset' },
         analyzerConfig: { type: mongoose.Schema.Types.Mixed, default: {} }, // threshold, etc.
+        // Trials per question (pass@k / pass^k). Each dataset row is run
+        // this many times as independent items.
+        trials: { type: Number, default: 1, min: 1, max: 8 },
     },
 
     // Files metadata

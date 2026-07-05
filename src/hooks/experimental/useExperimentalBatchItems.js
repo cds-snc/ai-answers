@@ -9,18 +9,16 @@ const DEFAULT_LIMIT = 25;
  * (with next/previous that crosses page boundaries).
  */
 export function useExperimentalBatchItems(batchId, { initialFilter = 'attention', limit = DEFAULT_LIMIT, openRowIndex = null } = {}) {
-    // Deep link (?open=<rowIndex>): land on the page containing that item,
-    // with the 'all' filter so the row is guaranteed present, and open it.
+    // Deep link (?open=<rowIndex>): load only that question (all its trials,
+    // any verdict) via the server-side row filter, and open the first one.
     const openTarget = Number.isInteger(openRowIndex) && openRowIndex > 0 ? openRowIndex : null;
-    if (openTarget) {
-        initialFilter = 'all';
-    }
     const [batch, setBatch] = useState(null);
     const [items, setItems] = useState([]);
     const [counts, setCounts] = useState({ total: 0, attention: 0, errors: 0 });
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit });
     const [filter, setFilterState] = useState(initialFilter);
-    const [page, setPage] = useState(openTarget ? Math.max(1, Math.ceil(openTarget / limit)) : 1);
+    const [rowFilter, setRowFilter] = useState(openTarget);
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -28,15 +26,15 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     const [selectedIndex, setSelectedIndex] = useState(null);
     // 'first' | 'last' — where to land after a page change triggered by next/prev
     const pendingSelectRef = useRef(null);
-    // rowIndex to auto-open once, from the ?open deep link
-    const pendingOpenRef = useRef(openTarget);
+    // auto-open the first loaded item once, from the ?open deep link
+    const pendingOpenRef = useRef(Boolean(openTarget));
 
     const load = useCallback(async () => {
         if (!batchId) return;
         setLoading(true);
         setError(null);
         try {
-            const result = await ExperimentalBatchClientService.getBatchItems(batchId, { page, limit, filter });
+            const result = await ExperimentalBatchClientService.getBatchItems(batchId, { page, limit, filter, row: rowFilter });
             setBatch(result.batch || null);
             setItems(result.items || []);
             setCounts(result.counts || { total: 0, attention: 0, errors: 0 });
@@ -44,9 +42,8 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
 
             const itemCount = (result.items || []).length;
             if (pendingOpenRef.current) {
-                const targetIdx = (result.items || []).findIndex(i => i.rowIndex === pendingOpenRef.current);
-                if (targetIdx >= 0) setSelectedIndex(targetIdx);
-                pendingOpenRef.current = null;
+                if (itemCount > 0) setSelectedIndex(0);
+                pendingOpenRef.current = false;
             } else if (pendingSelectRef.current && itemCount > 0) {
                 setSelectedIndex(pendingSelectRef.current === 'last' ? itemCount - 1 : 0);
             } else if (pendingSelectRef.current) {
@@ -59,7 +56,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
         } finally {
             setLoading(false);
         }
-    }, [batchId, page, limit, filter]);
+    }, [batchId, page, limit, filter, rowFilter]);
 
     useEffect(() => {
         load();
@@ -67,12 +64,22 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
 
     const setFilter = (nextFilter) => {
         setFilterState(nextFilter);
+        setRowFilter(null);
         setPage(1);
         setSelectedIndex(null);
     };
 
     const selectItem = (index) => setSelectedIndex(index);
-    const backToList = () => setSelectedIndex(null);
+
+    // Leaving the detail view also drops the deep-link row filter so the
+    // full list is shown, not just one question's trials.
+    const backToList = () => {
+        setSelectedIndex(null);
+        if (rowFilter) {
+            setRowFilter(null);
+            setPage(1);
+        }
+    };
 
     const positionInFilter = selectedIndex === null
         ? null

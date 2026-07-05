@@ -7,8 +7,11 @@ import { requireObjectIdString } from '../util/db-query.js';
 const ATTENTION_FILTER = { $or: [{ flagged: true }, { match: false }, { status: 'failed' }] };
 const ERRORS_FILTER = { status: 'failed' };
 
-const buildItemFilter = (batchId, filter) => {
+const buildItemFilter = (batchId, filter, row) => {
     const base = { experimentalBatch: batchId };
+    // Row filter (all trials of one question) overrides verdict filters —
+    // used by suite grid cell deep links.
+    if (row) return { ...base, rowIndex: row };
     if (filter === 'attention') return { ...base, ...ATTENTION_FILTER };
     if (filter === 'errors') return { ...base, ...ERRORS_FILTER };
     return base;
@@ -30,6 +33,7 @@ async function handler(req, res) {
         const filter = ['all', 'attention', 'errors'].includes(req.query.filter)
             ? req.query.filter
             : 'all';
+        const row = Math.max(parseInt(req.query.row, 10) || 0, 0) || null;
         const page = Math.max(parseInt(req.query.page) || 1, 1);
         const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 100);
 
@@ -40,11 +44,11 @@ async function handler(req, res) {
             return res.status(404).json({ error: 'Batch not found' });
         }
 
-        const query = buildItemFilter(id, filter);
+        const query = buildItemFilter(id, filter, row);
         const [items, totalItems, counts] = await Promise.all([
             ExperimentalBatchItem.find(query)
                 .select('-originalData')
-                .sort({ rowIndex: 1 })
+                .sort({ rowIndex: 1, trialIndex: 1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
                 .lean(),
@@ -60,6 +64,7 @@ async function handler(req, res) {
             batch,
             items,
             filter,
+            row,
             counts,
             pagination: {
                 page,
