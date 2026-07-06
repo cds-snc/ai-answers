@@ -718,19 +718,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const chromeLang = resolveChromeLang(answerLang, lang);
     return (
       <div className="ai-message-content">
-        <div lang={answerLang}>
-          {contentArr.map((content, index) => {
-            // If using paragraphs, split into sentences; if using sentences, just display
-            const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
-              ? extractSentences(content)
-              : [content];
-            return sentences.map((sentence, sentenceIndex) => (
-              <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
-                {decodeHTMLEntities(sentence)}
-              </p>
-            ));
-          })}
-        </div>
+        {contentArr.map((content, index) => {
+          // If using paragraphs, split into sentences; if using sentences, just display
+          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+            ? extractSentences(content)
+            : [content];
+          return sentences.map((sentence, sentenceIndex) => (
+            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
+              {decodeHTMLEntities(sentence)}
+            </p>
+          ));
+        })}
         {displayUrl && (
           <>
             <hr className="citation-divider" aria-hidden="true" />
