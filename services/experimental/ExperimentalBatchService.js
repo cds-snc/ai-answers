@@ -251,14 +251,26 @@ class ExperimentalBatchService {
             if (batchData.config?.baselineRunId) {
                 baselineRunItems = await ExperimentalBatchItem.find({
                     experimentalBatch: new mongoose.Types.ObjectId(batchData.config.baselineRunId)
-                }).sort({ rowIndex: 1 }).lean();
+                }).sort({ rowIndex: 1, trialIndex: 1 }).lean();
+            }
+
+            // One reference per question: when the baseline run used trials,
+            // several items share a rowIndex — the reference is the first
+            // trial's answer. Positional indexing would misalign questions.
+            const baselineByRowIndex = new Map();
+            for (const baselineItem of baselineRunItems) {
+                if (!baselineByRowIndex.has(baselineItem.rowIndex)) {
+                    baselineByRowIndex.set(baselineItem.rowIndex, baselineItem);
+                }
             }
 
             finalItems = rows.map((r, idx) => {
                 const data = { ...r.data };
                 // If comparing against previous run, set baselineAnswer to previous run's answer
-                if (baselineRunItems.length > 0) {
-                    const match = baselineRunItems[idx] || baselineRunItems.find(bi => bi.rowIndex === r.rowIndex);
+                if (baselineByRowIndex.size > 0) {
+                    // Batch items are numbered idx + 1 over the same sorted rows,
+                    // so position is the primary key; r.rowIndex is the fallback.
+                    const match = baselineByRowIndex.get(idx + 1) || baselineByRowIndex.get(r.rowIndex);
                     if (match) {
                         data.baselineAnswer = match.answer;
                         data.baselineAnalysisResults = match.analysisResults || {};

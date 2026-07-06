@@ -179,6 +179,49 @@ describe('ExperimentalBatchService', () => {
             expect(items).toHaveLength(8);
         });
 
+        it('should use the first trial per question when the baseline run had trials', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Drift DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create([
+                { experimentalDataset: ds._id, rowIndex: 1, data: { question: 'Q1' } },
+                { experimentalDataset: ds._id, rowIndex: 2, data: { question: 'Q2' } }
+            ]);
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline with trials',
+                type: 'analysis',
+                status: 'completed',
+                config: { analyzerId: 'similar-answer', datasetId: ds._id, trials: 2 }
+            });
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: baselineBatch._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Q1 trial 1', status: 'completed' },
+                { experimentalBatch: baselineBatch._id, rowIndex: 1, trialIndex: 2, question: 'Q1', answer: 'Q1 trial 2', status: 'completed' },
+                { experimentalBatch: baselineBatch._id, rowIndex: 2, trialIndex: 1, question: 'Q2', answer: 'Q2 trial 1', status: 'completed' },
+                { experimentalBatch: baselineBatch._id, rowIndex: 2, trialIndex: 2, question: 'Q2', answer: 'Q2 trial 2', status: 'completed' }
+            ]);
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'Drift run',
+                type: 'analysis',
+                config: {
+                    analyzerId: 'similar-answer',
+                    datasetId: ds._id.toString(),
+                    baselineRunId: baselineBatch._id.toString(),
+                    trials: 2
+                }
+            }, []);
+
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1, trialIndex: 1 });
+
+            // Every trial of a question compares against that question's
+            // first baseline trial — never a neighbouring question's answer.
+            expect(items.map(i => [i.rowIndex, i.trialIndex, i.baselineAnswer])).toEqual([
+                [1, 1, 'Q1 trial 1'],
+                [1, 2, 'Q1 trial 1'],
+                [2, 1, 'Q2 trial 1'],
+                [2, 2, 'Q2 trial 1']
+            ]);
+        });
+
         it('should not map unrecognized golden column variants', async () => {
             const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'expert-scorer' } };
             const itemsData = [
