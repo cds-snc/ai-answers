@@ -146,16 +146,41 @@ every test as a column, pass counts in the cells.
   overfitted to the tests (Anthropic's core warning).
 - Practical split per partner: when curating, hold back ~⅓ of expert-scored Q/A pairs.
 
+### Verdict revision — accept a "failed" answer
+
+Reviewing real runs shows the judge failing answers that are actually great —
+sometimes better than the golden answer (more complete, more precise limits and
+dates). The drill-down needs reviewer actions on each item:
+
+- **Accept as correct** — override the judge's verdict for this item. The item
+  is recorded as human-passed (`humanReview: { verdict: 'accepted', note,
+  reviewedBy, reviewedAt }`), the batch summary and suite grid cell recompute
+  to reflect the revised verdict (distinguishable styling so revised cells are
+  not mistaken for clean judge passes).
+- **Promote to golden** — replace the dataset row's GoldenAnswer with this
+  generated answer, so future runs are judged against it. Keep an audit trail
+  on the row (previous golden, who promoted, when, source chatId). This is how
+  golden suites improve over time instead of fossilizing: when the system
+  produces a better answer than the expert baseline, the expert blesses it and
+  it becomes the new standard.
+- **Judge was wrong (still a fail)** — disagree with a *pass* or record that a
+  fail was mis-explained, without accepting the answer (+ optional note).
+
 ### Judge calibration ("failures should seem fair")
 
-- Add a lightweight review action on the Phase 1 detail view:
-  **agree with judge / judge was wrong** (+ optional note), stored on the item
-  (`humanReview: { verdictAgreed: Boolean, note, reviewedBy, reviewedAt }`).
-- Track judge–expert agreement rate per analyzer per batch. If agreement drops, fix the
-  judge prompt (`agents/prompts/judges/ExpertScorerPrompt.js`) before trusting new runs —
+- Track judge–human agreement rate per analyzer per batch from the review
+  actions above. If agreement drops, fix the judge prompt
+  (`agents/prompts/judges/ExpertScorerPrompt.js`) before trusting new runs —
   judge-prompt changes go through the prompt maintainers like any other prompt work.
-- Disagreement items double as a curated set for regression-testing future judge
-  versions.
+- **Feed overridden verdicts back into the judge.** Human-accepted "fails" are
+  exactly the few-shot examples the scorer prompt needs (e.g. a generated
+  answer that adds correct limits/dates the golden lacked should pass, not
+  fail). Curate a handful of these accepted-despite-fail examples into the
+  ExpertScorerPrompt so the judge learns that *more precise and complete than
+  golden* is a pass — maintainers select which examples ship.
+- Overridden items double as a regression set for testing future judge
+  versions: a judge change is only an improvement if it agrees with the human
+  verdicts on this set.
 
 ---
 
