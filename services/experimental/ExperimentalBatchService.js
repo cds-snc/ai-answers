@@ -315,9 +315,11 @@ class ExperimentalBatchService {
                 baselineFlagged: item.baselineFlagged,
                 baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
                 referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
-                // Each trial is an independent pipeline conversation: only
-                // trial 1 reuses the shared per-source mapping.
-                chatId: trialIdx === 0 ? resolveRunChatId(sourceChatId) : crypto.randomUUID(),
+                // Each trial is an independent conversation thread. Rows that
+                // share a source chatId (multi-turn datasets) must also share
+                // a run chatId within a trial, so the resolver key includes
+                // the trial number.
+                chatId: resolveRunChatId(sourceChatId && trialIdx > 0 ? `${sourceChatId}::trial-${trialIdx + 1}` : sourceChatId),
                 originalData: item,
                 experimentalBatch: batch._id,
                 rowIndex: index + 1,

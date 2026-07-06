@@ -165,6 +165,31 @@ describe('ExperimentalBatchService', () => {
             expect(chatIds.size).toBe(6);
         });
 
+        it('should keep multi-turn conversations threaded within each trial', async () => {
+            const batchData = {
+                name: 'Multi-turn Trials Test',
+                type: 'analysis',
+                config: { analyzerId: 'expert-scorer', trials: 2 }
+            };
+            // Two rows sharing a source chatId = one two-turn conversation
+            const itemsData = [
+                { question: 'Turn 1', chatId: 'source-conv-1' },
+                { question: 'Turn 2', chatId: 'source-conv-1' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1, trialIndex: 1 });
+
+            const trial1 = items.filter(i => i.trialIndex === 1);
+            const trial2 = items.filter(i => i.trialIndex === 2);
+
+            // Within a trial, both turns share one conversation
+            expect(trial1[0].chatId).toBe(trial1[1].chatId);
+            expect(trial2[0].chatId).toBe(trial2[1].chatId);
+            // Across trials, the conversations are independent
+            expect(trial1[0].chatId).not.toBe(trial2[0].chatId);
+        });
+
         it('should clamp trials to the allowed range', async () => {
             const batchData = {
                 name: 'Trials Clamp Test',

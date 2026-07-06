@@ -135,7 +135,7 @@ async function handler(req, res) {
 
         // Fetch all items
         const items = await ExperimentalBatchItem.find({ experimentalBatch: id })
-            .sort({ rowIndex: 1 })
+            .sort({ rowIndex: 1, trialIndex: 1 })
             .lean();
         const exportItems = items.map(item => ({
             ...item,
