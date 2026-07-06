@@ -149,7 +149,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   ]), [formatDate, t]);
 
   return (
-    <GcdsContainer layout="page" tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('admin.evalDashboard.title', 'Evaluation dashboard')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>

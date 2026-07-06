@@ -85,7 +85,7 @@ const ChatViewer = ({ lang = 'en' }) => {
 
   return (
     <>
-      <GcdsContainer layout="page" tag="main" className="mb-600">
+      <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t('logging.title')}</h1>
         <nav className="mb-400">
           <GcdsText>
