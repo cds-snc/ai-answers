@@ -288,7 +288,7 @@ const UsersPage = ({ lang }) => {
             root.render(
               <GcdsButton
                 size="small"
-                variant="danger"
+                buttonRole="danger"
                 onClick={() => handleDelete(data._id)}
               >
                 {t('users.actions.delete')}

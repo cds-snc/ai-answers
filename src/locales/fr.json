@@ -36,18 +36,21 @@
     "publicFeedback": {
       "send": "Envoyer la rétroaction",
       "question": "C'était utile?",
+      "selectionRequired": "Veuillez sélectionner une raison.",
+      "requiredLabel": "obligatoire",
       "yes": {
-        "question": "Dites-nous plus. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
+        "title": "Dites-nous plus",
         "options": {
           "noCall": "Je n'ai pas besoin d'appeler le gouvernement",
           "noVisit": "Je n'ai pas besoin de me rendre dans un bureau",
           "savedTime": "J'ai gagné du temps en cherchant et en lisant",
           "other": "Autre"
         },
-        "shortQuestion": "Pourquoi était-ce utile ?"
+        "shortQuestion": "Pourquoi était-ce utile ?",
+        "hint": "Sélectionnez la meilleure option ci-dessous."
       },
       "no": {
-        "question": "Aidez-nous à améliorer. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
+        "title": "Aidez-nous à améliorer",
         "options": {
           "irrelevant": "Non pertinent ou hors sujet",
           "confusing": "Trop complexe ou déroutant",
@@ -56,7 +59,8 @@
           "brokenLink": "Le lien ne fonctionne pas",
           "other": "Autre"
         },
-        "shortQuestion": "Pourquoi n'était-ce pas utile ?"
+        "shortQuestion": "Pourquoi n'était-ce pas utile ?",
+        "hint": "Sélectionnez la meilleure option ci-dessous."
       }
     },
     "privacy": {
@@ -180,11 +184,13 @@
     },
     "expertRating": {
       "title": "Évaluation de la réponse",
+      "selectionRequired": "Veuillez sélectionner au moins une évaluation.",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
       "sentence4": "Phrase 4",
       "citation": "Citation",
+      "citationNoneProvided": "Aucune fournie",
       "options": {
         "good": "Bonne",
         "needsImprovement": "Nécessite une amélioration",
@@ -206,7 +212,8 @@
         }
       },
       "submit": "Soumettre l'évaluation",
-      "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+      "intro": "Évaluez les phrases de la réponse et/ou la citation",
+      "answerNumberLabel": "Réponse {number}"
     }
   },
   "batch": {
@@ -1080,6 +1087,8 @@
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
+    "close": "Fermer",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données?",
     "deleting": "Suppression en cours...",
     "loading": "Chargement...",
     "processing": "Traitement...",
