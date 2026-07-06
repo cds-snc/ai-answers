@@ -12,6 +12,7 @@ import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -712,8 +713,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const displayUrl = getCitationUrl(message.interaction);
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
+    const answerLang = toLangAttr(getAnswerLanguage(message.interaction));
     return (
-      <div className="ai-message-content">
+      <div className="ai-message-content" lang={answerLang}>
         {contentArr.map((content, index) => {
           // If using paragraphs, split into sentences; if using sentences, just display
           const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
