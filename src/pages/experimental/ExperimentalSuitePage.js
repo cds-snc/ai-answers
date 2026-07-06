@@ -29,7 +29,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
     };
 
     return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
                 <GcdsHeading tag="h1">
                     {dataset?.name || t('experimental.suite.title')}
