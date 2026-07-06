@@ -1714,7 +1714,7 @@
       "defaultMissing": "Texte par défaut indisponible."
     }
   },
-    "connectivity": {
+  "connectivity": {
     "title": "Tableau de bord de connectivité du service",
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
@@ -1896,7 +1896,7 @@
         },
         "expert-scorer": {
           "name": "Évaluateur expert",
-          "description": "Cet analyseur vérifie si la réponse conserve le même sens que la référence tout en respectant les attentes de qualité du gouvernement du Canada. Il compare la réponse courante à la référence pour l'équivalence sémantique, les idées clés manquantes, les changements de type de réponse et la conformité aux normes GC. Un résultat signalé signifie que la réponse a dérivé d'une manière qui devrait être revue, par exemple en perdant un point important, en changeant la recommandation ou en régressant d'une réponse normale vers une clarification ou une réponse plus faible. Lorsqu'une référence existe, l'analyseur vérifie l'amélioration, la régression ou l'absence de changement significatif; lorsqu'aucune référence n'est fournie, il devient une revue de qualité autonome de la réponse courante. Utilisez-le lorsque vous voulez un jugement global sur la qualité plutôt qu'une comparaison point par point."
+          "description": "Évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada. La référence utilisée pour évaluer chaque réponse dépend de la configuration de l'exécution :\n• Votre ensemble de données contient une colonne GoldenAnswer — chaque réponse nouvellement générée est évaluée par rapport à la réponse de l'expert : idées clés manquantes, recommandations modifiées et régressions de type de réponse (par exemple, une réponse normale qui devient un refus). Un échec signifie que la réponse est erronée ou plus faible que la norme de l'expert. C'est la configuration habituelle pour les suites de tests en or.\n• Vous avez sélectionné une exécution de référence — la même évaluation, mais la référence est constituée des réponses générées par cette exécution : un échec signifie que la qualité a changé depuis cette exécution, pas que la réponse est erronée. Si l'ensemble de données contient aussi des réponses en or, les réponses de l'exécution de référence ont priorité.\n• Ni l'un ni l'autre — une révision de qualité autonome : chaque réponse est évaluée seule par rapport aux normes du GC, sans comparaison. Cela fonctionne avec les ensembles de données de questions seulement.\nUtilisez cet analyseur par défaut lorsque vous avez des réponses approuvées par un expert, ou pour un jugement de qualité global plutôt qu'une comparaison factuelle étroite."
         },
         "refusal": {
           "name": "Analyseur de refus",
@@ -1908,7 +1908,7 @@
         },
         "similar-answer": {
           "name": "Analyseur de réponses similaires",
-          "description": "Cet analyseur est conçu pour détecter la dérive des réponses. Il compare la réponse courante à une réponse de référence et recherche les changements significatifs dans les dates, les nombres, les règles d'admissibilité, les étapes, les programmes ou documents nommés, la portée, les URL et tout autre fait concret qui pourrait modifier l'action à prendre par l'utilisateur. Un résultat signalé signifie que la nouvelle réponse diffère de façon importante et peut changer les conseils donnés, même si la formulation semble proche. Les reformulations sans conséquence, les points équivalents présentés dans un autre ordre et les changements de mise en forme sont ignorés. Si l'analyseur ne peut pas déterminer si une différence est importante, il peut renvoyer needs-review afin qu'une personne examine le cas. Utilisez-le pour repérer les régressions subtiles qu'un simple score de similarité manquerait."
+          "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de référence — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne GoldenAnswer — chaque réponse générée est comparée à la réponse de l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport aux réponses en or, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
         }
       }
     },

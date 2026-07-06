@@ -454,7 +454,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     <GcdsText className="mb-200">
                                         <strong>{getAnalyzerDisplayName(selectedAnalyzer)}</strong>
                                     </GcdsText>
-                                    <GcdsText>{getAnalyzerDescription(selectedAnalyzer)}</GcdsText>
+                                    {getAnalyzerDescription(selectedAnalyzer)
+                                        .split('\n')
+                                        .filter(line => line.trim())
+                                        .map((line, idx) => (
+                                            <GcdsText key={idx} className="mb-200">{line}</GcdsText>
+                                        ))}
                                 </GcdsDetails>
                             )}
                         </div>
