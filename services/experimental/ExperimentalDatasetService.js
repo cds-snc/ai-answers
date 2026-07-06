@@ -7,7 +7,12 @@ import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const QUESTION_ALIASES = ['question', 'problemdetails', 'problem details'];
+// Keep in sync with the production batch upload (BatchService._extractQuestion)
+// and the experimental runner (ExperimentalBatchService QUESTION_ALIASES) so a
+// file that works for a batch also works as a dataset. Matching is
+// case/space/underscore-insensitive, so redactedQuestion, REDACTED QUESTION,
+// QUESTION etc. all resolve.
+const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 const CHAT_ID_ALIASES = ['chatid'];
 const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 
@@ -264,10 +269,10 @@ class ExperimentalDatasetService {
 
         const requiredColumns = {
             'question-only': [
-                { question: ['question', 'problemdetails', 'problem details'] }
+                { question: QUESTION_ALIASES }
             ],
             'qa-pair': [
-                { question: ['question', 'problemdetails', 'problem details'] },
+                { question: QUESTION_ALIASES },
                 'answer'
             ],
         };

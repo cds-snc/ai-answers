@@ -182,6 +182,9 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 <strong>{t('experimental.datasets.requiredColumns')}: </strong>
                                 {typeInfo.columns}
                             </GcdsText>
+                            <GcdsText className="mb-200">
+                                {t('experimental.datasets.columnAliasHint')}
+                            </GcdsText>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                                     {t('experimental.datasets.fileLabel')}

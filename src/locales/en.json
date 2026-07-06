@@ -1777,10 +1777,11 @@
       "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
-      "requiredColumns": "Required columns",
+      "requiredColumns": "Columns",
+      "columnAliasHint": "Batch files work without renaming columns: matching ignores case, and batch names like redactedQuestion, QUESTION and URL are accepted. Extra columns are kept and ignored.",
       "uploadDescriptions": {
-        "questionOnly": "A fresh answer is generated for each question during analysis. To compare generated answers against a reference answer (for example, an expert-scored perfect answer), rename that column to GoldenAnswer before uploading — a column named answer will be ignored.",
-        "qaPair": "The answer column is treated as the answer to be judged — it is analyzed as-is and no new answers are generated. To judge those answers against a reference, add a GoldenAnswer column."
+        "questionOnly": "Use this to test the current system: each question gets a fresh answer from the pipeline when you run an analysis. Include a GoldenAnswer column to have every generated answer judged against your expert-approved answer. Any column named answer is dropped at upload.",
+        "qaPair": "Use this to evaluate answers that already exist (for example, from a past run or export) — the answer column holds those answers, they are judged as-is, and no new answers are generated. Include a GoldenAnswer column to also compare them against an expert-approved answer."
       },
       "uploadColumns": {
         "questionOnly": "question (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)",

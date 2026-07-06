@@ -1777,10 +1777,11 @@
       "categoryPlaceholder": "p. ex. cra, ircc, bias, pii, red-team",
       "suiteView": "Grille de la suite",
       "runCountLabel": "Exécutions",
-      "requiredColumns": "Colonnes requises",
+      "requiredColumns": "Colonnes",
+      "columnAliasHint": "Les fichiers de lots fonctionnent sans renommer les colonnes : la correspondance ignore la casse, et les noms de lots comme redactedQuestion, QUESTION et URL sont acceptés. Les colonnes supplémentaires sont conservées et ignorées.",
       "uploadDescriptions": {
-        "questionOnly": "Une nouvelle réponse est générée pour chaque question pendant l'analyse. Pour comparer les réponses générées à une réponse de référence (par exemple, une réponse parfaite validée par un expert), renommez cette colonne GoldenAnswer avant l'importation — une colonne nommée answer sera ignorée.",
-        "qaPair": "La colonne answer est traitée comme la réponse à évaluer — elle est analysée telle quelle et aucune nouvelle réponse n'est générée. Pour évaluer ces réponses par rapport à une référence, ajoutez une colonne GoldenAnswer."
+        "questionOnly": "Utilisez ce type pour tester le système actuel : chaque question reçoit une nouvelle réponse du pipeline lors de l'analyse. Incluez une colonne GoldenAnswer pour que chaque réponse générée soit évaluée par rapport à votre réponse approuvée par un expert. Toute colonne nommée answer est supprimée à l'importation.",
+        "qaPair": "Utilisez ce type pour évaluer des réponses qui existent déjà (par exemple, d'une exécution ou d'une exportation antérieure) — la colonne answer contient ces réponses, elles sont évaluées telles quelles et aucune nouvelle réponse n'est générée. Incluez une colonne GoldenAnswer pour les comparer aussi à une réponse approuvée par un expert."
       },
       "uploadColumns": {
         "questionOnly": "question (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)",
