@@ -65,7 +65,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const passRate = counts.total > 0 ? Math.round((passCount / counts.total) * 100) : 0;
 
     return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
                 <GcdsHeading tag="h1">
                     {batch?.name || t('experimental.results.title')}
