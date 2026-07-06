@@ -13,7 +13,6 @@ vi.mock('../../../hooks/usePageParam', () => ({
 
 vi.mock('../../../hooks/useTranslations', () => ({
     useTranslations: vi.fn(() => ({ t: (k) => k })),
-    translate: (k) => k,
 }));
 
 // Mock services

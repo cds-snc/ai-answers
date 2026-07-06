@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslations, translate } from '../../hooks/useTranslations.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
@@ -12,7 +12,7 @@ import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
-import { getAnswerLanguage, toLangAttr, resolveChromeLang } from '../../utils/answerLanguage.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -714,8 +714,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
     const answerLang = toLangAttr(getAnswerLanguage(message.interaction));
-    // Chrome (citation heading, disclaimer) only ever exists in en/fr - see resolveChromeLang.
-    const chromeLang = resolveChromeLang(answerLang, lang);
     return (
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
@@ -738,8 +736,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         {displayUrl && (
           <>
             <hr className="citation-divider" aria-hidden="true" />
-            <div className="citation-container" lang={chromeLang}>
-              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{translate('homepage.chat.citation.heading', chromeLang)}</p>
+            <div className="citation-container">
+              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
@@ -913,14 +911,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </div>
           </>
         )}
-        <div className="disclaimer" lang={chromeLang}>
+        <div className="disclaimer">
           <p className="font-size-text-xsm-nr">
-            {translate('homepage.chat.input.disclaimer', chromeLang)}
+            {safeT('homepage.chat.input.disclaimer')}
           </p>
         </div>
       </div>
     );
-  }, [chatId, isMobile, lang]);
+  }, [safeT, chatId, isMobile]);
 
   // Add handler for department changes
 
