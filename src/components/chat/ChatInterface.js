@@ -513,18 +513,20 @@ const ChatInterface = ({
                         {safeT("homepage.chat.messages.errorHeading")}
                       </h3>
                       <p className="error-message">
-                        {message.text}
-                        {message.searchUrl && (
-                          <>
-                            <br />
+                        <strong>{message.text}</strong>
+                      </p>
+                      {message.searchUrl && (
+                        <>
+                          <p className="error-message">
                             {safeT("homepage.chat.messages.shortQueryDetails")}
-                            <br />
+                          </p>
+                          <p className="error-message">
                             <a href={message.searchUrl}>
                               {safeT("homepage.chat.messages.shortQuerySearch")}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
                             </a>
-                          </>
-                        )}
-                      </p>
+                          </p>
+                        </>
+                      )}
                     </div>
                   )
                 ) : (
