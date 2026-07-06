@@ -107,6 +107,11 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                         <tr key={run._id}>
                             <td style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left', fontWeight: 'normal' }}>
                                 <div><strong>{truncate(runLabel(run, index), 60)}</strong></div>
+                                {run.referenceCapture && (
+                                    <div style={{ fontSize: '0.75rem', color: '#7a5a00', fontWeight: 'bold' }}>
+                                        {t('experimental.suite.captureRun')}
+                                    </div>
+                                )}
                                 <div style={{ fontSize: '0.75rem', color: '#555' }}>
                                     {[
                                         run.appVersion ? String(run.appVersion).slice(-10) : '',
@@ -116,6 +121,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                             </td>
                             <td style={{ ...CELL_BASE, cursor: 'default' }}>
                                 {(() => {
+                                    if (run.referenceCapture) return '—';
                                     const scores = runScores(run);
                                     if (!scores.hasTrials) {
                                         return `${formatNumber(scores.all, lang)}/${formatNumber(tests.length, lang)}`;
@@ -130,16 +136,21 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                             </td>
                             {tests.map(test => {
                                 const cell = cells[run._id]?.[test.position];
-                                const verdict = displayVerdict(cell);
-                                const clickable = verdict !== 'missing';
+                                // Capture runs render neutral: their "pass" verdicts
+                                // mean "nothing was compared", not success.
+                                const verdict = run.referenceCapture ? 'missing' : displayVerdict(cell);
+                                const clickable = run.referenceCapture ? Boolean(cell) : verdict !== 'missing';
+                                const label = run.referenceCapture && cell
+                                    ? `${test.testName} — ${t('experimental.suite.captureRun')}`
+                                    : `${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`;
                                 return (
                                     <td
                                         key={test.position}
                                         style={{ ...CELL_BASE, ...VERDICT_CELL_STYLES[verdict], cursor: clickable ? 'pointer' : 'default' }}
-                                        title={`${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`}
+                                        title={label}
                                         role={clickable ? 'button' : undefined}
                                         tabIndex={clickable ? 0 : undefined}
-                                        aria-label={`${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`}
+                                        aria-label={label}
                                         onClick={() => clickable && onCellClick(run, test)}
                                         onKeyDown={(e) => {
                                             if (clickable && (e.key === 'Enter' || e.key === ' ')) {
@@ -148,7 +159,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                             }
                                         }}
                                     >
-                                        {renderCellContent(cell, verdict)}
+                                        {run.referenceCapture ? VERDICT_SYMBOLS.missing : renderCellContent(cell, verdict)}
                                     </td>
                                 );
                             })}

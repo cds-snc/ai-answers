@@ -9,6 +9,8 @@ import { formatNumber } from '../../utils/numberFormat.js';
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
 const NO_ANALYZER_ID = 'no-analyzer';
+// Keep in sync with BASELINE_ANSWER_ALIASES in ExperimentalBatchService.js
+const GOLDEN_COLUMN_NAMES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -380,6 +382,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+    const datasetHasGoldenColumn = (selectedDataset?.columns || [])
+        .some(col => GOLDEN_COLUMN_NAMES.includes(col?.name));
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
@@ -534,6 +538,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         </option>
                                     ))}
                                 </select>
+                                {baselineBatchId && datasetHasGoldenColumn && (
+                                    <div
+                                        role="alert"
+                                        className="mt-200"
+                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
+                                    >
+                                        <strong>{t('experimental.analysis.baselineOverridesGolden')}</strong>
+                                    </div>
+                                )}
                                 <GcdsText className="mt-200">
                                     {t('experimental.analysis.goldenHint')}
                                 </GcdsText>

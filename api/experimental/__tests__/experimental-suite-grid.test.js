@@ -114,6 +114,53 @@ describe('experimental-suite-grid API', () => {
         }));
     });
 
+    it('marks reference-less similar-answer runs as capture runs', async () => {
+        ExperimentalDataset.findById.mockReturnValue(
+            chainResolving({ _id: DATASET_ID, name: 'No golden' }, ['select'])
+        );
+        // no GoldenAnswer column in the rows
+        ExperimentalDatasetRow.find.mockReturnValue(
+            chainResolving([{ rowIndex: 1, data: { question: 'Q1' } }], ['sort'])
+        );
+        ExperimentalBatch.find.mockReturnValue(
+            chainResolving([
+                { _id: RUN_ID, name: 'Capture', status: 'completed', createdAt: new Date(), config: { analyzerIds: ['similar-answer'] } },
+                { _id: '507f1f77bcf86cd799439033', name: 'Drift', status: 'completed', createdAt: new Date(), config: { analyzerIds: ['similar-answer'], baselineRunId: RUN_ID } },
+                { _id: '507f1f77bcf86cd799439044', name: 'Standalone', status: 'completed', createdAt: new Date(), config: { analyzerIds: ['expert-scorer'] } }
+            ], ['select', 'sort', 'limit'])
+        );
+        ExperimentalBatchItem.find.mockReturnValue(chainResolving([], ['select', 'sort']));
+
+        await handler(req, res);
+
+        const { runs } = res.json.mock.calls[0][0];
+        expect(runs.map(r => [r.name, r.referenceCapture])).toEqual([
+            ['Standalone', false], // expert-scorer judges quality without a reference
+            ['Drift', false],      // has a baseline run
+            ['Capture', true]      // similar-answer with nothing to compare against
+        ]);
+    });
+
+    it('does not mark runs as capture when the dataset has golden answers', async () => {
+        ExperimentalDataset.findById.mockReturnValue(
+            chainResolving({ _id: DATASET_ID, name: 'Golden' }, ['select'])
+        );
+        ExperimentalDatasetRow.find.mockReturnValue(
+            chainResolving([{ rowIndex: 1, data: { question: 'Q1', GoldenAnswer: 'Expert answer' } }], ['sort'])
+        );
+        ExperimentalBatch.find.mockReturnValue(
+            chainResolving([
+                { _id: RUN_ID, name: 'Golden run', status: 'completed', createdAt: new Date(), config: { analyzerIds: ['similar-answer'] } }
+            ], ['select', 'sort', 'limit'])
+        );
+        ExperimentalBatchItem.find.mockReturnValue(chainResolving([], ['select', 'sort']));
+
+        await handler(req, res);
+
+        const { runs } = res.json.mock.calls[0][0];
+        expect(runs[0].referenceCapture).toBe(false);
+    });
+
     it('returns empty cells when the dataset has no runs', async () => {
         ExperimentalDataset.findById.mockReturnValue(
             chainResolving({ _id: DATASET_ID, name: 'Empty' }, ['select'])
