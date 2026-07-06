@@ -720,9 +720,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
           // If using paragraphs, split into sentences; if using sentences, just display
-          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+          const rawSentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
             ? extractSentences(content)
             : [content];
+          // Drop blanks: an empty <s-N></s-N> tag (translation collapsed a sentence) or a
+          // paragraph left empty after the <translated-question> strip above would otherwise
+          // render as an empty <p>.
+          const sentences = rawSentences.filter(
+            (sentence) => typeof sentence === 'string' && sentence.trim()
+          );
           return sentences.map((sentence, sentenceIndex) => (
             <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
               {decodeHTMLEntities(sentence)}
