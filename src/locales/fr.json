@@ -1087,6 +1087,7 @@
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
+    "close": "Fermer",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données?",
     "deleting": "Suppression en cours...",
     "loading": "Chargement...",

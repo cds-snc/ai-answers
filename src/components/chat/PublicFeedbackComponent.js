@@ -58,7 +58,7 @@ const PublicFeedbackComponent = ({
         className="close-icon"
         role="button"
         tabIndex={0}
-        aria-label="Close"
+        aria-label={t('common.close')}
         onClick={onClose}
         onKeyDown={(e) => e.key === 'Enter' && onClose()}
       >

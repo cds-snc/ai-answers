@@ -1087,6 +1087,7 @@
   },
   "common": {
     "backToAdmin": "Back to admin",
+    "close": "Close",
     "confirmDelete": "Are you sure you want to delete this data?",
     "deleting": "Deleting...",
     "loading": "Loading...",

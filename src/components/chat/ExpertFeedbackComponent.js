@@ -143,7 +143,7 @@ const ExpertFeedbackComponent = ({
         onKeyDown={(e) => e.key === 'Enter' && onClose()}
         role="button"
         tabIndex={0}
-        aria-label="Close"
+        aria-label={t('common.close')}
       />
       <fieldset className={`gc-chckbxrdio md${hasError ? ' has-error' : ''}`}>
         <h2 className="feedback-followup-title">
