@@ -9,6 +9,7 @@ import EvalPanel from "./review/EvalPanel.js";
 import aiStarsGray from '../../assets/ai-stars-333-90.png';
 import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -391,10 +392,11 @@ const ChatInterface = ({
         <h2 id="chat-section-heading" className="sr-only">
           {safeT("homepage.chat.section.heading")}
         </h2>
-        <div className="message-list" role="log" aria-live="off">
+        <div className="message-list" role="log" aria-live="off" aria-labelledby="chat-section-heading">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
           const answerLabelKeys = ['answerLabel1', 'answerLabel2', 'answerLabel3'];
+          const userMessages = messages.filter(m => m.sender === "user");
           return messages.map((message) => {
           const isLastAIMessage =
             message.sender === "ai" &&
@@ -403,21 +405,34 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
+          const userQuestionIndex = message.sender === "user"
+            ? userMessages.findIndex(m => m.id === message.id)
+            : null;
           const citationUrl = getCitationUrl(message.interaction);
           const isLastErrorMessage =
             message.error && message.id === messages[messages.length - 1]?.id;
           return (
+          <React.Fragment key={`message-${message.id}`}>
+            {message.sender === "ai" && !message.error && aiAnswerIndex !== null && (
+              <h3 className="sr-only">
+                {safeT(`homepage.chat.messages.${answerLabelKeys[aiAnswerIndex]}`)}
+              </h3>
+            )}
+            {message.sender === "user" && userQuestionIndex !== null && (
+              <h3 className="sr-only">
+                {safeT("homepage.chat.messages.questionLabel")} {formatNumber(userQuestionIndex + 1, lang)}
+              </h3>
+            )}
           <div
-            key={`message-${message.id}`}
             id={message.id ? `interactionId${message.id}` : undefined}
             className={`message ${message.sender}`}
             ref={isLastAIMessage ? lastAIMessageRef : null}
             tabIndex={isLastAIMessage ? -1 : undefined}
           >
             {message.sender === "ai" && !message.error && aiAnswerIndex !== null && (
-              <h3 className="sr-only">
-                {safeT(`homepage.chat.messages.${answerLabelKeys[aiAnswerIndex]}`)}
-              </h3>
+              <p className="sr-only">
+                {safeT("homepage.chat.messages.yourAnswerIs")}
+              </p>
             )}
             {message.sender === "user" ? (
               <div
@@ -647,6 +662,7 @@ const ChatInterface = ({
               </>
             )}
           </div>
+          </React.Fragment>
           );
         });
         })()}

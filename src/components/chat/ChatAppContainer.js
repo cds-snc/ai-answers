@@ -922,8 +922,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // Add handler for department changes
 
-  const initialInput = t('homepage.chat.input.initial');
-
   return (
     <>
       <ChatInterface
@@ -950,20 +948,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        getLabelForInput={() =>
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').text
-              : t('homepage.chat.input.followUp'))
-        }
-        ariaLabelForInput={
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').ariaLabel
-              : undefined)
-        }
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}

@@ -719,9 +719,10 @@
 
 /* Label styling */
 .field-container label {
-  font-size: 24px;
-  font-family: "Lato";
-  font-weight: bold;
+  font-size: var(--gcds-font-sizes-h5);
+  line-height: var(--gcds-line-heights-h5);
+  font-family: var(--gcds-font-families-body);
+  font-weight: var(--gcds-font-weights-semibold);
 }
 
 /* Hint text styling */
@@ -811,7 +812,10 @@ textarea:focus {
     font: var(--gcds-heading-h4-mobile) !important;
   }
   .field-container label {
-    font: var(--gcds-heading-h5-mobile) !important;
+    font-size: var(--gcds-font-sizes-h5-mobile);
+    line-height: var(--gcds-line-heights-h5-mobile);
+    font-family: var(--gcds-font-families-body);
+    font-weight: var(--gcds-font-weights-semibold);
   }
   .btn-primary-send .button-icon,
   .btn-primary-send svg.button-icon {
