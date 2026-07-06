@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAnswerLanguage, toLangAttr } from '../answerLanguage.js';
+import { getAnswerLanguage, toLangAttr, resolveChromeLang } from '../answerLanguage.js';
 
 describe('getAnswerLanguage', () => {
   it('prefers the live-session shape (answer.questionLanguage) over the persisted shape', () => {
@@ -68,5 +68,28 @@ describe('toLangAttr', () => {
     expect(toLangAttr('arb')).toBe('ar');
     expect(toLangAttr('zho')).toBe('zh');
     expect(toLangAttr('cmn')).toBe('zh');
+  });
+});
+
+describe('resolveChromeLang', () => {
+  it('switches chrome to the answer language when the answer is in the other official language', () => {
+    expect(resolveChromeLang('fr', 'en')).toBe('fr');
+    expect(resolveChromeLang('en', 'fr')).toBe('en');
+  });
+
+  it('keeps chrome in the answer language when it already matches the page language', () => {
+    expect(resolveChromeLang('en', 'en')).toBe('en');
+    expect(resolveChromeLang('fr', 'fr')).toBe('fr');
+  });
+
+  it('falls back to the page language when the answer is in a non-official language', () => {
+    expect(resolveChromeLang('es', 'en')).toBe('en');
+    expect(resolveChromeLang('ar', 'fr')).toBe('fr');
+    expect(resolveChromeLang('crk', 'en')).toBe('en');
+  });
+
+  it('falls back to the page language when the answer language is undefined (und/zxx/undetected)', () => {
+    expect(resolveChromeLang(undefined, 'en')).toBe('en');
+    expect(resolveChromeLang(undefined, 'fr')).toBe('fr');
   });
 });

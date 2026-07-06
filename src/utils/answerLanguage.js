@@ -105,3 +105,15 @@ export function toLangAttr(rawLanguage) {
   if (code === 'und' || code === 'zxx') return undefined;
   return ISO3_TO_BCP47[code] || code;
 }
+
+// UI chrome around the answer (citation heading, disclaimer - see formatAIResponse in
+// ChatAppContainer.js) only ever exists in English and French (src/locales/en.json / fr.json) -
+// there's no translation of it for the ~60 other languages an answer can be detected in. So:
+// - if the answer's detected language IS English or French (even if it's not the page's own
+//   language - e.g. a French answer on an English page), use that language for this message's
+//   chrome too, so the whole message reads consistently instead of mixing languages.
+// - for any other detected language, chrome has nothing to switch to, so it stays in the page's
+//   own language.
+export function resolveChromeLang(answerLangBCP47, pageLang) {
+  return answerLangBCP47 === 'en' || answerLangBCP47 === 'fr' ? answerLangBCP47 : pageLang;
+}

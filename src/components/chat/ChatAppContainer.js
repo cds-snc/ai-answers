@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslations } from '../../hooks/useTranslations.js';
+import { useTranslations, translate } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
@@ -12,7 +12,7 @@ import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
-import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+import { getAnswerLanguage, toLangAttr, resolveChromeLang } from '../../utils/answerLanguage.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -714,24 +714,28 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
     const answerLang = toLangAttr(getAnswerLanguage(message.interaction));
+    // Chrome (citation heading, disclaimer) only ever exists in en/fr - see resolveChromeLang.
+    const chromeLang = resolveChromeLang(answerLang, lang);
     return (
-      <div className="ai-message-content" lang={answerLang}>
-        {contentArr.map((content, index) => {
-          // If using paragraphs, split into sentences; if using sentences, just display
-          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
-            ? extractSentences(content)
-            : [content];
-          return sentences.map((sentence, sentenceIndex) => (
-            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
-              {decodeHTMLEntities(sentence)}
-            </p>
-          ));
-        })}
+      <div className="ai-message-content">
+        <div lang={answerLang}>
+          {contentArr.map((content, index) => {
+            // If using paragraphs, split into sentences; if using sentences, just display
+            const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+              ? extractSentences(content)
+              : [content];
+            return sentences.map((sentence, sentenceIndex) => (
+              <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
+                {decodeHTMLEntities(sentence)}
+              </p>
+            ));
+          })}
+        </div>
         {displayUrl && (
           <>
             <hr className="citation-divider" aria-hidden="true" />
-            <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+            <div className="citation-container" lang={chromeLang}>
+              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{translate('homepage.chat.citation.heading', chromeLang)}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
@@ -905,14 +909,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             </div>
           </>
         )}
-        <div className="disclaimer">
+        <div className="disclaimer" lang={chromeLang}>
           <p className="font-size-text-xsm-nr">
-            {safeT('homepage.chat.input.disclaimer')}
+            {translate('homepage.chat.input.disclaimer', chromeLang)}
           </p>
         </div>
       </div>
     );
-  }, [safeT, chatId, isMobile]);
+  }, [chatId, isMobile, lang]);
 
   // Add handler for department changes
 
