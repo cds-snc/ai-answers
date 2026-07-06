@@ -169,7 +169,7 @@ describe('ExperimentalBatchService', () => {
             const batchData = {
                 name: 'Multi-turn Trials Test',
                 type: 'analysis',
-                config: { analyzerId: 'expert-scorer', trials: 2 }
+                config: { analyzerId: 'similar-answer', trials: 2 }
             };
             // Two rows sharing a source chatId = one two-turn conversation
             const itemsData = [
@@ -194,7 +194,7 @@ describe('ExperimentalBatchService', () => {
             const batchData = {
                 name: 'Trials Clamp Test',
                 type: 'analysis',
-                config: { analyzerId: 'expert-scorer', trials: 99 }
+                config: { analyzerId: 'similar-answer', trials: 99 }
             };
 
             const batch = await ExperimentalBatchService.createBatch(batchData, [{ question: 'Q1' }]);
@@ -202,6 +202,43 @@ describe('ExperimentalBatchService', () => {
 
             expect(batch.config.trials).toBe(8);
             expect(items).toHaveLength(8);
+        });
+
+        it('should reject expert-scorer runs with no reference at all', async () => {
+            await expect(ExperimentalBatchService.createBatch(
+                { name: 'No Reference', type: 'analysis', config: { analyzerId: 'expert-scorer' } },
+                [{ question: 'Q1' }]
+            )).rejects.toMatchObject({ code: 'NO_REFERENCE' });
+        });
+
+        it('should accept a no-analyzer capture run as baseline for any analyzer', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Capture DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create([
+                { experimentalDataset: ds._id, rowIndex: 1, data: { question: 'Q1' } }
+            ]);
+
+            const captureBatch = await ExperimentalBatch.create({
+                name: 'Capture',
+                type: 'analysis',
+                status: 'completed',
+                config: { analyzerId: 'no-analyzer', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: captureBatch._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Captured answer', status: 'completed' }
+            ]);
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'Scored run',
+                type: 'analysis',
+                config: {
+                    analyzerId: 'expert-scorer',
+                    datasetId: ds._id.toString(),
+                    baselineRunId: captureBatch._id.toString()
+                }
+            }, []);
+
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
+            expect(items[0].baselineAnswer).toBe('Captured answer');
         });
 
         it('should use the first trial per question when the baseline run had trials', async () => {
@@ -248,7 +285,7 @@ describe('ExperimentalBatchService', () => {
         });
 
         it('should not map unrecognized golden column variants', async () => {
-            const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'expert-scorer' } };
+            const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'similar-answer' } };
             const itemsData = [
                 { question: 'Q1', 'golden answer': 'Spaced name' },
                 { question: 'Q2', golden_answer: 'Underscored name' }

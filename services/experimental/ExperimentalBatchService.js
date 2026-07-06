@@ -229,8 +229,10 @@ class ExperimentalBatchService {
                     throw makeError('Baseline run must be an analysis batch', 'BAD_REQUEST', 400);
                 }
 
+                // No-analyzer capture runs only provide answers, so they can
+                // serve as the baseline for any analyzer.
                 const baselineAnalyzerId = resolveSelectedAnalyzerId(baselineBatch.config || {});
-                if (!baselineAnalyzerId || baselineAnalyzerId !== selectedAnalyzerId) {
+                if (!baselineAnalyzerId || (baselineAnalyzerId !== selectedAnalyzerId && baselineAnalyzerId !== 'no-analyzer')) {
                     throw makeError('Baseline analyzer must match the selected analyzer', 'BAD_REQUEST', 400);
                 }
             }
@@ -288,6 +290,18 @@ class ExperimentalBatchService {
 
         if (finalItems.length === 0) {
             throw makeError('Batch has no rows to process', 'NO_ITEMS', 400);
+        }
+
+        // Expert scorer without any reference judges answers from the LLM's
+        // own training data — no AI Answers requirements, stale knowledge.
+        // Require golden answers or a baseline run.
+        if (resolveSelectedAnalyzerId(batchData.config || {}) === 'expert-scorer'
+            && !finalItems.some(item => pickExactField(item, BASELINE_ANSWER_ALIASES))) {
+            throw makeError(
+                'Expert scorer needs a reference: use a dataset with a GoldenAnswer column or select a baseline run',
+                'NO_REFERENCE',
+                400
+            );
         }
 
         // Trials per question (clamped 1-8). Each trial becomes its own item.

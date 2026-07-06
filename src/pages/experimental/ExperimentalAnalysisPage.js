@@ -284,7 +284,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setRunLabel('');
         } catch (err) {
             console.error(err);
-                    setMessage(t('experimental.analysis.messages.startAnalysisFailed'));
+            setMessage(err?.message || t('experimental.analysis.messages.startAnalysisFailed'));
         } finally {
             setStartingRun(null);
             setLoading(false);
@@ -377,9 +377,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return appVersion ? appVersion.slice(-10) : t('common.na');
     };
 
+    // No-analyzer capture runs only provide answers, so they can baseline any analyzer.
+    const canBaseline = (batch) => {
+        const analyzerId = resolveBatchAnalyzerId(batch);
+        return analyzerId === selectedAnalyzerId || analyzerId === NO_ANALYZER_ID;
+    };
     const baselineOptions = batches.filter(batch =>
-        batch.status === 'completed' &&
-        (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
+        batch.status === 'completed' && (!selectedAnalyzerId || canBaseline(batch))
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
     const datasetHasGoldenColumn = (selectedDataset?.columns || [])
@@ -543,6 +547,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         </option>
                                     ))}
                                 </select>
+                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && !datasetHasGoldenColumn && !baselineBatchId && (
+                                    <div
+                                        role="alert"
+                                        className="mt-200"
+                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
+                                    >
+                                        <strong>{t('experimental.analysis.expertScorerNeedsReference')}</strong>
+                                    </div>
+                                )}
                                 {baselineBatchId && datasetHasGoldenColumn && (
                                     <div
                                         role="alert"
@@ -719,7 +732,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                             <GcdsButton
                                                 size="small"
                                                 buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
-                                                disabled={!!selectedAnalyzerId && resolveBatchAnalyzerId(batch) !== selectedAnalyzerId}
+                                                disabled={!!selectedAnalyzerId && !canBaseline(batch)}
                                                 onClick={() => handleUseAsBaseline(batch._id)}
                                             >
                                                 {baselineBatchId === batch._id

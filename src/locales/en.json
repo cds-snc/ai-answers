@@ -1811,6 +1811,7 @@
       "selectBaseline": "Select baseline run (comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
       "goldenHint": "No baseline run is needed if your dataset has a GoldenAnswer column — it is used automatically as the reference answer.",
+      "expertScorerNeedsReference": "Expert scorer needs a reference answer to judge against: use a dataset with a GoldenAnswer column, or select a baseline run. Without one, the run will not start.",
       "baselineOverridesGolden": "Warning: this dataset has a GoldenAnswer column, but the selected baseline run's answers will replace it as the reference for this run. Results will measure drift from that run, not correctness against the golden answers. Choose \"No baseline\" to compare against the golden answers.",
       "runLabelLabel": "Run label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
@@ -1896,7 +1897,7 @@
         },
         "expert-scorer": {
           "name": "Expert scorer",
-          "description": "Judges answer quality against Government of Canada expectations. What each answer is judged against depends on how you set up the run:\n• Your dataset has a GoldenAnswer column — each freshly generated answer is judged against the expert answer: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard. This is the usual setup for golden test suites.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has golden answers, the baseline run's answers take precedence.\n• Neither — a standalone quality review: each answer is judged on its own against GC standards, with no comparison. This works with question-only datasets.\nUse this as the default scorer when you have expert-approved answers, or for a broad quality judgment rather than a narrow fact-by-fact comparison."
+          "description": "Judges answer quality against Government of Canada expectations. It always needs a reference answer — a run without one will not start. What each answer is judged against depends on how you set up the run:\n• Your dataset has a GoldenAnswer column — each freshly generated answer is judged against the expert answer: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard. This is the usual setup for golden test suites.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has golden answers, the baseline run's answers take precedence.\nUse this as the default scorer when you have expert-approved answers, or for a broad quality judgment rather than a narrow fact-by-fact comparison."
         },
         "refusal": {
           "name": "Refusal analyzer",
