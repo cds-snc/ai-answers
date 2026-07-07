@@ -1893,7 +1893,16 @@
         "exportFailed": "Failed to export batch.",
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch",
-        "exportChatLogsError": "Failed to export chat logs"
+        "exportChatLogsError": "Failed to export chat logs",
+        "error.NO_REFERENCE": "This analyzer requires a baseline answer: use a dataset with a baselineAnswer (or GoldenAnswer) column, or select a baseline run.",
+        "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a GoldenAnswer (or baselineAnswer) column, or select a baseline run.",
+        "error.NO_ITEMS": "Batch has no rows to process.",
+        "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
+        "error.NOT_FOUND": "Resource not found.",
+        "error.INVALID_STATE": "Batch is in an invalid state for this action.",
+        "error.DUPLICATE": "A resource with this name already exists.",
+        "error.RETRY_LIMIT": "Retry limit reached.",
+        "error.IN_USE": "This resource is in use and cannot be deleted."
       },
       "analyzers": {
         "no-analyzer": {

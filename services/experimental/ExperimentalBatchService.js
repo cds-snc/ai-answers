@@ -292,16 +292,15 @@ class ExperimentalBatchService {
             throw makeError('Batch has no rows to process', 'NO_ITEMS', 400);
         }
 
-        // Expert scorer without any reference judges answers from the LLM's
-        // own training data — no AI Answers requirements, stale knowledge.
-        // Require golden answers or a baseline run.
-        if (resolveSelectedAnalyzerId(batchData.config || {}) === 'expert-scorer'
-            && !finalItems.some(item => pickExactField(item, BASELINE_ANSWER_ALIASES))) {
-            throw makeError(
-                'Expert scorer needs a reference: use a dataset with a GoldenAnswer column or select a baseline run',
-                'NO_REFERENCE',
-                400
-            );
+        // Delegate batch-level validation to the analyzer. Each analyzer
+        // owns its own requirements — the service just calls and throws.
+        const selectedAnalyzerId = resolveSelectedAnalyzerId(batchData.config || {});
+        if (selectedAnalyzerId) {
+            const analyzerConfig = await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId);
+            const validation = analyzerConfig?.validateBatch(finalItems);
+            if (validation && !validation.valid) {
+                throw makeError(validation.localeKey, validation.code, 400);
+            }
         }
 
         // Trials per question (clamped 1-8). Each trial becomes its own item.

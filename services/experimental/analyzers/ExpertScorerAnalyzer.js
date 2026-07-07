@@ -14,10 +14,26 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
     return 'azure';
 };
 
+import { BASELINE_ANSWER_ALIASES } from '../datasetColumns.js';
+
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
-    static inputType = 'universal';
+    static inputType = 'comparison';
     static outputColumns = ['verdict', 'confidence', 'explanation', 'flags', 'keyIdeasFound', 'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck'];
+
+    static validateBatch(items) {
+        const hasBaseline = items.some(
+            (item) => BASELINE_ANSWER_ALIASES.some((alias) => item[alias])
+        );
+        if (!hasBaseline) {
+            return {
+                valid: false,
+                code: 'NO_REFERENCE',
+                localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER'
+            };
+        }
+        return { valid: true };
+    }
 
     constructor(config = {}) {
         super(config);

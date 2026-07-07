@@ -21,7 +21,24 @@ vi.mock('../ExperimentalQueueService.js', () => ({
 
 vi.mock('../ExperimentalAnalyzerRegistry.js', () => ({
     default: {
-        get: vi.fn(),
+        get: vi.fn().mockImplementation((id) => {
+            if (id === 'expert-scorer') {
+                return {
+                    id: 'expert-scorer',
+                    inputType: 'comparison',
+                    validateBatch: (items) => {
+                        const hasBaseline = items.some((item) =>
+                            ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer']
+                                .some((alias) => item[alias])
+                        );
+                        return hasBaseline
+                            ? { valid: true }
+                            : { valid: false, code: 'NO_REFERENCE', localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER' };
+                    }
+                };
+            }
+            return undefined;
+        }),
         initialize: vi.fn().mockResolvedValue()
     }
 }));
@@ -116,8 +133,8 @@ describe('ExperimentalBatchService', () => {
             expect(item.baselineAnswer).toBe('Base');
         });
 
-        it('should map the accepted golden answer column names to baselineAnswer', async () => {
-            const batchData = { name: 'Golden Mapping Test', type: 'analysis', config: { analyzerId: 'expert-scorer' } };
+        it('should map the accepted baseline answer column names to baselineAnswer', async () => {
+            const batchData = { name: 'Baseline Mapping Test', type: 'analysis', config: { analyzerId: 'refusal' } };
             const itemsData = [
                 { question: 'Q1', GoldenAnswer: 'Expert answer 1' },
                 { question: 'Q2', goldenAnswer: 'Expert answer 2' },
@@ -134,7 +151,7 @@ describe('ExperimentalBatchService', () => {
                 'Expert answer 3',
                 'Expert answer 4'
             ]);
-            // Golden answers must land in the reference slot only — the current
+            // Baseline answers land in the reference slot only — the current
             // answer stays empty so processing generates a fresh one to compare.
             expect(items.every(i => !i.answer)).toBe(true);
         });

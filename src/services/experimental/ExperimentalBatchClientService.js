@@ -13,7 +13,18 @@ export const ExperimentalBatchClientService = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error(`Failed to create batch: ${res.status} ${res.statusText}`);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            // Throw an object with `code` so the frontend can map it to a
+            // translation key. Falls back to a plain Error when the body is
+            // not JSON or has no code.
+            if (errBody?.code) {
+                const err = new Error(errBody.error || 'Failed to create batch');
+                err.code = errBody.code;
+                throw err;
+            }
+            throw new Error(`Failed to create batch: ${res.status} ${res.statusText}`);
+        }
         return await res.json();
     },
 

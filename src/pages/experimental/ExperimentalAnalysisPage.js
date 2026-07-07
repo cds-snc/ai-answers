@@ -284,7 +284,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setRunLabel('');
         } catch (err) {
             console.error(err);
-            setMessage(err?.message || t('experimental.analysis.messages.startAnalysisFailed'));
+            // err.message is a locale key when the server returned a known error
+            // code (e.g. NO_REFERENCE). Try translating it first; fall back to
+            // the generic failure message when it resolves to the key itself.
+            const translated = err?.message ? t(err.message) : null;
+            const isLocaleKey = translated && translated !== err.message;
+            setMessage(isLocaleKey ? translated : t('experimental.analysis.messages.startAnalysisFailed'));
         } finally {
             setStartingRun(null);
             setLoading(false);

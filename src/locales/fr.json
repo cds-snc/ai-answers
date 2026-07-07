@@ -1893,7 +1893,16 @@
         "exportFailed": "Échec de l'exportation du lot.",
         "deleteError": "Échec de la suppression du lot",
         "exportError": "Échec de l'exportation du lot",
-        "exportChatLogsError": "Échec de l'exportation des journaux de clavardage"
+        "exportChatLogsError": "Échec de l'exportation des journaux de clavardage",
+        "error.NO_REFERENCE": "Cet analyseur nécessite une réponse de référence : utilisez un ensemble de données avec une colonne baselineAnswer (ou GoldenAnswer), ou sélectionnez une exécution de référence.",
+        "error.NO_REFERENCE_EXPERT_SCORER": "L'évaluateur expert nécessite une réponse de référence pour évaluer : utilisez un ensemble de données avec une colonne GoldenAnswer (ou baselineAnswer), ou sélectionnez une exécution de référence.",
+        "error.NO_ITEMS": "Le lot ne contient aucune ligne à traiter.",
+        "error.BAD_REQUEST": "Requête invalide. Veuillez vérifier votre configuration.",
+        "error.NOT_FOUND": "Ressource introuvable.",
+        "error.INVALID_STATE": "Le lot est dans un état invalide pour cette action.",
+        "error.DUPLICATE": "Une ressource avec ce nom existe déjà.",
+        "error.RETRY_LIMIT": "Limite de nouvelles tentatives atteinte.",
+        "error.IN_USE": "Cette ressource est utilisée et ne peut pas être supprimée."
       },
       "analyzers": {
         "no-analyzer": {
