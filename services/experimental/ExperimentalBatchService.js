@@ -10,15 +10,13 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
+import { BASELINE_ANSWER_ALIASES } from './datasetColumns.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
-// Reference answer to compare against (exact column names). `baseline` is kept
-// for datasets created before the Golden* names existed.
-const BASELINE_ANSWER_ALIASES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
@@ -231,8 +229,10 @@ class ExperimentalBatchService {
                     throw makeError('Baseline run must be an analysis batch', 'BAD_REQUEST', 400);
                 }
 
+                // No-analyzer capture runs only provide answers, so they can
+                // serve as the baseline for any analyzer.
                 const baselineAnalyzerId = resolveSelectedAnalyzerId(baselineBatch.config || {});
-                if (!baselineAnalyzerId || baselineAnalyzerId !== selectedAnalyzerId) {
+                if (!baselineAnalyzerId || (baselineAnalyzerId !== selectedAnalyzerId && baselineAnalyzerId !== 'no-analyzer')) {
                     throw makeError('Baseline analyzer must match the selected analyzer', 'BAD_REQUEST', 400);
                 }
             }
@@ -253,14 +253,26 @@ class ExperimentalBatchService {
             if (batchData.config?.baselineRunId) {
                 baselineRunItems = await ExperimentalBatchItem.find({
                     experimentalBatch: new mongoose.Types.ObjectId(batchData.config.baselineRunId)
-                }).sort({ rowIndex: 1 }).lean();
+                }).sort({ rowIndex: 1, trialIndex: 1 }).lean();
+            }
+
+            // One reference per question: when the baseline run used trials,
+            // several items share a rowIndex — the reference is the first
+            // trial's answer. Positional indexing would misalign questions.
+            const baselineByRowIndex = new Map();
+            for (const baselineItem of baselineRunItems) {
+                if (!baselineByRowIndex.has(baselineItem.rowIndex)) {
+                    baselineByRowIndex.set(baselineItem.rowIndex, baselineItem);
+                }
             }
 
             finalItems = rows.map((r, idx) => {
                 const data = { ...r.data };
                 // If comparing against previous run, set baselineAnswer to previous run's answer
-                if (baselineRunItems.length > 0) {
-                    const match = baselineRunItems[idx] || baselineRunItems.find(bi => bi.rowIndex === r.rowIndex);
+                if (baselineByRowIndex.size > 0) {
+                    // Batch items are numbered idx + 1 over the same sorted rows,
+                    // so position is the primary key; r.rowIndex is the fallback.
+                    const match = baselineByRowIndex.get(idx + 1) || baselineByRowIndex.get(r.rowIndex);
                     if (match) {
                         data.baselineAnswer = match.answer;
                         data.baselineAnalysisResults = match.analysisResults || {};
@@ -280,17 +292,35 @@ class ExperimentalBatchService {
             throw makeError('Batch has no rows to process', 'NO_ITEMS', 400);
         }
 
+        // Expert scorer without any reference judges answers from the LLM's
+        // own training data — no AI Answers requirements, stale knowledge.
+        // Require golden answers or a baseline run.
+        if (resolveSelectedAnalyzerId(batchData.config || {}) === 'expert-scorer'
+            && !finalItems.some(item => pickExactField(item, BASELINE_ANSWER_ALIASES))) {
+            throw makeError(
+                'Expert scorer needs a reference: use a dataset with a GoldenAnswer column or select a baseline run',
+                'NO_REFERENCE',
+                400
+            );
+        }
+
+        // Trials per question (clamped 1-8). Each trial becomes its own item.
+        const trials = Math.min(Math.max(parseInt(batchData?.config?.trials, 10) || 1, 1), 8);
+        if (batchData?.config) {
+            batchData.config.trials = trials;
+        }
+
         const batch = await ExperimentalBatch.create({
             ...batchData,
             appVersion: batchData.appVersion || getPersistedAppVersion(),
             status: 'pending',
-            summary: { total: finalItems.length, completed: 0, failed: 0, matches: 0 }
+            summary: { total: finalItems.length * trials, completed: 0, failed: 0, matches: 0 }
         });
 
         const resolveRunChatId = createRunChatIdResolver();
-        const items = finalItems.map((item, index) => {
+        const items = finalItems.flatMap((item, index) => {
             const sourceChatId = resolveSourceChatId(item);
-            return {
+            return Array.from({ length: trials }, (_, trialIdx) => ({
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
                 baselineAnswer: pickExactField(item, BASELINE_ANSWER_ALIASES) || '',
@@ -299,13 +329,18 @@ class ExperimentalBatchService {
                 baselineFlagged: item.baselineFlagged,
                 baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
                 referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
-                chatId: resolveRunChatId(sourceChatId),
+                // Each trial is an independent conversation thread. Rows that
+                // share a source chatId (multi-turn datasets) must also share
+                // a run chatId within a trial, so the resolver key includes
+                // the trial number.
+                chatId: resolveRunChatId(sourceChatId && trialIdx > 0 ? `${sourceChatId}::trial-${trialIdx + 1}` : sourceChatId),
                 originalData: item,
                 experimentalBatch: batch._id,
                 rowIndex: index + 1,
+                trialIndex: trialIdx + 1,
                 status: 'pending',
                 retryCount: 0
-            };
+            }));
         });
 
         await ExperimentalBatchItem.insertMany(items);

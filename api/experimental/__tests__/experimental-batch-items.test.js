@@ -68,14 +68,32 @@ describe('experimental-batch-items API', () => {
 
         expect(ExperimentalBatchItem.find).toHaveBeenCalledWith({ experimentalBatch: VALID_ID });
         expect(findQuery.select).toHaveBeenCalledWith('-originalData');
-        expect(findQuery.sort).toHaveBeenCalledWith({ rowIndex: 1 });
+        expect(findQuery.sort).toHaveBeenCalledWith({ rowIndex: 1, trialIndex: 1 });
         expect(res.json).toHaveBeenCalledWith({
             batch,
             items,
             filter: 'all',
+            row: null,
             counts: { total: 1, attention: 1, errors: 1 },
             pagination: { page: 1, limit: 25, total: 1, pages: 1 }
         });
+    });
+
+    it('filters to all trials of one question when row is set', async () => {
+        req.query.row = '3';
+        req.query.filter = 'attention';
+        mockBatchQuery({ _id: VALID_ID });
+        mockItemsQuery([]);
+        ExperimentalBatchItem.countDocuments.mockResolvedValue(0);
+
+        await handler(req, res);
+
+        // row overrides the verdict filter so every trial is visible
+        expect(ExperimentalBatchItem.find).toHaveBeenCalledWith({
+            experimentalBatch: VALID_ID,
+            rowIndex: 3
+        });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ row: 3 }));
     });
 
     it('applies the attention filter to the item query', async () => {

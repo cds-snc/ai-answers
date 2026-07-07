@@ -32,6 +32,7 @@ export default function BatchItemDetail({
     lang = 'en',
     position,
     totalInFilter,
+    trialsCount = 1,
     hasPrev,
     hasNext,
     onPrev,
@@ -67,6 +68,13 @@ export default function BatchItemDetail({
                     </span>
                 )}
                 <span style={{ ...VERDICT_STYLES[verdict], fontWeight: 'bold' }}>{verdictLabel}</span>
+                {trialsCount > 1 && (
+                    <span>
+                        {t('experimental.results.detail.trial')
+                            .replace('{n}', String(item.trialIndex || 1))
+                            .replace('{total}', String(trialsCount))}
+                    </span>
+                )}
             </div>
 
             <div className="mb-300">

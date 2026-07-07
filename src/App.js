@@ -37,6 +37,7 @@ import ConnectivityPage from './pages/ConnectivityPage.js';
 import ExperimentalAnalysisPage from './pages/experimental/ExperimentalAnalysisPage.js';
 import ExperimentalDatasetsPage from './pages/experimental/ExperimentalDatasetsPage.js';
 import ExperimentalBatchResultsPage from './pages/experimental/ExperimentalBatchResultsPage.js';
+import ExperimentalSuitePage from './pages/experimental/ExperimentalSuitePage.js';
 import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
 import { translateSlug } from './utils/routes.js';
@@ -431,7 +432,9 @@ export default function App() {
       { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },
       { path: '/fr/experimental/datasets', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

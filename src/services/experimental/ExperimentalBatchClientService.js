@@ -54,8 +54,9 @@ export const ExperimentalBatchClientService = {
      * @param {string} id
      * @param {object} options { page, limit, filter } filter: 'all' | 'attention' | 'errors'
      */
-    async getBatchItems(id, { page = 1, limit = 25, filter = 'all' } = {}) {
+    async getBatchItems(id, { page = 1, limit = 25, filter = 'all', row = null } = {}) {
         const query = new URLSearchParams({ page: String(page), limit: String(limit), filter });
+        if (row) query.set('row', String(row));
         const url = getApiUrl(`experimental-batch-items/${encodeURIComponent(id)}?${query.toString()}`);
         const res = await AuthService.fetch(url);
         if (!res.ok) {
@@ -208,6 +209,19 @@ export const ExperimentalBatchClientService = {
         if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));
             throw new Error(errBody.error || `Failed to get dataset rows: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+    },
+
+    /**
+     * Get the suite grid (runs x tests verdict matrix) for a dataset
+     */
+    async getSuiteGrid(datasetId) {
+        const url = getApiUrl(`experimental-suite-grid?datasetId=${encodeURIComponent(datasetId)}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to load suite grid: ${res.status} ${res.statusText}`);
         }
         return await res.json();
     },

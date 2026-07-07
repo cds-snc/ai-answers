@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useExperimentalBatchItems } from '../../hooks/experimental/useExperimentalBatchItems.js';
@@ -23,6 +23,8 @@ const STAT_STYLE = {
 export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const { batchId } = useParams();
+    const [searchParams] = useSearchParams();
+    const openParam = parseInt(searchParams.get('open'), 10);
 
     const {
         batch,
@@ -43,7 +45,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         goPrev,
         hasNext,
         hasPrev
-    } = useExperimentalBatchItems(batchId);
+    } = useExperimentalBatchItems(batchId, Number.isInteger(openParam) && openParam > 0 ? { openRowIndex: openParam } : {});
 
     // Arrow-key navigation while reviewing an item.
     useEffect(() => {
@@ -63,15 +65,22 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const passRate = counts.total > 0 ? Math.round((passCount / counts.total) * 100) : 0;
 
     return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
                 <GcdsHeading tag="h1">
                     {batch?.name || t('experimental.results.title')}
                 </GcdsHeading>
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
-                <GcdsLink href={`/${lang}/experimental/analysis`}>
-                    {t('experimental.results.backToRuns')}
-                </GcdsLink>
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <GcdsLink href={`/${lang}/experimental/analysis`}>
+                        {t('experimental.results.backToRuns')}
+                    </GcdsLink>
+                    {batch?.config?.datasetId && (
+                        <GcdsLink href={`/${lang}/experimental/suites/${batch.config.datasetId}`}>
+                            {t('experimental.analysis.suiteView')}
+                        </GcdsLink>
+                    )}
+                </div>
             </header>
 
             {error && (
@@ -106,6 +115,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     lang={lang}
                     position={positionInFilter}
                     totalInFilter={pagination.total}
+                    trialsCount={batch?.config?.trials || 1}
                     hasPrev={hasPrev}
                     hasNext={hasNext}
                     onPrev={goPrev}
@@ -136,7 +146,12 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                         <GcdsText>{t('experimental.results.loading')}</GcdsText>
                     ) : (
                         <>
-                            <BatchItemsTable items={items} lang={lang} onSelect={selectItem} />
+                            <BatchItemsTable
+                                items={items}
+                                lang={lang}
+                                onSelect={selectItem}
+                                showTrials={(batch?.config?.trials || 1) > 1}
+                            />
 
                             {pagination.pages > 1 && (
                                 <div className="mt-300" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

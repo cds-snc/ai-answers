@@ -14,7 +14,7 @@ const VERDICT_COLORS = {
  * List of batch items for the results drill-down. Rows open the
  * side-by-side detail view.
  */
-export default function BatchItemsTable({ items, lang = 'en', onSelect }) {
+export default function BatchItemsTable({ items, lang = 'en', onSelect, showTrials = false }) {
     const { t } = useTranslations(lang);
 
     if (!items || items.length === 0) {
@@ -27,6 +27,7 @@ export default function BatchItemsTable({ items, lang = 'en', onSelect }) {
                 <thead>
                     <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                         <th className="p-200">{t('experimental.results.table.row')}</th>
+                        {showTrials && <th className="p-200">{t('experimental.results.table.trial')}</th>}
                         <th className="p-200">{t('experimental.results.table.question')}</th>
                         <th className="p-200">{t('experimental.results.table.verdict')}</th>
                         <th className="p-200">{t('experimental.results.table.explanation')}</th>
@@ -42,7 +43,8 @@ export default function BatchItemsTable({ items, lang = 'en', onSelect }) {
                                 style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }}
                                 onClick={() => onSelect(index)}
                             >
-                                <td className="p-200">{formatNumber((item.rowIndex ?? index) + 1, lang)}</td>
+                                <td className="p-200">{formatNumber(item.rowIndex ?? (index + 1), lang)}</td>
+                                {showTrials && <td className="p-200">{formatNumber(item.trialIndex || 1, lang)}</td>}
                                 <td className="p-200">{truncate(item.question, 90)}</td>
                                 <td className="p-200">
                                     <span style={{ color: VERDICT_COLORS[verdict] || '#26374a', fontWeight: 'bold' }}>
