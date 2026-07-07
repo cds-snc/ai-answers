@@ -751,7 +751,8 @@
 
 .field-container:has(textarea:focus) .hint-text,
 .field-container:has(textarea:focus) label,
-.field-container:has(textarea:focus) .referring-url-chat {
+.field-container:has(textarea:focus) .referring-url-chat,
+.field-container:has(textarea:focus) #displayReferringURL {
   color: var(--gcds-details-focus-background);
 }
 
@@ -767,7 +768,8 @@
 @supports not selector(:has(a)) {
   .field-container:focus-within .hint-text,
   .field-container:focus-within label,
-  .field-container:focus-within .referring-url-chat {
+  .field-container:focus-within .referring-url-chat,
+  .field-container:focus-within #displayReferringURL {
     color: var(--gcds-details-focus-background);
   }
 
@@ -850,11 +852,18 @@ textarea:focus {
   }
 }
 
+/* Shared "pill badge" shape used by the chat-id footer and the referring-URL
+   banner — kept as one rule so the two don't drift out of sync. */
+.chat-id,
+.referring-url-chat,
+#displayReferringURL {
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
+}
+
 .chat-id {
   align-self: flex-end;
   padding: 6px 14px;
-  border: 1px solid #d9d9d9;
-  border-radius: 999px;
   background-color: #f5f5f5;
 }
 
@@ -1137,8 +1146,6 @@ fieldset.gc-chckbxrdio legend {
   font-size: 16px;
   line-height: 1.55;
   background-color: #f5f5ff;
-  border: 1px solid #d9d9d9;
-  border-radius: 999px;
   padding: var(--gcds-spacing-75) var(--gcds-spacing-175);
   color: #333;
   display: inline-block;
