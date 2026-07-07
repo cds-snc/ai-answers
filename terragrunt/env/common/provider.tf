@@ -25,3 +25,15 @@ provider "aws" {
     tags = var.default_tags
   }
 }
+
+provider "aws" {
+  alias               = "core_services"
+  region              = "ca-central-1"
+  allowed_account_ids = [var.account_id]
+  # always 22DH regardless of which account this runs in
+  default_tags {
+    tags = merge(var.default_tags, {
+      ssc_cbrid = "22DH"
+    })
+  }
+}
