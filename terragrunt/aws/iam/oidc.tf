@@ -5,12 +5,8 @@ locals {
 module "github_workflow_roles" {
   count = var.env == "production" ? 1 : 0
 
-  source            = "github.com/cds-snc/terraform-modules//gh_oidc_role?ref=v10.4.1"
+  source            = "github.com/cds-snc/terraform-modules//gh_oidc_role?ref=v11.4.1"
   billing_tag_value = var.billing_code
-
-  providers = {
-    aws = aws.core_services
-  }
 
   roles = [
     {
