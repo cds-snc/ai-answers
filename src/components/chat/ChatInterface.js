@@ -478,30 +478,23 @@ const ChatInterface = ({
             sequenceableUserMessages[sequenceableUserMessages.length - 1]?.id === message.id;
           return (
           <React.Fragment key={`message-${message.id}`}>
-            {message.sender === "user" && userQuestionIndex !== null && (
-              <h3 className="sr-only">
-                {pairedAnswerIndexByUserId[message.id] !== undefined
-                  ? `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} - ${safeT("homepage.chat.messages.responseLabel")} ${formatNumber(pairedAnswerIndexByUserId[message.id] + 1, lang)}`
-                  : isPendingAnswer
-                    ? `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)}`
-                    : `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} ${safeT("homepage.chat.messages.notAnsweredLabel")}`}
-              </h3>
-            )}
           <div
             id={message.id ? `interactionId${message.id}` : undefined}
             className={`message ${message.sender}`}
             ref={isLastAIMessage ? lastAIMessageRef : null}
             tabIndex={isLastAIMessage ? -1 : undefined}
           >
-            {message.sender === "ai" && !message.error && aiAnswerIndex !== null && (
-              <p className="sr-only">
-                {safeT("homepage.chat.messages.yourAnswerIs")}
-              </p>
-            )}
             {message.sender === "user" ? (
               <div
                 className={`user-message-box ${message.redactedText?.includes("XXX") ? "privacy-box" : message.redactedText?.includes("###") ? "redacted-box" : ""}`}
               >
+                {userQuestionIndex !== null && (
+                  <h3 className="sr-only">
+                    {pairedAnswerIndexByUserId[message.id] !== undefined || isPendingAnswer
+                      ? `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)}`
+                      : `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} ${safeT("homepage.chat.messages.notAnsweredLabel")}`}
+                  </h3>
+                )}
                 <p
                   className={message.redactedText?.includes("XXX") ? "privacy-message" : message.redactedText?.includes("###") ? "redacted-message" : ""}
                   {...(message.redactedText?.includes("###") && {
@@ -600,6 +593,11 @@ const ChatInterface = ({
                   )
                 ) : (
                   <div className="ai-message-bubble">
+                    {aiAnswerIndex !== null && (
+                      <h3 className="sr-only">
+                        {`${safeT("homepage.chat.messages.responseLabel")} ${formatNumber(aiAnswerIndex + 1, lang)}`}
+                      </h3>
+                    )}
                     {formatAIResponse(message.aiService, message)}
 
                     {/* Show feedback component in review mode for all answers/interactions that do not have expertFeedback */}
