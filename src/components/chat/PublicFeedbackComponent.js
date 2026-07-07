@@ -13,6 +13,7 @@ const PublicFeedbackComponent = ({
   userMessageId,
   onSubmit = () => {},
   onClose,
+  titleRef,
 }) => {
   const { t } = useTranslations(lang);
   const [selected, setSelected] = useState('');
@@ -64,13 +65,15 @@ const PublicFeedbackComponent = ({
       >
         <i className="fa-solid fa-close"></i>
       </span>
-      <h4 className="feedback-followup-title">
+      <h4 className="feedback-followup-title" id="public-feedback-title">
         {isPositive ? t('homepage.publicFeedback.yes.title') : t('homepage.publicFeedback.no.title')}
       </h4>
       <div className="feedback-reason-card">
         <fieldset
           className={`gc-chckbxrdio feedback-reason-fieldset${hasError ? ' has-error' : ''}`}
-          aria-labelledby="public-feedback-legend public-feedback-hint"
+          aria-labelledby="public-feedback-title public-feedback-legend public-feedback-hint"
+          ref={titleRef}
+          tabIndex={-1}
         >
           <legend id="public-feedback-legend">
             {isPositive ? t('homepage.publicFeedback.yes.shortQuestion') : t('homepage.publicFeedback.no.shortQuestion')}{' '}

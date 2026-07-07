@@ -28,6 +28,8 @@ const FeedbackComponent = ({
   const [publicPositive, setPublicPositive] = useState(true);
   const hasExpertRole = useHasAnyRole(["admin", "partner"]);
   const thankYouRef = useFocusOnChange(feedbackGiven);
+  const expertRatingTitleRef = useFocusOnChange(showExpertRating);
+  const publicRatingTitleRef = useFocusOnChange(showPublicRating);
 
   const handleFeedback = (isPositive) => {
     let feedbackPayload = null;
@@ -111,6 +113,7 @@ const FeedbackComponent = ({
         sentences={sentences}
         answerNumber={answerNumber}
         citationUrl={citationUrl}
+        titleRef={expertRatingTitleRef}
       />
     );
   }
@@ -124,6 +127,7 @@ const FeedbackComponent = ({
         userMessageId={userMessageId}
         onSubmit={handlePublicFeedback}
         onClose={() => setShowPublicRating(false)}
+        titleRef={publicRatingTitleRef}
       />
     );
   }
