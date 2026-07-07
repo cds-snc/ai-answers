@@ -23,7 +23,7 @@ module "github_workflow_roles" {
 
 resource "aws_iam_role_policy_attachment" "ai_answers_release" {
   provider = aws.core_services
-  count = var.env == "production" ? 1 : 0
+  count    = var.env == "production" ? 1 : 0
 
   role       = local.ai_answers_release
   policy_arn = data.aws_iam_policy.admin.arn

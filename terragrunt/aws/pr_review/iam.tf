@@ -17,7 +17,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_assume_role" {
 
 resource "aws_iam_role" "ai_answers_lambda_client" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   name               = "ai-answers-lambda-client"
   assume_role_policy = data.aws_iam_policy_document.ai_answers_lambda_assume_role[0].json
@@ -31,7 +31,7 @@ resource "aws_iam_role" "ai_answers_lambda_client" {
 # Attach basic Lambda execution policy
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_basic_execution" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -40,7 +40,7 @@ resource "aws_iam_role_policy_attachment" "ai_answers_lambda_basic_execution" {
 # Attach VPC execution policy for Lambda
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_vpc_execution" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
@@ -82,7 +82,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
 
 resource "aws_iam_policy" "ai_answers_lambda_parameter_store" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   name   = "aiAnswersLambdaParameterStoreRetrieval"
   path   = "/"
@@ -96,7 +96,7 @@ resource "aws_iam_policy" "ai_answers_lambda_parameter_store" {
 
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_parameter_store" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = aws_iam_policy.ai_answers_lambda_parameter_store[0].arn
@@ -116,7 +116,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_assume_bedrock_role" {
 
 resource "aws_iam_policy" "ai_answers_lambda_assume_bedrock_role" {
   provider = aws.core_services
-  count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
+  count    = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
 
   name        = "ai-answers-lambda-assume-bedrock-invoke-role"
   description = "Execution role policy for cross-account Bedrock access"
@@ -130,7 +130,7 @@ resource "aws_iam_policy" "ai_answers_lambda_assume_bedrock_role" {
 
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_assume_bedrock_role" {
   provider = aws.core_services
-  count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
+  count    = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = aws_iam_policy.ai_answers_lambda_assume_bedrock_role[0].arn
@@ -157,7 +157,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_s3_access" {
 
 resource "aws_iam_policy" "ai_answers_lambda_s3_access" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   name   = "aiAnswersLambdaS3Access"
   path   = "/"
@@ -171,7 +171,7 @@ resource "aws_iam_policy" "ai_answers_lambda_s3_access" {
 
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_s3_access" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
   policy_arn = aws_iam_policy.ai_answers_lambda_s3_access[0].arn
@@ -224,7 +224,7 @@ data "aws_iam_policy_document" "lambda_management" {
 
 resource "aws_iam_policy" "lambda_management" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   name   = "aiAnswersLambdaManagement"
   path   = "/"
@@ -238,7 +238,7 @@ resource "aws_iam_policy" "lambda_management" {
 
 resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_management" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   role       = local.ai_answers_lambda_client_pr_review_env
   policy_arn = aws_iam_policy.lambda_management[0].arn
@@ -248,7 +248,7 @@ resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_management" {
 # Attach SSM parameter store access to GitHub Actions role
 resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_parameter_store" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   role       = local.ai_answers_lambda_client_pr_review_env
   policy_arn = aws_iam_policy.ai_answers_lambda_parameter_store[0].arn

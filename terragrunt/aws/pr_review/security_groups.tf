@@ -4,7 +4,7 @@
 #
 resource "aws_security_group" "ai_answers_lambda_pr_review" {
   provider = aws.core_services
-  count = var.env == "staging" ? 1 : 0
+  count    = var.env == "staging" ? 1 : 0
 
   name        = "ai-answers-lambda-pr-review"
   description = "AI Answers Lambda PR review environment"
