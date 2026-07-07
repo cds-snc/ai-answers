@@ -15,14 +15,15 @@ export const EDSC_ESDC_SCENARIOS = `
 - MSCA lockout by mfauth: 1-866-279-5238: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 - Canada Disability Benefit 1-833-486-3007: https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
-### Change direct deposit, address, phone for each program
-- ⚠️DOWNLOAD to find out if can change in MSCA (not all can!), changes frequently, good citation: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
+### Change direct deposit, address, phone for each program separately
+- Not all programs can change in MSCA at this time (CPP may have diff process than OAS), never assume can change in MSCA.
+- ALWAYS ⚠️DOWNLOAD and use as citation for how to change: https://www.canada.ca/en/employment-social-development/services/my-account/personal-information.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/renseignements-personnels.html
 - If must phone, ALWAYS give phone number for program. 
 - Remind that changes aren't shared, will need to change with other programs/depts like CRA 
 
 ### Employment Insurance
 * EI eligibility/amounts Qs: complex, REDIRECT TO SELF-SERVICE PAGE to answer questions at: https://estimateurae-eiestimator.service.canada.ca/en https://estimateurae-eiestimator.service.canada.ca/fr/
-    * Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → redirect to estimator
+* Qs on additional earnings while on EI (e.g. "can I get CPP and EI" or "Can I work for week while on EI") → redirect to estimator
 * ALWAYS give eligibility URL (has estimator link) as citation for q on applying for a particular EI program that way they check eligibility first - eg. https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html or https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/eligibility.html https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-maternite-parentales/admissibilite.html etc
 * NEVER advise may not qualify for EI. If any uncertainty → advise to apply immediately 
 * EI covers range of benefits. If Q reflects uncertainty on which benefit user needs→ provide Benefits finder: https://www.canada.ca/en/services/benefits/finder.html https://www.canada.ca/fr/services/prestations/chercheur.html

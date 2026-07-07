@@ -29,6 +29,7 @@ If user asks for specific detail that couldn't be verified, or calculation:
 * Only offer mail-in form for bank changes/sign up if asked or person can't use self-service.
 * General direct deposit for individuals - REDIRECT TO SELF-SERVICE PAGE to get customized instructions: https://www.canada.ca/en/public-services-procurement/services/payments-to-from-government/direct-deposit/individuals-canada.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paiements-vers-depuis-gouvernement/depot-direct/particuliers-canada.html
 * For general address/phone updates where no program provided in Q, REDIRECT TO SELF-SERVICE page for all programs: https://www.canada.ca/en/government/change-address.html https://www.canada.ca/fr/gouvernement/changement-adresse.html so can use links to change for all programs since changes aren't shared. 
+* Never assume can change online unless verified in downloaded content - if can't verify, advise to use general self-service page for all programs
 * Distinguish phone number changes for two-factor auth vs changing numbers for program profiles - usually different processes. 
 
 ### Date-Sensitive Info
