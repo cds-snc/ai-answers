@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
+import AnnouncedError from '../components/auth/AnnouncedError.js';
+import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 
 
 const ResetVerifyPage = ({ lang = 'en' }) => {
@@ -10,14 +12,14 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
   const code = searchParams.get('code');
   const email = searchParams.get('email');
   const [mode, setMode] = useState('unknown');
-  const [message, setMessage] = useState('');
+  const { error, errorCount, errorRef, setError } = useAnnouncedError();
   const [isLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Redirect directly to reset-complete with code and email
     if (!code || !email) {
-      setMessage(t('reset.verify.invalidLink'));
+      setError(t('reset.verify.invalidLink'));
       setMode('invalid');
       return;
     }
@@ -31,8 +33,9 @@ const ResetVerifyPage = ({ lang = 'en' }) => {
   return (
     <div className="auth-login-container">
       <h1>{t('reset.verify.title')}</h1>
-      {message && <div>{message}</div>}
-      {mode === 'invalid' && <div>{t('reset.verify.invalidLink')}</div>}
+      {mode === 'invalid' && (
+        <AnnouncedError id="reset-verify-error" message={error} errorCount={errorCount} inputRef={errorRef} />
+      )}
       {mode === 'ready' && (
         <>
           <p>{t('reset.verify.instructionsNoOtp')}</p>

@@ -869,7 +869,7 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password",
+    "invalidCredentials": "Invalid email or password.",
     "sessionExpired": {
       "title": "Session expired",
       "message": "Your session has expired. Please sign in again to continue."
@@ -887,8 +887,8 @@
       "resend": "Resend code",
       "sentToEmail": "A verification code has been sent to your email.",
       "send": "Send verification code",
-      "sendError": "Failed to send verification code",
-      "invalidCode": "Invalid verification code"
+      "sendError": "Failed to send verification code.",
+      "invalidCode": "Invalid verification code."
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
@@ -905,7 +905,7 @@
       "send": "Send reset email",
       "sending": "Sending...",
       "sent": "If that account exists, we sent a reset email.",
-      "error": "Failed to request reset"
+      "error": "Failed to request reset."
     },
     "verify": {
       "title": "Verify reset",
@@ -917,7 +917,7 @@
       "otpSent": "A verification code has been sent to your email",
       "otpSendError": "Failed to send verification code",
       "next": "Next",
-      "invalidLink": "Invalid or missing reset link"
+      "invalidLink": "Invalid or missing reset link."
     },
     "complete": {
       "title": "Set a new password",
@@ -927,10 +927,10 @@
       "submit": "Set password",
       "submitting": "Submitting...",
       "success": "Password updated. Redirecting to sign in...",
-      "error": "Failed to reset password",
-      "invalid": "Invalid reset link",
-      "passwordTooShort": "Password must be at least 8 characters",
-      "passwordMismatch": "Passwords do not match",
+      "error": "Failed to reset password.",
+      "invalid": "Invalid reset link.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "passwordMismatch": "Passwords do not match.",
       "lockedOut": "Too many failed attempts. Please try again later.",
       "invalidCode": "Invalid or expired code. Please try again."
     }
@@ -941,9 +941,9 @@
     "password": "Password",
     "confirmPassword": "Confirm password",
     "submit": "Create account",
-    "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 8 characters",
-    "errorOccurred": "An error occurred creating your account",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "errorOccurred": "An error occurred creating your account.",
     "submitting": "Creating account...wait for approval"
   },
   "users": {

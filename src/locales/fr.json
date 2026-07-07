@@ -870,9 +870,9 @@
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "submit": "Créer un compte",
-    "passwordMismatch": "Les mots de passe ne correspondent pas",
-    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-    "errorOccurred": "Une erreur est survenue lors de l'inscription",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+    "errorOccurred": "Une erreur est survenue lors de l'inscription.",
     "submitting": "Création du compte...en attente d'approbation"
   },
   "login": {
@@ -880,7 +880,7 @@
     "email": "Courriel",
     "password": "Mot de passe",
     "submit": "Se connecter",
-    "invalidCredentials": "Courriel ou mot de passe invalide",
+    "invalidCredentials": "Courriel ou mot de passe invalide.",
     "sessionExpired": {
       "title": "Session expirée",
       "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."
@@ -898,8 +898,8 @@
       "resend": "Renvoyer le code",
       "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
       "send": "Envoyer le code de vérification",
-      "sendError": "Impossible d'envoyer le code de vérification",
-      "invalidCode": "Code de vérification invalide"
+      "sendError": "Impossible d'envoyer le code de vérification.",
+      "invalidCode": "Code de vérification invalide."
     },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe"
@@ -916,7 +916,7 @@
       "send": "Envoyer le courriel de réinitialisation",
       "sending": "Envoi...",
       "sent": "Si ce compte existe, nous avons envoyé un courriel de réinitialisation.",
-      "error": "Échec de la demande de réinitialisation"
+      "error": "Échec de la demande de réinitialisation."
     },
     "verify": {
       "title": "Vérifier la réinitialisation",
@@ -928,7 +928,7 @@
       "otpSent": "Un code de vérification a été envoyé à votre adresse courriel",
       "otpSendError": "Échec de l'envoi du code de vérification",
       "next": "Suivant",
-      "invalidLink": "Lien de réinitialisation invalide ou manquant"
+      "invalidLink": "Lien de réinitialisation invalide ou manquant."
     },
     "complete": {
       "title": "Définir un nouveau mot de passe",
@@ -938,10 +938,10 @@
       "submit": "Définir le mot de passe",
       "submitting": "Envoi...",
       "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
-      "error": "Échec de la réinitialisation du mot de passe",
-      "invalid": "Lien de réinitialisation invalide",
-      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "error": "Échec de la réinitialisation du mot de passe.",
+      "invalid": "Lien de réinitialisation invalide.",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "lockedOut": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
       "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
