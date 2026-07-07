@@ -6,7 +6,7 @@ import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import SettingsPage from '../SettingsPage.js';
 
-const { mockGetSetting, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(() => {
+const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(() => {
   const healthSettings = {
     'siteStatus': 'available',
     'deploymentMode': 'CDS',
@@ -42,12 +42,24 @@ const { mockGetSetting, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(
     'session.managementEnabled': 'true',
     'session.type': 'memory',
     'metrics.type': 'memory',
+    'redaction.profanity.en': 'bad word',
+    'redaction.threat.en': 'threat',
+    'redaction.manipulation.en': 'manipulation',
+    'redaction.profanity.fr': 'mot interdit',
+    'redaction.threat.fr': 'menace',
+    'redaction.manipulation.fr': 'manipulation',
   };
 
   return {
-    mockGetSetting: vi.fn(async (key, defaultValue = null) => (
-      Object.prototype.hasOwnProperty.call(healthSettings, key) ? healthSettings[key] : defaultValue
-    )),
+    mockGetSettings: vi.fn(async (keys, defaults = {}) => {
+      const values = {};
+      for (const key of keys) {
+        values[key] = Object.prototype.hasOwnProperty.call(healthSettings, key)
+          ? healthSettings[key]
+          : defaults[key];
+      }
+      return values;
+    }),
     mockSetSetting: vi.fn(async () => ({ message: 'Setting updated' })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
   };
@@ -55,7 +67,7 @@ const { mockGetSetting, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(
 
 vi.mock('../../services/DataStoreService.js', () => ({
   default: {
-    getSetting: mockGetSetting,
+    getSettings: mockGetSettings,
     setSetting: mockSetSetting,
     refreshSettingsCache: mockRefreshSettingsCache,
   },
@@ -80,7 +92,7 @@ vi.mock('@gcds-core/components-react', () => ({
 
 describe('SettingsPage health section', () => {
   beforeEach(() => {
-    mockGetSetting.mockClear();
+    mockGetSettings.mockClear();
     mockSetSetting.mockClear();
     mockRefreshSettingsCache.mockClear();
   });
@@ -110,14 +122,10 @@ describe('SettingsPage health section', () => {
     expect(screen.getByLabelText('settings.health.alertTemplateId')).toBeTruthy();
 
     await waitFor(() => {
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.enabled')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.database.enabled')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.search.enabled')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.checks.llm.enabled')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.autoDisableOnError')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.errorTemplateId')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.fastIntervalSeconds')).toBe(true);
-      expect(mockGetSetting.mock.calls.some(([key]) => key === 'systemHealth.alertRecipients')).toBe(true);
+      expect(mockGetSettings).toHaveBeenCalledTimes(1);
+      expect(mockGetSettings.mock.calls[0][0]).toContain('systemHealth.enabled');
+      expect(mockGetSettings.mock.calls[0][0]).toContain('session.rateLimitPersistence');
+      expect(mockGetSettings.mock.calls[0][0]).toContain('redaction.profanity.en');
     });
   });
 });

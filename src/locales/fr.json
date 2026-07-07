@@ -1,4 +1,4 @@
-{
+﻿{
   "locale": "fr",
   "homepage": {
     "title": "Réponses IA",
@@ -881,6 +881,10 @@
     "password": "Mot de passe",
     "submit": "Se connecter",
     "invalidCredentials": "Courriel ou mot de passe invalide",
+    "sessionExpired": {
+      "title": "Session expirée",
+      "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."
+    },
     "form": {
       "submitting": "Connexion en cours...",
       "signupLink": "Créer un compte",
@@ -899,6 +903,12 @@
     },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe"
+  },
+  "auth": {
+    "sessionWarning": {
+      "title": "Session sur le point d'expirer",
+      "message": "Votre session expirera dans 1 minute. Vous serez automatiquement déconnecté si vous restez inactif."
+    }
   },
   "reset": {
     "request": {

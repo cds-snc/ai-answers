@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
+import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
 
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, refreshUser, getDefaultRouteForRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,6 +89,17 @@ const LoginPage = ({ lang = 'en' }) => {
 
   return (
     <div className="auth-login-container">
+      {sessionExpired && (
+        <GcdsNotice
+          noticeRole="warning"
+          noticeTitleTag="h2"
+          noticeTitle={t('login.sessionExpired.title')}
+          className="mb-400"
+        >
+          <GcdsText>{t('login.sessionExpired.message')}</GcdsText>
+        </GcdsNotice>
+      )}
+
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>

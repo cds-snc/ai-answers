@@ -14,8 +14,12 @@ const _getSetting = (keys) => {
   return undefined;
 };
 
-const _getSessionMaxAgeMs = () => {
-  const minutes = Number(_getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '60');
+const _getSessionTtlMinutes = (req) => {
+  const defaultMinutes = Number(_getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '60');
+  const authenticatedMinutes = Number(_getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || defaultMinutes);
+
+  const isAuthenticatedSession = !!(req && req.session && req.session.passport && req.session.passport.user);
+  const minutes = isAuthenticatedSession ? authenticatedMinutes : defaultMinutes;
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
 };
 
@@ -64,7 +68,7 @@ const buildSessionMiddleware = (app) => {
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? 'strict' : 'lax',
-      maxAge: _getSessionMaxAgeMs(),
+      maxAge: _getSessionTtlMinutes(),
       path: '/'
     },
     rolling: true
@@ -115,7 +119,7 @@ export default function createSessionMiddleware(app) {
 
     instance(req, res, () => {
       if (req.session && req.session.cookie) {
-        req.session.cookie.maxAge = _getSessionMaxAgeMs();
+        req.session.cookie.maxAge = _getSessionTtlMinutes(req);
 
         if (parentDomain) {
           req.session.cookie.domain = parentDomain;

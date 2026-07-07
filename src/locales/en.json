@@ -870,6 +870,10 @@
     "password": "Password",
     "submit": "Sign in",
     "invalidCredentials": "Invalid email or password",
+    "sessionExpired": {
+      "title": "Session expired",
+      "message": "Your session has expired. Please sign in again to continue."
+    },
     "form": {
       "submitting": "Signing in...",
       "signupLink": "Create an account",
@@ -888,6 +892,12 @@
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
+  },
+  "auth": {
+    "sessionWarning": {
+      "title": "Session expiring soon",
+      "message": "Your session will expire in 1 minute. You will be signed out automatically if you remain idle."
+    }
   },
   "reset": {
     "request": {
