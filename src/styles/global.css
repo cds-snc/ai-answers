@@ -209,7 +209,7 @@ gcds-details {
    fought via !important elsewhere for) any other page's first h2, including
    the feedback components' own headings. */
 h2.homepage-subtitle {
-  font-size: 26px;
+  font: var(--gcds-heading-h4-desktop);
   margin-bottom: 10px;
   color: #333 !important;
 }
