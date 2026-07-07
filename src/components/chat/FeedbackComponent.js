@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
 import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
 import { useHasAnyRole } from "../RoleBasedUI.js";
 import { useTranslations } from "../../hooks/useTranslations.js";
 import { useFocusOnChange } from "../../hooks/useFocusOnChange.js";
+import { useReturnFocusOnClose } from "../../hooks/useReturnFocusOnClose.js";
 import FeedbackService from "../../services/FeedbackService.js";
 
 const FeedbackComponent = ({
@@ -30,6 +31,10 @@ const FeedbackComponent = ({
   const thankYouRef = useFocusOnChange(feedbackGiven);
   const expertRatingTitleRef = useFocusOnChange(showExpertRating);
   const publicRatingTitleRef = useFocusOnChange(showPublicRating);
+  const yesButtonRef = useRef(null);
+  const noButtonRef = useRef(null);
+  useReturnFocusOnClose(showExpertRating, noButtonRef);
+  useReturnFocusOnClose(showPublicRating, publicPositive ? yesButtonRef : noButtonRef);
 
   const handleFeedback = (isPositive) => {
     let feedbackPayload = null;
@@ -141,6 +146,7 @@ const FeedbackComponent = ({
         </span>
         <span className="feedback-buttons">
           <button
+            ref={yesButtonRef}
             className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(true)}
             tabIndex="0"
@@ -150,6 +156,7 @@ const FeedbackComponent = ({
           </button>
           <span className="feedback-separator">·</span>
           <button
+            ref={noButtonRef}
             className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(false)}
             tabIndex="0"
@@ -189,6 +196,7 @@ const FeedbackComponent = ({
       <span className="feedback-text">{t("homepage.feedback.or")}</span>
       <span className="feedback-separator">·</span>
       <button
+        ref={noButtonRef}
         className="feedback-link button-as-link"
         onClick={() => handleFeedback(false)}
         tabIndex="0"
