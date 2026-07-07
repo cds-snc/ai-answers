@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import ExperimentalDatasetsPage from '../experimental/ExperimentalDatasetsPage.js';
 
-const mockListDatasets = vi.fn();
+const { mockListDatasets } = vi.hoisted(() => ({ mockListDatasets: vi.fn() }));
 
 vi.mock('../../hooks/useTranslations.js', () => ({
     useTranslations: () => ({
@@ -40,6 +40,15 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
     GcdsLink: ({ children, href }) => <a href={href}>{children}</a>
 }));
 
+vi.mock('@gcds-core/components-react', () => ({
+    GcdsFileUploader: ({ label, uploaderId, onGcdsChange }) => (
+        <label htmlFor={uploaderId}>
+            {label}
+            <input type="file" id={uploaderId} onChange={onGcdsChange} />
+        </label>
+    )
+}));
+
 describe('ExperimentalDatasetsPage', () => {
     beforeEach(() => {
         mockListDatasets.mockReset().mockResolvedValue({ data: [] });
@@ -54,6 +63,6 @@ describe('ExperimentalDatasetsPage', () => {
 
         expect(screen.getByText('experimental.datasets.title').closest('[data-layout="page"]')).toBeTruthy();
         expect(screen.getByRole('link', { name: 'common.backToAdmin' }).getAttribute('href')).toBe('/en/admin');
-        expect(screen.getByText('experimental.datasets.empty')).toBeTruthy();
+        expect(await screen.findByText('experimental.datasets.empty')).toBeTruthy();
     });
 });

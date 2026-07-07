@@ -1,7 +1,7 @@
 // src/components/batch/BatchUpload.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsFileUploader } from '@gcds-core/components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
@@ -23,6 +23,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const selectedSearch = 'google';
   const [selectedWorkflow, setSelectedWorkflow] = useState('GenericGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
+  const fileUploaderRef = useRef(null);
 
   // Load the configured default model from Settings so batch matches the system default
   useEffect(() => {
@@ -31,9 +32,9 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     }).catch(() => {});
   }, []);
 
-  const handleFileChange = (event) => {
+  const handleFileChange = () => {
     setError(null);
-    const uploadedFile = event.target.files[0];
+    const uploadedFile = fileUploaderRef.current?.files?.[0];
 
     if (!uploadedFile) {
       setFile(null);
@@ -140,10 +141,9 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           // finished processing, clear processing flag and allow another upload
           setFileUploaded(false);
           setProcessing(false);
-          // Clear the file input DOM value (best-effort)
+          // Clear the file uploader's selected file (best-effort)
           try {
-            const input = document.getElementById('csvFile');
-            if (input) input.value = '';
+            if (fileUploaderRef.current) fileUploaderRef.current.value = [];
           } catch (domErr) {
             // ignore DOM reset errors
           }
@@ -334,21 +334,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             </div>
 
             <div className="file-input-container mrgn-bttm-20">
-              <label htmlFor="csvFile" className="mrgn-bttm-10 display-block">
-                {t('batch.upload.file.label')}
-              </label>
-              <input
-                type="file"
-                id="csvFile"
+              <GcdsFileUploader
+                uploaderId="csvFile"
+                name="csvFile"
+                label={t('batch.upload.file.label')}
                 accept=".csv"
-                onChange={handleFileChange}
-                className="mrgn-bttm-10 display-block"
+                onGcdsChange={handleFileChange}
+                ref={fileUploaderRef}
               />
-              {file && (
-                <div>
-                  {t('batch.upload.file.selected')} {file.name}
-                </div>
-              )}
             </div>
 
             {error && <div className="error-message mrgn-bttm-10 red">{error}</div>}

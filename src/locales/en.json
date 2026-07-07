@@ -259,8 +259,7 @@
         "label": "Model family"
       },
       "file": {
-        "label": "Add CSV file:",
-        "selected": "Selected file:"
+        "label": "Add CSV file:"
       },
       "buttons": {
         "upload": "Upload file"
@@ -487,6 +486,7 @@
       "chunkSizeLabel": "Chunk size (MB):",
       "throttleLabel": "Throttle (ms):",
       "tableSelectLabel": "Table (hold Ctrl/Cmd to multi-select):",
+      "importFileLabel": "File to import",
       "importingLabel": "Importing...",
       "importButton": "Import database",
       "integrityTitle": "Integrity checks",
