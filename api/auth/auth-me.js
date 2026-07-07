@@ -10,7 +10,8 @@ const meHandler = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            user: req.user
+            user: req.user,
+            sessionExpiresAt: req.session?.cookie?.expires ? req.session.cookie.expires.toISOString() : null
         });
     } catch (error) {
         console.error('Get current user error:', error);
