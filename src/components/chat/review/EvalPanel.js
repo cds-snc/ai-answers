@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
 import { formatDecimal } from '../../../utils/numberFormat.js';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
 const formatDate = (d) => {
   if (!d) return '';
@@ -27,13 +28,15 @@ const renderChatLink = (chatId) => {
   );
 };
 
-const EvalPanel = ({ message, t, lang = 'en' }) => {
+const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   // Show panel in review mode as requested (no longer hidden)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [reRunning, setReRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
   const getInteractionId = useCallback(() => (
     (message.interaction && (message.interaction._id || message.interaction.id)) || message.id
@@ -90,6 +93,14 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
   }, [getInteractionId, loadEval, message]);
 
   const handleDelete = useCallback(async () => {
+    // Note: window.confirm()'s OK/Cancel buttons render in the browser/OS
+    // language, not the app's selected locale — only the message text above
+    // is translated. Matches existing precedent (VectorPage.js, UsersPage.js
+    // also use window.confirm() for destructive actions). Flagged as a known
+    // limitation, out of scope for this PR.
+    if (!window.confirm(t('common.confirmDelete'))) {
+      return;
+    }
     try {
       setDeleting(true);
       setError(null);
@@ -106,7 +117,7 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
     } finally {
       setDeleting(false);
     }
-  }, [getInteractionId, message]);
+  }, [getInteractionId, message, t]);
 
   if (!message) return null;
 
@@ -146,7 +157,7 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
   if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
     evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
   }
-  const evalTitle = baseEvalTitle + evalTitleSuffix;
+  const evalTitle = withAnswerNumber(baseEvalTitle + evalTitleSuffix);
 
   return (
     <GcdsDetails
@@ -157,10 +168,22 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
     >
       <div className="review-panel eval-panel">
         <div className="actions" style={{ marginBottom: '1rem' }}>
-          <GcdsButton onClick={handleReRun} disabled={reRunning || deleting} className="hydrated">
+          <GcdsButton
+            onClick={handleReRun}
+            disabled={reRunning || deleting}
+            className="hydrated"
+            aria-label={withAnswerNumber(reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run'))}
+          >
             {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
           </GcdsButton>
-          <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated" style={{ marginLeft: '0.5rem' }}>
+          <GcdsButton
+            onClick={handleDelete}
+            buttonRole="danger"
+            disabled={deleting}
+            className="hydrated"
+            style={{ marginLeft: '0.5rem' }}
+            aria-label={withAnswerNumber(deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation'))}
+          >
             {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
           </GcdsButton>
         </div>
@@ -596,7 +619,12 @@ const EvalPanel = ({ message, t, lang = 'en' }) => {
               <div>
                 {t('reviewPanels.noEvaluation', 'No evaluation available.')}
                 <div className="mt-200">
-                  <GcdsButton onClick={handleReRun} disabled={reRunning} className="hydrated">
+                  <GcdsButton
+                    onClick={handleReRun}
+                    disabled={reRunning}
+                    className="hydrated"
+                    aria-label={withAnswerNumber(reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation'))}
+                  >
                     {reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation')}
                   </GcdsButton>
                 </div>

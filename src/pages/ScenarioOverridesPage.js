@@ -81,7 +81,7 @@ class PageErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
           <h1 className="mb-400">{this.props.t ? this.props.t('scenarioOverrides.title', 'Scenario overrides') : 'Scenario overrides'}</h1>
           <p style={{ color: '#d3080c' }}>{this.props.t ? this.props.t('scenarioOverrides.error.fallback', 'An error occurred while loading this page.') : 'An error occurred while loading this page.'}</p>
           <p>{this.state.error?.toString?.() || ''}</p>
@@ -300,7 +300,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
 
   return (
     <PageErrorBoundary t={t}>
-      <GcdsContainer layout="page" tag="main" className="mb-600">
+      <GcdsContainer layout="page" className="mb-600">
         {/* no overlay styles needed in simplified UI */}
         <h1 className="mb-400">{pageTitle}</h1>
         <nav className="mb-400">

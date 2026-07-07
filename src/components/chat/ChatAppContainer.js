@@ -11,6 +11,8 @@ import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
+import { getCitationUrl } from '../../utils/getCitationUrl.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -707,20 +709,26 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
     // Updated citation logic
     const answer = message.interaction?.answer || {};
-    const citation = answer.citation || {};
     // displayUrl is the citation URL to show and use for analytics
-    const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    const displayUrl = getCitationUrl(message.interaction);
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
+    const answerLang = toLangAttr(getAnswerLanguage(message.interaction));
     return (
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
           // If using paragraphs, split into sentences; if using sentences, just display
-          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+          const rawSentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
             ? extractSentences(content)
             : [content];
+          // Drop blanks: an empty <s-N></s-N> tag (translation collapsed a sentence) or a
+          // paragraph left empty after the <translated-question> strip above would otherwise
+          // render as an empty <p>.
+          const sentences = rawSentences.filter(
+            (sentence) => typeof sentence === 'string' && sentence.trim()
+          );
           return sentences.map((sentence, sentenceIndex) => (
-            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
+            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
               {decodeHTMLEntities(sentence)}
             </p>
           ));

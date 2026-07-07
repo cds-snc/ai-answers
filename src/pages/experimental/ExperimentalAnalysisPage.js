@@ -378,7 +378,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
                 <GcdsHeading tag="h1">
                     {selectedDataset?.name || t('experimental.analysis.title')}

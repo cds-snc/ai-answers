@@ -574,7 +574,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer layout="page" tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('settings.title')}</h1>
       <nav className="mb-400">
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
@@ -582,7 +582,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       <div className="mb-400">
         <GcdsButton
           type="button"
-          variant="secondary"
+          buttonRole="secondary"
           onClick={handleRefreshSettingsCache}
           disabled={refreshingSettingsCache}
         >

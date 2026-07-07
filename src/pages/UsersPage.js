@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
-import { GcdsButton, GcdsLink, GcdsText } from '@gcds-core/components-react';
+import { GcdsButton, GcdsContainer, GcdsLink, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import UserService from '../services/UserService.js';
@@ -242,8 +242,8 @@ const UsersPage = ({ lang }) => {
     },
   ];
   return (
-    <div className="container mt-4">
-      <h1>{t('users.title')}</h1>
+    <GcdsContainer layout="page" className="mb-600">
+      <h1 className="mb-400">{t('users.title')}</h1>
 
       <nav className="mb-400">
         <GcdsText>
@@ -288,7 +288,7 @@ const UsersPage = ({ lang }) => {
             root.render(
               <GcdsButton
                 size="small"
-                variant="danger"
+                buttonRole="danger"
                 onClick={() => handleDelete(data._id)}
               >
                 {t('users.actions.delete')}
@@ -297,7 +297,7 @@ const UsersPage = ({ lang }) => {
           },
         }}
       />
-    </div>
+    </GcdsContainer>
   );
 };
 

@@ -177,8 +177,6 @@ code {
   --gcds-header-brand-border-color: #ddd !important;
   --gcds-header-brand-border-width: 0.01rem !important;
   --gcds-link-underline-offset: 0.1rem !important;
-  --gcds-label-font-desktop: 600 1.45rem / 120% "Lato", sans-serif !important; /* want this to look like heading intentionally */
-  --gcds-label-font-mobile: 600 1.3rem / 120% "Lato", sans-serif !important;
   --gcds-text-size-body-desktop: 400 1.25rem / 160% "Noto Sans", sans-serif !important;
   --gcds-link-font-small-desktop: 400 1rem / 150% "Noto Sans", sans-serif !important;
 }
@@ -232,8 +230,11 @@ gcds-details {
   margin-top: 0px !important;
 }
 
-/* main page styles */
-h2:first-of-type {
+/* Homepage subtitle ("Get answers to your Canada.ca questions"). Was
+   h2:first-of-type — unscoped, so it silently applied to (and had to be
+   fought via !important elsewhere for) any other page's first h2, including
+   the feedback components' own headings. */
+h2.homepage-subtitle {
   font-size: 26px;
   margin-bottom: 10px;
   color: #333 !important;
@@ -459,24 +460,6 @@ legend {
   padding: 0;
 }
 
-.gc-chckbxrdio legend {
-  display: block;
-  width: 100%;
-  padding: 0;
-  margin-bottom: 23px;
-  line-height: inherit;
-  color: #333;
-  border: 0;
-}
-
-/* QA: cleanup — .gc-chckbxrdio label is defined twice; the second definition (further down) overrides display to block and adds font-size. Merge both into one rule and delete this one. */
-.gc-chckbxrdio label {
-  display: inline-block;
-  max-width: 100%;
-  margin-bottom: 5px;
-  font-weight: 700;
-}
-
 input[type="search"] {
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
@@ -489,6 +472,9 @@ input[type="search"] {
 .gc-chckbxrdio input[type="radio"] {
   margin: 4px 0 0;
   line-height: normal;
+  margin-left: 10px;
+  opacity: 0;
+  z-index: 2;
 }
 
 fieldset[disabled] input[type="checkbox"],
@@ -646,7 +632,6 @@ textarea.form-control {
 .answer-improvement label,
 label.expert-citation-url {
   font-weight: 500 !important;
-  margin-top: 30px !important;
 }
 .gc-chckbxrdio .checkbox,
 .gc-chckbxrdio .radio {
@@ -657,10 +642,10 @@ label.expert-citation-url {
   line-height: 2.8em;
 }
 
-.gc-chckbxrdio.sm-v .checkbox,
-.gc-chckbxrdio.sm-v .radio {
-  margin-top: 10px;
-  margin-bottom: 18px;
+.gc-chckbxrdio.md .checkbox,
+.gc-chckbxrdio.md .radio {
+  margin-top: 5px;
+  margin-bottom: 5px;
   line-height: 1em;
 }
 
@@ -717,173 +702,26 @@ fieldset[disabled] .radio-inline {
   margin-left: 10px;
 }
 
-/* QA: cleanup — .form-control-static, .input-group-sm/lg, .form-group-sm/lg, .input-sm/lg and all their sub-selectors below are Bootstrap-style size variants with 0 usages in JSX. ~100 lines that can likely be deleted. */
-.form-control-static {
-  min-height: 39px;
-  padding-top: 11px;
-  padding-bottom: 11px;
-  margin-bottom: 0;
-}
-
-.form-control-static.input-lg,
-.form-control-static.input-sm,
-.input-group-lg > .form-control-static.form-control,
-.input-group-lg > .form-control-static.input-group-addon,
-.input-group-lg > .input-group-btn > .form-control-static.btn,
-.input-group-sm > .form-control-static.form-control,
-.input-group-sm > .form-control-static.input-group-addon,
-.input-group-sm > .input-group-btn > .form-control-static.btn {
-  padding-right: 0;
-  padding-left: 0;
-}
-
-.input-group-sm > .form-control,
-.input-group-sm > .input-group-addon,
-.input-group-sm > .input-group-btn > .btn,
-.input-sm {
-  height: 33px;
-  padding: 5px 10px;
-  font-size: 14px;
-  line-height: 1.5;
-  border-radius: 3px;
-}
-
-.input-group-sm > .input-group-btn > select.btn,
-.input-group-sm > select.form-control,
-.input-group-sm > select.input-group-addon,
-select.input-sm {
-  height: 33px;
-  line-height: 33px;
-}
-
-.input-group-sm > .input-group-btn > select[multiple].btn,
-.input-group-sm > .input-group-btn > textarea.btn,
-.input-group-sm > select[multiple].form-control,
-.input-group-sm > select[multiple].input-group-addon,
-.input-group-sm > textarea.form-control,
-.input-group-sm > textarea.input-group-addon,
-select[multiple].input-sm,
-textarea.input-sm {
-  height: auto;
-}
-
-.form-group-sm .form-control {
-  height: 33px;
-  padding: 5px 10px;
-  font-size: 14px;
-  line-height: 1.5;
-  border-radius: 3px;
-}
-
-.form-group-sm select.form-control {
-  height: 33px;
-  line-height: 33px;
-}
-
-.form-group-sm select[multiple].form-control,
-.form-group-sm textarea.form-control {
-  height: auto;
-}
-
-.form-group-sm .form-control-static {
-  height: 33px;
-  min-height: 37px;
-  padding: 6px 10px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.input-group-lg > .form-control,
-.input-group-lg > .input-group-addon,
-.input-group-lg > .input-group-btn > .btn,
-.input-lg {
-  height: 46px;
-  padding: 10px 16px;
-  font-size: 18px;
-  line-height: 1.3333333;
-  border-radius: 6px;
-}
-
-.input-group-lg > .input-group-btn > select.btn,
-.input-group-lg > select.form-control,
-.input-group-lg > select.input-group-addon,
-select.input-lg {
-  height: 46px;
-  line-height: 46px;
-}
-
-.input-group-lg > .input-group-btn > select[multiple].btn,
-.input-group-lg > .input-group-btn > textarea.btn,
-.input-group-lg > select[multiple].form-control,
-.input-group-lg > select[multiple].input-group-addon,
-.input-group-lg > textarea.form-control,
-.input-group-lg > textarea.input-group-addon,
-select[multiple].input-lg,
-textarea.input-lg {
-  height: auto;
-}
-
-.form-group-lg .form-control {
-  height: 46px;
-  padding: 10px 16px;
-  font-size: 18px;
-  line-height: 1.3333333;
-  border-radius: 6px;
-}
-
-.form-group-lg select.form-control {
-  height: 46px;
-  line-height: 46px;
-}
-
-.form-group-lg select[multiple].form-control,
-.form-group-lg textarea.form-control {
-  height: auto;
-}
-
-.form-group-lg .form-control-static {
-  height: 46px;
-  min-height: 41px;
-  padding: 11px 16px;
-  font-size: 18px;
-  line-height: 1.3333333;
-}
-
-.form-inline .gc-chckbxrdio.checkbox input[type="checkbox"] {
-  position: absolute;
-}
-
-.form-inline.gc-chckbxrdio .checkbox input[type="checkbox"],
-.form-inline.gc-chckbxrdio .radio input[type="radio"] {
-  position: absolute;
-}
-
 fieldset.gc-chckbxrdio {
   border-top: 0;
   padding-top: 0;
 }
 
-/* QA: cleanup — duplicate .gc-chckbxrdio label; merge max-width/margin-bottom/font-weight from the first definition above into this one, then delete the first */
 .gc-chckbxrdio label {
   cursor: pointer;
   display: block;
-  font-size: 20px;
+  max-width: 100%;
+  color: var(--gcds-label-text);
+  font: var(--gcds-label-font-desktop);
+  font-weight: var(--gcds-font-weights-medium);
+  margin: var(--gcds-label-margin);
 }
 
-.gc-chckbxrdio legend {
-  float: none;
-  font-family: "Lato";
-  font-size: 1.625rem;
-  font-weight: 700;
-  margin-bottom: 15px;
-  margin-top: 0;
-}
-
-.gc-chckbxrdio input[type="checkbox"],
-.gc-chckbxrdio input[type="radio"] {
-  margin-left: 10px;
-  opacity: 0;
-  z-index: 2;
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio label {
+    font: var(--gcds-label-font-mobile);
+    font-weight: var(--gcds-font-weights-medium);
+  }
 }
 
 .gc-chckbxrdio input[type="checkbox"][disabled] + label,
@@ -895,14 +733,27 @@ fieldset.gc-chckbxrdio {
 .gc-chckbxrdio input[type="checkbox"] + label,
 .gc-chckbxrdio input[type="radio"] + label {
   display: inline-block;
-  line-height: 2;
   margin-left: 40px;
   width: auto;
+  /* Wins over the generic .expert-rating-container label { font-size: 16px }
+     rule (chat.css) on specificity — two class-level selectors here vs one
+     there — that was shrinking radio/checkbox option labels below the GC DS
+     label token size. */
+  font: var(--gcds-label-font-desktop);
+  font-weight: var(--gcds-font-weights-medium);
 }
 
-.gc-chckbxrdio.sm-v input[type="checkbox"] + label,
-.gc-chckbxrdio.sm-v input[type="radio"] + label {
-  margin-left: 32px;
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio input[type="checkbox"] + label,
+  .gc-chckbxrdio input[type="radio"] + label {
+    font: var(--gcds-label-font-mobile);
+    font-weight: var(--gcds-font-weights-medium);
+  }
+}
+
+.gc-chckbxrdio.md input[type="checkbox"] + label,
+.gc-chckbxrdio.md input[type="radio"] + label {
+  margin-left: 26px;
 }
 
 .gc-chckbxrdio input[type="checkbox"] + label::before,
@@ -919,11 +770,11 @@ fieldset.gc-chckbxrdio {
   width: 19px;
 }
 
-.gc-chckbxrdio.sm-v input[type="checkbox"] + label::before,
-.gc-chckbxrdio.sm-v input[type="radio"] + label::before {
-  border: 10px solid #fff;
-  height: 16px;
-  width: 16px;
+.gc-chckbxrdio.md input[type="checkbox"] + label::before,
+.gc-chckbxrdio.md input[type="radio"] + label::before {
+  border: 8px solid #fff;
+  height: 14px;
+  width: 14px;
 }
 
 .gc-chckbxrdio input[type="checkbox"] + label:hover::before,
@@ -959,18 +810,10 @@ fieldset.gc-chckbxrdio {
 .gc-chckbxrdio input[type="radio"]:focus + label::before {
   outline: 4px solid var(--gcds-details-focus-background);
   outline-offset: 4px;
-}
-.gc-chckbxrdio.sm-v input[type="checkbox"]:focus:checked + label::after {
-  border-color: var(--gcds-details-focus-background);
-}
-
-.gc-chckbxrdio input[type="checkbox"]:focus + label::before,
-.gc-chckbxrdio input[type="radio"]:focus + label::before {
   box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
 }
-
-.gc-chckbxrdio input[type="radio"]:focus + label::before {
-  background: var(--gcds-details-focus-background);
+.gc-chckbxrdio.md input[type="checkbox"]:focus:checked + label::after {
+  border-color: var(--gcds-details-focus-background);
 }
 
 .gc-chckbxrdio input[type="radio"]:checked:focus + label::before {
@@ -1006,11 +849,11 @@ fieldset.gc-chckbxrdio {
   width: 9px;
 }
 
-.gc-chckbxrdio.sm-v input[type="checkbox"]:checked + label::after {
-  border-width: 0 5px 5px 0;
-  height: 20px;
-  left: 11px;
-  width: 9px;
+.gc-chckbxrdio.md input[type="checkbox"]:checked + label::after {
+  border-width: 0 4px 4px 0;
+  height: 18px;
+  left: 9px;
+  width: 8px;
 }
 
 .gc-chckbxrdio input[type="checkbox"]:checked + label::after {
@@ -1026,14 +869,6 @@ fieldset.gc-chckbxrdio {
   -webkit-transform: rotate(45deg);
   transform: rotate(45deg);
   width: 13px;
-}
-
-.gc-chckbxrdio.form-inline .label-inline {
-  padding-right: 20px;
-}
-
-.gc-chckbxrdio.form-inline .label-inline label {
-  padding-left: 10px;
 }
 
 @media (prefers-contrast: more) {

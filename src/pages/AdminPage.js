@@ -33,7 +33,7 @@ const AdminPage = ({ lang = 'en' }) => {
   const isPartner = currentUser?.role === 'partner';
 
   return (
-    <GcdsContainer layout="page" tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">
         {isPartner
           ? t('admin.partnerTitle', 'AI Answers Partner Dashboard')
