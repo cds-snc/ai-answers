@@ -442,7 +442,9 @@ const ChatInterface = ({
           // of the AI reply that immediately follows it, only if that reply
           // succeeded. Built once, in a single forward pass, so the heading
           // below never has to guess: it either has a real paired answer number
-          // or it doesn't.
+          // or it doesn't — and when it doesn't, isPendingAnswer (below) tells
+          // the heading whether that's because a reply is still in flight or
+          // because it genuinely never got one.
           const pairedAnswerIndexByUserId = {};
           let pendingUserId = null;
           for (const m of messages) {

@@ -62,10 +62,6 @@
 }
 .message.ai {
   align-self: flex-start;
-  /* Without an explicit width, flex-start gives this box no anchor on its far
-     edge (unlike .message.user, where flex-end anchors the bubble to the
-     right regardless of its own content width) — it just shrinks to fit its
-     content, which can fall short of the available row width. */
   width: 100%;
 }
 .user-message-box {
@@ -117,9 +113,6 @@
   padding: 0;
 }
 
-/* Plain layout wrapper for the answer content, feedback prompt, and chat-id
-   footer — each of those is its own separate bubble (own border/radius/
-   background); this just stacks them with spacing between. */
 .ai-message-bubble {
   display: flex;
   flex-direction: column;
@@ -852,8 +845,6 @@ textarea:focus {
   }
 }
 
-/* Shared "pill badge" shape used by the chat-id footer and the referring-URL
-   banner — kept as one rule so the two don't drift out of sync. */
 .chat-id,
 .referring-url-chat,
 #displayReferringURL {

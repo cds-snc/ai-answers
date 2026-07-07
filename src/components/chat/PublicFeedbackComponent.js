@@ -67,15 +67,6 @@ const PublicFeedbackComponent = ({
       <h4 className="feedback-followup-title">
         {isPositive ? t('homepage.publicFeedback.yes.title') : t('homepage.publicFeedback.no.title')}
       </h4>
-      {/* TODO(a11y): what a screen reader reads here never identifies which chat/answer
-          is being rated — in review mode, with several messages on the page, there's no
-          way to be sure which one you're evaluating. Same gap as the EvalPanel buttons.
-          (Unlike ExpertFeedbackComponent, this component's ids don't need instance
-          namespacing: review mode's chat data fetch is gated to admin/partner roles
-          server-side (api/db/db-chat.js), and admin/partner always take the expert
-          feedback path, so PublicFeedbackComponent can never have two instances open
-          at once — only identifying which question is being rated is the real fix.)
-          Revisit as part of the planned eval/admin UI redesign. */}
       <div className="feedback-reason-card">
         <fieldset
           className={`gc-chckbxrdio feedback-reason-fieldset${hasError ? ' has-error' : ''}`}
