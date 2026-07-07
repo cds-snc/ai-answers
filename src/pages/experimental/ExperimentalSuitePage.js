@@ -41,9 +41,6 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                             <strong>{t('experimental.suite.categoryLabel')}:</strong> {dataset.category}
                         </span>
                     )}
-                    {dataset?.role === 'held-out' && (
-                        <strong style={{ color: '#b07a00' }}>{t('experimental.suite.heldOutBadge')}</strong>
-                    )}
                 </div>
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
                     <GcdsLink href={`/${lang}/experimental/datasets`}>

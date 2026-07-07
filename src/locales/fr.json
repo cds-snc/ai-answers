@@ -1996,7 +1996,6 @@
       "captureRun": "Capture de référence — non notée par rapport à une référence",
       "newRun": "Nouvelle analyse",
       "categoryLabel": "Catégorie",
-      "heldOutBadge": "Ensemble réservé",
       "columnsHint": "Les noms de colonnes proviennent d'une colonne facultative testName dans l'ensemble de données. Étiquetez les lignes avec une colonne caseType (control, edge, boundary) pour décrire le rôle de chaque test. Cliquez sur une cellule pour ouvrir cette réponse.",
       "caseType": {
         "control": "Contrôle",
@@ -2013,3 +2012,4 @@
     }
   }
 }
+

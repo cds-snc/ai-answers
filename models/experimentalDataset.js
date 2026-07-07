@@ -16,13 +16,6 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
     // Suite metadata: partner abbrKey (cra, ircc, ...) or cross-cutting
     // category (bias, pii, red-team, safety). Free text.
     category: { type: String, default: '', trim: true, maxLength: 100 },
-    // 'training' suites are tuned against; 'held-out' suites are run only to
-    // check generalization (kept out of routine tuning loops).
-    role: {
-        type: String,
-        enum: ['training', 'held-out'],
-        default: 'training'
-    },
     rowCount: { type: Number, default: 0 },
     columns: [{
         name: { type: String, required: true },

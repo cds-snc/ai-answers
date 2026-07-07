@@ -1996,7 +1996,6 @@
       "captureRun": "Baseline capture — not scored against a reference",
       "newRun": "New analysis run",
       "categoryLabel": "Category",
-      "heldOutBadge": "Held-out set",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
       "caseType": {
         "control": "Control",

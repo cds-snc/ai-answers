@@ -46,7 +46,7 @@ async function handler(req, res) {
         datasetId = requireObjectIdString(datasetId, 'datasetId');
 
         const dataset = await ExperimentalDataset.findById(datasetId)
-            .select('name description type category role rowCount')
+            .select('name description type category rowCount')
             .lean();
         if (!dataset) {
             return res.status(404).json({ error: 'Dataset not found' });
