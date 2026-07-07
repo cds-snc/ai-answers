@@ -12,8 +12,11 @@
 
 .error-box {
   color: var(--gcds-color-red-900);
-  background-color: var(--gcds-color-red-100);
-  border: 1px solid var(--gcds-color-red-100);
+  /* One step lighter than red-100: red-100 put the link's hover colour
+     (--gcds-link-hover, #1354ec from @gcds-core) at 4.34:1 against it,
+     just under the 4.5:1 AA minimum for normal text. red-50 clears it (5.13:1). */
+  background-color: var(--gcds-color-red-50);
+  border: 1px solid var(--gcds-color-red-50);
   border-radius: 4px;
   margin-bottom: 10px;
   padding-top: 20px;
@@ -59,6 +62,11 @@
 }
 .message.ai {
   align-self: flex-start;
+  /* Without an explicit width, flex-start gives this box no anchor on its far
+     edge (unlike .message.user, where flex-end anchors the bubble to the
+     right regardless of its own content width) — it just shrinks to fit its
+     content, which can fall short of the available row width. */
+  width: 100%;
 }
 .user-message-box {
   background-color: var(--gcds-color-blue-100);

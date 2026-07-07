@@ -381,6 +381,16 @@ const ChatInterface = ({
     ? `${safeT("homepage.chat.input.referringPage")} ${buildReadableLocationLabel(referringUrl, lang) || truncateURL(referringUrl)}`
     : '';
 
+  // Live-chat referring-URL banner: shown at the top once the first message
+  // has been sent, or above the textarea before that (see the two render
+  // sites below) — same markup either way, so it's defined once here rather
+  // than duplicated at both call sites.
+  const liveReferringUrlBanner = referringUrl ? (
+    <span className="referring-url-chat" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
+      <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+    </span>
+  ) : null;
+
   return (
 <div className="chat-container">
       {/* Show referring URL at the top: always for review mode, and once the
@@ -401,9 +411,7 @@ const ChatInterface = ({
             </a>
           </span>
         ) : (
-          <span className="referring-url-chat" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
-            <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
-          </span>
+          liveReferringUrlBanner
         )
       )}
       <section aria-labelledby="chat-section-heading">
@@ -413,7 +421,30 @@ const ChatInterface = ({
         <div className="message-list" role="log" aria-live="off" aria-labelledby="chat-section-heading">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
-          const userMessages = messages.filter(m => m.sender === "user");
+          // Every real question the user sent, whether it got a successful answer
+          // or an error reply. A user bubble that is itself error:true (blocked
+          // redaction) is excluded — that case already carries its own sr-only
+          // "Warning" heading, so it doesn't need a numbered one too.
+          const sequenceableUserMessages = messages.filter(m => m.sender === "user" && !m.error);
+
+          // Pair each such question with the answer index (in nonErrorAIMessages)
+          // of the AI reply that immediately follows it, only if that reply
+          // succeeded. Built once, in a single forward pass, so the heading
+          // below never has to guess: it either has a real paired answer number
+          // or it doesn't.
+          const pairedAnswerIndexByUserId = {};
+          let pendingUserId = null;
+          for (const m of messages) {
+            if (m.sender === "user") {
+              pendingUserId = m.error ? null : m.id;
+            } else if (m.sender === "ai" && pendingUserId !== null) {
+              if (!m.error) {
+                pairedAnswerIndexByUserId[pendingUserId] = nonErrorAIMessages.findIndex(x => x.id === m.id);
+              }
+              pendingUserId = null;
+            }
+          }
+
           return messages.map((message) => {
           const isLastAIMessage =
             message.sender === "ai" &&
@@ -422,8 +453,8 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
-          const userQuestionIndex = message.sender === "user"
-            ? userMessages.findIndex(m => m.id === message.id)
+          const userQuestionIndex = (message.sender === "user" && !message.error)
+            ? sequenceableUserMessages.findIndex(m => m.id === message.id)
             : null;
           const citationUrl = getCitationUrl(message.interaction);
           const isLastErrorMessage =
@@ -432,7 +463,9 @@ const ChatInterface = ({
           <React.Fragment key={`message-${message.id}`}>
             {message.sender === "user" && userQuestionIndex !== null && (
               <h3 className="sr-only">
-                {safeT("homepage.chat.messages.yourQuestionLabel")} {formatNumber(userQuestionIndex + 1, lang)} - {safeT("homepage.chat.messages.responseLabel")} {formatNumber(userQuestionIndex + 1, lang)}
+                {pairedAnswerIndexByUserId[message.id] !== undefined
+                  ? `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} - ${safeT("homepage.chat.messages.responseLabel")} ${formatNumber(pairedAnswerIndexByUserId[message.id] + 1, lang)}`
+                  : `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} ${safeT("homepage.chat.messages.notAnsweredLabel")}`}
               </h3>
             )}
           <div
@@ -525,6 +558,11 @@ const ChatInterface = ({
                         {safeT("homepage.chat.messages.errorHeading")}
                       </h3>
                       <p className="error-message">
+                        {message.searchUrl && (
+                          <>
+                            <FontAwesomeIcon icon="fa-circle-exclamation" aria-hidden="true" />{" "}
+                          </>
+                        )}
                         <strong>{message.text}</strong>
                       </p>
                       {message.searchUrl && (
@@ -772,11 +810,7 @@ const ChatInterface = ({
                   &nbsp;
                   {safeT("homepage.chat.input.hint")}
                 </span>
-                {!readOnly && messages.length === 0 && referringUrl && (
-                  <span className="referring-url-chat" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
-                    <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
-                  </span>
-                )}
+                {!readOnly && messages.length === 0 && liveReferringUrlBanner}
                 <div className="form-group">
                   <textarea
                     ref={textareaRef}

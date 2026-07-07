@@ -164,6 +164,7 @@
         "limitReachedHeading": "Limit of 3 questions reached",
         "yourQuestionLabel": "Your question",
         "responseLabel": "Response",
+        "notAnsweredLabel": "(not answered)",
         "errorHeading": "Error",
         "sessionTimeoutHeading": "Session expired",
         "chatIssue": "Error in chat",

@@ -578,10 +578,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           setIsLoading(false);
           return;
         } else if (error instanceof ShortQueryValidation) {
-          // Just append the short query error message, do not remove any messages
+          // Consolidate into one system bubble, same as the redaction paths:
+          // the original question rolls into the reply (quoted in the search
+          // link below) rather than staying its own bubble.
           const shortQueryMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
-            ...prevMessages,
+            ...prevMessages.slice(0, -1),
             {
               id: shortQueryMessageId,
               text: safeT('homepage.chat.messages.shortQueryMessage'),
