@@ -8,6 +8,7 @@ locals {
 }
 
 resource "aws_lb" "ai_answers" {
+  provider           = aws.core_services
   name               = "${var.product_name}-lb"
   internal           = false #tfsec:ignore:AWS005
   load_balancer_type = "application"
@@ -29,6 +30,7 @@ resource "aws_lb" "ai_answers" {
 }
 
 resource "aws_lb_listener" "ai_answers_listener" {
+  provider = aws.core_services
   depends_on = [
     aws_acm_certificate.ai_answers,
     aws_route53_record.ai_answers_certificate_validation,
@@ -54,6 +56,7 @@ resource "aws_lb_listener" "ai_answers_listener" {
 
 # Forward alternate hostname → same target group (prod only when provided)
 resource "aws_lb_listener_rule" "https_reponses" {
+  provider     = aws.core_services
   listener_arn = aws_lb_listener.ai_answers_listener.arn
   priority     = 110
 
@@ -72,6 +75,7 @@ resource "aws_lb_listener_rule" "https_reponses" {
 }
 
 resource "aws_lb_target_group" "ai_answers" {
+  provider             = aws.core_services
   name                 = var.product_name
   port                 = 3001
   protocol             = "HTTP"

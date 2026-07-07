@@ -5,6 +5,7 @@
 
 # Security group for Redis
 resource "aws_security_group" "redis" {
+  provider    = aws.core_services
   name        = "${var.product_name}-redis-sg"
   description = "Security group for ElastiCache Redis"
   vpc_id      = var.vpc_id

@@ -23,6 +23,7 @@ moved {
 
 # Create a security group for the DocumentDB cluster
 resource "aws_security_group" "ai-answers-docdb-sg" {
+  provider    = aws.core_services
   name        = "${var.product_name}-example-docdb-sg"
   description = "Security group for DocumentDB for the AI Answers app"
   vpc_id      = var.vpc_id

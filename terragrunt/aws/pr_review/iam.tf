@@ -16,6 +16,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_assume_role" {
 }
 
 resource "aws_iam_role" "ai_answers_lambda_client" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   name               = "ai-answers-lambda-client"
@@ -29,6 +30,7 @@ resource "aws_iam_role" "ai_answers_lambda_client" {
 
 # Attach basic Lambda execution policy
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_basic_execution" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
@@ -37,6 +39,7 @@ resource "aws_iam_role_policy_attachment" "ai_answers_lambda_basic_execution" {
 
 # Attach VPC execution policy for Lambda
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_vpc_execution" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
@@ -78,6 +81,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
 }
 
 resource "aws_iam_policy" "ai_answers_lambda_parameter_store" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   name   = "aiAnswersLambdaParameterStoreRetrieval"
@@ -91,6 +95,7 @@ resource "aws_iam_policy" "ai_answers_lambda_parameter_store" {
 }
 
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_parameter_store" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
@@ -110,6 +115,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_assume_bedrock_role" {
 }
 
 resource "aws_iam_policy" "ai_answers_lambda_assume_bedrock_role" {
+  provider = aws.core_services
   count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
 
   name        = "ai-answers-lambda-assume-bedrock-invoke-role"
@@ -123,6 +129,7 @@ resource "aws_iam_policy" "ai_answers_lambda_assume_bedrock_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_assume_bedrock_role" {
+  provider = aws.core_services
   count = var.env == "staging" && var.bedrock_invoke_role_arn != "" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
@@ -149,6 +156,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_s3_access" {
 }
 
 resource "aws_iam_policy" "ai_answers_lambda_s3_access" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   name   = "aiAnswersLambdaS3Access"
@@ -162,6 +170,7 @@ resource "aws_iam_policy" "ai_answers_lambda_s3_access" {
 }
 
 resource "aws_iam_role_policy_attachment" "ai_answers_lambda_s3_access" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   role       = aws_iam_role.ai_answers_lambda_client[0].name
@@ -180,6 +189,10 @@ module "github_workflow_roles" {
 
   source            = "github.com/cds-snc/terraform-modules//gh_oidc_role?ref=v10.4.1"
   billing_tag_value = var.billing_code
+
+  providers = {
+    aws = aws.core_services
+  }
 
   roles = [
     {
@@ -210,6 +223,7 @@ data "aws_iam_policy_document" "lambda_management" {
 }
 
 resource "aws_iam_policy" "lambda_management" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   name   = "aiAnswersLambdaManagement"
@@ -223,6 +237,7 @@ resource "aws_iam_policy" "lambda_management" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_management" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   role       = local.ai_answers_lambda_client_pr_review_env
@@ -232,6 +247,7 @@ resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_management" {
 
 # Attach SSM parameter store access to GitHub Actions role
 resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_parameter_store" {
+  provider = aws.core_services
   count = var.env == "staging" ? 1 : 0
 
   role       = local.ai_answers_lambda_client_pr_review_env
