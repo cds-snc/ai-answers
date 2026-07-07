@@ -201,7 +201,7 @@ const HomePage = ({ lang = "en" }) => {
           className="homepage-subtitle mt-400"
           aria-label={t("homepage.subtitle.ariaLabel")}
         >
-          <span className="aria-hidden">{t("homepage.subtitle.text")}</span>
+          <span aria-hidden="true">{t("homepage.subtitle.text")}</span>
         </h2>
         <GcdsText className="mb-200">
           {t("homepage.intro.researchOnly")}

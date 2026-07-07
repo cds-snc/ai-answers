@@ -34,9 +34,13 @@
   margin-bottom: 0px !important;
 }
 
+/* Fluid width + capped max-width, matching GcdsHeader's own inner container
+   (gcds-header.css: width:90%; max-width:var(--gcds-header-container-max-width))
+   and GcdsContainer's layout="page" — so page content lines up with the
+   header/logo/nav edges at every viewport width, not just at fixed breakpoints. */
 .container-custom {
-  padding-right: 15px;
-  padding-left: 15px;
+  width: 90%;
+  max-width: var(--gcds-container-size-xl);
   margin-right: auto;
   margin-left: auto;
 }
@@ -49,36 +53,6 @@
 
 .container-custom :after {
   clear: both;
-}
-
-@media (min-width: 480px) {
-  .container-custom {
-    width: 470px;
-  }
-}
-
-@media (min-width: 640px) {
-  .container-custom {
-    width: 605px;
-  }
-}
-
-@media (min-width: 768px) {
-  .container-custom {
-    width: 750px;
-  }
-}
-
-@media (min-width: 992px) {
-  .container-custom {
-    width: 970px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .container-custom {
-    width: 1170px;
-  }
 }
 
 /* top banner for alpha/beta warning */
@@ -235,7 +209,7 @@ gcds-details {
    fought via !important elsewhere for) any other page's first h2, including
    the feedback components' own headings. */
 h2.homepage-subtitle {
-  font-size: 26px;
+  font: var(--gcds-heading-h4-desktop);
   margin-bottom: 10px;
   color: #333 !important;
 }

@@ -578,10 +578,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           setIsLoading(false);
           return;
         } else if (error instanceof ShortQueryValidation) {
-          // Just append the short query error message, do not remove any messages
+          // Consolidate into one system bubble, same as the redaction paths:
+          // the original question rolls into the reply (quoted in the search
+          // link below) rather than staying its own bubble.
           const shortQueryMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
-            ...prevMessages,
+            ...prevMessages.slice(0, -1),
             {
               id: shortQueryMessageId,
               text: safeT('homepage.chat.messages.shortQueryMessage'),
@@ -737,14 +739,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <>
             <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+              <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
                       href={safeHttpHref(displayUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={buildAriaLabel(displayUrl, lang) || undefined}
+                      aria-label={buildAriaLabel(displayUrl, lang)}
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
@@ -768,7 +770,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         }
                       }}
                     >
-                      <span className="citation-url-text font-size-text-xsm-nr">
+                      <span className="citation-url-text font-size-text-small">
                         {(() => {
                           // Mobile: always render full URL, CSS handles ellipsis
                           if (isMobile) {
@@ -922,8 +924,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // Add handler for department changes
 
-  const initialInput = t('homepage.chat.input.initial');
-
   return (
     <>
       <ChatInterface
@@ -950,20 +950,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        getLabelForInput={() =>
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').text
-              : t('homepage.chat.input.followUp'))
-        }
-        ariaLabelForInput={
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').ariaLabel
-              : undefined)
-        }
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}

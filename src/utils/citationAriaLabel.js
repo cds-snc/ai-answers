@@ -142,7 +142,12 @@ function extractSlugLabel(pathname, lang = 'en') {
 //   and 2.5.3 cleanly but hides the raw URL from sighted users, reducing destination
 //   transparency on a government service. Revisit if design requirements change.
 //
-export function buildAriaLabel(url, lang = 'en') {
+// Builds a readable description of what a URL points to — department/site
+// name plus, where derivable, a readable page label — without the
+// link-specific "(opens in new tab)"/raw-URL suffix buildAriaLabel appends.
+// Used anywhere a URL's destination needs to be described to a screen reader
+// as informational text rather than as an actionable link.
+export function buildReadableLocationLabel(url, lang = 'en') {
   const s = STRINGS[lang];
 
   // Normalise protocol-relative URLs (//canada.ca/...) so new URL() can parse
@@ -181,9 +186,9 @@ export function buildAriaLabel(url, lang = 'en') {
     const { label: slugLabel, isBilingual } = slugResult;
     const deptName = DOMAIN_REGISTRY[hostname]?.[lang];
     if (!isBilingual && deptName && deptName !== s.govCa) {
-      return `${deptName} — ${slugLabel} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
+      return `${deptName} — ${slugLabel} — ${spokenHostname}`;
     }
-    return `${slugLabel} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
+    return `${slugLabel} — ${spokenHostname}`;
   }
 
   // Tier 2: domain in registry
@@ -193,9 +198,9 @@ export function buildAriaLabel(url, lang = 'en') {
     // with an opaque path), avoid repeating it: "Government of Canada — canada.ca"
     // rather than "Government of Canada — Government of Canada — canada.ca".
     if (deptName === s.govCa) {
-      return `${s.govCa} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
+      return `${s.govCa} — ${spokenHostname}`;
     }
-    return `${s.govCa} — ${deptName} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
+    return `${s.govCa} — ${deptName} — ${spokenHostname}`;
   }
 
   // Tier 3: always prefix GC domains with "Government of Canada" so something
@@ -203,8 +208,17 @@ export function buildAriaLabel(url, lang = 'en') {
   // not produce a readable slug — including indigenous language paths and any
   // other language prefix not covered by SKIP_SEGMENTS.
   if (isGcDomain(hostname)) {
-    return `${s.govCa} — ${spokenHostname} ${s.opensInNewTab} ${url}`;
+    return `${s.govCa} — ${spokenHostname}`;
   }
 
-  return `${spokenHostname} ${s.opensInNewTab} ${url}`;
+  return spokenHostname;
+}
+
+export function buildAriaLabel(url, lang = 'en') {
+  const s = STRINGS[lang];
+  const locationLabel = buildReadableLocationLabel(url, lang);
+  // Even when the URL can't be parsed into a readable label, this is still a
+  // link that opens in a new tab — that much always needs to be announced.
+  if (!locationLabel) return `${s.opensInNewTab} ${url}`;
+  return `${locationLabel} ${s.opensInNewTab} ${url}`;
 }

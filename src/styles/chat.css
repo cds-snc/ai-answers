@@ -12,8 +12,11 @@
 
 .error-box {
   color: var(--gcds-color-red-900);
-  background-color: var(--gcds-color-red-100);
-  border: 1px solid var(--gcds-color-red-100);
+  /* One step lighter than red-100: red-100 put the link's hover colour
+     (--gcds-link-hover, #1354ec from @gcds-core) at 4.34:1 against it,
+     just under the 4.5:1 AA minimum for normal text. red-50 clears it (5.13:1). */
+  background-color: var(--gcds-color-red-50);
+  border: 1px solid var(--gcds-color-red-50);
   border-radius: 4px;
   margin-bottom: 10px;
   padding-top: 20px;
@@ -59,6 +62,7 @@
 }
 .message.ai {
   align-self: flex-start;
+  width: 100%;
 }
 .user-message-box {
   background-color: var(--gcds-color-blue-100);
@@ -109,11 +113,17 @@
   padding: 0;
 }
 
+.ai-message-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .ai-message-content {
   background-color: #fff;
   border: solid 1px #d9d9d9;
-  padding: 1.25rem;
   border-radius: 0.5rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1em;
@@ -281,10 +291,8 @@
 .feedback-container {
   background-color: #fff;
   border: solid 1px #d9d9d9;
-  padding: 1rem;
   border-radius: 0.5rem;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  padding: 1rem 1.25rem;
 }
 .feedback-text {
   font-size: 18px !important;
@@ -719,9 +727,10 @@
 
 /* Label styling */
 .field-container label {
-  font-size: 24px;
-  font-family: "Lato";
-  font-weight: bold;
+  font-size: var(--gcds-font-sizes-h5);
+  line-height: var(--gcds-line-heights-h5);
+  font-family: var(--gcds-font-families-body);
+  font-weight: var(--gcds-font-weights-semibold);
 }
 
 /* Hint text styling */
@@ -734,7 +743,9 @@
 }
 
 .field-container:has(textarea:focus) .hint-text,
-.field-container:has(textarea:focus) label {
+.field-container:has(textarea:focus) label,
+.field-container:has(textarea:focus) .referring-url-chat,
+.field-container:has(textarea:focus) #displayReferringURL {
   color: var(--gcds-details-focus-background);
 }
 
@@ -749,7 +760,9 @@
 /* Fallback for browsers without :has() support (e.g. Firefox < 121) */
 @supports not selector(:has(a)) {
   .field-container:focus-within .hint-text,
-  .field-container:focus-within label {
+  .field-container:focus-within label,
+  .field-container:focus-within .referring-url-chat,
+  .field-container:focus-within #displayReferringURL {
     color: var(--gcds-details-focus-background);
   }
 
@@ -811,7 +824,10 @@ textarea:focus {
     font: var(--gcds-heading-h4-mobile) !important;
   }
   .field-container label {
-    font: var(--gcds-heading-h5-mobile) !important;
+    font-size: var(--gcds-font-sizes-h5-mobile);
+    line-height: var(--gcds-line-heights-h5-mobile);
+    font-family: var(--gcds-font-families-body);
+    font-weight: var(--gcds-font-weights-semibold);
   }
   .btn-primary-send .button-icon,
   .btn-primary-send svg.button-icon {
@@ -829,16 +845,17 @@ textarea:focus {
   }
 }
 
+.chat-id,
+.referring-url-chat,
+#displayReferringURL {
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
+}
+
 .chat-id {
-  padding: 10px 20px;
-  border-bottom: 1px solid #d9d9d9;
-  border-left: 1px solid #d9d9d9;
-  border-right: 1px solid #d9d9d9;
+  align-self: flex-end;
+  padding: 6px 14px;
   background-color: #f5f5f5;
-  margin-top: -6px;
-  border-bottom-right-radius: 5px;
-  border-bottom-left-radius: 5px;
-  text-align: right;
 }
 
 .chat-id p {
@@ -882,7 +899,7 @@ textarea:focus {
 
 /* Public feedback: section title sits above the white option-picker card,
    not inside its fieldset/legend — it's a page heading, not a form control. */
-.expert-rating-container h2.feedback-followup-title {
+.expert-rating-container h4.feedback-followup-title {
   font: var(--gcds-font-h4);
   margin: 0 0 var(--gcds-spacing-150);
   text-wrap: wrap;
@@ -959,25 +976,23 @@ fieldset.feedback-reason-fieldset input[type="radio"] + label::before {
 
 /* All gc-chckbxrdio legends (PublicFeedbackComponent's feedback-reason-fieldset
    and ExpertFeedbackComponent's sentence/citation-rating-group legends alike)
-   share this GC DS fieldset-legend styling. Hardcoded rather than var()'d:
-   our pinned @cdssnc/gcds-components (0.26.3) predates the gcds-radios
-   component and has no matching token — --gcds-fieldset-legend-size-h5-desktop
-   / -mobile referenced here previously don't exist in any GCDS version and
-   silently no-op. Values below are copied from @cdssnc/gcds-components@0.47.0's
-   --gcds-radio-legend-font-desktop / --gcds-radio-legend-font-mobile.
-   TODO: once gcds-components is upgraded past the version that ships
-   gcds-radios, replace with var(--gcds-radio-legend-font-desktop) /
-   var(--gcds-radio-legend-font-mobile). */
+   share this GC DS fieldset-legend styling — matched to .field-container
+   label's size (the textarea's own label) rather than the previous
+   hardcoded-Noto-Sans-bold values. */
 fieldset.gc-chckbxrdio legend {
   width: auto;
   color: var(--gcds-checkbox-default-text);
-  font: 700 1.25rem/160% "Noto Sans", sans-serif;
+  font-size: var(--gcds-font-sizes-h5);
+  line-height: var(--gcds-line-heights-h5);
+  font-family: var(--gcds-font-families-body);
+  font-weight: var(--gcds-font-weights-semibold);
   margin: var(--gcds-fieldset-legend-margin);
 }
 
 @media only screen and (width < 48em) {
   fieldset.gc-chckbxrdio legend {
-    font: 700 1.125rem/155% "Noto Sans", sans-serif;
+    font-size: var(--gcds-font-sizes-h5-mobile);
+    line-height: var(--gcds-line-heights-h5-mobile);
   }
 }
 
@@ -1122,21 +1137,8 @@ fieldset.gc-chckbxrdio legend {
   font-size: 16px;
   line-height: 1.55;
   background-color: #f5f5ff;
-  border-radius: 5px;
-  padding: 0.25em 0.5em;
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-175);
   color: #333;
-  display: block;
+  display: inline-block;
   margin-bottom: 24px;
-}
-.field-container:has(textarea:focus) .referring-url-chat,
-.field-container:has(textarea:focus) #displayReferringURL {
-  color: var(--gcds-details-focus-background);
-}
-
-/* Fallback for browsers without :has() support (e.g. Firefox < 121) */
-@supports not selector(:has(a)) {
-  .field-container:focus-within .referring-url-chat,
-  .field-container:focus-within #displayReferringURL {
-    color: var(--gcds-details-focus-background);
-  }
 }

@@ -132,7 +132,7 @@ const FeedbackComponent = ({
   if (!hasExpertRole) {
     return (
       <div className="feedback-container">
-        <span className="feedback-text">
+        <span className="feedback-text" aria-hidden="true">
           {t("homepage.publicFeedback.question")}
         </span>
         <span className="feedback-buttons">
@@ -172,7 +172,7 @@ const FeedbackComponent = ({
 
   return (
     <div className="feedback-container">
-      <span className="feedback-text">{t("homepage.feedback.question")} </span>
+      <span className="feedback-text" aria-hidden="true">{t("homepage.feedback.question")} </span>
       <button
         className="feedback-link button-as-link"
         onClick={() => handleFeedback(true)}

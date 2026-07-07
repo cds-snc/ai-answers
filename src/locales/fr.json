@@ -162,9 +162,9 @@
         "shortQuerySearch": "Rechercher sur Canada.ca :",
         "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
         "limitReachedHeading": "Limite de 3 questions atteinte",
-        "answerLabel1": "Votre réponse est,",
-        "answerLabel2": "Votre réponse 2 est,",
-        "answerLabel3": "Votre réponse 3 est,",
+        "yourQuestionLabel": "Votre question",
+        "responseLabel": "Réponse",
+        "notAnsweredLabel": "(sans réponse)",
         "errorHeading": "Erreur",
         "sessionTimeoutHeading": "Session expirée",
         "chatIssue": "Erreur dans le chat",
@@ -179,7 +179,7 @@
         "referringUrl": "URL de provenance :"
       },
       "section": {
-        "heading": "Conversation par clavardage"
+        "heading": "Historique de la conversation – Réponses IA"
       }
     },
     "expertRating": {

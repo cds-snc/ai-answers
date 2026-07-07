@@ -162,9 +162,9 @@
         "shortQuerySearch": "Search Canada.ca for:",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
         "limitReachedHeading": "Limit of 3 questions reached",
-        "answerLabel1": "Your answer is,",
-        "answerLabel2": "Your answer 2 is,",
-        "answerLabel3": "Your answer 3 is,",
+        "yourQuestionLabel": "Your question",
+        "responseLabel": "Response",
+        "notAnsweredLabel": "(not answered)",
         "errorHeading": "Error",
         "sessionTimeoutHeading": "Session expired",
         "chatIssue": "Error in chat",
@@ -179,7 +179,7 @@
         "referringUrl": "Referring URL:"
       },
       "section": {
-        "heading": "Chat conversation"
+        "heading": "AI Answers conversation log"
       }
     },
     "expertRating": {
