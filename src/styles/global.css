@@ -1,10 +1,22 @@
 /* Add Font Awesome CSS import at the top */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
 
-/* Suppress focus ring on programmatically focused elements (tabindex="-1").
-   These are never reachable via keyboard tab so removing the outline is safe. */
+/* Suppress focus ring on programmatically focused elements (tabindex="-1")
+   that exist only to move the screen-reader cursor for a status/loading
+   announcement (e.g. FeedbackComponent's "thank you" message, ChatInterface's
+   loading indicator) — sighted keyboard users have nothing to act on there,
+   so a visible ring would be confusing rather than helpful. */
 [tabindex="-1"]:focus {
   outline: none;
+}
+
+/* Error alerts opt back into a visible ring: focus moving to a role="alert"
+   error (AnnouncedError.js, FeedbackInlineError.js) is meaningful to sighted
+   keyboard users too, not just screen readers, so they need to see where
+   focus landed. */
+[role="alert"][tabindex="-1"]:focus {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
 }
 
 /* Custom non-responsive font sizes */

@@ -34,7 +34,12 @@ const ResetRequestPage = ({ lang = 'en' }) => {
   return (
     <div className="auth-login-container">
       <h1>{t('reset.request.title')}</h1>
-      {successMessage && <div>{successMessage}</div>}
+      {successMessage && (
+        <p className="thank-you" role="status" aria-live="polite">
+          <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
+          {successMessage}
+        </p>
+      )}
       {error && (
         <AnnouncedError id="reset-request-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}
