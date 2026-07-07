@@ -555,12 +555,6 @@
   margin: 1em 1em 1em 1em;
 }
 
-.feedback-inline-error {
-  color: var(--gcds-error-message-text-color);
-  font-weight: var(--gcds-font-weights-bold);
-  font-size: 18px;
-}
-
 /* Add spacing between sections */
 .sentence-rating-group,
 .citation-rating-group,

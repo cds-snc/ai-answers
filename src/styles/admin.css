@@ -1273,16 +1273,6 @@
   cursor: not-allowed;
 }
 
-.auth-error-message {
-  padding: 12px;
-  margin-bottom: 20px;
-  background-color: #FEE;
-  border: 1px solid #FCC;
-  border-radius: 4px;
-  color: #C00;
-  font-size: 0.9rem;
-}
-
 .auth-links {
   margin-top: 20px;
   text-align: center;

@@ -4,6 +4,8 @@ import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
+import AnnouncedError from '../components/auth/AnnouncedError.js';
+import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 
 const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -11,12 +13,12 @@ const RegisterPage = ({ lang = 'en' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    clearError();
 
     if (password !== confirmPassword) {
       setError(t('signup.passwordMismatch'));
@@ -42,7 +44,9 @@ const RegisterPage = ({ lang = 'en' }) => {
   return (
     <div className="auth-signup-container">
       <h1>{t('signup.title')}</h1>
-      {error && <div className="auth-error-message">{error}</div>}
+      {error && (
+        <AnnouncedError id="signup-error" message={error} errorCount={errorCount} inputRef={errorRef} />
+      )}
       <form onSubmit={handleSubmit}>
         <div className="auth-form-group">
           <label htmlFor="email">{t('signup.email')}</label>

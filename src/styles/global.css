@@ -8,6 +8,10 @@
 }
 
 /* Custom non-responsive font sizes */
+.font-size-text-sm-nr {
+  font-size: var(--gcds-font-sizes-text-small); /* 18px — GC DS token, stays this size on mobile rather than shrinking to --gcds-font-sizes-text-small-mobile (16px) */
+}
+
 .font-size-text-xsm-nr {
   font-size: 1rem !important; /* 16px */
   line-height: 1.5em;
@@ -168,6 +172,11 @@ gcds-details {
 
 .mrgn-bttm-20 {
   margin-bottom: 20px;
+}
+
+.form-error-message {
+  color: var(--gcds-error-message-text-color);
+  font-weight: var(--gcds-font-weights-bold);
 }
 
 .mrgn-bttm-10 {
