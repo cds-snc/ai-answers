@@ -750,7 +750,8 @@
 }
 
 .field-container:has(textarea:focus) .hint-text,
-.field-container:has(textarea:focus) label {
+.field-container:has(textarea:focus) label,
+.field-container:has(textarea:focus) .referring-url-chat {
   color: var(--gcds-details-focus-background);
 }
 
@@ -765,7 +766,8 @@
 /* Fallback for browsers without :has() support (e.g. Firefox < 121) */
 @supports not selector(:has(a)) {
   .field-container:focus-within .hint-text,
-  .field-container:focus-within label {
+  .field-container:focus-within label,
+  .field-container:focus-within .referring-url-chat {
     color: var(--gcds-details-focus-background);
   }
 
@@ -1141,16 +1143,4 @@ fieldset.gc-chckbxrdio legend {
   color: #333;
   display: inline-block;
   margin-bottom: 24px;
-}
-.field-container:has(textarea:focus) .referring-url-chat,
-.field-container:has(textarea:focus) #displayReferringURL {
-  color: var(--gcds-details-focus-background);
-}
-
-/* Fallback for browsers without :has() support (e.g. Firefox < 121) */
-@supports not selector(:has(a)) {
-  .field-container:focus-within .referring-url-chat,
-  .field-container:focus-within #displayReferringURL {
-    color: var(--gcds-details-focus-background);
-  }
 }

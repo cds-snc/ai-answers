@@ -391,6 +391,17 @@ const ChatInterface = ({
     </span>
   ) : null;
 
+  // Once the conversation is underway, the persistent banner above already
+  // carries id="displayReferringURL" (the aria-describedby target), so this
+  // near-compose-box copy — shown only while composing a follow-up — can't
+  // reuse that id without duplicating it in the DOM. It's aria-hidden since
+  // the accessible description is already announced via the persistent one.
+  const composeBoxReferringUrlEcho = referringUrl ? (
+    <span className="referring-url-chat" aria-hidden="true">
+      <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+    </span>
+  ) : null;
+
   return (
 <div className="chat-container">
       {/* Show referring URL at the top: always for review mode, and once the
@@ -459,13 +470,21 @@ const ChatInterface = ({
           const citationUrl = getCitationUrl(message.interaction);
           const isLastErrorMessage =
             message.error && message.id === messages[messages.length - 1]?.id;
+          // While the AI is still generating a reply, the most recent question
+          // has no paired answer yet — that's not the same as "not answered"
+          // (which means the reply failed or never came). Don't announce a
+          // pending question as unanswered.
+          const isPendingAnswer = isLoading &&
+            sequenceableUserMessages[sequenceableUserMessages.length - 1]?.id === message.id;
           return (
           <React.Fragment key={`message-${message.id}`}>
             {message.sender === "user" && userQuestionIndex !== null && (
               <h3 className="sr-only">
                 {pairedAnswerIndexByUserId[message.id] !== undefined
                   ? `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} - ${safeT("homepage.chat.messages.responseLabel")} ${formatNumber(pairedAnswerIndexByUserId[message.id] + 1, lang)}`
-                  : `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} ${safeT("homepage.chat.messages.notAnsweredLabel")}`}
+                  : isPendingAnswer
+                    ? `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)}`
+                    : `${safeT("homepage.chat.messages.yourQuestionLabel")} ${formatNumber(userQuestionIndex + 1, lang)} ${safeT("homepage.chat.messages.notAnsweredLabel")}`}
               </h3>
             )}
           <div
@@ -811,6 +830,7 @@ const ChatInterface = ({
                   {safeT("homepage.chat.input.hint")}
                 </span>
                 {!readOnly && messages.length === 0 && liveReferringUrlBanner}
+                {!readOnly && messages.length > 0 && isTextareaFocused && composeBoxReferringUrlEcho}
                 <div className="form-group">
                   <textarea
                     ref={textareaRef}
