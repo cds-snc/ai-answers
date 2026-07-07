@@ -65,7 +65,7 @@ const MetadataModal = ({ metadata, onClose, t }) => {
           }}
         >
           <h2 className="text-xl font-semibold">{t('logging.metadataDetails')}</h2>
-          <GcdsButton type="button" variant="secondary" onClick={onClose}>
+          <GcdsButton type="button" buttonRole="secondary" onClick={onClose}>
             {t('logging.close')}
           </GcdsButton>
         </div>

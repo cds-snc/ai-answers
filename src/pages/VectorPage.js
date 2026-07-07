@@ -336,7 +336,7 @@ const VectorPage = ({ lang = 'en' }) => {
           <GcdsButton onClick={fetchVectorStats} disabled={loading} className="mb-200 mr-200">
             {loading ? t('vector.loading') : t('vector.fetchStats')}
           </GcdsButton>
-          <GcdsButton onClick={handleCreateVectorIndex} disabled={loading} variant="primary" className="mb-200 mr-200">
+          <GcdsButton onClick={handleCreateVectorIndex} disabled={loading} buttonRole="primary" className="mb-200 mr-200">
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
@@ -419,7 +419,7 @@ const VectorPage = ({ lang = 'en' }) => {
           <GcdsButton
             onClick={handleRegenerateEmbeddings}
             disabled={embeddingProgress?.loading || isAutoProcessingEmbeddings}
-            variant="danger"
+            buttonRole="danger"
             className="mb-200 mr-200"
           >
             {isRegeneratingEmbeddings ? t('vector.regenerating') : t('vector.regenerateEmbeddings')}
@@ -474,7 +474,7 @@ const VectorPage = ({ lang = 'en' }) => {
             <GcdsButton
               onClick={handleRestartMetadataBackfill}
               disabled={isBackfillingMetadata}
-              variant="secondary"
+              buttonRole="secondary"
               className="mb-200 mr-200"
             >
               {t('vector.restartMetadataBackfill')}
@@ -483,7 +483,7 @@ const VectorPage = ({ lang = 'en' }) => {
           <GcdsButton
             onClick={handleStopMetadataBackfill}
             disabled={!isBackfillingMetadata}
-            variant="secondary"
+            buttonRole="secondary"
             className="mb-200 mr-200"
           >
             {t('vector.stopMetadataBackfill')}

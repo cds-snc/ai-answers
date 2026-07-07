@@ -246,7 +246,7 @@
   flex-direction: column;
   gap: 20px;
 }
-@media (max-width: 768px) {
+@media only screen and (width < 48em) {
   .chat-container {
     padding: 0.5rem;
   }
@@ -266,7 +266,7 @@
     margin-top: 10px;
   }
 }
-@media (min-width: 769px) {
+@media only screen and (width >= 48em) {
   .chat-container {
     padding-left: 0;
     padding-right: 0;
@@ -286,8 +286,7 @@
   margin-top: 10px;
   margin-bottom: 10px;
 }
-.feedback-text,
-.feedback-link {
+.feedback-text {
   font-size: 18px !important;
   padding-right: 10px;
 }
@@ -379,17 +378,13 @@
 /* expert rating */
 .expert-rating-container {
   margin-top: 10px;
-  padding: 20px 20px 20px 20px;
+  padding: 20px;
   background-color: #f5f5f5;
   border: 1px solid #e3e3e3;
   border-radius: 0.5rem;
+  position: relative;
 }
 
-.expert-rating-container h2:first-of-type {
-  font-size: 20px;
-  text-wrap: wrap;
-  max-width: none;
-}
 .expert-rating-container h3 {
   font-size: 18px;
   color: #333;
@@ -402,7 +397,6 @@
 .expert-rating-container label {
   display: block;
   margin-bottom: 20px;
-  font-size: 16px;
 }
 .expert-rating-container input[type="checkbox"] {
   margin-right: 10px;
@@ -416,7 +410,9 @@
 }
 
 .feedback-link {
-  color: #284162;
+  font-size: 18px !important;
+  padding-right: 10px;
+  color: var(--gcds-link-default);
   margin-right: 8px;
   margin-left: 8px;
   text-decoration-thickness: var(--gcds-link-decoration-thickness);
@@ -470,6 +466,16 @@
   text-decoration: none;
 }
 
+/* .feedback-link:hover and .button-as-link:focus have equal specificity, so
+   which one wins the `color` property when both states are active at once
+   (tab to focus, then hover with the mouse) depends on source order alone.
+   State it explicitly so the focus-style pairing (light text on the blue
+   focus background) always wins and stays contrast-safe. */
+.feedback-link.button-as-link:focus:hover {
+  color: var(--gcds-details-focus-text);
+  text-decoration: none;
+}
+
 .ai-message-content p {
   display: block;
   margin: 0;
@@ -520,11 +526,6 @@
   margin-right: 8px;
 }
 
-/* QA: cleanup — duplicate .expert-rating-container; fold position: relative into the first definition above and delete this block */
-.expert-rating-container {
-  position: relative;
-}
-
 .thank-you span {
   margin-right: 6px;
   color: var(--gcds-notice-success-text);
@@ -546,11 +547,55 @@
   margin: 1em 1em 1em 1em;
 }
 
+.feedback-inline-error {
+  color: var(--gcds-error-message-text-color);
+  font-weight: var(--gcds-font-weights-bold);
+  font-size: 18px;
+}
+
 /* Add spacing between sections */
 .sentence-rating-group,
 .citation-rating-group,
 .answer-improvement {
   margin-bottom: 20px;
+}
+
+/* Expert feedback only — .md is scoped to ExpertFeedbackComponent's outer
+   fieldset (PublicFeedbackComponent dropped it, see .feedback-reason-fieldset
+   above). Indents each rating radio/checkbox row under its question text. */
+.gc-chckbxrdio.md .radio,
+.gc-chckbxrdio.md .checkbox {
+  margin-left: var(--gcds-spacing-300);
+  margin-right: var(--gcds-spacing-300);
+}
+
+/* .list-disc (gcds-utility) sets no spacing between <li> items, so the
+   "When to code as harmful" bullets read as one packed block. Scoped to
+   .harmful-details so the citation-link list elsewhere (also .list-disc)
+   is unaffected. */
+.harmful-details li {
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.harmful-details li:last-child {
+  margin-bottom: 0;
+}
+
+/* details summary has display: flex !important (global.css), which collapses
+   a trailing text-node space at the flex-item boundary — a literal space
+   after the asterisk gets swallowed. Use margin instead of relying on the
+   space character. */
+.harmful-summary-marker {
+  margin-right: 0.25em;
+}
+
+/* GC DS "text small" (18px), non-responsive — stays 18px on mobile rather than
+   shrinking, replacing the old non-responsive .font-size-text-xsm-nr.
+   font-size only (not the full `font` shorthand): the token also bundles its
+   own line-height/font-family, which fought with what this list already had. */
+.harmful-details p,
+.harmful-details li {
+  font-size: var(--gcds-font-sizes-text-small);
 }
 
 .character-warning {
@@ -762,7 +807,7 @@ textarea:focus {
   .hint-text {
     font: var(--gcds-font-text-mobile) !important;
   }
-  h2:first-of-type {
+  h2.homepage-subtitle {
     font: var(--gcds-heading-h4-mobile) !important;
   }
   .field-container label {
@@ -801,29 +846,25 @@ textarea:focus {
   max-width: 100%;
 }
 
-/* QA: cleanup — .explanation-field is defined again further down with more properties (padding, border-radius, background); that second definition supersedes this one. Delete this block. */
-.expert-rating-container .explanation-field {
-  margin-top: 10px;
-  margin-bottom: 20px;
+.expert-rating-container .explanation-field textarea,
+.expert-rating-container .explanation-field input[type="url"] {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 2px solid #333;
+  border-radius: 0;
 }
 
 .expert-rating-container .explanation-field textarea {
-  width: 100%;
   min-height: 60px;
-  padding: 8px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 .expert-rating-container .sentence-rating-group {
-  margin-bottom: 25px;
-  padding-bottom: 15px;
   border-bottom: 1px solid #eee;
 }
 
-.sentence-text {
-  font-style: italic;
+.sentence-text,
+.citation-text {
   color: #333;
   margin: 10px 0;
   padding: 10px;
@@ -831,14 +872,141 @@ textarea:focus {
   border-left: 3px solid #ddd;
   font-size: 0.95em;
   line-height: 1.4;
+  font-style: italic;
+  overflow-wrap: break-word;
+  /* Was inherited from the parent <legend>'s bold font shorthand; these divs
+     moved out to be legend siblings (for aria-describedby), so it no longer
+     cascades in — restored explicitly. */
+  font-weight: var(--gcds-font-weights-bold);
 }
 
-.expert-rating-container legend {
-  margin-bottom: 10px;
+/* Public feedback: section title sits above the white option-picker card,
+   not inside its fieldset/legend — it's a page heading, not a form control. */
+.expert-rating-container h2.feedback-followup-title {
+  font: var(--gcds-font-h4);
+  margin: 0 0 var(--gcds-spacing-150);
+  text-wrap: wrap;
+  max-width: none;
+}
+
+/* Puts the "Answer N" disambiguator on its own line under the heading text
+   (block instead of a <br>, so the line break lives in CSS, not markup).
+   h6 scale (bold, #333 via --gcds-checkbox-default-text) — smaller than the
+   h4 heading above it, but still reads as part of the same heading. */
+.feedback-answer-number {
+  display: block;
+  font: var(--gcds-heading-h6-desktop);
+  color: var(--gcds-checkbox-default-text);
+}
+
+@media only screen and (width < 48em) {
+  .feedback-answer-number {
+    font: var(--gcds-heading-h6-mobile);
+  }
+}
+
+/* White card holding the radio/checkbox options, distinct from the grey
+   .expert-rating-container it sits inside. The border/background live on this
+   wrapping div rather than on the <fieldset> itself: a <fieldset> with a
+   visible border makes the browser carve a notch out of it wherever the
+   <legend> sits, and when the legend wraps to two lines (long text, narrow
+   viewport, "(required)" pushed to its own line) only the first line gets
+   the notch treatment — the rest renders outside the border entirely. With
+   no border on the fieldset there's no notch to compute, so wrapped legend
+   text just flows normally inside this div's padding. */
+.feedback-reason-card {
+  background-color: var(--gcds-bg-white);
+  border: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+  padding: 0 var(--gcds-spacing-300) var(--gcds-spacing-300);
+}
+
+fieldset.feedback-reason-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* Shared error ring for both feedback flows: PublicFeedbackComponent's
+   fieldset and ExpertFeedbackComponent's fieldset both carry .gc-chckbxrdio,
+   so one rule covers the .has-error state for either. */
+.gc-chckbxrdio.has-error input[type="checkbox"] + label::before,
+.gc-chckbxrdio.has-error input[type="radio"] + label::before {
+  box-shadow: 0 0 0 2px var(--gcds-error-message-text-color);
+}
+
+/* Without .md (removed so public feedback keeps the larger touch-target
+   radio circles), items fall back to .gc-chckbxrdio .radio's default
+   spacing — margin-bottom: 26px, line-height: 2.8em — which reads as too
+   loose. Tighten spacing only, independent of the md/default circle size. */
+.feedback-reason-fieldset li.checkbox,
+.feedback-reason-fieldset li.radio {
+  margin-top: 0;
+  margin-bottom: var(--gcds-spacing-200);
+  line-height: 1.4;
+}
+
+/* The circle is a 45px box (19px content + 13px white border each side,
+   content-box), positioned absolute with top:2px in the base .gc-chckbxrdio
+   rule — tuned for that rule's own much taller default line-height/spacing.
+   Against our tightened spacing it centers on the whole (possibly 2-line)
+   label instead of its first line, reading as sitting too low relative to
+   the text. Scoped to this fieldset only so ExpertFeedbackComponent, which
+   still uses the default spacing, is unaffected. */
+fieldset.feedback-reason-fieldset input[type="checkbox"] + label::before,
+fieldset.feedback-reason-fieldset input[type="radio"] + label::before {
+  top: -8px;
+}
+
+/* All gc-chckbxrdio legends (PublicFeedbackComponent's feedback-reason-fieldset
+   and ExpertFeedbackComponent's sentence/citation-rating-group legends alike)
+   share this GC DS fieldset-legend styling. Hardcoded rather than var()'d:
+   our pinned @cdssnc/gcds-components (0.26.3) predates the gcds-radios
+   component and has no matching token — --gcds-fieldset-legend-size-h5-desktop
+   / -mobile referenced here previously don't exist in any GCDS version and
+   silently no-op. Values below are copied from @cdssnc/gcds-components@0.47.0's
+   --gcds-radio-legend-font-desktop / --gcds-radio-legend-font-mobile.
+   TODO: once gcds-components is upgraded past the version that ships
+   gcds-radios, replace with var(--gcds-radio-legend-font-desktop) /
+   var(--gcds-radio-legend-font-mobile). */
+fieldset.gc-chckbxrdio legend {
+  width: auto;
+  color: var(--gcds-checkbox-default-text);
+  font: 700 1.25rem/160% "Noto Sans", sans-serif;
+  margin: var(--gcds-fieldset-legend-margin);
+}
+
+@media only screen and (width < 48em) {
+  fieldset.gc-chckbxrdio legend {
+    font: 700 1.125rem/155% "Noto Sans", sans-serif;
+  }
+}
+
+/* Matches the GC DS gcds-fieldset/gcds-hint pattern: the hint is a sibling of
+   the legend, not nested inside it. */
+.feedback-reason-hint {
+  font-family: var(--gcds-font-families-body);
+  font-weight: var(--gcds-font-weights-regular);
+  color: var(--gcds-hint-text);
+  margin: 0 0 var(--gcds-spacing-500);
+}
+
+/* Matches GC DS gcds-checkboxes' legend required-suffix styling exactly
+   (that rule lives in the component's shadow DOM, so it doesn't reach our
+   plain <legend>). No checkbox-specific required-margin token exists, so
+   spacing reuses --gcds-label-required-margin, the same value gcds-date-input
+   uses for its own required suffix. */
+.gc-chckbxrdio legend .label--required {
+  font: var(--gcds-checkbox-legend-required-font-desktop);
+  margin: var(--gcds-label-required-margin);
+}
+
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio legend .label--required {
+    font: var(--gcds-checkbox-legend-required-font-mobile);
+  }
 }
 
 .expert-rating-container .explanation-field {
-  margin-top: 15px;
   margin-bottom: 20px;
   padding: 10px;
   border-radius: 4px;

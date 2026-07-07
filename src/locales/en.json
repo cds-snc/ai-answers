@@ -36,18 +36,21 @@
     "publicFeedback": {
       "send": "Send feedback",
       "question": "Was this helpful?",
+      "selectionRequired": "Please select a reason.",
+      "requiredLabel": "required",
       "yes": {
-        "question": "Tell us more. Select the best option below. (required)",
+        "title": "Tell us more",
         "options": {
           "noCall": "I don't need to call the government",
           "noVisit": "I don't need to visit an office",
           "savedTime": "Saved me time searching and reading",
           "other": "Other"
         },
-        "shortQuestion": "Why was this helpful?"
+        "shortQuestion": "Why was this helpful?",
+        "hint": "Select the best option below."
       },
       "no": {
-        "question": "Help us improve. Select the best option below. (required)",
+        "title": "Help us improve",
         "options": {
           "irrelevant": "Irrelevant or off topic",
           "confusing": "Too complex or confusing",
@@ -56,7 +59,8 @@
           "brokenLink": "Link doesn't work",
           "other": "Other"
         },
-        "shortQuestion": "Why wasn't this helpful?"
+        "shortQuestion": "Why wasn't this helpful?",
+        "hint": "Select the best option below."
       }
     },
     "privacy": {
@@ -180,11 +184,13 @@
     },
     "expertRating": {
       "title": "Answer rating",
+      "selectionRequired": "Please select at least one rating.",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
       "sentence4": "Sentence 4",
       "citation": "Citation",
+      "citationNoneProvided": "None provided",
       "options": {
         "good": "Good",
         "needsImprovement": "Needs improvement",
@@ -206,7 +212,8 @@
         }
       },
       "submit": "Submit evaluation",
-      "intro": "Rate the sentences in the answer, or the citation, or both"
+      "intro": "Rate the answer sentences and/or citation",
+      "answerNumberLabel": "Answer {number}"
     }
   },
   "batch": {
@@ -1080,6 +1087,8 @@
   },
   "common": {
     "backToAdmin": "Back to admin",
+    "close": "Close",
+    "confirmDelete": "Are you sure you want to delete this data?",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
