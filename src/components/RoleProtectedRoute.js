@@ -6,7 +6,7 @@ import { getPath } from '../utils/routes.js';
 // Basic authentication protection
 export const ProtectedRoute = ({ children, lang = 'en' }) => {
   const location = useLocation();
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, sessionExpiredRedirecting } = useAuth();
 
   if (loading) {
     return null; // or a loading spinner component
@@ -14,6 +14,9 @@ export const ProtectedRoute = ({ children, lang = 'en' }) => {
 
   // Check if user is authenticated
   if (!currentUser) {
+    if (sessionExpiredRedirecting) {
+      return <Navigate to={`${getPath('signin', lang)}?reason=session-expired`} state={{ from: location }} replace />;
+    }
     // Redirect to signin page with return url
     return <Navigate to={getPath('signin', lang)} state={{ from: location }} replace />;
   }
@@ -29,7 +32,7 @@ export const RoleProtectedRoute = ({
   redirectTo = null // Custom redirect path
 }) => {
   const location = useLocation();
-  const { currentUser, loading, getDefaultRouteForRole } = useAuth();
+  const { currentUser, loading, getDefaultRouteForRole, sessionExpiredRedirecting } = useAuth();
 
   // If still loading, don't redirect yet
   if (loading) {
@@ -38,6 +41,9 @@ export const RoleProtectedRoute = ({
 
   // Check if user is authenticated
   if (!currentUser) {
+    if (sessionExpiredRedirecting) {
+      return <Navigate to={`${getPath('signin', lang)}?reason=session-expired`} state={{ from: location }} replace />;
+    }
     return <Navigate to={getPath('signin', lang)} state={{ from: location }} replace />;
   }
   // If roles are specified, check if user has one of them
