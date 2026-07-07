@@ -146,12 +146,12 @@ const ExpertFeedbackComponent = ({
         aria-label={t('common.close')}
       />
       <fieldset className={`gc-chckbxrdio md${hasError ? ' has-error' : ''}`}>
-        <h2 className="feedback-followup-title">
+        <h4 className="feedback-followup-title">
           {t('homepage.expertRating.intro')}
           {answerNumber && (
             <span className="feedback-answer-number">{answerText}</span>
           )}
-        </h2>
+        </h4>
         {hasError && (
           <FeedbackInlineError
             id={`${uid}-error`}

@@ -737,14 +737,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <>
             <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+              <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
                       href={safeHttpHref(displayUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={buildAriaLabel(displayUrl, lang) || undefined}
+                      aria-label={buildAriaLabel(displayUrl, lang)}
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
@@ -768,7 +768,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         }
                       }}
                     >
-                      <span className="citation-url-text font-size-text-xsm-nr">
+                      <span className="citation-url-text font-size-text-small">
                         {(() => {
                           // Mobile: always render full URL, CSS handles ellipsis
                           if (isMobile) {

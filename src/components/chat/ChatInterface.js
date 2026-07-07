@@ -10,6 +10,7 @@ import aiStarsGray from '../../assets/ai-stars-333-90.png';
 import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
+import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -373,20 +374,37 @@ const ChatInterface = ({
 
   const { text: inputLabel, ariaLabel: inputSRLabel } = getInputCopy();
 
+  // A readable department/page label for screen readers, instead of the
+  // visual "domain/.../file.html" truncation (its literal dots and slashes
+  // don't read as an ellipsis to a screen reader).
+  const referringUrlAriaLabel = referringUrl
+    ? `${safeT("homepage.chat.input.referringPage")} ${buildReadableLocationLabel(referringUrl, lang) || truncateURL(referringUrl)}`
+    : '';
+
   return (
 <div className="chat-container">
-      {/* Show referring URL at the top for review mode */}
-      {readOnly && referringUrl && (
-        <span className="referring-url-chat">
-          <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
+      {/* Show referring URL at the top: always for review mode, and once the
+          first message has been sent for the live chat (before that, it's
+          shown above the textarea instead, as context for the message being composed).
+          messages.length (not turnCount) is the trigger since turnCount only
+          increments on a successful AI response, not on submission itself. */}
+      {referringUrl && (readOnly || messages.length > 0) && (
+        readOnly ? (
+          <span className="referring-url-chat">
+            <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
 
-          <a href={referringUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {referringUrl}
-          </a>
-        </span>
+            <a href={referringUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {referringUrl}
+            </a>
+          </span>
+        ) : (
+          <span className="referring-url-chat" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
+            <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+          </span>
+        )
       )}
       <section aria-labelledby="chat-section-heading">
         <h2 id="chat-section-heading" className="sr-only">
@@ -395,7 +413,6 @@ const ChatInterface = ({
         <div className="message-list" role="log" aria-live="off" aria-labelledby="chat-section-heading">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
-          const answerLabelKeys = ['answerLabel1', 'answerLabel2', 'answerLabel3'];
           const userMessages = messages.filter(m => m.sender === "user");
           return messages.map((message) => {
           const isLastAIMessage =
@@ -413,14 +430,9 @@ const ChatInterface = ({
             message.error && message.id === messages[messages.length - 1]?.id;
           return (
           <React.Fragment key={`message-${message.id}`}>
-            {message.sender === "ai" && !message.error && aiAnswerIndex !== null && (
-              <h3 className="sr-only">
-                {safeT(`homepage.chat.messages.${answerLabelKeys[aiAnswerIndex]}`)}
-              </h3>
-            )}
             {message.sender === "user" && userQuestionIndex !== null && (
               <h3 className="sr-only">
-                {safeT("homepage.chat.messages.questionLabel")} {formatNumber(userQuestionIndex + 1, lang)}
+                {safeT("homepage.chat.messages.yourQuestionLabel")} {formatNumber(userQuestionIndex + 1, lang)} - {safeT("homepage.chat.messages.responseLabel")} {formatNumber(userQuestionIndex + 1, lang)}
               </h3>
             )}
           <div
@@ -530,50 +542,82 @@ const ChatInterface = ({
                     </div>
                   )
                 ) : (
-                  <>
+                  <div className="ai-message-bubble">
                     {formatAIResponse(message.aiService, message)}
 
-                    {chatId && (
+                    {/* Show feedback component in review mode for all answers/interactions that do not have expertFeedback */}
+                    {readOnly &&
+                      message.sender === "ai" &&
+                      !message.error &&
+                      message.interaction &&
+                      caches &&
+                      message.interaction.answer.answerType !== "question" &&
+                      !message.interaction.expertFeedback && (
+                        <FeedbackComponent
+                          lang={lang}
+                          sentences={
+                            extractSentences(message.interaction.answer.content) ||
+                            []
+                          }
+                          sentenceCount={
+                            extractSentences(message.interaction.answer.content)
+                              .length
+                          }
+                          chatId={chatId}
+                          userMessageId={message.id}
+                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                          citationUrl={citationUrl}
+                          showSkipButton={false}
+                          onSkip={focusTextarea}
+                          skipButtonLabel={safeT(
+                            "homepage.chat.textarea.ariaLabel.skipfo"
+                          )}
+                        />
+                      )}
+
+                    {/* Only show feedback for the last message if not in review mode */}
+                    {!readOnly &&
+                      message.id === messages[messages.length - 1].id &&
+                      showFeedback &&
+                      !message.error &&
+                      message.interaction.answer.answerType !== "question" && (
+                        <FeedbackComponent
+                          lang={lang}
+                          sentenceCount={getLastMessageSentenceCount()}
+                          sentences={
+                            message.interaction.answer.paragraphs
+                              ? message.interaction.answer.paragraphs.flatMap(
+                                (paragraph) => extractSentences(paragraph)
+                              )
+                              : []
+                          }
+                          chatId={chatId}
+                          userMessageId={message.id}
+                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                          citationUrl={citationUrl}
+                          showSkipButton={
+                            !readOnly &&
+                            turnCount < MAX_CONVERSATION_TURNS &&
+                            !isLoading
+                          }
+                          onSkip={focusTextarea}
+                          skipButtonLabel={safeT(
+                            "homepage.chat.textarea.ariaLabel.skipfo"
+                          )}
+                        />
+                      )}
+
+                    {/* Chat ID last: a technical footnote, not something a screen
+                        reader user should hit before the feedback/review options above */}
+                    {message.sender === "ai" && !message.error && chatId && (
                       <div className="chat-id">
                         <p className="font-size-text-xxs-nr">
                           {safeT("homepage.chat.chatId")}: {chatId}
                         </p>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
-
-                {/* Panels will be rendered immediately after the FeedbackComponent below so they appear under the "How was this answer?" area */}
-
-                {/* Show feedback component in review mode for all answers/interactions that do not have expertFeedback */}
-                {readOnly &&
-                  message.sender === "ai" &&
-                  !message.error &&
-                  message.interaction &&
-                  caches &&
-                  message.interaction.answer.answerType !== "question" &&
-                  !message.interaction.expertFeedback && (
-                    <FeedbackComponent
-                      lang={lang}
-                      sentences={
-                        extractSentences(message.interaction.answer.content) ||
-                        []
-                      }
-                      sentenceCount={
-                        extractSentences(message.interaction.answer.content)
-                          .length
-                      }
-                      chatId={chatId}
-                      userMessageId={message.id}
-                      answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
-                      citationUrl={citationUrl}
-                      showSkipButton={false}
-                      onSkip={focusTextarea}
-                      skipButtonLabel={safeT(
-                        "homepage.chat.textarea.ariaLabel.skipfo"
-                      )}
-                    />
-                  )}
 
                 {/* Render review panels just under the FeedbackComponent / "How was this answer?" (very close) */}
                 {readOnly &&
@@ -630,37 +674,6 @@ const ChatInterface = ({
                     </>
                   )}
 
-                {/* Only show feedback for the last message if not in review mode */}
-                {!readOnly &&
-                  message.id === messages[messages.length - 1].id &&
-                  showFeedback &&
-                  !message.error &&
-                  message.interaction.answer.answerType !== "question" && (
-                    <FeedbackComponent
-                      lang={lang}
-                      sentenceCount={getLastMessageSentenceCount()}
-                      sentences={
-                        message.interaction.answer.paragraphs
-                          ? message.interaction.answer.paragraphs.flatMap(
-                            (paragraph) => extractSentences(paragraph)
-                          )
-                          : []
-                      }
-                      chatId={chatId}
-                      userMessageId={message.id}
-                      answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
-                      citationUrl={citationUrl}
-                      showSkipButton={
-                        !readOnly &&
-                        turnCount < MAX_CONVERSATION_TURNS &&
-                        !isLoading
-                      }
-                      onSkip={focusTextarea}
-                      skipButtonLabel={safeT(
-                        "homepage.chat.textarea.ariaLabel.skipfo"
-                      )}
-                    />
-                  )}
               </>
             )}
           </div>
@@ -759,8 +772,8 @@ const ChatInterface = ({
                   &nbsp;
                   {safeT("homepage.chat.input.hint")}
                 </span>
-                {referringUrl && (
-                  <span className="referring-url-chat" id="displayReferringURL">
+                {!readOnly && messages.length === 0 && referringUrl && (
+                  <span className="referring-url-chat" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
                     <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
                   </span>
                 )}
@@ -776,7 +789,11 @@ const ChatInterface = ({
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
                     onFocus={handleTextareaFocus}
-                    aria-describedby="chat-input-hint"
+                    aria-describedby={
+                      !readOnly && referringUrl
+                        ? "chat-input-hint displayReferringURL"
+                        : "chat-input-hint"
+                    }
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}

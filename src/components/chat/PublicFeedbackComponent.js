@@ -64,9 +64,9 @@ const PublicFeedbackComponent = ({
       >
         <i className="fa-solid fa-close"></i>
       </span>
-      <h2 className="feedback-followup-title">
+      <h4 className="feedback-followup-title">
         {isPositive ? t('homepage.publicFeedback.yes.title') : t('homepage.publicFeedback.no.title')}
-      </h2>
+      </h4>
       {/* TODO(a11y): what a screen reader reads here never identifies which chat/answer
           is being rated — in review mode, with several messages on the page, there's no
           way to be sure which one you're evaluating. Same gap as the EvalPanel buttons.
