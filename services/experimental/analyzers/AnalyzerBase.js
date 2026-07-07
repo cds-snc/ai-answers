@@ -10,6 +10,18 @@ export class AnalyzerBase {
     static inputType = '';    // 'single' | 'comparison' | 'universal'
     static outputColumns = []; // e.g., ['verdict', 'confidence', 'explanation']
 
+    /**
+     * Validate the full set of batch input rows before the batch is created.
+     * Override this to enforce analyzer-specific requirements. The service
+     * calls this generically — it does not inspect the result's meaning.
+     *
+     * @param {Object[]} items - Raw input rows from the dataset or upload.
+     * @returns {{ valid: true } | { valid: false, code: string, localeKey: string }}
+     */
+    static validateBatch(_items) {
+        return { valid: true };
+    }
+
     constructor(config = {}) {
         this.config = config;
     }
@@ -21,29 +33,6 @@ export class AnalyzerBase {
      */
     async analyze(input) {
         throw new Error('Subclass must implement analyze()');
-    }
-
-    /**
-     * Validate input before processing.
-     * @param {Object} input
-     * @returns {{ valid: boolean, error?: string }}
-     */
-    validateInput(input) {
-        if (this.constructor.inputType === 'comparison') {
-            if (!input.baselineAnswer || !input.answer) {
-                return { valid: false, error: 'Comparison requires baselineAnswer and answer' };
-            }
-        } else if (this.constructor.inputType === 'single') {
-            if (!input.answer && !input.question) {
-                return { valid: false, error: 'Single input requires answer or question' };
-            }
-        } else if (this.constructor.inputType === 'universal') {
-            // Universal analyzers handle both with/without baseline gracefully
-            if (!input.answer && !input.question) {
-                return { valid: false, error: 'Universal input requires answer or question' };
-            }
-        }
-        return { valid: true };
     }
 }
 

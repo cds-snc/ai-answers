@@ -23,6 +23,8 @@ import experimentalBatchCreateHandler from '../api/experimental/experimental-bat
 import experimentalBatchListHandler from '../api/experimental/experimental-batch-list.js';
 import experimentalBatchProcessHandler from '../api/experimental/experimental-batch-process.js';
 import experimentalBatchStatusHandler from '../api/experimental/experimental-batch-status.js';
+import experimentalBatchItemsHandler from '../api/experimental/experimental-batch-items.js';
+import experimentalSuiteGridHandler from '../api/experimental/experimental-suite-grid.js';
 import experimentalBatchExportHandler from '../api/experimental/experimental-batch-export.js';
 import experimentalBatchChatLogsExportHandler from '../api/experimental/experimental-batch-chat-logs-export.js';
 import experimentalBatchDeleteHandler from '../api/experimental/experimental-batch-delete.js';
@@ -298,6 +300,8 @@ app.post('/api/experimental/experimental-batch-create', experimentalBatchCreateH
 app.get('/api/experimental/experimental-batch-list', experimentalBatchListHandler);
 app.post('/api/experimental/experimental-batch-process/:id', experimentalBatchProcessHandler);
 app.get('/api/experimental/experimental-batch-status/:id', experimentalBatchStatusHandler);
+app.get('/api/experimental/experimental-batch-items/:id', experimentalBatchItemsHandler);
+app.get('/api/experimental/experimental-suite-grid', experimentalSuiteGridHandler);
 app.get('/api/experimental/experimental-batch-export/:id', experimentalBatchExportHandler);
 app.get('/api/experimental/experimental-batch-chat-logs-export/:id', experimentalBatchChatLogsExportHandler);
 app.delete('/api/experimental/experimental-batch-delete/:id', experimentalBatchDeleteHandler);

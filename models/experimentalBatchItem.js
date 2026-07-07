@@ -7,6 +7,10 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
         required: true,
     },
     rowIndex: { type: Number, required: true },
+    // 1-based trial number when a run executes each question multiple times
+    // (config.trials > 1). Items with the same rowIndex are trials of the
+    // same question.
+    trialIndex: { type: Number, default: 1 },
 
     // Status of this specific item
     status: {

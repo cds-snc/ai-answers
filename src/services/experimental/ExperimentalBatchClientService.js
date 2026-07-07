@@ -13,7 +13,18 @@ export const ExperimentalBatchClientService = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error(`Failed to create batch: ${res.status} ${res.statusText}`);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            // Throw an object with `code` so the frontend can map it to a
+            // translation key. Falls back to a plain Error when the body is
+            // not JSON or has no code.
+            if (errBody?.code) {
+                const err = new Error(errBody.error || 'Failed to create batch');
+                err.code = errBody.code;
+                throw err;
+            }
+            throw new Error(`Failed to create batch: ${res.status} ${res.statusText}`);
+        }
         return await res.json();
     },
 
@@ -50,8 +61,25 @@ export const ExperimentalBatchClientService = {
     },
 
     /**
+     * Get paginated items for a batch (results drill-down)
+     * @param {string} id
+     * @param {object} options { page, limit, filter } filter: 'all' | 'attention' | 'errors'
+     */
+    async getBatchItems(id, { page = 1, limit = 25, filter = 'all', row = null } = {}) {
+        const query = new URLSearchParams({ page: String(page), limit: String(limit), filter });
+        if (row) query.set('row', String(row));
+        const url = getApiUrl(`experimental-batch-items/${encodeURIComponent(id)}?${query.toString()}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to get batch items: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+    },
+
+    /**
      * Trigger processing for a batch
-     * @param {string} id 
+     * @param {string} id
      */
     async processBatch(id, force = false) {
         const url = getApiUrl(`experimental-batch-process/${encodeURIComponent(id)}${force ? '?force=true' : ''}`);
@@ -192,6 +220,19 @@ export const ExperimentalBatchClientService = {
         if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));
             throw new Error(errBody.error || `Failed to get dataset rows: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+    },
+
+    /**
+     * Get the suite grid (runs x tests verdict matrix) for a dataset
+     */
+    async getSuiteGrid(datasetId) {
+        const url = getApiUrl(`experimental-suite-grid?datasetId=${encodeURIComponent(datasetId)}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to load suite grid: ${res.status} ${res.statusText}`);
         }
         return await res.json();
     },

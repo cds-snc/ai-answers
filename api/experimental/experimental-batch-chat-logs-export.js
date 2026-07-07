@@ -21,7 +21,7 @@ async function handler(req, res) {
 
         for (const batchId of batchIds) {
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batchId })
-                .sort({ rowIndex: 1 })
+                .sort({ rowIndex: 1, trialIndex: 1 })
                 .select('chatId')
                 .lean();
 

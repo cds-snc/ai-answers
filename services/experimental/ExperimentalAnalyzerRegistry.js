@@ -17,6 +17,7 @@ class ExperimentalAnalyzerRegistry {
                         descriptionKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.description`,
                         inputType: AnalyzerClass.inputType,
                         outputColumns: AnalyzerClass.outputColumns,
+                        validateBatch: (items) => AnalyzerClass.validateBatch(items),
                         concurrency: AnalyzerClass.concurrency, // Optional hint
                         processor: async (input) => {
                             const instance = new AnalyzerClass(input.config);

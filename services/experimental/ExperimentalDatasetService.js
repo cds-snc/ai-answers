@@ -4,9 +4,15 @@ import { parseString } from 'fast-csv';
 import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
+import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const QUESTION_ALIASES = ['question', 'problemdetails', 'problem details'];
+// Keep in sync with the production batch upload (BatchService._extractQuestion)
+// and the experimental runner (ExperimentalBatchService QUESTION_ALIASES) so a
+// file that works for a batch also works as a dataset. Matching is
+// case/space/underscore-insensitive, so redactedQuestion, REDACTED QUESTION,
+// QUESTION etc. all resolve.
+const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 const CHAT_ID_ALIASES = ['chatid'];
 const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 
@@ -263,10 +269,10 @@ class ExperimentalDatasetService {
 
         const requiredColumns = {
             'question-only': [
-                { question: ['question', 'problemdetails', 'problem details'] }
+                { question: QUESTION_ALIASES }
             ],
             'qa-pair': [
-                { question: ['question', 'problemdetails', 'problem details'] },
+                { question: QUESTION_ALIASES },
                 'answer'
             ],
         };
@@ -444,8 +450,22 @@ class ExperimentalDatasetService {
             ExperimentalDataset.countDocuments()
         ]);
 
+        // Analysis run counts per dataset, so the list can show which
+        // datasets have suite history at a glance.
+        const runCounts = data.length > 0
+            ? await ExperimentalBatch.aggregate([
+                { $match: { type: 'analysis', 'config.datasetId': { $in: data.map(d => d._id) } } },
+                { $group: { _id: '$config.datasetId', count: { $sum: 1 } } }
+            ])
+            : [];
+        const countByDatasetId = new Map(runCounts.map(rc => [String(rc._id), rc.count]));
+
         return {
-            data,
+            data: data.map(d => {
+                const obj = d.toObject();
+                obj.runCount = countByDatasetId.get(String(d._id)) || 0;
+                return obj;
+            }),
             total,
             page,
             limit,

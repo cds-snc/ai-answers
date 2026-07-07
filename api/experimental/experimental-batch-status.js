@@ -22,7 +22,7 @@ async function handler(req, res) {
 
         if (includeItems) {
             const items = await ExperimentalBatchItem.find({ experimentalBatch: id })
-                .sort({ rowIndex: 1 })
+                .sort({ rowIndex: 1, trialIndex: 1 })
                 .skip((page - 1) * limit)
                 .limit(limit);
 
