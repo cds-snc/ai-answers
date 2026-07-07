@@ -13,6 +13,7 @@ import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+import { withCanadaCaPronunciation } from '../../utils/pronounceCanadaCa.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -731,7 +732,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           );
           return sentences.map((sentence, sentenceIndex) => (
             <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
-              {decodeHTMLEntities(sentence)}
+              {withCanadaCaPronunciation(decodeHTMLEntities(sentence), answerLang)}
             </p>
           ));
         })}

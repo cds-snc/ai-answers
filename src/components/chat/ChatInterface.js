@@ -11,6 +11,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
+import { withCanadaCaPronunciation } from '../../utils/pronounceCanadaCa.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -582,11 +583,11 @@ const ChatInterface = ({
                       {message.searchUrl && (
                         <>
                           <p className="error-message">
-                            {safeT("homepage.chat.messages.shortQueryDetails")}
+                            {withCanadaCaPronunciation(safeT("homepage.chat.messages.shortQueryDetails"), lang)}
                           </p>
                           <p className="error-message">
                             <a href={message.searchUrl}>
-                              {safeT("homepage.chat.messages.shortQuerySearch")}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
+                              {withCanadaCaPronunciation(safeT("homepage.chat.messages.shortQuerySearch"), lang)}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
                             </a>
                           </p>
                         </>

@@ -15,6 +15,7 @@ import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
+import { withCanadaCaPronunciation } from "../utils/pronounceCanadaCa.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -204,7 +205,7 @@ const HomePage = ({ lang = "en" }) => {
           <span aria-hidden="true">{t("homepage.subtitle.text")}</span>
         </h2>
         <GcdsText className="mb-200">
-          {t("homepage.intro.researchOnly")}
+          {withCanadaCaPronunciation(t("homepage.intro.researchOnly"), lang)}
         </GcdsText>
         <GcdsDetails
           detailsTitle={t("homepage.privacy.title")}
@@ -223,7 +224,7 @@ const HomePage = ({ lang = "en" }) => {
                   : "https://www.canada.ca/en/transparency/terms.html"
               }
             >
-              {t("homepage.privacy.termsLink")}
+              {withCanadaCaPronunciation(t("homepage.privacy.termsLink"), lang)}
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
@@ -255,7 +256,7 @@ const HomePage = ({ lang = "en" }) => {
       {!reviewMode && (
         <div className="mb-600 container-custom">
           <GcdsText>
-            {t("homepage.about.builtBy")}{" "}
+            {withCanadaCaPronunciation(t("homepage.about.builtBy"), lang)}{" "}
             <GcdsLink
               href={getPath('about', lang)}
             >
