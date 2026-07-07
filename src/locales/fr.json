@@ -907,7 +907,7 @@
   "auth": {
     "sessionWarning": {
       "title": "Session sur le point d'expirer",
-      "message": "Votre session expirera dans 1 minute. Enregistrez votre travail maintenant, car vous serez automatiquement déconnecté."
+      "message": "Votre session expirera dans 1 minute. Vous serez automatiquement déconnecté si vous restez inactif."
     }
   },
   "reset": {

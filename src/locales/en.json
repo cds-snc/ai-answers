@@ -896,7 +896,7 @@
   "auth": {
     "sessionWarning": {
       "title": "Session expiring soon",
-      "message": "Your session will expire in 1 minute. Save your work now, because you will be signed out automatically."
+      "message": "Your session will expire in 1 minute. You will be signed out automatically if you remain idle."
     }
   },
   "reset": {

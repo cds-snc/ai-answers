@@ -87,6 +87,30 @@ describe('AuthProvider session revalidation', () => {
     expect(mockSetUnauthorizedCallback).toHaveBeenCalled();
   });
 
+  it('does not immediately revalidate again after hydrating the current user', async () => {
+    mockGetCurrentUser.mockReset();
+    mockGetCurrentUser.mockResolvedValueOnce({ userId: 'abc', role: 'admin' });
+
+    render(
+      <MemoryRouter initialEntries={['/en/admin']}>
+        <AuthProvider>
+          <AuthStatusProbe />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-status').textContent).toBe('signed-in');
+    });
+
+    expect(mockGetCurrentUser).toHaveBeenCalledTimes(1);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockGetCurrentUser).toHaveBeenCalledTimes(1);
+    expect(mockLogout).not.toHaveBeenCalled();
+  });
+
   it('does not revalidate or redirect while the user is on the public chat page', async () => {
     render(
       <MemoryRouter initialEntries={['/en']}>
