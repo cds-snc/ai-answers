@@ -16,6 +16,7 @@ const ExpertFeedbackComponent = ({
   sentences = [],
   answerNumber,
   citationUrl,
+  titleRef,
 }) => {
   const { t } = useTranslations(lang);
   // Namespaces every id in this component so multiple instances can render on
@@ -146,7 +147,7 @@ const ExpertFeedbackComponent = ({
         aria-label={t('common.close')}
       />
       <fieldset className={`gc-chckbxrdio md${hasError ? ' has-error' : ''}`}>
-        <h4 className="feedback-followup-title">
+        <h4 className="feedback-followup-title" ref={titleRef} tabIndex={-1}>
           {t('homepage.expertRating.intro')}
           {answerNumber && (
             <span className="feedback-answer-number">{answerText}</span>
