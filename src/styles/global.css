@@ -207,7 +207,8 @@ gcds-details {
 }
 
 /* GC DS's own readable-line-length token (same one gcds-text's characterLimit
-   prop applies) — for plain markup GCDS has no bare utility class for. */
+   prop applies) — for plain markup GCDS has no bare utility class for.
+   TODO: revisit as a width restriction in combination with character restriction */
 .text-measure {
   max-width: var(--gcds-text-character-limit);
 }
