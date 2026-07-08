@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.160.0](https://github.com/cds-snc/ai-answers/compare/v1.159.0...v1.160.0) (2026-07-08)
+
+
+### Features
+
+* implement batch validation for analyzers and enhance error handling ([ddfece7](https://github.com/cds-snc/ai-answers/commit/ddfece7da288758a579ca6ca6b912d7f7a60a41f))
+* results page for batch analysis runs ([e9073b4](https://github.com/cds-snc/ai-answers/commit/e9073b4c782eb3b8b612de5965ec9d35700d276d))
+
+
+### Bug Fixes
+
+* announce and focus form validation errors on auth pages, scoped … ([78a1eb9](https://github.com/cds-snc/ai-answers/commit/78a1eb934ea99f7de63c26a60de82c46ee3c9af5))
+* announce and focus form validation errors on auth pages, scoped css cleanup ([182461b](https://github.com/cds-snc/ai-answers/commit/182461b859edc6b377ca37c7efe5a2e2411a066e))
+* css update, success message ([46af5e3](https://github.com/cds-snc/ai-answers/commit/46af5e357073d832765aa0677424d237851dde67))
+* feedback focus correction ([057355c](https://github.com/cds-snc/ai-answers/commit/057355c129dec853dc07e1367a2b88b5c5ab547a))
+* feedback focus correction ([1eb07c9](https://github.com/cds-snc/ai-answers/commit/1eb07c916dcec40737f2b69e78a00a97810f5e33))
+* focus returns to previous selection ([64edbab](https://github.com/cds-snc/ai-answers/commit/64edbab0aa447f38c46b270bb8df4f6b8d7fb129))
+
+
+### Code Refactoring
+
+* remove 'role' field from ExperimentalDataset schema and update related components ([9b8d44d](https://github.com/cds-snc/ai-answers/commit/9b8d44d82cbbf8500167a2c76b6e36983acdc461))
+
 ## [1.159.0](https://github.com/cds-snc/ai-answers/compare/v1.158.2...v1.159.0) (2026-07-07)
 
 

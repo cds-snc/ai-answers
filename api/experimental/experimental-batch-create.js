@@ -7,7 +7,7 @@ import { authMiddleware, adminMiddleware, withProtection } from '../../middlewar
  */
 async function handler(req, res) {
     try {
-        const { name, description, type, config, items } = req.body;
+        const { name, description, runLabel, type, config, items } = req.body;
         const hasDatasetId = config?.datasetId;
 
         if (!name || !type || (!hasDatasetId && (!items || !Array.isArray(items) || items.length === 0))) {
@@ -19,7 +19,7 @@ async function handler(req, res) {
         }
 
         const batch = await ExperimentalBatchService.createBatch(
-            { name, description, type, config, createdBy: req.user?.userId },
+            { name, description, runLabel: typeof runLabel === 'string' ? runLabel : '', type, config, createdBy: req.user?.userId },
             items
         );
 

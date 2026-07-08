@@ -13,6 +13,9 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
         required: true,
         enum: ['question-only', 'qa-pair', 'batch-output']
     },
+    // Suite metadata: partner abbrKey (cra, ircc, ...) or cross-cutting
+    // category (bias, pii, red-team, safety). Free text.
+    category: { type: String, default: '', trim: true, maxLength: 100 },
     rowCount: { type: Number, default: 0 },
     columns: [{
         name: { type: String, required: true },

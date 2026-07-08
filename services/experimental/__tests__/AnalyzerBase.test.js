@@ -6,48 +6,28 @@ class TestAnalyzer extends AnalyzerBase {
     static inputType = 'single';
 }
 
-class TestComparisonAnalyzer extends AnalyzerBase {
-    static id = 'test-comp';
-    static inputType = 'comparison';
-}
-
 describe('AnalyzerBase', () => {
-    describe('validateInput', () => {
-        it('should validate single input with answer', () => {
-            const analyzer = new TestAnalyzer();
-            const result = analyzer.validateInput({ answer: 'yes' });
-            expect(result.valid).toBe(true);
-        });
-
-        it('should validate single input with question', () => {
-            const analyzer = new TestAnalyzer();
-            const result = analyzer.validateInput({ question: 'what?' });
-            expect(result.valid).toBe(true);
-        });
-
-        it('should fail single input without answer and question', () => {
-            const analyzer = new TestAnalyzer();
-            const result = analyzer.validateInput({});
-            expect(result.valid).toBe(false);
-            expect(result.error).toContain('requires answer or question');
-        });
-
-        it('should validate comparison input with both answers', () => {
-            const analyzer = new TestComparisonAnalyzer();
-            const result = analyzer.validateInput({ baselineAnswer: 'a', answer: 'b' });
-            expect(result.valid).toBe(true);
-        });
-
-        it('should fail comparison input if baseline is missing', () => {
-            const analyzer = new TestComparisonAnalyzer();
-            const result = analyzer.validateInput({ answer: 'b' });
-            expect(result.valid).toBe(false);
-            expect(result.error).toContain('requires baselineAnswer and answer');
-        });
-    });
-
     it('should throw if analyze is not implemented', async () => {
         const analyzer = new TestAnalyzer();
         await expect(analyzer.analyze({})).rejects.toThrow('Subclass must implement');
     });
+
+    it('should return valid from default validateBatch', () => {
+        expect(AnalyzerBase.validateBatch([{ question: 'Q1' }])).toEqual({ valid: true });
+    });
+
+    it('should allow subclasses to override validateBatch', () => {
+        class StrictAnalyzer extends AnalyzerBase {
+            static id = 'strict';
+            static inputType = 'comparison';
+            static validateBatch(items) {
+                return items.some((i) => i.baselineAnswer)
+                    ? { valid: true }
+                    : { valid: false, code: 'NO_REFERENCE', localeKey: 'some.key' };
+            }
+        }
+        expect(StrictAnalyzer.validateBatch([{ question: 'Q' }])).toMatchObject({ valid: false });
+        expect(StrictAnalyzer.validateBatch([{ question: 'Q', baselineAnswer: 'A' }])).toEqual({ valid: true });
+    });
 });
+
