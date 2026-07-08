@@ -116,7 +116,11 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   // Handle button actions mapped to explicit handlers
   const handleExport = (batchId, type) => onExport && onExport(batchId, type);
-  const handleDelete = (batchId) => onDelete && onDelete(batchId);
+  const handleDelete = (batchId) => {
+    if (!window.confirm(t('batch.list.actions.confirmDelete'))) return false;
+    onDelete && onDelete(batchId);
+    return true;
+  };
   // Pass workflow through when invoking onProcess so restarts can reuse the saved workflow
   const handleProcess = (batchId, provider, workflow) => onProcess && onProcess(batchId, provider, workflow);
   const handleCancel = (batchId, provider) => onCancel && onCancel(batchId, provider);
@@ -238,9 +242,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     )}
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}
@@ -270,9 +274,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     </GcdsButton>
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}
@@ -298,9 +302,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     </GcdsButton>
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}
@@ -326,9 +330,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     </GcdsButton>
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}

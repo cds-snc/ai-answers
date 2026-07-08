@@ -231,32 +231,42 @@
       }
     },
     "upload": {
-      "batchName": "Name",
+      "batchName": "Name the batch",
+      "steps": {
+        "step2Title": "Upload the batch",
+        "step3Title": "Process the batch"
+      },
       "instructions": {
-        "title": "How to run a batch:",
+        "tipsTitle": "Tips for processing and evaluating results",
         "step1": "Create a CSV file",
+        "step1Summary": "How to create a CSV file",
         "step1a": "At minimum, a column with your questions labelled QUESTION and one with your referring URL labelled URL.",
-        "step1b": "The questions can be numbered with a space before the question text — e.g. 001.  How apply for EI",
-        "step1c": "Your CSV file can contain other columns (e.g. with previous answers) — the question numbers help you match them up later.",
+        "step1b": "The questions can be numbered with a space before the question text, for example, 001. How to apply for EI.",
+        "step1c": "Your CSV file can contain other columns, such as previous answers. Use the question numbers to match them up later.",
         "step1d": "You'll need separate files for English questions to be asked/answered as if on an English page, and French questions to be asked/answered on the French AI Answers page.",
         "step1e": "A batch can contain a maximum of 200 questions. Split larger sets into multiple files.",
-        "step2": "Assign a name, and leave workflow and model family at default selections.",
-        "step3": "Select the language of the batch file (i.e. the language of the page the batch is simulating).",
-        "step4": "Choose your CSV file and click the Upload button that appears.",
-        "step5": "Click the Process button once the file shows up in the Incomplete batches section.",
+        "step3a": "Select the language of the batch file.",
+        "step3b": "(i.e. the language of the page the batch is simulating)",
+        "reviewIncomplete": "After a successful upload, initiate processing and/or check on your batch's progress below.",
+        "incompleteLinkText": "Go to the Incomplete batches section",
         "step6": "When it's done (if it gets interrupted and didn't finish, click the Process button again), it will move to the Completed batches section. You can download the file from there.",
         "step7": "All of the chats run in the batch will be available to evaluate in the Evaluation dashboard and Chat viewer with the email address of the person who submitted the batch."
       },
       "language": {
-        "label": "Page language:",
+        "label": "Page language",
         "english": "English",
         "french": "French"
       },
+      "advanced": {
+        "title": "Workflow and model: Advanced"
+      },
       "workflow": {
-        "label": "Workflow"
+        "label": "Workflow",
+        "hint": "Most batches should be left at default selections"
       },
       "model": {
-        "label": "Model family"
+        "label": "Model family",
+        "hint": "Most batches should be left at default selections"
       },
       "file": {
         "label": "Add CSV file:"
@@ -265,6 +275,7 @@
         "upload": "Upload file"
       },
       "processing": "Processing file, please wait...",
+      "success": "Batch uploaded.",
       "searchService": {
         "label": "Search service",
         "google": "Google",
@@ -299,6 +310,7 @@
         "excel": "Excel",
         "process": "Process",
         "delete": "Delete",
+        "confirmDelete": "Are you sure you want to delete this batch?",
         "cancel": "Cancel"
       },
       "types": {

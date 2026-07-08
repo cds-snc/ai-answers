@@ -123,12 +123,12 @@ const BatchPage = ({ lang = 'en' }) => {
       </nav>
 
 
-      <section id="evaluator" className="mb-600">
+      <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>
         <BatchUpload lang={lang} onBatchSaved={triggerRefresh} />
       </section>
 
-      <section id="running-evaluation" className="mb-600">
+      <section id="running-evaluation" className="mb-600 focus-target" tabIndex={-1}>
         <h2 className="mt-400 mb-400">{t('batch.sections.running.title')}</h2>
         <BatchList
           onProcess={onProcess}

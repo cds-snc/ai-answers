@@ -10,11 +10,14 @@
   outline: none;
 }
 
-/* Error alerts opt back into a visible ring: focus moving to a role="alert"
-   error (AnnouncedError.js, FeedbackInlineError.js) is meaningful to sighted
-   keyboard users too, not just screen readers, so they need to see where
-   focus landed. */
-[role="alert"][tabindex="-1"]:focus {
+/* Opt back into a visible ring for tabindex="-1" targets a sighted keyboard
+   user deliberately lands on, where the focus itself is meaningful and not
+   just a screen-reader cursor move: role="alert" errors (AnnouncedError.js,
+   FeedbackInlineError.js) and in-page jump targets (.focus-target — e.g.
+   BatchUpload's "Go to the Incomplete batches section" landing on
+   BatchPage's tabindex="-1" section). */
+[role="alert"][tabindex="-1"]:focus,
+.focus-target:focus {
   outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
   outline-offset: 2px;
 }
@@ -203,6 +206,30 @@ gcds-details {
   display: block;
 }
 
+/* GC DS's own readable-line-length token (same one gcds-text's characterLimit
+   prop applies) — for plain markup GCDS has no bare utility class for. */
+.text-measure {
+  max-width: var(--gcds-text-character-limit);
+}
+
+/* .list-disc (gcds-utility) sets no spacing between <li> items. Shared by
+   BatchUpload's CSV-instructions list and ExpertFeedbackComponent's
+   .harmful-details list — both needed the same gap, so this replaced two
+   near-identical per-component rules.
+
+   TOKEN SUGGESTION for GC DS: their spacing scale is entirely rem-based, so
+   getting equivalent-looking item spacing across lists at different font
+   sizes (e.g. default body text vs .harmful-details' 18px text) means
+   picking a different --gcds-spacing-* per context by hand. Using 1.25em
+   here instead scales automatically with whatever font-size the list
+   renders at (note: this is below WCAG 1.4.12's 2x-font-size
+   paragraph-spacing guideline — a deliberate visual call, not a compliance
+   claim). Worth proposing to the GC DS team as a font-relative step (e.g.
+   --gcds-spacing-text-1-25x: 1.25em) alongside the fixed rem scale. */
+.canada-ca-list-spcd-2 li {
+  margin-bottom: 1.25em;
+}
+
 .flex-center {
   display: flex;
   align-items: center;
@@ -210,10 +237,6 @@ gcds-details {
 
 .mrgn-rght-15 {
   margin-right: 15px;
-}
-
-.red {
-  color: red;
 }
 
 .mrgn-tp-1r {
@@ -313,6 +336,41 @@ details summary {
   color: #295376;
   padding: 5px 15px;
   background-color: white;
+}
+
+/* Details that sit inside a form alongside GC DS inputs (e.g. BatchUpload's
+   workflow/model advanced options, ExpertFeedbackComponent's harmful details)
+   — darker border so they read as part of the form, matching GC DS's input
+   border color (--gcds-input-default-text) but 1px thinner than the input's
+   own 0.125rem (2px) border width. */
+.details-form[open],
+.details-form summary {
+  border-color: var(--gcds-input-default-text);
+  border-radius: 0;
+}
+
+/* "Page language" is a field label, not a heading — it shouldn't outrank
+   "Name the batch" (GcdsInput's own label) in size/weight. GcdsFieldset's
+   legendSize only offers heading-scale presets (h2-h6; even h6 is Lato
+   700 22px, bigger/bolder than a label), so match --gcds-label-font-desktop/
+   -mobile exactly — the same token GcdsInput/GcdsSelect's own labels use.
+   Custom properties cross shadow DOM boundaries, so redefining the legend's
+   size token here reaches GcdsFieldset's shadow-rendered <legend>. */
+.language-toggle {
+  --gcds-fieldset-legend-size-h6-desktop: var(--gcds-label-font-desktop);
+  --gcds-fieldset-legend-size-h6-mobile: var(--gcds-label-font-mobile);
+}
+
+/* Same reasoning as .language-toggle above: GcdsFileUploader's whole wrapper
+   (its "Add CSV file" label included) inherits font from
+   --gcds-file-uploader-font-desktop/-mobile (400 weight, 140% line-height) —
+   a different token than GcdsInput/GcdsSelect's labels use, not
+   --gcds-label-font-desktop/-mobile. Redefining it here matches "Add CSV
+   file" to "Name the batch" instead of letting it read as its own,
+   unrelated weight. */
+.csv-file-uploader {
+  --gcds-file-uploader-font-desktop: var(--gcds-label-font-desktop);
+  --gcds-file-uploader-font-mobile: var(--gcds-label-font-mobile);
 }
 
 details > summary {
@@ -807,6 +865,7 @@ fieldset.gc-chckbxrdio {
   outline-offset: 4px;
   box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
 }
+
 .gc-chckbxrdio.md input[type="checkbox"]:focus:checked + label::after {
   border-color: var(--gcds-details-focus-background);
 }
