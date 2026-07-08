@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink, GcdsFileUploader } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import BatchService from '../services/BatchService.js';
@@ -317,7 +317,7 @@ const DatabasePage = ({ lang }) => {
       }
       setMessage(finalMsg);
       if (fileInputRef.current) {
-        fileInputRef.current.value = []; // Reset file uploader
+        fileInputRef.current.value = ''; // Reset file input
       }
     } catch (error) {
       setMessage(`Import failed: ${error.message}`);
@@ -694,13 +694,12 @@ const DatabasePage = ({ lang }) => {
               </select>
             </label>
           </div>
-          <GcdsFileUploader
-            uploaderId="importFile"
-            name="importFile"
-            label={t('admin.database.importFileLabel')}
+          <input
+            type="file"
             accept=".jsonl"
             ref={fileInputRef}
             className="mb-200"
+            style={{ display: 'block' }}
           />
           <GcdsButton
             type="submit"

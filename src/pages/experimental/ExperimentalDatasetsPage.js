@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
-// GcdsFileUploader isn't exported by @cdssnc/gcds-components-react — pull it from the newer
-// @gcds-core package, which both already coexist in the app bundle across other pages.
-import { GcdsFileUploader } from '@gcds-core/components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 
@@ -22,7 +19,6 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [selectedFile, setSelectedFile] = useState(null);
 
     const [showUpload, setShowUpload] = useState(false);
-    const fileUploaderRef = useRef(null);
 
     useEffect(() => {
         fetchDatasets();
@@ -40,8 +36,8 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
-    const handleFileChange = () => {
-        const file = fileUploaderRef.current?.files?.[0];
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
         if (file) {
             setSelectedFile(file);
             if (!newName) setNewName(file.name.split('.')[0]);
@@ -190,14 +186,10 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 {t('experimental.datasets.columnAliasHint')}
                             </GcdsText>
                             <div>
-                                <GcdsFileUploader
-                                    uploaderId="ds-file"
-                                    name="ds-file"
-                                    label={t('experimental.datasets.fileLabel')}
-                                    accept=".xlsx, .csv"
-                                    onGcdsChange={handleFileChange}
-                                    ref={fileUploaderRef}
-                                />
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                    {t('experimental.datasets.fileLabel')}
+                                </label>
+                                <input type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
                             </div>
                             <div>
                                 <GcdsButton onClick={handleUpload} disabled={uploading || !selectedFile || !newName}>

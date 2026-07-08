@@ -15,8 +15,21 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
   // Removed unused results state
+  // Whole-form/server errors only (e.g. persistBatch failing) — per-field
+  // validation uses each GCDS component's own errorMessage prop instead.
   const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
   const [fileError, setFileError] = useState('');
+  // { msg, token } set only when announceFileError() detects a repeat of the
+  // same message — GcdsFileUploader's own errorMessage prop won't re-announce
+  // an unchanged string, so this drives a supplementary sr-only live region
+  // for that specific repeat. Rendering is gated on fileError === msg (see
+  // JSX below) so it never lingers or re-fires for a later, genuinely new
+  // error — those are already announced fine by GcdsFileUploader itself.
+  const [fileErrorRepeat, setFileErrorRepeat] = useState(null);
+  const [nameError, setNameError] = useState('');
+  // Same repeat-announcement gap/fix as fileErrorRepeat above, for GcdsInput's
+  // errorMessage on the batchName field.
+  const [nameErrorRepeat, setNameErrorRepeat] = useState(null);
   const [fileUploaded, setFileUploaded] = useState(false);
   const [batchId, setBatchId] = useState(null);
   const [batchStatus, setBatchStatus] = useState(null);
@@ -28,6 +41,10 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [selectedWorkflow, setSelectedWorkflow] = useState('GenericGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
   const fileUploaderRef = useRef(null);
+  const nameInputRef = useRef(null);
+  // Bumped after a successful upload to remount GcdsFileUploader — its
+  // `.value` prop doesn't reset the component's internal files/value state.
+  const [fileUploaderKey, setFileUploaderKey] = useState(0);
 
   // Load the configured default model from Settings so batch matches the system default
   useEffect(() => {
@@ -35,6 +52,31 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
       if (model) setSelectedModel(model);
     }).catch(() => {});
   }, []);
+
+  // Sets fileError, and — only when the new message is identical to the one
+  // already showing (React would otherwise bail on the no-op state update,
+  // so GcdsFileUploader's errorMessage prop never changes and nothing gets
+  // re-announced) — records a fresh { msg, token } to force a one-off
+  // supplementary announcement via the sr-only region below.
+  const announceFileError = (msg) => {
+    setFileError((prev) => {
+      if (prev === msg && msg) {
+        setFileErrorRepeat({ msg, token: `${Date.now()}-${Math.random()}` });
+      }
+      return msg;
+    });
+  };
+
+  // Same repeat-announcement handling as announceFileError, for the
+  // batchName field's GcdsInput errorMessage.
+  const announceNameError = (msg) => {
+    setNameError((prev) => {
+      if (prev === msg && msg) {
+        setNameErrorRepeat({ msg, token: `${Date.now()}-${Math.random()}` });
+      }
+      return msg;
+    });
+  };
 
   const handleFileChange = () => {
     clearError();
@@ -48,7 +90,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     }
 
     if (!uploadedFile.name.toLowerCase().endsWith('.csv')) {
-      setFileError(t('batch.upload.error.invalidFile'));
+      announceFileError(t('batch.upload.error.invalidFile'));
       setFile(null);
       return;
     }
@@ -68,13 +110,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     e.preventDefault();
     if (!processing) {
       if (!file) {
-        setFileError(t('batch.upload.error.noFile'));
+        announceFileError(t('batch.upload.error.noFile'));
         fileUploaderRef.current?.focus?.();
         return;
       }
 
       if (!batchName.trim()) {
-        setError(t('batch.upload.error.nameRequired'));
+        announceNameError(t('batch.upload.error.nameRequired'));
+        nameInputRef.current?.focus?.();
         return;
       }
 
@@ -130,6 +173,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           // no-op: removed unused results state
           clearError();
           setFileError('');
+          setNameError('');
           setSuccessMessage(t('batch.upload.success'));
           // Notify parent to refresh lists immediately
           try {
@@ -143,12 +187,11 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           // finished processing, clear processing flag and allow another upload
           setFileUploaded(false);
           setProcessing(false);
-          // Clear the file uploader's selected file (best-effort)
-          try {
-            if (fileUploaderRef.current) fileUploaderRef.current.value = [];
-          } catch (domErr) {
-            // ignore DOM reset errors
-          }
+          // Remount the uploader so its internal files/value state actually
+          // clears — setting .value alone doesn't reset the underlying
+          // native <input>'s FileList, which would otherwise silently
+          // resubmit the same file on a later upload.
+          setFileUploaderKey((k) => k + 1);
         } catch (persistErr) {
           console.error('Failed to persist batch:', persistErr);
           setError(persistErr?.message || t('batch.upload.error.saveFailed'));
@@ -163,7 +206,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           EMPTY_CSV: t('batch.upload.error.invalidCsv'),
           MISSING_QUESTION_COLUMN: t('batch.upload.error.missingQuestionColumn'),
         }[err?.code] || err?.message || t('batch.upload.error.readFailed');
-        setFileError(detail);
+        announceFileError(detail);
         fileUploaderRef.current?.focus?.();
         console.error('Error reading file:', err);
         // Re-show the upload button so the user can retry without re-selecting
@@ -210,9 +253,22 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               name="batchName"
               label={t('batch.upload.batchName')}
               value={batchName}
-              onGcdsInput={(e) => setBatchName(e.target.value)}
+              onGcdsInput={(e) => {
+                setBatchName(e.target.value);
+                setNameError('');
+              }}
+              errorMessage={nameError}
               required
+              ref={nameInputRef}
             />
+            {/* Same repeat-announcement handling as the fileErrorRepeat region
+                below — only renders for the exact repeat announceNameError()
+                just recorded. */}
+            {nameErrorRepeat && nameError === nameErrorRepeat.msg && (
+              <span key={nameErrorRepeat.token} role="alert" className="sr-only">
+                {nameError}
+              </span>
+            )}
           </div>
 
           {/* Search service toggle – commented out until Canada.ca search is available
@@ -318,6 +374,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           </div>
 
           <GcdsFileUploader
+            key={fileUploaderKey}
             className="csv-file-uploader"
             uploaderId="csvFile"
             name="csvFile"
@@ -328,6 +385,18 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             onGcdsChange={handleFileChange}
             ref={fileUploaderRef}
           />
+          {/* GcdsFileUploader's own inline error covers sighted users and the
+              first announcement. This sr-only region renders only for the
+              exact repeat announceFileError() just recorded — gated on
+              fileError matching fileErrorRepeat.msg so it never lingers past
+              a later, genuinely new error (which GcdsFileUploader's own alert
+              already announces on its own, and double-announcing here would
+              be redundant). */}
+          {fileErrorRepeat && fileError === fileErrorRepeat.msg && (
+            <span key={fileErrorRepeat.token} role="alert" className="sr-only">
+              {fileError}
+            </span>
+          )}
 
           {file && !fileUploaded && (
             <button type="submit" className="btn-primary">

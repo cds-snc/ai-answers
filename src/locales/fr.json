@@ -498,7 +498,6 @@
       "chunkSizeLabel": "Taille du bloc (Mo) :",
       "throttleLabel": "Limitation (ms) :",
       "tableSelectLabel": "Table (maintenir Ctrl/Cmd pour la sélection multiple) :",
-      "importFileLabel": "Fichier à importer",
       "importingLabel": "Importation...",
       "importButton": "Importer la base de données",
       "integrityTitle": "Vérifications d'intégrité",

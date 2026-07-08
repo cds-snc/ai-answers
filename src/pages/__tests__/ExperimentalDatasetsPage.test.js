@@ -40,15 +40,6 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
     GcdsLink: ({ children, href }) => <a href={href}>{children}</a>
 }));
 
-vi.mock('@gcds-core/components-react', () => ({
-    GcdsFileUploader: ({ label, uploaderId, onGcdsChange }) => (
-        <label htmlFor={uploaderId}>
-            {label}
-            <input type="file" id={uploaderId} onChange={onGcdsChange} />
-        </label>
-    )
-}));
-
 describe('ExperimentalDatasetsPage', () => {
     beforeEach(() => {
         mockListDatasets.mockReset().mockResolvedValue({ data: [] });
