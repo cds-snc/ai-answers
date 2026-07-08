@@ -276,12 +276,10 @@ const ChatInterface = ({
     }
   }, [isLoading]);
 
-  const getInputCopy = () => {
-    const value = turnCount >= 1
+  const getInputCopy = () =>
+    turnCount >= 1
       ? t("homepage.chat.input.followUp")
       : t("homepage.chat.input.initial");
-    return typeof value === "object" ? value : { text: value, ariaLabel: value };
-  };
 
   // TOOD is there a difference between paragraphs and sentrences?
   const getLastMessageSentenceCount = () => {
@@ -373,7 +371,7 @@ const ChatInterface = ({
     setIsTextareaFocused(true);
   };
 
-  const { text: inputLabel, ariaLabel: inputSRLabel } = getInputCopy();
+  const inputCopy = getInputCopy();
 
   // A readable department/page label for screen readers, instead of the
   // visual "domain/.../file.html" truncation (its literal dots and slashes
@@ -815,8 +813,7 @@ const ChatInterface = ({
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
                 <label htmlFor="message">
-                  <span aria-hidden="true">{inputLabel}</span>
-                  <span className="sr-only">{inputSRLabel}</span>
+                  {withCanadaCaPronunciation(inputCopy, lang)}
                 </label>
                 <span className="hint-text" id="chat-input-hint">
                   <img

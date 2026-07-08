@@ -198,11 +198,8 @@ const HomePage = ({ lang = "en" }) => {
     <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
-        <h2
-          className="homepage-subtitle mt-400"
-          aria-label={t("homepage.subtitle.ariaLabel")}
-        >
-          <span aria-hidden="true">{t("homepage.subtitle.text")}</span>
+        <h2 className="homepage-subtitle mt-400">
+          {withCanadaCaPronunciation(t("homepage.subtitle"), lang)}
         </h2>
         <GcdsText className="mb-200">
           {withCanadaCaPronunciation(t("homepage.intro.researchOnly"), lang)}
