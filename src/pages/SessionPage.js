@@ -16,6 +16,17 @@ const SessionPage = ({ lang: propLang }) => {
   const [sessions, setSessions] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const sessionTypeLabel = React.useCallback((value) => {
+    const type = value || 'unknown';
+    const labels = {
+      auth: t('admin.session.sessionTypes.auth'),
+      visitor: t('admin.session.sessionTypes.visitor'),
+      session: t('admin.session.sessionTypes.session'),
+      ip: t('admin.session.sessionTypes.ip'),
+      unknown: t('admin.session.sessionTypes.unknown'),
+    };
+    return labels[type] || labels.unknown;
+  }, [t]);
 
   const fetchSessions = React.useCallback(async () => {
     setLoading(true);
@@ -69,6 +80,7 @@ const SessionPage = ({ lang: propLang }) => {
         data={sessions}
         columns={[
           { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
+          { title: t('admin.session.sessionType', 'Session type'), data: 'sessionType', render: (data) => sessionTypeLabel(data) },
           {
             title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
               const cid = data || row.chatId || '';

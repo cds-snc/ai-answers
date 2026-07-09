@@ -94,6 +94,13 @@ export class RedactionError extends Error {
   }
 }
 
+export class ChatRunInProgressError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ChatRunInProgressError';
+  }
+}
+
 export class ShortQueryValidation extends Error {
   constructor(message, userMessage, searchUrl) {
     super(message);
