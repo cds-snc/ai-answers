@@ -409,6 +409,38 @@ describe('ExperimentalDatasetService', () => {
         });
     });
 
+    describe('exportDataset', () => {
+        it('should export dataset rows as csv with chatId, question and answer columns', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Export Dataset', type: 'qa-pair' });
+            await ExperimentalDatasetRow.create([
+                {
+                    experimentalDataset: ds._id,
+                    rowIndex: 1,
+                    data: { chatId: 'chat-1', question: 'First question?', answer: 'First answer' }
+                },
+                {
+                    experimentalDataset: ds._id,
+                    rowIndex: 2,
+                    data: { chatId: 'chat-2', question: 'Second question?', answer: '' }
+                }
+            ]);
+
+            const result = await ExperimentalDatasetService.exportDataset(ds._id);
+
+            expect(result.dataset.name).toBe('Export Dataset');
+            expect(result.csvText.startsWith('\uFEFF')).toBe(true);
+            expect(result.csvText).toContain('chatId,question,answer');
+            expect(result.csvText).toContain('chat-1,First question?,First answer');
+            expect(result.csvText).toContain('chat-2,Second question?,');
+        });
+
+        it('should return null for a missing dataset', async () => {
+            const missingId = new mongoose.Types.ObjectId();
+            const result = await ExperimentalDatasetService.exportDataset(missingId);
+            expect(result).toBeNull();
+        });
+    });
+
     describe('list', () => {
         it('should return paginated results', async () => {
             await ExperimentalDataset.create([

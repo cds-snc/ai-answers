@@ -5,6 +5,7 @@ import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Keep in sync with the production batch upload (BatchService._extractQuestion)
@@ -434,6 +435,28 @@ class ExperimentalDatasetService {
             page,
             limit,
             totalPages: Math.ceil(total / limit)
+        };
+    }
+
+    async exportDataset(datasetId) {
+        const dataset = await ExperimentalDataset.findById(datasetId).lean();
+        if (!dataset) {
+            return null;
+        }
+
+        const rows = await ExperimentalDatasetRow.find({ experimentalDataset: datasetId })
+            .sort({ rowIndex: 1 })
+            .lean();
+
+        const headers = ['chatId', 'question', 'answer'];
+        const csvRows = [
+            headers,
+            ...rows.map((row) => headers.map((header) => row.data?.[header] ?? ''))
+        ];
+
+        return {
+            dataset,
+            csvText: `\uFEFF${serializeCsvRows(csvRows)}`
         };
     }
 
