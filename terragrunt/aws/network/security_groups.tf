@@ -10,6 +10,7 @@ locals {
 
 # Create a Security Group for the React Answers App
 resource "aws_security_group" "app" {
+  provider = aws.core_services
   # Use the SG name defined in the local variable
   name = local.sg_app_name
 

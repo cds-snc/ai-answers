@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -14,6 +15,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [newName, setNewName] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [newType, setNewType] = useState('question-only');
+    const [newCategory, setNewCategory] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
 
     const [showUpload, setShowUpload] = useState(false);
@@ -57,12 +59,13 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         base64,
                         selectedFile.type,
                         selectedFile.name,
-                        { name: newName, description: newDesc, type: newType }
+                        { name: newName, description: newDesc, type: newType, category: newCategory.trim() }
                     );
                     setMessage({ type: 'success', text: t('experimental.datasets.uploadSuccess') });
                     fetchDatasets();
                     setNewName('');
                     setNewDesc('');
+                    setNewCategory('');
                     setSelectedFile(null);
                     setShowUpload(false);
                 } catch (err) {
@@ -114,7 +117,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         };
 
     return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.title')}</GcdsHeading>
             <div className="mb-400">
                 <GcdsLink href={`/${lang}/admin`}>
@@ -158,12 +161,29 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
                                 </select>
                             </div>
+                            <div>
+                                <label htmlFor="ds-category" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                    {t('experimental.datasets.categoryLabel')}
+                                </label>
+                                <input
+                                    id="ds-category"
+                                    type="text"
+                                    value={newCategory}
+                                    maxLength={100}
+                                    onChange={(e) => setNewCategory(e.target.value)}
+                                    placeholder={t('experimental.datasets.categoryPlaceholder')}
+                                    style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                                />
+                            </div>
                             <GcdsText className="mb-200">
                                 {typeInfo.description}
                             </GcdsText>
                             <GcdsText className="mb-200">
                                 <strong>{t('experimental.datasets.requiredColumns')}: </strong>
                                 {typeInfo.columns}
+                            </GcdsText>
+                            <GcdsText className="mb-200">
+                                {t('experimental.datasets.columnAliasHint')}
                             </GcdsText>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -210,6 +230,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 <th className="p-200">{t('experimental.datasets.typeLabel')}</th>
                                 <th className="p-200">{t('experimental.datasets.uploadedBy')}</th>
                                 <th className="p-200">{t('experimental.datasets.rowCount')}</th>
+                                <th className="p-200">{t('experimental.datasets.runCountLabel')}</th>
                                 <th className="p-200">{t('experimental.datasets.created')}</th>
                                 <th className="p-200">{t('experimental.datasets.actions')}</th>
                             </tr>
@@ -231,12 +252,28 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                                 : ds.type}
                                     </td>
                                     <td className="p-200">{ds.createdBy?.email || t('common.na')}</td>
-                                    <td className="p-200">{ds.rowCount}</td>
+                                    <td className="p-200">{formatNumber(ds.rowCount, lang)}</td>
+                                    <td className="p-200">
+                                        {ds.runCount > 0
+                                            ? <strong>{formatNumber(ds.runCount, lang)}</strong>
+                                            : formatNumber(0, lang)}
+                                    </td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
                                         <div className="d-flex gap-200">
-                                            <GcdsButton size="small" onClick={() => handleViewDataset(ds._id)}>
+                                            <GcdsButton
+                                                size="small"
+                                                buttonRole={ds.runCount > 0 ? 'secondary' : 'primary'}
+                                                onClick={() => handleViewDataset(ds._id)}
+                                            >
                                             {t('experimental.datasets.analyze')}
+                                            </GcdsButton>
+                                            <GcdsButton
+                                                size="small"
+                                                buttonRole={ds.runCount > 0 ? 'primary' : 'secondary'}
+                                                onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }}
+                                            >
+                                                {t('experimental.datasets.suiteView')}
                                             </GcdsButton>
                                             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
                                                 {t('experimental.datasets.delete')}
@@ -247,7 +284,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                             ))}
                             {datasets.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
+                                    <td colSpan="7" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
                                 </tr>
                             )}
                         </tbody>

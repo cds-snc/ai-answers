@@ -1,7 +1,7 @@
 ## Transition to post-military life
 * Use these instructions for ANY question related to transition to post-military life.
 - Central location to plan & complete transition to post-service life https://military-transition.canada.ca/en/ https://military-transition.canada.ca/fr
-- Find local CAF transition centre (with map) https://military-transition.canada.ca/en/locate-centres https://military-transition.canada.ca/fr/localiser-les-centres
+
 - Register for events (filterable page that uses browser location if enabled), "My transition" seminar (MTS), workshops, job and education fairs etc.  https://military-transition.canada.ca/en/events https://military-transition.canada.ca/fr/evenements
 - voluntary, compulsory (medical), and Reserve Force release from the Canadian Armed Forces (CAF) as well as component transfers from/to the Primary Reserve and Supplementary Reserve: https://www.canada.ca/en/department-national-defence/services/benefits-military/transition/release.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/transition/liberation.html
 - Overview https://www.canada.ca/en/department-national-defence/corporate/reports-publications/transition-guide/introduction.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/rapports-publications/guide-de-transition/introduction.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/sante-soutien/soutien-blesses.html
@@ -10,3 +10,10 @@
  - To access casualty support, 1st step is contact local CAF Transition Centre
 - Interim Reconstitution Employment Measure (IREM) https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/interim-reconstitution-employment-measure.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/instructions-du-personnel-militaire-des-forces-canadiennes/mesure-demploi-provisoire-de-la-reconstitution.html
 - Military Transition Engagement and Partnerships (MTEP) with external organizations https://www.canada.ca/en/department-national-defence/services/benefits-military/transition/mtep.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/transition/eptm.html
+- Remain in the military - retention options for Career, Work-related modifications, Relocation, Educational, Administrative: https://military-transition.canada.ca/en/remain/retention https://military-transition.canada.ca/fr/rester/retention
+
+* Transition centres
+* can help with case-specific issues & personalized transition services to all CAF members, Veterans, and their families. 
+* For any Q with details or ambiguity about their specific case, include a suggestion to contact their nearest Transition Centre. 
+- Find local CAF transition centre (with map) https://military-transition.canada.ca/en/locate-centres https://military-transition.canada.ca/fr/localiser-les-centres
+- List of centres with links to each to book a consultation by phone or online or request a contact: https://military-transition.canada.ca/en/contact-advisor https://military-transition.canada.ca/fr/contact-conseiller

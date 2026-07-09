@@ -123,12 +123,16 @@ describe('buildAriaLabel', () => {
   });
 
   describe('edge cases', () => {
-    it('returns empty string for malformed URL', () => {
-      expect(buildAriaLabel('not-a-url', 'en')).toBe('');
+    it('still announces "opens in new tab" for a malformed URL', () => {
+      expect(buildAriaLabel('not-a-url', 'en')).toBe('(opens in new tab) not-a-url');
     });
 
-    it('returns empty string for empty string input', () => {
-      expect(buildAriaLabel('', 'en')).toBe('');
+    it('still announces "opens in new tab" (fr) for a malformed URL', () => {
+      expect(buildAriaLabel('not-a-url', 'fr')).toBe("(s'ouvre dans un nouvel onglet) not-a-url");
+    });
+
+    it('still announces "opens in new tab" for empty string input', () => {
+      expect(buildAriaLabel('', 'en')).toBe('(opens in new tab) ');
     });
 
     it('defaults lang to en when omitted', () => {

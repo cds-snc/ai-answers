@@ -18,6 +18,7 @@ inputs = {
   default_tags = {
     CostCentre = "${local.vars.inputs.cost_center_code}"
     Terraform  = true
+    ssc_cbrid  = "22DI"
   }
 }
 

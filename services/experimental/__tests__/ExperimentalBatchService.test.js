@@ -21,7 +21,24 @@ vi.mock('../ExperimentalQueueService.js', () => ({
 
 vi.mock('../ExperimentalAnalyzerRegistry.js', () => ({
     default: {
-        get: vi.fn(),
+        get: vi.fn().mockImplementation((id) => {
+            if (id === 'expert-scorer') {
+                return {
+                    id: 'expert-scorer',
+                    inputType: 'comparison',
+                    validateBatch: (items) => {
+                        const hasBaseline = items.some((item) =>
+                            ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer']
+                                .some((alias) => item[alias])
+                        );
+                        return hasBaseline
+                            ? { valid: true }
+                            : { valid: false, code: 'NO_REFERENCE', localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER' };
+                    }
+                };
+            }
+            return undefined;
+        }),
         initialize: vi.fn().mockResolvedValue()
     }
 }));
@@ -104,7 +121,7 @@ describe('ExperimentalBatchService', () => {
             const itemsData = [{
                 Question: 'Standard Q',
                 Response: 'Standard A',
-                baseline: 'Base',
+                baselineAnswer: 'Base',
                 NewAnswer: 'Comp'
             }];
 
@@ -114,6 +131,187 @@ describe('ExperimentalBatchService', () => {
             expect(item.question).toBe('Standard Q');
             expect(item.answer).toBe('Standard A');
             expect(item.baselineAnswer).toBe('Base');
+        });
+
+        it('should map the accepted baseline answer column names to baselineAnswer', async () => {
+            const batchData = { name: 'Baseline Mapping Test', type: 'analysis', config: { analyzerId: 'refusal' } };
+            const itemsData = [
+                { question: 'Q1', GoldenAnswer: 'Expert answer 1' },
+                { question: 'Q2', goldenAnswer: 'Expert answer 2' },
+                { question: 'Q3', BaselineAnswer: 'Expert answer 3' },
+                { question: 'Q4', baseline: 'Expert answer 4' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
+
+            expect(items.map(i => i.baselineAnswer)).toEqual([
+                'Expert answer 1',
+                'Expert answer 2',
+                'Expert answer 3',
+                'Expert answer 4'
+            ]);
+            // Baseline answers land in the reference slot only — the current
+            // answer stays empty so processing generates a fresh one to compare.
+            expect(items.every(i => !i.answer)).toBe(true);
+        });
+
+        it('should expand each question into n items when config.trials is set', async () => {
+            const batchData = {
+                name: 'Trials Test',
+                type: 'analysis',
+                config: { analyzerId: 'expert-scorer', trials: 3 }
+            };
+            const itemsData = [
+                { question: 'Q1', GoldenAnswer: 'Golden 1' },
+                { question: 'Q2', GoldenAnswer: 'Golden 2' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1, trialIndex: 1 });
+
+            expect(batch.summary.total).toBe(6);
+            expect(items).toHaveLength(6);
+            expect(items.map(i => [i.rowIndex, i.trialIndex])).toEqual([
+                [1, 1], [1, 2], [1, 3],
+                [2, 1], [2, 2], [2, 3]
+            ]);
+            // Every trial carries the golden answer but is its own conversation
+            expect(items.every(i => i.baselineAnswer.startsWith('Golden'))).toBe(true);
+            const chatIds = new Set(items.map(i => i.chatId));
+            expect(chatIds.size).toBe(6);
+        });
+
+        it('should keep multi-turn conversations threaded within each trial', async () => {
+            const batchData = {
+                name: 'Multi-turn Trials Test',
+                type: 'analysis',
+                config: { analyzerId: 'similar-answer', trials: 2 }
+            };
+            // Two rows sharing a source chatId = one two-turn conversation
+            const itemsData = [
+                { question: 'Turn 1', chatId: 'source-conv-1' },
+                { question: 'Turn 2', chatId: 'source-conv-1' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1, trialIndex: 1 });
+
+            const trial1 = items.filter(i => i.trialIndex === 1);
+            const trial2 = items.filter(i => i.trialIndex === 2);
+
+            // Within a trial, both turns share one conversation
+            expect(trial1[0].chatId).toBe(trial1[1].chatId);
+            expect(trial2[0].chatId).toBe(trial2[1].chatId);
+            // Across trials, the conversations are independent
+            expect(trial1[0].chatId).not.toBe(trial2[0].chatId);
+        });
+
+        it('should clamp trials to the allowed range', async () => {
+            const batchData = {
+                name: 'Trials Clamp Test',
+                type: 'analysis',
+                config: { analyzerId: 'similar-answer', trials: 99 }
+            };
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, [{ question: 'Q1' }]);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
+
+            expect(batch.config.trials).toBe(8);
+            expect(items).toHaveLength(8);
+        });
+
+        it('should reject expert-scorer runs with no reference at all', async () => {
+            await expect(ExperimentalBatchService.createBatch(
+                { name: 'No Reference', type: 'analysis', config: { analyzerId: 'expert-scorer' } },
+                [{ question: 'Q1' }]
+            )).rejects.toMatchObject({ code: 'NO_REFERENCE' });
+        });
+
+        it('should accept a no-analyzer capture run as baseline for any analyzer', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Capture DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create([
+                { experimentalDataset: ds._id, rowIndex: 1, data: { question: 'Q1' } }
+            ]);
+
+            const captureBatch = await ExperimentalBatch.create({
+                name: 'Capture',
+                type: 'analysis',
+                status: 'completed',
+                config: { analyzerId: 'no-analyzer', datasetId: ds._id }
+            });
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: captureBatch._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Captured answer', status: 'completed' }
+            ]);
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'Scored run',
+                type: 'analysis',
+                config: {
+                    analyzerId: 'expert-scorer',
+                    datasetId: ds._id.toString(),
+                    baselineRunId: captureBatch._id.toString()
+                }
+            }, []);
+
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
+            expect(items[0].baselineAnswer).toBe('Captured answer');
+        });
+
+        it('should use the first trial per question when the baseline run had trials', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Drift DS', type: 'question-only' });
+            await ExperimentalDatasetRow.create([
+                { experimentalDataset: ds._id, rowIndex: 1, data: { question: 'Q1' } },
+                { experimentalDataset: ds._id, rowIndex: 2, data: { question: 'Q2' } }
+            ]);
+
+            const baselineBatch = await ExperimentalBatch.create({
+                name: 'Baseline with trials',
+                type: 'analysis',
+                status: 'completed',
+                config: { analyzerId: 'similar-answer', datasetId: ds._id, trials: 2 }
+            });
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: baselineBatch._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Q1 trial 1', status: 'completed' },
+                { experimentalBatch: baselineBatch._id, rowIndex: 1, trialIndex: 2, question: 'Q1', answer: 'Q1 trial 2', status: 'completed' },
+                { experimentalBatch: baselineBatch._id, rowIndex: 2, trialIndex: 1, question: 'Q2', answer: 'Q2 trial 1', status: 'completed' },
+                { experimentalBatch: baselineBatch._id, rowIndex: 2, trialIndex: 2, question: 'Q2', answer: 'Q2 trial 2', status: 'completed' }
+            ]);
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'Drift run',
+                type: 'analysis',
+                config: {
+                    analyzerId: 'similar-answer',
+                    datasetId: ds._id.toString(),
+                    baselineRunId: baselineBatch._id.toString(),
+                    trials: 2
+                }
+            }, []);
+
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1, trialIndex: 1 });
+
+            // Every trial of a question compares against that question's
+            // first baseline trial — never a neighbouring question's answer.
+            expect(items.map(i => [i.rowIndex, i.trialIndex, i.baselineAnswer])).toEqual([
+                [1, 1, 'Q1 trial 1'],
+                [1, 2, 'Q1 trial 1'],
+                [2, 1, 'Q2 trial 1'],
+                [2, 2, 'Q2 trial 1']
+            ]);
+        });
+
+        it('should not map unrecognized golden column variants', async () => {
+            const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'similar-answer' } };
+            const itemsData = [
+                { question: 'Q1', 'golden answer': 'Spaced name' },
+                { question: 'Q2', golden_answer: 'Underscored name' }
+            ];
+
+            const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
+
+            expect(items.every(i => !i.baselineAnswer)).toBe(true);
         });
 
         it('should not invent a model family when none is explicitly provided', async () => {

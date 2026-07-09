@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
+import AnnouncedError from '../components/auth/AnnouncedError.js';
+import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
+import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
 
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, refreshUser, getDefaultRouteForRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
   const [isLoading, setIsLoading] = useState(false);
+  const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    clearError();
     // If 2FA flow already started, ignore normal submit
     if (showTwoStep) {
       setIsLoading(false);
@@ -43,11 +48,17 @@ const LoginPage = ({ lang = 'en' }) => {
   // Two-step verification state
   const [showTwoStep, setShowTwoStep] = useState(false);
   const [code, setCode] = useState('');
-  const [twoStepError, setTwoStepError] = useState('');
+  const {
+    error: twoStepError,
+    errorCount: twoStepErrorCount,
+    errorRef: twoStepErrorRef,
+    setError: setTwoStepError,
+    clearError: clearTwoStepError,
+  } = useAnnouncedError();
 
   const verifyTwoStep = async () => {
     setIsLoading(true);
-    setTwoStepError('');
+    clearTwoStepError();
     try {
       // backend method remains verify2FA
       const data = await AuthService.verify2FA(email, code);
@@ -72,7 +83,7 @@ const LoginPage = ({ lang = 'en' }) => {
   const requestTwoStep = async () => {
     if (!email) return;
     setIsLoading(true);
-    setError('');
+    clearError();
     try {
       // backend method remains send2FA
       await AuthService.send2FA(email);
@@ -86,12 +97,30 @@ const LoginPage = ({ lang = 'en' }) => {
 
   return (
     <div className="auth-login-container">
+      {sessionExpired && (
+        <GcdsNotice
+          noticeRole="warning"
+          noticeTitleTag="h2"
+          noticeTitle={t('login.sessionExpired.title')}
+          className="mb-400"
+        >
+          <GcdsText>{t('login.sessionExpired.message')}</GcdsText>
+        </GcdsNotice>
+      )}
+
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>
           <h2>{t('login.2fa.title')}</h2>
           <p>{t('login.2fa.sentToEmail')}</p>
-          {twoStepError && <div className="auth-error-message">{twoStepError}</div>}
+          {twoStepError && (
+            <AnnouncedError
+              id="login-2fa-error"
+              message={twoStepError}
+              errorCount={twoStepErrorCount}
+              inputRef={twoStepErrorRef}
+            />
+          )}
           <div className="auth-form-group">
             <label htmlFor="code">{t('login.2fa.code')}</label>
             <input id="code" value={code} onChange={(e) => setCode(e.target.value)} disabled={isLoading} />
@@ -109,7 +138,9 @@ const LoginPage = ({ lang = 'en' }) => {
         // Default login form with signup link when not in 2FA flow
         <>
           <h1>{t('login.title')}</h1>
-          {error && <div className="auth-error-message">{error}</div>}
+          {error && (
+            <AnnouncedError id="login-error" message={error} errorCount={errorCount} inputRef={errorRef} />
+          )}
           <form onSubmit={handleSubmit}>
             <div className="auth-form-group">
               <label htmlFor="email">{t('login.email')}</label>

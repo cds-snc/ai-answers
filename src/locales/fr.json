@@ -1,4 +1,4 @@
-{
+﻿{
   "locale": "fr",
   "homepage": {
     "title": "Réponses IA",
@@ -36,18 +36,21 @@
     "publicFeedback": {
       "send": "Envoyer la rétroaction",
       "question": "C'était utile?",
+      "selectionRequired": "Veuillez sélectionner une raison.",
+      "requiredLabel": "obligatoire",
       "yes": {
-        "question": "Dites-nous plus. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
+        "title": "Dites-nous plus",
         "options": {
           "noCall": "Je n'ai pas besoin d'appeler le gouvernement",
           "noVisit": "Je n'ai pas besoin de me rendre dans un bureau",
           "savedTime": "J'ai gagné du temps en cherchant et en lisant",
           "other": "Autre"
         },
-        "shortQuestion": "Pourquoi était-ce utile ?"
+        "shortQuestion": "Pourquoi était-ce utile ?",
+        "hint": "Sélectionnez la meilleure option ci-dessous."
       },
       "no": {
-        "question": "Aidez-nous à améliorer. Sélectionnez la meilleure option ci-dessous. (obligatoire)",
+        "title": "Aidez-nous à améliorer",
         "options": {
           "irrelevant": "Non pertinent ou hors sujet",
           "confusing": "Trop complexe ou déroutant",
@@ -56,7 +59,8 @@
           "brokenLink": "Le lien ne fonctionne pas",
           "other": "Autre"
         },
-        "shortQuestion": "Pourquoi n'était-ce pas utile ?"
+        "shortQuestion": "Pourquoi n'était-ce pas utile ?",
+        "hint": "Sélectionnez la meilleure option ci-dessous."
       }
     },
     "privacy": {
@@ -158,9 +162,9 @@
         "shortQuerySearch": "Rechercher sur Canada.ca :",
         "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
         "limitReachedHeading": "Limite de 3 questions atteinte",
-        "answerLabel1": "Votre réponse est,",
-        "answerLabel2": "Votre réponse 2 est,",
-        "answerLabel3": "Votre réponse 3 est,",
+        "yourQuestionLabel": "Votre question",
+        "responseLabel": "Réponse",
+        "notAnsweredLabel": "(sans réponse)",
         "errorHeading": "Erreur",
         "sessionTimeoutHeading": "Session expirée",
         "chatIssue": "Erreur dans le chat",
@@ -177,16 +181,18 @@
         "noDepartment": "Aucun ministère attribué"
       },
       "section": {
-        "heading": "Conversation par clavardage"
+        "heading": "Historique de la conversation – Réponses IA"
       }
     },
     "expertRating": {
       "title": "Évaluation de la réponse",
+      "selectionRequired": "Veuillez sélectionner au moins une évaluation.",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
       "sentence4": "Phrase 4",
       "citation": "Citation",
+      "citationNoneProvided": "Aucune fournie",
       "options": {
         "good": "Bonne",
         "needsImprovement": "Nécessite une amélioration",
@@ -208,7 +214,8 @@
         }
       },
       "submit": "Soumettre l'évaluation",
-      "intro": "Évaluez les phrases de la réponse, ou la citation, ou les deux"
+      "intro": "Évaluez les phrases de la réponse et/ou la citation",
+      "answerNumberLabel": "Réponse {number}"
     }
   },
   "batch": {
@@ -226,36 +233,45 @@
       }
     },
     "upload": {
-      "batchName": "Nom",
+      "batchName": "Nommez le lot",
+      "steps": {
+        "step2Title": "Téléversez le lot",
+        "step3Title": "Traitez le lot"
+      },
       "instructions": {
-        "title": "Comment exécuter un lot :",
+        "tipsTitle": "Astuces pour le traitement et l'évaluation des résultats",
         "step1": "Créez un fichier CSV",
+        "step1Summary": "Comment créer un fichier CSV",
         "step1a": "Au minimum, une colonne avec vos questions intitulée QUESTION et une avec votre URL de référence intitulée URL.",
-        "step1b": "Les questions peuvent être numérotées avec un espace avant le texte — p. ex. 001.  Comment faire une demande d'AE",
-        "step1c": "Votre fichier CSV peut contenir d'autres colonnes (p. ex. avec des réponses précédentes) — les numéros de questions vous aident à les associer par la suite.",
+        "step1b": "Les questions peuvent être numérotées avec un espace avant le texte, par exemple, 001. Comment faire une demande d'AE.",
+        "step1c": "Votre fichier CSV peut contenir d'autres colonnes, comme des réponses précédentes. Utilisez les numéros de questions pour les associer par la suite.",
         "step1d": "Vous aurez besoin de fichiers séparés pour les questions en anglais à poser/répondre comme si elles étaient sur une page anglaise, et les questions en français à poser/répondre sur la page française de Réponses IA.",
         "step1e": "Un lot peut contenir un maximum de 200 questions. Divisez les ensembles plus volumineux en plusieurs fichiers.",
-        "step2": "Attribuez un nom et laissez le flux de travail et la famille de modèles aux sélections par défaut.",
-        "step3": "Sélectionnez la langue du fichier de lot (c.-à-d. la langue de la page que le lot simule).",
-        "step4": "Choisissez votre fichier CSV et cliquez sur le bouton Télécharger qui apparaît.",
-        "step5": "Cliquez sur le bouton Traiter une fois que le fichier apparaît dans la section Lots incomplets.",
+        "step3a": "Sélectionnez la langue du fichier de lot.",
+        "step3b": "(c.-à-d. la langue de la page que le lot simule)",
+        "reviewIncomplete": "Après un téléversement réussi, lancez le traitement et/ou suivez la progression de votre lot ci-dessous.",
+        "incompleteLinkText": "Accéder à la section Lots incomplets",
         "step6": "Lorsque c'est terminé (si le traitement est interrompu et n'est pas terminé, cliquez à nouveau sur le bouton Traiter), il sera déplacé vers la section Lots terminés. Vous pouvez télécharger le fichier à partir de là.",
         "step7": "Tous les clavardages exécutés dans le lot seront disponibles pour évaluation dans le Tableau de bord d'évaluation et le Visualiseur de clavardage avec l'adresse courriel de la personne qui a soumis le lot."
       },
       "language": {
-        "label": "Langue de la page :",
+        "label": "Langue de la page",
         "english": "Anglais",
         "french": "Français"
       },
+      "advanced": {
+        "title": "Flux de travail et modèle : Avancé"
+      },
       "workflow": {
-        "label": "Flux de travail"
+        "label": "Flux de travail",
+        "hint": "La plupart des lots devraient être laissés à la sélection par défaut"
       },
       "model": {
-        "label": "Famille de modèles"
+        "label": "Famille de modèles",
+        "hint": "La plupart des lots devraient être laissés à la sélection par défaut"
       },
       "file": {
-        "label": "Ajouter un fichier CSV :",
-        "selected": "Fichier sélectionné :"
+        "label": "Ajouter un fichier CSV :"
       },
       "searchService": {
         "label": "Service de recherche",
@@ -266,6 +282,7 @@
         "upload": "Télécharger le fichier"
       },
       "processing": "Traitement du fichier, veuillez patienter...",
+      "success": "Lot téléversé.",
       "error": {
         "noFile": "Veuillez sélectionner un fichier d'abord.",
         "nameRequired": "Veuillez entrer un nom de lot.",
@@ -295,6 +312,7 @@
         "excel": "Excel",
         "process": "Traiter",
         "delete": "Supprimer",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot?",
         "cancel": "Annuler"
       },
       "types": {
@@ -865,9 +883,9 @@
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "submit": "Créer un compte",
-    "passwordMismatch": "Les mots de passe ne correspondent pas",
-    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-    "errorOccurred": "Une erreur est survenue lors de l'inscription",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+    "errorOccurred": "Une erreur est survenue lors de l'inscription.",
     "submitting": "Création du compte...en attente d'approbation"
   },
   "login": {
@@ -875,7 +893,11 @@
     "email": "Courriel",
     "password": "Mot de passe",
     "submit": "Se connecter",
-    "invalidCredentials": "Courriel ou mot de passe invalide",
+    "invalidCredentials": "Courriel ou mot de passe invalide.",
+    "sessionExpired": {
+      "title": "Session expirée",
+      "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."
+    },
     "form": {
       "submitting": "Connexion en cours...",
       "signupLink": "Créer un compte",
@@ -889,11 +911,17 @@
       "resend": "Renvoyer le code",
       "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
       "send": "Envoyer le code de vérification",
-      "sendError": "Impossible d'envoyer le code de vérification",
-      "invalidCode": "Code de vérification invalide"
+      "sendError": "Impossible d'envoyer le code de vérification.",
+      "invalidCode": "Code de vérification invalide."
     },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe"
+  },
+  "auth": {
+    "sessionWarning": {
+      "title": "Session sur le point d'expirer",
+      "message": "Votre session expirera dans 1 minute. Vous serez automatiquement déconnecté si vous restez inactif."
+    }
   },
   "reset": {
     "request": {
@@ -901,7 +929,7 @@
       "send": "Envoyer le courriel de réinitialisation",
       "sending": "Envoi...",
       "sent": "Si ce compte existe, nous avons envoyé un courriel de réinitialisation.",
-      "error": "Échec de la demande de réinitialisation"
+      "error": "Échec de la demande de réinitialisation."
     },
     "verify": {
       "title": "Vérifier la réinitialisation",
@@ -913,7 +941,7 @@
       "otpSent": "Un code de vérification a été envoyé à votre adresse courriel",
       "otpSendError": "Échec de l'envoi du code de vérification",
       "next": "Suivant",
-      "invalidLink": "Lien de réinitialisation invalide ou manquant"
+      "invalidLink": "Lien de réinitialisation invalide ou manquant."
     },
     "complete": {
       "title": "Définir un nouveau mot de passe",
@@ -923,10 +951,10 @@
       "submit": "Définir le mot de passe",
       "submitting": "Envoi...",
       "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
-      "error": "Échec de la réinitialisation du mot de passe",
-      "invalid": "Lien de réinitialisation invalide",
-      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "error": "Échec de la réinitialisation du mot de passe.",
+      "invalid": "Lien de réinitialisation invalide.",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "lockedOut": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
       "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
@@ -1082,6 +1110,8 @@
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
+    "close": "Fermer",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données?",
     "deleting": "Suppression en cours...",
     "loading": "Chargement...",
     "processing": "Traitement...",
@@ -1716,7 +1746,7 @@
       "defaultMissing": "Texte par défaut indisponible."
     }
   },
-    "connectivity": {
+  "connectivity": {
     "title": "Tableau de bord de connectivité du service",
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
@@ -1775,14 +1805,19 @@
       "typeLabel": "Type d'ensemble de données",
       "uploadedBy": "Téléversé par",
       "fileLabel": "Fichier XLSX / CSV",
-      "requiredColumns": "Colonnes requises",
+      "categoryLabel": "Catégorie (facultatif)",
+      "categoryPlaceholder": "p. ex. cra, ircc, bias, pii, red-team",
+      "suiteView": "Grille de la suite",
+      "runCountLabel": "Exécutions",
+      "requiredColumns": "Colonnes",
+      "columnAliasHint": "Les fichiers de lots fonctionnent sans renommer les colonnes : la correspondance ignore la casse, et les noms de lots comme redactedQuestion, QUESTION et URL sont acceptés. Les colonnes supplémentaires sont conservées et ignorées.",
       "uploadDescriptions": {
-        "questionOnly": "Importez uniquement les questions. Toutes les colonnes de réponse seront ignorées.",
-        "qaPair": "Importez les questions avec leurs réponses existantes. La colonne de réponse sera conservée."
+        "questionOnly": "Utilisez ce type pour tester le système actuel : chaque question reçoit une nouvelle réponse du pipeline lors de l'analyse. Incluez une colonne GoldenAnswer pour que chaque réponse générée soit évaluée par rapport à votre réponse approuvée par un expert. Toute colonne nommée answer est supprimée à l'importation.",
+        "qaPair": "Utilisez ce type pour évaluer des réponses qui existent déjà (par exemple, d'une exécution ou d'une exportation antérieure) — la colonne answer contient ces réponses, elles sont évaluées telles quelles et aucune nouvelle réponse n'est générée. Incluez une colonne GoldenAnswer pour les comparer aussi à une réponse approuvée par un expert."
       },
       "uploadColumns": {
-        "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
-        "qaPair": "question et answer (requis), referringUrl (optionnel), chatId (optionnel)"
+        "questionOnly": "question (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)",
+        "qaPair": "question et answer (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)"
       },
       "rowCount": "Lignes",
       "created": "Créé le",
@@ -1807,6 +1842,14 @@
       "workflowLabel": "Flux de travail",
       "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
       "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
+      "goldenHint": "Aucune exécution de référence n'est nécessaire si votre ensemble de données contient une colonne GoldenAnswer — elle est utilisée automatiquement comme réponse de référence.",
+      "expertScorerNeedsReference": "L'évaluateur expert a besoin d'une réponse de référence pour juger : utilisez un ensemble de données avec une colonne GoldenAnswer, ou sélectionnez une exécution de référence. Sans référence, l'exécution ne démarrera pas.",
+      "baselineOverridesGolden": "Avertissement : cet ensemble de données contient une colonne GoldenAnswer, mais les réponses de l'exécution de référence sélectionnée la remplaceront comme référence pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non l'exactitude par rapport aux réponses en or. Choisissez « Aucune référence » pour comparer aux réponses en or.",
+      "runLabelLabel": "Étiquette d'exécution (facultatif)",
+      "runLabelPlaceholder": "p. ex. v2 – consignes de citation resserrées",
+      "suiteView": "Grille de la suite",
+      "trialsLabel": "Essais par question",
+      "trialsCostHint": "{rows} questions × {trials} essais = {total} exécutions du pipeline",
       "noBaseline": "-- Aucune référence (évaluation autonome) --",
       "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
       "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",
@@ -1842,6 +1885,7 @@
         "actions": "Actions"
       },
       "baseline": "Référence",
+      "viewResults": "Voir les résultats",
       "export": "Exporter",
       "exportChatLogs": "Exporter les journaux de clavardage",
       "useAsBaseline": "Utiliser comme référence",
@@ -1872,7 +1916,16 @@
         "exportFailed": "Échec de l'exportation du lot.",
         "deleteError": "Échec de la suppression du lot",
         "exportError": "Échec de l'exportation du lot",
-        "exportChatLogsError": "Échec de l'exportation des journaux de clavardage"
+        "exportChatLogsError": "Échec de l'exportation des journaux de clavardage",
+        "error.NO_REFERENCE": "Cet analyseur nécessite une réponse de référence : utilisez un ensemble de données avec une colonne baselineAnswer (ou GoldenAnswer), ou sélectionnez une exécution de référence.",
+        "error.NO_REFERENCE_EXPERT_SCORER": "L'évaluateur expert nécessite une réponse de référence pour évaluer : utilisez un ensemble de données avec une colonne GoldenAnswer (ou baselineAnswer), ou sélectionnez une exécution de référence.",
+        "error.NO_ITEMS": "Le lot ne contient aucune ligne à traiter.",
+        "error.BAD_REQUEST": "Requête invalide. Veuillez vérifier votre configuration.",
+        "error.NOT_FOUND": "Ressource introuvable.",
+        "error.INVALID_STATE": "Le lot est dans un état invalide pour cette action.",
+        "error.DUPLICATE": "Une ressource avec ce nom existe déjà.",
+        "error.RETRY_LIMIT": "Limite de nouvelles tentatives atteinte.",
+        "error.IN_USE": "Cette ressource est utilisée et ne peut pas être supprimée."
       },
       "analyzers": {
         "no-analyzer": {
@@ -1885,7 +1938,7 @@
         },
         "expert-scorer": {
           "name": "Évaluateur expert",
-          "description": "Cet analyseur vérifie si la réponse conserve le même sens que la référence tout en respectant les attentes de qualité du gouvernement du Canada. Il compare la réponse courante à la référence pour l'équivalence sémantique, les idées clés manquantes, les changements de type de réponse et la conformité aux normes GC. Un résultat signalé signifie que la réponse a dérivé d'une manière qui devrait être revue, par exemple en perdant un point important, en changeant la recommandation ou en régressant d'une réponse normale vers une clarification ou une réponse plus faible. Lorsqu'une référence existe, l'analyseur vérifie l'amélioration, la régression ou l'absence de changement significatif; lorsqu'aucune référence n'est fournie, il devient une revue de qualité autonome de la réponse courante. Utilisez-le lorsque vous voulez un jugement global sur la qualité plutôt qu'une comparaison point par point."
+          "description": "Évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada. Une réponse de référence est toujours nécessaire — une exécution sans référence ne démarrera pas. La référence utilisée pour évaluer chaque réponse dépend de la configuration de l'exécution :\n• Votre ensemble de données contient une colonne GoldenAnswer — chaque réponse nouvellement générée est évaluée par rapport à la réponse de l'expert : idées clés manquantes, recommandations modifiées et régressions de type de réponse (par exemple, une réponse normale qui devient un refus). Un échec signifie que la réponse est erronée ou plus faible que la norme de l'expert. C'est la configuration habituelle pour les suites de tests en or.\n• Vous avez sélectionné une exécution de référence — la même évaluation, mais la référence est constituée des réponses générées par cette exécution : un échec signifie que la qualité a changé depuis cette exécution, pas que la réponse est erronée. Si l'ensemble de données contient aussi des réponses en or, les réponses de l'exécution de référence ont priorité.\nUtilisez cet analyseur par défaut lorsque vous avez des réponses approuvées par un expert, ou pour un jugement de qualité global plutôt qu'une comparaison factuelle étroite."
         },
         "refusal": {
           "name": "Analyseur de refus",
@@ -1897,9 +1950,98 @@
         },
         "similar-answer": {
           "name": "Analyseur de réponses similaires",
-          "description": "Cet analyseur est conçu pour détecter la dérive des réponses. Il compare la réponse courante à une réponse de référence et recherche les changements significatifs dans les dates, les nombres, les règles d'admissibilité, les étapes, les programmes ou documents nommés, la portée, les URL et tout autre fait concret qui pourrait modifier l'action à prendre par l'utilisateur. Un résultat signalé signifie que la nouvelle réponse diffère de façon importante et peut changer les conseils donnés, même si la formulation semble proche. Les reformulations sans conséquence, les points équivalents présentés dans un autre ordre et les changements de mise en forme sont ignorés. Si l'analyseur ne peut pas déterminer si une différence est importante, il peut renvoyer needs-review afin qu'une personne examine le cas. Utilisez-le pour repérer les régressions subtiles qu'un simple score de similarité manquerait."
+          "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de référence — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne GoldenAnswer — chaque réponse générée est comparée à la réponse de l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport aux réponses en or, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
         }
+      }
+    },
+    "results": {
+      "title": "Résultats du lot",
+      "backToRuns": "Retour aux analyses",
+      "loading": "Chargement des résultats...",
+      "loadError": "Échec du chargement des résultats du lot.",
+      "summary": {
+        "total": "Éléments au total",
+        "attention": "Écarts",
+        "errors": "Erreurs",
+        "passRate": "Taux de réussite"
+      },
+      "filter": {
+        "label": "Afficher",
+        "attention": "Écarts seulement",
+        "all": "Tous les éléments",
+        "errors": "Erreurs seulement"
+      },
+      "table": {
+        "row": "Ligne",
+        "trial": "Essai",
+        "question": "Question",
+        "verdict": "Verdict",
+        "explanation": "Explication",
+        "actions": "Actions",
+        "view": "Voir",
+        "empty": "Aucun élément ne correspond à ce filtre."
+      },
+      "verdict": {
+        "pass": "Réussite",
+        "flagged": "Signalé",
+        "error": "Erreur",
+        "pending": "En attente",
+        "processing": "En traitement",
+        "cancelled": "Annulé",
+        "refused": "Refusé",
+        "skipped": "Ignoré"
+      },
+      "detail": {
+        "backToList": "Retour à la liste",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "position": "{current} de {total}",
+        "trial": "Essai {n} de {total}",
+        "question": "Question",
+        "referringUrl": "URL de référence",
+        "itemError": "Erreur de traitement",
+        "goldenAnswer": "Réponse de référence (expert)",
+        "currentAnswer": "Réponse générée",
+        "noAnswer": "Aucune réponse n'a été générée.",
+        "legendRemoved": "Absent de la réponse générée",
+        "legendAdded": "Ajouté dans la réponse générée",
+        "viewChatLogs": "Voir les journaux de clavardage",
+        "viewBaselineChatLogs": "Voir les journaux de clavardage de référence",
+        "analyzerResults": "Résultats des évaluateurs",
+        "analyzerErrors": "Erreurs des analyseurs"
+      },
+      "pagination": {
+        "previous": "Page précédente",
+        "next": "Page suivante",
+        "page": "Page {page} de {pages}"
+      }
+    },
+    "suite": {
+      "title": "Suite de tests",
+      "loading": "Chargement de la grille de la suite...",
+      "loadError": "Échec du chargement de la grille de la suite.",
+      "noRuns": "Aucune analyse n'a encore été exécutée pour cet ensemble de données. Lancez-en une depuis la page d'analyse.",
+      "runColumn": "Exécution",
+      "scoreColumn": "Score",
+      "scoreAll": "tous les essais",
+      "scoreAny": "au moins un essai",
+      "captureRun": "Capture de référence — non notée par rapport à une référence",
+      "newRun": "Nouvelle analyse",
+      "categoryLabel": "Catégorie",
+      "columnsHint": "Les noms de colonnes proviennent d'une colonne facultative testName dans l'ensemble de données. Étiquetez les lignes avec une colonne caseType (control, edge, boundary) pour décrire le rôle de chaque test. Cliquez sur une cellule pour ouvrir cette réponse.",
+      "caseType": {
+        "control": "Contrôle",
+        "edge": "Cas limite",
+        "boundary": "Frontière"
+      },
+      "verdict": {
+        "pass": "Réussite",
+        "mixed": "Mitigé",
+        "flagged": "Signalé",
+        "error": "Erreur",
+        "missing": "Aucun résultat"
       }
     }
   }
 }
+

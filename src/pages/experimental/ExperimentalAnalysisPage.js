@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
 const NO_ANALYZER_ID = 'no-analyzer';
+// Keep in sync with BASELINE_ANSWER_ALIASES in ExperimentalBatchService.js
+const GOLDEN_COLUMN_NAMES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -55,6 +57,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const datasetIdParam = searchParams.get('datasetId');
 
     // State
@@ -64,6 +67,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
     const [baselineBatchId, setBaselineBatchId] = useState('');
+    const [runLabel, setRunLabel] = useState('');
+    const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
 
@@ -239,6 +244,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         const batchData = {
             name: runName,
             description: `${t('experimental.analysis.analyzerPrefix')}: ${selectedAnalyzerId}`,
+            runLabel: runLabel.trim(),
             type: 'analysis',
             config: {
                 analyzerId: selectedAnalyzerId,
@@ -247,6 +253,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 aiProvider: selectedModel || undefined,
                 datasetId: selectedDatasetId || undefined,
                 baselineRunId: selectedAnalyzerId === NO_ANALYZER_ID ? undefined : baselineBatchId || undefined,
+                trials,
                 pageLanguage: String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en',
             }
         };
@@ -274,9 +281,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     setMessage(t('experimental.analysis.messages.startProcessingError'));
                 }
             }
+            setRunLabel('');
         } catch (err) {
             console.error(err);
-                    setMessage(t('experimental.analysis.messages.startAnalysisFailed'));
+            // err.message is a locale key when the server returned a known error
+            // code (e.g. NO_REFERENCE). Try translating it first; fall back to
+            // the generic failure message when it resolves to the key itself.
+            const translated = err?.message ? t(err.message) : null;
+            const isLocaleKey = translated && translated !== err.message;
+            setMessage(isLocaleKey ? translated : t('experimental.analysis.messages.startAnalysisFailed'));
         } finally {
             setStartingRun(null);
             setLoading(false);
@@ -369,15 +382,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return appVersion ? appVersion.slice(-10) : t('common.na');
     };
 
+    // No-analyzer capture runs only provide answers, so they can baseline any analyzer.
+    const canBaseline = (batch) => {
+        const analyzerId = resolveBatchAnalyzerId(batch);
+        return analyzerId === selectedAnalyzerId || analyzerId === NO_ANALYZER_ID;
+    };
     const baselineOptions = batches.filter(batch =>
-        batch.status === 'completed' &&
-        (!selectedAnalyzerId || resolveBatchAnalyzerId(batch) === selectedAnalyzerId)
+        batch.status === 'completed' && (!selectedAnalyzerId || canBaseline(batch))
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+    const datasetHasGoldenColumn = (selectedDataset?.columns || [])
+        .some(col => GOLDEN_COLUMN_NAMES.includes(col?.name));
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
-        <GcdsContainer layout="page" tag="main" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
                 <GcdsHeading tag="h1">
                     {selectedDataset?.name || t('experimental.analysis.title')}
@@ -387,9 +406,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         {selectedDataset.description}
                     </GcdsText>
                 )}
-                <GcdsLink href={`/${lang}/experimental/datasets`}>
-                    {t('experimental.datasets.backToList')}
-                </GcdsLink>
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                        {t('experimental.datasets.backToList')}
+                    </GcdsLink>
+                    {selectedDatasetId && (
+                        <GcdsLink href={`/${lang}/experimental/suites/${selectedDatasetId}`}>
+                            {t('experimental.analysis.suiteView')}
+                        </GcdsLink>
+                    )}
+                </div>
             </header>
             
 
@@ -437,7 +463,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     <GcdsText className="mb-200">
                                         <strong>{getAnalyzerDisplayName(selectedAnalyzer)}</strong>
                                     </GcdsText>
-                                    <GcdsText>{getAnalyzerDescription(selectedAnalyzer)}</GcdsText>
+                                    {getAnalyzerDescription(selectedAnalyzer)
+                                        .split('\n')
+                                        .filter(line => line.trim())
+                                        .map((line, idx) => (
+                                            <GcdsText key={idx} className="mb-200">{line}</GcdsText>
+                                        ))}
                                 </GcdsDetails>
                             )}
                         </div>
@@ -521,8 +552,68 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         </option>
                                     ))}
                                 </select>
+                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && !datasetHasGoldenColumn && !baselineBatchId && (
+                                    <div
+                                        role="alert"
+                                        className="mt-200"
+                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
+                                    >
+                                        <strong>{t('experimental.analysis.expertScorerNeedsReference')}</strong>
+                                    </div>
+                                )}
+                                {baselineBatchId && datasetHasGoldenColumn && (
+                                    <div
+                                        role="alert"
+                                        className="mt-200"
+                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
+                                    >
+                                        <strong>{t('experimental.analysis.baselineOverridesGolden')}</strong>
+                                    </div>
+                                )}
+                                <GcdsText className="mt-200">
+                                    {t('experimental.analysis.goldenHint')}
+                                </GcdsText>
                             </div>
                         )}
+
+                        <div className="mb-400">
+                            <label htmlFor="trials-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.trialsLabel')}
+                            </label>
+                            <select
+                                id="trials-select"
+                                value={trials}
+                                onChange={(e) => setTrials(parseInt(e.target.value, 10) || 1)}
+                                style={{ padding: '8px', maxWidth: '10rem' }}
+                            >
+                                {[1, 2, 3, 4, 6, 8].map(n => (
+                                    <option key={n} value={n}>{formatNumber(n, lang)}</option>
+                                ))}
+                            </select>
+                            {selectedDataset && (
+                                <GcdsText className="mt-200">
+                                    {t('experimental.analysis.trialsCostHint')
+                                        .replace('{rows}', formatNumber(selectedDataset.rowCount || 0, lang))
+                                        .replace('{trials}', formatNumber(trials, lang))
+                                        .replace('{total}', formatNumber((selectedDataset.rowCount || 0) * trials, lang))}
+                                </GcdsText>
+                            )}
+                        </div>
+
+                        <div className="mb-400">
+                            <label htmlFor="run-label-input" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.runLabelLabel')}
+                            </label>
+                            <input
+                                id="run-label-input"
+                                type="text"
+                                value={runLabel}
+                                maxLength={200}
+                                onChange={(e) => setRunLabel(e.target.value)}
+                                placeholder={t('experimental.analysis.runLabelPlaceholder')}
+                                style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                            />
+                        </div>
 
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
                             {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}
@@ -623,7 +714,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-200">
                                     <div className="flex gap-200">
                                         {batch.status !== 'processing' && (
-                                            <GcdsButton size="small" onClick={() => handleExport(batch._id)}>
+                                            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
+                                                {t('experimental.analysis.viewResults')}
+                                            </GcdsButton>
+                                        )}
+                                        {batch.status !== 'processing' && (
+                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>
                                                 {t('experimental.analysis.export')}
                                             </GcdsButton>
                                         )}
@@ -641,7 +737,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                             <GcdsButton
                                                 size="small"
                                                 buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
-                                                disabled={!!selectedAnalyzerId && resolveBatchAnalyzerId(batch) !== selectedAnalyzerId}
+                                                disabled={!!selectedAnalyzerId && !canBaseline(batch)}
                                                 onClick={() => handleUseAsBaseline(batch._id)}
                                             >
                                                 {baselineBatchId === batch._id

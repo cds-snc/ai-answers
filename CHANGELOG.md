@@ -1,5 +1,108 @@
 # Changelog
 
+## [1.161.0](https://github.com/cds-snc/ai-answers/compare/v1.160.0...v1.161.0) (2026-07-09)
+
+
+### Features
+
+* additional css instructions ([761cdd9](https://github.com/cds-snc/ai-answers/commit/761cdd9206efe5126740e1068014f33f17c2cc86))
+* redesign batch upload ([f3075c7](https://github.com/cds-snc/ai-answers/commit/f3075c757921120008323e3a40c9b04ef1c813d6))
+
+
+### Bug Fixes
+
+* batch upload accessibility (labels, focus, contrast) and redesign flow ([43b4d18](https://github.com/cds-snc/ai-answers/commit/43b4d18767202dd6d7828f3a95fcea2eaa00bf39))
+* file-uploader reset bug (key-remount) ([944a734](https://github.com/cds-snc/ai-answers/commit/944a7348f4e50ee6ae8e858610c07f1a853f7d30))
+* resolve conflict ([a607e74](https://github.com/cds-snc/ai-answers/commit/a607e74e9b73ea9e2fc783b58dd7bbfa07029b04))
+
+## [1.160.0](https://github.com/cds-snc/ai-answers/compare/v1.159.0...v1.160.0) (2026-07-08)
+
+
+### Features
+
+* implement batch validation for analyzers and enhance error handling ([ddfece7](https://github.com/cds-snc/ai-answers/commit/ddfece7da288758a579ca6ca6b912d7f7a60a41f))
+* results page for batch analysis runs ([e9073b4](https://github.com/cds-snc/ai-answers/commit/e9073b4c782eb3b8b612de5965ec9d35700d276d))
+
+
+### Bug Fixes
+
+* announce and focus form validation errors on auth pages, scoped … ([78a1eb9](https://github.com/cds-snc/ai-answers/commit/78a1eb934ea99f7de63c26a60de82c46ee3c9af5))
+* announce and focus form validation errors on auth pages, scoped css cleanup ([182461b](https://github.com/cds-snc/ai-answers/commit/182461b859edc6b377ca37c7efe5a2e2411a066e))
+* css update, success message ([46af5e3](https://github.com/cds-snc/ai-answers/commit/46af5e357073d832765aa0677424d237851dde67))
+* feedback focus correction ([057355c](https://github.com/cds-snc/ai-answers/commit/057355c129dec853dc07e1367a2b88b5c5ab547a))
+* feedback focus correction ([1eb07c9](https://github.com/cds-snc/ai-answers/commit/1eb07c916dcec40737f2b69e78a00a97810f5e33))
+* focus returns to previous selection ([64edbab](https://github.com/cds-snc/ai-answers/commit/64edbab0aa447f38c46b270bb8df4f6b8d7fb129))
+
+
+### Code Refactoring
+
+* remove 'role' field from ExperimentalDataset schema and update related components ([9b8d44d](https://github.com/cds-snc/ai-answers/commit/9b8d44d82cbbf8500167a2c76b6e36983acdc461))
+
+## [1.159.0](https://github.com/cds-snc/ai-answers/compare/v1.158.2...v1.159.0) (2026-07-07)
+
+
+### Features
+
+* add lang tests ([5f6bc5e](https://github.com/cds-snc/ai-answers/commit/5f6bc5e044462fd3ad66f54c6a426fc5c2062860))
+* assign log name, heading improvements ([c00779a](https://github.com/cds-snc/ai-answers/commit/c00779ad0780fbf748bc0cac2c8b375c4462b10f))
+* create accessibility audit skill ([c793843](https://github.com/cds-snc/ai-answers/commit/c7938437b271738d3de41fa325264db257008cc6))
+* create accessibility audit skill ([b8462e4](https://github.com/cds-snc/ai-answers/commit/b8462e4c18b82f9bc3cb8d73e315378d3bc53ab7))
+* language attr detection for answers ([42a9899](https://github.com/cds-snc/ai-answers/commit/42a9899befa49449f9178a5f1f7f982e0b574506))
+* language attr detection for answers ([226855e](https://github.com/cds-snc/ai-answers/commit/226855e3c0ee97d47cc06649771c29bfeb381eaf))
+
+
+### Bug Fixes
+
+* add about never assuming can change online ([267f2bf](https://github.com/cds-snc/ai-answers/commit/267f2bfd73bd3d151603476024bd64a116475525))
+* add close local ([2305bec](https://github.com/cds-snc/ai-answers/commit/2305becc498b275000f2dc0e1b65e38a4d96a79e))
+* add note in dashboards about pre-sets ([879b1cf](https://github.com/cds-snc/ai-answers/commit/879b1cfca77b8b1be4129fd88e75519443be4844))
+* apply delete buttons, expertfeedback legend corrections ([e9c97fd](https://github.com/cds-snc/ai-answers/commit/e9c97fd060252c34bbf8e0e3564bf854c9ac9df0))
+* citation rating display ([8839915](https://github.com/cds-snc/ai-answers/commit/8839915f871dee2ddc0752e27923485ce8d93dcd))
+* css cleanup ([4b157e6](https://github.com/cds-snc/ai-answers/commit/4b157e69a9c81e745f7d8b5dd49ce8e5aece42c5))
+* dead css removal form-group ([7d8da60](https://github.com/cds-snc/ai-answers/commit/7d8da60923bb8734d6aab1f18ffb98fb798ad605))
+* error message focus management ([6f10b3c](https://github.com/cds-snc/ai-answers/commit/6f10b3c1a8b03af1415b4b7e04e11006eccf7df0))
+* expert feedback review polish (answer numbering, citation preview, harmful guidance link ([b2d08f0](https://github.com/cds-snc/ai-answers/commit/b2d08f01a05ee431025c0e84f5e85955762b24a7))
+* feedback form error focus and cleanup ([d8794f0](https://github.com/cds-snc/ai-answers/commit/d8794f003b8cc229cf5f575c757f90edf1cfd509))
+* final pr review edits ([0025298](https://github.com/cds-snc/ai-answers/commit/00252986b4a983a3079bda400cb58d535e8b9ed5))
+* focus correction ([c57c3a9](https://github.com/cds-snc/ai-answers/commit/c57c3a96c3696a3bed72fc9634754a275a2350eb))
+* heading corrections, restructure referringURL, chat id, ([4ae2c0b](https://github.com/cds-snc/ai-answers/commit/4ae2c0bbba054810bd6785562a206a9b2413099e))
+* heading logic refinement, css cleanup ([d79a577](https://github.com/cds-snc/ai-answers/commit/d79a5775ee5a35fd3276389bed176ddbb865b0de))
+* headings ([1cd81b5](https://github.com/cds-snc/ai-answers/commit/1cd81b5fb8638e51f9257165df5663e66efaf8b0))
+* id rendering for feedback radios ([7e3d698](https://github.com/cds-snc/ai-answers/commit/7e3d69843f11261c73a5822882318526a500201d))
+* lang wrap off of div and into content ([c805054](https://github.com/cds-snc/ai-answers/commit/c80505460a0da00000cec29562cc29ad7d2932dd))
+* match exec last 30 days to other panels ([59d8abf](https://github.com/cds-snc/ai-answers/commit/59d8abfc927422f6338f774563a8ce212c770fcd))
+* match OL note decisions ([7b50f35](https://github.com/cds-snc/ai-answers/commit/7b50f35764a68013010e201fcbd77c529252d12d))
+* pr review ([e460661](https://github.com/cds-snc/ai-answers/commit/e460661ff6df577d276d0822d5a771e9661b205f))
+* prevent empty p tags ([630dd20](https://github.com/cds-snc/ai-answers/commit/630dd20e8258d27f421ea30d8a39991e85329b9d))
+* radio group accessibility for public/expert feedback ([458cbda](https://github.com/cds-snc/ai-answers/commit/458cbda4ae5bd4ed62d0c483b2c8591ccdc5e1d8))
+* radio group accessibility for public/expert feedback ([fec8201](https://github.com/cds-snc/ai-answers/commit/fec820188d8e749e9356eb5bd83e1207e8c659ec))
+* referringURL to follow-up ([dd5c2cf](https://github.com/cds-snc/ai-answers/commit/dd5c2cf8abbfd955b211c6a7050c2e0bea76dfef))
+* remove br ([6c20106](https://github.com/cds-snc/ai-answers/commit/6c20106ed4b825a9c49008e6b0394d615fd10a5c))
+* remove dead css form-inline ([bc27c9c](https://github.com/cds-snc/ai-answers/commit/bc27c9c303d147c114c249bcfcf3cfad7e246c8c))
+* remove nested &lt;main&gt; landmark on 16 pages ([bfe560b](https://github.com/cds-snc/ai-answers/commit/bfe560bea371bbd00418772a188f6bfb62b1fa1d))
+* remove nested &lt;main&gt; landmark on 16 pages ([3b9db17](https://github.com/cds-snc/ai-answers/commit/3b9db17c6f5fab01039e46c2f7021080ad30dc96))
+* remove stale comments ([98087a7](https://github.com/cds-snc/ai-answers/commit/98087a74d354b327329f8f3c1f686d52b3e05c27))
+* scope answer lang tag to each section ([26fe6ad](https://github.com/cds-snc/ai-answers/commit/26fe6ad6d1c29ba2059ee02a4d3f8a029abb94b3))
+* selected CEO for a CPP question ([9a4692f](https://github.com/cds-snc/ai-answers/commit/9a4692fdd6247744e34ef67084998f1a2545037d))
+* selected CEO for a CPP question ([d0f5cf4](https://github.com/cds-snc/ai-answers/commit/d0f5cf4b1b58d58f6330c0ffadfc60378dcfa2a5))
+* shared hook for numbering answers ([74ef4ce](https://github.com/cds-snc/ai-answers/commit/74ef4ce0aef90b218cf06163309cdb2d20a792ce))
+* skip link button to link ([1068f63](https://github.com/cds-snc/ai-answers/commit/1068f632fbfd62d512745ef6ab48ae7d492c0535))
+* skip link button to link ([2172317](https://github.com/cds-snc/ai-answers/commit/21723175349a7ca96695173b23f410120432f8c5))
+* style adjustment ([f55ad3a](https://github.com/cds-snc/ai-answers/commit/f55ad3a7d56193e8ac0a50b764fd7ec82e880d17))
+* try again ([85f4e55](https://github.com/cds-snc/ai-answers/commit/85f4e55fe4653806e80dc12c717d2b6571f77bb2))
+* update note ([1b2c69a](https://github.com/cds-snc/ai-answers/commit/1b2c69a6a2d28f9a7be366be2c467c432f53ac57))
+* use token ([307503b](https://github.com/cds-snc/ai-answers/commit/307503bd309abc06f6cdb273a43a9438a1dec5e9))
+
+## [1.158.2](https://github.com/cds-snc/ai-answers/compare/v1.158.1...v1.158.2) (2026-06-30)
+
+
+### Bug Fixes
+
+* military transition from email ([c83d25e](https://github.com/cds-snc/ai-answers/commit/c83d25e8d0104aaa971e5d7ca3cca35a609cc0f0))
+* more detail for retention ([70b269f](https://github.com/cds-snc/ai-answers/commit/70b269fade47a63d5ce012fcd607e0f97ae1e7c7))
+* move the retention urls ([c140ded](https://github.com/cds-snc/ai-answers/commit/c140dede30b202040b1e1da6f2b87a6f1e830358))
+* remove the danged regex ([dbf1408](https://github.com/cds-snc/ai-answers/commit/dbf14081ea043ba2d2492634533c9ad28c0c51a4))
+
 ## [1.158.1](https://github.com/cds-snc/ai-answers/compare/v1.158.0...v1.158.1) (2026-06-30)
 
 

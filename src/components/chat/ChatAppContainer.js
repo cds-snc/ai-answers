@@ -11,6 +11,8 @@ import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
+import { getCitationUrl } from '../../utils/getCitationUrl.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -576,10 +578,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           setIsLoading(false);
           return;
         } else if (error instanceof ShortQueryValidation) {
-          // Just append the short query error message, do not remove any messages
+          // Consolidate into one system bubble, same as the redaction paths:
+          // the original question rolls into the reply (quoted in the search
+          // link below) rather than staying its own bubble.
           const shortQueryMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
-            ...prevMessages,
+            ...prevMessages.slice(0, -1),
             {
               id: shortQueryMessageId,
               text: safeT('homepage.chat.messages.shortQueryMessage'),
@@ -707,20 +711,26 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
     // Updated citation logic
     const answer = message.interaction?.answer || {};
-    const citation = answer.citation || {};
     // displayUrl is the citation URL to show and use for analytics
-    const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    const displayUrl = getCitationUrl(message.interaction);
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
+    const answerLang = toLangAttr(getAnswerLanguage(message.interaction));
     return (
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
           // If using paragraphs, split into sentences; if using sentences, just display
-          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+          const rawSentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
             ? extractSentences(content)
             : [content];
+          // Drop blanks: an empty <s-N></s-N> tag (translation collapsed a sentence) or a
+          // paragraph left empty after the <translated-question> strip above would otherwise
+          // render as an empty <p>.
+          const sentences = rawSentences.filter(
+            (sentence) => typeof sentence === 'string' && sentence.trim()
+          );
           return sentences.map((sentence, sentenceIndex) => (
-            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
+            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
               {decodeHTMLEntities(sentence)}
             </p>
           ));
@@ -729,14 +739,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <>
             <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+              <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
                       href={safeHttpHref(displayUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={buildAriaLabel(displayUrl, lang) || undefined}
+                      aria-label={buildAriaLabel(displayUrl, lang)}
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
@@ -760,7 +770,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         }
                       }}
                     >
-                      <span className="citation-url-text font-size-text-xsm-nr">
+                      <span className="citation-url-text font-size-text-small">
                         {(() => {
                           // Mobile: always render full URL, CSS handles ellipsis
                           if (isMobile) {
@@ -914,8 +924,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // Add handler for department changes
 
-  const initialInput = t('homepage.chat.input.initial');
-
   return (
     <>
       <ChatInterface
@@ -942,20 +950,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        getLabelForInput={() =>
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').text
-              : t('homepage.chat.input.followUp'))
-        }
-        ariaLabelForInput={
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').ariaLabel
-              : undefined)
-        }
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}

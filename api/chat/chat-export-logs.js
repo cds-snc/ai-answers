@@ -323,6 +323,20 @@ function flattenInteraction(chat, interaction, view) {
             aiService: chat.aiProvider || '',
             searchService: chat.searchProvider || '',
 
+            // The `answer.citation.url` fallback below is dead: no document in the `citations`
+            // collection has ever had a `url` field, at any point in this schema's history.
+            //   - models/citation.js only defines aiCitationUrl / providedCitationUrl / citationHead.
+            //   - The only place a Citation gets created, services/InteractionPersistenceService.js,
+            //     writes exclusively to those three fields — never `url`.
+            //   - This function reads via Chat.aggregate() $lookup and Chat.find().lean(), both of
+            //     which return raw Mongo documents that bypass Mongoose's schema stripping — so if
+            //     any legacy record had a stray `url` field, it would still show up here. None do.
+            // Don't mistake this for a real shape that src/utils/getCitationUrl.js (the canonical
+            // client-side citation-URL resolver) is missing — it deliberately omits the same
+            // fallback for the same reason. Left in place rather than deleted to avoid scope creep
+            // on an unrelated file — validate this finding from Claude with team, out of scope for
+            // this PR. Documented here because Claude PR reviews kept flagging this line as a
+            // possible bug, requiring re-deriving the same schema/write-path trace each time.
             citationUrl: get(interaction, 'answer.citation.providedCitationUrl') || get(interaction, 'answer.citation.url') || '',
             englishAnswer: get(interaction, 'answer.englishAnswer'),
             answer: get(interaction, 'answer.content'),

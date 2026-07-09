@@ -4,6 +4,8 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import AuthService from '../services/AuthService.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
+import AnnouncedError from '../components/auth/AnnouncedError.js';
+import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 
 const ResetCompletePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -12,32 +14,34 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   const email = searchParams.get('email');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [message, setMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!code || !email) {
-      setMessage(t('reset.complete.invalid'));
+      setError(t('reset.complete.invalid'));
     }
   }, [code, email, t]);
 
   const submit = async (e) => {
     e && e.preventDefault();
-    setMessage('');
+    setSuccessMessage('');
+    clearError();
     if (!password || password.length < 8) {
-      setMessage(t('reset.complete.passwordTooShort'));
+      setError(t('reset.complete.passwordTooShort'));
       return;
     }
     if (password !== confirm) {
-      setMessage(t('reset.complete.passwordMismatch'));
+      setError(t('reset.complete.passwordMismatch'));
       return;
     }
     setIsLoading(true);
     try {
       // TOTP-based password reset
       await AuthService.resetPassword({ email, code, password });
-      setMessage(t('reset.complete.success'));
+      setSuccessMessage(t('reset.complete.success'));
       setTimeout(() => navigate(getPath('signin', lang)), 2500);
     } catch (err) {
       const errorKeys = {
@@ -45,7 +49,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
         RESET_INVALID_CODE: 'reset.complete.invalidCode',
       };
       const key = err.code && errorKeys[err.code];
-      setMessage(key ? t(key) : t('reset.complete.error'));
+      setError(key ? t(key) : t('reset.complete.error'));
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +58,15 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   return (
     <div className="auth-login-container">
       <h1>{t('reset.complete.title')}</h1>
-      {message && <div>{message}</div>}
+      {successMessage && (
+        <p className="thank-you" role="status" aria-live="polite">
+          <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
+          {successMessage}
+        </p>
+      )}
+      {error && (
+        <AnnouncedError id="reset-complete-error" message={error} errorCount={errorCount} inputRef={errorRef} />
+      )}
       <form onSubmit={submit}>
         {/* No code/OTP field — link verification is sufficient to set a new password */}
         <PasswordInput

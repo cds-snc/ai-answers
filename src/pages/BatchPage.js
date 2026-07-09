@@ -113,7 +113,7 @@ const BatchPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer layout="page" tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('batch.title')}</h1>
 
       <nav className="mb-400">
@@ -123,12 +123,12 @@ const BatchPage = ({ lang = 'en' }) => {
       </nav>
 
 
-      <section id="evaluator" className="mb-600">
+      <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>
         <BatchUpload lang={lang} onBatchSaved={triggerRefresh} />
       </section>
 
-      <section id="running-evaluation" className="mb-600">
+      <section id="running-evaluation" className="mb-600 focus-target" tabIndex={-1}>
         <h2 className="mt-400 mb-400">{t('batch.sections.running.title')}</h2>
         <BatchList
           onProcess={onProcess}

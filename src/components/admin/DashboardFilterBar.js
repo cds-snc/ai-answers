@@ -36,8 +36,10 @@ const getCurrentFiscalQuarter = () => {
 const getDateRange = (preset, customStart, customEnd, allTimeStart) => {
   const endDate = todayStr();
   if (preset === 'last30') {
+    // 30-day window inclusive of today (today − 29), matching FilterPanel.js's
+    // "Last 30 Days" (moment().subtract(29, 'days')) so both panels agree.
     const d = new Date();
-    d.setDate(d.getDate() - 30);
+    d.setDate(d.getDate() - 29);
     return { startDate: toISODate(d), endDate };
   }
   if (preset === 'currentQuarter') return getCurrentFiscalQuarter();

@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import ExpertFeedbackComponent from "./ExpertFeedbackComponent.js";
 import PublicFeedbackComponent from "./PublicFeedbackComponent.js";
 import { useHasAnyRole } from "../RoleBasedUI.js";
 import { useTranslations } from "../../hooks/useTranslations.js";
+import { useFocusOnChange } from "../../hooks/useFocusOnChange.js";
+import { useReturnFocusOnClose } from "../../hooks/useReturnFocusOnClose.js";
 import FeedbackService from "../../services/FeedbackService.js";
 
 const FeedbackComponent = ({
@@ -11,10 +13,13 @@ const FeedbackComponent = ({
   chatId,
   userMessageId,
   sentences = [],
-  // Add these new props for the skip button
-  showSkipButton = false, // Determines if skip button should be shown
-  onSkip = () => { }, // Function to call when skip button is clicked
-  skipButtonLabel = "", // Accessible label for the skip button
+  answerNumber,
+  citationUrl,
+  // Add these new props for the skip link
+  showSkipButton = false, // Determines if skip link should be shown
+  onSkip = () => { }, // Function to call when skip link is activated
+  skipButtonLabel = "", // Accessible label for the skip link
+  skipToId = "message", // id of the element the skip link navigates to
 }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
@@ -23,6 +28,13 @@ const FeedbackComponent = ({
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);
   const hasExpertRole = useHasAnyRole(["admin", "partner"]);
+  const thankYouRef = useFocusOnChange(feedbackGiven);
+  const expertRatingTitleRef = useFocusOnChange(showExpertRating);
+  const publicRatingTitleRef = useFocusOnChange(showPublicRating);
+  const yesButtonRef = useRef(null);
+  const noButtonRef = useRef(null);
+  useReturnFocusOnClose(showExpertRating, noButtonRef);
+  useReturnFocusOnClose(showPublicRating, publicPositive ? yesButtonRef : noButtonRef);
 
   const handleFeedback = (isPositive) => {
     let feedbackPayload = null;
@@ -79,8 +91,8 @@ const FeedbackComponent = ({
 
   if (feedbackGiven) {
     return (
-      <p className="thank-you">
-        <span className="gcds-icon fa fa-solid fa-check-circle"></span>
+      <p className="thank-you" role="status" ref={thankYouRef} tabIndex={-1}>
+        <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
         {t("homepage.feedback.thankYou")}
       </p>
     );
@@ -104,6 +116,9 @@ const FeedbackComponent = ({
         lang={lang}
         sentenceCount={sentenceCount}
         sentences={sentences}
+        answerNumber={answerNumber}
+        citationUrl={citationUrl}
+        titleRef={expertRatingTitleRef}
       />
     );
   }
@@ -117,6 +132,7 @@ const FeedbackComponent = ({
         userMessageId={userMessageId}
         onSubmit={handlePublicFeedback}
         onClose={() => setShowPublicRating(false)}
+        titleRef={publicRatingTitleRef}
       />
     );
   }
@@ -125,36 +141,40 @@ const FeedbackComponent = ({
   if (!hasExpertRole) {
     return (
       <div className="feedback-container">
-        <span className="feedback-text">
+        <span className="feedback-text" aria-hidden="true">
           {t("homepage.publicFeedback.question")}
         </span>
         <span className="feedback-buttons">
           <button
+            ref={yesButtonRef}
             className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(true)}
             tabIndex="0"
+            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.yes", "Yes")}`}
           >
             {t("common.yes", "Yes")}
           </button>
           <span className="feedback-separator">·</span>
           <button
+            ref={noButtonRef}
             className="feedback-link button-as-link link-default hover:link-hover"
             onClick={() => handleFeedback(false)}
             tabIndex="0"
+            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.no", "No")}`}
           >
             {t("common.no", "No")}
           </button>
         </span>
         {showSkipButton && (
           <>
-            <button
+            <a
               className="wb-inv"
+              href={`#${skipToId}`}
               onClick={onSkip}
               aria-label={skipButtonLabel}
-              tabIndex="0"
             >
               {skipButtonLabel}
-            </button>
+            </a>
           </>
         )}
       </div>
@@ -163,11 +183,12 @@ const FeedbackComponent = ({
 
   return (
     <div className="feedback-container">
-      <span className="feedback-text">{t("homepage.feedback.question")} </span>
+      <span className="feedback-text" aria-hidden="true">{t("homepage.feedback.question")} </span>
       <button
         className="feedback-link button-as-link"
         onClick={() => handleFeedback(true)}
         tabIndex="0"
+        aria-label={`${t("homepage.feedback.question")} ${t("homepage.feedback.useful")}`}
       >
         {t("homepage.feedback.useful")}
       </button>
@@ -175,25 +196,27 @@ const FeedbackComponent = ({
       <span className="feedback-text">{t("homepage.feedback.or")}</span>
       <span className="feedback-separator">·</span>
       <button
+        ref={noButtonRef}
         className="feedback-link button-as-link"
         onClick={() => handleFeedback(false)}
         tabIndex="0"
+        aria-label={`${t("homepage.feedback.question")} ${t("homepage.feedback.notUseful")}`}
       >
         {t("homepage.feedback.notUseful")}
       </button>
 
-      {/* Add the skip button after the other buttons, in the same line */}
+      {/* Add the skip link after the other buttons, in the same line */}
       {showSkipButton && (
         <>
           <span className="feedback-separator"></span>
-          <button
+          <a
             className="wb-inv"
+            href={`#${skipToId}`}
             onClick={onSkip}
             aria-label={skipButtonLabel}
-            tabIndex="0"
           >
             {skipButtonLabel}
-          </button>
+          </a>
         </>
       )}
     </div>

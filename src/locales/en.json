@@ -36,18 +36,21 @@
     "publicFeedback": {
       "send": "Send feedback",
       "question": "Was this helpful?",
+      "selectionRequired": "Please select a reason.",
+      "requiredLabel": "required",
       "yes": {
-        "question": "Tell us more. Select the best option below. (required)",
+        "title": "Tell us more",
         "options": {
           "noCall": "I don't need to call the government",
           "noVisit": "I don't need to visit an office",
           "savedTime": "Saved me time searching and reading",
           "other": "Other"
         },
-        "shortQuestion": "Why was this helpful?"
+        "shortQuestion": "Why was this helpful?",
+        "hint": "Select the best option below."
       },
       "no": {
-        "question": "Help us improve. Select the best option below. (required)",
+        "title": "Help us improve",
         "options": {
           "irrelevant": "Irrelevant or off topic",
           "confusing": "Too complex or confusing",
@@ -56,7 +59,8 @@
           "brokenLink": "Link doesn't work",
           "other": "Other"
         },
-        "shortQuestion": "Why wasn't this helpful?"
+        "shortQuestion": "Why wasn't this helpful?",
+        "hint": "Select the best option below."
       }
     },
     "privacy": {
@@ -158,9 +162,9 @@
         "shortQuerySearch": "Search Canada.ca for:",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
         "limitReachedHeading": "Limit of 3 questions reached",
-        "answerLabel1": "Your answer is,",
-        "answerLabel2": "Your answer 2 is,",
-        "answerLabel3": "Your answer 3 is,",
+        "yourQuestionLabel": "Your question",
+        "responseLabel": "Response",
+        "notAnsweredLabel": "(not answered)",
         "errorHeading": "Error",
         "sessionTimeoutHeading": "Session expired",
         "chatIssue": "Error in chat",
@@ -177,16 +181,18 @@
         "noDepartment": "No department matched"
       },
       "section": {
-        "heading": "Chat conversation"
+        "heading": "AI Answers conversation log"
       }
     },
     "expertRating": {
       "title": "Answer rating",
+      "selectionRequired": "Please select at least one rating.",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
       "sentence4": "Sentence 4",
       "citation": "Citation",
+      "citationNoneProvided": "None provided",
       "options": {
         "good": "Good",
         "needsImprovement": "Needs improvement",
@@ -208,7 +214,8 @@
         }
       },
       "submit": "Submit evaluation",
-      "intro": "Rate the sentences in the answer, or the citation, or both"
+      "intro": "Rate the answer sentences and/or citation",
+      "answerNumberLabel": "Answer {number}"
     }
   },
   "batch": {
@@ -226,41 +233,51 @@
       }
     },
     "upload": {
-      "batchName": "Name",
+      "batchName": "Name the batch",
+      "steps": {
+        "step2Title": "Upload the batch",
+        "step3Title": "Process the batch"
+      },
       "instructions": {
-        "title": "How to run a batch:",
+        "tipsTitle": "Tips for processing and evaluating results",
         "step1": "Create a CSV file",
+        "step1Summary": "How to create a CSV file",
         "step1a": "At minimum, a column with your questions labelled QUESTION and one with your referring URL labelled URL.",
-        "step1b": "The questions can be numbered with a space before the question text — e.g. 001.  How apply for EI",
-        "step1c": "Your CSV file can contain other columns (e.g. with previous answers) — the question numbers help you match them up later.",
+        "step1b": "The questions can be numbered with a space before the question text, for example, 001. How to apply for EI.",
+        "step1c": "Your CSV file can contain other columns, such as previous answers. Use the question numbers to match them up later.",
         "step1d": "You'll need separate files for English questions to be asked/answered as if on an English page, and French questions to be asked/answered on the French AI Answers page.",
         "step1e": "A batch can contain a maximum of 200 questions. Split larger sets into multiple files.",
-        "step2": "Assign a name, and leave workflow and model family at default selections.",
-        "step3": "Select the language of the batch file (i.e. the language of the page the batch is simulating).",
-        "step4": "Choose your CSV file and click the Upload button that appears.",
-        "step5": "Click the Process button once the file shows up in the Incomplete batches section.",
+        "step3a": "Select the language of the batch file.",
+        "step3b": "(i.e. the language of the page the batch is simulating)",
+        "reviewIncomplete": "After a successful upload, initiate processing and/or check on your batch's progress below.",
+        "incompleteLinkText": "Go to the Incomplete batches section",
         "step6": "When it's done (if it gets interrupted and didn't finish, click the Process button again), it will move to the Completed batches section. You can download the file from there.",
         "step7": "All of the chats run in the batch will be available to evaluate in the Evaluation dashboard and Chat viewer with the email address of the person who submitted the batch."
       },
       "language": {
-        "label": "Page language:",
+        "label": "Page language",
         "english": "English",
         "french": "French"
       },
+      "advanced": {
+        "title": "Workflow and model: Advanced"
+      },
       "workflow": {
-        "label": "Workflow"
+        "label": "Workflow",
+        "hint": "Most batches should be left at default selections"
       },
       "model": {
-        "label": "Model family"
+        "label": "Model family",
+        "hint": "Most batches should be left at default selections"
       },
       "file": {
-        "label": "Add CSV file:",
-        "selected": "Selected file:"
+        "label": "Add CSV file:"
       },
       "buttons": {
         "upload": "Upload file"
       },
       "processing": "Processing file, please wait...",
+      "success": "Batch uploaded.",
       "searchService": {
         "label": "Search service",
         "google": "Google",
@@ -295,6 +312,7 @@
         "excel": "Excel",
         "process": "Process",
         "delete": "Delete",
+        "confirmDelete": "Are you sure you want to delete this batch?",
         "cancel": "Cancel"
       },
       "types": {
@@ -864,7 +882,11 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password",
+    "invalidCredentials": "Invalid email or password.",
+    "sessionExpired": {
+      "title": "Session expired",
+      "message": "Your session has expired. Please sign in again to continue."
+    },
     "form": {
       "submitting": "Signing in...",
       "signupLink": "Create an account",
@@ -878,11 +900,17 @@
       "resend": "Resend code",
       "sentToEmail": "A verification code has been sent to your email.",
       "send": "Send verification code",
-      "sendError": "Failed to send verification code",
-      "invalidCode": "Invalid verification code"
+      "sendError": "Failed to send verification code.",
+      "invalidCode": "Invalid verification code."
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
+  },
+  "auth": {
+    "sessionWarning": {
+      "title": "Session expiring soon",
+      "message": "Your session will expire in 1 minute. You will be signed out automatically if you remain idle."
+    }
   },
   "reset": {
     "request": {
@@ -890,7 +918,7 @@
       "send": "Send reset email",
       "sending": "Sending...",
       "sent": "If that account exists, we sent a reset email.",
-      "error": "Failed to request reset"
+      "error": "Failed to request reset."
     },
     "verify": {
       "title": "Verify reset",
@@ -902,7 +930,7 @@
       "otpSent": "A verification code has been sent to your email",
       "otpSendError": "Failed to send verification code",
       "next": "Next",
-      "invalidLink": "Invalid or missing reset link"
+      "invalidLink": "Invalid or missing reset link."
     },
     "complete": {
       "title": "Set a new password",
@@ -912,10 +940,10 @@
       "submit": "Set password",
       "submitting": "Submitting...",
       "success": "Password updated. Redirecting to sign in...",
-      "error": "Failed to reset password",
-      "invalid": "Invalid reset link",
-      "passwordTooShort": "Password must be at least 8 characters",
-      "passwordMismatch": "Passwords do not match",
+      "error": "Failed to reset password.",
+      "invalid": "Invalid reset link.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "passwordMismatch": "Passwords do not match.",
       "lockedOut": "Too many failed attempts. Please try again later.",
       "invalidCode": "Invalid or expired code. Please try again."
     }
@@ -926,9 +954,9 @@
     "password": "Password",
     "confirmPassword": "Confirm password",
     "submit": "Create account",
-    "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 8 characters",
-    "errorOccurred": "An error occurred creating your account",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "errorOccurred": "An error occurred creating your account.",
     "submitting": "Creating account...wait for approval"
   },
   "users": {
@@ -1082,6 +1110,8 @@
   },
   "common": {
     "backToAdmin": "Back to admin",
+    "close": "Close",
+    "confirmDelete": "Are you sure you want to delete this data?",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
@@ -1775,14 +1805,19 @@
       "typeLabel": "Dataset Type",
       "uploadedBy": "Uploaded by",
       "fileLabel": "XLSX / CSV file",
-      "requiredColumns": "Required columns",
+      "categoryLabel": "Category (optional)",
+      "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
+      "suiteView": "Suite grid",
+      "runCountLabel": "Runs",
+      "requiredColumns": "Columns",
+      "columnAliasHint": "Batch files work without renaming columns: matching ignores case, and batch names like redactedQuestion, QUESTION and URL are accepted. Extra columns are kept and ignored.",
       "uploadDescriptions": {
-        "questionOnly": "Upload questions only. Any answer columns will be ignored.",
-        "qaPair": "Upload questions with their existing answers. The answer column will be kept."
+        "questionOnly": "Use this to test the current system: each question gets a fresh answer from the pipeline when you run an analysis. Include a GoldenAnswer column to have every generated answer judged against your expert-approved answer. Any column named answer is dropped at upload.",
+        "qaPair": "Use this to evaluate answers that already exist (for example, from a past run or export) — the answer column holds those answers, they are judged as-is, and no new answers are generated. Include a GoldenAnswer column to also compare them against an expert-approved answer."
       },
       "uploadColumns": {
-        "questionOnly": "question (required), referringUrl (optional), chatId (optional)",
-        "qaPair": "question and answer (required), referringUrl (optional), chatId (optional)"
+        "questionOnly": "question (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)",
+        "qaPair": "question and answer (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)"
       },
       "rowCount": "Rows",
       "created": "Created",
@@ -1807,6 +1842,14 @@
       "workflowLabel": "Workflow",
       "selectBaseline": "Select baseline run (comparison)",
       "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
+      "goldenHint": "No baseline run is needed if your dataset has a GoldenAnswer column — it is used automatically as the reference answer.",
+      "expertScorerNeedsReference": "Expert scorer needs a reference answer to judge against: use a dataset with a GoldenAnswer column, or select a baseline run. Without one, the run will not start.",
+      "baselineOverridesGolden": "Warning: this dataset has a GoldenAnswer column, but the selected baseline run's answers will replace it as the reference for this run. Results will measure drift from that run, not correctness against the golden answers. Choose \"No baseline\" to compare against the golden answers.",
+      "runLabelLabel": "Run label (optional)",
+      "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
+      "suiteView": "Suite grid",
+      "trialsLabel": "Trials per question",
+      "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline runs",
       "noBaseline": "-- No baseline (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
@@ -1842,6 +1885,7 @@
         "actions": "Actions"
       },
       "baseline": "BASELINE",
+      "viewResults": "View results",
       "export": "Export",
       "exportChatLogs": "Export chat logs",
       "useAsBaseline": "Use as baseline",
@@ -1872,7 +1916,16 @@
         "exportFailed": "Failed to export batch.",
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch",
-        "exportChatLogsError": "Failed to export chat logs"
+        "exportChatLogsError": "Failed to export chat logs",
+        "error.NO_REFERENCE": "This analyzer requires a baseline answer: use a dataset with a baselineAnswer (or GoldenAnswer) column, or select a baseline run.",
+        "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a GoldenAnswer (or baselineAnswer) column, or select a baseline run.",
+        "error.NO_ITEMS": "Batch has no rows to process.",
+        "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
+        "error.NOT_FOUND": "Resource not found.",
+        "error.INVALID_STATE": "Batch is in an invalid state for this action.",
+        "error.DUPLICATE": "A resource with this name already exists.",
+        "error.RETRY_LIMIT": "Retry limit reached.",
+        "error.IN_USE": "This resource is in use and cannot be deleted."
       },
       "analyzers": {
         "no-analyzer": {
@@ -1885,7 +1938,7 @@
         },
         "expert-scorer": {
           "name": "Expert scorer",
-          "description": "This analyzer judges whether the answer still matches the baseline meaning while staying aligned with Government of Canada quality expectations. It compares the current answer against the baseline for semantic equivalence, missing key ideas, answer-type changes, and GC standard compliance. A flagged result means the answer drifted in a way that should be reviewed, such as losing an important point, changing the recommendation, or regressing from a normal answer to a clarification or other weaker response. When a baseline is available, the analyzer checks for improvement, regression, or no meaningful change; when no baseline is supplied, it works as a standalone quality review for the current answer. Use this when you want a broader quality judgment rather than a narrow fact-by-fact comparison."
+          "description": "Judges answer quality against Government of Canada expectations. It always needs a reference answer — a run without one will not start. What each answer is judged against depends on how you set up the run:\n• Your dataset has a GoldenAnswer column — each freshly generated answer is judged against the expert answer: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard. This is the usual setup for golden test suites.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has golden answers, the baseline run's answers take precedence.\nUse this as the default scorer when you have expert-approved answers, or for a broad quality judgment rather than a narrow fact-by-fact comparison."
         },
         "refusal": {
           "name": "Refusal analyzer",
@@ -1897,8 +1950,96 @@
         },
         "similar-answer": {
           "name": "Similar answer analyzer",
-          "description": "This analyzer is designed for answer-drift detection. It compares the current answer with a baseline answer and looks for meaningful changes in dates, numbers, eligibility rules, steps, named programs or documents, scope, URLs, and other concrete facts that would change what a user should do. A flagged result means the new answer is materially different in a way that could affect guidance, even if the wording still sounds close. Harmless rephrasing, reordered but equivalent points, and formatting-only changes are ignored. If the analyzer cannot tell whether a difference matters, it can return needs-review so a human can inspect it. Use this when you want to catch subtle regressions that a simple similarity score would miss."
+          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a baseline run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a GoldenAnswer column — each generated answer is compared against the expert answer, flagging factual deviations only. For a broader quality judgment against golden answers, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a baseline capture). Select it as the baseline for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
         }
+      }
+    },
+    "results": {
+      "title": "Batch results",
+      "backToRuns": "Back to analysis runs",
+      "loading": "Loading results...",
+      "loadError": "Failed to load batch results.",
+      "summary": {
+        "total": "Total items",
+        "attention": "Deviations",
+        "errors": "Errors",
+        "passRate": "Pass rate"
+      },
+      "filter": {
+        "label": "Show",
+        "attention": "Deviations only",
+        "all": "All items",
+        "errors": "Errors only"
+      },
+      "table": {
+        "row": "Row",
+        "trial": "Trial",
+        "question": "Question",
+        "verdict": "Verdict",
+        "explanation": "Explanation",
+        "actions": "Actions",
+        "view": "View",
+        "empty": "No items match this filter."
+      },
+      "verdict": {
+        "pass": "Pass",
+        "flagged": "Flagged",
+        "error": "Error",
+        "pending": "Pending",
+        "processing": "Processing",
+        "cancelled": "Cancelled",
+        "refused": "Refused",
+        "skipped": "Skipped"
+      },
+      "detail": {
+        "backToList": "Back to list",
+        "previous": "Previous",
+        "next": "Next",
+        "position": "{current} of {total}",
+        "trial": "Trial {n} of {total}",
+        "question": "Question",
+        "referringUrl": "Referring URL",
+        "itemError": "Processing error",
+        "goldenAnswer": "Golden answer (expert)",
+        "currentAnswer": "Generated answer",
+        "noAnswer": "No answer was generated.",
+        "legendRemoved": "Missing from generated answer",
+        "legendAdded": "Added in generated answer",
+        "viewChatLogs": "View chat logs",
+        "viewBaselineChatLogs": "View baseline chat logs",
+        "analyzerResults": "Judge results",
+        "analyzerErrors": "Analyzer errors"
+      },
+      "pagination": {
+        "previous": "Previous page",
+        "next": "Next page",
+        "page": "Page {page} of {pages}"
+      }
+    },
+    "suite": {
+      "title": "Test suite",
+      "loading": "Loading suite grid...",
+      "loadError": "Failed to load suite grid.",
+      "noRuns": "No analysis runs yet for this dataset. Start one from the analysis page.",
+      "runColumn": "Run",
+      "scoreColumn": "Score",
+      "scoreAll": "all trials",
+      "scoreAny": "any trial",
+      "captureRun": "Baseline capture — not scored against a reference",
+      "newRun": "New analysis run",
+      "categoryLabel": "Category",
+      "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
+      "caseType": {
+        "control": "Control",
+        "edge": "Edge",
+        "boundary": "Boundary"
+      },
+      "verdict": {
+        "pass": "Pass",
+        "mixed": "Mixed",
+        "flagged": "Flagged",
+        "error": "Error",
+        "missing": "No result"
       }
     }
   }

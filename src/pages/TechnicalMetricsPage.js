@@ -8,7 +8,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
 
   return (
-    <GcdsContainer layout="page" tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('technicalMetrics.title')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>

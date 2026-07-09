@@ -17,31 +17,6 @@
   color: red;
 }
 
-.file-input-container input[type="file"]::file-selector-button {
-  padding: var(--gcds-button-small-padding);
-  background-color: white;
-  color: var(--gcds-color-blue-900);
-  border: var(--gcds-button-border-width) solid var(--gcds-color-blue-900);
-  border-radius: var(--gcds-button-border-radius);
-  font: var(--gcds-button-small-font-desktop);
-  font-weight: 500;
-  cursor: pointer;
-  margin-right: 8px;
-}
-
-.file-input-container input[type="file"]::file-selector-button:hover {
-  background-color: var(--gcds-color-blue-100);
-}
-
-.file-input-container input[type="file"]:focus-visible::file-selector-button {
-  background-color: var(--gcds-details-focus-background);
-  box-shadow: var(--gcds-details-focus-box-shadow);
-  color: var(--gcds-details-focus-text);
-  outline: var(--gcds-details-focus-outline);
-  outline-offset: var(--gcds-details-focus-outline-offset);
-}
-
-
 /* Fixed loading overlay for dashboards - always visible on screen */
 .loading-overlay {
   position: fixed;
@@ -1271,16 +1246,6 @@
 .auth-submit-button:disabled {
   background-color: #999;
   cursor: not-allowed;
-}
-
-.auth-error-message {
-  padding: 12px;
-  margin-bottom: 20px;
-  background-color: #FEE;
-  border: 1px solid #FCC;
-  border-radius: 4px;
-  color: #C00;
-  font-size: 0.9rem;
 }
 
 .auth-links {
