@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.161.0](https://github.com/cds-snc/ai-answers/compare/v1.160.0...v1.161.0) (2026-07-09)
+
+
+### Features
+
+* additional css instructions ([761cdd9](https://github.com/cds-snc/ai-answers/commit/761cdd9206efe5126740e1068014f33f17c2cc86))
+* redesign batch upload ([f3075c7](https://github.com/cds-snc/ai-answers/commit/f3075c757921120008323e3a40c9b04ef1c813d6))
+
+
+### Bug Fixes
+
+* batch upload accessibility (labels, focus, contrast) and redesign flow ([43b4d18](https://github.com/cds-snc/ai-answers/commit/43b4d18767202dd6d7828f3a95fcea2eaa00bf39))
+* file-uploader reset bug (key-remount) ([944a734](https://github.com/cds-snc/ai-answers/commit/944a7348f4e50ee6ae8e858610c07f1a853f7d30))
+* resolve conflict ([a607e74](https://github.com/cds-snc/ai-answers/commit/a607e74e9b73ea9e2fc783b58dd7bbfa07029b04))
+
 ## [1.160.0](https://github.com/cds-snc/ai-answers/compare/v1.159.0...v1.160.0) (2026-07-08)
 
 
