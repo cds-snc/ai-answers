@@ -176,6 +176,7 @@ async function handleIncomingChatId(req, res, managementEnabled) {
 function finalizeRequest(req, chatId) {
   const session = req.session;
   const sessionId = req.sessionID;
+  const authenticated = isAuthenticated(req);
 
   req.chatId = chatId;
 
@@ -193,6 +194,10 @@ function finalizeRequest(req, chatId) {
 
   if (chatId && sessionId) {
     ChatSessionMetricsService.registerChat(sessionId, chatId);
+  }
+
+  if (sessionId) {
+    ChatSessionMetricsService.markSessionAuth(sessionId, authenticated);
   }
 }
 

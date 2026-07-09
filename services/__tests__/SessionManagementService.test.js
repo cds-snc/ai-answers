@@ -96,7 +96,7 @@ describe('SessionManagementService - Lambda Persistence', () => {
             }),
         });
         ChatSessionMetricsService.registerChat(mockSessionId, mockChatId);
-        ChatSessionMetricsService.metricsBuffer.get(mockSessionId).isAuthenticated = true;
+        ChatSessionMetricsService.markSessionAuth(mockSessionId, true);
 
         const summary = await ChatSessionMetricsService.getSummary();
 
@@ -106,5 +106,22 @@ describe('SessionManagementService - Lambda Persistence', () => {
             sessionType: 'auth',
             creditsLeft: null,
         });
+    });
+
+    it('should persist authenticated sessions when flushing metrics', async () => {
+        ChatSessionMetricsService.registerChat(mockSessionId, mockChatId);
+        ChatSessionMetricsService.markSessionAuth(mockSessionId, true);
+
+        await ChatSessionMetricsService.flushMetrics();
+
+        expect(SessionState.findOneAndUpdate).toHaveBeenCalledWith(
+            { sessionId: mockSessionId },
+            expect.objectContaining({
+                sessionId: mockSessionId,
+                isAuthenticated: true,
+                chatIds: [mockChatId],
+            }),
+            expect.objectContaining({ upsert: true, setDefaultsOnInsert: true })
+        );
     });
 });

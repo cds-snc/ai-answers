@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import botFingerprintPresence from '../bot-fingerprint-presence.js';
 import sessionMiddleware from '../chat-session.js';
+import ChatSessionMetricsService from '../../services/ChatSessionMetricsService.js';
 import crypto from 'crypto';
 
 vi.mock('../../services/ChatSessionService.js', () => ({
@@ -15,6 +16,7 @@ vi.mock('../../services/ChatSessionMetricsService.js', () => ({
     default: {
         recordRateLimiterSnapshot: vi.fn(),
         registerChat: vi.fn(),
+        markSessionAuth: vi.fn(),
     }
 }));
 
@@ -110,6 +112,18 @@ describe('Middleware Session Logic', () => {
             expect(res.statusCode).toBe(403);
             expect(res.end).toHaveBeenCalled();
             expect(next).not.toHaveBeenCalled();
+        });
+
+        it('marks authenticated sessions in the metrics buffer', async () => {
+            req.sessionID = 'session-auth-123';
+            req.session.passport = { user: 'user-123' };
+            const mw = sessionMiddleware();
+
+            await mw(req, res, next);
+
+            expect(req.chatId).toBeDefined();
+            expect(ChatSessionMetricsService.markSessionAuth).toHaveBeenCalledWith(req.sessionID, true);
+            expect(next).toHaveBeenCalled();
         });
     });
 });

@@ -127,6 +127,7 @@ class ChatSessionMetricsService {
   _createMetricsEntry(sessionId) {
     return {
       sessionId,
+      isAuthenticated: false,
       chatIds: new Set(),
       requestCount: 0,
       errorCount: 0,
@@ -145,6 +146,13 @@ class ChatSessionMetricsService {
       this.metricsBuffer.set(sessionId, this._createMetricsEntry(sessionId));
     }
     return this.metricsBuffer.get(sessionId);
+  }
+
+  markSessionAuth(sessionId, isAuthenticated) {
+    if (!sessionId) return;
+    const m = this._ensureMetricsEntry(sessionId);
+    m.isAuthenticated = Boolean(isAuthenticated);
+    m.lastSeen = Date.now();
   }
 
   async pruneStaleSessions() {
@@ -192,6 +200,7 @@ class ChatSessionMetricsService {
             const doc = {
                 sessionId,
                 status: 'active',
+                isAuthenticated: !!m.isAuthenticated,
                 chatIds,
                 lastSeen: new Date(m.lastSeen),
                 requestCount: m.requestCount,
