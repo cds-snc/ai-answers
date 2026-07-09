@@ -6,7 +6,6 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInPro
 
 
 import DataStoreService from '../../services/DataStoreService.js';
-import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
@@ -460,11 +459,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           ...(referringUrl.trim() && { referringUrl: referringUrl.trim() })
         }
       ]);
-      let startMs;
       const overrideUserId = AuthService.getUserId ? AuthService.getUserId() : (AuthService.currentUser?.userId ?? null);
       try {
         const aiMessageId = messageIdCounter.current++;
-        startMs = Date.now();
         const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
@@ -480,19 +477,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           selectedSearch,  // Add this parameter
           overrideUserId
         );
-        const latencyMs = Date.now() - startMs;
 
         // Capture server-generated chatId (if this was the first request)
         if (interaction?.chatId && onChatIdUpdate) {
           onChatIdUpdate(interaction.chatId);
-        }
-
-        // Fire-and-forget report to server about latency (and success)
-        // Use the interaction's chatId if we didn't have one before
-        const effectiveChatId = interaction?.chatId || chatId;
-        // fire-and-forget session report (no specific errorType for success)
-        if (!overrideUserId) {
-          SessionService.report(effectiveChatId, latencyMs, false, null);
         }
 
         clearInput();
@@ -511,27 +499,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         setIsLoading(false);
 
       } catch (error) {
-        // attempt to record latency and error, including an errorType when we can
-        try {
-          const errLatency = Date.now() - (typeof startMs !== 'undefined' ? startMs : Date.now());
-          let errorType = null;
-          if (error instanceof RedactionError) {
-            errorType = 'redaction';
-          } else if (error instanceof ShortQueryValidation) {
-            errorType = 'shortQuery';
-          }
-          (async () => {
-            try {
-              if (!overrideUserId) {
-                await SessionService.report(chatId, errLatency, true, errorType);
-              }
-            } catch (e) {
-              if (console && console.error) console.error('session report failed', e);
-            }
-          })();
-        } catch (e) {
-          // ignore
-        }
         if (error instanceof RedactionError) {
           if (error.redactedText.includes('XXX')) {
             // Privacy (XXX): single combined system bubble — one bounding box for question + warning
@@ -989,4 +956,3 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 };
 
 export default ChatAppContainer;
-

@@ -9,8 +9,6 @@ const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
 // These are the chat flow endpoints called during user interactions.
 const FINGERPRINT_REQUIRED_PATHS = [
   '/api/chat/chat-graph-run',
-  '/api/chat/chat-report',
-
 ];
 
 // Explicit list of routes that are always exempt. Currently empty after chat-init removal.
