@@ -239,6 +239,9 @@ class ChatSessionMetricsService {
       const persisted = bucketMap.get(sessionId);
       const isAuthenticated = (persisted && typeof persisted.isAuthenticated !== 'undefined') ? persisted.isAuthenticated : (v && v.isAuthenticated) || false;
       const sessionLimiterSnapshot = (persisted && persisted.rateLimiter) || (v && v.rateLimiterSnapshot) || null;
+      const sessionType = (sessionLimiterSnapshot && typeof sessionLimiterSnapshot.keyType === 'string')
+        ? sessionLimiterSnapshot.keyType
+        : (isAuthenticated ? 'auth' : 'unknown');
       const limiterRemaining = (sessionLimiterSnapshot && typeof sessionLimiterSnapshot.remainingPoints === 'number')
         ? sessionLimiterSnapshot.remainingPoints
         : null;
@@ -268,6 +271,7 @@ class ChatSessionMetricsService {
 
         out.push({
           sessionId,
+          sessionType,
           chatId: cid || null,
           // Use rate-limiter remaining points as the authoritative credits source.
           // Fall back to persisted/in-memory bucket only when limiter data is unavailable.

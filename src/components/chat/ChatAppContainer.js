@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
+import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInProgressError } from '../../services/ChatWorkflowService.js';
 
 
 import DataStoreService from '../../services/DataStoreService.js';
@@ -641,6 +641,21 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             return;
           }
 
+          if (error instanceof ChatRunInProgressError) {
+            const inProgressMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages,
+              {
+                id: inProgressMessageId,
+                text: safeT('homepage.chat.messages.chatRunInProgress'),
+                sender: 'system',
+                error: true,
+              }
+            ]);
+            setIsLoading(false);
+            return;
+          }
+
           try {
             console.log('handleSendMessage: falling back to generic error branch', { historySignature: error?.historySignature });
           } catch (e) {
@@ -974,5 +989,4 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 };
 
 export default ChatAppContainer;
-
 
