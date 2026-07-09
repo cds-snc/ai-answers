@@ -1927,11 +1927,11 @@
       },
       "analyzers": {
         "no-analyzer": {
-          "name": "Aucun analyseur",
+          "name": "Aucune notation",
           "description": "Cette option exécute le lot sans étape de notation. Elle est utile pour valider le pipeline du lot, les exportations ou le chemin de stockage sans comparer les réponses ni produire d'indicateurs. Comme rien n'est évalué, le statut reste pass et flagged demeure false. Il n'y a ni comparaison à une référence, ni détection de dérive, ni logique de régression. Utilisez ce mode uniquement pour vérifier que le flux peut déplacer les données de l'entrée à la sortie, et non pour analyser la qualité des réponses."
         },
         "bias-detection": {
-          "name": "Détecteur de biais",
+          "name": "Biais",
           "description": "Cet analyseur vérifie si la réponse introduit ou renforce un biais nuisible, par exemple un biais lié au genre, à la race, à l'âge, au handicap ou à d'autres caractéristiques protégées. Il recherche les formulations qui stéréotypent, excluent ou traitent un groupe de façon injuste, et il peut aussi comparer l'exécution actuelle à un lot de référence afin de déterminer si le biais s'est amélioré, aggravé ou maintenu. Un résultat signalé signifie que la réponse contient un signal de biais qui mérite une vérification, ou que la réponse actuelle est sensiblement plus biaisée que la référence. En l'absence de référence, l'analyseur agit comme une revue de sécurité autonome et évalue seulement la réponse courante. Utilisez-le pour surveiller les formulations nuisibles, les hypothèses injustes et les régressions subtiles de ton ou de vocabulaire."
         },
         "expert-scorer": {
@@ -1939,15 +1939,15 @@
           "description": "Évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada. Il peut évaluer une paire question et réponse seule, ou comparer cette réponse à une réponse de référence ou à une exécution de comparaison lorsque vous en fournissez une. La référence utilisée pour évaluer chaque réponse dépend de la configuration de l'exécution :\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse est évaluée par rapport à la réponse approuvée par l'expert : idées clés manquantes, recommandations modifiées et régressions de type de réponse (par exemple, une réponse normale qui devient un refus). Un échec signifie que la réponse est erronée ou plus faible que la norme de l'expert.\n• Vous avez sélectionné une exécution de comparaison — la même évaluation, mais la référence est constituée des réponses générées par cette exécution : un échec signifie que la qualité a changé depuis cette exécution, pas que la réponse est erronée. Si l'ensemble de données contient aussi une réponse de référence, les réponses de l'exécution de comparaison ont priorité.\nUtilisez cet analyseur par défaut lorsque vous voulez un jugement de qualité global, avec ou sans réponse de comparaison."
         },
         "refusal": {
-          "name": "Analyseur de refus",
+          "name": "Refus",
           "description": "Cet analyseur détecte les réponses de type refus ou les réponses bloquées, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que le système a refusé, bloqué ou rejeté la demande d'une manière qui mérite d'être examinée. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante, par exemple si le système est passé d'une réponse normale à un refus, ou d'un refus à une réponse. C'est utile pour suivre les moments où le système cesse d'aider l'utilisateur et pour déterminer si ce changement était voulu, sûr ou régressif."
         },
         "safety": {
-          "name": "Évaluateur de sécurité",
+          "name": "Sécurité",
           "description": "Cet analyseur examine la réponse pour repérer du contenu nuisible, des propos haineux, des instructions dangereuses, des fuites de renseignements personnels et tout autre contenu qui ne devrait pas être diffusé tel quel. Un résultat signalé signifie que la réponse a franchi une limite de sécurité ou qu'elle a exposé du contenu qui devrait être examiné avant de considérer l'exécution comme acceptable. Lorsqu'une référence est fournie, l'analyseur compare les deux exécutions et indique si la sécurité s'est améliorée, détériorée ou maintenue. Utilisez cet analyseur pour surveiller la qualité de la modération, repérer rapidement les sorties à risque et vérifier que les changements apportés au système rendent les réponses plus sûres, et non moins sûres."
         },
         "similar-answer": {
-          "name": "Analyseur de réponses similaires",
+          "name": "Réponse similaire",
           "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de comparaison — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse générée est comparée à la réponse approuvée par l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport à une réponse de référence, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
         }
       }

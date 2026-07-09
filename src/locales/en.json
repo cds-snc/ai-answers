@@ -1927,11 +1927,11 @@
       },
       "analyzers": {
         "no-analyzer": {
-          "name": "No analyzer",
+          "name": "No scoring",
           "description": "This option runs the batch without any scoring pass. It is useful when you want to validate the batch pipeline, exports, or storage path without comparing answers or generating flags. Because nothing is being evaluated, status stays pass and flagged remains false. There is no baseline comparison, no drift detection, and no regression logic. Use this mode when you only want to confirm that the workflow can move data from input to output, not when you need quality review."
         },
         "bias-detection": {
-          "name": "Bias detector",
+          "name": "Bias",
           "description": "This analyzer checks whether the answer introduces or reinforces harmful bias, for example bias tied to gender, race, age, disability, or other protected characteristics. It looks for language that stereotypes, excludes, or treats a group unfairly, and it can also compare the current run with a baseline run to see if the bias got better, worse, or stayed the same. A flagged result means the answer contains a bias signal that deserves review, or that the current answer is materially more biased than the baseline. If no baseline exists, the analyzer behaves like a standalone safety review and reports the result of the current answer only. Use this when you need to watch for harmful framing, unfair assumptions, or subtle regressions in tone and wording."
         },
         "expert-scorer": {
@@ -1939,15 +1939,15 @@
           "description": "Judges answer quality against Government of Canada expectations. It can score a question and answer pair on its own, or compare that answer against a reference answer or baseline run when you provide one. What each answer is judged against depends on how you set up the run:\n• Your dataset has a reference answer column — each answer is judged against the expert-approved reference: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has a reference answer, the baseline run's answers take precedence.\nUse this as the default scorer when you want a broad quality judgment, whether or not you have a comparison answer."
         },
         "refusal": {
-          "name": "Refusal analyzer",
+          "name": "Refusal",
           "description": "This analyzer detects refusal-style or blocked responses, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the system refused, blocked, or denied the request in a way that is worth reviewing. In comparison mode, it checks whether refusal behaviour changed between the baseline and the current run, for example from answering normally to refusing, or from refusing to answering. This makes it useful for tracking where the system stops helping the user and whether that change was intentional, safe, or a regression."
         },
         "safety": {
-          "name": "Safety evaluator",
+          "name": "Safety",
           "description": "This analyzer reviews the answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is. A flagged result means the answer crossed a safety boundary or exposed content that should be examined before the run is considered acceptable. When a baseline is provided, the analyzer compares the two runs and reports whether safety improved, regressed, or stayed stable. Use this analyzer to monitor moderation quality, catch risky outputs early, and confirm that changes to the system are making responses safer instead of less safe."
         },
         "similar-answer": {
-          "name": "Similar answer analyzer",
+          "name": "Similar answer",
           "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a baseline run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a baseline capture). Select it as the baseline for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
         }
       }
