@@ -27,6 +27,9 @@ const SessionPage = ({ lang: propLang }) => {
     };
     return labels[type] || labels.unknown;
   }, [t]);
+  const creditsLeftLabel = React.useCallback((value) => (
+    value === null ? t('admin.session.unlimited', 'Unlimited') : (value !== undefined ? value : 0)
+  ), [t]);
 
   const fetchSessions = React.useCallback(async () => {
     setLoading(true);
@@ -87,7 +90,7 @@ const SessionPage = ({ lang: propLang }) => {
               return cid ? `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>` : '';
             }
           },
-          { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => data !== undefined ? data : 0 },
+          { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => creditsLeftLabel(data) },
           { title: t('admin.session.lastSeen', 'Last seen'), data: 'lastSeen', render: (data) => new Date(data).toLocaleString() },
           { title: t('admin.session.requests', 'Requests'), data: 'requestCount' },
           { title: t('admin.session.errors', 'Errors'), data: 'errorCount' },

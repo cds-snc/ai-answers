@@ -29,11 +29,9 @@ vi.mock('../../models/sessionState.js', () => ({
 
 vi.mock('../../middleware/rate-limiter.js', () => ({
     rateLimiters: {
-        public: { get: vi.fn() },
-        auth: { get: vi.fn() }
+        public: { get: vi.fn() }
     },
     getRateLimiterConfig: vi.fn(() => ({
-        authCapacity: 100,
         publicCapacity: 10
     }))
 }));
@@ -89,5 +87,24 @@ describe('SessionManagementService - Lambda Persistence', () => {
         // Assert
         expect(count).toBe(5);
         expect(SessionState.countDocuments).toHaveBeenCalled();
+    });
+
+    it('should report unlimited credits for authenticated sessions', async () => {
+        SessionState.find.mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                lean: vi.fn().mockResolvedValue([]),
+            }),
+        });
+        ChatSessionMetricsService.registerChat(mockSessionId, mockChatId);
+        ChatSessionMetricsService.metricsBuffer.get(mockSessionId).isAuthenticated = true;
+
+        const summary = await ChatSessionMetricsService.getSummary();
+
+        expect(summary[0]).toMatchObject({
+            sessionId: mockSessionId,
+            chatId: mockChatId,
+            sessionType: 'auth',
+            creditsLeft: null,
+        });
     });
 });

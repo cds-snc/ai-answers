@@ -277,8 +277,9 @@ class ChatSessionMetricsService {
           // Fall back to persisted/in-memory bucket only when limiter data is unavailable.
           creditsLeft: (() => {
             try {
+              if (isAuthenticated) return null;
               if (typeof limiterRemaining === 'number') return limiterRemaining;
-              const configuredCapacity = isAuthenticated ? limiterConfig.authCapacity : limiterConfig.publicCapacity;
+              const configuredCapacity = limiterConfig.publicCapacity;
               const fallbackCapacity = (typeof limiterPoints === 'number')
                 ? limiterPoints
                 : (Number.isFinite(configuredCapacity) ? configuredCapacity : 0);
