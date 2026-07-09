@@ -126,7 +126,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
-  // Rate-limiter persistence mode (memory | mongo)
+  // Rate-limiter persistence mode. UI says DocumentDB; persisted value remains 'mongo'.
   const [rateLimitPersistence, setRateLimitPersistence] = useState('memory');
   const [savingRateLimitPersistence, setSavingRateLimitPersistence] = useState(false);
   // Authenticated session rate-limit settings
@@ -138,10 +138,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
   const [sessionManagementEnabled, setSessionManagementEnabled] = useState('true');
   const [savingSessionManagementEnabled, setSavingSessionManagementEnabled] = useState(false);
-  // Session store type (memory | mongo)
+  // Session store type. UI says DocumentDB; persisted value remains 'mongo'.
   const [sessionStoreType, setSessionStoreType] = useState('memory');
   const [savingSessionStoreType, setSavingSessionStoreType] = useState(false);
-  // Metrics store type (memory | mongo)
+  // Metrics store type. UI says DocumentDB; persisted value remains 'mongo'.
   const [metricsStoreType, setMetricsStoreType] = useState('memory');
   const [savingMetricsStoreType, setSavingMetricsStoreType] = useState(false);
   const [redactionValues, setRedactionValues] = useState({
@@ -189,7 +189,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setMaxActiveSessions(settings['session.maxActiveSessions'] === 'undefined' ? '' : (settings['session.maxActiveSessions'] ?? ''));
       setSessionAuthTTL(Number(settings['session.authenticatedTTLMinutes']));
       const persistenceNorm = (settings['session.rateLimitPersistence'] || '').toString().trim().toLowerCase();
-      setRateLimitPersistence(persistenceNorm === 'mongo' ? 'mongo' : 'memory');
+      setRateLimitPersistence(['mongo', 'mongodb', 'redis'].includes(persistenceNorm) ? (persistenceNorm === 'mongodb' ? 'mongo' : persistenceNorm) : 'memory');
       setSessionManagementEnabled(String(settings['session.managementEnabled'] ?? 'true'));
       const storeNorm = (settings['session.type'] || '').toString().trim().toLowerCase();
       setSessionStoreType(['mongo', 'mongodb', 'redis'].includes(storeNorm) ? storeNorm : 'memory');
@@ -318,8 +318,12 @@ const SettingsPage = ({ lang = 'en' }) => {
     setRateLimitPersistence(val);
     setSavingRateLimitPersistence(true);
     try {
-      // store as 'mongo' or 'memory'
-      const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => ((v || '').toString().trim().toLowerCase() === 'mongo' ? 'mongo' : 'memory'));
+      // Store as one of the supported rate-limiter backends.
+      const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => {
+        const norm = (v || '').toString().trim().toLowerCase();
+        if (norm === 'mongodb') return 'mongo';
+        return ['mongo', 'redis'].includes(norm) ? norm : 'memory';
+      });
       setRateLimitPersistence(current);
     } catch (error) {
       console.error('Failed to save rate-limiter persistence:', error);
@@ -1019,6 +1023,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         <select id="session-rate-persistence" value={rateLimitPersistence} onChange={handleRateLimitPersistenceChange} disabled={savingRateLimitPersistence}>
           <option value="memory">{t('settings.session.persistence.options.memory')}</option>
           <option value="mongo">{t('settings.session.persistence.options.mongo')}</option>
+          <option value="redis">{t('settings.session.persistence.options.redis')}</option>
         </select>
 
         <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">
