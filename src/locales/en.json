@@ -161,7 +161,7 @@
         "shortQueryDetails": "Try again with more details below, or use this link to search the words you entered on Canada.ca.",
         "shortQuerySearch": "Search Canada.ca for:",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
-        "chatRunInProgress": "Please wait until it finishes before submitting another question.",
+        "chatRunInProgress": "You have another chat running in another tab or browser window. Please wait until it has finished before making another request.",
         "limitReachedHeading": "Limit of 3 questions reached",
         "yourQuestionLabel": "Your question",
         "responseLabel": "Response",

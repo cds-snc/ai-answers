@@ -161,7 +161,7 @@
         "shortQueryDetails": "Veuillez réessayer avec plus de détails ci-dessous, ou utilisez ce lien pour rechercher les mots que vous avez entrés sur Canada.ca.",
         "shortQuerySearch": "Rechercher sur Canada.ca :",
         "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
-        "chatRunInProgress": "Veuillez attendre qu'elle soit terminée avant de soumettre une autre question.",
+        "chatRunInProgress": "Vous avez un autre clavardage en cours dans un autre onglet ou navigateur. Veuillez attendre qu'il soit terminé avant de faire une autre demande.",
         "limitReachedHeading": "Limite de 3 questions atteinte",
         "yourQuestionLabel": "Votre question",
         "responseLabel": "Réponse",
