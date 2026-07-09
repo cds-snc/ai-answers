@@ -33,6 +33,25 @@ describe('ExpertScorerAnalyzer', () => {
         expect(createJudgeLLM).not.toHaveBeenCalled();
     });
 
+    it('should score a standalone question and answer without a baseline', async () => {
+        const mockLLM = {
+            invoke: vi.fn().mockResolvedValue({
+                content: '{"verdict": "pass", "confidence": 0.8, "explanation": "Looks good"}'
+            })
+        };
+        createJudgeLLM.mockResolvedValue(mockLLM);
+
+        const analyzer = new ExpertScorerAnalyzer();
+        const result = await analyzer.analyze({
+            question: 'Q',
+            answer: 'A'
+        });
+
+        expect(result.verdict).toBe('pass');
+        expect(result.confidence).toBe(0.8);
+        expect(createJudgeLLM).toHaveBeenCalled();
+    });
+
     it('should auto-flag needs-review for normal->clarifying-question downgrade', async () => {
         const mockLLM = {
             invoke: vi.fn().mockResolvedValue({ content: '{"verdict": "pass", "explanation": "Looks okay"}' })

@@ -24,7 +24,7 @@ const openChatViewer = (chatId, lang) => {
 };
 
 /**
- * Full drill-down for one batch item: question, golden vs generated answer
+ * Full drill-down for one batch item: question, reference vs generated answer
  * with diff highlighting, judge output, and chat log links.
  */
 export default function BatchItemDetail({

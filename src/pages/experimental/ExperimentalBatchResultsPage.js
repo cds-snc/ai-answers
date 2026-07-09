@@ -18,7 +18,7 @@ const STAT_STYLE = {
 
 /**
  * Results drill-down for one experimental batch: read every answer that
- * deviated from the golden/expert answer without exporting to Excel.
+ * deviated from the reference answer without exporting to Excel.
  */
 export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);

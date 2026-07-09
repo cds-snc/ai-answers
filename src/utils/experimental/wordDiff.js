@@ -1,6 +1,6 @@
 /**
  * Word-level diff between two texts, used to highlight how a generated
- * answer deviates from the golden/expert answer.
+ * answer deviates from the reference answer.
  *
  * Pure utility — no React, no state.
  */

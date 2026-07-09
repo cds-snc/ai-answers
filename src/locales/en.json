@@ -1810,12 +1810,12 @@
       "requiredColumns": "Columns",
       "columnAliasHint": "Batch files work without renaming columns: matching ignores case, and batch names like redactedQuestion, QUESTION and URL are accepted. Extra columns are kept and ignored.",
       "uploadDescriptions": {
-        "questionOnly": "Use this to test the current system: each question gets a fresh answer from the pipeline when you run an analysis. Include a GoldenAnswer column to have every generated answer judged against your expert-approved answer. Any column named answer is dropped at upload.",
-        "qaPair": "Use this to evaluate answers that already exist (for example, from a past run or export) — the answer column holds those answers, they are judged as-is, and no new answers are generated. Include a GoldenAnswer column to also compare them against an expert-approved answer."
+        "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Add a reference answer column only if you want to compare the generated answer against an expert-approved answer.",
+        "qaPair": "Use this when the dataset already contains the answer you want to review. The answer column is the answer under review, and no new answer is generated. Add a reference answer column only if you also want a comparison against an expert-approved answer or baseline."
       },
       "uploadColumns": {
-        "questionOnly": "question (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)",
-        "qaPair": "question and answer (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)"
+        "questionOnly": "question (required), reference answer (optional), referringUrl (optional), chatId (optional)",
+        "qaPair": "question and answer (required), reference answer (optional), referringUrl (optional), chatId (optional)"
       },
       "rowCount": "Rows",
       "created": "Created",
@@ -1825,7 +1825,7 @@
       "actions": "Actions",
       "type": {
         "questionOnly": "Question only",
-        "qaPair": "Q&A pair",
+        "qaPair": "Question and answer",
         "batchOutput": "Batch output"
       }
     },
@@ -1839,16 +1839,16 @@
       "analyzerPrefix": "Analyzer",
       "workflowLabel": "Workflow",
       "selectBaseline": "Select baseline run (comparison)",
-      "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
-      "goldenHint": "No baseline run is needed if your dataset has a GoldenAnswer column — it is used automatically as the reference answer.",
-      "expertScorerNeedsReference": "Expert scorer needs a reference answer to judge against: use a dataset with a GoldenAnswer column, or select a baseline run. Without one, the run will not start.",
-      "baselineOverridesGolden": "Warning: this dataset has a GoldenAnswer column, but the selected baseline run's answers will replace it as the reference for this run. Results will measure drift from that run, not correctness against the golden answers. Choose \"No baseline\" to compare against the golden answers.",
+      "baselineHint": "Pick a previous analysis to act as the comparison baseline. Subsequent runs will be compared against that run's answers.",
+      "referenceHint": "If your dataset includes a reference answer column, it will be used automatically unless you choose a baseline run.",
+      "expertScorerInfo": "Expert scorer can review a question and answer pair on its own. Add a reference answer or choose a baseline run only if you want a comparison.",
+      "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected baseline run's answers will replace it as the comparison baseline for this run. Results will measure drift from that run, not against the dataset reference answer. Choose \"No comparison run\" to compare against the dataset reference answer.",
       "runLabelLabel": "Run label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
       "suiteView": "Suite grid",
       "trialsLabel": "Trials per question",
       "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline runs",
-      "noBaseline": "-- No baseline (standalone evaluation) --",
+      "noBaseline": "-- No comparison run (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
       "datasetHelper": "Upload and manage datasets through the Datasets page, then select one here.",
@@ -1915,8 +1915,6 @@
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch",
         "exportChatLogsError": "Failed to export chat logs",
-        "error.NO_REFERENCE": "This analyzer requires a baseline answer: use a dataset with a baselineAnswer (or GoldenAnswer) column, or select a baseline run.",
-        "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a GoldenAnswer (or baselineAnswer) column, or select a baseline run.",
         "error.NO_ITEMS": "Batch has no rows to process.",
         "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
         "error.NOT_FOUND": "Resource not found.",
@@ -1936,7 +1934,7 @@
         },
         "expert-scorer": {
           "name": "Expert scorer",
-          "description": "Judges answer quality against Government of Canada expectations. It always needs a reference answer — a run without one will not start. What each answer is judged against depends on how you set up the run:\n• Your dataset has a GoldenAnswer column — each freshly generated answer is judged against the expert answer: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard. This is the usual setup for golden test suites.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has golden answers, the baseline run's answers take precedence.\nUse this as the default scorer when you have expert-approved answers, or for a broad quality judgment rather than a narrow fact-by-fact comparison."
+          "description": "Judges answer quality against Government of Canada expectations. It can score a question and answer pair on its own, or compare that answer against a reference answer or baseline run when you provide one. What each answer is judged against depends on how you set up the run:\n• Your dataset has a reference answer column — each answer is judged against the expert-approved reference: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has a reference answer, the baseline run's answers take precedence.\nUse this as the default scorer when you want a broad quality judgment, whether or not you have a comparison answer."
         },
         "refusal": {
           "name": "Refusal analyzer",
@@ -1948,7 +1946,7 @@
         },
         "similar-answer": {
           "name": "Similar answer analyzer",
-          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a baseline run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a GoldenAnswer column — each generated answer is compared against the expert answer, flagging factual deviations only. For a broader quality judgment against golden answers, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a baseline capture). Select it as the baseline for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
+          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a baseline run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a baseline capture). Select it as the baseline for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
         }
       }
     },
@@ -1998,7 +1996,7 @@
         "question": "Question",
         "referringUrl": "Referring URL",
         "itemError": "Processing error",
-        "goldenAnswer": "Golden answer (expert)",
+        "referenceAnswer": "Reference answer",
         "currentAnswer": "Generated answer",
         "noAnswer": "No answer was generated.",
         "legendRemoved": "Missing from generated answer",

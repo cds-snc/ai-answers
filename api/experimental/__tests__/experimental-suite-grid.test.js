@@ -116,9 +116,9 @@ describe('experimental-suite-grid API', () => {
 
     it('marks reference-less similar-answer runs as capture runs', async () => {
         ExperimentalDataset.findById.mockReturnValue(
-            chainResolving({ _id: DATASET_ID, name: 'No golden' }, ['select'])
+            chainResolving({ _id: DATASET_ID, name: 'No reference' }, ['select'])
         );
-        // no GoldenAnswer column in the rows
+        // no reference answer column in the rows
         ExperimentalDatasetRow.find.mockReturnValue(
             chainResolving([{ rowIndex: 1, data: { question: 'Q1' } }], ['sort'])
         );
@@ -141,16 +141,16 @@ describe('experimental-suite-grid API', () => {
         ]);
     });
 
-    it('does not mark runs as capture when the dataset has golden answers', async () => {
+    it('does not mark runs as capture when the dataset has reference answers', async () => {
         ExperimentalDataset.findById.mockReturnValue(
-            chainResolving({ _id: DATASET_ID, name: 'Golden' }, ['select'])
+            chainResolving({ _id: DATASET_ID, name: 'Reference' }, ['select'])
         );
         ExperimentalDatasetRow.find.mockReturnValue(
             chainResolving([{ rowIndex: 1, data: { question: 'Q1', GoldenAnswer: 'Expert answer' } }], ['sort'])
         );
         ExperimentalBatch.find.mockReturnValue(
             chainResolving([
-                { _id: RUN_ID, name: 'Golden run', status: 'completed', createdAt: new Date(), config: { analyzerIds: ['similar-answer'] } }
+                { _id: RUN_ID, name: 'Reference run', status: 'completed', createdAt: new Date(), config: { analyzerIds: ['similar-answer'] } }
             ], ['select', 'sort', 'limit'])
         );
         ExperimentalBatchItem.find.mockReturnValue(chainResolving([], ['select', 'sort']));

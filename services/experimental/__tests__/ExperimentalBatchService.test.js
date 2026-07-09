@@ -26,15 +26,7 @@ vi.mock('../ExperimentalAnalyzerRegistry.js', () => ({
                 return {
                     id: 'expert-scorer',
                     inputType: 'comparison',
-                    validateBatch: (items) => {
-                        const hasBaseline = items.some((item) =>
-                            ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer']
-                                .some((alias) => item[alias])
-                        );
-                        return hasBaseline
-                            ? { valid: true }
-                            : { valid: false, code: 'NO_REFERENCE', localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER' };
-                    }
+                    validateBatch: () => ({ valid: true })
                 };
             }
             return undefined;
@@ -176,7 +168,7 @@ describe('ExperimentalBatchService', () => {
                 [1, 1], [1, 2], [1, 3],
                 [2, 1], [2, 2], [2, 3]
             ]);
-            // Every trial carries the golden answer but is its own conversation
+            // Every trial carries the reference answer but is its own conversation
             expect(items.every(i => i.baselineAnswer.startsWith('Golden'))).toBe(true);
             const chatIds = new Set(items.map(i => i.chatId));
             expect(chatIds.size).toBe(6);
@@ -221,11 +213,15 @@ describe('ExperimentalBatchService', () => {
             expect(items).toHaveLength(8);
         });
 
-        it('should reject expert-scorer runs with no reference at all', async () => {
-            await expect(ExperimentalBatchService.createBatch(
+        it('should allow expert-scorer runs without a reference answer', async () => {
+            const batch = await ExperimentalBatchService.createBatch(
                 { name: 'No Reference', type: 'analysis', config: { analyzerId: 'expert-scorer' } },
                 [{ question: 'Q1' }]
-            )).rejects.toMatchObject({ code: 'NO_REFERENCE' });
+            );
+
+            expect(batch.summary.total).toBe(1);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
+            expect(items).toHaveLength(1);
         });
 
         it('should accept a no-analyzer capture run as baseline for any analyzer', async () => {
