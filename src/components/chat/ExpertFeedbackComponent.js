@@ -146,7 +146,7 @@ const ExpertFeedbackComponent = ({
         tabIndex={0}
         aria-label={t('common.close')}
       />
-      <fieldset className={`gc-chckbxrdio md${hasError ? ' has-error' : ''}`}>
+      <fieldset className={`gc-chckbxrdio md expert-rating-fieldset${hasError ? ' has-error' : ''}`}>
         <h4 className="feedback-followup-title" ref={titleRef} tabIndex={-1}>
           {t('homepage.expertRating.intro')}
           {answerNumber && (
@@ -243,11 +243,11 @@ const ExpertFeedbackComponent = ({
                     />
                     <label htmlFor={`${uid}-sentence${index + 1}-harmful`}
                     >{t('homepage.expertRating.options.harmful')} <span aria-hidden="true">*</span></label>
-                    <details className="harmful-details mt-100 mb-200">
+                    <details className="harmful-details mt-100 mb-200 details-form">
                       <summary id={`${uid}-sentence${index + 1}-harmful-details-summary`}><span aria-hidden="true" className="harmful-summary-marker">*</span>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
                       <p className="mb-100 mt-100">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
                       <p className="mb-100">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
-                      <ul className="mb-200 list-disc">
+                      <ul className="mb-200 list-disc canada-ca-list-spcd-2">
                         <li>{t('homepage.expertRating.options.harmfulDetails.item1')}</li>
                         <li>{t('homepage.expertRating.options.harmfulDetails.item2')}</li>
                         <li>{t('homepage.expertRating.options.harmfulDetails.item3')}</li>
