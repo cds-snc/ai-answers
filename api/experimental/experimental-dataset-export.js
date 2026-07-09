@@ -1,5 +1,6 @@
 import ExperimentalDatasetService from '../../services/experimental/ExperimentalDatasetService.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { normalizeObjectIdString } from '../util/db-query.js';
 
 const sanitizeFileName = (input = '') => {
     const safe = String(input)
@@ -14,9 +15,14 @@ const sanitizeFileName = (input = '') => {
 
 async function handler(req, res) {
     try {
-        const { id } = req.query;
-        if (!id) {
+        const rawId = req.query?.id;
+        if (typeof rawId !== 'string' || !rawId.trim()) {
             return res.status(400).json({ error: 'datasetId is required' });
+        }
+
+        const id = normalizeObjectIdString(rawId);
+        if (!id) {
+            return res.status(400).json({ error: 'Invalid datasetId' });
         }
 
         const result = await ExperimentalDatasetService.exportDataset(id);

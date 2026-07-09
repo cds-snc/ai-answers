@@ -5,6 +5,7 @@ import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { normalizeObjectId } from '../../api/util/db-query.js';
 import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -417,6 +418,11 @@ class ExperimentalDatasetService {
     }
 
     async getDatasetRows(datasetId, options = {}) {
+        datasetId = normalizeObjectId(datasetId);
+        if (!datasetId) {
+            throw new Error('Invalid datasetId');
+        }
+
         const { page = 1, limit = 50 } = options;
         const skip = (page - 1) * limit;
 
@@ -439,6 +445,11 @@ class ExperimentalDatasetService {
     }
 
     async exportDataset(datasetId) {
+        datasetId = normalizeObjectId(datasetId);
+        if (!datasetId) {
+            throw new Error('Invalid datasetId');
+        }
+
         const dataset = await ExperimentalDataset.findById(datasetId).lean();
         if (!dataset) {
             return null;
@@ -497,6 +508,11 @@ class ExperimentalDatasetService {
     }
 
     async deleteDataset(id) {
+        id = normalizeObjectId(id);
+        if (!id) {
+            throw new Error('Invalid datasetId');
+        }
+
         const existing = await ExperimentalDataset.findById(id);
         if (!existing) return false;
 

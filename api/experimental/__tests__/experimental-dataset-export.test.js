@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import mongoose from 'mongoose';
 import handler from '../experimental-dataset-export.js';
 
 const { mockExportDataset } = vi.hoisted(() => ({
@@ -22,8 +23,9 @@ describe('experimental-dataset-export API', () => {
     let res;
 
     beforeEach(() => {
+        const id = new mongoose.Types.ObjectId().toString();
         req = {
-            query: { id: 'dataset-123' }
+            query: { id }
         };
         res = {
             setHeader: vi.fn(),
@@ -42,7 +44,7 @@ describe('experimental-dataset-export API', () => {
 
         await handler(req, res);
 
-        expect(mockExportDataset).toHaveBeenCalledWith('dataset-123');
+        expect(mockExportDataset).toHaveBeenCalledWith(req.query.id);
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv; charset=utf-8');
         expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="dataset-Exportable-Dataset.csv"');
         expect(res.status).toHaveBeenCalledWith(200);
@@ -56,5 +58,15 @@ describe('experimental-dataset-export API', () => {
 
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({ error: 'datasetId is required' });
+    });
+
+    it('should return 400 when datasetId is invalid', async () => {
+        req.query = { id: 'not-a-valid-object-id' };
+
+        await handler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Invalid datasetId' });
+        expect(mockExportDataset).not.toHaveBeenCalled();
     });
 });
