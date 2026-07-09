@@ -1,6 +1,7 @@
 import AnalyzerBase from './AnalyzerBase.js';
 import { createJudgeLLM } from '../../../agents/AgentFactory.js';
 import { EXPERT_SCORER_PROMPT } from '../../../agents/prompts/judges/ExpertScorerPrompt.js';
+import { BASELINE_ANSWER_ALIASES } from '../datasetColumns.js';
 
 const normalizeJudgeProvider = (aiProvider = 'azure') => {
     const value = String(aiProvider || '').trim();
@@ -14,18 +15,15 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
     return 'azure';
 };
 
-import { BASELINE_ANSWER_ALIASES } from '../datasetColumns.js';
-
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
     static inputType = 'comparison';
     static outputColumns = ['verdict', 'confidence', 'explanation', 'flags', 'keyIdeasFound', 'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck'];
 
     static validateBatch(items) {
-        const hasBaseline = items.some(
-            (item) => BASELINE_ANSWER_ALIASES.some((alias) => item[alias])
-        );
-        if (!hasBaseline) {
+        const hasReference = Array.isArray(items)
+            && items.some(item => BASELINE_ANSWER_ALIASES.some(alias => String(item?.[alias] || '').trim() !== ''));
+        if (!hasReference) {
             return {
                 valid: false,
                 code: 'NO_REFERENCE',
@@ -58,8 +56,12 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
     async analyze(input) {
         const { question, answer, baselineAnswer, originalData } = input;
 
+        if (!baselineAnswer) {
+            throw new Error('Expert scorer requires a reference answer.');
+        }
+
         // 1. Pre-LLM auto-checks
-        const baselineType = baselineAnswer ? this._getAnswerType(baselineAnswer) : 'n/a';
+        const baselineType = this._getAnswerType(baselineAnswer);
         const answerType = this._getAnswerType(answer);
 
         if (!answer || answer.trim() === '') {
@@ -86,36 +88,13 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
             ? originalData.downloadedPages.map((p, i) => `PAGE ${i + 1}:\n${p}`).join('\n\n')
             : 'No downloaded page content available.';
 
-        let prompt;
-        if (baselineAnswer) {
-            prompt = EXPERT_SCORER_PROMPT
-                .replace('{question}', question)
-                .replace('{baselineAnswer}', baselineAnswer)
-                .replace('{baselineAnswerType}', baselineType)
-                .replace('{answer}', answer)
-                .replace('{answerType}', answerType)
-                .replace('{downloadedPages}', downloadedPages);
-        } else {
-            // General quality check if no baseline
-            prompt = `You are an expert evaluator for a Government of Canada AI service.
-Evaluate the "Answer" to the "Question" for accuracy and adherence to GC standards.
-
-QUESTION: ${question}
-ANSWER: ${answer}
-
-DOCUMENT CONTEXT:
-${downloadedPages}
-
-Return ONLY a JSON object:
-{
-  "verdict": "pass" | "fail" | "needs-review",
-  "confidence": 0.0-1.0,
-  "explanation": "Detailed rationale",
-  "keyIdeasFound": ["list"],
-  "keyIdeasMissing": ["list"],
-  "flags": []
-}`;
-        }
+        const prompt = EXPERT_SCORER_PROMPT
+            .replace('{question}', question)
+            .replace('{baselineAnswer}', baselineAnswer)
+            .replace('{baselineAnswerType}', baselineType)
+            .replace('{answer}', answer)
+            .replace('{answerType}', answerType)
+            .replace('{downloadedPages}', downloadedPages);
 
         // 3. Call LLM
         const llm = await this._getLLM();
