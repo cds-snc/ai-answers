@@ -64,6 +64,10 @@ function createRequest() {
   return {
     method: 'POST',
     headers: {},
+    sessionID: 'session-123',
+    session: {
+      visitorId: 'visitor-hash-123',
+    },
     body: {
       graph: 'GenericGraph',
       input: {
@@ -168,6 +172,37 @@ describe('chatGraphRunHandler transport setting', () => {
       }),
     ]));
     expect(res.end).toHaveBeenCalled();
+  });
+
+  it('rejects overlapping anonymous graph runs for the same fingerprint', async () => {
+    mockSettingsTransport('sse');
+    let releaseStream;
+    mocks.getGraphApp.mockResolvedValue({
+      stream: async function* () {
+        await new Promise((resolve) => {
+          releaseStream = resolve;
+        });
+        yield { verify: { result: { answer: { answerType: 'normal', content: 'done' } } } };
+      },
+    });
+
+    const firstReq = createRequest();
+    const firstRes = createResponse();
+    const firstRun = chatGraphRunHandler(firstReq, firstRes);
+
+    await vi.waitFor(() => {
+      expect(firstRes.write).toHaveBeenCalledWith(': connected\n\n');
+    });
+
+    const secondReq = createRequest();
+    const secondRes = createResponse();
+    await chatGraphRunHandler(secondReq, secondRes);
+
+    expect(secondRes.status).toHaveBeenCalledWith(429);
+    expect(secondRes.jsonPayload).toMatchObject({ error: 'chat_run_in_progress' });
+
+    releaseStream();
+    await firstRun;
   });
 });
 

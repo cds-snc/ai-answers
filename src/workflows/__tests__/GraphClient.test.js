@@ -26,6 +26,7 @@ vi.mock('../../services/ChatWorkflowService.js', () => ({
   },
   ShortQueryValidation: class ShortQueryValidation extends Error {},
   RedactionError: class RedactionError extends Error {},
+  ChatRunInProgressError: class ChatRunInProgressError extends Error {},
 }));
 
 describe('GraphClient', () => {

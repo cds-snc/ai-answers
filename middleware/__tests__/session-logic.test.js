@@ -60,7 +60,23 @@ describe('Middleware Session Logic', () => {
             const nextFn = () => { handlerCalled = true; };
             await botFingerprintPresence(req, res, nextFn);
             expect(req.session.visitorId).toBeDefined();
+            expect(req.session.save).toHaveBeenCalledTimes(1);
             expect(handlerCalled).toBe(true);
+        });
+
+        it('blocks when the provided fingerprint does not match the session visitorId', async () => {
+            req.session.visitorId = crypto.createHmac('sha256', 'dev-pepper')
+                .update('browser123')
+                .digest('hex');
+            req.body.visitorId = 'different-browser';
+            handlerCalled = false;
+            const nextFn = () => { handlerCalled = true; };
+
+            await botFingerprintPresence(req, res, nextFn);
+
+            expect(res.statusCode).toBe(403);
+            expect(res.end).toHaveBeenCalledWith(expect.stringContaining('Fingerprint mismatch'));
+            expect(handlerCalled).toBe(false);
         });
     });
 
@@ -72,6 +88,7 @@ describe('Middleware Session Logic', () => {
             expect(req.chatId).toBeDefined();
             expect(req.session.chatIds).toBeDefined();
             expect(Object.prototype.hasOwnProperty.call(req.session.chatIds, req.chatId)).toBe(true);
+            expect(req.session.save).toHaveBeenCalledTimes(1);
             expect(next).toHaveBeenCalled();
         });
 
