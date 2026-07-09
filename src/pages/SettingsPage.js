@@ -40,6 +40,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'session.maxActiveSessions': '',
   'session.authenticatedTTLMinutes': '60',
   'session.rateLimitPersistence': 'memory',
+  'session.singleAnonymousChatRunEnabled': 'true',
   'session.managementEnabled': 'true',
   'session.type': 'memory',
   'metrics.type': 'memory',
@@ -126,9 +127,11 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
-  // Rate-limiter persistence mode. UI says DocumentDB; persisted value remains 'mongo'.
+  // Rate-limiter persistence mode.
   const [rateLimitPersistence, setRateLimitPersistence] = useState('memory');
   const [savingRateLimitPersistence, setSavingRateLimitPersistence] = useState(false);
+  const [singleAnonymousChatRunEnabled, setSingleAnonymousChatRunEnabled] = useState('true');
+  const [savingSingleAnonymousChatRunEnabled, setSavingSingleAnonymousChatRunEnabled] = useState(false);
   // Authenticated session rate-limit settings
   const [authRateLimitCapacity, setAuthRateLimitCapacity] = useState(100);
   const [savingAuthRateLimitCapacity, setSavingAuthRateLimitCapacity] = useState(false);
@@ -189,7 +192,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setMaxActiveSessions(settings['session.maxActiveSessions'] === 'undefined' ? '' : (settings['session.maxActiveSessions'] ?? ''));
       setSessionAuthTTL(Number(settings['session.authenticatedTTLMinutes']));
       const persistenceNorm = (settings['session.rateLimitPersistence'] || '').toString().trim().toLowerCase();
-      setRateLimitPersistence(['mongo', 'mongodb', 'redis'].includes(persistenceNorm) ? (persistenceNorm === 'mongodb' ? 'mongo' : persistenceNorm) : 'memory');
+      setRateLimitPersistence(persistenceNorm === 'redis' ? 'redis' : 'memory');
+      setSingleAnonymousChatRunEnabled(String(settings['session.singleAnonymousChatRunEnabled'] ?? 'true'));
       setSessionManagementEnabled(String(settings['session.managementEnabled'] ?? 'true'));
       const storeNorm = (settings['session.type'] || '').toString().trim().toLowerCase();
       setSessionStoreType(['mongo', 'mongodb', 'redis'].includes(storeNorm) ? storeNorm : 'memory');
@@ -321,14 +325,25 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Store as one of the supported rate-limiter backends.
       const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => {
         const norm = (v || '').toString().trim().toLowerCase();
-        if (norm === 'mongodb') return 'mongo';
-        return ['mongo', 'redis'].includes(norm) ? norm : 'memory';
+        return norm === 'redis' ? 'redis' : 'memory';
       });
       setRateLimitPersistence(current);
     } catch (error) {
       console.error('Failed to save rate-limiter persistence:', error);
     } finally {
       setSavingRateLimitPersistence(false);
+    }
+  };
+
+  const handleSingleAnonymousChatRunEnabledChange = async (e) => {
+    const val = e.target.value;
+    setSingleAnonymousChatRunEnabled(val);
+    setSavingSingleAnonymousChatRunEnabled(true);
+    try {
+      const current = await saveAndVerify('session.singleAnonymousChatRunEnabled', val, (v) => String(v ?? 'true'));
+      setSingleAnonymousChatRunEnabled(String(current));
+    } finally {
+      setSavingSingleAnonymousChatRunEnabled(false);
     }
   };
 
@@ -1022,8 +1037,20 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <select id="session-rate-persistence" value={rateLimitPersistence} onChange={handleRateLimitPersistenceChange} disabled={savingRateLimitPersistence}>
           <option value="memory">{t('settings.session.persistence.options.memory')}</option>
-          <option value="mongo">{t('settings.session.persistence.options.mongo')}</option>
           <option value="redis">{t('settings.session.persistence.options.redis')}</option>
+        </select>
+
+        <label htmlFor="session-single-anonymous-chat-run" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.singleAnonymousChatRunEnabled')}
+        </label>
+        <select
+          id="session-single-anonymous-chat-run"
+          value={singleAnonymousChatRunEnabled}
+          onChange={handleSingleAnonymousChatRunEnabledChange}
+          disabled={savingSingleAnonymousChatRunEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
         </select>
 
         <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">

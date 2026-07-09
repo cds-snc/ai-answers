@@ -1084,7 +1084,6 @@
       "persistence": {
         "options": {
           "memory": "Mémoire (en processus)",
-          "mongo": "DocumentDB (persistant/cache)",
           "redis": "Redis (persistant/cache)"
         }
       }
@@ -1092,8 +1091,9 @@
     "rateLimiting": {
       "title": "Limitation du débit",
       "persistence": {
-        "label": "Persistance du limiteur de débit (mémoire | DocumentDB | Redis)"
+        "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
+      "singleAnonymousChatRunEnabled": "Limiter les utilisateurs anonymes à une seule réponse active à la fois",
       "rateLimitCapacity": "Capacité du quota (requêtes)",
       "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
       "rateLimitRefill": "Recharge du quota (requêtes/min)",
