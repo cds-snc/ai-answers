@@ -14,9 +14,7 @@ const { consume, mockGetSetting, mockRedisConnect, mockRedisSet, mockRedisDel } 
     const settingKey = Array.isArray(key) ? key[0] : key;
     if (settingKey === 'session.rateLimitPersistence') return 'memory';
     if (settingKey === 'session.rateLimitCapacity') return '60';
-    if (settingKey === 'session.authenticatedRateLimitCapacity') return '300';
     if (settingKey === 'session.rateLimitRefillPerSec') return '60';
-    if (settingKey === 'session.authenticatedRateLimitRefillPerSec') return '300';
     return undefined;
   }),
 }));
@@ -71,9 +69,7 @@ describe('rate limiter key selection', () => {
       const settingKey = Array.isArray(key) ? key[0] : key;
       if (settingKey === 'session.rateLimitPersistence') return 'memory';
       if (settingKey === 'session.rateLimitCapacity') return '60';
-      if (settingKey === 'session.authenticatedRateLimitCapacity') return '300';
       if (settingKey === 'session.rateLimitRefillPerSec') return '60';
-      if (settingKey === 'session.authenticatedRateLimitRefillPerSec') return '300';
       if (settingKey === 'session.singleAnonymousChatRunEnabled') return 'true';
       return undefined;
     });
@@ -99,7 +95,7 @@ describe('rate limiter key selection', () => {
     expect(req.rateLimiterSnapshot).toMatchObject({ authenticated: false, keyType: 'visitor' });
   });
 
-  it('keeps authenticated requests keyed by session id', async () => {
+  it('bypasses rate limiting for authenticated requests', async () => {
     await initializeRateLimiter();
 
     const req = {
@@ -116,9 +112,9 @@ describe('rate limiter key selection', () => {
 
     await rateLimiterMiddleware(req, res, next);
 
-    expect(consume).toHaveBeenCalledWith('auth:session-456');
+    expect(consume).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledTimes(1);
-    expect(req.rateLimiterSnapshot).toMatchObject({ authenticated: true, keyType: 'auth' });
+    expect(req.rateLimiterSnapshot).toBeUndefined();
   });
 
   it('can initialize Redis-backed limiters', async () => {
@@ -126,9 +122,7 @@ describe('rate limiter key selection', () => {
       const settingKey = Array.isArray(key) ? key[0] : key;
       if (settingKey === 'session.rateLimitPersistence') return 'redis';
       if (settingKey === 'session.rateLimitCapacity') return '60';
-      if (settingKey === 'session.authenticatedRateLimitCapacity') return '300';
       if (settingKey === 'session.rateLimitRefillPerSec') return '60';
-      if (settingKey === 'session.authenticatedRateLimitRefillPerSec') return '300';
       if (settingKey === 'session.singleAnonymousChatRunEnabled') return 'true';
       return undefined;
     });
@@ -191,9 +185,7 @@ describe('rate limiter key selection', () => {
       const settingKey = Array.isArray(key) ? key[0] : key;
       if (settingKey === 'session.rateLimitPersistence') return 'redis';
       if (settingKey === 'session.rateLimitCapacity') return '60';
-      if (settingKey === 'session.authenticatedRateLimitCapacity') return '300';
       if (settingKey === 'session.rateLimitRefillPerSec') return '60';
-      if (settingKey === 'session.authenticatedRateLimitRefillPerSec') return '300';
       if (settingKey === 'session.singleAnonymousChatRunEnabled') return 'true';
       return undefined;
     });
@@ -238,9 +230,7 @@ describe('rate limiter key selection', () => {
       const settingKey = Array.isArray(key) ? key[0] : key;
       if (settingKey === 'session.rateLimitPersistence') return 'memory';
       if (settingKey === 'session.rateLimitCapacity') return '60';
-      if (settingKey === 'session.authenticatedRateLimitCapacity') return '300';
       if (settingKey === 'session.rateLimitRefillPerSec') return '60';
-      if (settingKey === 'session.authenticatedRateLimitRefillPerSec') return '300';
       if (settingKey === 'session.singleAnonymousChatRunEnabled') return 'false';
       return undefined;
     });

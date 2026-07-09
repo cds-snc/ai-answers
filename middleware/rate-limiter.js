@@ -29,19 +29,15 @@ function toBoolean(value, defaultValue = true) {
 export function getRateLimiterConfig() {
   const persistenceNow = normalizePersistence(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory');
   const publicCapacityNow = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
-  const authCapacityNow = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
 
   // Read refill rates (tokens per minute)
   const publicRefillNow = Number(_getSetting(['session.rateLimitRefillPerSec', 'SESSION_RATE_LIMIT_REFILL']) || process.env.SESSION_RATE_LIMIT_REFILL || '60');
-  const authRefillNow = Number(_getSetting(['session.authenticatedRateLimitRefillPerSec', 'SESSION_AUTH_RATE_LIMIT_REFILL']) || process.env.SESSION_AUTH_RATE_LIMIT_REFILL || '300');
   const singleAnonymousChatRunEnabled = toBoolean(_getSetting(['session.singleAnonymousChatRunEnabled', 'SESSION_SINGLE_ANONYMOUS_CHAT_RUN_ENABLED']) || process.env.SESSION_SINGLE_ANONYMOUS_CHAT_RUN_ENABLED, true);
 
   return {
     persistence: persistenceNow,
     publicCapacity: publicCapacityNow,
-    authCapacity: authCapacityNow,
     publicRefill: publicRefillNow,
-    authRefill: authRefillNow,
     singleAnonymousChatRunEnabled
   };
 }
@@ -55,7 +51,7 @@ const _getSetting = (keys) => {
 };
 
 // Expose limiters logic/state for monitoring
-export const rateLimiters = { public: null, auth: null };
+export const rateLimiters = { public: null };
 
 // Internal promise identifying if the middleware is ready
 let middlewarePromise = null;
@@ -115,22 +111,16 @@ async function buildMiddlewareInternal() {
   const persistence = normalizePersistence(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory');
 
   const publicCapacity = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
-  const authCapacity = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
-
   const publicRefill = Number(_getSetting(['session.rateLimitRefillPerSec', 'SESSION_RATE_LIMIT_REFILL']) || process.env.SESSION_RATE_LIMIT_REFILL || '60');
-  const authRefill = Number(_getSetting(['session.authenticatedRateLimitRefillPerSec', 'SESSION_AUTH_RATE_LIMIT_REFILL']) || process.env.SESSION_AUTH_RATE_LIMIT_REFILL || '300');
 
   let publicLimiter;
-  let authLimiter;
   let redisClient;
 
   // Track current configuration so we can hot-swap when settings change
   let currentConfig = {
     persistence,
     publicCapacity,
-    authCapacity,
     publicRefill,
-    authRefill,
     singleAnonymousChatRunEnabled: getRateLimiterConfig().singleAnonymousChatRunEnabled
   };
 
@@ -145,10 +135,8 @@ async function buildMiddlewareInternal() {
     // local references for this build
     let newRedisClient = redisClient;
     let newPublicLimiter;
-    let newAuthLimiter;
 
     const publicDuration = calculateDuration(currentConfig.publicCapacity, currentConfig.publicRefill);
-    const authDuration = calculateDuration(currentConfig.authCapacity, currentConfig.authRefill);
 
     if (currentConfig.persistence === 'redis') {
       const redisUrl = _getSetting(['redis.url', 'REDIS_URL']) || process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -166,34 +154,19 @@ async function buildMiddlewareInternal() {
         keyPrefix: 'aianswers:rl:public',
         useRedisPackage: true,
       });
-
-      newAuthLimiter = new RateLimiterRedis({
-        storeClient: newRedisClient,
-        points: Number.isFinite(currentConfig.authCapacity) && currentConfig.authCapacity > 0 ? currentConfig.authCapacity : 300,
-        duration: authDuration,
-        keyPrefix: 'aianswers:rl:auth',
-        useRedisPackage: true,
-      });
     } else {
       newPublicLimiter = new RateLimiterMemory({
         points: Number.isFinite(currentConfig.publicCapacity) && currentConfig.publicCapacity > 0 ? currentConfig.publicCapacity : 60,
         duration: publicDuration
       });
-
-      newAuthLimiter = new RateLimiterMemory({
-        points: Number.isFinite(currentConfig.authCapacity) && currentConfig.authCapacity > 0 ? currentConfig.authCapacity : 300,
-        duration: authDuration
-      });
     }
 
     // Atomically swap in new limiters and client reference
     publicLimiter = newPublicLimiter;
-    authLimiter = newAuthLimiter;
     redisClient = newRedisClient;
 
     // Expose for monitoring
     rateLimiters.public = publicLimiter;
-    rateLimiters.auth = authLimiter;
   };
 
   // Assign internal reset hook so other modules can trigger rebuilds
@@ -202,9 +175,7 @@ async function buildMiddlewareInternal() {
     const cfg = getRateLimiterConfig();
     currentConfig.persistence = cfg.persistence;
     currentConfig.publicCapacity = cfg.publicCapacity;
-    currentConfig.authCapacity = cfg.authCapacity;
     currentConfig.publicRefill = cfg.publicRefill;
-    currentConfig.authRefill = cfg.authRefill;
     currentConfig.singleAnonymousChatRunEnabled = cfg.singleAnonymousChatRunEnabled;
     await buildLimiters();
   };
@@ -219,17 +190,13 @@ async function buildMiddlewareInternal() {
       if (
         cfg.persistence !== currentConfig.persistence ||
         cfg.publicCapacity !== currentConfig.publicCapacity ||
-        cfg.authCapacity !== currentConfig.authCapacity ||
         cfg.publicRefill !== currentConfig.publicRefill ||
-        cfg.authRefill !== currentConfig.authRefill ||
         cfg.singleAnonymousChatRunEnabled !== currentConfig.singleAnonymousChatRunEnabled
       ) {
         // Update config and rebuild.
         currentConfig.persistence = cfg.persistence;
         currentConfig.publicCapacity = cfg.publicCapacity;
-        currentConfig.authCapacity = cfg.authCapacity;
         currentConfig.publicRefill = cfg.publicRefill;
-        currentConfig.authRefill = cfg.authRefill;
         currentConfig.singleAnonymousChatRunEnabled = cfg.singleAnonymousChatRunEnabled;
         await internalResetFn();
       }
@@ -248,8 +215,12 @@ async function buildMiddlewareInternal() {
         req.session.user
       ))
     );
+    if (isAuthenticated) {
+      return next();
+    }
+
     const { key, keyType } = buildRateLimiterIdentity(req, isAuthenticated);
-    const limiter = isAuthenticated ? authLimiter : publicLimiter;
+    const limiter = publicLimiter;
 
     try {
       // consume 1 point per request
