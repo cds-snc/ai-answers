@@ -25,6 +25,32 @@ function isAuthenticated(req) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Save chatId to session
 // ─────────────────────────────────────────────────────────────────────────────
+function saveSession(req, reason, extra = {}) {
+  if (!req?.session || typeof req.session.save !== 'function') {
+    return Promise.resolve(false);
+  }
+
+  const sessionId = req.sessionID || req.session.id || 'unknown';
+  console.info('[session] saving session', { reason, sessionId, ...extra });
+
+  return new Promise((resolve, reject) => {
+    req.session.save((err) => {
+      if (err) {
+        console.error('[session] failed to save session', {
+          reason,
+          sessionId,
+          message: err.message,
+          ...extra,
+        });
+        reject(err);
+        return;
+      }
+      console.info('[session] saved session', { reason, sessionId, ...extra });
+      resolve(true);
+    });
+  });
+}
+
 async function saveChatIdToSession(req, chatId) {
   if (!req.session) return;
 
@@ -34,9 +60,10 @@ async function saveChatIdToSession(req, chatId) {
   existing[String(chatId)] = true;
   req.session.chatIds = existing;
 
-  console.log('[session] saving chatId:', chatId, 'sessionID:', req.sessionID, 'chatIds:', req.session.chatIds);
-  // No explicit save needed - express-session auto-saves when response ends
-  // (now that chat-graph-run returns immediately before SSE starts)
+  await saveSession(req, 'chatId', {
+    chatId,
+    chatIdCount: Object.keys(req.session.chatIds).length,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
