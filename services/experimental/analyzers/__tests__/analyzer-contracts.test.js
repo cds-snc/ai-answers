@@ -23,9 +23,12 @@ describe('Analyzer contracts', () => {
     it('should use inputType "comparison" for expert-scorer', () => {
         expect(ExpertScorerAnalyzer.inputType).toBe('comparison');
 
-        // validateBatch accepts standalone question+answer rows as well as
-        // rows that include a comparison answer.
-        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1' }])).toEqual({ valid: true });
+        // validateBatch requires a reference answer from the dataset or a baseline run.
+        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1' }])).toMatchObject({
+            valid: false,
+            code: 'NO_REFERENCE',
+            localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER'
+        });
         expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', GoldenAnswer: 'A' }])).toEqual({ valid: true });
         expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', baselineAnswer: 'A' }])).toEqual({ valid: true });
 

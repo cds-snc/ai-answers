@@ -26,7 +26,15 @@ vi.mock('../ExperimentalAnalyzerRegistry.js', () => ({
                 return {
                     id: 'expert-scorer',
                     inputType: 'comparison',
-                    validateBatch: () => ({ valid: true })
+                    validateBatch: (items) => {
+                        const hasReference = items.some((item) =>
+                            ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer']
+                                .some((alias) => String(item?.[alias] || '').trim() !== '')
+                        );
+                        return hasReference
+                            ? { valid: true }
+                            : { valid: false, code: 'NO_REFERENCE', localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER' };
+                    }
                 };
             }
             return undefined;
@@ -213,15 +221,11 @@ describe('ExperimentalBatchService', () => {
             expect(items).toHaveLength(8);
         });
 
-        it('should allow expert-scorer runs without a reference answer', async () => {
-            const batch = await ExperimentalBatchService.createBatch(
+        it('should reject expert-scorer runs without a reference answer', async () => {
+            await expect(ExperimentalBatchService.createBatch(
                 { name: 'No Reference', type: 'analysis', config: { analyzerId: 'expert-scorer' } },
                 [{ question: 'Q1' }]
-            );
-
-            expect(batch.summary.total).toBe(1);
-            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
-            expect(items).toHaveLength(1);
+            )).rejects.toMatchObject({ code: 'NO_REFERENCE' });
         });
 
         it('should accept a no-analyzer capture run as baseline for any analyzer', async () => {

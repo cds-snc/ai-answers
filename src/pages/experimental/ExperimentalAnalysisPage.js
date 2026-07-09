@@ -10,7 +10,7 @@ const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
 const NO_ANALYZER_ID = 'no-analyzer';
 // Keep in sync with BASELINE_ANSWER_ALIASES in ExperimentalBatchService.js
-const GOLDEN_COLUMN_NAMES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
+const REFERENCE_COLUMN_NAMES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -284,9 +284,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setRunLabel('');
         } catch (err) {
             console.error(err);
-            // err.message is a locale key when the server returned a known error
-            // code (e.g. NO_REFERENCE). Try translating it first; fall back to
-            // the generic failure message when it resolves to the key itself.
+            // err.message is a locale key when the server returned a known error.
+            // Try translating it first; fall back to the generic failure message
+            // when it resolves to the key itself.
             const translated = err?.message ? t(err.message) : null;
             const isLocaleKey = translated && translated !== err.message;
             setMessage(isLocaleKey ? translated : t('experimental.analysis.messages.startAnalysisFailed'));
@@ -391,8 +391,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         batch.status === 'completed' && (!selectedAnalyzerId || canBaseline(batch))
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
-    const datasetHasGoldenColumn = (selectedDataset?.columns || [])
-        .some(col => GOLDEN_COLUMN_NAMES.includes(col?.name));
+    const datasetHasReferenceColumn = (selectedDataset?.columns || [])
+        .some(col => REFERENCE_COLUMN_NAMES.includes(col?.name));
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
@@ -552,26 +552,29 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         </option>
                                     ))}
                                 </select>
-                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && !datasetHasGoldenColumn && !baselineBatchId && (
+                                <GcdsText className="mt-200">
+                                    {t('experimental.analysis.baselineHint')}
+                                </GcdsText>
+                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && (
                                     <div
                                         role="alert"
                                         className="mt-200"
                                         style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
                                     >
-                                        <strong>{t('experimental.analysis.expertScorerNeedsReference')}</strong>
+                                        <strong>{t('experimental.analysis.expertScorerInfo')}</strong>
                                     </div>
                                 )}
-                                {baselineBatchId && datasetHasGoldenColumn && (
+                                {baselineBatchId && datasetHasReferenceColumn && (
                                     <div
                                         role="alert"
                                         className="mt-200"
                                         style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
                                     >
-                                        <strong>{t('experimental.analysis.baselineOverridesGolden')}</strong>
+                                        <strong>{t('experimental.analysis.baselineOverridesReference')}</strong>
                                     </div>
                                 )}
                                 <GcdsText className="mt-200">
-                                    {t('experimental.analysis.goldenHint')}
+                                    {t('experimental.analysis.referenceHint')}
                                 </GcdsText>
                             </div>
                         )}
