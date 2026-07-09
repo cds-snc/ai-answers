@@ -1,7 +1,5 @@
-import { RateLimiterMemory, RateLimiterMongo } from 'rate-limiter-flexible';
-import { MongoClient } from 'mongodb';
-import mongoose from 'mongoose';
-import dbConnect from '../api/db/db-connect.js';
+import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
+import { createClient } from 'redis';
 import { SettingsService } from '../services/SettingsService.js';
 
 // Internal reset hook (will be set when middleware initializes)
@@ -12,22 +10,39 @@ export async function resetRateLimiters() {
   return internalResetFn();
 }
 
+function normalizePersistence(value) {
+  const norm = (String(value || '')).toLowerCase();
+  if (norm === 'redis') return 'redis';
+  return 'memory';
+}
+
+function toBoolean(value, defaultValue = true) {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  if (typeof value === 'boolean') return value;
+  const norm = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(norm)) return true;
+  if (['false', '0', 'no', 'off'].includes(norm)) return false;
+  return defaultValue;
+}
+
 // Exported helper to read the current limiter-related settings from cache/env
 export function getRateLimiterConfig() {
-  const persistenceNow = (String(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory')).toLowerCase();
+  const persistenceNow = normalizePersistence(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory');
   const publicCapacityNow = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
   const authCapacityNow = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
 
   // Read refill rates (tokens per minute)
   const publicRefillNow = Number(_getSetting(['session.rateLimitRefillPerSec', 'SESSION_RATE_LIMIT_REFILL']) || process.env.SESSION_RATE_LIMIT_REFILL || '60');
   const authRefillNow = Number(_getSetting(['session.authenticatedRateLimitRefillPerSec', 'SESSION_AUTH_RATE_LIMIT_REFILL']) || process.env.SESSION_AUTH_RATE_LIMIT_REFILL || '300');
+  const singleAnonymousChatRunEnabled = toBoolean(_getSetting(['session.singleAnonymousChatRunEnabled', 'SESSION_SINGLE_ANONYMOUS_CHAT_RUN_ENABLED']) || process.env.SESSION_SINGLE_ANONYMOUS_CHAT_RUN_ENABLED, true);
 
   return {
     persistence: persistenceNow,
     publicCapacity: publicCapacityNow,
     authCapacity: authCapacityNow,
     publicRefill: publicRefillNow,
-    authRefill: authRefillNow
+    authRefill: authRefillNow,
+    singleAnonymousChatRunEnabled
   };
 }
 
@@ -44,13 +59,60 @@ export const rateLimiters = { public: null, auth: null };
 
 // Internal promise identifying if the middleware is ready
 let middlewarePromise = null;
+const activeAnonymousChatRuns = new Set();
+
+export function buildRateLimiterIdentity(req, isAuthenticated) {
+  if (isAuthenticated && req && req.sessionID) {
+    return { key: `auth:${req.sessionID}`, keyType: 'auth' };
+  }
+
+  const visitorId = req?.session?.visitorId;
+  if (visitorId) {
+    return { key: `visitor:${visitorId}`, keyType: 'visitor' };
+  }
+
+  if (req && req.sessionID) {
+    return { key: `session:${req.sessionID}`, keyType: 'session' };
+  }
+
+  if (req && req.ip) {
+    return { key: `ip:${req.ip}`, keyType: 'ip' };
+  }
+
+  return { key: 'unknown', keyType: 'unknown' };
+}
+
+function isChatGraphRun(req) {
+  return req?.method === 'POST' && String(req.originalUrl || req.url || '').includes('/api/chat/chat-graph-run');
+}
+
+async function acquireAnonymousChatRun({ req, key, persistence, redisClient }) {
+  if (!isChatGraphRun(req)) return () => {};
+
+  const lockKey = `aianswers:chat-run:${key}`;
+  if (persistence === 'redis') {
+    const acquired = await redisClient.set(lockKey, '1', { NX: true, EX: 300 });
+    if (acquired !== 'OK') return null;
+    return () => {
+      redisClient.del(lockKey).catch((err) => {
+        console.error('[RateLimiter] Failed to release Redis chat-run lock', { message: err.message });
+      });
+    };
+  }
+
+  if (activeAnonymousChatRuns.has(lockKey)) return null;
+  activeAnonymousChatRuns.add(lockKey);
+  return () => {
+    activeAnonymousChatRuns.delete(lockKey);
+  };
+}
 
 /**
  * Core function to build the actual rate limiter middleware function.
  * This is now internal and called by verify/init logic.
  */
 async function buildMiddlewareInternal() {
-  const persistence = (String(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'mongo')).toLowerCase();
+  const persistence = normalizePersistence(_getSetting(['session.rateLimitPersistence', 'SESSION_RATE_LIMIT_PERSISTENCE']) || process.env.SESSION_RATE_LIMIT_PERSISTENCE || 'memory');
 
   const publicCapacity = Number(_getSetting(['session.rateLimitCapacity', 'SESSION_RATE_LIMIT_CAPACITY']) || process.env.SESSION_RATE_LIMIT_CAPACITY || '60');
   const authCapacity = Number(_getSetting(['session.authenticatedRateLimitCapacity', 'SESSION_AUTH_RATE_LIMIT_CAPACITY']) || process.env.SESSION_AUTH_RATE_LIMIT_CAPACITY || '300');
@@ -60,7 +122,7 @@ async function buildMiddlewareInternal() {
 
   let publicLimiter;
   let authLimiter;
-  let mongoClient;
+  let redisClient;
 
   // Track current configuration so we can hot-swap when settings change
   let currentConfig = {
@@ -68,7 +130,8 @@ async function buildMiddlewareInternal() {
     publicCapacity,
     authCapacity,
     publicRefill,
-    authRefill
+    authRefill,
+    singleAnonymousChatRunEnabled: getRateLimiterConfig().singleAnonymousChatRunEnabled
   };
 
   // Helper to calculate duration based on capacity and refill rate (tokens/min)
@@ -80,43 +143,36 @@ async function buildMiddlewareInternal() {
   // Build / rebuild the limiters. Safe to call multiple times.
   const buildLimiters = async () => {
     // local references for this build
-    let newMongoClient = mongoClient;
+    let newRedisClient = redisClient;
     let newPublicLimiter;
     let newAuthLimiter;
 
     const publicDuration = calculateDuration(currentConfig.publicCapacity, currentConfig.publicRefill);
     const authDuration = calculateDuration(currentConfig.authCapacity, currentConfig.authRefill);
 
-    if (currentConfig.persistence === 'mongo' || currentConfig.persistence === 'mongodb') {
-      const mongoUrl = _getSetting(['mongo.uri', 'MONGODB_URI']) || process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/ai-answers';
+    if (currentConfig.persistence === 'redis') {
+      const redisUrl = _getSetting(['redis.url', 'REDIS_URL']) || process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
-      // Try to reuse existing mongoose client
-      try {
-        await dbConnect();
-        newMongoClient = (mongoose.connection && typeof mongoose.connection.getClient === 'function')
-          ? mongoose.connection.getClient()
-          : (mongoose.connection && mongoose.connection.client) ? mongoose.connection.client : newMongoClient;
-      } catch (err) {
-        // If dbConnect failed, fall back to previous/new client later
+      if (!newRedisClient) {
+        newRedisClient = createClient({ url: redisUrl });
+        newRedisClient.on('error', (err) => console.error('[RateLimiter] Redis error:', err));
+        await newRedisClient.connect();
       }
 
-      if (!newMongoClient) {
-        newMongoClient = new MongoClient(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-        await newMongoClient.connect();
-      }
-
-      newPublicLimiter = new RateLimiterMongo({
-        storeClient: newMongoClient,
+      newPublicLimiter = new RateLimiterRedis({
+        storeClient: newRedisClient,
         points: Number.isFinite(currentConfig.publicCapacity) && currentConfig.publicCapacity > 0 ? currentConfig.publicCapacity : 60,
         duration: publicDuration,
-        tableName: 'rate_limiter_public'
+        keyPrefix: 'aianswers:rl:public',
+        useRedisPackage: true,
       });
 
-      newAuthLimiter = new RateLimiterMongo({
-        storeClient: newMongoClient,
+      newAuthLimiter = new RateLimiterRedis({
+        storeClient: newRedisClient,
         points: Number.isFinite(currentConfig.authCapacity) && currentConfig.authCapacity > 0 ? currentConfig.authCapacity : 300,
         duration: authDuration,
-        tableName: 'rate_limiter_auth'
+        keyPrefix: 'aianswers:rl:auth',
+        useRedisPackage: true,
       });
     } else {
       newPublicLimiter = new RateLimiterMemory({
@@ -133,7 +189,7 @@ async function buildMiddlewareInternal() {
     // Atomically swap in new limiters and client reference
     publicLimiter = newPublicLimiter;
     authLimiter = newAuthLimiter;
-    mongoClient = newMongoClient;
+    redisClient = newRedisClient;
 
     // Expose for monitoring
     rateLimiters.public = publicLimiter;
@@ -149,6 +205,7 @@ async function buildMiddlewareInternal() {
     currentConfig.authCapacity = cfg.authCapacity;
     currentConfig.publicRefill = cfg.publicRefill;
     currentConfig.authRefill = cfg.authRefill;
+    currentConfig.singleAnonymousChatRunEnabled = cfg.singleAnonymousChatRunEnabled;
     await buildLimiters();
   };
 
@@ -164,7 +221,8 @@ async function buildMiddlewareInternal() {
         cfg.publicCapacity !== currentConfig.publicCapacity ||
         cfg.authCapacity !== currentConfig.authCapacity ||
         cfg.publicRefill !== currentConfig.publicRefill ||
-        cfg.authRefill !== currentConfig.authRefill
+        cfg.authRefill !== currentConfig.authRefill ||
+        cfg.singleAnonymousChatRunEnabled !== currentConfig.singleAnonymousChatRunEnabled
       ) {
         // Update config and rebuild.
         currentConfig.persistence = cfg.persistence;
@@ -172,6 +230,7 @@ async function buildMiddlewareInternal() {
         currentConfig.authCapacity = cfg.authCapacity;
         currentConfig.publicRefill = cfg.publicRefill;
         currentConfig.authRefill = cfg.authRefill;
+        currentConfig.singleAnonymousChatRunEnabled = cfg.singleAnonymousChatRunEnabled;
         await internalResetFn();
       }
     } catch (e) {
@@ -182,7 +241,6 @@ async function buildMiddlewareInternal() {
   // Actual middleware function logic
   return async function rateLimit(req, res, next) {
     await ensureLimitersUpToDate();
-    const key = (req && req.session && req.sessionID) ? req.sessionID : req.ip;
     const isAuthenticated = !!(
       req.user ||
       (req.session && (
@@ -190,6 +248,7 @@ async function buildMiddlewareInternal() {
         req.session.user
       ))
     );
+    const { key, keyType } = buildRateLimiterIdentity(req, isAuthenticated);
     const limiter = isAuthenticated ? authLimiter : publicLimiter;
 
     try {
@@ -204,10 +263,38 @@ async function buildMiddlewareInternal() {
         duration,
         msBeforeNext: reward.msBeforeNext,
         lastUpdated: new Date().toISOString(),
-        authenticated: isAuthenticated
+        authenticated: isAuthenticated,
+        keyType
       };
       // Attach to request for potential handler use
       req.rateLimiterSnapshot = rateLimiterSnapshot;
+
+      let releaseChatRun = () => {};
+      if (!isAuthenticated && currentConfig.singleAnonymousChatRunEnabled) {
+        const acquired = await acquireAnonymousChatRun({
+          req,
+          key,
+          persistence: currentConfig.persistence,
+          redisClient,
+        });
+        if (!acquired) {
+          return res.status(429).json({
+            error: 'chat_run_in_progress',
+            message: 'A chat response is already in progress for this session',
+          });
+        }
+        releaseChatRun = acquired;
+      }
+
+      let released = false;
+      const releaseOnce = () => {
+        if (released) return;
+        released = true;
+        releaseChatRun();
+      };
+      res.on?.('finish', releaseOnce);
+      res.on?.('close', releaseOnce);
+
       // console.log(`RateLimiter: allowed request for key=${key} (auth=${isAuthenticated}) remaining=${reward.remainingPoints}`);
       return next();
     } catch (rej) {
@@ -242,4 +329,3 @@ export async function rateLimiterMiddleware(req, res, next) {
     return next();
   }
 }
-
