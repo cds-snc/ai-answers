@@ -159,6 +159,26 @@ const resolveWorkflowName = (workflow = '') => {
     return WORKFLOW_ALIASES[trimmed] || trimmed;
 };
 
+const prepareQaPairRowsForComparison = (items, { baselineRunSelected = false } = {}) => items.map((item = {}) => {
+    const baselineAnswer = pickExactField(item, BASELINE_ANSWER_ALIASES);
+    const uploadedAnswer = pickNormalizedAnswer(item);
+
+    if (!baselineRunSelected && (baselineAnswer || !uploadedAnswer)) {
+        return item;
+    }
+
+    const next = { ...item };
+    if (!baselineRunSelected && uploadedAnswer) {
+        next.baselineAnswer = uploadedAnswer;
+    }
+
+    for (const alias of ANSWER_ALIASES) {
+        delete next[alias];
+    }
+
+    return next;
+});
+
 class ExperimentalBatchService {
     constructor() {
         this.analyzerQueues = new Map(); // analyzerId -> PQueue
@@ -198,6 +218,7 @@ class ExperimentalBatchService {
     async createBatch(batchData, itemsData) {
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
         const config = batchData.config || {};
+        let sourceDatasetType = '';
 
         if (batchData.type === 'analysis') {
             const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
@@ -243,6 +264,9 @@ class ExperimentalBatchService {
             if (!mongoose.Types.ObjectId.isValid(batchData.config.datasetId)) {
                 throw makeError('Invalid datasetId', 'BAD_REQUEST', 400);
             }
+
+            const sourceDataset = await ExperimentalDataset.findById(batchData.config.datasetId).select('type').lean();
+            sourceDatasetType = sourceDataset?.type || '';
 
             const rows = await ExperimentalDatasetRow.find({
                 experimentalDataset: new mongoose.Types.ObjectId(batchData.config.datasetId)
@@ -297,6 +321,11 @@ class ExperimentalBatchService {
         const selectedAnalyzerId = resolveSelectedAnalyzerId(batchData.config || {});
         if (selectedAnalyzerId) {
             const analyzerConfig = await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId);
+            if (sourceDatasetType === 'qa-pair' && analyzerConfig?.inputType === 'comparison') {
+                finalItems = prepareQaPairRowsForComparison(finalItems, {
+                    baselineRunSelected: Boolean(batchData.config?.baselineRunId)
+                });
+            }
             const validation = analyzerConfig?.validateBatch(finalItems);
             if (validation && !validation.valid) {
                 throw makeError(validation.localeKey, validation.code, 400);

@@ -228,6 +228,27 @@ describe('ExperimentalBatchService', () => {
             )).rejects.toMatchObject({ code: 'NO_REFERENCE' });
         });
 
+        it('should use qa-pair dataset answers as references for expert-scorer generation runs', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'QA Reference DS', type: 'qa-pair' });
+            await ExperimentalDatasetRow.create([
+                { experimentalDataset: ds._id, rowIndex: 1, data: { question: 'Q1', answer: 'Reference answer 1' } },
+                { experimentalDataset: ds._id, rowIndex: 2, data: { question: 'Q2', answer: 'Reference answer 2' } }
+            ]);
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'QA reference scorer',
+                type: 'analysis',
+                config: {
+                    analyzerId: 'expert-scorer',
+                    datasetId: ds._id.toString()
+                }
+            }, []);
+
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
+            expect(items.map(i => i.baselineAnswer)).toEqual(['Reference answer 1', 'Reference answer 2']);
+            expect(items.every(i => !i.answer)).toBe(true);
+        });
+
         it('should accept a no-analyzer capture run as baseline for any analyzer', async () => {
             const ds = await ExperimentalDataset.create({ name: 'Capture DS', type: 'question-only' });
             await ExperimentalDatasetRow.create([

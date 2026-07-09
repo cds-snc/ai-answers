@@ -1814,7 +1814,7 @@
       "columnAliasHint": "Les fichiers de lots fonctionnent sans renommer les colonnes : la correspondance ignore la casse, et les noms de lots comme redactedQuestion, QUESTION et URL sont acceptés. Les colonnes supplémentaires sont conservées et ignorées.",
       "uploadDescriptions": {
         "questionOnly": "Utilisez ce type lorsque vous voulez que le système génère une nouvelle réponse pendant l'analyse. Ajoutez une colonne de réponse de référence seulement si vous voulez comparer la réponse générée à une réponse approuvée par un expert.",
-        "qaPair": "Utilisez ce type lorsque l'ensemble de données contient déjà la réponse que vous voulez examiner. La colonne answer est la réponse examinée et aucune nouvelle réponse n'est générée. Ajoutez une colonne de réponse de référence seulement si vous voulez aussi une comparaison avec une réponse approuvée par un expert ou une base de comparaison."
+        "qaPair": "Utilisez ce type lorsque l'ensemble de données contient déjà la réponse de référence pour chaque question. Pour les analyseurs de comparaison, la colonne answer est utilisée comme référence et le système génère une nouvelle réponse à comparer."
       },
       "uploadColumns": {
         "questionOnly": "question (requis), réponse de référence (optionnelle), referringUrl (optionnel), chatId (optionnel)",
@@ -1842,9 +1842,9 @@
       "analyzerPrefix": "Analyseur",
       "workflowLabel": "Flux de travail",
       "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
-      "baselineHint": "Choisissez une analyse précédente comme base de comparaison. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
-      "referenceHint": "Si votre ensemble de données contient une colonne de réponse de référence, elle sera utilisée automatiquement sauf si vous choisissez une exécution de comparaison.",
-      "expertScorerInfo": "L'évaluateur expert nécessite une réponse de référence provenant de l'ensemble de données ou d'une exécution de comparaison. Il ne note pas les paires question et réponse autonomes.",
+      "baselineHint": "Choisissez une analyse précédente comme base de comparaison. Lorsqu'elle est sélectionnée, les nouvelles exécutions sont comparées aux réponses de celle-ci.",
+      "referenceHint": "Si aucune exécution de comparaison n'est sélectionnée, la référence de l'ensemble de données est utilisée automatiquement. Pour les ensembles de données de questions et réponses, la colonne answer sert de référence pour les analyseurs de comparaison.",
+      "expertScorerInfo": "L'évaluateur expert nécessite une réponse de référence provenant de l'ensemble de données ou d'une exécution de comparaison. Utilisez un ensemble de données de questions et réponses, une colonne GoldenAnswer ou baselineAnswer, ou une exécution de comparaison.",
       "baselineOverridesReference": "Avertissement : cet ensemble de données contient une colonne de réponse de référence, mais les réponses de l'exécution de comparaison sélectionnée la remplaceront comme base de comparaison pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non par rapport à la réponse de référence de l'ensemble de données. Choisissez « Aucune exécution de comparaison » pour comparer à la réponse de référence de l'ensemble de données.",
       "runLabelLabel": "Étiquette d'exécution (facultatif)",
       "runLabelPlaceholder": "p. ex. v2 – consignes de citation resserrées",
