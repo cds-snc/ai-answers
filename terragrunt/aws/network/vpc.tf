@@ -4,7 +4,7 @@
 
 # Use the terraform-modules/vpc module to create the VPC for the react answers app
 module "ai_answers_vpc" {
-  source            = "github.com/cds-snc/terraform-modules//vpc?ref=v10.2.2"
+  source            = "github.com/cds-snc/terraform-modules//vpc?ref=v11.4.1"
   name              = var.product_name
   billing_tag_value = var.billing_tag_value
 

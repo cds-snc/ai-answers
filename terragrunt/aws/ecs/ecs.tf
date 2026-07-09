@@ -68,7 +68,7 @@ locals {
 }
 
 module "ai_answers" {
-  source = "github.com/cds-snc/terraform-modules//ecs?ref=v10.3.0"
+  source = "github.com/cds-snc/terraform-modules//ecs?ref=v11.4.1"
 
   # Cluster and service
   cluster_name = "${var.product_name}-cluster"
@@ -141,11 +141,13 @@ module "ai_answers" {
 }
 
 resource "aws_cloudwatch_log_group" "ai_answers_group" {
+  provider          = aws.core_services
   name              = "/aws/ecs/${var.product_name}-cluster"
   retention_in_days = 30
 }
 
 resource "aws_cloudwatch_log_stream" "ai_answers_stream" {
+  provider       = aws.core_services
   name           = "${var.product_name}-log-stream"
   log_group_name = aws_cloudwatch_log_group.ai_answers_group.name
 }
