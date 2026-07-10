@@ -66,7 +66,7 @@ describe('Middleware Session Logic', () => {
             expect(handlerCalled).toBe(true);
         });
 
-        it('blocks when the provided fingerprint does not match the session visitorId', async () => {
+        it('allows requests when the provided fingerprint does not match the session visitorId', async () => {
             req.session.visitorId = crypto.createHmac('sha256', 'dev-pepper')
                 .update('browser123')
                 .digest('hex');
@@ -76,9 +76,9 @@ describe('Middleware Session Logic', () => {
 
             await botFingerprintPresence(req, res, nextFn);
 
-            expect(res.statusCode).toBe(403);
-            expect(res.end).toHaveBeenCalledWith(expect.stringContaining('Fingerprint mismatch'));
-            expect(handlerCalled).toBe(false);
+            expect(res.statusCode).toBe(200);
+            expect(res.end).not.toHaveBeenCalled();
+            expect(handlerCalled).toBe(true);
         });
     });
 

@@ -93,13 +93,10 @@ export default async function botFingerprintPresence(req, res, next) {
     const incomingHashedVisitorId = visitorId ? hashVisitorId(visitorId) : null;
 
     if (req.session.visitorId && incomingHashedVisitorId && req.session.visitorId !== incomingHashedVisitorId) {
-      console.warn('[botFingerprintPresence] BLOCKED (VisitorId mismatch):', {
+      console.warn('[botFingerprintPresence] visitorId mismatch, allowing request to continue:', {
         url,
         sessionId: req.sessionID || req.session.id || 'unknown',
       });
-      res.statusCode = 403;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: 'botDetected', message: 'Fingerprint mismatch' }));
     }
 
     if (!req.session.visitorId && visitorId) {
