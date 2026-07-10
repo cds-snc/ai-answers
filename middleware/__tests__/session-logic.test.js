@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import botFingerprintPresence from '../bot-fingerprint-presence.js';
 import sessionMiddleware from '../chat-session.js';
+import ChatSessionMetricsService from '../../services/ChatSessionMetricsService.js';
 import crypto from 'crypto';
 
 vi.mock('../../services/ChatSessionService.js', () => ({
@@ -15,6 +16,7 @@ vi.mock('../../services/ChatSessionMetricsService.js', () => ({
     default: {
         recordRateLimiterSnapshot: vi.fn(),
         registerChat: vi.fn(),
+        markSessionAuth: vi.fn(),
     }
 }));
 
@@ -60,6 +62,22 @@ describe('Middleware Session Logic', () => {
             const nextFn = () => { handlerCalled = true; };
             await botFingerprintPresence(req, res, nextFn);
             expect(req.session.visitorId).toBeDefined();
+            expect(req.session.save).toHaveBeenCalledTimes(1);
+            expect(handlerCalled).toBe(true);
+        });
+
+        it('allows requests when the provided fingerprint does not match the session visitorId', async () => {
+            req.session.visitorId = crypto.createHmac('sha256', 'dev-pepper')
+                .update('browser123')
+                .digest('hex');
+            req.body.visitorId = 'different-browser';
+            handlerCalled = false;
+            const nextFn = () => { handlerCalled = true; };
+
+            await botFingerprintPresence(req, res, nextFn);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.end).not.toHaveBeenCalled();
             expect(handlerCalled).toBe(true);
         });
     });
@@ -72,6 +90,7 @@ describe('Middleware Session Logic', () => {
             expect(req.chatId).toBeDefined();
             expect(req.session.chatIds).toBeDefined();
             expect(Object.prototype.hasOwnProperty.call(req.session.chatIds, req.chatId)).toBe(true);
+            expect(req.session.save).toHaveBeenCalledTimes(1);
             expect(next).toHaveBeenCalled();
         });
 
@@ -93,6 +112,18 @@ describe('Middleware Session Logic', () => {
             expect(res.statusCode).toBe(403);
             expect(res.end).toHaveBeenCalled();
             expect(next).not.toHaveBeenCalled();
+        });
+
+        it('marks authenticated sessions in the metrics buffer', async () => {
+            req.sessionID = 'session-auth-123';
+            req.session.passport = { user: 'user-123' };
+            const mw = sessionMiddleware();
+
+            await mw(req, res, next);
+
+            expect(req.chatId).toBeDefined();
+            expect(ChatSessionMetricsService.markSessionAuth).toHaveBeenCalledWith(req.sessionID, true);
+            expect(next).toHaveBeenCalled();
         });
     });
 });

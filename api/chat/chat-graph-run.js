@@ -6,6 +6,7 @@ import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES } from '../../src/config/workflows.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
+import ChatSessionService from '../../services/ChatSessionService.js';
 
 const REQUIRED_METHOD = 'POST';
 const DEFAULT_CHAT_TRANSPORT = 'sse';
@@ -150,6 +151,7 @@ async function handler(req, res) {
 
   // Ensure the graph uses the validated/generated chatId from the session middleware
   input.chatId = req.chatId;
+  const requestStartedAt = Date.now();
 
   // Server-side Workflow Resolution
   let graphName;
@@ -311,6 +313,17 @@ async function handler(req, res) {
       resultSent = true;
     }
   } finally {
+    if (req.chatId && ChatSessionService.isManagementEnabled()) {
+      try {
+        ChatSessionService.recordRequest(req.chatId, {
+          latencyMs: Date.now() - requestStartedAt,
+          error: Boolean(streamError) || !resultSent,
+          errorType: streamError?.blockType || streamError?.name || (!resultSent ? 'no_result' : null),
+        });
+      } catch (metricsError) {
+        if (console && console.error) console.error('chat-graph-run metrics error', metricsError);
+      }
+    }
     clearInterval(keepAliveTimer);
     if (!resultSent && !streamError) {
       writeGraphEvent('error', { message: 'Graph completed without result payload' });

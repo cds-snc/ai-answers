@@ -38,7 +38,6 @@ import experimentalDatasetRowsHandler from '../api/experimental/experimental-dat
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
-import chatReportHandler from '../api/chat/chat-report.js';
 import chatSessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
@@ -286,7 +285,6 @@ app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
-app.post('/api/chat/chat-report', chatReportHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);

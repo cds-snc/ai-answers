@@ -34,8 +34,6 @@ const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted
     'session.defaultTTLMinutes': '60',
     'session.rateLimitCapacity': '60',
     'session.rateLimitRefillPerSec': '1',
-    'session.authenticatedRateLimitCapacity': '100',
-    'session.authenticatedRateLimitRefillPerSec': '5',
     'session.maxActiveSessions': '',
     'session.authenticatedTTLMinutes': '60',
     'session.rateLimitPersistence': 'memory',
