@@ -27,6 +27,17 @@ const jsAsJsx = {
 
 export default defineConfig({
   plugins: [jsAsJsx, react()],
+  optimizeDeps: {
+    // Vite 8's Rolldown dependency scanner parses .js files before the
+    // jsAsJsx transform runs. Keep JSX-enabled .js entry points compatible.
+    rolldownOptions: {
+      transform: {
+        jsx: {
+          runtime: 'automatic'
+        }
+      }
+    }
+  },
   server: {
     host: '0.0.0.0',
     port: Number(process.env.PORT || 3000),

@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import "../../models/interaction.js";
 import "../../models/question.js";
 import "../../models/answer.js";
@@ -24,6 +27,49 @@ import "../../models/sentenceEmbedding.js";
 // worker threads, as each thread gets its own module instance.
 let cached = { conn: null, promise: null };
 
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(moduleDir, "../../");
+
+function resolveDocumentDbCaFile() {
+  const configuredCaFile = process.env.DOCDB_CA_FILE || process.env.DOCDB_TLS_CA_FILE;
+  if (configuredCaFile) {
+    return configuredCaFile;
+  }
+
+  const candidatePaths = [
+    path.resolve(repoRoot, "global-bundle.pem"),
+    "/app/global-bundle.pem",
+  ];
+
+  return candidatePaths.find((candidatePath) => fs.existsSync(candidatePath));
+}
+
+function shouldAllowInvalidDocumentDbHostnames(connectionString) {
+  if (process.env.DOCDB_TLS_ALLOW_INVALID_HOSTNAMES === "true") {
+    return true;
+  }
+
+  try {
+    const { hostname } = new URL(connectionString);
+    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
+function shouldUseDirectConnectionForDocumentDb(connectionString) {
+  if (process.env.DOCDB_DIRECT_CONNECTION === "true") {
+    return true;
+  }
+
+  try {
+    const { hostname } = new URL(connectionString);
+    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
 function getDocumentDbUri() {
   return process.env.DOCDB_URI;
 }
@@ -47,13 +93,18 @@ function getConnectionConfig() {
   }
 
   const connectionString = getDocumentDbUri();
+  const tlsCAFile = resolveDocumentDbCaFile();
+  const tlsAllowInvalidHostnames = shouldAllowInvalidDocumentDbHostnames(connectionString);
+  const directConnection = shouldUseDirectConnectionForDocumentDb(connectionString);
 
   return {
     connectionString,
     targetKey: `docdb8:${connectionString}`,
     opts: {
       tls: true,
-      tlsCAFile: "/app/global-bundle.pem",
+      ...(tlsCAFile ? { tlsCAFile } : {}),
+      ...(tlsAllowInvalidHostnames ? { tlsAllowInvalidHostnames: true } : {}),
+      ...(directConnection ? { directConnection: true } : {}),
       retryWrites: false,
       bufferCommands: false,
       connectTimeoutMS: 60000, // 60 seconds timeout
@@ -102,4 +153,7 @@ async function dbConnect() {
 export default dbConnect;
 export {
   getDocumentDbUri,
+  resolveDocumentDbCaFile,
+  shouldAllowInvalidDocumentDbHostnames,
+  shouldUseDirectConnectionForDocumentDb,
 };
