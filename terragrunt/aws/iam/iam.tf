@@ -44,6 +44,22 @@ data "aws_iam_policy_document" "ai-answers-ssm-policy" {
   }
 }
 
+data "aws_iam_policy_document" "ai-answers-ecs-exec-policy" {
+  count = var.env == "staging" ? 1 : 0
+
+  statement {
+    sid    = "AllowEcsExec"
+    effect = "Allow"
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    resources = ["*"]
+  }
+}
+
 resource "aws_iam_policy" "ai-answers-ssm-policy" {
   provider    = aws.core_services
   name        = "${var.product_name}-ssm-policy"
@@ -73,6 +89,26 @@ resource "aws_iam_policy_attachment" "ai-answers-ssm-policy" {
   name       = "${var.product_name}-ssm-policy"
   policy_arn = aws_iam_policy.ai-answers-ssm-policy.arn
   roles      = [aws_iam_role.ai-answers-ecs-role.name]
+}
+
+resource "aws_iam_policy" "ai-answers-ecs-exec-policy" {
+  provider    = aws.core_services
+  count       = var.env == "staging" ? 1 : 0
+  name        = "${var.product_name}-ecs-exec-policy"
+  description = "Allow ${var.product_name} ECS tasks to use ECS Exec in ${var.env}"
+  policy      = data.aws_iam_policy_document.ai-answers-ecs-exec-policy[0].json
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ai-answers-ecs-exec-policy" {
+  provider   = aws.core_services
+  count      = var.env == "staging" ? 1 : 0
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = aws_iam_policy.ai-answers-ecs-exec-policy[0].arn
 }
 
 # Policy document for assuming the cross-account Bedrock invoke role
