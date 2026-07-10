@@ -213,7 +213,13 @@ async function buildMiddlewareInternal() {
     } catch (rej) {
       // RateLimiter throws when points exhausted
       res.setHeader('Retry-After', String(Math.ceil((rej?.msBeforeNext || 1000) / 1000)));
-      return res.status(429).send('Too many requests');
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: "Looks like you're using the system a lot. Please wait a few minutes for more capacity.",
+        currentCount: typeof rej?.consumedPoints === 'number' ? rej.consumedPoints : null,
+        retryAfterSeconds: Math.ceil((rej?.msBeforeNext || 1000) / 1000)
+      });
     }
   };
 }
