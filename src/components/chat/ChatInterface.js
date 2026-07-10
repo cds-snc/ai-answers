@@ -11,6 +11,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
+import { useAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -386,7 +387,7 @@ const ChatInterface = ({
   // sites below) — same markup either way, so it's defined once here rather
   // than duplicated at both call sites.
   const liveReferringUrlBanner = referringUrl ? (
-    <span className="referring-url-chat" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
+    <span className="referring-url-label mb-300" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
       <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
     </span>
   ) : null;
@@ -397,7 +398,7 @@ const ChatInterface = ({
   // reuse that id without duplicating it in the DOM. It's aria-hidden since
   // the accessible description is already announced via the persistent one.
   const composeBoxReferringUrlEcho = referringUrl ? (
-    <span className="referring-url-chat" aria-hidden="true">
+    <span className="referring-url-label mb-300" aria-hidden="true">
       <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
     </span>
   ) : null;
@@ -411,7 +412,7 @@ const ChatInterface = ({
           increments on a successful AI response, not on submission itself. */}
       {referringUrl && (readOnly || messages.length > 0) && (
         readOnly ? (
-          <span className="referring-url-chat">
+          <span className="referring-url-label mb-300">
             <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
 
             <a href={referringUrl}
@@ -466,6 +467,10 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
+          const { answerText: departmentAnswerText } = useAnswerNumberLabel(
+            t,
+            aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined
+          );
           const userQuestionIndex = (message.sender === "user" && !message.error)
             ? sequenceableUserMessages.findIndex(m => m.id === message.id)
             : null;
@@ -602,34 +607,51 @@ const ChatInterface = ({
                     )}
                     {formatAIResponse(message.aiService, message)}
 
-                    {/* Show feedback component in review mode for all answers/interactions that do not have expertFeedback */}
+                    {/* Show which department(s) this turn was assigned to, in review mode, wrapping the "How was this answer?" feedback tool */}
                     {readOnly &&
                       message.sender === "ai" &&
                       !message.error &&
-                      message.interaction &&
-                      caches &&
-                      message.interaction.answer.answerType !== "question" &&
-                      !message.interaction.expertFeedback && (
-                        <FeedbackComponent
-                          lang={lang}
-                          sentences={
-                            extractSentences(message.interaction.answer.content) ||
-                            []
-                          }
-                          sentenceCount={
-                            extractSentences(message.interaction.answer.content)
-                              .length
-                          }
-                          chatId={chatId}
-                          userMessageId={message.id}
-                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
-                          citationUrl={citationUrl}
-                          showSkipButton={false}
-                          onSkip={focusTextarea}
-                          skipButtonLabel={safeT(
-                            "homepage.chat.textarea.ariaLabel.skipfo"
-                          )}
-                        />
+                      message.interaction && (
+                        <div className="department-feedback-wrapper">
+                          <h3 className="sr-only">
+                            {safeT("homepage.chat.review.assignedTo")}{" "}
+                            {departmentAnswerText ? `${departmentAnswerText}: ` : ""}
+                            {message.interaction.context?.department ||
+                              safeT("homepage.chat.review.noDepartment")}
+                          </h3>
+                          <p className="department-label-text font-size-text-xsm-nr mt-100 mb-200" aria-hidden="true">
+                            <b>
+                              {safeT("homepage.chat.review.assignedTo")}{" "}
+                              {message.interaction.context?.department ||
+                                safeT("homepage.chat.review.noDepartment")}
+                            </b>
+                          </p>
+                          {caches &&
+                            message.interaction.answer.answerType !== "question" &&
+                            !message.interaction.expertFeedback && (
+                              <FeedbackComponent
+                                lang={lang}
+                                sentences={
+                                  extractSentences(message.interaction.answer.content) ||
+                                  []
+                                }
+                                sentenceCount={
+                                  extractSentences(message.interaction.answer.content)
+                                    .length
+                                }
+                                chatId={chatId}
+                                userMessageId={message.id}
+                                answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                                citationUrl={citationUrl}
+                                department={message.interaction.context?.department}
+                                showSkipButton={false}
+                                onSkip={focusTextarea}
+                                skipButtonLabel={safeT(
+                                  "homepage.chat.textarea.ariaLabel.skipfo"
+                                )}
+                              />
+                            )}
+                        </div>
                       )}
 
                     {/* Only show feedback for the last message if not in review mode */}
@@ -675,20 +697,6 @@ const ChatInterface = ({
                     )}
                   </div>
                 )}
-
-                {/* Show which department(s) this turn was assigned to, in review mode, above the "How was this answer?" area */}
-                {readOnly &&
-                  message.sender === "ai" &&
-                  !message.error &&
-                  message.interaction && (
-                    <div className="department-assigned-label">
-                      <span className="label normal">
-                        {safeT("homepage.chat.review.department")}:{" "}
-                        {message.interaction.context?.department ||
-                          safeT("homepage.chat.review.noDepartment")}
-                      </span>
-                    </div>
-                  )}
 
                 {/* Render review panels just under the FeedbackComponent / "How was this answer?" (very close) */}
                 {readOnly &&

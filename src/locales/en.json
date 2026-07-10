@@ -177,8 +177,8 @@
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:",
-        "department": "Department(s) assigned",
-        "noDepartment": "No department matched"
+        "assignedTo": "Assigned to:",
+        "noDepartment": "None"
       },
       "section": {
         "heading": "AI Answers conversation log"

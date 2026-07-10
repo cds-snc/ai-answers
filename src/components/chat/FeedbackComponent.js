@@ -15,6 +15,7 @@ const FeedbackComponent = ({
   sentences = [],
   answerNumber,
   citationUrl,
+  department,
   // Add these new props for the skip link
   showSkipButton = false, // Determines if skip link should be shown
   onSkip = () => { }, // Function to call when skip link is activated
@@ -118,6 +119,7 @@ const FeedbackComponent = ({
         sentences={sentences}
         answerNumber={answerNumber}
         citationUrl={citationUrl}
+        department={department}
         titleRef={expertRatingTitleRef}
       />
     );

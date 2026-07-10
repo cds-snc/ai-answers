@@ -728,7 +728,7 @@
 
 .field-container:has(textarea:focus) .hint-text,
 .field-container:has(textarea:focus) label,
-.field-container:has(textarea:focus) .referring-url-chat,
+.field-container:has(textarea:focus) .referring-url-label,
 .field-container:has(textarea:focus) #displayReferringURL {
   color: var(--gcds-details-focus-background);
 }
@@ -745,7 +745,7 @@
 @supports not selector(:has(a)) {
   .field-container:focus-within .hint-text,
   .field-container:focus-within label,
-  .field-container:focus-within .referring-url-chat,
+  .field-container:focus-within .referring-url-label,
   .field-container:focus-within #displayReferringURL {
     color: var(--gcds-details-focus-background);
   }
@@ -830,7 +830,7 @@ textarea:focus {
 }
 
 .chat-id,
-.referring-url-chat,
+.referring-url-label,
 #displayReferringURL {
   border: 1px solid #d9d9d9;
   border-radius: 999px;
@@ -845,11 +845,6 @@ textarea:focus {
 .chat-id p {
   color: #555;
   max-width: 100%;
-}
-
-.department-assigned-label {
-  margin-top: var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-100);
 }
 
 .expert-rating-container .explanation-field textarea,
@@ -1122,12 +1117,11 @@ fieldset.gc-chckbxrdio legend {
   font-size: 18px;
   margin-left: 12px
 }
-.referring-url-chat, #displayReferringURL {
+.referring-url-label, #displayReferringURL {
   font-size: 16px;
   line-height: 1.55;
   background-color: #f5f5ff;
   padding: var(--gcds-spacing-75) var(--gcds-spacing-175);
   color: #333;
   display: inline-block;
-  margin-bottom: 24px;
 }

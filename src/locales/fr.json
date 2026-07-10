@@ -177,8 +177,8 @@
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :",
-        "department": "Ministère(s) attribué(s)",
-        "noDepartment": "Aucun ministère attribué"
+        "assignedTo": "Assigné à :",
+        "noDepartment": "Aucun"
       },
       "section": {
         "heading": "Historique de la conversation – Réponses IA"
