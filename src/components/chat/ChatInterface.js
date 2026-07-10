@@ -11,7 +11,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
-import { useAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
+import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -467,7 +467,7 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
-          const { answerText: departmentAnswerText } = useAnswerNumberLabel(
+          const { answerText: departmentAnswerText } = buildAnswerNumberLabel(
             t,
             aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined
           );
@@ -615,11 +615,11 @@ const ChatInterface = ({
                         <div className="department-feedback-wrapper">
                           <h3 className="sr-only">
                             {safeT("homepage.chat.review.assignedTo")}{" "}
-                            {departmentAnswerText ? `${departmentAnswerText}: ` : ""}
+                            {departmentAnswerText ? `${departmentAnswerText} - ` : ""}
                             {message.interaction.context?.department ||
                               safeT("homepage.chat.review.noDepartment")}
                           </h3>
-                          <p className="department-label-text font-size-text-xsm-nr mt-100 mb-200" aria-hidden="true">
+                          <p className="department-label-text font-size-text-xsm-nr mb-200" aria-hidden="true">
                             <b>
                               {safeT("homepage.chat.review.assignedTo")}{" "}
                               {message.interaction.context?.department ||

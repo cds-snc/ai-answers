@@ -516,23 +516,10 @@
   font-weight: 500;
 }
 
-.label.primary {
-  background-color: var(--gcds-color-blue-100);
-  color: var(--gcds-color-blue-650);
-  border-radius: 0;
-  border-left: 6px solid var(--gcds-color-grayscale-400);
-  padding-left: var(--gcds-spacing-125);
-  padding-right: var(--gcds-spacing-250);
-  padding-top: var(--gcds-spacing-125);
-  padding-bottom: var(--gcds-spacing-125);
-  align-self: flex-start;
-  max-width: 100%;
-}
-
 .department-feedback-wrapper {
   background-color: var(--gcds-color-grayscale-50);
   border-left: 6px solid var(--gcds-color-grayscale-400);
-  padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-125);
+  padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-200);
 }
 
 .department-feedback-wrapper:has(.expert-rating-container) {
@@ -543,14 +530,13 @@
 
 .department-label-text {
   color: var(--gcds-color-blue-650);
-  padding-left: var(--gcds-spacing-125);
 }
 
 .department-feedback-wrapper:has(.expert-rating-container) .department-label-text {
   display: inline-block;
   background-color: var(--gcds-color-grayscale-50);
   border-left: 6px solid var(--gcds-color-grayscale-400);
-  padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-125);
+  padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-200);
 }
 
 /* User type labels */

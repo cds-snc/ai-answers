@@ -361,7 +361,7 @@ const ExpertFeedbackComponent = ({
       </fieldset>
       <button type="submit" className="btn-primary mrgn-lft-sm">
         {withAnswerNumber(t('homepage.expertRating.submit'))}
-        {department ? `: ${department}` : ''}
+        {department ? ` - ${department}` : ''}
       </button>
     </form>
   );
