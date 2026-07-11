@@ -1396,6 +1396,71 @@
         "ptMuni": "Provincial/municipal",
         "notGc": "Not in GC scope answers"
       }
+    },
+    "evalAnalysis": {
+      "title": "Eval analysis",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by topic, what the explanations indicate, content issues, English vs French differences, and evaluator consistency.",
+      "selectInstitution": "Select an institution in the filters above to enable analysis.",
+      "precheckCount": "{count} expert evaluations match the current filters.",
+      "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
+      "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
+      "runButton": "Run eval analysis",
+      "error": "The analysis failed. Partial results may be shown below.",
+      "running": {
+        "preparing": "Preparing analysis…",
+        "classifying": "Classifying topics… {done} of {total}",
+        "synthesizing": "Writing findings…"
+      },
+      "status": {
+        "running": "Preparing",
+        "classifying": "Classifying",
+        "synthesizing": "Synthesizing",
+        "complete": "Complete",
+        "error": "Failed"
+      },
+      "pastRuns": {
+        "title": "Past analyses",
+        "colDate": "Run date",
+        "colRange": "Date range",
+        "colCount": "Evaluations",
+        "colStatus": "Status",
+        "colBy": "Run by",
+        "view": "View"
+      },
+      "report": {
+        "title": "Analysis report",
+        "header": "{count} expert evaluations · {department} · {start} – {end}",
+        "runOn": "Run on {date}",
+        "runBy": "by {email}",
+        "excluded": "{count} without a score excluded from score statistics",
+        "unclassified": "{count} could not be classified by topic",
+        "partial": "This analysis did not finish — the results below are partial.",
+        "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
+        "topicsTitle": "Scores by topic",
+        "actionsTitle": "Scores by action",
+        "colTopic": "Topic",
+        "colAction": "Action",
+        "colCount": "Evaluations",
+        "colNonPerfect": "Non-perfect",
+        "colPctNonPerfect": "% non-perfect",
+        "allPerfect": "All perfect",
+        "themesTitle": "What the explanations say",
+        "themeCount": "{count} evaluations",
+        "contentIssuesTitle": "Content issues",
+        "contentIssuesCount": "{count} evaluations flagged a content issue.",
+        "languageTitle": "English vs French",
+        "colLanguage": "Language",
+        "colMeanScore": "Mean score",
+        "colPctPerfect": "% perfect",
+        "lang": {
+          "en": "English",
+          "fr": "French"
+        },
+        "evaluatorsTitle": "Evaluator consistency",
+        "colEvaluator": "Evaluator",
+        "colDelta": "vs others",
+        "flagged": "Review"
+      }
     }
   },
   "metrics": {

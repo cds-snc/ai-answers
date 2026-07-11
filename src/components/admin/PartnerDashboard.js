@@ -9,6 +9,7 @@ import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
 import CitationPagesCard from './dashboard/CitationPagesCard.js';
+import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
@@ -23,6 +24,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
+  // Full filters object as last applied — the eval-analysis section runs its
+  // precheck and analysis against exactly what the dashboard is showing.
+  const [appliedFilters, setAppliedFilters] = useState(null);
   const handleApplyFilters = (filters) => {
     if (autoApplyFired.current) {
       // Second+ call is user-triggered: mark as applied so FilterPanel can collapse.
@@ -30,10 +34,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     }
     autoApplyFired.current = true;
     setAppliedDepartment(filters?.department || '');
+    setAppliedFilters(filters || null);
     fetchMetrics(filters);
   };
   const handleClearFilters = (filters) => {
     setAppliedDepartment(filters?.department || '');
+    setAppliedFilters(filters || null);
     fetchMetrics(filters);
   };
 
@@ -414,6 +420,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           </div>
         </div>
       )}
+
+      {/* Eval analysis — runs over the currently applied filters; requires an
+          institution to be selected before the Run button enables. */}
+      <EvalAnalysisSection
+        lang={lang}
+        appliedDepartment={appliedDepartment}
+        appliedFilters={appliedFilters}
+      />
       </>
       )}
 
