@@ -65,39 +65,41 @@ describe('EvalAnalysisReport', () => {
       anyEvaluatorFlagged: true
     },
     crossTab: {
-      topics: [
-        { label: 'Early retirement incentive', count: 20, scoredCount: 20, nonPerfectCount: 5, pctNonPerfect: 25, alwaysPerfect: false, categories: {}, contentIssueCount: 1 },
-        { label: 'Public service pension', count: 22, scoredCount: 21, nonPerfectCount: 0, pctNonPerfect: 0, alwaysPerfect: true, categories: {}, contentIssueCount: 1 }
+      groups: [
+        { label: 'Early retirement incentive — Check eligibility', count: 20, scoredCount: 20, nonPerfectCount: 5, pctNonPerfect: 25, alwaysPerfect: false, categories: {}, contentIssueCount: 1 },
+        { label: 'Public service pension — Apply', count: 22, scoredCount: 21, nonPerfectCount: 0, pctNonPerfect: 0, alwaysPerfect: true, categories: {}, contentIssueCount: 1 }
       ],
-      actions: [
-        { label: 'Check eligibility', count: 30, scoredCount: 29, nonPerfectCount: 4, pctNonPerfect: 14, alwaysPerfect: false, categories: {}, contentIssueCount: 2 }
-      ],
+      skippedSingles: { groupCount: 2, rowCount: 2 },
       unclassifiedCount: 0
     },
     insights: {
       overview: 'Most answers score perfectly; deductions cluster on eligibility nuances.',
-      topicPatterns: 'Early retirement incentive collects most deductions.',
       explanationThemes: [
         { theme: 'Confusing yes/no openers', count: 3, note: 'Experts flagged ambiguous openings.', examples: ['The no is confusing.'] }
       ],
-      contentIssues: 'Both content issues concern outdated page content.',
-      languageComparison: 'French sample is small; no meaningful difference.',
-      evaluatorConsistency: 'b@x.ca scores diverge from the rest — worth a look.'
+      contentIssues: 'Both content issues concern outdated page content.'
     }
   };
 
   it('renders a complete stored report', () => {
     render(<EvalAnalysisReport analysis={analysis} lang="en" />);
     expect(screen.getByText('Analysis report')).toBeTruthy();
-    expect(screen.getByText('Scores by topic')).toBeTruthy();
-    expect(screen.getByText('Early retirement incentive')).toBeTruthy();
+    expect(screen.getByText('Scores by topic and action')).toBeTruthy();
+    expect(screen.getByText('Early retirement incentive — Check eligibility')).toBeTruthy();
     expect(screen.getByText('All perfect')).toBeTruthy();
+    expect(screen.getByText('2 groups with only one evaluation are not shown (2 evaluations).')).toBeTruthy();
     expect(screen.getByText('What the explanations say')).toBeTruthy();
     expect(screen.getByText('Confusing yes/no openers')).toBeTruthy();
     expect(screen.getByText('English vs French')).toBeTruthy();
     expect(screen.getByText('Evaluator consistency')).toBeTruthy();
     expect(screen.getByText('b@x.ca')).toBeTruthy();
     expect(screen.getByText('Review')).toBeTruthy();
+  });
+
+  it('hides the content-issues card when none were flagged', () => {
+    const noIssues = { ...analysis, stats: { ...analysis.stats, contentIssueCount: 0 } };
+    render(<EvalAnalysisReport analysis={noIssues} lang="en" />);
+    expect(screen.queryByText('Content issues')).toBeNull();
   });
 
   it('shows the partial-results warning for an errored run', () => {

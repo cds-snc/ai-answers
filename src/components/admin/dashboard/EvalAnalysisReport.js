@@ -92,14 +92,18 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
         {insights && narrative(insights.overview)}
       </div>
 
-      {/* Scores by topic / action (Tier 2 cross-tab) */}
-      {crossTab && (
+      {/* Scores by combined topic — action group (Tier 2 cross-tab) */}
+      {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-card">
-          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.topicsTitle')}</h3>
-          {crossTabTable(crossTab.topics || [], t('partnerDashboard.evalAnalysis.report.colTopic'))}
-          <h3 className="card-title" style={{ marginTop: 24 }}>{t('partnerDashboard.evalAnalysis.report.actionsTitle')}</h3>
-          {crossTabTable(crossTab.actions || [], t('partnerDashboard.evalAnalysis.report.colAction'))}
-          {insights && narrative(insights.topicPatterns)}
+          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.topicActionsTitle')}</h3>
+          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colTopicAction'))}
+          {crossTab.skippedSingles?.groupCount > 0 && (
+            <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
+              {t('partnerDashboard.evalAnalysis.report.singlesSkipped')
+                .replace('{groups}', fmtN(crossTab.skippedSingles.groupCount))
+                .replace('{count}', fmtN(crossTab.skippedSingles.rowCount))}
+            </p>
+          )}
         </div>
       )}
 
@@ -130,15 +134,13 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
         </div>
       )}
 
-      {/* Content issues */}
-      {(insights?.contentIssues || (stats && stats.contentIssueCount > 0)) && (
+      {/* Content issues — only when some were flagged; no card for a zero count */}
+      {stats && stats.contentIssueCount > 0 && (
         <div className="dashboard-card">
           <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.contentIssuesTitle')}</h3>
-          {stats && (
-            <p className="font-size-text-xsm-nr">
-              {t('partnerDashboard.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
-            </p>
-          )}
+          <p className="font-size-text-xsm-nr">
+            {t('partnerDashboard.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
+          </p>
           {insights && narrative(insights.contentIssues)}
         </div>
       )}
@@ -173,7 +175,6 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               </tbody>
             </table>
           </div>
-          {insights && narrative(insights.languageComparison)}
         </div>
       )}
 
@@ -216,7 +217,6 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               </tbody>
             </table>
           </div>
-          {insights && narrative(insights.evaluatorConsistency)}
         </div>
       )}
     </div>

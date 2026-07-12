@@ -6,6 +6,7 @@
 // dashboards use, kept beside it so the analysis can't drift from them.
 
 import { deriveExpertFeedbackCategory } from '../api/util/chat-filters.js';
+import { OTHER_LABEL } from '../api/data/serviceActionSeeds.js';
 
 const SENTENCE_NUMBERS = [1, 2, 3, 4];
 
@@ -144,37 +145,58 @@ export function computeStats(rows) {
     };
 }
 
-// Tier 2 cross-tab: score categories per topic group and per action, built
-// after classification has tagged the rows. Topics/actions sorted by
-// non-perfect rate (descending), always-perfect groups flagged.
+// A group needs at least this many evaluations to appear in the cross-tab:
+// one evaluation is an anecdote, not a pattern. Smaller groups are dropped
+// from the table and reported in aggregate (skippedSingles).
+export const MIN_GROUP_COUNT = 2;
+
+// Combined "topic — action" group label, e.g.
+// "Canada child benefit — Change my contact information". An uninformative
+// half (missing or "Other") is left off rather than shown as "— Other".
+export function combinedLabel(row) {
+    const topic = row.topic && row.topic !== OTHER_LABEL ? row.topic : null;
+    const action = row.action && row.action !== OTHER_LABEL ? row.action : null;
+    if (topic && action) return `${topic} — ${action}`;
+    return topic || action || OTHER_LABEL;
+}
+
+// Tier 2 cross-tab: score categories per combined topic—action group, built
+// after classification has tagged the rows. Groups sorted by non-perfect
+// rate (descending), always-perfect groups flagged.
 export function buildCrossTab(rows) {
-    const tabulate = (keyOf) => {
-        const groups = new Map();
-        rows.forEach((r) => {
-            const key = keyOf(r) || 'Unclassified';
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(r);
-        });
-        return Array.from(groups.entries())
-            .map(([label, groupRows]) => {
-                const summary = summarizeGroup(groupRows);
-                return {
-                    label,
-                    count: summary.count,
-                    scoredCount: summary.scoredCount,
-                    nonPerfectCount: summary.scoredCount - summary.perfectCount,
-                    pctNonPerfect: summary.pctPerfect !== null ? 100 - summary.pctPerfect : null,
-                    categories: summary.categories,
-                    contentIssueCount: summary.contentIssueCount,
-                    alwaysPerfect: summary.scoredCount > 0 && summary.pctPerfect === 100
-                };
-            })
-            .sort((a, b) => (b.pctNonPerfect ?? -1) - (a.pctNonPerfect ?? -1) || b.count - a.count);
-    };
+    const byLabel = new Map();
+    rows.forEach((r) => {
+        if (!r.topic) return; // unclassified rows are counted separately
+        const key = combinedLabel(r);
+        if (!byLabel.has(key)) byLabel.set(key, []);
+        byLabel.get(key).push(r);
+    });
+
+    const all = Array.from(byLabel.entries()).map(([label, groupRows]) => {
+        const summary = summarizeGroup(groupRows);
+        return {
+            label,
+            count: summary.count,
+            scoredCount: summary.scoredCount,
+            nonPerfectCount: summary.scoredCount - summary.perfectCount,
+            pctNonPerfect: summary.pctPerfect !== null ? 100 - summary.pctPerfect : null,
+            categories: summary.categories,
+            contentIssueCount: summary.contentIssueCount,
+            alwaysPerfect: summary.scoredCount > 0 && summary.pctPerfect === 100
+        };
+    });
+
+    const groups = all
+        .filter((g) => g.count >= MIN_GROUP_COUNT)
+        .sort((a, b) => (b.pctNonPerfect ?? -1) - (a.pctNonPerfect ?? -1) || b.count - a.count);
+    const skipped = all.filter((g) => g.count < MIN_GROUP_COUNT);
 
     return {
-        topics: tabulate((r) => r.topic),
-        actions: tabulate((r) => r.action),
+        groups,
+        skippedSingles: {
+            groupCount: skipped.length,
+            rowCount: skipped.reduce((sum, g) => sum + g.count, 0)
+        },
         unclassifiedCount: rows.filter((r) => !r.topic).length
     };
 }

@@ -363,6 +363,10 @@ class EvalAnalysisServiceClass {
         const nonPerfect = rows.filter(
             (r) => (r.score !== null && r.score < 100) || (r.category && r.category !== 'correct')
         );
+        // A theme must recur to count as analysis: at least 2 rows, scaling to
+        // 20% of the non-perfect pool on bigger runs. Asked of the model AND
+        // enforced on its output — a single-example "theme" is an anecdote.
+        const minThemeCount = Math.max(2, Math.ceil(nonPerfect.length * 0.2));
         const result = await invoke(
             evalAnalysisInsightsStrategy,
             {
@@ -371,6 +375,7 @@ class EvalAnalysisServiceClass {
                 dateRange: { start: doc.startDate, end: doc.endDate },
                 stats: doc.stats,
                 crossTab,
+                minThemeCount,
                 lowScoreRows: nonPerfect.map(slimRowForInsights),
                 contentIssueRows: rows.filter((r) => r.contentIssue).map(slimRowForInsights)
             },
@@ -379,8 +384,16 @@ class EvalAnalysisServiceClass {
         if (!result?.insights) {
             throw new Error('Insight synthesis did not return a usable result');
         }
-        await EvalAnalysis.updateOne({ _id: doc._id }, { $set: { insights: result.insights, status: 'complete' } });
-        doc.insights = result.insights;
+        const insights = {
+            ...result.insights,
+            explanationThemes: Array.isArray(result.insights.explanationThemes)
+                ? result.insights.explanationThemes.filter(
+                      (th) => typeof th?.count === 'number' && th.count >= minThemeCount
+                  )
+                : []
+        };
+        await EvalAnalysis.updateOne({ _id: doc._id }, { $set: { insights, status: 'complete' } });
+        doc.insights = insights;
         doc.status = 'complete';
     }
 }

@@ -3,6 +3,7 @@ import {
     toCompactRow,
     computeStats,
     buildCrossTab,
+    combinedLabel,
     MIN_EVALS_FOR_FLAG
 } from '../evalAnalysisStats.js';
 import { deriveExpertFeedbackCategory as deriveCategory } from '../../api/util/chat-filters.js';
@@ -182,8 +183,18 @@ describe('computeStats', () => {
     });
 });
 
+describe('combinedLabel', () => {
+    it('joins topic and action, dropping an uninformative half', () => {
+        expect(combinedLabel(row({ topic: 'Canada child benefit', action: 'Change my contact information' })))
+            .toBe('Canada child benefit — Change my contact information');
+        expect(combinedLabel(row({ topic: 'Canada child benefit', action: 'Other' }))).toBe('Canada child benefit');
+        expect(combinedLabel(row({ topic: 'Other', action: 'Apply' }))).toBe('Apply');
+        expect(combinedLabel(row({ topic: 'Other', action: 'Other' }))).toBe('Other');
+    });
+});
+
 describe('buildCrossTab', () => {
-    it('tabulates categories per topic and action, worst-first', () => {
+    it('tabulates categories per combined topic—action group, worst-first', () => {
         const rows = [
             row({ topic: 'Pensions', action: 'Apply' }),
             row({ topic: 'Pensions', action: 'Apply' }),
@@ -193,12 +204,24 @@ describe('buildCrossTab', () => {
         ];
         const tab = buildCrossTab(rows);
         expect(tab.unclassifiedCount).toBe(1);
-        expect(tab.topics[0].label).toBe('Treaties');
-        expect(tab.topics[0].nonPerfectCount).toBe(1);
-        expect(tab.topics[0].pctNonPerfect).toBe(50);
-        const pensions = tab.topics.find((t) => t.label === 'Pensions');
+        expect(tab.groups[0].label).toBe('Treaties — Search');
+        expect(tab.groups[0].nonPerfectCount).toBe(1);
+        expect(tab.groups[0].pctNonPerfect).toBe(50);
+        const pensions = tab.groups.find((g) => g.label === 'Pensions — Apply');
+        expect(pensions.count).toBe(2);
         expect(pensions.alwaysPerfect).toBe(true);
-        expect(tab.actions.find((a) => a.label === 'Apply').count).toBe(2);
-        expect(tab.topics.find((t) => t.label === 'Unclassified').count).toBe(1);
+        expect(tab.skippedSingles).toEqual({ groupCount: 0, rowCount: 0 });
+    });
+
+    it('drops single-evaluation groups from the table and counts them aside', () => {
+        const rows = [
+            row({ topic: 'Pensions', action: 'Apply' }),
+            row({ topic: 'Pensions', action: 'Apply' }),
+            row({ topic: 'Pensions', action: 'Renew', score: 0, category: 'hasError' }),
+            row({ topic: 'Treaties', action: 'Search' })
+        ];
+        const tab = buildCrossTab(rows);
+        expect(tab.groups.map((g) => g.label)).toEqual(['Pensions — Apply']);
+        expect(tab.skippedSingles).toEqual({ groupCount: 2, rowCount: 2 });
     });
 });

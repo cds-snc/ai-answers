@@ -60,7 +60,8 @@ export const SERVICE_SEEDS_BY_DEPARTMENT = {
         'Immigrate - general',
         'Immigration through express entry',
         'Immigration as a provincial nominee',
-        'Refugee protection'
+        'Refugee protection',
+        'IRCC account'
     ]
 };
 

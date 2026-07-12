@@ -88,6 +88,10 @@ New stats this feature computes (input to the report + the insight pass):
 Tag each evaluated Q&A with an **emergent topic group** and an **action**
 (Apply, Check status, Pay, Sign in, …). Inputs per row: question, answer (first
 sentence or two), **citationUrl and referringUrl** (strong topic clues).
+Topic groups name the **program/service/subject** (the thing — "Canada child
+benefit"), never the activity ("Updating address with CRA") — the action is
+the second, separate dimension, and the two are **combined for display**
+("Canada child benefit — Change my contact information").
 
 - Two-pass approach for stable grouping: first call proposes the topic-group
   set from a sample of the questions (seeded with the services/actions
@@ -95,33 +99,44 @@ sentence or two), **citationUrl and referringUrl** (strong topic clues).
   subsequent chunked calls (~20 rows each) assign every row to one of the
   proposed groups (+ "Other") and an action (+ "Other").
 - 200 evals ≈ 10–11 calls. Store per-row tags on the analysis doc.
-- Output feeds the **service/action × score cross-tab**: eval count and
-  % non-perfect per topic group; call out "always perfect" groups too.
+- Output feeds the **combined topic—action × score cross-tab**: eval count and
+  % non-perfect per combined group; call out "always perfect" groups too.
+  Groups with **fewer than 2 evaluations are dropped from the table** (one
+  evaluation is an anecdote, not a pattern) and reported in aggregate as a
+  one-line note.
 
 ### Tier 3 — LLM insight pass (one call)
 
 One synthesis call, in the **dashboard language**, given: Tier 1 stats, the
 Tier 2 cross-tab, and the raw explanation texts (low-score + content-issue
-rows). Produces short narrative findings per report section:
+rows). Produces only:
 
+- A 2–3 sentence **overview**.
 - What the low-score explanations indicate (themes, each with a count and 1–2
-  example quotes).
-- Whether content issues share a topic/style/tone pattern.
-- Notable EN/FR differences (or "none meaningful").
-- Evaluator consistency observations worth a human look.
+  example quotes). A theme must cover at least **max(2, 20% of the non-perfect
+  rows)** — asked of the model in the prompt AND filtered on its output; rarer
+  observations are anecdotes and are left out entirely.
+- A 1–2 sentence content-issue pattern note (empty when there are no flags).
 
-The prompt instructs the model to ground every claim in the supplied numbers —
-no invented rates.
+No per-table narrative paragraphs (topic patterns, EN/FR commentary, evaluator
+commentary) — the tables carry that information themselves. The prompt
+instructs the model to ground every claim in the supplied numbers — no
+invented rates.
 
 ## Report layout (stored, re-renderable)
 
-1. **Header** — N evals analyzed, institution, date range, run date, run by.
-2. **Scores by topic group / action** — table (count, % non-perfect) with
-   always-perfect groups highlighted.
-3. **What the explanations say** — themed narrative with counts + quotes.
-4. **Content issues** — count + pattern note.
-5. **EN vs FR** — small table + one-line narrative.
-6. **Evaluator consistency** — per-evaluator table + anomaly flags.
+1. **Header** — N evals analyzed, institution, date range, run date, run by,
+   plus the 2–3 sentence overview.
+2. **Scores by topic and action** — one combined table (count, % non-perfect)
+   with always-perfect groups highlighted and a note for skipped
+   single-evaluation groups.
+3. **What the explanations say** — themed narrative with counts + quotes
+   (themes below the minimum count are omitted).
+4. **Content issues** — count + pattern note; the card is hidden when the
+   count is 0.
+5. **EN vs FR** — small table, no narrative.
+6. **Evaluator consistency** — per-evaluator table + anomaly flags, no
+   narrative.
 
 ## Architecture
 
