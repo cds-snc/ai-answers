@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
 import { formatDecimal } from '../../../utils/numberFormat.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
@@ -159,13 +159,14 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   }
   const evalTitle = withAnswerNumber(baseEvalTitle + evalTitleSuffix);
 
+  if (!evalObj) return null;
+
   return (
-    <GcdsDetails
-      detailsTitle={evalTitle}
+    <details
       className="review-details"
-      tabIndex="0"
-      onGcdsClick={handleToggle}
+      onToggle={handleToggle}
     >
+      <summary>{evalTitle}</summary>
       <div className="review-panel eval-panel">
         <div className="actions" style={{ marginBottom: '1rem' }}>
           <GcdsButton
@@ -300,7 +301,8 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
         )}
       </div>
       {/* Stage timeline - collapsible */}
-      <GcdsDetails detailsTitle={t('reviewPanels.stageTimeline', 'Stage timeline')} className="mt-200">
+      <details className="review-details">
+        <summary>{t('reviewPanels.stageTimeline', 'Stage timeline')}</summary>
         {Array.isArray(evalObj?.stageTimeline) && evalObj.stageTimeline.length > 0 ? (
           <div>
             <table className="review-table">
@@ -337,7 +339,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
         ) : (
           <div>{t('reviewPanels.noStageTimeline', 'No stage timeline available.')}</div>
         )}
-      </GcdsDetails>
+      </details>
       <div className="eval-details">
         <table className="table">
           <tbody>
@@ -354,7 +356,8 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
       
 
             {/* Sentence match trace - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.sentenceMatchTrace', 'Sentence match trace')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.sentenceMatchTrace', 'Sentence match trace')}</summary>
               {sentenceTrace.length > 0 ? (
                 <table className="review-table">
                   <thead>
@@ -387,10 +390,11 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
               ) : (
                 <div>{t('reviewPanels.noSentenceTraces', 'No sentence match traces available.')}</div>
               )}
-            </GcdsDetails>
+            </details>
 
             {/* Fallback details section */}
-            <GcdsDetails detailsTitle={t('reviewPanels.fallbackDetails', 'Fallback details')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.fallbackDetails', 'Fallback details')}</summary>
               <div>
                 <div><strong>{t('reviewPanels.fallbackType', 'Fallback type')}:</strong> {evalObj.fallbackType || ''}</div>
                 <div><strong>{t('reviewPanels.fallbackSourceChatId', 'Fallback source chatId')}:</strong> {renderChatLink(evalObj.fallbackSourceChatId) || ''}</div>
@@ -455,11 +459,12 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
 
                 {/* raw fallback compare data intentionally not shown */}
               </div>
-            </GcdsDetails>
+            </details>
 
             {/* Agent candidate choices per source sentence (if available) */}
             {sentenceTrace.some(s => Array.isArray(s.candidateChoices) && s.candidateChoices.length) ? (
-              <GcdsDetails detailsTitle={t('reviewPanels.agentCandidateChoices', 'Agent candidate choices')} className="mt-200">
+              <details className="review-details">
+                <summary>{t('reviewPanels.agentCandidateChoices', 'Agent candidate choices')}</summary>
                 <table className="review-table">
                   <thead>
                     <tr>
@@ -512,11 +517,12 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                     ))}
                   </tbody>
                 </table>
-              </GcdsDetails>
+              </details>
             ) : null}
 
             {/* Similarity scores - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.similarityScores', 'Similarity scores')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.similarityScores', 'Similarity scores')}</summary>
               <table className="review-table">
                 <thead>
                   <tr>
@@ -537,10 +543,11 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                   </tr>
                 </tbody>
               </table>
-            </GcdsDetails>
+            </details>
 
             {/* Agent usage - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.agentUsage', 'Agent usage')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.agentUsage', 'Agent usage')}</summary>
               <h4>{t('reviewPanels.agentUsage', 'Agent usage')}</h4>
               <div>
                 <strong>{t('reviewPanels.sentenceCompareUsed', 'Sentence compare used')}:</strong> {evalObj.sentenceCompareUsed ? t('common.yes', 'yes') : t('common.no', 'no')}
@@ -611,7 +618,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
               ) : null}
 
               {/* raw fallback compare data intentionally not shown */}
-              </GcdsDetails>
+              </details>
           </>
         ) : (
           <>
@@ -633,7 +640,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
           </>
         )}
       </div>
-    </GcdsDetails>
+    </details>
   );
 };
 

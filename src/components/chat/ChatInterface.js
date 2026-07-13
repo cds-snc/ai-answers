@@ -614,14 +614,12 @@ const ChatInterface = ({
                       message.interaction && (
                         <div className="department-feedback-wrapper">
                           <h3 className="sr-only">
-                            {safeT("homepage.chat.review.assignedTo")}{" "}
                             {departmentAnswerText ? `${departmentAnswerText} - ` : ""}
                             {message.interaction.context?.department ||
                               safeT("homepage.chat.review.noDepartment")}
                           </h3>
                           <p className="department-label-text font-size-text-xsm-nr mb-200" aria-hidden="true">
                             <b>
-                              {safeT("homepage.chat.review.assignedTo")}{" "}
                               {message.interaction.context?.department ||
                                 safeT("homepage.chat.review.noDepartment")}
                             </b>
@@ -651,6 +649,22 @@ const ChatInterface = ({
                                 )}
                               />
                             )}
+                          <div className="inline-review-panels">
+                            <ExpertFeedbackPanel
+                              message={message}
+                              extractSentences={extractSentences}
+                              t={t}
+                              answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                            />
+                            <PublicFeedbackPanel
+                              message={message}
+                              extractSentences={extractSentences}
+                              t={t}
+                              answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                            />
+                            <DownloadPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                            <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                          </div>
                         </div>
                       )}
 
@@ -698,59 +712,36 @@ const ChatInterface = ({
                   </div>
                 )}
 
-                {/* Render review panels just under the FeedbackComponent / "How was this answer?" (very close) */}
+                {/* Show referring URL only for the first AI message with review panels */}
                 {readOnly &&
                   message.sender === "ai" &&
                   !message.error &&
-                  message.interaction && (
-                    <>
-                      {/* Show referring URL only for the first AI message with review panels */}
-                      {readOnly && messages.findIndex(m => m.sender === "ai" && !m.error && m.interaction) === messages.findIndex(m => m.id === message.id) && (
-                        <div
-                          style={{
-                            padding: "0.75rem",
-                            marginTop: "0.5rem",
-                            marginBottom: "0.5rem",
-                            backgroundColor: "#f5f5f5",
-                            borderLeft: "4px solid #26374a",
-                            fontSize: "0.9rem"
-                          }}
+                  message.interaction &&
+                  messages.findIndex(m => m.sender === "ai" && !m.error && m.interaction) === messages.findIndex(m => m.id === message.id) && (
+                    <div
+                      style={{
+                        padding: "0.75rem",
+                        marginTop: "0.5rem",
+                        marginBottom: "0.5rem",
+                        backgroundColor: "#f5f5f5",
+                        borderLeft: "4px solid #26374a",
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
+                      {referringUrl ? (
+                        <a
+                          href={referringUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ wordBreak: "break-all" }}
                         >
-                          <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
-                          {referringUrl ? (
-                            <a
-                              href={referringUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ wordBreak: "break-all" }}
-                            >
-                              {referringUrl}
-                            </a>
-                          ) : (
-                            <span style={{ fontStyle: "italic", color: "#666" }}>none</span>
-                          )}
-                        </div>
+                          {referringUrl}
+                        </a>
+                      ) : (
+                        <span style={{ fontStyle: "italic", color: "#666" }}>none</span>
                       )}
-                      <div
-                        className="inline-review-panels"
-                        style={{ marginTop: "0.25rem" }}
-                      >
-                        <ExpertFeedbackPanel
-                          message={message}
-                          extractSentences={extractSentences}
-                          t={t}
-                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
-                        />
-                        <PublicFeedbackPanel
-                          message={message}
-                          extractSentences={extractSentences}
-                          t={t}
-                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
-                        />
-                        <DownloadPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
-                        <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
-                      </div>
-                    </>
+                    </div>
                   )}
 
               </>

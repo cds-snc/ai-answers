@@ -336,6 +336,22 @@
   font-weight: 600;
 }
 
+.eval-panel + details.review-details {
+  margin-top: var(--gcds-spacing-50);
+}
+
+.inline-review-panels > details:first-of-type {
+  margin-top: var(--gcds-spacing-250);
+}
+
+.review-details > summary + * {
+  margin-top: var(--gcds-spacing-200);
+}
+
+.review-details > *:last-child {
+  margin-bottom: var(--gcds-spacing-200);
+}
+
 .privacy-error-message, .error-message {
   padding: 0rem 1.5rem;
 }
@@ -885,7 +901,7 @@ textarea:focus {
    not inside its fieldset/legend — it's a page heading, not a form control. */
 .expert-rating-container h4.feedback-followup-title {
   font: var(--gcds-font-h4);
-  margin: 0 0 var(--gcds-spacing-150);
+  margin: 0 0 var(--gcds-spacing-200);
   text-wrap: wrap;
   max-width: none;
 }

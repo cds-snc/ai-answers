@@ -177,7 +177,6 @@
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:",
-        "assignedTo": "Assigned to:",
         "noDepartment": "None"
       },
       "section": {

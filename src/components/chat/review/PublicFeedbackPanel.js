@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
@@ -47,11 +46,13 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     }
     const publicTitle = withAnswerNumber(baseTitle + publicTitleSuffix);
 
+    if (!interaction.publicFeedback && !message.publicFeedback) return null;
+
     return (
-        <GcdsDetails detailsTitle={publicTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <details className="review-details" onToggle={(e) => {
             try {
                 // Call handleToggle when the details panel is opened (e.target.open === true)
-                if (e && e.target && !e.target.open) {
+                if (e && e.target && e.target.open) {
                     handleToggle(e);
                 }
             } catch (err) {
@@ -59,6 +60,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
                 handleToggle(e);
             }
         }}>
+            <summary>{publicTitle}</summary>
             <div className="review-panel public-feedback-panel">
                 {loading && <div>{t('common.loading', 'Loading...')}</div>}
                 {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
@@ -76,7 +78,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
                 </div>
                 {/* Only show overall public feedback score and reason; sentence-level chart removed */}
             </div>
-        </GcdsDetails>
+        </details>
     );
 };
 
