@@ -26,16 +26,16 @@
       "learnMore": "Lire plus sur Réponses IA"
     },
     "feedback": {
-      "question": "Cette réponse était-elle utile?",
+      "question": "Cette réponse était-elle utile ?",
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
-      "thankYou": "Merci d'avoir donné votre rétroaction!",
+      "thankYou": "Merci d'avoir donné votre rétroaction !",
       "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
       "send": "Envoyer la rétroaction",
-      "question": "C'était utile?",
+      "question": "C'était utile ?",
       "selectionRequired": "Veuillez sélectionner une raison.",
       "requiredLabel": "obligatoire",
       "yes": {
@@ -176,7 +176,8 @@
       },
       "review": {
         "chatDate": "Date (AAAA-MM-JJ):",
-        "referringUrl": "URL de provenance :"
+        "referringUrl": "URL de provenance :",
+        "noDepartment": "Aucun"
       },
       "section": {
         "heading": "Historique de la conversation – Réponses IA"
@@ -213,7 +214,8 @@
       },
       "submit": "Soumettre l'évaluation",
       "intro": "Évaluez les phrases de la réponse et/ou la citation",
-      "answerNumberLabel": "Réponse {number}"
+      "answerNumberLabel": "Réponse {number}",
+      "labelWithAnswer": "{label} : {answer}"
     }
   },
   "batch": {
@@ -227,7 +229,7 @@
       },
       "processed": {
         "title": "Lots terminés",
-        "description": "Des questions manquantes? Seules les questions qui passent les mesures de protection en matière de confidentialité, de menaces et de manipulation reçoivent une réponse, sont stockées dans la base de données et exportées dans le fichier de sortie."
+        "description": "Des questions manquantes ? Seules les questions qui passent les mesures de protection en matière de confidentialité, de menaces et de manipulation reçoivent une réponse, sont stockées dans la base de données et exportées dans le fichier de sortie."
       }
     },
     "upload": {
@@ -310,7 +312,7 @@
         "excel": "Excel",
         "process": "Traiter",
         "delete": "Supprimer",
-        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot?",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
         "cancel": "Annuler"
       },
       "types": {
@@ -403,25 +405,25 @@
       "createIndexes": "Créer/Reconstruire des index",
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
-      "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer?",
+      "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer ?",
       "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
       "createIndexesError": "Échec de la création des index: {error}",
-      "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer?",
+      "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer ?",
       "dropIndexesSuccess": "Indexes supprimés avec succès pour {count} collections",
       "dropIndexesError": "Échec de la suppression des index: {error}",
       "deleteSystemLogsConfirm": "Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = \"system\" ? Cette action est irréversible.",
       "deleteSystemLogsSuccess": "Supprimé {count} journaux système.",
       "deleteSystemLogsError": "Échec de la suppression des journaux système: {error}",
-      "deleteAllBatchesConfirm": "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?",
+      "deleteAllBatchesConfirm": "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?",
       "deleteAllBatchesSuccess": "Lots supprimés : {batches}, batchItems supprimés : {batchItems}",
       "deleteAllBatchesError": "Échec de la suppression des lots : {error}",
-      "repairTimestampsConfirm": "Cela ajoutera des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. Êtes-vous sûr de vouloir continuer?",
+      "repairTimestampsConfirm": "Cela ajoutera des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. Êtes-vous sûr de vouloir continuer ?",
       "repairTimestampsSuccess": "Horodatages des outils réparés avec succès. Outils: {updated}/{total}",
       "repairTimestampsError": "Échec de la réparation des horodatages: {error}",
-      "repairExpertFeedbackConfirm": "Cela définira le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types \"public\" ou \"ai\" resteront inchangés. Êtes-vous sûr de vouloir continuer?",
+      "repairExpertFeedbackConfirm": "Cela définira le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types \"public\" ou \"ai\" resteront inchangés. Êtes-vous sûr de vouloir continuer ?",
       "repairExpertFeedbackSuccess": "Types de commentaires d'experts réparés avec succès. Mis à jour: {updated}/{total} ({alreadyCorrect} déjà corrects)",
       "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts: {error}",
-      "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer?",
+      "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer ?",
       "migratePublicFeedbackSuccess": "Migration terminée. {migrated} commentaires migrés.",
       "migratePublicFeedbackError": "Échec de la migration: {error}",
       "collections": {
@@ -1109,7 +1111,7 @@
   "common": {
     "backToAdmin": "Retour à l'administration",
     "close": "Fermer",
-    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données?",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données ?",
     "deleting": "Suppression en cours...",
     "loading": "Chargement...",
     "processing": "Traitement...",
@@ -1154,10 +1156,10 @@
     "interactionUpdatedAt": "Date du chat",
     "allEvalsGenerated": "Toutes les évaluations ont été générées ! Totaux finaux : {processed} réussies, {failed} échouées.",
     "generateEvalsFailed": "Échec de la génération des évaluations. Vérifiez la console pour plus de détails.",
-    "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "deleteEvalsSuccess": "{deleted} évaluations et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
     "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
-    "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
     "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails.",
     "noMatchReasonTypes": {
@@ -1650,7 +1652,7 @@
     },
     "allEmbeddingsGenerated": "Tous les incorporations ont été générées !",
     "generateEmbeddingsFailed": "Échec de la génération des incorporations. Vérifiez la console pour plus de détails.",
-    "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer?",
+    "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès !",
     "docdb8Capability": {
       "title": "Test des capacités de recherche vectorielle de DocumentDB 8",
@@ -1710,7 +1712,7 @@
   },
   "scenarioOverrides": {
     "title": "Remplacements de scénarios",
-    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Assurez-vous de ne pas avoir ajouté d'ambiguïté! Restez concis pour réduire la charge cognitive de l'IA. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester. Testez avec plusieurs questions plusieurs fois.",
+    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Assurez-vous de ne pas avoir ajouté d'ambiguïté ! Restez concis pour réduire la charge cognitive de l'IA. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester. Testez avec plusieurs questions plusieurs fois.",
     "description2": "Si vous êtes satisfait des modifications, alertez l'équipe Réponses IA, copiez et collez la version modifiée pour eux, et ils effectueront et publieront les modifications dans le produit Réponses IA en direct.",
     "sections": {
       "editOverride": "Modifier le remplacement",
@@ -1788,7 +1790,7 @@
       "hideUpload": "Masquer le téléversement",
       "upload": "Téléverser un ensemble de données",
       "uploading": "Téléversement en cours...",
-      "uploadSuccess": "Ensemble de données téléversé avec succès!",
+      "uploadSuccess": "Ensemble de données téléversé avec succès !",
       "uploadFailed": "Le téléversement a échoué",
       "readFailed": "Impossible de lire le fichier",
       "delete": "Supprimer l'ensemble de données",
@@ -1796,7 +1798,7 @@
       "viewing": "Affichage des données : {name}",
       "backToList": "Retour aux ensembles",
       "errorLoadingRows": "Échec du chargement des données.",
-      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données? Cette action est irréversible.",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
       "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
       "nameLabel": "Nom de l'ensemble de données",
       "descLabel": "Description",
@@ -1905,7 +1907,7 @@
         "startingRun": "Démarrage de votre analyse. Veuillez patienter un instant.",
         "startedCount": "{count} exécutions d'analyse lancées.",
         "resumeStarted": "La reprise a été demandée.",
-        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot?",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
         "processingStarted": "Traitement démarré.",
         "startProcessingError": "Échec du démarrage du traitement.",
         "startAnalysisFailed": "Échec du démarrage de l'analyse.",
