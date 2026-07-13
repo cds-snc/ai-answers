@@ -336,6 +336,22 @@
   font-weight: 600;
 }
 
+.eval-panel + details.review-details {
+  margin-top: var(--gcds-spacing-50);
+}
+
+.inline-review-panels > details:first-of-type {
+  margin-top: var(--gcds-spacing-250);
+}
+
+.review-details > summary + * {
+  margin-top: var(--gcds-spacing-200);
+}
+
+.review-details > *:last-child {
+  margin-bottom: var(--gcds-spacing-200);
+}
+
 .privacy-error-message, .error-message {
   padding: 0rem 1.5rem;
 }
@@ -562,25 +578,15 @@
   margin-bottom: 20px;
 }
 
-/* Expert feedback only — .md is scoped to ExpertFeedbackComponent's outer
-   fieldset (PublicFeedbackComponent dropped it, see .feedback-reason-fieldset
-   above). Indents each rating radio/checkbox row under its question text. */
-.gc-chckbxrdio.md .radio,
-.gc-chckbxrdio.md .checkbox {
+/* Expert feedback only. Was keyed off .gc-chckbxrdio.md, but .md is now also
+   used by BatchUpload's language toggle (a shared size, not an expert-feedback
+   marker) — scope to expert-rating-fieldset specifically so that reuse doesn't
+   pull in this indent. Indents each rating radio/checkbox row under its
+   question text. */
+.expert-rating-fieldset .radio,
+.expert-rating-fieldset .checkbox {
   margin-left: var(--gcds-spacing-300);
   margin-right: var(--gcds-spacing-300);
-}
-
-/* .list-disc (gcds-utility) sets no spacing between <li> items, so the
-   "When to code as harmful" bullets read as one packed block. Scoped to
-   .harmful-details so the citation-link list elsewhere (also .list-disc)
-   is unaffected. */
-.harmful-details li {
-  margin-bottom: var(--gcds-spacing-200);
-}
-
-.harmful-details li:last-child {
-  margin-bottom: 0;
 }
 
 /* details summary has display: flex !important (global.css), which collapses
@@ -738,7 +744,7 @@
 
 .field-container:has(textarea:focus) .hint-text,
 .field-container:has(textarea:focus) label,
-.field-container:has(textarea:focus) .referring-url-chat,
+.field-container:has(textarea:focus) .referring-url-label,
 .field-container:has(textarea:focus) #displayReferringURL {
   color: var(--gcds-details-focus-background);
 }
@@ -755,7 +761,7 @@
 @supports not selector(:has(a)) {
   .field-container:focus-within .hint-text,
   .field-container:focus-within label,
-  .field-container:focus-within .referring-url-chat,
+  .field-container:focus-within .referring-url-label,
   .field-container:focus-within #displayReferringURL {
     color: var(--gcds-details-focus-background);
   }
@@ -840,7 +846,7 @@ textarea:focus {
 }
 
 .chat-id,
-.referring-url-chat,
+.referring-url-label,
 #displayReferringURL {
   border: 1px solid #d9d9d9;
   border-radius: 999px;
@@ -895,7 +901,7 @@ textarea:focus {
    not inside its fieldset/legend — it's a page heading, not a form control. */
 .expert-rating-container h4.feedback-followup-title {
   font: var(--gcds-font-h4);
-  margin: 0 0 var(--gcds-spacing-150);
+  margin: 0 0 var(--gcds-spacing-200);
   text-wrap: wrap;
   max-width: none;
 }
@@ -1127,12 +1133,11 @@ fieldset.gc-chckbxrdio legend {
   font-size: 18px;
   margin-left: 12px
 }
-.referring-url-chat, #displayReferringURL {
+.referring-url-label, #displayReferringURL {
   font-size: 16px;
   line-height: 1.55;
   background-color: #f5f5ff;
   padding: var(--gcds-spacing-75) var(--gcds-spacing-175);
   color: #333;
   display: inline-block;
-  margin-bottom: 24px;
 }

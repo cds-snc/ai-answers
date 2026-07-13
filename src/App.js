@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
@@ -194,6 +194,16 @@ const AppLayout = () => {
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
 
+  // Set the html lang attribute synchronously (before paint/microtasks) so that
+  // GCDS web components (gcds-header, gcds-footer) resolve the correct language
+  // the first time their componentWillLoad reads the ancestor [lang] attribute.
+  // A useEffect here fires too late: it runs after those components have already
+  // initialized off the stale <html lang="en"> from index.html, briefly rendering
+  // untranslated skip-link and footer text on French page loads.
+  useLayoutEffect(() => {
+    document.documentElement.lang = currentLang;
+  }, [currentLang]);
+
   useEffect(() => {
     // Removed the auth expiration checker setup
   }, []);
@@ -227,9 +237,6 @@ const AppLayout = () => {
       const projectStatus = currentLang === 'fr' ? 'bêta' : 'beta';
       projectStatusMeta.setAttribute('content', projectStatus);
     }
-
-    // Update html lang attribute
-    document.documentElement.lang = currentLang;
 
     // Only update title and description for pages without custom metadata
     if (!isCustomMetadataPage) {

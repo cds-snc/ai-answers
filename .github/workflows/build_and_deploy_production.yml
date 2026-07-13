@@ -42,7 +42,7 @@ jobs:
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Configure aws credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@master
+        uses: aws-actions/configure-aws-credentials@517a711dbcd0e402f90c77e7e2f81e849156e31d # v6.2.2
         with:
           role-to-assume: arn:aws:iam::730335533085:role/ai_answers_release
           role-session-name: AIAnswersGitHubActions

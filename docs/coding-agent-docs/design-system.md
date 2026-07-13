@@ -40,6 +40,10 @@ When adding any style, follow this order — stop at the first option that works
 2. **GC DS token** — no utility class fits, but a `var(--gcds-*)` token covers the value
 3. **Hardcoded value** — no token exists; leave a short comment so a designer can review it later
 
+**Check for a related element's existing class before writing a new one.** Custom CSS should be lean, purpose-driven, and consistent across like elements — if a sibling or related element already solves the same problem (e.g. list-item spacing, a form-embedded `<details>` border), reuse or extend that class instead of writing a near-duplicate. Example: `.canada-ca-list-spcd-2 li` spacing is shared by BatchUpload's CSV-instructions list and `ExpertFeedbackComponent`'s harmful-details list, rather than each defining its own rule.
+
+**Write custom CSS as though it could be proposed back to GC DS.** Think through what a real token contribution would look like, not just what solves the immediate problem in front of you. Name proposal-candidate classes with a `canada-ca-` prefix — marking them as coming from the Canada.ca Specification team, distinct from GC DS's own classes or older Canada.ca/WET-BOEW naming. If a custom value reveals a genuine gap in GC DS's token set, leave a `TOKEN SUGGESTION` comment describing what GC DS could add and why — e.g. `.canada-ca-list-spcd-2` uses `1.25em` instead of a fixed `--gcds-spacing-*` token because GC DS's spacing scale is rem-based and can't scale with font size the way list-item spacing needs to; the comment proposes `--gcds-spacing-text-1-25x: 1.25em` as a font-relative step GC DS could add alongside its fixed scale.
+
 ### CSS shortcuts vs. custom CSS with tokens
 
 The choice between applying utility classes directly in markup vs. writing a custom CSS class depends on complexity:
@@ -122,6 +126,10 @@ When a designer requests a CSS review on a specific page or file, audit the rele
 
 7. **`!important` declarations without a rationale comment.** Flag any `!important` that lacks an explanatory comment. `!important` is sometimes necessary to override third-party styles, but must be documented so future maintainers know why it's there and can remove it safely if the override is no longer needed.
 
+8. **Missed reuse across related elements.** A new custom class duplicates a rule a sibling or related element already defines for the same purpose (e.g. list-item spacing, a form-embedded `<details>` border). Flag for consolidation into one shared class.
+
+9. **Opportunities to frame as a token proposal.** A custom value solves a real, generalizable gap in GC DS's token set — not a one-off visual tweak. Spot these and propose shaping them into a `TOKEN SUGGESTION`: name it, scope it, and describe what GC DS could add and why, surfacing the gap as a contribution candidate rather than leaving it as an isolated workaround.
+
 For each finding, include:
 - The class name(s) affected
 - The page(s) where those classes are visually rendered, so changes can be verified in the browser after implementation (e.g. "visible on `/en/admin/dashboard` — exec dashboard cards")
@@ -129,3 +137,5 @@ For each finding, include:
 ## GCDS React components
 
 Prefer building UI elements with CSS shortcuts over GCDS React components. CSS shortcuts produce standard HTML elements that can be tracked with analytics; GCDS React components cannot yet. Avoid introducing new GCDS React components — existing usage can be backtracked as necessary.
+
+**Exception for complex patterns behind admin auth.** On admin/partner-only pages (not public-facing), since these are internal tools where tracking through analytics isn't a requirement, and ensuring the ability to refine UX behaviour for complex chat interactions isn't a factor. For a component with significant built-in behaviour that would be substantial and error-prone to hand-roll correctly (e.g. `gcds-file-uploader`'s drag-drop, file list/remove UI, validation states, and ARIA wiring), it's reasonable to adopt the GCDS React component directly rather than reimplementing it with CSS shortcuts or GC DS tokens, over a raw HTML element. Still avoid it for simple elements (links, buttons, headings) where a CSS shortcut is just as easy and keeps analytics tracking intact.

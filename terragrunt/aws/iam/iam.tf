@@ -44,7 +44,24 @@ data "aws_iam_policy_document" "ai-answers-ssm-policy" {
   }
 }
 
+data "aws_iam_policy_document" "ai-answers-ecs-exec-policy" {
+  count = var.env == "staging" ? 1 : 0
+
+  statement {
+    sid    = "AllowEcsExec"
+    effect = "Allow"
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    resources = ["*"]
+  }
+}
+
 resource "aws_iam_policy" "ai-answers-ssm-policy" {
+  provider    = aws.core_services
   name        = "${var.product_name}-ssm-policy"
   description = "Policy for ${var.product_name} ${var.env} to access SSM parameters"
   policy      = data.aws_iam_policy_document.ai-answers-ssm-policy.json
@@ -56,19 +73,42 @@ resource "aws_iam_policy" "ai-answers-ssm-policy" {
 }
 
 resource "aws_iam_role" "ai-answers-ecs-role" {
+  provider           = aws.core_services
   name               = "${var.product_name}-ecs-role"
   assume_role_policy = data.aws_iam_policy_document.ai-answers-ecs-policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "ai-answers-ecs-policy" {
+  provider   = aws.core_services
   role       = aws_iam_role.ai-answers-ecs-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 resource "aws_iam_policy_attachment" "ai-answers-ssm-policy" {
+  provider   = aws.core_services
   name       = "${var.product_name}-ssm-policy"
   policy_arn = aws_iam_policy.ai-answers-ssm-policy.arn
   roles      = [aws_iam_role.ai-answers-ecs-role.name]
+}
+
+resource "aws_iam_policy" "ai-answers-ecs-exec-policy" {
+  provider    = aws.core_services
+  count       = var.env == "staging" ? 1 : 0
+  name        = "${var.product_name}-ecs-exec-policy"
+  description = "Allow ${var.product_name} ECS tasks to use ECS Exec in ${var.env}"
+  policy      = data.aws_iam_policy_document.ai-answers-ecs-exec-policy[0].json
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ai-answers-ecs-exec-policy" {
+  provider   = aws.core_services
+  count      = var.env == "staging" ? 1 : 0
+  role       = aws_iam_role.ai-answers-ecs-role.name
+  policy_arn = aws_iam_policy.ai-answers-ecs-exec-policy[0].arn
 }
 
 # Policy document for assuming the cross-account Bedrock invoke role
@@ -84,6 +124,7 @@ data "aws_iam_policy_document" "ai_answers_assume_bedrock_role" {
 
 # Customer-managed policy for cross-account Bedrock access
 resource "aws_iam_policy" "ai_answers_assume_bedrock_role" {
+  provider    = aws.core_services
   count       = var.bedrock_invoke_role_arn != "" ? 1 : 0
   name        = "${var.product_name}-assume-bedrock-invoke-role"
   description = "Allow ${var.product_name} ECS tasks to assume the Bedrock invoke role"
@@ -97,6 +138,7 @@ resource "aws_iam_policy" "ai_answers_assume_bedrock_role" {
 
 # Attach the cross-account assume role policy to the ECS role
 resource "aws_iam_role_policy_attachment" "ai_answers_assume_bedrock_role" {
+  provider   = aws.core_services
   count      = var.bedrock_invoke_role_arn != "" ? 1 : 0
   role       = aws_iam_role.ai-answers-ecs-role.name
   policy_arn = aws_iam_policy.ai_answers_assume_bedrock_role[0].arn
@@ -121,12 +163,14 @@ data "aws_iam_policy_document" "s3_access_policy" {
 }
 
 resource "aws_iam_policy" "s3_access_policy" {
+  provider    = aws.core_services
   name        = "${var.product_name}-s3-policy"
   description = "Policy for ${var.product_name} to access S3"
   policy      = data.aws_iam_policy_document.s3_access_policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "s3_access_policy" {
+  provider   = aws.core_services
   role       = aws_iam_role.ai-answers-ecs-role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
 }
