@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.162.0](https://github.com/cds-snc/ai-answers/compare/v1.161.0...v1.162.0) (2026-07-13)
+
+
+### Features
+
+* departmental labels ([be04aa6](https://github.com/cds-snc/ai-answers/commit/be04aa6f0c9692e0bc5778a9fb6dd5536dfa9397))
+* departmental labels ([d354ee3](https://github.com/cds-snc/ai-answers/commit/d354ee348fc2fe447982c273e985259e7f2a140e))
+* departmental labels, OL refinement ([7af0c7a](https://github.com/cds-snc/ai-answers/commit/7af0c7afe8c08f53438072e2e1b9d04495de1825))
+* **ecs-exec-policy:** add ECS Exec policy for staging environment ([82ab918](https://github.com/cds-snc/ai-answers/commit/82ab9186b07de6647be63d46df0b20879b6b649f))
+* **ecs-exec-policy:** add ECS Exec policy for staging environment ([d30578a](https://github.com/cds-snc/ai-answers/commit/d30578aa6b0c9724beb109ebf7de8646694d0417))
+* hide eval options if no results ([68d2a69](https://github.com/cds-snc/ai-answers/commit/68d2a69a3114c4d900b43ec57753c520c1dd89a3))
+
+
+### Bug Fixes
+
+* set html lang synchronously to fix untranslated header-footer fl… ([811431d](https://github.com/cds-snc/ai-answers/commit/811431d4a218b3a700f30f8321758967881926bd))
+
+
+### Miscellaneous Chores
+
+* **ci:** upgrade configure-aws-credentials to v6.2.2 and fix tf_pla… ([a4625af](https://github.com/cds-snc/ai-answers/commit/a4625af410f733c00796150aa00614effb0ab651))
+* **ci:** upgrade configure-aws-credentials to v6.2.2 and fix tf_plan_staging workflow_dispatch crash ([49a3bbc](https://github.com/cds-snc/ai-answers/commit/49a3bbc9fe9653aa95a5c39d2dc553ce7e1452d9))
+* **infra:** upgrade cds terraform modules to v11.4.3 ([478ed85](https://github.com/cds-snc/ai-answers/commit/478ed85c66cecac7cd4bca1d1d1d3a1a1e8c1e44))
+* **infra:** upgrade cds terraform modules to v11.4.3 ([f0f8836](https://github.com/cds-snc/ai-answers/commit/f0f8836e85b02b42b71c08f54bc0e88b734c018c))
+
 ## [1.161.0](https://github.com/cds-snc/ai-answers/compare/v1.160.0...v1.161.0) (2026-07-09)
 
 
