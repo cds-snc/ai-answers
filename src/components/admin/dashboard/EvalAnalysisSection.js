@@ -87,69 +87,67 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
     <div>
       <h2 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.title')}</h2>
       <div className="dashboard-section">
-        <div className="dashboard-card">
-          <p className="font-size-text-xsm-nr">{t('partnerDashboard.evalAnalysis.description')}</p>
+        <p className="font-size-text-xsm-nr">{t('partnerDashboard.evalAnalysis.description')}</p>
 
-          {!appliedDepartment && (
-            <p className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
-          )}
+        {!appliedDepartment && (
+          <p className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
+        )}
 
-          {appliedDepartment && count !== null && !running && (
-            <>
-              {tooFew && (
-                <div className="dashboard-warning">
-                  <span className="dashboard-warning__icon" aria-hidden="true" />
-                  {t('partnerDashboard.evalAnalysis.tooFew')
-                    .replace('{min}', fmtN(precheck.min))
-                    .replace('{count}', fmtN(count))}
-                </div>
-              )}
-              {tooMany && (
-                <div className="dashboard-warning">
-                  <span className="dashboard-warning__icon" aria-hidden="true" />
-                  {t('partnerDashboard.evalAnalysis.tooMany')
-                    .replace('{max}', fmtN(precheck.max))
-                    .replace('{count}', fmtN(count))}
-                </div>
-              )}
-              {!tooFew && !tooMany && (
-                <p className="font-size-text-small">
-                  {t('partnerDashboard.evalAnalysis.precheckCount').replace('{count}', fmtN(count))}
-                </p>
-              )}
-            </>
-          )}
+        {appliedDepartment && count !== null && !running && (
+          <>
+            {tooFew && (
+              <div className="dashboard-warning">
+                <span className="dashboard-warning__icon" aria-hidden="true" />
+                {t('partnerDashboard.evalAnalysis.tooFew')
+                  .replace('{min}', fmtN(precheck.min))
+                  .replace('{count}', fmtN(count))}
+              </div>
+            )}
+            {tooMany && (
+              <div className="dashboard-warning">
+                <span className="dashboard-warning__icon" aria-hidden="true" />
+                {t('partnerDashboard.evalAnalysis.tooMany')
+                  .replace('{max}', fmtN(precheck.max))
+                  .replace('{count}', fmtN(count))}
+              </div>
+            )}
+            {!tooFew && !tooMany && (
+              <p className="font-size-text-small">
+                {t('partnerDashboard.evalAnalysis.precheckCount').replace('{count}', fmtN(count))}
+              </p>
+            )}
+          </>
+        )}
 
-          <GcdsButton
-            onClick={() => runAnalysis(appliedFilters)}
-            disabled={!canRun || undefined}
-            className="hydrated"
-          >
-            {t('partnerDashboard.evalAnalysis.runButton')}
-          </GcdsButton>
+        <GcdsButton
+          onClick={() => runAnalysis(appliedFilters)}
+          disabled={!canRun || undefined}
+          className="hydrated"
+        >
+          {t('partnerDashboard.evalAnalysis.runButton')}
+        </GcdsButton>
 
-          {running && (
-            <p className="font-size-text-small" role="status" style={{ marginTop: 12 }}>
-              {progressLabel()}
-            </p>
-          )}
+        {running && (
+          <p className="font-size-text-small" role="status" style={{ marginTop: 12 }}>
+            {progressLabel()}
+          </p>
+        )}
 
-          {runError && (
-            <div className="dashboard-error" style={{ marginTop: 12 }}>
-              {runErrorLabel()}
-            </div>
-          )}
-        </div>
+        {runError && (
+          <div className="dashboard-error" style={{ marginTop: 12 }}>
+            {runErrorLabel()}
+          </div>
+        )}
       </div>
 
-      {/* Past analyses for this institution */}
+      {/* Past analyses for this institution — the global details/summary
+          styling provides the box; no extra card chrome. */}
       {appliedDepartment && pastRuns.length > 0 && (
         <div className="dashboard-section">
-          <div className="dashboard-card">
-            <details>
-              <summary className="card-title" style={{ cursor: 'pointer' }}>
-                {t('partnerDashboard.evalAnalysis.pastRuns.title')}
-              </summary>
+          <details>
+            <summary style={{ cursor: 'pointer' }}>
+              {t('partnerDashboard.evalAnalysis.pastRuns.title')}
+            </summary>
               <div style={{ overflowX: 'auto' }}>
                 <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
@@ -188,8 +186,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
                   </tbody>
                 </table>
               </div>
-            </details>
-          </div>
+          </details>
         </div>
       )}
 

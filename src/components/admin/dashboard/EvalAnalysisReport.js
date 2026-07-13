@@ -61,9 +61,11 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   return (
     <div>
-      {/* Header card: what was analyzed */}
-      <div className="dashboard-card">
-        <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.title')}</h3>
+      {/* Header: what was analyzed. Plain sections with dashboard-style
+          headings — the card border/box chrome is reserved for the stat and
+          chart cards elsewhere on the dashboard. */}
+      <div className="dashboard-section">
+        <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.title')}</h3>
         <p className="font-size-text-xsm-nr">
           {t('partnerDashboard.evalAnalysis.report.header')
             .replace('{count}', fmtN(analysis.evalCount))
@@ -89,13 +91,12 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
             {t('partnerDashboard.evalAnalysis.report.partial')}
           </div>
         )}
-        {insights && narrative(insights.overview)}
       </div>
 
       {/* Scores by combined topic — action group (Tier 2 cross-tab) */}
       {crossTab && Array.isArray(crossTab.groups) && (
-        <div className="dashboard-card">
-          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.topicActionsTitle')}</h3>
+        <div className="dashboard-section">
+          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.topicActionsTitle')}</h3>
           {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colTopicAction'))}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
@@ -109,8 +110,8 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
       {/* Explanation themes */}
       {insights && Array.isArray(insights.explanationThemes) && insights.explanationThemes.length > 0 && (
-        <div className="dashboard-card">
-          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.themesTitle')}</h3>
+        <div className="dashboard-section">
+          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.themesTitle')}</h3>
           {insights.explanationThemes.map((theme, i) => (
             <div key={i} style={{ marginBottom: 16 }}>
               <p style={{ marginBottom: 4 }}>
@@ -136,8 +137,8 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
       {/* Content issues — only when some were flagged; no card for a zero count */}
       {stats && stats.contentIssueCount > 0 && (
-        <div className="dashboard-card">
-          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.contentIssuesTitle')}</h3>
+        <div className="dashboard-section">
+          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.contentIssuesTitle')}</h3>
           <p className="font-size-text-xsm-nr">
             {t('partnerDashboard.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
           </p>
@@ -147,8 +148,8 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
       {/* EN vs FR */}
       {stats && (
-        <div className="dashboard-card">
-          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
+        <div className="dashboard-section">
+          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
             <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -180,8 +181,8 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
       {/* Evaluator consistency */}
       {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
-        <div className="dashboard-card">
-          <h3 className="card-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
+        <div className="dashboard-section">
+          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
             <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>

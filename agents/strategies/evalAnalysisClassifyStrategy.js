@@ -19,7 +19,7 @@ const extractJson = (content, openChar, closeChar) => {
   }
 };
 
-const TOPIC_PROPOSAL_PROMPT = `You are analyzing questions asked to a Government of Canada AI assistant so a team of expert evaluators can spot score patterns by topic.
+const TOPIC_PROPOSAL_PROMPT = `You are analyzing questions asked to a Government of Canada AI assistant so a team of expert evaluators can spot  patterns by topic.
 
 Propose a set of topic groups that partitions the sample questions by the program, service, or subject users were asking about. Name the thing, not the activity: a separate pass tags what the user was trying to do (apply, sign in, change contact information…), so "Canada child benefit" is right and "Updating address with CRA" is wrong — the action half would be redundant. Aim for groups specific enough that score differences between them are actionable (a named service, program or subject — not "general inquiries"), but broad enough that most groups will collect several questions. 5-15 groups is the useful range. The seed vocabulary shows the granularity wanted; use its names when they fit the sample, but derive groups from the questions themselves — do not include seed entries nothing was asked about. Citation and referring URLs are strong clues to the subject.
 

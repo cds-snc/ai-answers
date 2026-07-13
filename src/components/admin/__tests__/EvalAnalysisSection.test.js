@@ -73,7 +73,6 @@ describe('EvalAnalysisReport', () => {
       unclassifiedCount: 0
     },
     insights: {
-      overview: 'Most answers score perfectly; deductions cluster on eligibility nuances.',
       explanationThemes: [
         { theme: 'Confusing yes/no openers', count: 3, note: 'Experts flagged ambiguous openings.', examples: ['The no is confusing.'] }
       ],

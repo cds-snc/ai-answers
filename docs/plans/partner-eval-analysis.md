@@ -111,7 +111,6 @@ One synthesis call, in the **dashboard language**, given: Tier 1 stats, the
 Tier 2 cross-tab, and the raw explanation texts (low-score + content-issue
 rows). Produces only:
 
-- A 2–3 sentence **overview**.
 - What the low-score explanations indicate (themes, each with a count and 1–2
   example quotes). A theme must cover at least **max(2, 20% of the non-perfect
   rows)** — asked of the model in the prompt AND filtered on its output; rarer
@@ -125,8 +124,8 @@ invented rates.
 
 ## Report layout (stored, re-renderable)
 
-1. **Header** — N evals analyzed, institution, date range, run date, run by,
-   plus the 2–3 sentence overview.
+1. **Header** — N evals analyzed, institution, date range, run date, run by.
+   No summary paragraph — the tables and themes carry the findings.
 2. **Scores by topic and action** — one combined table (count, % non-perfect)
    with always-perfect groups highlighted and a note for skipped
    single-evaluation groups.
