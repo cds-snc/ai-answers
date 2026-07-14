@@ -5,7 +5,7 @@ import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { getItemVerdict } from '../../src/utils/experimental/batchItems.js';
-import { REFERENCE_ANSWER_ALIASES } from '../../services/experimental/datasetColumns.js';
+import { pickReferenceAnswer } from '../../services/experimental/datasetColumns.js';
 
 // Analyzers whose per-item verdicts are meaningless without a comparison
 // answer: similar-answer just reports "no baseline" (all green), no-analyzer
@@ -13,8 +13,7 @@ import { REFERENCE_ANSWER_ALIASES } from '../../services/experimental/datasetCol
 // capture runs, not scored runs.
 const REFERENCE_REQUIRED_ANALYZERS = ['similar-answer', 'no-analyzer'];
 
-const hasReferenceAnswer = (row) => REFERENCE_ANSWER_ALIASES
-    .some(key => String(row?.data?.[key] || '').trim() !== '');
+const hasReferenceAnswer = (row) => String(pickReferenceAnswer(row?.data) || '').trim() !== '';
 
 const resolveAnalyzerIds = (config = {}) => {
     if (Array.isArray(config.analyzerIds) && config.analyzerIds.length > 0) return config.analyzerIds;

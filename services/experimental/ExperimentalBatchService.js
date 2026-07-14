@@ -10,7 +10,7 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
-import { BASELINE_ANSWER_ALIASES } from './datasetColumns.js';
+import { pickExplicitReferenceAnswer, pickReferenceAnswer } from './datasetColumns.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -159,17 +159,17 @@ const resolveWorkflowName = (workflow = '') => {
     return WORKFLOW_ALIASES[trimmed] || trimmed;
 };
 
-const prepareQaPairRowsForComparison = (items, { baselineRunSelected = false } = {}) => items.map((item = {}) => {
-    const baselineAnswer = pickExactField(item, BASELINE_ANSWER_ALIASES);
+const prepareQaPairRowsForComparison = (items, { referenceRunSelected = false } = {}) => items.map((item = {}) => {
+    const referenceAnswer = pickExplicitReferenceAnswer(item);
     const uploadedAnswer = pickNormalizedAnswer(item);
 
-    if (!baselineRunSelected && (baselineAnswer || !uploadedAnswer)) {
+    if (!referenceRunSelected && (referenceAnswer || !uploadedAnswer)) {
         return item;
     }
 
     const next = { ...item };
-    if (!baselineRunSelected && uploadedAnswer) {
-        next.baselineAnswer = uploadedAnswer;
+    if (!referenceRunSelected && uploadedAnswer) {
+        next.referenceAnswer = uploadedAnswer;
     }
 
     for (const alias of ANSWER_ALIASES) {
@@ -292,17 +292,18 @@ class ExperimentalBatchService {
 
             finalItems = rows.map((r, idx) => {
                 const data = { ...r.data };
-                // If comparing against previous run, set baselineAnswer to previous run's answer
+                // If comparing against previous run, set referenceAnswer to the previous run's answer.
                 if (baselineByRowIndex.size > 0) {
                     // Batch items are numbered idx + 1 over the same sorted rows,
                     // so position is the primary key; r.rowIndex is the fallback.
                     const match = baselineByRowIndex.get(idx + 1) || baselineByRowIndex.get(r.rowIndex);
                     if (match) {
-                        data.baselineAnswer = match.answer;
-                        data.baselineAnalysisResults = match.analysisResults || {};
-                        data.baselineMatch = match.match;
-                        data.baselineFlagged = match.flagged;
-                        data.baselineChatId = match.chatId || '';
+                        data.referenceAnswer = match.answer;
+                        data.referenceAnswer = match.answer;
+                        data.referenceAnalysisResults = match.analysisResults || {};
+                        data.referenceMatch = match.match;
+                        data.referenceFlagged = match.flagged;
+                        data.referenceChatId = match.chatId || '';
 
                         // Keep baseline output separate from the current answer. If the
                         // dataset row has no answer, processing will generate a fresh one.
@@ -323,7 +324,7 @@ class ExperimentalBatchService {
             const analyzerConfig = await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId);
             if (sourceDatasetType === 'qa-pair' && analyzerConfig?.inputType === 'comparison') {
                 finalItems = prepareQaPairRowsForComparison(finalItems, {
-                    baselineRunSelected: Boolean(batchData.config?.baselineRunId)
+                    referenceRunSelected: Boolean(batchData.config?.baselineRunId)
                 });
             }
             const validation = analyzerConfig?.validateBatch(finalItems);
@@ -351,11 +352,11 @@ class ExperimentalBatchService {
             return Array.from({ length: trials }, (_, trialIdx) => ({
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
-                baselineAnswer: pickExactField(item, BASELINE_ANSWER_ALIASES) || '',
-                baselineAnalysisResults: item.baselineAnalysisResults || {},
-                baselineMatch: item.baselineMatch,
-                baselineFlagged: item.baselineFlagged,
-                baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
+                referenceAnswer: pickReferenceAnswer(item) || '',
+                referenceAnalysisResults: item.referenceAnalysisResults || {},
+                referenceMatch: item.referenceMatch,
+                referenceFlagged: item.referenceFlagged,
+                referenceChatId: item.referenceChatId || item.originalData?.referenceChatId || '',
                 referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
                 // Each trial is an independent conversation thread. Rows that
                 // share a source chatId (multi-turn datasets) must also share
@@ -494,10 +495,10 @@ class ExperimentalBatchService {
                         const result = await this._runAnalyzer(analyzerDef, {
                             question: item.question,
                             answer: item.answer || '',
-                            baselineAnswer: item.baselineAnswer,
-                            baselineAnalysisResults: item.baselineAnalysisResults,
-                            baselineMatch: item.baselineMatch,
-                            baselineFlagged: item.baselineFlagged,
+                            referenceAnswer: item.referenceAnswer,
+                            referenceAnalysisResults: item.referenceAnalysisResults,
+                            referenceMatch: item.referenceMatch,
+                            referenceFlagged: item.referenceFlagged,
                             config: { ...(batch.config.analyzerConfig || {}), aiProvider: batch.config.aiProvider },
                             originalData: {
                                 ...(item.originalData || {}),

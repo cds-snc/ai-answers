@@ -9,8 +9,6 @@ import { formatNumber } from '../../utils/numberFormat.js';
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
 const NO_ANALYZER_ID = 'no-analyzer';
-// Keep in sync with BASELINE_ANSWER_ALIASES in ExperimentalBatchService.js
-const REFERENCE_COLUMN_NAMES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -391,8 +389,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         batch.status === 'completed' && (!selectedAnalyzerId || canBaseline(batch))
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
-    const datasetHasReferenceColumn = (selectedDataset?.columns || [])
-        .some(col => REFERENCE_COLUMN_NAMES.includes(col?.name));
+    const datasetHasReferenceColumn = Boolean(selectedDataset?.hasReferenceAnswer);
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
