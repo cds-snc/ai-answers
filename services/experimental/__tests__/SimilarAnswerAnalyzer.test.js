@@ -31,7 +31,7 @@ describe('SimilarAnswerAnalyzer', () => {
 
         const result = await analyzer.analyze({
             answer: '<s-1>The deadline is June 1, 2026.</s-1>',
-            baselineAnswer: 'The deadline is June 1, 2026.'
+            referenceAnswer: 'The deadline is June 1, 2026.'
         });
 
         expect(result.status).toBe('pass');
@@ -45,7 +45,7 @@ describe('SimilarAnswerAnalyzer', () => {
 
         const result = await analyzer.analyze({
             answer: '',
-            baselineAnswer: 'Apply by June 1, 2026.'
+            referenceAnswer: 'The deadline is June 1, 2026.'
         });
 
         expect(result.status).toBe('flagged');
@@ -68,7 +68,7 @@ describe('SimilarAnswerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'When is the deadline?',
             answer: 'The deadline is July 1, 2026.',
-            baselineAnswer: 'The deadline is June 1, 2026.'
+            referenceAnswer: 'The deadline is June 1, 2026.'
         });
 
         expect(createJudgeLLM).toHaveBeenCalledWith('azure');
@@ -95,7 +95,7 @@ describe('SimilarAnswerAnalyzer', () => {
         const analyzer = new SimilarAnswerAnalyzer({ aiProvider: 'openai-gpt51' });
         await analyzer.analyze({
             answer: 'You can renew online.',
-            baselineAnswer: 'Renew online.'
+            referenceAnswer: 'Renew online.'
         });
 
         expect(createJudgeLLM).toHaveBeenCalledWith('openai-gpt5-mini');
@@ -111,7 +111,7 @@ describe('SimilarAnswerAnalyzer', () => {
 
         await expect(analyzer.analyze({
             answer: 'The current answer.',
-            baselineAnswer: 'The baseline answer.'
+            referenceAnswer: 'The reference answer.'
         })).rejects.toThrow('Invalid JSON output from Similar Answer Judge LLM');
     });
 });

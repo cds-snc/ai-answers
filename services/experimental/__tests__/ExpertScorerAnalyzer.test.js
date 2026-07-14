@@ -13,7 +13,7 @@ describe('ExpertScorerAnalyzer', () => {
 
     it('should return fail immediately if answer is empty', async () => {
         const analyzer = new ExpertScorerAnalyzer();
-        const result = await analyzer.analyze({ question: 'Q', answer: '', baselineAnswer: 'B' });
+        const result = await analyzer.analyze({ question: 'Q', answer: '', referenceAnswer: 'B' });
 
         expect(result.verdict).toBe('fail');
         expect(result.explanation).toContain('empty');
@@ -25,7 +25,7 @@ describe('ExpertScorerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'This is <not-gc>',
-            baselineAnswer: 'Proper answer'
+            referenceAnswer: 'Proper answer'
         });
 
         expect(result.verdict).toBe('fail');
@@ -51,7 +51,7 @@ describe('ExpertScorerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'Can you specify? <clarifying-question>',
-            baselineAnswer: 'Proper answer'
+            referenceAnswer: 'Proper answer'
         });
 
         expect(result.verdict).toBe('needs-review');
@@ -70,7 +70,7 @@ describe('ExpertScorerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'A',
-            baselineAnswer: 'A'
+            referenceAnswer: 'A'
         });
 
         expect(result.verdict).toBe('pass');
@@ -89,7 +89,7 @@ describe('ExpertScorerAnalyzer', () => {
         await analyzer.analyze({
             question: 'Q',
             answer: 'A',
-            baselineAnswer: 'A'
+            referenceAnswer: 'A'
         });
 
         expect(createJudgeLLM).toHaveBeenCalledWith('openai-gpt5-mini');

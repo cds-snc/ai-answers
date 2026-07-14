@@ -1,7 +1,7 @@
 import AnalyzerBase from './AnalyzerBase.js';
 import { createJudgeLLM } from '../../../agents/AgentFactory.js';
 import { EXPERT_SCORER_PROMPT } from '../../../agents/prompts/judges/ExpertScorerPrompt.js';
-import { BASELINE_ANSWER_ALIASES } from '../datasetColumns.js';
+import { pickReferenceAnswer } from '../datasetColumns.js';
 
 const normalizeJudgeProvider = (aiProvider = 'azure') => {
     const value = String(aiProvider || '').trim();
@@ -22,7 +22,7 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
 
     static validateBatch(items) {
         const hasReference = Array.isArray(items)
-            && items.some(item => BASELINE_ANSWER_ALIASES.some(alias => String(item?.[alias] || '').trim() !== ''));
+            && items.some(item => String(pickReferenceAnswer(item) || '').trim() !== '');
         if (!hasReference) {
             return {
                 valid: false,
@@ -54,14 +54,15 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
     }
 
     async analyze(input) {
-        const { question, answer, baselineAnswer, originalData } = input;
+        const { question, answer, referenceAnswer, originalData } = input;
 
-        if (!baselineAnswer) {
+        if (!referenceAnswer) {
             throw new Error('Expert scorer requires a reference answer.');
         }
 
         // 1. Pre-LLM auto-checks
-        const baselineType = this._getAnswerType(baselineAnswer);
+        const referenceType = this._getAnswerType(referenceAnswer);
+        // Keep the response contract name stable for existing consumers.
         const answerType = this._getAnswerType(answer);
 
         if (!answer || answer.trim() === '') {
@@ -69,17 +70,17 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
                 verdict: 'fail',
                 confidence: 1.0,
                 explanation: 'New answer is empty.',
-                answerTypeCheck: { goldenType: baselineType, newType: 'empty', flag: 'regression' }
+                answerTypeCheck: { referenceType, newType: 'empty', flag: 'regression' }
             };
         }
 
         // normal -> not-gc is a regression (only if baseline exists)
-        if (baselineAnswer && baselineType === 'normal' && answerType === 'not-gc') {
+        if (referenceAnswer && referenceType === 'normal' && answerType === 'not-gc') {
             return {
                 verdict: 'fail',
                 confidence: 1.0,
                 explanation: 'Answer type regression from normal to not-gc.',
-                answerTypeCheck: { goldenType: baselineType, newType: answerType, flag: 'regression' }
+                answerTypeCheck: { referenceType, newType: answerType, flag: 'regression' }
             };
         }
 
@@ -90,8 +91,8 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
 
         const prompt = EXPERT_SCORER_PROMPT
             .replace('{question}', question)
-            .replace('{baselineAnswer}', baselineAnswer)
-            .replace('{baselineAnswerType}', baselineType)
+            .replace('{baselineAnswer}', referenceAnswer)
+            .replace('{baselineAnswerType}', referenceType)
             .replace('{answer}', answer)
             .replace('{answerType}', answerType)
             .replace('{downloadedPages}', downloadedPages);
@@ -104,7 +105,7 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
             const result = JSON.parse(response.content.trim().replace(/^```json/, '').replace(/```$/, ''));
 
             // Auto-tag needs-review for certain type changes if LLM didn't already fail it
-            if (baselineType === 'normal' && answerType === 'clarifying-question' && result.verdict === 'pass') {
+            if (referenceType === 'normal' && answerType === 'clarifying-question' && result.verdict === 'pass') {
                 result.verdict = 'needs-review';
                 result.explanation = (result.explanation || '') + ' [Auto-flag: answerType downgrade normal -> clarifying]';
                 result.match = false;

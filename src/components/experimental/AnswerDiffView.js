@@ -42,9 +42,9 @@ const renderSegments = (segments, paneType) => segments.map((segment, idx) => {
  * Side-by-side view of the reference answer and the generated answer,
  * with word-level differences highlighted in each pane.
  */
-export default function AnswerDiffView({ baselineAnswer, answer, lang = 'en' }) {
+export default function AnswerDiffView({ referenceAnswer, answer, lang = 'en' }) {
     const { t } = useTranslations(lang);
-    const segments = useMemo(() => wordDiff(baselineAnswer, answer), [baselineAnswer, answer]);
+    const segments = useMemo(() => wordDiff(referenceAnswer, answer), [referenceAnswer, answer]);
 
     return (
         <div>

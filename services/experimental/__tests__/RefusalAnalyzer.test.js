@@ -94,15 +94,15 @@ describe('RefusalAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Can you help?',
             answer: 'Yes, here is the information you need.',
-            baselineAnswer: '<not-gc><s-1>An answer to your question was not found on Government of Canada websites.</s-1></not-gc>'
+            referenceAnswer: '<not-gc><s-1>An answer to your question was not found on Government of Canada websites.</s-1></not-gc>'
         });
 
         expect(result.status).toBe('pass');
         expect(result.refusalDetected).toBe(false);
-        expect(result.baselineRefusalDetected).toBe(true);
+        expect(result.referenceRefusalDetected).toBe(true);
         expect(result.flagsDiffer).toBe(true);
         expect(result.differenceFound).toBe(true);
-        expect(result.differenceExplanation).toContain('baseline');
+        expect(result.differenceExplanation).toContain('reference');
     });
 
     it('uses baseline analyzer metadata when available', async () => {
@@ -111,7 +111,7 @@ describe('RefusalAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Can you help?',
             answer: 'Yes, here is the information you need.',
-            baselineAnalysisResults: {
+            referenceAnalysisResults: {
                 refusal: {
                     refusalDetected: true,
                     refusalMode: 'prompt',
@@ -121,8 +121,8 @@ describe('RefusalAnalyzer', () => {
         });
 
         expect(result.refusalDetected).toBe(false);
-        expect(result.baselineRefusalDetected).toBe(true);
-        expect(result.baselineRefusalMode).toBe('prompt');
+        expect(result.referenceRefusalDetected).toBe(true);
+        expect(result.referenceRefusalMode).toBe('prompt');
         expect(result.flagsDiffer).toBe(true);
     });
 });

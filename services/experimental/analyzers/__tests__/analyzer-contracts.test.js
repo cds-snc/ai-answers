@@ -29,8 +29,8 @@ describe('Analyzer contracts', () => {
             code: 'NO_REFERENCE',
             localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER'
         });
-        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', GoldenAnswer: 'A' }])).toEqual({ valid: true });
-        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', baselineAnswer: 'A' }])).toEqual({ valid: true });
+        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', referenceAnswer: 'A' }])).toEqual({ valid: true });
+        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', referenceAnswer: 'A' }])).toEqual({ valid: true });
 
         // All other analyzers are universal — they handle missing baseline gracefully.
         expect(RefusalAnalyzer.inputType).toBe('universal');

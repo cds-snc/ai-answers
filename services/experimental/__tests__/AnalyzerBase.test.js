@@ -21,13 +21,13 @@ describe('AnalyzerBase', () => {
             static id = 'strict';
             static inputType = 'comparison';
             static validateBatch(items) {
-                return items.some((i) => i.baselineAnswer)
+                return items.some((i) => i.referenceAnswer)
                     ? { valid: true }
                     : { valid: false, code: 'NO_REFERENCE', localeKey: 'some.key' };
             }
         }
         expect(StrictAnalyzer.validateBatch([{ question: 'Q' }])).toMatchObject({ valid: false });
-        expect(StrictAnalyzer.validateBatch([{ question: 'Q', baselineAnswer: 'A' }])).toEqual({ valid: true });
+        expect(StrictAnalyzer.validateBatch([{ question: 'Q', referenceAnswer: 'A' }])).toEqual({ valid: true });
     });
 });
 

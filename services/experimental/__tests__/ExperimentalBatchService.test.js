@@ -28,7 +28,7 @@ vi.mock('../ExperimentalAnalyzerRegistry.js', () => ({
                     inputType: 'comparison',
                     validateBatch: (items) => {
                         const hasReference = items.some((item) =>
-                            ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer']
+                            ['referenceAnswer', 'ReferenceAnswer', 'reference']
                                 .some((alias) => String(item?.[alias] || '').trim() !== '')
                         );
                         return hasReference
@@ -121,7 +121,7 @@ describe('ExperimentalBatchService', () => {
             const itemsData = [{
                 Question: 'Standard Q',
                 Response: 'Standard A',
-                baselineAnswer: 'Base',
+                referenceAnswer: 'Base',
                 NewAnswer: 'Comp'
             }];
 
@@ -130,22 +130,22 @@ describe('ExperimentalBatchService', () => {
 
             expect(item.question).toBe('Standard Q');
             expect(item.answer).toBe('Standard A');
-            expect(item.baselineAnswer).toBe('Base');
+            expect(item.referenceAnswer).toBe('Base');
         });
 
-        it('should map the accepted baseline answer column names to baselineAnswer', async () => {
+        it('should map the accepted reference answer column names to referenceAnswer', async () => {
             const batchData = { name: 'Baseline Mapping Test', type: 'analysis', config: { analyzerId: 'refusal' } };
             const itemsData = [
-                { question: 'Q1', GoldenAnswer: 'Expert answer 1' },
-                { question: 'Q2', goldenAnswer: 'Expert answer 2' },
-                { question: 'Q3', BaselineAnswer: 'Expert answer 3' },
-                { question: 'Q4', baseline: 'Expert answer 4' }
+                { question: 'Q1', referenceAnswer: 'Expert answer 1' },
+                { question: 'Q2', ReferenceAnswer: 'Expert answer 2' },
+                { question: 'Q3', reference: 'Expert answer 3' },
+                { question: 'Q4', Reference: 'Expert answer 4' }
             ];
 
             const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
 
-            expect(items.map(i => i.baselineAnswer)).toEqual([
+            expect(items.map(i => i.referenceAnswer)).toEqual([
                 'Expert answer 1',
                 'Expert answer 2',
                 'Expert answer 3',
@@ -163,8 +163,8 @@ describe('ExperimentalBatchService', () => {
                 config: { analyzerId: 'expert-scorer', trials: 3 }
             };
             const itemsData = [
-                { question: 'Q1', GoldenAnswer: 'Golden 1' },
-                { question: 'Q2', GoldenAnswer: 'Golden 2' }
+                { question: 'Q1', referenceAnswer: 'Golden 1' },
+                { question: 'Q2', referenceAnswer: 'Golden 2' }
             ];
 
             const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
@@ -177,7 +177,7 @@ describe('ExperimentalBatchService', () => {
                 [2, 1], [2, 2], [2, 3]
             ]);
             // Every trial carries the reference answer but is its own conversation
-            expect(items.every(i => i.baselineAnswer.startsWith('Golden'))).toBe(true);
+            expect(items.every(i => i.referenceAnswer.startsWith('Golden'))).toBe(true);
             const chatIds = new Set(items.map(i => i.chatId));
             expect(chatIds.size).toBe(6);
         });
@@ -245,7 +245,7 @@ describe('ExperimentalBatchService', () => {
             }, []);
 
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
-            expect(items.map(i => i.baselineAnswer)).toEqual(['Reference answer 1', 'Reference answer 2']);
+            expect(items.map(i => i.referenceAnswer)).toEqual(['Reference answer 1', 'Reference answer 2']);
             expect(items.every(i => !i.answer)).toBe(true);
         });
 
@@ -276,7 +276,7 @@ describe('ExperimentalBatchService', () => {
             }, []);
 
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id });
-            expect(items[0].baselineAnswer).toBe('Captured answer');
+            expect(items[0].referenceAnswer).toBe('Captured answer');
         });
 
         it('should use the first trial per question when the baseline run had trials', async () => {
@@ -314,7 +314,7 @@ describe('ExperimentalBatchService', () => {
 
             // Every trial of a question compares against that question's
             // first baseline trial — never a neighbouring question's answer.
-            expect(items.map(i => [i.rowIndex, i.trialIndex, i.baselineAnswer])).toEqual([
+            expect(items.map(i => [i.rowIndex, i.trialIndex, i.referenceAnswer])).toEqual([
                 [1, 1, 'Q1 trial 1'],
                 [1, 2, 'Q1 trial 1'],
                 [2, 1, 'Q2 trial 1'],
@@ -322,7 +322,7 @@ describe('ExperimentalBatchService', () => {
             ]);
         });
 
-        it('should not map unrecognized golden column variants', async () => {
+        it('should map supported reference column variants', async () => {
             const batchData = { name: 'Golden Negative Test', type: 'analysis', config: { analyzerId: 'similar-answer' } };
             const itemsData = [
                 { question: 'Q1', 'golden answer': 'Spaced name' },
@@ -332,7 +332,7 @@ describe('ExperimentalBatchService', () => {
             const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
 
-            expect(items.every(i => !i.baselineAnswer)).toBe(true);
+            expect(items.every(i => i.referenceAnswer)).toBe(true);
         });
 
         it('should not invent a model family when none is explicitly provided', async () => {
@@ -502,9 +502,9 @@ describe('ExperimentalBatchService', () => {
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id }).lean();
             expect(item.chatId).toBeTruthy();
             expect(item.chatId).not.toBe('chat-baseline-123');
-            expect(item.baselineChatId).toBe('chat-baseline-123');
+            expect(item.referenceChatId).toBe('chat-baseline-123');
             expect(item.answer).toBe('');
-            expect(item.baselineAnswer).toBe('A baseline');
+            expect(item.referenceAnswer).toBe('A baseline');
         });
     });
 
@@ -728,7 +728,7 @@ describe('ExperimentalBatchService', () => {
             expect(item.chatId).toBeTruthy();
             expect(item.chatId).not.toBe('1234');
             expect(item.chatId).not.toBe('generated-baseline-chat-id');
-            expect(item.baselineChatId).toBe('generated-baseline-chat-id');
+            expect(item.referenceChatId).toBe('generated-baseline-chat-id');
         });
 
         it('should pass prior turns to the workflow in a multi-turn baseline comparison with similar-answer analyzer', async () => {
@@ -791,7 +791,7 @@ describe('ExperimentalBatchService', () => {
             expect(items[0].chatId).not.toBe('1234');
             expect(items[0].chatId).not.toBe('generated-baseline-chat-1');
             expect(items[0].chatId).not.toBe('generated-baseline-chat-2');
-            expect(items.map(item => item.baselineChatId)).toEqual(['generated-baseline-chat-1', 'generated-baseline-chat-2']);
+            expect(items.map(item => item.referenceChatId)).toEqual(['generated-baseline-chat-1', 'generated-baseline-chat-2']);
 
             const mockApp = {
                 stream: vi.fn()
@@ -1015,7 +1015,7 @@ describe('ExperimentalBatchService', () => {
                 rowIndex: 1,
                 question: 'When is the deadline?',
                 answer: '',
-                baselineAnswer: 'The deadline is June 1, 2026.'
+                referenceAnswer: 'The deadline is June 1, 2026.'
             });
 
             const mockStream = {
@@ -1049,11 +1049,11 @@ describe('ExperimentalBatchService', () => {
             const updatedItem = await ExperimentalBatchItem.findById(item._id);
             expect(updatedItem.status).toBe('completed');
             expect(updatedItem.answer).toBe('The deadline is July 1, 2026.');
-            expect(updatedItem.baselineAnswer).toBe('The deadline is June 1, 2026.');
+            expect(updatedItem.referenceAnswer).toBe('The deadline is June 1, 2026.');
             expect(processor).toHaveBeenCalledWith(expect.objectContaining({
                 question: 'When is the deadline?',
                 answer: 'The deadline is July 1, 2026.',
-                baselineAnswer: 'The deadline is June 1, 2026.'
+                referenceAnswer: 'The deadline is June 1, 2026.'
             }));
         });
     });

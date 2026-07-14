@@ -94,8 +94,8 @@ export default function BatchItemDetail({
                 </div>
             )}
 
-            {item.baselineAnswer ? (
-                <AnswerDiffView baselineAnswer={item.baselineAnswer} answer={item.answer} lang={lang} />
+            {item.referenceAnswer ? (
+                <AnswerDiffView referenceAnswer={item.referenceAnswer} answer={item.answer} lang={lang} />
             ) : (
                 <div className="mb-300">
                     <strong>{t('experimental.results.detail.currentAnswer')}</strong>
@@ -111,8 +111,8 @@ export default function BatchItemDetail({
                         {t('experimental.results.detail.viewChatLogs')}
                     </GcdsButton>
                 )}
-                {item.baselineChatId && (
-                    <GcdsButton size="small" buttonRole="secondary" onClick={() => openChatViewer(item.baselineChatId, lang)}>
+                {item.referenceChatId && (
+                    <GcdsButton size="small" buttonRole="secondary" onClick={() => openChatViewer(item.referenceChatId, lang)}>
                         {t('experimental.results.detail.viewBaselineChatLogs')}
                     </GcdsButton>
                 )}
