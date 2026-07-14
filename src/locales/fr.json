@@ -1451,6 +1451,7 @@
         "colCount": "Évaluations",
         "colNonPerfect": "Non parfaites",
         "colPctNonPerfect": "% non parfaites",
+        "colExample": "Exemple",
         "allPerfect": "Toutes parfaites",
         "themesTitle": "Ce que révèlent les explications",
         "themeCount": "{count} évaluations",
@@ -1464,9 +1465,8 @@
           "en": "Anglais",
           "fr": "Français"
         },
-        "evaluatorsTitle": "Cohérence entre évaluateurs",
+        "evaluatorsTitle": "Évaluateurs",
         "colEvaluator": "Évaluateur",
-        "colDelta": "vs les autres",
         "flagged": "À examiner"
       }
     }

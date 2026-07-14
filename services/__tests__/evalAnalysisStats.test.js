@@ -196,10 +196,10 @@ describe('combinedLabel', () => {
 describe('buildCrossTab', () => {
     it('tabulates categories per combined program—action group, worst-first', () => {
         const rows = [
-            row({ program: 'Pensions', action: 'Apply' }),
-            row({ program: 'Pensions', action: 'Apply' }),
-            row({ program: 'Treaties', action: 'Search', score: 0, category: 'hasError' }),
-            row({ program: 'Treaties', action: 'Search' }),
+            row({ id: 'i1', chatId: 'c1', program: 'Pensions', action: 'Apply' }),
+            row({ id: 'i2', chatId: 'c2', program: 'Pensions', action: 'Apply' }),
+            row({ id: 'i3', chatId: 'c3', lang: 'fr', program: 'Treaties', action: 'Search' }),
+            row({ id: 'i4', chatId: 'c4', lang: 'fr', program: 'Treaties', action: 'Search', score: 0, category: 'hasError' }),
             row({ program: null, action: null })
         ];
         const tab = buildCrossTab(rows);
@@ -207,9 +207,12 @@ describe('buildCrossTab', () => {
         expect(tab.groups[0].label).toBe('Treaties — Search');
         expect(tab.groups[0].nonPerfectCount).toBe(1);
         expect(tab.groups[0].pctNonPerfect).toBe(50);
+        // Example prefers a non-perfect row (the one worth opening), else the first.
+        expect(tab.groups[0].example).toEqual({ chatId: 'c4', interactionId: 'i4', lang: 'fr' });
         const pensions = tab.groups.find((g) => g.label === 'Pensions — Apply');
         expect(pensions.count).toBe(2);
         expect(pensions.alwaysPerfect).toBe(true);
+        expect(pensions.example).toEqual({ chatId: 'c1', interactionId: 'i1', lang: 'en' });
         expect(tab.skippedSingles).toEqual({ groupCount: 0, rowCount: 0 });
     });
 

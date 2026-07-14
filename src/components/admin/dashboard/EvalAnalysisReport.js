@@ -27,6 +27,23 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   const narrative = (text) => (text ? <p style={{ whiteSpace: 'pre-wrap' }}>{text}</p> : null);
 
+  // Same review-mode deep link the eval/chat dashboards use for chatIds, in
+  // the conversation's own language. Older stored reports have no example.
+  const exampleLink = (example) => {
+    if (!example?.chatId) return '—';
+    const chatLang = example.lang === 'fr' ? 'fr' : 'en';
+    const hash = example.interactionId ? `#interaction=${encodeURIComponent(`interactionId${example.interactionId}`)}` : '';
+    return (
+      <a
+        href={`/${chatLang}?chat=${encodeURIComponent(example.chatId)}&review=1${hash}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {example.chatId}
+      </a>
+    );
+  };
+
   const crossTabTable = (rows, labelColLabel) => (
     <div style={{ overflowX: 'auto' }}>
       <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -36,6 +53,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
             <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
             <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colNonPerfect')}</th>
             <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctNonPerfect')}</th>
+            <th style={head}>{t('partnerDashboard.evalAnalysis.report.colExample')}</th>
           </tr>
         </thead>
         <tbody>
@@ -52,6 +70,9 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               <td style={numCell}>{fmtN(row.count)}</td>
               <td style={numCell}>{fmtN(row.nonPerfectCount)}</td>
               <td style={numCell}>{pctOrDash(row.pctNonPerfect)}</td>
+              <td style={{ ...cell, wordBreak: 'break-all' }} className="font-size-text-xsm-nr">
+                {exampleLink(row.example)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -179,7 +200,10 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
         </div>
       )}
 
-      {/* Evaluator consistency */}
+      {/* Evaluators — no "vs others" column: the delta reads as a ranking of
+          people, which is more sensitive than it is useful. A manager can
+          derive divergence from the counts and rates shown. The Review flag
+          (which uses the same delta internally) stays. */}
       {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
         <div className="dashboard-section">
           <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
@@ -191,7 +215,6 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
                   <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
                   <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
                   <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colDelta')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -208,11 +231,6 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
                     <td style={numCell}>{fmtN(ev.count)}</td>
                     <td style={numCell}>{fmtScore(ev.meanScore)}</td>
                     <td style={numCell}>{pctOrDash(ev.pctPerfect)}</td>
-                    <td style={numCell}>
-                      {ev.deltaPctPerfect !== null && ev.deltaPctPerfect !== undefined
-                        ? `${ev.deltaPctPerfect > 0 ? '+' : ''}${fmtN(ev.deltaPctPerfect)}`
-                        : '—'}
-                    </td>
                   </tr>
                 ))}
               </tbody>

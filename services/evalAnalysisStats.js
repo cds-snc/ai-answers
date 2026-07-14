@@ -174,8 +174,15 @@ export function buildCrossTab(rows) {
 
     const all = Array.from(byLabel.entries()).map(([label, groupRows]) => {
         const summary = summarizeGroup(groupRows);
+        // One clickable example per group so evaluators can open a real
+        // conversation from the report: prefer a non-perfect row (that's the
+        // one worth inspecting), else the group's first row.
+        const exampleRow =
+            groupRows.find((r) => (r.score !== null && r.score < 100) || (r.category && r.category !== 'correct')) ||
+            groupRows[0];
         return {
             label,
+            example: { chatId: exampleRow.chatId, interactionId: exampleRow.id, lang: exampleRow.lang },
             count: summary.count,
             scoredCount: summary.scoredCount,
             nonPerfectCount: summary.scoredCount - summary.perfectCount,

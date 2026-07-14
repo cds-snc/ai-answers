@@ -66,7 +66,7 @@ describe('EvalAnalysisReport', () => {
     },
     crossTab: {
       groups: [
-        { label: 'Early retirement incentive — Check eligibility', count: 20, scoredCount: 20, nonPerfectCount: 5, pctNonPerfect: 25, alwaysPerfect: false, categories: {}, contentIssueCount: 1 },
+        { label: 'Early retirement incentive — Check eligibility', count: 20, scoredCount: 20, nonPerfectCount: 5, pctNonPerfect: 25, alwaysPerfect: false, categories: {}, contentIssueCount: 1, example: { chatId: 'chat-abc', interactionId: 'int-1', lang: 'en' } },
         { label: 'Public service pension — Apply', count: 22, scoredCount: 21, nonPerfectCount: 0, pctNonPerfect: 0, alwaysPerfect: true, categories: {}, contentIssueCount: 1 }
       ],
       skippedSingles: { groupCount: 2, rowCount: 2 },
@@ -90,9 +90,17 @@ describe('EvalAnalysisReport', () => {
     expect(screen.getByText('What the explanations say')).toBeTruthy();
     expect(screen.getByText('Confusing yes/no openers')).toBeTruthy();
     expect(screen.getByText('English vs French')).toBeTruthy();
-    expect(screen.getByText('Evaluator consistency')).toBeTruthy();
+    expect(screen.getByText('Evaluators')).toBeTruthy();
     expect(screen.getByText('b@x.ca')).toBeTruthy();
     expect(screen.getByText('Review')).toBeTruthy();
+    // "vs others" column removed deliberately (sensitivity); flag stays.
+    expect(screen.queryByText('vs others')).toBeNull();
+    // Example chatId links to review mode in a new tab, deep-linked to the
+    // evaluated interaction; groups without a stored example render a dash.
+    const link = screen.getByRole('link', { name: 'chat-abc' });
+    expect(link.getAttribute('href')).toBe('/en?chat=chat-abc&review=1#interaction=interactionId' + encodeURIComponent('int-1'));
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(screen.getByText('—')).toBeTruthy();
   });
 
   it('hides the content-issues card when none were flagged', () => {

@@ -127,15 +127,20 @@ invented rates.
 1. **Header** — N evals analyzed, institution, date range, run date, run by.
    No summary paragraph — the tables and themes carry the findings.
 2. **Scores by program and action** — one combined table (count, % non-perfect)
-   with always-perfect groups highlighted and a note for skipped
-   single-evaluation groups.
+   with always-perfect groups highlighted, a note for skipped
+   single-evaluation groups, and per group one **example chatId link** (a
+   non-perfect row when there is one) opening review mode in a new tab so
+   evaluators can explore a real conversation behind the numbers.
 3. **What the explanations say** — themed narrative with counts + quotes
    (themes below the minimum count are omitted).
 4. **Content issues** — count + pattern note; the card is hidden when the
    count is 0.
 5. **EN vs FR** — small table, no narrative.
-6. **Evaluator consistency** — per-evaluator table + anomaly flags, no
-   narrative.
+6. **Evaluators** — per-evaluator table + anomaly flags, no narrative.
+   Titled "Evaluators" (not "consistency") and without a "vs others" delta
+   column — the delta reads as a ranking of people, which is more sensitive
+   than useful; a manager can derive divergence from the shown counts/rates.
+   The internal delta still drives the Review flag.
 
 ## Architecture
 

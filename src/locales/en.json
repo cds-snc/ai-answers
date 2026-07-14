@@ -1451,6 +1451,7 @@
         "colCount": "Evaluations",
         "colNonPerfect": "Non-perfect",
         "colPctNonPerfect": "% non-perfect",
+        "colExample": "Example",
         "allPerfect": "All perfect",
         "themesTitle": "What the explanations say",
         "themeCount": "{count} evaluations",
@@ -1464,9 +1465,8 @@
           "en": "English",
           "fr": "French"
         },
-        "evaluatorsTitle": "Evaluator consistency",
+        "evaluatorsTitle": "Evaluators",
         "colEvaluator": "Evaluator",
-        "colDelta": "vs others",
         "flagged": "Review"
       }
     }
