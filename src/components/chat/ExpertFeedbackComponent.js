@@ -16,6 +16,7 @@ const ExpertFeedbackComponent = ({
   sentences = [],
   answerNumber,
   citationUrl,
+  department,
   titleRef,
 }) => {
   const { t } = useTranslations(lang);
@@ -360,6 +361,7 @@ const ExpertFeedbackComponent = ({
       </fieldset>
       <button type="submit" className="btn-primary mrgn-lft-sm">
         {withAnswerNumber(t('homepage.expertRating.submit'))}
+        {department ? ` - ${department}` : ''}
       </button>
     </form>
   );

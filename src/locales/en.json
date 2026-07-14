@@ -176,7 +176,8 @@
       },
       "review": {
         "chatDate": "Date (YYYY-MM-DD):",
-        "referringUrl": "Referring URL:"
+        "referringUrl": "Referring URL:",
+        "noDepartment": "None"
       },
       "section": {
         "heading": "AI Answers conversation log"
@@ -213,7 +214,8 @@
       },
       "submit": "Submit evaluation",
       "intro": "Rate the answer sentences and/or citation",
-      "answerNumberLabel": "Answer {number}"
+      "answerNumberLabel": "Answer {number}",
+      "labelWithAnswer": "{label}: {answer}"
     }
   },
   "batch": {

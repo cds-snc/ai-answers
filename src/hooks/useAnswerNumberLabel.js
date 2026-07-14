@@ -7,10 +7,19 @@
 //
 // Returns both the raw "Answer N" text (for standalone display) and
 // withAnswerNumber (for appending it to an existing label).
-export const useAnswerNumberLabel = (t, answerNumber) => {
+//
+// Plain function, not a real hook (no useState/useEffect/etc inside) — safe
+// to call from a .map() callback or other non-component context. Exported
+// under both names so existing call sites that treat it as a hook keep
+// working unchanged.
+export const buildAnswerNumberLabel = (t, answerNumber) => {
   const answerText = answerNumber
     ? t('homepage.expertRating.answerNumberLabel').replace('{number}', answerNumber)
     : '';
-  const withAnswerNumber = (label) => (answerNumber ? `${label}: ${answerText}` : label);
+  const withAnswerNumber = (label) => (answerNumber
+    ? t('homepage.expertRating.labelWithAnswer').replace('{label}', label).replace('{answer}', answerText)
+    : label);
   return { answerText, withAnswerNumber };
 };
+
+export const useAnswerNumberLabel = buildAnswerNumberLabel;

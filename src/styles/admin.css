@@ -516,6 +516,29 @@
   font-weight: 500;
 }
 
+.department-feedback-wrapper {
+  background-color: var(--gcds-color-grayscale-50);
+  border-left: 6px solid var(--gcds-color-grayscale-400);
+  padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-200);
+}
+
+.department-feedback-wrapper:has(.expert-rating-container) {
+  background-color: transparent;
+  border-left: none;
+  padding: 0;
+}
+
+.department-label-text {
+  color: var(--gcds-color-blue-650);
+}
+
+.department-feedback-wrapper:has(.expert-rating-container) .department-label-text {
+  display: inline-block;
+  background-color: var(--gcds-color-grayscale-50);
+  border-left: 6px solid var(--gcds-color-grayscale-400);
+  padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-200);
+}
+
 /* User type labels */
 .label.public {
   background-color: var(--gcds-color-blue-100);

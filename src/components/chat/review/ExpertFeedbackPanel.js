@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails, GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
@@ -176,12 +176,14 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
         : '';
     const expertTitle = withAnswerNumber(baseTitle + expertTitleSuffix);
 
+    if (!hasExpert) return null;
+
     return (
-        <GcdsDetails detailsTitle={expertTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
-            // e.target should be the gcds-details web component; check its open property
+        <details className="review-details" onToggle={(e) => {
+            // e.target is the native <details> element; check its open property
             try {
                 // call load when panel is being opened
-                if (e && e.target && !e.target.open) {
+                if (e && e.target && e.target.open) {
                     handleToggle(e);
                 }
             } catch (err) {
@@ -189,6 +191,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                 handleToggle(e);
             }
         }}>
+            <summary>{expertTitle}</summary>
             <div className="review-panel expert-feedback-panel">
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
                 {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
@@ -318,7 +321,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                     );
                 })()}
             </div>
-        </GcdsDetails>
+        </details>
     );
 };
 
