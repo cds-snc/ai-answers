@@ -7,8 +7,9 @@ import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
+import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
-import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
+import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const ExecDashboard = ({ lang = 'en' }) => {
@@ -75,20 +76,13 @@ const ExecDashboard = ({ lang = 'en' }) => {
     { name: t('execDashboard.charts.hasError'), value: hasError },
   ] : [];
 
-  // Harmful (expert evaluations only). Shown in the Safety metrics row, even at 0.
+  // Harmful + content issues (expert evaluations only). Always shown, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
+  const contentIssue = metrics.expertScored?.hasContentIssue || {};
 
   // Blocked queries (safety counter). Total card + ranked bar breakdown by type.
   const blockedTotal = metrics.blockedQueries?.total || {};
-  const blockedBarData = useMemo(() => {
-    const bq = metrics.blockedQueries || {};
-    return BLOCK_QUERY_TYPES
-      .map((type) => {
-        const row = bq[type] || {};
-        return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
-      })
-      .filter((d) => d.value > 0);
-  }, [metrics.blockedQueries, t]);
+  const blockedBarData = useMemo(() => buildBlockedBarData(metrics.blockedQueries, t), [metrics.blockedQueries, t]);
 
   const BlockedBarTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
@@ -119,23 +113,6 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
   const responseTime = metrics.responseTime || {};
   const hasResponseTime = (responseTime.count || 0) > 0;
-
-  const kpiCards = (
-    <>
-      <StatCard
-        label={t('execDashboard.kpi.questionsAsked')}
-        value={fmtN(totalQuestions)}
-        sub={t('execDashboard.kpi.questionsSub')
-          .replace('{en}', fmtN(metrics.totalQuestionsEn))
-          .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
-      />
-      <StatCard
-        label={t('execDashboard.kpi.evaluated')}
-        value={fmtN(expertTotal)}
-        sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
-      />
-    </>
-  );
 
   return (
     <div>
@@ -169,11 +146,13 @@ const ExecDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* KPI row: accuracy donut on the left (~2/3 wide), stat cards stacked on the right.
-          Falls back to a flat row when there are too few evals to show the donut. */}
-      {evalTotal >= 10 ? (
-        <div className="dashboard-row">
-          <div className="dashboard-col-half">
+      {/* KPI row: accuracy donut on the left, stat cards on the right — questions
+          asked across the top, content issues and expert evaluated beneath it.
+          Below 10 evals the donut is replaced by a placeholder rather than
+          dropped, so the row keeps its shape and the reason is on the page. */}
+      <div className="dashboard-row">
+        <div className="dashboard-col-half">
+          {evalTotal >= 10 ? (
             <DonutCard
               title={t('execDashboard.charts.accuracyDonutTitle')}
               data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
@@ -183,30 +162,58 @@ const ExecDashboard = ({ lang = 'en' }) => {
               centreClass={accuracyPct === null ? undefined : accuracyPct >= 80 ? 'green' : accuracyPct > 50 ? 'orange' : 'red'}
               lang={lang}
             />
-          </div>
-          <div className="dashboard-col-half dashboard-col--equal-height">
-            {kpiCards}
+          ) : (
+            <NoDataCard
+              title={t('execDashboard.charts.accuracyDonutTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
+        <div className="dashboard-col-half dashboard-col--equal-height">
+          <StatCard
+            label={t('execDashboard.kpi.questionsAsked')}
+            value={fmtN(totalQuestions)}
+            sub={t('execDashboard.kpi.questionsSub')
+              .replace('{en}', fmtN(metrics.totalQuestionsEn))
+              .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
+          />
+          <div className="dashboard-row dashboard-row--nested">
+            <StatCard
+              label={t('execDashboard.kpi.contentIssues')}
+              value={fmtN(contentIssue.total)}
+              sub={t('execDashboard.kpi.contentIssuesSub')
+                .replace('{ni}', fmtN(contentIssue.needsImprovement))
+                .replace('{error}', fmtN(contentIssue.hasError))}
+            />
+            <StatCard
+              label={t('execDashboard.kpi.evaluated')}
+              value={fmtN(expertTotal)}
+              sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+            />
           </div>
         </div>
-      ) : (
-        <div className="dashboard-row">
-          {kpiCards}
-        </div>
-      )}
+      </div>
 
       {/* Satisfaction (helpful or not) breakdown — full width diverging bar */}
-      {filteredPfTotal >= 10 && (
-        <div className="dashboard-section">
+      <div className="dashboard-section">
+        {filteredPfTotal >= 10 ? (
           <DivergingBarCard
             title={t('execDashboard.charts.feedbackBreakdownTitle')}
             data={feedbackReasonsData}
             lang={lang}
           />
-        </div>
-      )}
+        ) : (
+          <NoDataCard
+            title={t('execDashboard.charts.feedbackBreakdownTitle')}
+            message={t('common.notEnoughData')}
+          />
+        )}
+      </div>
 
-      {/* Top institutions: institution count stat card left, bar chart right */}
-      {departmentData.length > 0 && (
+      {/* Top institutions: institution count stat card left, bar chart right.
+          Hidden when a single institution is filtered — both the count and the
+          ranking are answered by the filter itself. */}
+      {!appliedDepartment && departmentData.length > 0 && (
         <div className="dashboard-row">
           <div className="dashboard-col-third dashboard-col--equal-height">
             <StatCard

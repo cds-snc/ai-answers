@@ -10,8 +10,9 @@ import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
 import CitationPagesCard from './dashboard/CitationPagesCard.js';
 import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
+import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
-import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
+import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
 const PartnerDashboard = ({ lang = 'en' }) => {
@@ -90,15 +91,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // Can't be department-scoped (blocks happen before the department is known),
   // so the blocked view is hidden when a department filter is applied.
   const blockedTotal = metrics.blockedQueries?.total || {};
-  const blockedBarData = useMemo(() => {
-    const bq = metrics.blockedQueries || {};
-    return BLOCK_QUERY_TYPES
-      .map((type) => {
-        const row = bq[type] || {};
-        return { name: t(`blockedQueries.types.${type}`), value: row.total || 0, en: row.en || 0, fr: row.fr || 0 };
-      })
-      .filter((d) => d.value > 0);
-  }, [metrics.blockedQueries, t]);
+  const blockedBarData = useMemo(() => buildBlockedBarData(metrics.blockedQueries, t), [metrics.blockedQueries, t]);
 
   const BlockedBarTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
@@ -245,28 +238,35 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Answer-quality bar — full width. Hidden below 10 evals. */}
-      {(expertTotal + aiTotal) >= 10 && (
+      {/* Answer-quality bar — full width. Below 10 evals the chart is replaced by
+          a placeholder rather than dropped, so the reason stays on the page. */}
       <div className="dashboard-section">
-        <HBarCard
-          title={t('partnerDashboard.charts.accuracyTitle')}
-          subtitle={t('partnerDashboard.charts.accuracySubtitle')
-            .replace('{total}', fmtN(expertTotal + aiTotal))
-            .replace('{expert}', fmtN(expertTotal))
-            .replace('{ai}', fmtN(aiTotal))}
-          data={qualityData}
-          percent
-          height={240}
-          noDataLabel={t('partnerDashboard.charts.noData')}
-          tooltipContent={QualityBarTooltip}
-          lang={lang}
-        />
+        {(expertTotal + aiTotal) >= 10 ? (
+          <HBarCard
+            title={t('partnerDashboard.charts.accuracyTitle')}
+            subtitle={t('partnerDashboard.charts.accuracySubtitle')
+              .replace('{total}', fmtN(expertTotal + aiTotal))
+              .replace('{expert}', fmtN(expertTotal))
+              .replace('{ai}', fmtN(aiTotal))}
+            data={qualityData}
+            percent
+            height={240}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            tooltipContent={QualityBarTooltip}
+            lang={lang}
+          />
+        ) : (
+          <NoDataCard
+            title={t('partnerDashboard.charts.accuracyTitle')}
+            message={t('common.notEnoughData')}
+          />
+        )}
       </div>
-      )}
 
       {/* Satisfaction breakdown bar (wide) + user satisfaction donut side by side.
-          Hidden below 10 responses — percentages from tiny samples are misleading. */}
-      {pfTotal >= 10 && (
+          Below 10 responses both are replaced by a single placeholder —
+          percentages from tiny samples are misleading. */}
+      {pfTotal >= 10 ? (
         <div className="dashboard-row">
           <DonutCard
             title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
@@ -286,25 +286,38 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             />
           </div>
         </div>
-      )}
-
-      {/* Conversation length donut. Hidden below 10 conversations. */}
-      {totalConversations >= 10 && (
-      <div className="dashboard-row">
-        <div className="dashboard-col-half">
-          <DonutCard
-            title={t('partnerDashboard.charts.engagementTitle')}
-            subtitle={t('partnerDashboard.charts.engagementSubtitle')}
-            data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-            centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-            centreLabel={t('partnerDashboard.charts.conversations')}
-            footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
-            lang={lang}
+      ) : (
+        <div className="dashboard-section">
+          <NoDataCard
+            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+            message={t('common.notEnoughData')}
           />
         </div>
-      </div>
       )}
+
+      {/* Conversation length donut. Below 10 conversations, a placeholder. */}
+      <div className="dashboard-row">
+        <div className="dashboard-col-half">
+          {totalConversations >= 10 ? (
+            <DonutCard
+              title={t('partnerDashboard.charts.engagementTitle')}
+              subtitle={t('partnerDashboard.charts.engagementSubtitle')}
+              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+              centreLabel={t('partnerDashboard.charts.conversations')}
+              footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
+              lang={lang}
+            />
+          ) : (
+            <NoDataCard
+              title={t('partnerDashboard.charts.engagementTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
+      </div>
+
 
       {/* Question volume by program — ranked bar of the per-question program
           classification. Hidden when nothing in range is classified (all

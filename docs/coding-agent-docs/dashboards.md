@@ -184,7 +184,8 @@ come from `src/constants/dashboardColours.js`.
 | `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
 | `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on both dashboards. |
-| `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the exec dashboard uses a `StatCard` + `HBarCard` instead. Row order from `src/constants/blockedQueryTypes.js`. |
+| `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the exec dashboard uses a `StatCard` + `HBarCard` instead. Row order from `BLOCK_QUERY_TYPES` (`src/constants/blockedQueryTypes.js`) — the raw per-type rows, **not** the merged exec/partner grouping. |
+| `NoDataCard.js` | Placeholder card (title + short note) shown in place of a chart or donut that is below its minimum-sample threshold. Keeps the section's heading on the page instead of letting the card vanish — see [Minimum data thresholds](#layout). Message is always `common.notEnoughData`. |
 | `CountTable.js` | Plain two-column "label / count" table with row dividers, shared by the collapsible list cards. `rows` = `[{ key, label, count, href? }]` — `href` renders the label as a new-tab link. Locale-free (labels passed in resolved). |
 | `ReferralUrlsCard.js` | Collapsible (`<details>`) card wrapping a `CountTable` (referring page / click-throughs) for the top-referral-pages list. **Partner dashboard only.** URLs open in a new tab (`https://` prepended to the normalized page key). |
 | `CitationPagesCard.js` | Collapsible (`<details>`) card with **two** `CountTable`s: top citation pages (cited page / questions) and the answer-type breakdown (answer type / questions). **Partner dashboard only.** |
@@ -263,6 +264,17 @@ the only record of them. End-to-end:
   when a department is selected** (showing `blockedQueries.deptNote` instead) — it
   can't be department-scoped. Type order/labels:
   `src/constants/blockedQueryTypes.js` + `blockedQueries.types.*` locale keys.
+- **"Private details" is a display-only merge.** The exec and partner bars group
+  the two privacy guardrails (`piStage1` programmatic + `piStage2` AI detection)
+  into one **Private details** row — which stage caught the query is an
+  implementation detail to those audiences. The grouping lives in
+  `BLOCK_QUERY_GROUPS` (`blockedQueryTypes.js`) and is summed by the shared
+  `buildBlockedBarData` (`src/utils/dashboard/blockedQueryBars.js`), which both
+  dashboards call — don't rebuild the bar rows inline. The **technical**
+  dashboard deliberately keeps the raw two-row split (`BLOCK_QUERY_TYPES`) so the
+  guardrails stay debuggable. Storage, `blockType` tagging, and the metrics API
+  are untouched — they still record and return both stages separately.
+  Tests: `src/utils/dashboard/blockedQueryBars.test.js`.
 - **Partner userType is deliberately NOT forced to public.** Exec fixes
   `userType: 'public'` on every fetch, so its blocked counter excludes admin/
   partner test traffic. The partner dashboard intentionally does **not** do this —
@@ -359,7 +371,11 @@ A component left alone in a `dashboard-row` will stretch full width — wrap it 
 Charts default to full width. When a related KPI card or donut sits alongside one, the chart takes the left (wider) column using `dashboard-chart-wide` and the card or donut sits unstyled on the right.
 
 **Minimum data thresholds**
-Hide charts and donuts when the sample is too small to be meaningful (< 10). Current gates: `>= 10` evaluations for quality bars, `>= 10` responses for satisfaction charts and donuts, `>= 10` conversations for the engagement donut. Blocked queries has no minimum — safety signals show regardless of volume.
+Charts and donuts don't render when the sample is too small to be meaningful (< 10). Current gates: `>= 10` evaluations for the quality bar and the exec accuracy donut, `>= 10` responses for satisfaction charts and donuts, `>= 10` conversations for the engagement donut. Blocked queries has no minimum — safety signals show regardless of volume.
+
+**Below the threshold, render a `NoDataCard`, don't hide the section.** Users read a vanished card as a bug or a broken filter, so every threshold-gated section on the exec and partner dashboards swaps in a `NoDataCard` carrying the *same title* plus `common.notEnoughData`. Keep that pattern when adding a gated chart. (The exec accuracy donut used to collapse the whole KPI row into a flat fallback; it now always occupies its half so the row keeps its shape.)
+
+This applies to **minimum-sample** gates only. Sections gated on *presence* of data — top referrals, top citations, top programs — stay hidden when empty, and exec's **top-institutions** row is hidden outright when a single institution is filtered (the count and the ranking are both answered by the filter itself, so a placeholder would be noise).
 
 ## Conventions
 

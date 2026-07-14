@@ -712,6 +712,14 @@
   gap: var(--gcds-spacing-200);
 }
 
+/* A dashboard-row sitting inside an equal-height column (e.g. two stat cards
+   side by side under a full-width one): shares the column height, and drops the
+   standalone row's bottom margin, which the column's gap already provides. */
+.dashboard-row--nested {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .dashboard-col-full {
   flex: 1 1 100%;
   min-width: 0;
@@ -847,6 +855,19 @@
 .stat-card__sub {
   color: var(--gcds-color-grayscale-700);
   margin: var(--gcds-spacing-75) 0 0;
+}
+
+/* ---- NoDataCard ---- */
+
+.no-data-card {
+  flex: 1;
+  min-width: 280px;
+  padding: var(--gcds-spacing-300) var(--gcds-spacing-350);
+}
+
+.no-data-card__message {
+  color: var(--gcds-color-grayscale-700);
+  margin: 0;
 }
 
 /* ---- DonutCard ---- */

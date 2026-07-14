@@ -1124,7 +1124,8 @@
     "on": "On",
     "off": "Off",
     "na": "N/A",
-    "noDataForFilters": "No data found for the selected filters."
+    "noDataForFilters": "No data found for the selected filters.",
+    "notEnoughData": "Not enough data available for the filters selected."
   },
   "eval": {
     "metric": "Metric",
@@ -1297,6 +1298,7 @@
       "profanity": "Profanity",
       "piStage1": "Private information: programmatic",
       "piStage2": "Private information: AI detection",
+      "privateDetails": "Private details",
       "azureGuardrail": "Azure guardrails",
       "unsupportedLanguage": "Unsupported language"
     }
@@ -1313,6 +1315,8 @@
       "questionsAsked": "Questions asked",
       "questionsSub": "EN: {en} · FR: {fr}",
       "partnerCount": "Institutions with questions",
+      "contentIssues": "Content issues",
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}",
       "harmful": "Harmful",
       "harmfulSub": "EN: {en} · FR: {fr}"
     },

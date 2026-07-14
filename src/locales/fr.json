@@ -1124,7 +1124,8 @@
     "on": "Activé",
     "off": "Désactivé",
     "na": "S.O.",
-    "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés."
+    "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
+    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés."
   },
   "eval": {
     "metric": "Métrique",
@@ -1297,6 +1298,7 @@
       "profanity": "Grossièretés",
       "piStage1": "Renseignements personnels : par programme",
       "piStage2": "Renseignements personnels : détection par IA",
+      "privateDetails": "Renseignements personnels",
       "azureGuardrail": "Mesures de protection Azure",
       "unsupportedLanguage": "Langue non prise en charge"
     }
@@ -1313,6 +1315,8 @@
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
       "partnerCount": "Institutions avec des questions",
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}",
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}"
     },
