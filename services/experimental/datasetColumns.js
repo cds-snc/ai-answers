@@ -6,17 +6,12 @@
 // frontend code cannot import from services/.
 export const REFERENCE_ANSWER_ALIASES = [
     'referenceAnswer',
-    'reference',
     'answer',
     'redactedAnswer',
-    'response',
-    'newAnswer',
-    'comparison',
-    'comparisonAnswer',
-    'baselineAnswer',
-    'baseline',
-    'goldenAnswer'
+    'response'
 ];
+
+export const EXPLICIT_REFERENCE_ANSWER_ALIASES = ['referenceAnswer'];
 
 export const normalizeDatasetColumnName = (name = '') => String(name)
     .toLowerCase()
@@ -50,9 +45,7 @@ export const pickReferenceAnswer = (row = {}) => {
 // columns. QA-pair preparation uses this to convert an answer-only row into a
 // reference while still respecting a separately supplied reference column.
 export const pickExplicitReferenceAnswer = (row = {}) => {
-    const explicitAliases = REFERENCE_ANSWER_ALIASES
-        .filter(alias => !['answer', 'redactedAnswer'].includes(alias))
-        .map(normalizeDatasetColumnName);
+    const explicitAliases = EXPLICIT_REFERENCE_ANSWER_ALIASES.map(normalizeDatasetColumnName);
     const entries = Object.entries(row || {});
 
     for (const alias of explicitAliases) {

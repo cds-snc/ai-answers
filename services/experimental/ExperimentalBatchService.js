@@ -10,13 +10,13 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
-import { pickExplicitReferenceAnswer, pickReferenceAnswer } from './datasetColumns.js';
+import { pickExplicitReferenceAnswer } from './datasetColumns.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
+const ANSWER_ALIASES = ['answer', 'redactedAnswer', 'response'];
 const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
@@ -76,7 +76,7 @@ const pickExactField = (item = {}, keys = []) => {
     return '';
 };
 
-const pickNormalizedAnswer = (item = {}) => pickExactField(item, ANSWER_ALIASES);
+const pickNormalizedAnswer = (item = {}) => pickFirstField([item], ANSWER_ALIASES);
 
 const normalizeFieldKey = (input = '') => String(input)
     .toLowerCase()
@@ -352,7 +352,7 @@ class ExperimentalBatchService {
             return Array.from({ length: trials }, (_, trialIdx) => ({
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
-                referenceAnswer: pickReferenceAnswer(item) || '',
+                referenceAnswer: pickExplicitReferenceAnswer(item) || '',
                 referenceAnalysisResults: item.referenceAnalysisResults || {},
                 referenceMatch: item.referenceMatch,
                 referenceFlagged: item.referenceFlagged,

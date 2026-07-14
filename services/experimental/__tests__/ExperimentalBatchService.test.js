@@ -138,8 +138,8 @@ describe('ExperimentalBatchService', () => {
             const itemsData = [
                 { question: 'Q1', referenceAnswer: 'Expert answer 1' },
                 { question: 'Q2', ReferenceAnswer: 'Expert answer 2' },
-                { question: 'Q3', reference: 'Expert answer 3' },
-                { question: 'Q4', Reference: 'Expert answer 4' }
+                { question: 'Q3', response: 'Expert answer 3' },
+                { question: 'Q4', redactedAnswer: 'Expert answer 4' }
             ];
 
             const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
@@ -148,12 +148,12 @@ describe('ExperimentalBatchService', () => {
             expect(items.map(i => i.referenceAnswer)).toEqual([
                 'Expert answer 1',
                 'Expert answer 2',
-                'Expert answer 3',
-                'Expert answer 4'
+                '',
+                ''
             ]);
             // Baseline answers land in the reference slot only — the current
             // answer stays empty so processing generates a fresh one to compare.
-            expect(items.every(i => !i.answer)).toBe(true);
+            expect(items.map(i => i.answer)).toEqual(['', '', 'Expert answer 3', 'Expert answer 4']);
         });
 
         it('should expand each question into n items when config.trials is set', async () => {
@@ -332,7 +332,7 @@ describe('ExperimentalBatchService', () => {
             const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
             const items = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).sort({ rowIndex: 1 });
 
-            expect(items.every(i => i.referenceAnswer)).toBe(true);
+            expect(items.every(i => !i.referenceAnswer)).toBe(true);
         });
 
         it('should not invent a model family when none is explicitly provided', async () => {

@@ -62,7 +62,8 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-    useSearchParams: () => [new URLSearchParams('datasetId=dataset-1'), vi.fn()]
+    useSearchParams: () => [new URLSearchParams('datasetId=dataset-1'), vi.fn()],
+    useNavigate: () => vi.fn()
 }));
 
 vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => ({

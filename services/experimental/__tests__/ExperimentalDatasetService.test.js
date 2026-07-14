@@ -119,7 +119,7 @@ describe('ExperimentalDatasetService', () => {
 
         it('should normalize answer aliases into the canonical answer field', async () => {
             const data = [
-                { question: 'What is IA?', NewAnswer: 'Intelligence Artificielle' }
+                { question: 'What is IA?', response: 'Intelligence Artificielle' }
             ];
             const buffer = await createXlsxBuffer(data);
             const metadata = { name: 'Answer Alias Dataset', type: 'qa-pair' };
@@ -135,7 +135,7 @@ describe('ExperimentalDatasetService', () => {
             const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
             expect(rows).toHaveLength(1);
             expect(rows[0].data).toHaveProperty('answer', 'Intelligence Artificielle');
-            expect(rows[0].data).not.toHaveProperty('NewAnswer');
+            expect(rows[0].data).not.toHaveProperty('response');
         });
 
         it('should normalize chatId and referringUrl aliases from spreadsheet uploads', async () => {
