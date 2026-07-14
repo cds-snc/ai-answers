@@ -28,7 +28,7 @@ export class AnalyzerBase {
 
     /**
      * Analyze input and return structured results.
-     * @param {Object} input - { question, answer, baselineAnswer, config, originalData }
+     * @param {Object} input - { question, answer, referenceAnswer, config, originalData }
      * @returns {Promise<Object>} - Analysis results matching outputColumns
      */
     async analyze(input) {

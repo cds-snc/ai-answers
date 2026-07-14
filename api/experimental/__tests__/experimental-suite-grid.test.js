@@ -146,7 +146,7 @@ describe('experimental-suite-grid API', () => {
             chainResolving({ _id: DATASET_ID, name: 'Reference' }, ['select'])
         );
         ExperimentalDatasetRow.find.mockReturnValue(
-            chainResolving([{ rowIndex: 1, data: { question: 'Q1', GoldenAnswer: 'Expert answer' } }], ['sort'])
+            chainResolving([{ rowIndex: 1, data: { question: 'Q1', referenceAnswer: 'Expert answer' } }], ['sort'])
         );
         ExperimentalBatch.find.mockReturnValue(
             chainResolving([

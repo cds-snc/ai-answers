@@ -26,14 +26,14 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
     // For 'batch' generation results
     answer: { type: String },   // Generated answer
     chatId: { type: String },   // Current run chat id
-    baselineChatId: { type: String },   // Chat id of the baseline comparison row
+    referenceChatId: { type: String },   // Chat id of the reference comparison row
     referringUrl: { type: String }, // Per-row referring URL context
 
-    // For 'comparison' inputs
-    baselineAnswer: { type: String },
-    baselineAnalysisResults: { type: mongoose.Schema.Types.Mixed, default: {} },
-    baselineMatch: { type: Boolean },
-    baselineFlagged: { type: Boolean },
+    // For comparison inputs
+    referenceAnswer: { type: String },
+    referenceAnalysisResults: { type: mongoose.Schema.Types.Mixed, default: {} },
+    referenceMatch: { type: Boolean },
+    referenceFlagged: { type: Boolean },
 
     // Analysis Results (Standardized)
     similarityScore: { type: Number },

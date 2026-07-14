@@ -3,7 +3,7 @@ import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import { requireObjectIdString } from '../util/db-query.js';
 
-// Items that deviated from the reference/baseline answer or errored out.
+// Items that deviated from the reference answer or errored out.
 const ATTENTION_FILTER = { $or: [{ flagged: true }, { match: false }, { status: 'failed' }] };
 const ERRORS_FILTER = { status: 'failed' };
 
