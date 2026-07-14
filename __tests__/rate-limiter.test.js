@@ -63,7 +63,7 @@ describe('rateLimiterMiddleware', () => {
     await rateLimiterMiddleware(req, res, next);
 
     expect(rateLimiters.public).toBeTruthy();
-    expect(consumeMock).toHaveBeenCalledWith('127.0.0.1');
+    expect(consumeMock).toHaveBeenCalledWith('ip:127.0.0.1');
     expect(res.setHeader).toHaveBeenCalledWith('Retry-After', '5');
     expect(res.status).toHaveBeenCalledWith(429);
     expect(res.json).toHaveBeenCalledWith({

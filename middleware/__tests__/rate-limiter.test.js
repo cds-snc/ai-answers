@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'events';
 
-const { consume, mockGetSetting, mockRedisConnect, mockRedisSet, mockRedisDel } = vi.hoisted(() => ({
+const { consume, mockGetSetting, mockRedisConnect, mockRedisSet, mockRedisEval } = vi.hoisted(() => ({
   consume: vi.fn().mockResolvedValue({
     remainingPoints: 59,
     consumedPoints: 1,
@@ -9,7 +9,7 @@ const { consume, mockGetSetting, mockRedisConnect, mockRedisSet, mockRedisDel } 
   }),
   mockRedisConnect: vi.fn().mockResolvedValue(undefined),
   mockRedisSet: vi.fn().mockResolvedValue('OK'),
-  mockRedisDel: vi.fn().mockResolvedValue(1),
+  mockRedisEval: vi.fn().mockResolvedValue(1),
   mockGetSetting: vi.fn((key) => {
     const settingKey = Array.isArray(key) ? key[0] : key;
     if (settingKey === 'session.rateLimitPersistence') return 'memory';
@@ -41,7 +41,7 @@ vi.mock('redis', () => ({
     connect: mockRedisConnect,
     on: vi.fn(),
     set: mockRedisSet,
-    del: mockRedisDel,
+    eval: mockRedisEval,
   })),
 }));
 
@@ -211,7 +211,7 @@ describe('rate limiter key selection', () => {
     expect(firstNext).toHaveBeenCalledTimes(1);
     expect(mockRedisSet).toHaveBeenCalledWith(
       'aianswers:chat-run:visitor:visitor-hash-redis-lock',
-      '1',
+      expect.any(String),
       { NX: true, EX: 300 }
     );
 
@@ -222,7 +222,13 @@ describe('rate limiter key selection', () => {
     expect(secondNext).not.toHaveBeenCalled();
 
     firstRes.emit('finish');
-    expect(mockRedisDel).toHaveBeenCalledWith('aianswers:chat-run:visitor:visitor-hash-redis-lock');
+    expect(mockRedisEval).toHaveBeenCalledWith(
+      expect.stringContaining('redis.call("get"'),
+      expect.objectContaining({
+        keys: ['aianswers:chat-run:visitor:visitor-hash-redis-lock'],
+        arguments: expect.any(Array),
+      }),
+    );
   });
 
   it('does not apply the anonymous single-run guard when disabled', async () => {

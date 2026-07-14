@@ -1,5 +1,6 @@
 import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
 import { createClient } from 'redis';
+import crypto from 'crypto';
 import { SettingsService } from '../services/SettingsService.js';
 
 // Internal reset hook (will be set when middleware initializes)
@@ -87,10 +88,14 @@ async function acquireAnonymousChatRun({ req, key, persistence, redisClient }) {
 
   const lockKey = `aianswers:chat-run:${key}`;
   if (persistence === 'redis') {
-    const acquired = await redisClient.set(lockKey, '1', { NX: true, EX: 300 });
+    const lockToken = crypto.randomUUID();
+    const acquired = await redisClient.set(lockKey, lockToken, { NX: true, EX: 300 });
     if (acquired !== 'OK') return null;
     return () => {
-      redisClient.del(lockKey).catch((err) => {
+      redisClient.eval(
+        'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
+        { keys: [lockKey], arguments: [lockToken] },
+      ).catch((err) => {
         console.error('[RateLimiter] Failed to release Redis chat-run lock', { message: err.message });
       });
     };
@@ -222,7 +227,24 @@ async function buildMiddlewareInternal() {
     const { key, keyType } = buildRateLimiterIdentity(req, isAuthenticated);
     const limiter = publicLimiter;
 
+    let releaseChatRun = () => {};
     try {
+      if (!isAuthenticated && currentConfig.singleAnonymousChatRunEnabled) {
+        const acquired = await acquireAnonymousChatRun({
+          req,
+          key,
+          persistence: currentConfig.persistence,
+          redisClient,
+        });
+        if (!acquired) {
+          return res.status(429).json({
+            error: 'chat_run_in_progress',
+            message: 'A chat response is already in progress for this session',
+          });
+        }
+        releaseChatRun = acquired;
+      }
+
       // consume 1 point per request
       const reward = await limiter.consume(key);
       const points = typeof limiter.points === 'number' ? limiter.points : null;
@@ -240,23 +262,6 @@ async function buildMiddlewareInternal() {
       // Attach to request for potential handler use
       req.rateLimiterSnapshot = rateLimiterSnapshot;
 
-      let releaseChatRun = () => {};
-      if (!isAuthenticated && currentConfig.singleAnonymousChatRunEnabled) {
-        const acquired = await acquireAnonymousChatRun({
-          req,
-          key,
-          persistence: currentConfig.persistence,
-          redisClient,
-        });
-        if (!acquired) {
-          return res.status(429).json({
-            error: 'chat_run_in_progress',
-            message: 'A chat response is already in progress for this session',
-          });
-        }
-        releaseChatRun = acquired;
-      }
-
       let released = false;
       const releaseOnce = () => {
         if (released) return;
@@ -269,6 +274,7 @@ async function buildMiddlewareInternal() {
       // console.log(`RateLimiter: allowed request for key=${key} (auth=${isAuthenticated}) remaining=${reward.remainingPoints}`);
       return next();
     } catch (rej) {
+      releaseChatRun();
       // RateLimiter throws when points exhausted
       res.setHeader('Retry-After', String(Math.ceil((rej?.msBeforeNext || 1000) / 1000)));
       return res.status(429).json({
