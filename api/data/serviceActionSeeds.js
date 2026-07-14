@@ -50,6 +50,9 @@ export const SERVICE_SEEDS_BY_DEPARTMENT = {
         'My Service Canada Account',
         'Old Age Security'
     ],
+    'TBS-SCT': [
+        'Early Retirement Incentive'
+    ],
     IRCC: [
         'Adult passport',
         'Child passport',
@@ -83,6 +86,8 @@ export const ACTION_SEEDS = [
     { action: 'Find out how much I owe', synonyms: ['Balance owing', 'Fee', 'Fine'] },
     { action: 'Find options available', synonyms: ['Innovation', 'Immigration', 'Jobs'] },
     { action: 'Get help with', synonyms: ['Delays', 'Locked out account'] },
+    { action: 'Recover account', synonyms: ['Forgot password', 'Reset password', 'Locked out'] },
+    { action: 'Use MFA', synonyms: ['Multi-factor authentication', 'Verification code', 'Authenticator'] },
     { action: 'Pay', synonyms: ['Remit'] },
     { action: 'Register', synonyms: ['Open', 'Create', 'Set up'] },
     { action: 'Renew', synonyms: [] },

@@ -7,6 +7,11 @@ const contextSchema = new Schema({
     topicUrl: { type: String, required: false, default: '' },
     department: { type: String, required: false, default: '' },
     departmentUrl: { type: String, required: false, default: '' },
+    // Post-answer task classification (docs/plans/service-action-classification.md).
+    // '' = never classified (historical data or failed call); 'unknown' = the
+    // classifier ran but was not confident. Canonical English values.
+    service: { type: String, required: false, default: '' },
+    action: { type: String, required: false, default: '' },
     searchResults: { type: String, required: false, default: '' },
     inputTokens: { type: String, required: false, default: '' },
     outputTokens: { type: String, required: false, default: '' },

@@ -228,6 +228,34 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
   return llm;
 };
 
+// Service/action classification agent: LLM-only agent for the post-answer
+// task classification (docs/plans/service-action-classification.md). A cheap
+// tagging call, so it uses the mini model like PII/translation/query-rewrite.
+const createServiceActionAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: cfg.name,
+        temperature: cfg.temperature,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for service/action classification: ${agentType}`);
+  }
+
+  return llm;
+};
+
 // Ranker agent: LLM-only agent that uses the reranker prompt. Supports 'openai' and 'azure'.
 const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
@@ -512,4 +540,4 @@ const createSafetyLLM = async (agentType = 'azure') => {
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createJudgeLLM, createSafetyLLM };
+export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createServiceActionAgent, createJudgeLLM, createSafetyLLM };

@@ -793,6 +793,8 @@
         "chatId": "ID de chat",
         "questionNumber": "Q #",
         "department": "Ministère",
+        "service": "Service",
+        "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
         "expertEval": "Éval. expert",
@@ -1375,6 +1377,11 @@
     },
     "safety": {
       "title": "Mesures de sécurité"
+    },
+    "services": {
+      "title": "Volume de questions par service",
+      "subtitle": "Questions regroupées selon le programme ou le service visé par la question de l'utilisateur, calculé par question. Seules les questions posées après le lancement du marquage par service sont classées.",
+      "unknown": "Inconnu"
     },
     "referrals": {
       "title": "Principales pages référentes",

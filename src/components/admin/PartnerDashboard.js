@@ -20,7 +20,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includeServices: true });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
@@ -132,6 +132,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     { name: t('partnerDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
     { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
   ].filter(d => d.value > 0) : [];
+
+  // Question volume by service (per-question task classification). Values are
+  // canonical English strings from the DB (dynamic content); only the
+  // 'unknown' sentinel bucket — unclassified or low-confidence — is translated.
+  const topServicesData = useMemo(
+    () => (metrics.topServices || []).map((row) => ({
+      name: row.service === 'unknown' ? t('partnerDashboard.services.unknown') : row.service,
+      value: row.count,
+    })),
+    [metrics.topServices, t],
+  );
 
   // Top referring pages (distinct conversations / click-throughs per page).
   // Already normalized, merged and ranked server-side; scoped to the selected
@@ -293,6 +304,22 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           />
         </div>
       </div>
+      )}
+
+      {/* Question volume by service — ranked bar of the per-question service
+          classification. Hidden when nothing in range is classified (all
+          pre-feature data would just show one "unknown" bar). */}
+      {topServicesData.some((d) => d.name !== t('partnerDashboard.services.unknown')) && (
+        <div className="dashboard-section">
+          <HBarCard
+            title={t('partnerDashboard.services.title')}
+            subtitle={t('partnerDashboard.services.subtitle')}
+            data={topServicesData}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            yAxisWidth={220}
+            lang={lang}
+          />
+        </div>
       )}
 
       {/* Top referral pages — collapsible list of the partner site pages that
