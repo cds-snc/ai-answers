@@ -228,6 +228,34 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
   return llm;
 };
 
+// Program/action classification agent: LLM-only agent for the post-answer
+// task classification (docs/plans/program-action-classification.md). A cheap
+// tagging call, so it uses the mini model like PII/translation/query-rewrite.
+const createProgramActionAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: cfg.name,
+        temperature: cfg.temperature,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for program/action classification: ${agentType}`);
+  }
+
+  return llm;
+};
+
 // Ranker agent: LLM-only agent that uses the reranker prompt. Supports 'openai' and 'azure'.
 const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
@@ -252,6 +280,37 @@ const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') 
       throw new Error(`Unknown agent type for ranker: ${agentType}`);
   }
 
+
+  return llm;
+};
+
+// Eval-analysis agent: LLM-only agent for the partner eval-analysis
+// classification and insight passes. Uses the default chat model. Supports 'openai' and 'azure'.
+// The deployment is a GPT-5 model, so this mirrors createAzureOpenAIAgent's
+// isGPT5 handling: no temperature/maxTokens (gpt-5.x rejects them), reasoning
+// + maxCompletionTokens + the preview API version instead.
+const createEvalAnalysisAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'azure':
+    case 'openai-gpt51':
+    case 'openai-gpt51-chat': {
+      const cfg = getModelConfig('azure', 'openai-gpt51');
+      llm = new AzureChatOpenAI({
+        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        azureOpenAIApiDeploymentName: cfg.name,
+        azureOpenAIApiVersion: '2025-04-01-preview',
+        model: cfg.model,
+        reasoning: cfg.reasoning,
+        maxCompletionTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for eval-analysis: ${agentType}`);
+  }
 
   return llm;
 };
@@ -481,4 +540,4 @@ const createSafetyLLM = async (agentType = 'azure') => {
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createJudgeLLM, createSafetyLLM };
+export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createProgramActionAgent, createJudgeLLM, createSafetyLLM };

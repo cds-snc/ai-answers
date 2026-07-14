@@ -50,6 +50,10 @@ class MetricsService {
     return this._fetchMetric('metrics-referrals', filters, signal);
   }
 
+  static async getProgramMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-programs', filters, signal);
+  }
+
   static async getCitationMetrics(filters = {}, signal) {
     return this._fetchMetric('metrics-citations', filters, signal);
   }

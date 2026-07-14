@@ -795,6 +795,8 @@
         "chatId": "ID de chat",
         "questionNumber": "Q #",
         "department": "Ministère",
+        "program": "Programme",
+        "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
         "expertEval": "Éval. expert",
@@ -1378,6 +1380,11 @@
     "safety": {
       "title": "Mesures de sécurité"
     },
+    "programs": {
+      "title": "Volume de questions par programme",
+      "subtitle": "Questions regroupées selon le programme gouvernemental visé par la question de l'utilisateur, calculé par question. Seules les questions posées après le lancement du marquage par programme sont classées.",
+      "unknown": "Inconnu"
+    },
     "referrals": {
       "title": "Principales pages référentes",
       "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation.",
@@ -1397,6 +1404,70 @@
         "clarifyingQuestion": "Questions de clarification",
         "ptMuni": "Provincial/municipal",
         "notGc": "Réponses hors du mandat du GC"
+      }
+    },
+    "evalAnalysis": {
+      "title": "Analyse des évaluations",
+      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par programme, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
+      "selectInstitution": "Sélectionnez une institution dans les filtres ci-dessus pour activer l'analyse.",
+      "precheckCount": "{count} évaluations d'experts correspondent aux filtres actuels.",
+      "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",
+      "tooMany": "Trop d'évaluations pour une seule analyse — réduisez la plage de dates jusqu'à {max} ou moins ({count} correspondent actuellement).",
+      "runButton": "Lancer l'analyse des évaluations",
+      "error": "L'analyse a échoué. Des résultats partiels peuvent être affichés ci-dessous.",
+      "running": {
+        "preparing": "Préparation de l'analyse…",
+        "classifying": "Classification des programmes… {done} de {total}",
+        "synthesizing": "Rédaction des constats…"
+      },
+      "status": {
+        "running": "En préparation",
+        "classifying": "En classification",
+        "synthesizing": "En synthèse",
+        "complete": "Terminée",
+        "error": "Échouée"
+      },
+      "pastRuns": {
+        "title": "Analyses antérieures",
+        "colDate": "Date d'exécution",
+        "colRange": "Plage de dates",
+        "colCount": "Évaluations",
+        "colStatus": "État",
+        "colBy": "Lancée par",
+        "view": "Afficher"
+      },
+      "report": {
+        "title": "Rapport d'analyse",
+        "header": "{count} évaluations d'experts · {department} · {start} – {end}",
+        "runOn": "Exécutée le {date}",
+        "runBy": "par {email}",
+        "excluded": "{count} sans note exclues des statistiques de résultats",
+        "unclassified": "{count} n'ont pas pu être classées par programme",
+        "partial": "Cette analyse ne s'est pas terminée — les résultats ci-dessous sont partiels.",
+        "incomplete": "Cette analyse a été interrompue avant la fin et n'a aucun rapport à afficher. Lancez une nouvelle analyse.",
+        "programActionsTitle": "Résultats par programme et action",
+        "colProgramAction": "Programme — action",
+        "singlesSkipped": "{groups} groupes n'ayant qu'une seule évaluation ne sont pas affichés ({count} évaluations).",
+        "colCount": "Évaluations",
+        "colNonPerfect": "Non parfaites",
+        "colPctNonPerfect": "% non parfaites",
+        "colExample": "Exemple",
+        "allPerfect": "Toutes parfaites",
+        "themesTitle": "Ce que révèlent les explications",
+        "themeCount": "{count} évaluations",
+        "contentIssuesTitle": "Problèmes de contenu",
+        "contentIssuesCount": "{count} évaluations ont signalé un problème de contenu.",
+        "languageTitle": "Anglais vs français",
+        "colLanguage": "Langue",
+        "colMeanScore": "Note moyenne",
+        "colPctPerfect": "% parfaites",
+        "lang": {
+          "en": "Anglais",
+          "fr": "Français"
+        },
+        "evaluatorsTitle": "Évaluateurs",
+        "colEvaluator": "Évaluateur",
+        "flagged": "À examiner"
       }
     }
   },

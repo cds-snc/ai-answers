@@ -9,6 +9,7 @@ import HBarCard from './dashboard/HBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
 import CitationPagesCard from './dashboard/CitationPagesCard.js';
+import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { BLOCK_QUERY_TYPES } from '../../constants/blockedQueryTypes.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
@@ -19,10 +20,13 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
+  // Full filters object as last applied — the eval-analysis section runs its
+  // precheck and analysis against exactly what the dashboard is showing.
+  const [appliedFilters, setAppliedFilters] = useState(null);
   const handleApplyFilters = (filters) => {
     if (autoApplyFired.current) {
       // Second+ call is user-triggered: mark as applied so FilterPanel can collapse.
@@ -30,10 +34,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     }
     autoApplyFired.current = true;
     setAppliedDepartment(filters?.department || '');
+    setAppliedFilters(filters || null);
     fetchMetrics(filters);
   };
   const handleClearFilters = (filters) => {
     setAppliedDepartment(filters?.department || '');
+    setAppliedFilters(filters || null);
     fetchMetrics(filters);
   };
 
@@ -126,6 +132,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     { name: t('partnerDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
     { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
   ].filter(d => d.value > 0) : [];
+
+  // Question volume by program (per-question task classification). Values are
+  // canonical English strings from the DB (dynamic content); only the
+  // 'unknown' sentinel bucket — unclassified or low-confidence — is translated.
+  const topProgramsData = useMemo(
+    () => (metrics.topPrograms || []).map((row) => ({
+      name: row.program === 'unknown' ? t('partnerDashboard.programs.unknown') : row.program,
+      value: row.count,
+    })),
+    [metrics.topPrograms, t],
+  );
 
   // Top referring pages (distinct conversations / click-throughs per page).
   // Already normalized, merged and ranked server-side; scoped to the selected
@@ -289,6 +306,22 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
       )}
 
+      {/* Question volume by program — ranked bar of the per-question program
+          classification. Hidden when nothing in range is classified (all
+          pre-feature data would just show one "unknown" bar). */}
+      {topProgramsData.some((d) => d.name !== t('partnerDashboard.programs.unknown')) && (
+        <div className="dashboard-section">
+          <HBarCard
+            title={t('partnerDashboard.programs.title')}
+            subtitle={t('partnerDashboard.programs.subtitle')}
+            data={topProgramsData}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            yAxisWidth={220}
+            lang={lang}
+          />
+        </div>
+      )}
+
       {/* Top referral pages — collapsible list of the partner site pages that
           drove the most click-throughs (conversations) to AI Answers. Hidden
           when there are no referrals to show. */}
@@ -414,6 +447,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           </div>
         </div>
       )}
+
+      {/* Eval analysis — runs over the currently applied filters; requires an
+          institution to be selected before the Run button enables. */}
+      <EvalAnalysisSection
+        lang={lang}
+        appliedDepartment={appliedDepartment}
+        appliedFilters={appliedFilters}
+      />
       </>
       )}
 

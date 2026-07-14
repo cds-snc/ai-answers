@@ -18,7 +18,7 @@ const escapeHtmlAttribute = (value) => {
     .replace(/>/g, '&gt;');
 };
 
-const TABLE_STORAGE_KEY = `evalDashboard_tableState_v2_`;
+const TABLE_STORAGE_KEY = `evalDashboard_tableState_v3_`;
 
 const truncateEmail = (email) => {
   if (!email) return '';
@@ -141,6 +141,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => v ? escapeHtmlAttribute(v) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: false, orderable: true },
+    { title: t('admin.evalDashboard.columns.program', 'Program'), data: 'program', render: v => v ? escapeHtmlAttribute(v) : '', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.action', 'Action'), data: 'action', render: v => v ? escapeHtmlAttribute(v) : '', searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
@@ -197,7 +199,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 ordering: true,
                 info: true,
                 autoWidth: false,
-                order: [[11, 'desc']],
+                order: [[13, 'desc']],
                 stateSave: true,
                 layout: {
                   topStart: {
@@ -275,8 +277,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 11, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'feedback', 'hasDownload', 'department', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 13, dir: 'desc' };
+                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'feedback', 'hasDownload', 'department', 'program', 'action', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';

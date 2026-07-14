@@ -81,6 +81,32 @@ const filterInteractionsByCategory = (chat, category, evaluator) => {
 // Filtering now happens in the aggregation pipeline using computed fields
 // via getPartnerEvalAggregationExpression() and getAiEvalAggregationExpression().
 
+// JS mirror of getPartnerEvalAggregationExpression below — the exact same
+// score signals and priority (harmful > hasCitationError > hasError >
+// needsImprovement > correct), for consumers that categorize in Node instead
+// of in the pipeline (e.g. the partner eval analysis). If the expression
+// changes, change this too — they live side by side for that reason.
+// (categorizeExpertFeedback above is the older categorizer with different
+// edge-case semantics — a scored row without totalScore 100 falls back to
+// 'correct' there, but stays null here and in the aggregation.)
+export function deriveExpertFeedbackCategory(ef) {
+  if (!ef) return null;
+  const sentenceScores = [1, 2, 3, 4].map((n) => ef[`sentence${n}Score`]);
+  const hasAnyScore =
+    sentenceScores.some((s) => [0, 80, 100].includes(s)) ||
+    [0, 20, 25].includes(ef.citationScore) ||
+    (ef.totalScore !== null && ef.totalScore !== undefined);
+  if (!hasAnyScore) return null;
+
+  const hasHarmful = [1, 2, 3, 4].some((n) => ef[`sentence${n}Harmful`] === true);
+  if (hasHarmful) return 'harmful';
+  if ([0, 20].includes(ef.citationScore)) return 'hasCitationError';
+  if (sentenceScores.some((s) => s === 0) || ef.totalScore === 0) return 'hasError';
+  if (sentenceScores.some((s) => s === 80) || ef.totalScore === 80) return 'needsImprovement';
+  if (ef.totalScore === 100) return 'correct';
+  return null;
+}
+
 export function getPartnerEvalAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
   return {
     $cond: {
