@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import EmbeddingService from './EmbeddingService.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import EvaluationService from './EvaluationService.js';
-import ServiceActionClassificationService from './ServiceActionClassificationService.js';
+import ProgramActionClassificationService from './ProgramActionClassificationService.js';
 import { Setting } from '../models/setting.js';
 import { requireString } from '../api/util/db-query.js';
 import { getPersistedAppVersion } from './AppVersionService.js';
@@ -144,10 +144,10 @@ export const InteractionPersistenceService = {
         chat.interactions.push(dbInteraction._id);
         await chat.save();
 
-        // 4b. Service/action task classification — fire-and-forget so the
+        // 4b. Program/action task classification — fire-and-forget so the
         // response path pays no latency; a failure leaves the Context fields
-        // at '' (see docs/plans/service-action-classification.md).
-        ServiceActionClassificationService.classifyInteractionInBackground({
+        // at '' (see docs/plans/program-action-classification.md).
+        ProgramActionClassificationService.classifyInteractionInBackground({
             contextId: savedContext._id,
             chatId,
             question: interaction.answer?.englishQuestion || interaction.question || '',

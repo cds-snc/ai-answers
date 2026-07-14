@@ -7,7 +7,7 @@ const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign:
 const numHead = { ...head, textAlign: 'right' };
 const numCell = { ...cell, textAlign: 'right', whiteSpace: 'nowrap' };
 
-// Renders a stored eval-analysis report: computed tables (topics/actions
+// Renders a stored eval-analysis report: computed tables (programs/actions
 // cross-tab, EN/FR, evaluators) interleaved with the LLM narrative sections.
 // Everything is read from the stored analysis doc — no fetching here.
 const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
@@ -93,11 +93,11 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
         )}
       </div>
 
-      {/* Scores by combined topic — action group (Tier 2 cross-tab) */}
+      {/* Scores by combined program — action group (Tier 2 cross-tab) */}
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.topicActionsTitle')}</h3>
-          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colTopicAction'))}
+          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
+          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'))}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
               {t('partnerDashboard.evalAnalysis.report.singlesSkipped')

@@ -29,7 +29,7 @@ const INITIAL_METRICS = {
   topReferrals: [],
   topCitations: [],
   answerTypeBreakdown: {},
-  topServices: [],
+  topPrograms: [],
 };
 
 // Fetches the shared dashboard metric bundle (usage, sessions, expert feedback,
@@ -49,7 +49,7 @@ const INITIAL_METRICS = {
 // Like blocked queries, they're best-effort: a failure leaves an empty result
 // rather than taking down the whole dashboard.
 export function useDashboardMetrics(options = {}) {
-  const { includeReferrals = false, includeCitations = false, includeServices = false } = options;
+  const { includeReferrals = false, includeCitations = false, includePrograms = false } = options;
   const [metrics, setMetrics] = useState(INITIAL_METRICS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -90,7 +90,7 @@ export function useDashboardMetrics(options = {}) {
       // Best-effort tail fetches run together: blocked queries always, top
       // referrals / citations only when opted in. Each falls back to its empty
       // shape so one failing endpoint can't blank the rest of the dashboard.
-      const [blocked, referrals, citations, services] = await Promise.all([
+      const [blocked, referrals, citations, programs] = await Promise.all([
         MetricsService.getBlockedMetrics(filters, signal)
           .catch(() => ({ blockedQueries: INITIAL_METRICS.blockedQueries })),
         includeReferrals
@@ -101,20 +101,20 @@ export function useDashboardMetrics(options = {}) {
           ? MetricsService.getCitationMetrics(filters, signal)
               .catch(() => ({ topCitations: INITIAL_METRICS.topCitations, answerTypeBreakdown: INITIAL_METRICS.answerTypeBreakdown }))
           : Promise.resolve({ topCitations: INITIAL_METRICS.topCitations, answerTypeBreakdown: INITIAL_METRICS.answerTypeBreakdown }),
-        includeServices
-          ? MetricsService.getServiceMetrics(filters, signal)
-              .catch(() => ({ topServices: INITIAL_METRICS.topServices }))
-          : Promise.resolve({ topServices: INITIAL_METRICS.topServices }),
+        includePrograms
+          ? MetricsService.getProgramMetrics(filters, signal)
+              .catch(() => ({ topPrograms: INITIAL_METRICS.topPrograms }))
+          : Promise.resolve({ topPrograms: INITIAL_METRICS.topPrograms }),
       ]);
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals, ...citations, ...services });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals, ...citations, ...programs });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [includeReferrals, includeCitations, includeServices]);
+  }, [includeReferrals, includeCitations, includePrograms]);
 
   return { metrics, loading, error, fetchMetrics };
 }

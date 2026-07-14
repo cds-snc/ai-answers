@@ -3,7 +3,7 @@ import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import { sendServiceError } from './eval-analysis-util.js';
 
-// Advances a running analysis by exactly one step (snapshot + topic proposal,
+// Advances a running analysis by exactly one step (snapshot + program proposal,
 // one classification chunk, or synthesis). The client keeps calling until the
 // returned status is 'complete' or 'error' — chunk-per-request keeps every
 // call short enough for serverless deployments.

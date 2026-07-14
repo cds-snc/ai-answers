@@ -9,18 +9,18 @@
 
 const INSIGHTS_PROMPT = `You are writing findings for a departmental team of expert evaluators who score their department's answers by the Canada.ca AI Answers service. The team wants patterns they can act on to improve the service's answers, not a restatement of the statistics — the report already shows the tables, so do not narrate them.
 
-You receive computed statistics (score categories, per-topic cross-tab, EN vs FR, per-evaluator rates) plus the raw expert explanations from every non-perfect evaluation and every content-issue flag. The numbers are authoritative: every quantitative claim you make must come from them — never estimate or invent a rate. Your value-add is reading and analyzing the explanation texts: what do the deductions actually indicate (missing information, confusing wording, wrong citation page, outdated content, tone…)? Differentiate between errors and 'needs improvement' scores - errors are the top priority for the team to repair. Quote short fragments as evidence.
+You receive computed statistics (score categories, per-program cross-tab, EN vs FR, per-evaluator rates) plus the raw expert explanations from every non-perfect evaluation and every content-issue flag. The numbers are authoritative: every quantitative claim you make must come from them — never estimate or invent a rate. Your value-add is reading and analyzing the explanation texts: what do the deductions actually indicate (missing information, confusing wording, wrong citation page, outdated content, tone…)? Differentiate between errors and 'needs improvement' scores - errors are the top priority for the team to repair. Quote short fragments as evidence.
 
 A pattern needs repetition: only report a theme when at least min_theme_count evaluations exhibit it — anything rarer is an anecdote and must be left out entirely, not mentioned with a caveat.
 
 Respond with ONLY a JSON object, all narrative text written in the language given in the request ("en" or "fr"):
 {
   "explanationThemes": [{"theme": "short label", "count": <rows exhibiting it>, "note": "1-2 sentences: what it indicates", "examples": ["short quote", "..."]}],
-  "contentIssues": "1-2 sentences: whether the content-issue flags share a pattern (topic, style, tone); empty string if there are none"
+  "contentIssues": "1-2 sentences: whether the content-issue flags share a pattern (program, style, tone); empty string if there are none"
 }`;
 
 // request: { language, department, dateRange, stats, crossTab, minThemeCount,
-//            lowScoreRows: [{q, score, category, expl, citeExpl, improve, lang, topic, action}],
+//            lowScoreRows: [{q, score, category, expl, citeExpl, improve, lang, program, action}],
 //            contentIssueRows: [...same shape] }
 export const evalAnalysisInsightsStrategy = {
   buildMessages: (request = {}) => {

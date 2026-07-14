@@ -199,11 +199,11 @@ async function evalDashboardHandler(req, res) {
         as: 'contextDoc'
       }
     });
-    // Extract only department + service/action classification immediately
+    // Extract only department + program/action classification immediately
     pipeline.push({
       $addFields: {
         'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] },
-        'interactions.service': { $ifNull: [{ $arrayElemAt: ['$contextDoc.service', 0] }, ''] },
+        'interactions.program': { $ifNull: [{ $arrayElemAt: ['$contextDoc.program', 0] }, ''] },
         'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDoc.action', 0] }, ''] }
       }
     });
@@ -366,7 +366,7 @@ async function evalDashboardHandler(req, res) {
         chatId: 1,  // Already extracted at top level
         pageLanguage: 1,  // Already extracted at top level
         department: '$interactions.department',
-        service: '$interactions.service',
+        program: '$interactions.program',
         action: '$interactions.action',
         referringUrl: { $ifNull: ['$interactions.referringUrl', ''] },
         questionNumber: 1,
@@ -401,7 +401,7 @@ async function evalDashboardHandler(req, res) {
         { chatId: { $regex: esc, $options: 'i' } },
         { interactionId: { $regex: esc, $options: 'i' } },
         { department: { $regex: esc, $options: 'i' } },
-        { service: { $regex: esc, $options: 'i' } },
+        { program: { $regex: esc, $options: 'i' } },
         { action: { $regex: esc, $options: 'i' } },
         { pageLanguage: { $regex: esc, $options: 'i' } },
         { expertEmail: { $regex: esc, $options: 'i' } },
@@ -455,7 +455,7 @@ async function evalDashboardHandler(req, res) {
       chatId: 'chatId',
       questionNumber: 'questionNumber',
       department: 'department',
-      service: 'service',
+      program: 'program',
       action: 'action',
       referringUrl: 'referringUrl',
       pageLanguage: 'pageLanguage',
@@ -488,7 +488,7 @@ async function evalDashboardHandler(req, res) {
       questionNumber: r.questionNumber || 0,
       chatId: r.chatId || '',
       department: r.department || '',
-      service: r.service || '',
+      program: r.program || '',
       action: r.action || '',
       referringUrl: r.referringUrl || '',
       pageLanguage: r.pageLanguage || '',

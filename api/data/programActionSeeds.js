@@ -1,13 +1,16 @@
-// Seed vocabulary for the partner eval-analysis topic classification.
-// Converted from "LF services actions ideas.csv" (Lisa Fast, 2026-07).
+// Seed vocabulary for the program/action classification (per-question tagging
+// and the partner eval analysis). Converted from Lisa Fast's seed CSV
+// (seed-programs-actions-ideas.csv, formerly "LF services actions ideas.csv",
+// 2026-07) — most entries in that CSV were in fact programs, hence the
+// program framing here.
 //
 // These are NOT a closed taxonomy: the classifier derives emergent topic
 // groups from the questions/answers themselves and uses this vocabulary only
-// as examples of the granularity wanted. Services are grouped by department
+// as examples of the granularity wanted. Programs are grouped by department
 // abbrKey (see agents/prompts/scenarios/departments_EN.js — never invent new
 // abbrKeys); the action list is global across departments.
 
-export const SERVICE_SEEDS_BY_DEPARTMENT = {
+export const PROGRAM_SEEDS_BY_DEPARTMENT = {
     'CRA-ARC': [
         'CRA Account',
         'My Account',
@@ -68,7 +71,7 @@ export const SERVICE_SEEDS_BY_DEPARTMENT = {
     ]
 };
 
-// Global action vocabulary: what the user is trying to DO with a service.
+// Global action vocabulary: what the user is trying to DO with a program.
 // `synonyms` help the classifier recognize phrasing variants.
 export const ACTION_SEEDS = [
     { action: 'Apply', synonyms: ['Request'] },

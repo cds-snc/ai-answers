@@ -10,11 +10,11 @@ import { toCompactRow, computeStats, buildCrossTab } from './evalAnalysisStats.j
 import AgentOrchestratorService from '../agents/AgentOrchestratorService.js';
 import { createEvalAnalysisAgent } from '../agents/AgentFactory.js';
 import {
-    evalAnalysisTopicsStrategy,
+    evalAnalysisProgramsStrategy,
     evalAnalysisClassifyStrategy
 } from '../agents/strategies/evalAnalysisClassifyStrategy.js';
 import { evalAnalysisInsightsStrategy } from '../agents/strategies/evalAnalysisInsightsStrategy.js';
-import { SERVICE_SEEDS_BY_DEPARTMENT, ACTION_SEEDS, OTHER_LABEL } from '../api/data/serviceActionSeeds.js';
+import { PROGRAM_SEEDS_BY_DEPARTMENT, ACTION_SEEDS, OTHER_LABEL } from '../api/data/programActionSeeds.js';
 import ServerLoggingService from './ServerLoggingService.js';
 
 // Volume guardrails (also enforced client-side from the precheck endpoint).
@@ -24,7 +24,7 @@ export const MIN_EVALS = 20;
 export const MAX_EVALS = 200;
 
 const CLASSIFY_CHUNK_SIZE = 20;
-const TOPIC_SAMPLE_SIZE = 80;
+const PROGRAM_SAMPLE_SIZE = 80;
 
 const parseDateRange = (filters = {}) => {
     const start = filters.startDate ? new Date(filters.startDate) : null;
@@ -123,7 +123,7 @@ const invoke = (strategy, request, chatId) =>
         strategy
     });
 
-// Evenly spread sample so the topic proposal sees the full date range, not
+// Evenly spread sample so the program proposal sees the full date range, not
 // just the earliest questions.
 const sampleRows = (rows, size) => {
     if (rows.length <= size) return rows;
@@ -140,7 +140,7 @@ const slimRowForInsights = (r) => ({
     expl: r.expl,
     citeExpl: r.citeExpl,
     improve: r.improve,
-    topic: r.topic,
+    program: r.program,
     action: r.action
 });
 
@@ -192,7 +192,7 @@ class EvalAnalysisServiceClass {
         return toClientDoc(doc);
     }
 
-    // Advances a run by exactly one step (snapshot+topics, one classification
+    // Advances a run by exactly one step (snapshot+programs, one classification
     // chunk, or synthesis) so each HTTP request stays short. Any step failure
     // marks the doc 'error' but keeps whatever was already computed.
     // The rows snapshot is deliberately NOT loaded here — each step fetches
@@ -210,7 +210,7 @@ class EvalAnalysisServiceClass {
 
         try {
             if (doc.status === 'running') {
-                await this.#snapshotAndProposeTopics(doc);
+                await this.#snapshotAndProposePrograms(doc);
             } else if (doc.status === 'classifying') {
                 await this.#classifyNextChunk(doc);
             } else if (doc.status === 'synthesizing') {
@@ -248,7 +248,7 @@ class EvalAnalysisServiceClass {
             .lean();
     }
 
-    async #snapshotAndProposeTopics(doc) {
+    async #snapshotAndProposePrograms(doc) {
         const aggRows = await Chat.aggregate(buildPipeline(doc.filters || {}));
         const rows = aggRows.map(toCompactRow);
         if (rows.length < MIN_EVALS) {
@@ -268,21 +268,21 @@ class EvalAnalysisServiceClass {
 
         const chatId = `eval-analysis-${doc._id}`;
         const proposal = await invoke(
-            evalAnalysisTopicsStrategy,
+            evalAnalysisProgramsStrategy,
             {
                 department: doc.department,
-                seedServices: SERVICE_SEEDS_BY_DEPARTMENT[doc.department] || [],
-                sampleRows: sampleRows(rows, TOPIC_SAMPLE_SIZE)
+                seedPrograms: PROGRAM_SEEDS_BY_DEPARTMENT[doc.department] || [],
+                sampleRows: sampleRows(rows, PROGRAM_SAMPLE_SIZE)
             },
             chatId
         );
-        if (!proposal?.topics?.length) {
-            throw new Error('Topic proposal did not return a usable topic list');
+        if (!proposal?.programs?.length) {
+            throw new Error('Program proposal did not return a usable program list');
         }
 
         const scalars = {
             stats,
-            topics: proposal.topics,
+            programs: proposal.programs,
             evalCount: rows.length,
             excludedCount: stats.excludedCount,
             progress: { classified: 0, total: rows.length },
@@ -307,12 +307,12 @@ class EvalAnalysisServiceClass {
             chunk = chunkDoc?.rows || [];
         }
 
-        // Row tag updates as targeted dotted-path $set deltas (rows.<i>.topic)
+        // Row tag updates as targeted dotted-path $set deltas (rows.<i>.program)
         // so only the ~20 changed rows are written, not the whole Mixed array.
         const rowSets = {};
         if (chunk.length > 0) {
             const chatId = `eval-analysis-${doc._id}`;
-            const request = { topics: doc.topics, actions: ACTION_SEEDS, rows: chunk };
+            const request = { programs: doc.programs, actions: ACTION_SEEDS, rows: chunk };
             let assignments = null;
             try {
                 assignments = (await invoke(evalAnalysisClassifyStrategy, request, chatId))?.assignments;
@@ -321,7 +321,7 @@ class EvalAnalysisServiceClass {
             }
             if (!assignments) {
                 // The retry must not throw: a twice-failed chunk stays
-                // unclassified (topic null) and the run continues — the report
+                // unclassified (program null) and the run continues — the report
                 // states how many rows were unclassified.
                 try {
                     assignments = (await invoke(evalAnalysisClassifyStrategy, request, chatId))?.assignments;
@@ -330,13 +330,13 @@ class EvalAnalysisServiceClass {
                 }
             }
             if (assignments) {
-                const validTopics = new Set([...doc.topics, OTHER_LABEL]);
+                const validPrograms = new Set([...doc.programs, OTHER_LABEL]);
                 const validActions = new Set([...ACTION_SEEDS.map((a) => a.action), OTHER_LABEL]);
                 const byId = new Map(assignments.map((a) => [a.id, a]));
                 chunk.forEach((row, i) => {
                     const a = byId.get(row.id);
                     if (!a) return;
-                    rowSets[`rows.${offset + i}.topic`] = validTopics.has(a.topic) ? a.topic : OTHER_LABEL;
+                    rowSets[`rows.${offset + i}.program`] = validPrograms.has(a.program) ? a.program : OTHER_LABEL;
                     rowSets[`rows.${offset + i}.action`] = validActions.has(a.action) ? a.action : OTHER_LABEL;
                 });
             }

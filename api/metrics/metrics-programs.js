@@ -4,15 +4,15 @@ import { withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
-const MAX_SERVICES = 25;
+const MAX_PROGRAMS = 25;
 
-// Question volume grouped by the per-question service classification
-// (context.service — see docs/plans/service-action-classification.md).
+// Question volume grouped by the per-question program classification
+// (context.program — see docs/plans/program-action-classification.md).
 // Mirrors buildDepartmentPipeline in metrics-departments.js, including the
 // cross-filter support, but only counts volume. Unclassified ('' — historical
 // or failed call) and low-confidence ('unknown') questions are folded into a
 // single 'unknown' sentinel bucket the client translates for display.
-function buildServicePipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
+function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
     const stages = [
         { $match: dateFilter },
         {
@@ -36,9 +36,9 @@ function buildServicePipeline(dateFilter, extraFilters = [], departmentFilter = 
         {
             $addFields: {
                 department: { $ifNull: [{ $arrayElemAt: ['$ctx.department', 0] }, 'Unknown'] },
-                service: {
+                program: {
                     $let: {
-                        vars: { raw: { $ifNull: [{ $arrayElemAt: ['$ctx.service', 0] }, ''] } },
+                        vars: { raw: { $ifNull: [{ $arrayElemAt: ['$ctx.program', 0] }, ''] } },
                         in: { $cond: [{ $in: ['$$raw', ['', 'unknown']] }, 'unknown', '$$raw'] }
                     }
                 }
@@ -49,7 +49,7 @@ function buildServicePipeline(dateFilter, extraFilters = [], departmentFilter = 
         // Project only fields needed for aggregation + cross-filter lookups
         {
             $project: {
-                service: 1,
+                program: 1,
                 answerId: '$interactions.answer',
                 autoEvalId: '$interactions.autoEval',
                 expertFeedbackId: '$interactions.expertFeedback'
@@ -140,31 +140,31 @@ function buildServicePipeline(dateFilter, extraFilters = [], departmentFilter = 
 
     stages.push({
         $group: {
-            _id: '$service',
+            _id: '$program',
             total: { $sum: 1 }
         }
     });
     stages.push({ $sort: { total: -1 } });
-    stages.push({ $limit: MAX_SERVICES });
+    stages.push({ $limit: MAX_PROGRAMS });
     return stages;
 }
 
-async function getServiceMetrics(req, res) {
+async function getProgramMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
         const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-        const result = await executeWithRetry(() => Chat.aggregate(buildServicePipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
+        const result = await executeWithRetry(() => Chat.aggregate(buildProgramPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
 
-        const topServices = result.map((row) => ({ service: row._id, count: row.total }));
+        const topPrograms = result.map((row) => ({ program: row._id, count: row.total }));
 
-        return res.status(200).json({ success: true, metrics: { topServices } });
+        return res.status(200).json({ success: true, metrics: { topPrograms } });
     } catch (error) {
-        console.error('Error in service metrics:', error);
-        return res.status(500).json({ error: 'Failed to fetch service metrics' });
+        console.error('Error in program metrics:', error);
+        return res.status(500).json({ error: 'Failed to fetch program metrics' });
     }
 }
 
-export default withProtection(getServiceMetrics);
+export default withProtection(getProgramMetrics);

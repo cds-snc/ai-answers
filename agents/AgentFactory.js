@@ -228,10 +228,10 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
   return llm;
 };
 
-// Service/action classification agent: LLM-only agent for the post-answer
-// task classification (docs/plans/service-action-classification.md). A cheap
+// Program/action classification agent: LLM-only agent for the post-answer
+// task classification (docs/plans/program-action-classification.md). A cheap
 // tagging call, so it uses the mini model like PII/translation/query-rewrite.
-const createServiceActionAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
+const createProgramActionAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'azure':
@@ -250,7 +250,7 @@ const createServiceActionAgent = async (agentType = 'openai-gpt51', chatId = 'sy
       break;
     }
     default:
-      throw new Error(`Unknown agent type for service/action classification: ${agentType}`);
+      throw new Error(`Unknown agent type for program/action classification: ${agentType}`);
   }
 
   return llm;
@@ -540,4 +540,4 @@ const createSafetyLLM = async (agentType = 'azure') => {
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createServiceActionAgent, createJudgeLLM, createSafetyLLM };
+export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createProgramActionAgent, createJudgeLLM, createSafetyLLM };

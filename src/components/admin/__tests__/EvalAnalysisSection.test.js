@@ -83,7 +83,7 @@ describe('EvalAnalysisReport', () => {
   it('renders a complete stored report', () => {
     render(<EvalAnalysisReport analysis={analysis} lang="en" />);
     expect(screen.getByText('Analysis report')).toBeTruthy();
-    expect(screen.getByText('Scores by topic and action')).toBeTruthy();
+    expect(screen.getByText('Scores by program and action')).toBeTruthy();
     expect(screen.getByText('Early retirement incentive — Check eligibility')).toBeTruthy();
     expect(screen.getByText('All perfect')).toBeTruthy();
     expect(screen.getByText('2 groups with only one evaluation are not shown (2 evaluations).')).toBeTruthy();

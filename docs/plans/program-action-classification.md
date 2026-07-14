@@ -1,4 +1,4 @@
-# Per-question service & action classification
+# Per-question program & action classification
 
 **Status:** implementing (July 2026)
 **Owner:** Lisa Fast
@@ -10,8 +10,10 @@ drives scenario loading and department-level statistics. We want a second, more
 granular layer: what **task** the user was trying to accomplish, split into two
 independent parts:
 
-- **Service** — the specific program/service the question relates to
-  (e.g. "Canada Pension Plan")
+- **Program** — the specific government program the question relates to
+  (e.g. "Canada Pension Plan"). Framed as *program*, not *service*: programs
+  have clear accountability, "service" is nebulous, and the crisper concept
+  keeps the LLM's naming consistent across runs (July 2026 team decision).
 - **Action** — what the user wants to do with it (e.g. "Apply",
   "Check eligibility")
 
@@ -24,22 +26,22 @@ by per-question scoping.
 | Decision | Choice |
 |----------|--------|
 | Where classification runs | **Fire-and-forget after persist** — zero added user latency; a failed call leaves the fields empty |
-| Service vocabulary | **Open, seed-guided** — the model names the official GC program itself; `SERVICE_SEEDS_BY_DEPARTMENT` is a naming anchor, not a closed list. No taxonomy for public servants to maintain. |
+| Program vocabulary | **Open, seed-guided** — the model names the official GC program itself; `PROGRAM_SEEDS_BY_DEPARTMENT` is a naming anchor, not a closed list. No taxonomy for public servants to maintain. |
 | Action vocabulary | **Controlled list** (`ACTION_SEEDS` + synonyms) or `unknown` — actions are where consistency does the differentiating work |
-| Unseeded departments | Classifier still runs; the model uses its own knowledge of GC programs for the service |
-| Dashboard v1 | Volume-by-service card on the partner dashboard only |
-| Examine/test surface | Service + Action columns on the Evaluation dashboard table |
+| Unseeded departments | Classifier still runs; the model uses its own knowledge of GC programs |
+| Dashboard v1 | Volume-by-program card on the partner dashboard only |
+| Examine/test surface | Program + Action columns on the Evaluation dashboard table |
 | Language | **EN-first MVP** — canonical English values stored in the DB; FR display deferred (see below) |
 | Model | Mini tier (`openai-gpt41-mini`), same as PII/translation/query-rewrite — it's a cheap tagging call |
 
 ### Accepted risks
 
-1. **Naming drift.** Open service naming means the model may emit variant names
+1. **Naming drift.** Open program naming means the model may emit variant names
    for the same program over time ("EI regular benefits" vs "Employment
    insurance - regular benefits"). Mitigation: the prompt instructs exact reuse
    of seed names when they fit; drift is visible in the volume card, and a
    normalization pass can be added later if it proves to be a problem.
-2. **Shared action seeds.** `api/data/serviceActionSeeds.js` is also the
+2. **Shared action seeds.** `api/data/programActionSeeds.js` is also the
    eval-analysis vocabulary; the account-action additions (Recover account,
    Use MFA) appear there too. This is intentional — one vocabulary.
 
@@ -48,7 +50,7 @@ by per-question scoping.
 Two new optional string fields on the `Context` schema (`models/context.js`):
 
 ```js
-service: { type: String, required: false, default: '' },
+program: { type: String, required: false, default: '' },
 action:  { type: String, required: false, default: '' },
 ```
 
@@ -68,21 +70,21 @@ backfill; historical docs simply lack the fields.
 ```
 persistNode → InteractionPersistenceService.persistInteraction()
                 └─ (after interaction + chat saved, NOT awaited)
-                   ServiceActionClassificationService.classifyInteraction()
+                   ProgramActionClassificationService.classifyInteraction()
                      ├─ buildMessages: English question + English answer +
                      │  context.department + citation URL + referring URL +
-                     │  seed services (for the matched dept) + action list
+                     │  seed programs (for the matched dept) + action list
                      ├─ mini-model LLM call via AgentOrchestratorService
-                     └─ Context.updateOne({_id}, {$set: {service, action}})
+                     └─ Context.updateOne({_id}, {$set: {program, action}})
 ```
 
 - The answer and citation are inputs **by design** — users mix programs up, and
   the answer/citation often reveals the real program.
-- The prompt encodes the accounts rule: account services (CRA Account, My
+- The prompt encodes the accounts rule: accounts (CRA Account, My
   Service Canada Account, IRCC account…) apply only when the user's task is
   *using* the account — sign in, register, recover/forgot password, MFA,
   locked out. A question about a program *inside* an account (e.g. "see my CPP
-  entitlement in MSCA") gets the program as the service.
+  entitlement in MSCA") gets the program itself.
 - Because the hook lives in the shared persistence service, all graph variants
   (Generic, DefaultWithVector, InstantAndQA, GenericWithQA) and batch runs get
   classification automatically.
@@ -98,24 +100,24 @@ persistNode → InteractionPersistenceService.persistInteraction()
 
 | File | Change |
 |------|--------|
-| `models/context.js` | Add `service`, `action` fields |
-| `api/data/serviceActionSeeds.js` | Add account actions (Recover account, Use MFA) |
-| `agents/strategies/serviceActionClassifyStrategy.js` | **New** — prompt + parse, modeled on `evalAnalysisClassifyStrategy.js` |
-| `agents/AgentFactory.js` | **New** `createServiceActionAgent` (mini model, mirrors `createQueryRewriteAgent`) |
-| `services/ServiceActionClassificationService.js` | **New** — orchestrates the call, updates the Context doc |
+| `models/context.js` | Add `program`, `action` fields |
+| `api/data/programActionSeeds.js` | Add account actions (Recover account, Use MFA) |
+| `agents/strategies/programActionClassifyStrategy.js` | **New** — prompt + parse, modeled on `evalAnalysisClassifyStrategy.js` |
+| `agents/AgentFactory.js` | **New** `createProgramActionAgent` (mini model, mirrors `createQueryRewriteAgent`) |
+| `services/ProgramActionClassificationService.js` | **New** — orchestrates the call, updates the Context doc |
 | `services/InteractionPersistenceService.js` | Fire-and-forget hook after save |
-| `api/eval/eval-dashboard.js` | Project `service`/`action` from the context lookup; add to search, columnSearch, sort |
-| `src/pages/EvalDashboardPage.js` | Service + Action columns (after Department), per-column filters, updated order indexes, bumped table-state key |
-| `api/metrics/metrics-services.js` | **New** — question volume grouped by `context.service`, shared filters |
-| `server/server.js` | Register `/api/metrics/metrics-services` |
-| `src/services/MetricsService.js` | `getServiceMetrics()` |
-| `src/hooks/admin/useDashboardMetrics.js` | `includeServices` opt-in (best-effort, like referrals) |
-| `src/components/admin/PartnerDashboard.js` | "Question volume by service" `HBarCard` |
+| `api/eval/eval-dashboard.js` | Project `program`/`action` from the context lookup; add to search, columnSearch, sort |
+| `src/pages/EvalDashboardPage.js` | Program + Action columns (after Department), per-column filters, updated order indexes, bumped table-state key |
+| `api/metrics/metrics-programs.js` | **New** — question volume grouped by `context.program`, shared filters |
+| `server/server.js` | Register `/api/metrics/metrics-programs` |
+| `src/services/MetricsService.js` | `getProgramMetrics()` |
+| `src/hooks/admin/useDashboardMetrics.js` | `includePrograms` opt-in (best-effort, like referrals) |
+| `src/components/admin/PartnerDashboard.js` | "Question volume by program" `HBarCard` |
 | `src/locales/en.json` / `fr.json` | Keys for the card + columns |
 
 ## Partner dashboard v1
 
-Single `HBarCard`: top services by question volume plus an "unknown" bucket
+Single `HBarCard`: top programs by question volume plus an "unknown" bucket
 (empty + `'unknown'` merged for display), scoped by the applied filters (date
 range, department, userType, …). Numbers via `formatNumber`. Chrome (title,
 labels) fully bilingual via locale keys.
@@ -124,26 +126,26 @@ labels) fully bilingual via locale keys.
 
 Stored values are canonical **English** strings (the pipeline classifies on the
 English translation of the question, and consistency requires one canonical
-language). Service/action values shown in dashboards are dynamic DB content,
+language). Program/action values shown in dashboards are dynamic DB content,
 which is exempt from the locale-key rule — but a French admin/partner will see
 English program names, which is not acceptable long-term.
 
 Follow-up options when we get there:
 
-1. **Display-time translation map** — seed the high-volume services with their
+1. **Display-time translation map** — seed the high-volume programs with their
    official FR names (programs have official French names on canada.ca);
    fall back to the stored EN string when unmapped.
 2. **Second LLM pass or bilingual output** — ask the classifier for both EN and
    FR names at classification time and store both.
 
-Option 1 is likely sufficient for seeded services and costs nothing at
+Option 1 is likely sufficient for seeded programs and costs nothing at
 classification time. Decision deferred until the EN MVP has real data.
 
 ## Later phases (not in this PR)
 
-- Accuracy/satisfaction breakdowns by service, drill into action within a
-  service (partner dashboard)
-- Service/action filters in `FilterPanel` (scan chats by program area)
-- Exec dashboard volume-by-service view
-- FR display of service/action values (above)
-- Possible normalization pass if service-name drift shows up in the data
+- Accuracy/satisfaction breakdowns by program, drill into action within a
+  program (partner dashboard)
+- Program/action filters in `FilterPanel` (scan chats by program area)
+- Exec dashboard volume-by-program view
+- FR display of program/action values (above)
+- Possible normalization pass if program-name drift shows up in the data

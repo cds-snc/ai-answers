@@ -6,7 +6,7 @@
 // dashboards use, kept beside it so the analysis can't drift from them.
 
 import { deriveExpertFeedbackCategory } from '../api/util/chat-filters.js';
-import { OTHER_LABEL } from '../api/data/serviceActionSeeds.js';
+import { OTHER_LABEL } from '../api/data/programActionSeeds.js';
 
 const SENTENCE_NUMBERS = [1, 2, 3, 4];
 
@@ -58,7 +58,7 @@ export function toCompactRow(aggRow) {
         improve: truncate(ef.answerImprovement, 400),
         evaluator: ef.expertEmail || '',
         createdAt: aggRow.createdAt ? new Date(aggRow.createdAt).toISOString() : null,
-        topic: null,
+        program: null,
         action: null
     };
 }
@@ -150,23 +150,23 @@ export function computeStats(rows) {
 // from the table and reported in aggregate (skippedSingles).
 export const MIN_GROUP_COUNT = 2;
 
-// Combined "topic — action" group label, e.g.
+// Combined "program — action" group label, e.g.
 // "Canada child benefit — Change my contact information". An uninformative
 // half (missing or "Other") is left off rather than shown as "— Other".
 export function combinedLabel(row) {
-    const topic = row.topic && row.topic !== OTHER_LABEL ? row.topic : null;
+    const program = row.program && row.program !== OTHER_LABEL ? row.program : null;
     const action = row.action && row.action !== OTHER_LABEL ? row.action : null;
-    if (topic && action) return `${topic} — ${action}`;
-    return topic || action || OTHER_LABEL;
+    if (program && action) return `${program} — ${action}`;
+    return program || action || OTHER_LABEL;
 }
 
-// Tier 2 cross-tab: score categories per combined topic—action group, built
+// Tier 2 cross-tab: score categories per combined program—action group, built
 // after classification has tagged the rows. Groups sorted by non-perfect
 // rate (descending), always-perfect groups flagged.
 export function buildCrossTab(rows) {
     const byLabel = new Map();
     rows.forEach((r) => {
-        if (!r.topic) return; // unclassified rows are counted separately
+        if (!r.program) return; // unclassified rows are counted separately
         const key = combinedLabel(r);
         if (!byLabel.has(key)) byLabel.set(key, []);
         byLabel.get(key).push(r);
@@ -197,6 +197,6 @@ export function buildCrossTab(rows) {
             groupCount: skipped.length,
             rowCount: skipped.reduce((sum, g) => sum + g.count, 0)
         },
-        unclassifiedCount: rows.filter((r) => !r.topic).length
+        unclassifiedCount: rows.filter((r) => !r.program).length
     };
 }

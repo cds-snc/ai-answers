@@ -32,7 +32,7 @@ const row = (overrides = {}) => ({
     improve: '',
     evaluator: 'a@x.ca',
     createdAt: null,
-    topic: null,
+    program: null,
     action: null,
     ...overrides
 });
@@ -103,7 +103,7 @@ describe('toCompactRow', () => {
             expl: 'S2: Confusing wording',
             improve: 'Reorder sentences',
             evaluator: 'eval@x.ca',
-            topic: null,
+            program: null,
             action: null
         });
     });
@@ -184,23 +184,23 @@ describe('computeStats', () => {
 });
 
 describe('combinedLabel', () => {
-    it('joins topic and action, dropping an uninformative half', () => {
-        expect(combinedLabel(row({ topic: 'Canada child benefit', action: 'Change my contact information' })))
+    it('joins program and action, dropping an uninformative half', () => {
+        expect(combinedLabel(row({ program: 'Canada child benefit', action: 'Change my contact information' })))
             .toBe('Canada child benefit — Change my contact information');
-        expect(combinedLabel(row({ topic: 'Canada child benefit', action: 'Other' }))).toBe('Canada child benefit');
-        expect(combinedLabel(row({ topic: 'Other', action: 'Apply' }))).toBe('Apply');
-        expect(combinedLabel(row({ topic: 'Other', action: 'Other' }))).toBe('Other');
+        expect(combinedLabel(row({ program: 'Canada child benefit', action: 'Other' }))).toBe('Canada child benefit');
+        expect(combinedLabel(row({ program: 'Other', action: 'Apply' }))).toBe('Apply');
+        expect(combinedLabel(row({ program: 'Other', action: 'Other' }))).toBe('Other');
     });
 });
 
 describe('buildCrossTab', () => {
-    it('tabulates categories per combined topic—action group, worst-first', () => {
+    it('tabulates categories per combined program—action group, worst-first', () => {
         const rows = [
-            row({ topic: 'Pensions', action: 'Apply' }),
-            row({ topic: 'Pensions', action: 'Apply' }),
-            row({ topic: 'Treaties', action: 'Search', score: 0, category: 'hasError' }),
-            row({ topic: 'Treaties', action: 'Search' }),
-            row({ topic: null, action: null })
+            row({ program: 'Pensions', action: 'Apply' }),
+            row({ program: 'Pensions', action: 'Apply' }),
+            row({ program: 'Treaties', action: 'Search', score: 0, category: 'hasError' }),
+            row({ program: 'Treaties', action: 'Search' }),
+            row({ program: null, action: null })
         ];
         const tab = buildCrossTab(rows);
         expect(tab.unclassifiedCount).toBe(1);
@@ -215,10 +215,10 @@ describe('buildCrossTab', () => {
 
     it('drops single-evaluation groups from the table and counts them aside', () => {
         const rows = [
-            row({ topic: 'Pensions', action: 'Apply' }),
-            row({ topic: 'Pensions', action: 'Apply' }),
-            row({ topic: 'Pensions', action: 'Renew', score: 0, category: 'hasError' }),
-            row({ topic: 'Treaties', action: 'Search' })
+            row({ program: 'Pensions', action: 'Apply' }),
+            row({ program: 'Pensions', action: 'Apply' }),
+            row({ program: 'Pensions', action: 'Renew', score: 0, category: 'hasError' }),
+            row({ program: 'Treaties', action: 'Search' })
         ];
         const tab = buildCrossTab(rows);
         expect(tab.groups.map((g) => g.label)).toEqual(['Pensions — Apply']);

@@ -7,7 +7,7 @@ measure cost/duration
 
 A "Run eval analysis" section at the bottom of the Partner dashboard that analyzes
 the **human expert evaluations** in the currently applied filter scope and surfaces
-patterns for the evaluator team: which topic areas collect errors or
+patterns for the evaluator team: which program areas collect errors or
 needs-improvement scores, what the low-score explanations indicate, whether
 content issues share a pattern, EN vs FR differences, and whether any evaluator
 scores differently from the rest.
@@ -19,7 +19,7 @@ comes later.
 
 | Question | Decision |
 |---|---|
-| Topic taxonomy | **Emergent topic groupings derived by the LLM** from the questions/answers. The services/actions CSV (`LF services actions ideas.csv`) is *seed vocabulary/ideas*, not a fixed taxonomy. `referringUrl` and `citationUrl` are good clues for topic grouping — include them in the classification input. |
+| Program taxonomy | **Emergent program groupings derived by the LLM** from the questions/answers. The programs/actions seed CSV (`seed-programs-actions-ideas.csv`, formerly `LF services actions ideas.csv`) is *seed vocabulary/ideas*, not a fixed taxonomy. `referringUrl` and `citationUrl` are good clues for program grouping — include them in the classification input. |
 | Model | Default model via the existing agent factory (there will always be a default). No new model setting. |
 | Evaluator anomaly visibility | Show to everyone who can run the analysis (signed-in admin/partner — realistically the team lead). Evaluator emails are fine to display. |
 | Volume guardrails | Min **20** evals to run; max **200** (was 500 — reduced to watch API cost/duration; revisit later). |
@@ -83,23 +83,23 @@ New stats this feature computes (input to the report + the insight pass):
 - **Low-score rows** (totalScore < 100) gathered with all their explanation
   texts, citation explanations, and answerImprovement (feeds Tier 3).
 
-### Tier 2 — LLM topic classification (chunked)
+### Tier 2 — LLM program classification (chunked)
 
-Tag each evaluated Q&A with an **emergent topic group** and an **action**
+Tag each evaluated Q&A with an **emergent program group** and an **action**
 (Apply, Check status, Pay, Sign in, …). Inputs per row: question, answer (first
-sentence or two), **citationUrl and referringUrl** (strong topic clues).
-Topic groups name the **program/service/subject** (the thing — "Canada child
+sentence or two), **citationUrl and referringUrl** (strong program clues).
+Program groups name the **program/subject** (the thing — "Canada child
 benefit"), never the activity ("Updating address with CRA") — the action is
 the second, separate dimension, and the two are **combined for display**
 ("Canada child benefit — Change my contact information").
 
-- Two-pass approach for stable grouping: first call proposes the topic-group
-  set from a sample of the questions (seeded with the services/actions
+- Two-pass approach for stable grouping: first call proposes the program-group
+  set from a sample of the questions (seeded with the programs/actions
   vocabulary as *examples of the granularity wanted*, not as a closed list);
   subsequent chunked calls (~20 rows each) assign every row to one of the
   proposed groups (+ "Other") and an action (+ "Other").
 - 200 evals ≈ 10–11 calls. Store per-row tags on the analysis doc.
-- Output feeds the **combined topic—action × score cross-tab**: eval count and
+- Output feeds the **combined program—action × score cross-tab**: eval count and
   % non-perfect per combined group; call out "always perfect" groups too.
   Groups with **fewer than 2 evaluations are dropped from the table** (one
   evaluation is an anecdote, not a pattern) and reported in aggregate as a
@@ -117,7 +117,7 @@ rows). Produces only:
   observations are anecdotes and are left out entirely.
 - A 1–2 sentence content-issue pattern note (empty when there are no flags).
 
-No per-table narrative paragraphs (topic patterns, EN/FR commentary, evaluator
+No per-table narrative paragraphs (program patterns, EN/FR commentary, evaluator
 commentary) — the tables carry that information themselves. The prompt
 instructs the model to ground every claim in the supplied numbers — no
 invented rates.
@@ -126,7 +126,7 @@ invented rates.
 
 1. **Header** — N evals analyzed, institution, date range, run date, run by.
    No summary paragraph — the tables and themes carry the findings.
-2. **Scores by topic and action** — one combined table (count, % non-perfect)
+2. **Scores by program and action** — one combined table (count, % non-perfect)
    with always-perfect groups highlighted and a note for skipped
    single-evaluation groups.
 3. **What the explanations say** — themed narrative with counts + quotes
@@ -144,7 +144,7 @@ invented rates.
 - **Model `models/evalAnalysis.js`** — `{ department, startDate, endDate,
   filters (raw filter snapshot), language, status: 'running'|'classifying'|
   'synthesizing'|'complete'|'error', progress: { classified, total },
-  evalCount, stats (Tier 1), rowTags (Tier 2 per-row topic/action),
+  evalCount, stats (Tier 1), rowTags (Tier 2 per-row program/action),
   crossTab, insights (Tier 3 narrative sections), requestedBy, error,
   timestamps }`.
 - **Endpoints (`api/eval/`)**, all `withProtection(handler, authMiddleware,
@@ -155,7 +155,7 @@ invented rates.
   - `eval-analysis-run.js` — POST; validates count and creates the doc
     (status `running`), nothing else.
   - `eval-analysis-advance.js` — POST; advances the run by exactly one step
-    (snapshot + Tier 1 + topic proposal → one classification chunk → synthesis).
+    (snapshot + Tier 1 + program proposal → one classification chunk → synthesis).
     **Chunk-per-request** (Vercel-safe): the client drives it in a loop until
     `complete`/`error`. (Same client-driven continuation spirit as the existing
     chunked eval processing.)
@@ -172,9 +172,12 @@ invented rates.
   same pattern as `rankerStrategy`). ⚠️ These contain new prompt text —
   **flag the wording to the prompt maintainers for review** before shipping.
   They are new files, not edits to `agents/prompts/`, but same care applies.
-- **Seed vocabulary** — convert `LF services actions ideas.csv` to
-  `api/data/serviceActionSeeds.js` (services by department + global action list
-  with synonyms). Used only as example vocabulary inside the classify strategy.
+- **Seed vocabulary** — convert `seed-programs-actions-ideas.csv` (formerly
+  `LF services actions ideas.csv`) to
+  `api/data/programActionSeeds.js` (programs by department + global action list
+  with synonyms; framed as **programs, not services** — programs have clear
+  accountability and the crisper concept keeps LLM groupings consistent across
+  runs). Used only as example vocabulary inside the classify strategy.
   Not under `agents/prompts/` and not under root `config/` (React build rule
   irrelevant here since it's server-only, but keep it out of `config/` anyway).
 
@@ -208,7 +211,7 @@ invented rates.
   and noted in the report header.
 - Department is required, but the analysis must tolerate rows whose
   `context.department` differs from the filter (filter logic decides scope).
-- LLM chunk failure → retry once, then mark the affected rows `topic: null` and
+- LLM chunk failure → retry once, then mark the affected rows `program: null` and
   continue; report notes how many rows were unclassified. Synthesis failure →
   `status: 'error'` with stored Tier 1/2 results still viewable.
 
@@ -237,7 +240,7 @@ invented rates.
   evals: ~85% score 100; tail of 90–96 needs-improvement where explanations
   carry the signal; citation-only deductions; 2 of 8 evaluators did 87% of
   evals; FR ≈ 12% of volume).
-- Seed vocabulary: `.../CDS/AI/LF services actions ideas.csv` (services for
+- Seed vocabulary: `.../CDS/AI/seed-programs-actions-ideas.csv` (programs for
   CRA/ESDC/IRCC + global action list with synonyms).
 - Dashboards guide: `docs/coding-agent-docs/dashboards.md`.
 - Eval lifecycle: `docs/architecture/evaluation-service.md`.

@@ -795,7 +795,7 @@
         "chatId": "Chat ID",
         "questionNumber": "Q #",
         "department": "Department",
-        "service": "Service",
+        "program": "Program",
         "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "AutoEval",
@@ -1380,9 +1380,9 @@
     "safety": {
       "title": "Safety metrics"
     },
-    "services": {
-      "title": "Question volume by service",
-      "subtitle": "Questions grouped by the program or service the user was asking about, counted by question. Only questions asked after service tagging launched are classified.",
+    "programs": {
+      "title": "Question volume by program",
+      "subtitle": "Questions grouped by the government program the user was asking about, counted by question. Only questions asked after program tagging launched are classified.",
       "unknown": "Unknown"
     },
     "referrals": {
@@ -1408,7 +1408,7 @@
     },
     "evalAnalysis": {
       "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by topic, what the explanations indicate, content issues, English vs French differences, and evaluator consistency.",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by program, what the explanations indicate, content issues, English vs French differences, and evaluator consistency.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
@@ -1417,7 +1417,7 @@
       "error": "The analysis failed. Partial results may be shown below.",
       "running": {
         "preparing": "Preparing analysis…",
-        "classifying": "Classifying topics… {done} of {total}",
+        "classifying": "Classifying programs… {done} of {total}",
         "synthesizing": "Writing findings…"
       },
       "status": {
@@ -1442,11 +1442,11 @@
         "runOn": "Run on {date}",
         "runBy": "by {email}",
         "excluded": "{count} without a score excluded from score statistics",
-        "unclassified": "{count} could not be classified by topic",
+        "unclassified": "{count} could not be classified by program",
         "partial": "This analysis did not finish — the results below are partial.",
         "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
-        "topicActionsTitle": "Scores by topic and action",
-        "colTopicAction": "Topic — action",
+        "programActionsTitle": "Scores by program and action",
+        "colProgramAction": "Program — action",
         "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
         "colCount": "Evaluations",
         "colNonPerfect": "Non-perfect",

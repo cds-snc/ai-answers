@@ -33,9 +33,9 @@ const evalAnalysisSchema = new Schema({
     rows: { type: [Schema.Types.Mixed], required: false, default: [] },
     // Tier 1 deterministic stats (evaluator table, EN/FR comparison, etc.).
     stats: { type: Schema.Types.Mixed, required: false, default: null },
-    // Topic groups proposed by the classification pass.
-    topics: { type: [String], required: false, default: [] },
-    // Tier 2 cross-tab of score categories by topic group and by action.
+    // Program groups proposed by the classification pass.
+    programs: { type: [String], required: false, default: [] },
+    // Tier 2 cross-tab of score categories by program group and by action.
     crossTab: { type: Schema.Types.Mixed, required: false, default: null },
     // Tier 3 narrative sections, generated in `language`.
     insights: { type: Schema.Types.Mixed, required: false, default: null },
