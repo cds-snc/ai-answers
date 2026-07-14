@@ -1408,7 +1408,7 @@
     },
     "evalAnalysis": {
       "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by program, what the explanations indicate, content issues, English vs French differences, and evaluator consistency.",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by program, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",

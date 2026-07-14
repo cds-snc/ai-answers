@@ -1408,7 +1408,7 @@
     },
     "evalAnalysis": {
       "title": "Analyse des évaluations",
-      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par programme, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et cohérence entre évaluateurs.",
+      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par programme, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
       "selectInstitution": "Sélectionnez une institution dans les filtres ci-dessus pour activer l'analyse.",
       "precheckCount": "{count} évaluations d'experts correspondent aux filtres actuels.",
       "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",

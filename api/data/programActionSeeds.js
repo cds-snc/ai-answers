@@ -23,16 +23,19 @@ export const PROGRAM_SEEDS_BY_DEPARTMENT = {
         'Canada child benefit',
         'Disability tax credit',
         'First home savings account',
-        'GST/HST credit',
         'Business Number (BN)',
-        'GST/HST account (RT)',
-        'Payroll deductions account (RP)',
+        'GST/HST',
+        'Payroll',
+        'Employer',
         'Registered retirement savings plan (RRSP)',
         'Registered Education Savings Plan (RESP)',
         'Registered disability savings plan',
         'Tax-free savings account (TFSA)',
         'Underused Housing Tax',
-        'Canada Disability Benefit'
+        'Canada Disability Benefit',
+        'Voluntary Disclosures',
+        'Taxpayer relief provisions',
+        'Charities'
     ],
     'EDSC-ESDC': [
         'Canada Disability Benefit',
@@ -64,9 +67,11 @@ export const PROGRAM_SEEDS_BY_DEPARTMENT = {
         'Study permit',
         'Work permit',
         'Immigrate - general',
-        'Immigration through express entry',
-        'Immigration as a provincial nominee',
+        'Immigration - express entry',
+        'Immigration - provincial nominee',
         'Refugee protection',
+        'Permanent Residency',
+        'Citizenship',
         'IRCC account'
     ]
 };
@@ -75,18 +80,18 @@ export const PROGRAM_SEEDS_BY_DEPARTMENT = {
 // `synonyms` help the classifier recognize phrasing variants.
 export const ACTION_SEEDS = [
     { action: 'Apply', synonyms: ['Request'] },
-    { action: 'Change my contact information', synonyms: ['Update', 'Modify', 'Fix', 'Address', 'Phone number'] },
-    { action: 'Change my banking information', synonyms: ['Direct deposit'] },
+    { action: 'Change contact details', synonyms: ['Update', 'Modify', 'Fix', 'Address', 'Phone number'] },
+    { action: 'Change direct deposit', synonyms: ['Direct deposit','Banking information'] },
     { action: 'Check status', synonyms: [] },
     { action: 'Check eligibility', synonyms: [] },
     { action: 'Check processing times', synonyms: ['Service standards'] },
     { action: 'Claim', synonyms: ['Request'] },
     { action: 'Complain', synonyms: [] },
     { action: 'Contact', synonyms: ['Email', 'Phone', 'Mailing address', 'Fax number', 'Office locations'] },
-    { action: 'Find out how much money I can receive', synonyms: [] },
+    { action: 'How much can I receive', synonyms: [] },
     { action: 'Find benefit payment date', synonyms: [] },
     { action: 'Find out payment due date', synonyms: [] },
-    { action: 'Find out how much I owe', synonyms: ['Balance owing', 'Fee', 'Fine'] },
+    { action: 'How much I owe', synonyms: ['Balance owing', 'Fee', 'Fine'] },
     { action: 'Find options available', synonyms: ['Innovation', 'Immigration', 'Jobs'] },
     { action: 'Get help with', synonyms: ['Delays', 'Locked out account'] },
     { action: 'Recover account', synonyms: ['Forgot password', 'Reset password', 'Locked out'] },
@@ -96,7 +101,8 @@ export const ACTION_SEEDS = [
     { action: 'Renew', synonyms: [] },
     { action: 'Send', synonyms: ['Submit', 'File'] },
     { action: 'Search', synonyms: ['Find'] },
-    { action: 'Sign-in', synonyms: ['Access', 'Log in'] }
+    { action: 'Sign-in', synonyms: ['Access', 'Log in'] },
+    { action: 'Use MFA', synonyms: ['Change multi-factor authentication'] }
 ];
 
 export const OTHER_LABEL = 'Other';
