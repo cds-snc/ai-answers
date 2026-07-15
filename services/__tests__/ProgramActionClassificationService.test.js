@@ -88,6 +88,32 @@ describe('classifyInteraction', () => {
     expect(updateOne).not.toHaveBeenCalled();
   });
 
+  it.each(['not-gc', 'pt-muni', 'clarifying-question'])(
+    'skips classification for non-normal answer type "%s" and leaves the doc unclassified',
+    async (answerType) => {
+      const result = await ProgramActionClassificationService.classifyInteraction({
+        ...baseArgs,
+        answerType
+      });
+      expect(result).toBeNull();
+      expect(invokeWithStrategy).not.toHaveBeenCalled();
+      expect(updateOne).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['normal', ''])(
+    'classifies normal answer type "%s"',
+    async (answerType) => {
+      invokeWithStrategy.mockResolvedValue({ program: 'Canada Pension Plan', action: 'Apply' });
+      const result = await ProgramActionClassificationService.classifyInteraction({
+        ...baseArgs,
+        answerType
+      });
+      expect(result).toEqual({ program: 'Canada Pension Plan', action: 'Apply' });
+      expect(invokeWithStrategy).toHaveBeenCalled();
+    }
+  );
+
   it('throws when contextId is missing', async () => {
     await expect(
       ProgramActionClassificationService.classifyInteraction({ ...baseArgs, contextId: null })

@@ -146,7 +146,9 @@ export const InteractionPersistenceService = {
 
         // 4b. Program/action task classification — fire-and-forget so the
         // response path pays no latency; a failure leaves the Context fields
-        // at '' (see docs/plans/program-action-classification.md).
+        // at '' (see docs/plans/program-action-classification.md). Skipped for
+        // non-normal answer types (not-gc / pt-muni / clarifying-question),
+        // which have no GC program to name.
         ProgramActionClassificationService.classifyInteractionInBackground({
             contextId: savedContext._id,
             chatId,
@@ -154,7 +156,8 @@ export const InteractionPersistenceService = {
             answer: interaction.answer?.englishAnswer || interaction.answer?.content || '',
             department: savedContext.department || '',
             citationUrl: interaction.finalCitationUrl || interaction.answer?.citationUrl || '',
-            referringUrl: interaction.referringUrl || ''
+            referringUrl: interaction.referringUrl || '',
+            answerType: interaction.answer?.answerType || ''
         });
 
         // 5. Generate embeddings for the interaction (non-blocking for persistence)

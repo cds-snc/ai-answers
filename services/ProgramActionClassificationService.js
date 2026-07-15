@@ -3,11 +3,16 @@ import AgentOrchestratorService from '../agents/AgentOrchestratorService.js';
 import { createProgramActionAgent } from '../agents/AgentFactory.js';
 import programActionClassifyStrategy from '../agents/strategies/programActionClassifyStrategy.js';
 import { PROGRAM_SEEDS_BY_DEPARTMENT, ACTION_SEEDS } from '../api/data/programActionSeeds.js';
+import { NON_CLASSIFIABLE_ANSWER_TYPES } from '../api/util/answerTypes.js';
 import ServerLoggingService from './ServerLoggingService.js';
 
 // 'unknown' = the classifier ran but was not confident — distinct from '' (never
 // classified). See docs/plans/program-action-classification.md.
 export const UNKNOWN_VALUE = 'unknown';
+
+// Non-normal answer types (not-gc / pt-muni / clarifying-question) carry no GC
+// program, so classification skips them and leaves the fields unclassified ('').
+// The set is shared with the program-volume metric — see api/util/answerTypes.js.
 
 // Guard against a runaway model response ending up as a dashboard category.
 const MAX_PROGRAM_LENGTH = 80;
@@ -43,11 +48,16 @@ class ProgramActionClassificationServiceClass {
         answer = '',
         department = '',
         citationUrl = '',
-        referringUrl = ''
+        referringUrl = '',
+        answerType = ''
     }) {
         if (!contextId) throw new Error('contextId is required');
         if (!question) {
             ServerLoggingService.warn('Program/action classification skipped: no question text', chatId);
+            return null;
+        }
+        if (NON_CLASSIFIABLE_ANSWER_TYPES.has(answerType)) {
+            ServerLoggingService.info('Program/action classification skipped: non-normal answer type', chatId, { answerType });
             return null;
         }
 

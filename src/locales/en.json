@@ -1387,7 +1387,7 @@
     "programs": {
       "title": "Question volume by program",
       "subtitle": "Questions grouped by the government program the user was asking about, counted by question. Only questions asked after program tagging launched are classified.",
-      "unclassifiedNote": "{count} questions are not yet classified by program."
+      "unclassifiedNote": "{count} questions not yet classified."
     },
     "referrals": {
       "title": "Top referral pages",
