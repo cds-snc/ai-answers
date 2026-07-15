@@ -1984,6 +1984,7 @@
       },
       "table": {
         "chat": "Clavardage",
+        "chatId": "ID de clavardage",
         "noChatId": "Aucun ID de clavardage",
         "row": "Ligne",
         "trial": "Essai",

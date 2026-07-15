@@ -1984,6 +1984,7 @@
       },
       "table": {
         "chat": "Chat",
+        "chatId": "Chat ID",
         "noChatId": "No chat ID",
         "row": "Row",
         "trial": "Trial",
