@@ -463,12 +463,22 @@ const ChatInterface = ({
             {safeT("homepage.chat.section.heading")}
           </h2>
         )}
-        <div
-          className="message-list"
-          role="log"
-          aria-live="off"
-          aria-labelledby={messages.length > 0 ? "chat-section-heading" : undefined}
-        >
+        {/* role="status" (not "progressbar" — this is an indeterminate
+            spinner, not a measurable value) gives a concise, atomic
+            "busy" announcement on its own, instead of relying on the
+            surrounding structure. aria-atomic ensures the whole label reads
+            as one phrase rather than being read piecemeal. */}
+        {isLoading && (
+          <div
+            ref={loadingContainerRef}
+            tabIndex={-1}
+            className="sr-only"
+            role="status"
+            aria-atomic="true"
+            aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
+          />
+        )}
+        <div className="message-list">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
           // Every real question the user sent, whether it got a successful answer
@@ -795,9 +805,6 @@ const ChatInterface = ({
             <div
               key="loading"
               className="loading-container"
-              ref={loadingContainerRef}
-              tabIndex={-1}
-              aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
             >
               <div className="loading-animation"></div>
               <div className="loading-text">
