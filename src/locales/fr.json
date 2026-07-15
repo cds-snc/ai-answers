@@ -1983,6 +1983,8 @@
         "errors": "Erreurs seulement"
       },
       "table": {
+        "chat": "Clavardage",
+        "noChatId": "Aucun ID de clavardage",
         "row": "Ligne",
         "trial": "Essai",
         "question": "Question",

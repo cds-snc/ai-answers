@@ -14,6 +14,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     const openTarget = Number.isInteger(openRowIndex) && openRowIndex > 0 ? openRowIndex : null;
     const [batch, setBatch] = useState(null);
     const [items, setItems] = useState([]);
+    const [groups, setGroups] = useState([]);
     const [counts, setCounts] = useState({ total: 0, attention: 0, errors: 0 });
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit });
     const [filter, setFilterState] = useState(initialFilter);
@@ -37,6 +38,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
             const result = await ExperimentalBatchClientService.getBatchItems(batchId, { page, limit, filter, row: rowFilter });
             setBatch(result.batch || null);
             setItems(result.items || []);
+            setGroups(result.groups || (result.items || []).map(item => ({ chatId: item.chatId || null, items: [item] })));
             setCounts(result.counts || { total: 0, attention: 0, errors: 0 });
             setPagination(result.pagination || { page: 1, pages: 1, total: 0, limit });
 
@@ -113,6 +115,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     return {
         batch,
         items,
+        groups,
         counts,
         pagination,
         filter,

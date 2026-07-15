@@ -1983,6 +1983,8 @@
         "errors": "Errors only"
       },
       "table": {
+        "chat": "Chat",
+        "noChatId": "No chat ID",
         "row": "Row",
         "trial": "Trial",
         "question": "Question",

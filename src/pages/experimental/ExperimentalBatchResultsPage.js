@@ -29,6 +29,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const {
         batch,
         items,
+        groups,
         counts,
         pagination,
         filter,
@@ -114,7 +115,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     item={selectedItem}
                     lang={lang}
                     position={positionInFilter}
-                    totalInFilter={pagination.total}
+                    totalInFilter={pagination.totalItems || pagination.total}
                     trialsCount={batch?.config?.trials || 1}
                     hasPrev={hasPrev}
                     hasNext={hasNext}
@@ -148,6 +149,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                         <>
                             <BatchItemsTable
                                 items={items}
+                                groups={groups}
                                 lang={lang}
                                 onSelect={selectItem}
                                 showTrials={(batch?.config?.trials || 1) > 1}

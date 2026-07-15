@@ -72,11 +72,32 @@ describe('experimental-batch-items API', () => {
         expect(res.json).toHaveBeenCalledWith({
             batch,
             items,
+            groups: [{ chatId: null, items }],
             filter: 'all',
             row: null,
             counts: { total: 1, attention: 1, errors: 1 },
-            pagination: { page: 1, limit: 25, total: 1, pages: 1 }
+            pagination: { page: 1, limit: 25, total: 1, totalItems: 1, pages: 1 }
         });
+    });
+
+    it('keeps items with the same chatId in one paginated group', async () => {
+        const items = [
+            { _id: 'item-1', rowIndex: 1, chatId: 'chat-1' },
+            { _id: 'item-2', rowIndex: 2, chatId: 'chat-1' },
+            { _id: 'item-3', rowIndex: 3, chatId: 'chat-2' }
+        ];
+        mockBatchQuery({ _id: VALID_ID });
+        mockItemsQuery(items);
+        ExperimentalBatchItem.countDocuments.mockResolvedValue(3);
+
+        req.query.limit = '1';
+        await handler(req, res);
+
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            groups: [{ chatId: 'chat-1', items: items.slice(0, 2) }],
+            items: items.slice(0, 2),
+            pagination: { page: 1, limit: 1, total: 2, totalItems: 3, pages: 2 }
+        }));
     });
 
     it('filters to all trials of one question when row is set', async () => {
