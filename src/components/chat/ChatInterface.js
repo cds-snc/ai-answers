@@ -16,11 +16,6 @@ import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
-// GCDS Stencil web components present on this page (gcds-header/gcds-footer
-// from App.js, plus gcds-text/gcds-details/gcds-link on the homepage) — see
-// the mount-time focus effect below.
-const GCDS_SELECTOR = 'gcds-header, gcds-footer, gcds-text, gcds-details, gcds-link';
-
 const ChatInterface = ({
   messages,
   inputText,
@@ -108,14 +103,17 @@ const ChatInterface = ({
     }
   };
 
-  // GCDS elements (gcds-header/gcds-footer in App.js, plus gcds-text/
-  // gcds-details/gcds-link on the homepage) are Stencil web components that
-  // hydrate asynchronously. If any are still settling when we call focus(),
-  // VoiceOver's automatic read-from-top on page load isn't interrupted and
-  // just reads straight through the textarea instead of landing on it. Wait
-  // for every known gcds-* tag to report itself hydrated (componentOnReady,
-  // the standard Stencil per-instance readiness API) before focusing, with a
+  // GCDS elements (gcds-header/gcds-footer/gcds-breadcrumbs/gcds-notice in
+  // App.js, plus gcds-details/gcds-notice on the homepage, and any others
+  // added later) are Stencil web components that hydrate asynchronously. If
+  // any are still settling when we call focus(), VoiceOver's automatic
+  // read-from-top on page load isn't interrupted and just reads straight
+  // through the textarea instead of landing on it. Wait for every gcds-*
+  // element in the DOM to report itself hydrated (componentOnReady, the
+  // standard Stencil per-instance readiness API) before focusing, with a
   // hard cap so a slow/broken component can't block focus indefinitely.
+  // Matched by tag-name prefix rather than a hand-maintained list — a
+  // hardcoded list silently misses new/existing gcds-* elements.
   useEffect(() => {
     let cancelled = false;
     let fallbackId;
@@ -127,7 +125,9 @@ const ChatInterface = ({
     };
 
     const tagNames = new Set(
-      Array.from(document.querySelectorAll(GCDS_SELECTOR)).map((el) => el.tagName.toLowerCase())
+      Array.from(document.querySelectorAll('*'))
+        .map((el) => el.tagName.toLowerCase())
+        .filter((tag) => tag.startsWith('gcds-'))
     );
 
     const hydrated = tagNames.size
@@ -421,6 +421,11 @@ const ChatInterface = ({
 
   const inputCopy = getInputCopy();
 
+  // Single source of truth for whether the conversation-log section/heading
+  // pair renders — the <section>'s aria-labelledby and the <h2> it points at
+  // must agree, or the section can end up pointing at an ID that doesn't exist.
+  const hasMessages = messages.length > 0;
+
   // A readable department/page label for screen readers, instead of the
   // visual "domain/.../file.html" truncation (its literal dots and slashes
   // don't read as an ellipsis to a screen reader).
@@ -472,8 +477,8 @@ const ChatInterface = ({
           liveReferringUrlBanner
         )
       )}
-      <section aria-labelledby={messages.length > 0 ? "chat-section-heading" : undefined}>
-        {messages.length > 0 && (
+      <section aria-labelledby={hasMessages ? "chat-section-heading" : undefined}>
+        {hasMessages && (
           <h2 id="chat-section-heading" className="sr-only">
             {safeT("homepage.chat.section.heading")}
           </h2>
@@ -644,9 +649,21 @@ const ChatInterface = ({
                             {withCanadaCaPronunciation(safeT("homepage.chat.messages.shortQueryDetails"), lang)}
                           </p>
                           <p className="error-message">
-                            <a href={message.searchUrl}>
-                              {withCanadaCaPronunciation(safeT("homepage.chat.messages.shortQuerySearch"), lang)}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
-                            </a>
+                            {/* Link accessible name must stay one atomic string (see
+                                CanadaCaAccessibleLabel), so the appended search query
+                                is folded into `text` rather than rendered as a sibling
+                                node the way withCanadaCaPronunciation's inline spans
+                                would require. */}
+                            <CanadaCaAccessibleLabel
+                              as="a"
+                              href={message.searchUrl}
+                              text={
+                                message.searchQuery
+                                  ? `${safeT("homepage.chat.messages.shortQuerySearch")} "${message.searchQuery}"`
+                                  : safeT("homepage.chat.messages.shortQuerySearch")
+                              }
+                              lang={lang}
+                            />
                           </p>
                         </>
                       )}

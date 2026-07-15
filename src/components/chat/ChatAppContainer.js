@@ -13,6 +13,12 @@ import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+
+// Minimum gap between real-backend-status live-region announcements, so a
+// fast-moving backend can't fire several in rapid succession — see the
+// throttled status-announce effect in ChatAppContainer.
+const STATUS_ANNOUNCE_THROTTLE_MS = 4000;
+
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -109,6 +115,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [errorAlert, setErrorAlert] = useState('');
   const userLeftChatRef = useRef(false);
   const stillWorkingTimerRef = useRef(null);
+  const hintTimerRef = useRef(null);
+  const lastStatusAnnounceTimeRef = useRef(0);
+  const pendingStatusAnnounceTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -177,17 +186,61 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     return () => chatEl.removeEventListener('focusout', handleFocusOut);
   }, [isLoading]);
 
-  // Single reassurance cue for a slow response, instead of narrating every
-  // internal processing stage (searching, building context, verifying
-  // citation, ...) as it happens — those are implementation detail, not
-  // something a waiting user needs read out one by one, and real backend
-  // progress arrives too fast/unevenly to map onto a fixed announcement
-  // schedule anyway. The initial "Moderating your question" cue is handled
-  // separately (ChatInterface's mount-of-loading-container focus). If the
-  // request is still going after ~6s, announce once so screen reader users
-  // know nothing has stalled. displayStatus itself is unrelated to
-  // announcements now — it only drives the visible status text sighted
-  // users see (see processNextStatus/updateStatusWithTimer below).
+  // Guaranteed early reassurance: always fires ~1s into a request, regardless
+  // of backend timing, so it's never crowded out by anything else competing
+  // for the live region (the throttled status effect below deliberately
+  // can't announce before ~4s, specifically so it never collides with this).
+  useEffect(() => {
+    if (!isLoading) {
+      clearTimeout(hintTimerRef.current);
+      return;
+    }
+    hintTimerRef.current = setTimeout(() => {
+      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
+    }, 1000);
+    return () => clearTimeout(hintTimerRef.current);
+  }, [isLoading, safeT, announceToLiveRegion]);
+
+  // Real backend progress (searching, building context, verifying citation,
+  // ...), throttled to at most one announcement every
+  // STATUS_ANNOUNCE_THROTTLE_MS — a fast-moving backend can advance through
+  // several stages a second apart, and narrating every one of those is more
+  // noise than help. If several stages complete inside one throttle window,
+  // only the latest gets announced once the window opens. The throttle
+  // baseline resets to "now" whenever a request starts (the
+  // displayStatus === 'moderatingQuestion' branch below), so the earliest a
+  // real stage can be announced is ~4s in — after the guaranteed hint above.
+  useEffect(() => {
+    if (!isLoading) {
+      lastStatusAnnounceTimeRef.current = 0;
+      clearTimeout(pendingStatusAnnounceTimeoutRef.current);
+      return;
+    }
+    if (displayStatus === 'moderatingQuestion') {
+      lastStatusAnnounceTimeRef.current = Date.now();
+      clearTimeout(pendingStatusAnnounceTimeoutRef.current);
+      return;
+    }
+
+    const announceNow = () => {
+      lastStatusAnnounceTimeRef.current = Date.now();
+      announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
+    };
+
+    const elapsed = Date.now() - lastStatusAnnounceTimeRef.current;
+    clearTimeout(pendingStatusAnnounceTimeoutRef.current);
+    if (elapsed >= STATUS_ANNOUNCE_THROTTLE_MS) {
+      announceNow();
+    } else {
+      pendingStatusAnnounceTimeoutRef.current = setTimeout(announceNow, STATUS_ANNOUNCE_THROTTLE_MS - elapsed);
+    }
+
+    return () => clearTimeout(pendingStatusAnnounceTimeoutRef.current);
+  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+
+  // Fallback reassurance if the request is still going after ~6s with no
+  // further status change to announce (e.g. stuck on one real backend stage
+  // the whole time, so the throttled effect above never fires again).
   useEffect(() => {
     if (!isLoading) {
       clearTimeout(stillWorkingTimerRef.current);
