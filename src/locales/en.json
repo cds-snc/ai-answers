@@ -1811,14 +1811,24 @@
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
       "requiredColumns": "Columns",
-      "columnAliasHint": "Batch files work without renaming columns: matching ignores case, and batch names like redactedQuestion, QUESTION and URL are accepted. Extra columns are kept and ignored.",
+      "columnAliasHint": "Column names are matched without regard to case, spaces, hyphens or underscores. Extra columns are kept and ignored unless they conflict with the selected dataset type.",
       "uploadDescriptions": {
-        "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Add a reference answer column only if you want to compare the generated answer against an expert-approved answer.",
+        "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Do not include an answer or reference answer column.",
         "qaPair": "Use this when the dataset already contains the reference answer for each question. For comparison analyzers, the answer column is used as the reference and the system generates a fresh answer to compare against it."
       },
       "uploadColumns": {
-        "questionOnly": "question (required), reference answer (optional), referringUrl (optional), chatId (optional)",
+        "questionOnly": "question (required), referringUrl (optional), chatId (optional)",
         "qaPair": "question and answer (required), reference answer (optional), referringUrl (optional), chatId (optional)"
+      },
+      "columnVariants": {
+        "title": "Accepted field variants",
+        "fieldHeader": "Field",
+        "variantsHeader": "Accepted variants",
+        "question": { "field": "Question", "variants": "question, redactedQuestion, problemDetails, prompt" },
+        "answer": { "field": "Answer", "variants": "answer, redactedAnswer, response" },
+        "referenceAnswer": { "field": "Reference answer", "variants": "referenceAnswer" },
+        "referringUrl": { "field": "Referring URL", "variants": "referringUrl, URL" },
+        "chatId": { "field": "Chat ID", "variants": "chatId" }
       },
       "rowCount": "Rows",
       "created": "Created",

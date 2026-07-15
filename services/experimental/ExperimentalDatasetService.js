@@ -368,6 +368,10 @@ class ExperimentalDatasetService {
             normalized.answer = normalized[referenceKey];
         }
 
+        if (type === 'question-only' && referenceKey) {
+            delete normalized[referenceKey];
+        }
+
         const chatIdKey = this._findColumnKey(normalized, CHAT_ID_ALIASES);
         if (chatIdKey) {
             normalized.chatId = normalized[chatIdKey];

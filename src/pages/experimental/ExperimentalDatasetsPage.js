@@ -144,6 +144,14 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             columns: t('experimental.datasets.uploadColumns.questionOnly')
         };
 
+    const columnVariants = [
+        { field: t('experimental.datasets.columnVariants.question.field'), variants: t('experimental.datasets.columnVariants.question.variants') },
+        ...(newType === 'qa-pair' ? [{ field: t('experimental.datasets.columnVariants.answer.field'), variants: t('experimental.datasets.columnVariants.answer.variants') }] : []),
+        ...(newType === 'qa-pair' ? [{ field: t('experimental.datasets.columnVariants.referenceAnswer.field'), variants: t('experimental.datasets.columnVariants.referenceAnswer.variants') }] : []),
+        { field: t('experimental.datasets.columnVariants.referringUrl.field'), variants: t('experimental.datasets.columnVariants.referringUrl.variants') },
+        { field: t('experimental.datasets.columnVariants.chatId.field'), variants: t('experimental.datasets.columnVariants.chatId.variants') }
+    ];
+
     return (
         <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.title')}</GcdsHeading>
@@ -213,6 +221,23 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                             <GcdsText className="mb-200">
                                 {t('experimental.datasets.columnAliasHint')}
                             </GcdsText>
+                            <table className="review-table">
+                                <caption>{t('experimental.datasets.columnVariants.title')}</caption>
+                                <thead>
+                                    <tr>
+                                        <th>{t('experimental.datasets.columnVariants.fieldHeader')}</th>
+                                        <th>{t('experimental.datasets.columnVariants.variantsHeader')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {columnVariants.map(({ field, variants }) => (
+                                        <tr key={field}>
+                                            <td>{field}</td>
+                                            <td>{variants}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                                     {t('experimental.datasets.fileLabel')}

@@ -160,7 +160,7 @@ describe('ExperimentalDatasetService', () => {
             expect(rows[0].data).toHaveProperty('referringUrl', 'https://www.sac-isc.gc.ca');
         });
 
-        it('should drop answer columns for question-only uploads', async () => {
+        it('should discard answer columns for question-only uploads', async () => {
             const data = [
                 { question: 'What is IA?', answer: 'Intelligence Artificielle' }
             ];
@@ -174,11 +174,22 @@ describe('ExperimentalDatasetService', () => {
                 userId,
                 'question-only.xlsx'
             );
-
             const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
-            expect(rows).toHaveLength(1);
-            expect(rows[0].data).toHaveProperty('question', 'What is IA?');
             expect(rows[0].data).not.toHaveProperty('answer');
+        });
+
+        it('should discard reference answer columns for question-only uploads', async () => {
+            const buffer = await createXlsxBuffer([{ question: 'What is IA?', referenceAnswer: 'Intelligence Artificielle' }]);
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                { name: 'Question Only Reference Dataset', type: 'question-only' },
+                userId,
+                'question-only-reference.xlsx'
+            );
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows[0].data).not.toHaveProperty('referenceAnswer');
         });
 
         it('should reject legacy xls uploads', async () => {

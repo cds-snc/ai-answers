@@ -1811,14 +1811,24 @@
       "suiteView": "Grille de la suite",
       "runCountLabel": "Exécutions",
       "requiredColumns": "Colonnes",
-      "columnAliasHint": "Les fichiers de lots fonctionnent sans renommer les colonnes : la correspondance ignore la casse, et les noms de lots comme redactedQuestion, QUESTION et URL sont acceptés. Les colonnes supplémentaires sont conservées et ignorées.",
+      "columnAliasHint": "La correspondance des noms de colonnes ignore la casse, les espaces, les traits d’union et les traits de soulignement. Les colonnes supplémentaires sont conservées et ignorées, sauf si elles sont incompatibles avec le type d’ensemble sélectionné.",
       "uploadDescriptions": {
-        "questionOnly": "Utilisez ce type lorsque vous voulez que le système génère une nouvelle réponse pendant l'analyse. Ajoutez une colonne de réponse de référence seulement si vous voulez comparer la réponse générée à une réponse approuvée par un expert.",
+        "questionOnly": "Utilisez ce type lorsque vous voulez que le système génère une nouvelle réponse pendant l’analyse. N’incluez pas de colonne de réponse ou de réponse de référence.",
         "qaPair": "Utilisez ce type lorsque l'ensemble de données contient déjà la réponse de référence pour chaque question. Pour les analyseurs de comparaison, la colonne answer est utilisée comme référence et le système génère une nouvelle réponse à comparer."
       },
       "uploadColumns": {
-        "questionOnly": "question (requis), réponse de référence (optionnelle), referringUrl (optionnel), chatId (optionnel)",
+        "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
         "qaPair": "question et answer (requis), réponse de référence (optionnelle), referringUrl (optionnel), chatId (optionnel)"
+      },
+      "columnVariants": {
+        "title": "Variantes de champs acceptées",
+        "fieldHeader": "Champ",
+        "variantsHeader": "Variantes acceptées",
+        "question": { "field": "Question", "variants": "question, redactedQuestion, problemDetails, prompt" },
+        "answer": { "field": "Réponse", "variants": "answer, redactedAnswer, response" },
+        "referenceAnswer": { "field": "Réponse de référence", "variants": "referenceAnswer" },
+        "referringUrl": { "field": "URL de provenance", "variants": "referringUrl, URL" },
+        "chatId": { "field": "ID de conversation", "variants": "chatId" }
       },
       "rowCount": "Lignes",
       "created": "Créé le",
