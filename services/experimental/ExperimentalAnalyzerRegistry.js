@@ -1,4 +1,5 @@
 import analyzerClasses from './analyzers/index.js';
+import AnalyzerBase from './analyzers/AnalyzerBase.js';
 
 class ExperimentalAnalyzerRegistry {
     constructor() {
@@ -16,12 +17,15 @@ class ExperimentalAnalyzerRegistry {
                         nameKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.name`,
                         descriptionKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.description`,
                         inputType: AnalyzerClass.inputType,
-                        outputColumns: AnalyzerClass.outputColumns,
+                        outputColumns: [...new Set([
+                            ...AnalyzerBase.standardOutputColumns,
+                            ...(AnalyzerClass.outputColumns || [])
+                        ])],
                         validateBatch: (items) => AnalyzerClass.validateBatch(items),
                         concurrency: AnalyzerClass.concurrency, // Optional hint
                         processor: async (input) => {
                             const instance = new AnalyzerClass(input.config);
-                            return instance.analyze(input);
+                            return instance.normalizeResult(await instance.analyze(input));
                         }
                     });
                     console.log(`Registered analyzer: ${AnalyzerClass.id}`);

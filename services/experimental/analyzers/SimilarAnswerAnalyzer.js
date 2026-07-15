@@ -47,6 +47,7 @@ export class SimilarAnswerAnalyzer extends AnalyzerBase {
     static id = 'similar-answer';
     static inputType = 'universal';
     static outputColumns = [
+        'explanation',
         'status',
         'label',
         'flagged',

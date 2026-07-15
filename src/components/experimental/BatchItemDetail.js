@@ -122,7 +122,7 @@ export default function BatchItemDetail({
                 <div className="mt-400">
                     <h3>{t('experimental.results.detail.analyzerResults')}</h3>
                     {analysisResults.map(([analyzerId, result]) => (
-                        <AnalyzerResultDetails key={analyzerId} analyzerId={analyzerId} result={result} />
+                        <AnalyzerResultDetails key={analyzerId} analyzerId={analyzerId} result={result} lang={lang} />
                     ))}
                 </div>
             )}

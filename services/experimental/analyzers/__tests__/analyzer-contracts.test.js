@@ -43,6 +43,7 @@ describe('Analyzer contracts', () => {
     it('should have non-empty outputColumns for all analyzers', () => {
         for (const AnalyzerClass of analyzerClasses) {
             expect(AnalyzerClass.outputColumns.length).toBeGreaterThan(0);
+            expect(AnalyzerClass.outputColumns).toContain('explanation');
         }
     });
 });

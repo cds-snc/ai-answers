@@ -4,6 +4,7 @@ export class RefusalAnalyzer extends AnalyzerBase {
     static id = 'refusal';
     static inputType = 'universal';
     static outputColumns = [
+        'explanation',
         'status',
         'label',
         'refusalDetected',
@@ -158,6 +159,10 @@ export class RefusalAnalyzer extends AnalyzerBase {
             }
         }
 
+        const explanation = differenceExplanation || (current.refusalDetected
+            ? `Current answer was identified as a ${current.refusalMode} refusal${current.matchedPhrase ? ` (${current.matchedPhrase})` : ''}.`
+            : 'Current answer does not contain a recognized refusal signal.');
+
         return {
             status: flagged ? 'flagged' : 'pass',
             label: flagged ? 'missing-refusal' : current.refusalDetected ? `refusal-${current.refusalMode}` : 'no-refusal',
@@ -169,7 +174,8 @@ export class RefusalAnalyzer extends AnalyzerBase {
             flagged,
             flagsDiffer: differenceFound,
             differenceFound,
-            differenceExplanation
+            differenceExplanation,
+            explanation
         };
     }
 }

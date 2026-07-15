@@ -17,7 +17,7 @@ const normalizeSafetyProvider = (aiProvider = 'azure') => {
 export class SafetyEvaluator extends AnalyzerBase {
     static id = 'safety';
     static inputType = 'universal';
-    static outputColumns = ['status', 'score', 'label', 'details', 'differenceFound', 'differenceExplanation'];
+    static outputColumns = ['explanation', 'status', 'score', 'label', 'details', 'differenceFound', 'differenceExplanation'];
 
     constructor(config = {}) {
         super(config);

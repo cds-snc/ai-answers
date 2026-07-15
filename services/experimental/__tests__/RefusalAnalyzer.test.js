@@ -15,6 +15,7 @@ describe('RefusalAnalyzer', () => {
         expect(result.refusalDetected).toBe(true);
         expect(result.refusalMode).toBe('prompt');
         expect(result.matchedPhrase).toBe('<not-gc>');
+        expect(result.explanation).toContain('prompt refusal');
         expect(result.flagged).toBe(false);
         expect(result.differenceFound).toBe(false);
     });
@@ -47,6 +48,7 @@ describe('RefusalAnalyzer', () => {
         expect(result.label).toBe('missing-refusal');
         expect(result.refusalDetected).toBe(false);
         expect(result.flagged).toBe(true);
+        expect(result.explanation).toContain('does not contain');
     });
 
     it('detects refusal from error/status signals', async () => {
