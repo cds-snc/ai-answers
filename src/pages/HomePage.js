@@ -6,6 +6,7 @@ import {
   GcdsContainer,
   GcdsDetails,
   GcdsNotice,
+  GcdsText,
 } from "@gcds-core/components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
 import { useAuth } from "../contexts/AuthContext.js";
@@ -222,7 +223,7 @@ const HomePage = ({ lang = "en" }) => {
               }
               text={t("homepage.privacy.termsLink")}
               lang={lang}
-            />
+            />.
           </p>
         </GcdsDetails>
         {showWarningNotice && (
@@ -232,7 +233,7 @@ const HomePage = ({ lang = "en" }) => {
             noticeTitle={t("homepage.warning.title")}
             className="mt-200"
           >
-            <p className="mb-300">{t("homepage.warning.message")}</p>
+            <GcdsText>{t("homepage.warning.message")}</GcdsText>
           </GcdsNotice>
         )}
         <ChatAppContainer
@@ -256,7 +257,7 @@ const HomePage = ({ lang = "en" }) => {
             <CanadaCaAccessibleLabel as="span" text={t("homepage.about.builtBy")} lang={lang} />{" "}
             <a href={getPath('about', lang)}>
               {t("homepage.about.learnMore")}
-            </a>
+            </a>.
           </p>
         </div>
       )}
