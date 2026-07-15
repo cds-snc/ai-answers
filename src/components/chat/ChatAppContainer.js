@@ -184,7 +184,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // progress arrives too fast/unevenly to map onto a fixed announcement
   // schedule anyway. The initial "Moderating your question" cue is handled
   // separately (ChatInterface's mount-of-loading-container focus). If the
-  // request is still going after ~10s, announce once so screen reader users
+  // request is still going after ~6s, announce once so screen reader users
   // know nothing has stalled. displayStatus itself is unrelated to
   // announcements now — it only drives the visible status text sighted
   // users see (see processNextStatus/updateStatusWithTimer below).
@@ -195,7 +195,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
     stillWorkingTimerRef.current = setTimeout(() => {
       announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore'));
-    }, 10000);
+    }, 6000);
     return () => clearTimeout(stillWorkingTimerRef.current);
   }, [isLoading, safeT, announceToLiveRegion]);
 

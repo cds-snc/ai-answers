@@ -478,7 +478,13 @@ const ChatInterface = ({
             {safeT("homepage.chat.section.heading")}
           </h2>
         )}
-        <div className="message-list">
+        {/* role="log" marks this as a conversation-history landmark for
+            assistive tech. aria-live="off" deliberately suppresses the
+            auto-announce-new-entries behaviour role="log" implies — new
+            messages/errors already get explicit focus (see the loading
+            lifecycle effect above), so a live-region announcement on top of
+            that would double up. */}
+        <div className="message-list" role="log" aria-live="off">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
           // Every real question the user sent, whether it got a successful answer

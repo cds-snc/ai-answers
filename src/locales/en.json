@@ -155,7 +155,7 @@
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
         "limitReachedHeading": "Limit of 3 questions reached",
         "yourQuestionLabel": "Your question",
-        "responseLabel": "Response",
+        "responseLabel": "Reply",
         "notAnsweredLabel": "(not answered)",
         "errorHeading": "Error",
         "sessionTimeoutHeading": "Session expired",
