@@ -1854,9 +1854,70 @@
       "selectBaseline": "Select reference run (comparison)",
       "baselineHint": "Pick a previous analysis to act as the comparison reference. When selected, new runs are compared against that run's answers.",
       "referenceHint": "If no reference run is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
+      "expertScorerDescription": "Judges the current answer against the dataset's canonical reference when one is available. It checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and answer quality. With a previous run selected, the main verdict still uses the dataset reference and a separate drift result describes whether the current answer improved, regressed, or stayed unchanged.",
       "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison run. Use a question and answer dataset with a referenceAnswer column, or a comparison run.",
       "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare the current answer with the selected reference run for drift.",
       "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference run's answers will replace it as the comparison reference for this run. Results will measure drift from that run, not against the dataset reference answer. Choose \"No reference run\" to compare against the dataset reference answer.",
+      "analyzerRules": {
+        "headers": {
+          "setup": "Run setup",
+          "comparison": "What is compared",
+          "flagged": "What can be flagged"
+        },
+        "no-analyzer": {
+          "title": "No scoring rules",
+          "rows": {
+            "always": {
+              "setup": "Any setup",
+              "comparison": "No comparison is performed.",
+              "flagged": "Nothing is flagged; the run only validates generation and storage."
+            }
+          }
+        },
+        "expert-scorer": {
+        "title": "Expert scorer comparison rules",
+        "rows": {
+          "datasetOnly": {
+            "setup": "Dataset reference, no reference run",
+            "comparison": "Current answer against the dataset reference answer.",
+            "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
+          },
+          "datasetAndRun": {
+            "setup": "Dataset reference and reference run",
+            "comparison": "Main verdict against the dataset reference; separate drift result against the previous run.",
+            "flagged": "The main verdict can be flagged for quality issues. Drift is reported separately as improved, regressed, unchanged, or needs review."
+          }
+        }
+      },
+        "similar-answer": {
+          "title": "Similar answer comparison rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "No answer comparison; the run can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current answer against the supplied reference answer.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
+          }
+        },
+        "refusal": {
+          "title": "Refusal comparison rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "Current answer is checked for recognized refusal signals.", "flagged": "The answer fails to refuse when the refusal evaluator expects a refusal." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior.", "flagged": "An expected refusal is missing or refusal behavior changes relative to the reference." }
+          }
+        },
+        "safety": {
+          "title": "Safety evaluation rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful, unsafe, privacy, or other restricted content.", "flagged": "The answer contains a safety concern requiring review." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current safety status and, separately, change from the reference.", "flagged": "A current safety concern or a meaningful safety regression can be flagged." }
+          }
+        },
+        "bias-detection": {
+          "title": "Bias evaluation rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful bias.", "flagged": "The answer is classified as biased or caution-worthy." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current bias level and change from the reference bias level.", "flagged": "A current bias concern or a change in bias level; detail-only differences are ignored." }
+          }
+        }
+      },
       "runLabelLabel": "Run label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
       "suiteView": "Suite grid",

@@ -1854,9 +1854,70 @@
       "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
       "baselineHint": "Choisissez une analyse précédente comme référence de comparaison. Lorsqu'elle est sélectionnée, les nouvelles exécutions sont comparées à ses réponses.",
       "referenceHint": "Si aucune exécution de référence n'est sélectionnée, la référence de l'ensemble de données est utilisée automatiquement. Pour les ensembles de données de questions et réponses, la colonne answer sert de référence pour les analyseurs de comparaison.",
+      "expertScorerDescription": "Évalue la réponse actuelle par rapport à la référence canonique de l’ensemble de données lorsqu’elle est disponible. L’évaluation porte sur les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale. Lorsqu’une exécution précédente est sélectionnée, le verdict principal utilise toujours la référence de l’ensemble de données et un résultat distinct indique si la réponse actuelle s’est améliorée, a régressé ou est demeurée inchangée.",
       "expertScorerInfo": "L'évaluateur expert nécessite une réponse de référence provenant de l'ensemble de données ou d'une exécution de comparaison. Utilisez un ensemble de données de questions et réponses avec une colonne referenceAnswer, ou une exécution de comparaison.",
       "expertScorerBaselineHint": "L’évaluateur expert utilisera la réponse de référence de l’ensemble de données pour la note de qualité principale et comparera la réponse actuelle à l’exécution de référence sélectionnée pour mesurer la dérive.",
       "baselineOverridesReference": "Avertissement : cet ensemble de données contient une colonne de réponse de référence, mais les réponses de l'exécution de référence sélectionnée la remplaceront comme référence de comparaison pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non par rapport à la réponse de référence de l'ensemble de données. Choisissez « Aucune exécution de référence » pour comparer à la réponse de référence de l'ensemble de données.",
+      "analyzerRules": {
+        "headers": {
+          "setup": "Configuration de l’exécution",
+          "comparison": "Éléments comparés",
+          "flagged": "Éléments pouvant être signalés"
+        },
+        "no-analyzer": {
+          "title": "Règles sans notation",
+          "rows": {
+            "always": {
+              "setup": "Toute configuration",
+              "comparison": "Aucune comparaison n’est effectuée.",
+              "flagged": "Rien n’est signalé; l’exécution ne fait que valider la génération et le stockage."
+            }
+          }
+        },
+        "expert-scorer": {
+        "title": "Règles de comparaison de l’évaluateur expert",
+        "rows": {
+          "datasetOnly": {
+            "setup": "Référence de l’ensemble de données, sans exécution de référence",
+            "comparison": "La réponse actuelle est comparée à la réponse de référence de l’ensemble de données.",
+            "flagged": "Idées clés manquantes, recommandations modifiées, affirmations non fondées, régressions du type de réponse, balises invalides ou qualité sensiblement inférieure."
+          },
+          "datasetAndRun": {
+            "setup": "Référence de l’ensemble de données et exécution de référence",
+            "comparison": "Verdict principal par rapport à la référence de l’ensemble de données; résultat de dérive distinct par rapport à l’exécution précédente.",
+            "flagged": "Le verdict principal peut être signalé pour des problèmes de qualité. La dérive est indiquée séparément comme améliorée, régressée, inchangée ou à vérifier."
+          }
+        }
+      },
+        "similar-answer": {
+          "title": "Règles de comparaison des réponses similaires",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "Aucune comparaison de réponses; l’exécution peut servir de référence ultérieurement.", "flagged": "Rien n’est signalé pour la comparaison." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "La réponse actuelle est comparée à la réponse de référence fournie.", "flagged": "Modifications importantes des faits, dates, nombres, critères d’admissibilité, étapes, programmes nommés, portée ou URL. Les changements de formulation inoffensifs sont ignorés." }
+          }
+        },
+        "refusal": {
+          "title": "Règles de comparaison des refus",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est vérifiée pour détecter les signaux de refus reconnus.", "flagged": "La réponse ne refuse pas lorsque l’évaluateur s’attend à un refus." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le comportement de refus actuel est comparé au comportement de refus de référence.", "flagged": "Un refus attendu est absent ou le comportement de refus change par rapport à la référence." }
+          }
+        },
+        "safety": {
+          "title": "Règles d’évaluation de la sécurité",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est évaluée pour détecter le contenu nuisible, dangereux, lié à la vie privée ou autrement restreint.", "flagged": "La réponse présente un problème de sécurité qui doit être vérifié." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le niveau de sécurité actuel et, séparément, son changement par rapport à la référence.", "flagged": "Un problème de sécurité actuel ou une régression importante de la sécurité peut être signalé." }
+          }
+        },
+        "bias-detection": {
+          "title": "Règles d’évaluation des biais",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est évaluée pour détecter les biais nuisibles.", "flagged": "La réponse est classée comme biaisée ou préoccupante." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le niveau de biais actuel et son changement par rapport au niveau de biais de référence.", "flagged": "Un problème de biais actuel ou un changement de niveau de biais; les différences de détail seulement sont ignorées." }
+          }
+        }
+      },
       "runLabelLabel": "Étiquette d'exécution (facultatif)",
       "runLabelPlaceholder": "p. ex. v2 – consignes de citation resserrées",
       "suiteView": "Grille de la suite",

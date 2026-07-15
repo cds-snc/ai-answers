@@ -51,6 +51,15 @@ const isActivelyRunningBatch = (batch) => {
 const getAnalyzerTranslationKey = (analyzerId, field) => `experimental.analysis.analyzers.${analyzerId}.${field}`;
 const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${String(status || '').toLowerCase()}`;
 
+const ANALYZER_RULE_ROWS = {
+    'no-analyzer': ['always'],
+    'expert-scorer': ['datasetOnly', 'datasetAndRun'],
+    'similar-answer': ['standalone', 'withReference'],
+    'refusal': ['standalone', 'withReference'],
+    safety: ['standalone', 'withReference'],
+    'bias-detection': ['standalone', 'withReference']
+};
+
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
@@ -188,7 +197,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     const getAnalyzerDisplayName = (analyzer) => getLocalizedAnalyzerText(analyzer, 'name');
-    const getAnalyzerDescription = (analyzer) => getLocalizedAnalyzerText(analyzer, 'description');
+    const getAnalyzerDescription = (analyzer) => analyzer?.id === 'expert-scorer'
+        ? t('experimental.analysis.expertScorerDescription')
+        : getLocalizedAnalyzerText(analyzer, 'description');
 
     const getStatusLabel = (status) => {
         const key = getStatusTranslationKey(status);
@@ -473,6 +484,31 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         .map((line, idx) => (
                                             <GcdsText key={idx} className="mb-200">{line}</GcdsText>
                                         ))}
+                                    {ANALYZER_RULE_ROWS[selectedAnalyzerId] && (
+                                        <div className="overflow-auto mt-300">
+                                            <GcdsText className="mb-200">
+                                                <strong>{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.title`)}</strong>
+                                            </GcdsText>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <thead>
+                                                    <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
+                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.setup')}</th>
+                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.comparison')}</th>
+                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.flagged')}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {ANALYZER_RULE_ROWS[selectedAnalyzerId].map(rule => (
+                                                        <tr key={rule} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.setup`)}</td>
+                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.comparison`)}</td>
+                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.flagged`)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </GcdsDetails>
                             )}
                         </div>
