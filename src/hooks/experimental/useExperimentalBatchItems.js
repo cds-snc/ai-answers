@@ -23,7 +23,8 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // null = list view; otherwise index into the current page's items
+    // null = list view; otherwise index into the flattened items for the
+    // selected chat group on the current page.
     const [selectedIndex, setSelectedIndex] = useState(null);
     // 'first' | 'last' — where to land after a page change triggered by next/prev
     const pendingSelectRef = useRef(null);
@@ -73,6 +74,13 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
 
     const selectItem = (index) => setSelectedIndex(index);
 
+    const selectedGroupIndex = selectedIndex === null
+        ? null
+        : groups.findIndex(group => group.items.some(item => item === items[selectedIndex] || item._id === items[selectedIndex]?._id));
+    const selectedGroup = selectedGroupIndex === null || selectedGroupIndex < 0
+        ? null
+        : groups[selectedGroupIndex];
+
     // Leaving the detail view also drops the deep-link row filter so the
     // full list is shown, not just one question's trials.
     const backToList = () => {
@@ -83,19 +91,21 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
         }
     };
 
-    const positionInFilter = selectedIndex === null
+    const positionInFilter = selectedGroupIndex === null || selectedGroupIndex < 0
         ? null
-        : (pagination.page - 1) * pagination.limit + selectedIndex + 1;
+        : (pagination.page - 1) * pagination.limit + selectedGroupIndex + 1;
 
-    const hasNext = selectedIndex !== null
-        && (selectedIndex < items.length - 1 || pagination.page < pagination.pages);
-    const hasPrev = selectedIndex !== null
-        && (selectedIndex > 0 || pagination.page > 1);
+    const hasNext = selectedGroupIndex !== null
+        && (selectedGroupIndex < groups.length - 1 || pagination.page < pagination.pages);
+    const hasPrev = selectedGroupIndex !== null
+        && (selectedGroupIndex > 0 || pagination.page > 1);
 
     const goNext = () => {
         if (!hasNext) return;
-        if (selectedIndex < items.length - 1) {
-            setSelectedIndex(selectedIndex + 1);
+        if (selectedGroupIndex < groups.length - 1) {
+            const nextGroupStart = groups.slice(0, selectedGroupIndex + 1)
+                .reduce((count, group) => count + group.items.length, 0);
+            setSelectedIndex(nextGroupStart);
         } else {
             pendingSelectRef.current = 'first';
             setPage(pagination.page + 1);
@@ -104,8 +114,11 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
 
     const goPrev = () => {
         if (!hasPrev) return;
-        if (selectedIndex > 0) {
-            setSelectedIndex(selectedIndex - 1);
+        if (selectedGroupIndex > 0) {
+            const previousGroup = groups[selectedGroupIndex - 1];
+            const previousGroupStart = groups.slice(0, selectedGroupIndex - 1)
+                .reduce((count, group) => count + group.items.length, 0);
+            setSelectedIndex(previousGroupStart);
         } else {
             pendingSelectRef.current = 'last';
             setPage(pagination.page - 1);
@@ -127,6 +140,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
         reload: load,
         selectedIndex,
         selectedItem: selectedIndex === null ? null : items[selectedIndex],
+        selectedChatItems: selectedGroup?.items || [],
         positionInFilter,
         selectItem,
         backToList,

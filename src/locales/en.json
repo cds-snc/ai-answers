@@ -2005,6 +2005,10 @@
         "skipped": "Skipped"
       },
       "detail": {
+        "chat": "Chat",
+        "interaction": "Interaction",
+        "simpleView": "Simple view",
+        "detailedView": "Detailed view",
         "backToList": "Back to list",
         "previous": "Previous",
         "next": "Next",

@@ -39,6 +39,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         error,
         selectedIndex,
         selectedItem,
+        selectedChatItems,
         positionInFilter,
         selectItem,
         backToList,
@@ -113,9 +114,10 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
             {selectedIndex !== null ? (
                 <BatchItemDetail
                     item={selectedItem}
+                    chatItems={selectedChatItems}
                     lang={lang}
                     position={positionInFilter}
-                    totalInFilter={pagination.totalItems || pagination.total}
+                    totalInFilter={pagination.total}
                     trialsCount={batch?.config?.trials || 1}
                     hasPrev={hasPrev}
                     hasNext={hasNext}

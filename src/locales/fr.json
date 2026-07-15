@@ -2005,6 +2005,10 @@
         "skipped": "Ignoré"
       },
       "detail": {
+        "chat": "Clavardage",
+        "interaction": "Interaction",
+        "simpleView": "Vue simple",
+        "detailedView": "Vue détaillée",
         "backToList": "Retour à la liste",
         "previous": "Précédent",
         "next": "Suivant",
