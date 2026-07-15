@@ -15,7 +15,7 @@ import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
-import { withCanadaCaPronunciation } from "../utils/pronounceCanadaCa.js";
+import { withCanadaCaPronunciation, canadaCaAriaLabel } from "../utils/pronounceCanadaCa.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -194,12 +194,22 @@ const HomePage = ({ lang = "en" }) => {
     return <OutageComponent lang={lang} />;
   }
 
+  const subtitleAriaLabel = canadaCaAriaLabel(t("homepage.subtitle"), lang);
+  const termsLinkAriaLabel = canadaCaAriaLabel(t("homepage.privacy.termsLink"), lang);
+
   return (
     <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
-        <h2 className="homepage-subtitle mt-400">
-          {withCanadaCaPronunciation(t("homepage.subtitle"), lang)}
+        <h2
+          className="homepage-subtitle mt-400"
+          aria-label={subtitleAriaLabel || undefined}
+        >
+          {subtitleAriaLabel ? (
+            <span aria-hidden="true">{t("homepage.subtitle")}</span>
+          ) : (
+            t("homepage.subtitle")
+          )}
         </h2>
         <GcdsText className="mb-200">
           {withCanadaCaPronunciation(t("homepage.intro.researchOnly"), lang)}
@@ -220,8 +230,13 @@ const HomePage = ({ lang = "en" }) => {
                   ? "https://www.canada.ca/fr/transparence/avis.html"
                   : "https://www.canada.ca/en/transparency/terms.html"
               }
+              aria-label={termsLinkAriaLabel || undefined}
             >
-              {withCanadaCaPronunciation(t("homepage.privacy.termsLink"), lang)}
+              {termsLinkAriaLabel ? (
+                <span aria-hidden="true">{t("homepage.privacy.termsLink")}</span>
+              ) : (
+                t("homepage.privacy.termsLink")
+              )}
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>

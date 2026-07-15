@@ -11,7 +11,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
-import { withCanadaCaPronunciation } from '../../utils/pronounceCanadaCa.js';
+import { withCanadaCaPronunciation, canadaCaAriaLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
@@ -373,6 +373,11 @@ const ChatInterface = ({
   };
 
   const inputCopy = getInputCopy();
+  // The <label for="message"> below is the accessible-name source for the
+  // autofocused textarea (see the mount-time focus effect above) — its name
+  // must stay one atomic string, so it uses the aria-label pattern rather
+  // than withCanadaCaPronunciation's inline aria-hidden/sr-only spans.
+  const inputCopyAriaLabel = canadaCaAriaLabel(inputCopy, lang);
 
   // A readable department/page label for screen readers, instead of the
   // visual "domain/.../file.html" truncation (its literal dots and slashes
@@ -825,8 +830,12 @@ const ChatInterface = ({
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
-                <label htmlFor="message">
-                  {withCanadaCaPronunciation(inputCopy, lang)}
+                <label htmlFor="message" aria-label={inputCopyAriaLabel || undefined}>
+                  {inputCopyAriaLabel ? (
+                    <span aria-hidden="true">{inputCopy}</span>
+                  ) : (
+                    inputCopy
+                  )}
                 </label>
                 <span className="hint-text" id="chat-input-hint">
                   <img

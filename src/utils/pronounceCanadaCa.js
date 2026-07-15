@@ -40,3 +40,18 @@ export function withCanadaCaPronunciation(text, lang = 'en') {
   if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
   return nodes;
 }
+
+// For elements whose accessible name must stay one atomic string — headings
+// and links — computing the name from mixed inline content (visible text +
+// an out-of-flow .sr-only span + aria-hidden span, as withCanadaCaPronunciation
+// produces) can get exposed as separate accessible-tree nodes instead of one
+// flat name, because .sr-only relies on position:absolute to hide visually.
+// The safe pattern is: put the fully-substituted spoken string in aria-label
+// on the container, and hide the entire visible rendering behind one
+// aria-hidden span, so there is nothing for the accessible name to be
+// computed from except the aria-label.
+export function canadaCaAriaLabel(text, lang = 'en') {
+  if (typeof text !== 'string' || !text.includes('Canada.ca')) return null;
+  const spoken = SPOKEN[lang] || SPOKEN.en;
+  return text.replace(CANADA_CA_RE, spoken);
+}
