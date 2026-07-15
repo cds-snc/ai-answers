@@ -15,6 +15,10 @@ import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
+// Bars shown in the "question volume by program" chart. Capped client-side so
+// the API's larger MAX_PROGRAMS response stays available to other views.
+const TOP_PROGRAMS_LIMIT = 10;
+
 const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
@@ -127,15 +131,23 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   ].filter(d => d.value > 0) : [];
 
   // Question volume by program (per-question task classification). Values are
-  // canonical English strings from the DB (dynamic content); only the
-  // 'unknown' sentinel bucket — unclassified or low-confidence — is translated.
-  const topProgramsData = useMemo(
-    () => (metrics.topPrograms || []).map((row) => ({
-      name: row.program === 'unknown' ? t('partnerDashboard.programs.unknown') : row.program,
-      value: row.count,
-    })),
-    [metrics.topPrograms, t],
-  );
+  // canonical English strings from the DB (dynamic content). The 'unknown'
+  // sentinel bucket — unclassified or low-confidence — is pulled out of the
+  // bars and surfaced in the subtitle instead, so it doesn't dominate the axis;
+  // real programs are capped at the top N so the long single-count tail drops
+  // off. The API returns more (MAX_PROGRAMS) in case another view needs it.
+  const { topProgramsData, unclassifiedCount } = useMemo(() => {
+    const rows = metrics.topPrograms || [];
+    const unclassified = rows
+      .filter((row) => row.program === 'unknown')
+      .reduce((acc, row) => acc + (row.count || 0), 0);
+    const bars = rows
+      .filter((row) => row.program !== 'unknown')
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .slice(0, TOP_PROGRAMS_LIMIT)
+      .map((row) => ({ name: row.program, value: row.count }));
+    return { topProgramsData: bars, unclassifiedCount: unclassified };
+  }, [metrics.topPrograms]);
 
   // Top referring pages (distinct conversations / click-throughs per page).
   // Already normalized, merged and ranked server-side; scoped to the selected
@@ -320,13 +332,16 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
 
       {/* Question volume by program — ranked bar of the per-question program
-          classification. Hidden when nothing in range is classified (all
-          pre-feature data would just show one "unknown" bar). */}
-      {topProgramsData.some((d) => d.name !== t('partnerDashboard.programs.unknown')) && (
+          classification (top N). Hidden when nothing in range has a real
+          program (pre-feature data is all unclassified). The unclassified count
+          is noted in the subtitle rather than shown as a dominating bar. */}
+      {topProgramsData.length > 0 && (
         <div className="dashboard-section">
           <HBarCard
             title={t('partnerDashboard.programs.title')}
-            subtitle={t('partnerDashboard.programs.subtitle')}
+            subtitle={unclassifiedCount > 0
+              ? `${t('partnerDashboard.programs.subtitle')} ${t('partnerDashboard.programs.unclassifiedNote').replace('{count}', fmtN(unclassifiedCount))}`
+              : t('partnerDashboard.programs.subtitle')}
             data={topProgramsData}
             noDataLabel={t('partnerDashboard.charts.noData')}
             yAxisWidth={220}

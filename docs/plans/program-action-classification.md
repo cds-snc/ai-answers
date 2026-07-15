@@ -1,7 +1,13 @@
 # Per-question program & action classification
 
-**Status:** implementing (July 2026)
+**Status:** shipped (July 2026, merged to `main`). EN-first MVP per the plan below;
+FR display and the "later phases" remain outstanding.
 **Owner:** Lisa Fast
+
+Post-ship tuning of the partner "Question volume by program" card: real programs
+are capped at the top 10 (client-side; the API still returns `MAX_PROGRAMS`), and
+the `unknown`/unclassified bucket was moved out of the bars into the subtitle so
+it no longer dominates the axis.
 
 ## Problem
 
