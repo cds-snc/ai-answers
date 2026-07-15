@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.163.0](https://github.com/cds-snc/ai-answers/compare/v1.162.0...v1.163.0) (2026-07-14)
+
+
+### Features
+
+* eval analysis engine - passes tests on preview ([600525b](https://github.com/cds-snc/ai-answers/commit/600525ba044de0014c3429d94602564e9c1243c3))
+* serviceAction classification ([706d577](https://github.com/cds-snc/ai-answers/commit/706d577c7b5b9f06bb57831005c5a820ebd718d9))
+* **tunnel-scripts:** add local AWS connectivity scripts ([540e515](https://github.com/cds-snc/ai-answers/commit/540e515fa06c20ff2b881c6a5b7a314d86f87434))
+
+
+### Bug Fixes
+
+* change to programs from services ([3bf8424](https://github.com/cds-snc/ai-answers/commit/3bf842423adbf776c98e34ea24aeaaae31d309cb))
+* refine prompts re program names ([382b132](https://github.com/cds-snc/ai-answers/commit/382b132c007ea20c71246857eb9d92d7efa3f6e0))
+* soften evaluator section and add example links ([2f5c120](https://github.com/cds-snc/ai-answers/commit/2f5c120dde1e9dfe8db4de80b85d975ec92bc826))
+
 ## [1.162.0](https://github.com/cds-snc/ai-answers/compare/v1.161.0...v1.162.0) (2026-07-13)
 
 
