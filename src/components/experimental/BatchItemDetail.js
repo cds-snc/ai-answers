@@ -158,6 +158,7 @@ export default function BatchItemDetail({
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                             <th className="p-200">{t('experimental.results.detail.interaction')}</th>
                             <th className="p-200">{t('experimental.results.table.question')}</th>
+                            {detailMode && <th className="p-200">{t('experimental.results.detail.referenceAnswer')}</th>}
                             <th className="p-200">{t('experimental.results.detail.currentAnswer')}</th>
                             <th className="p-200">{t('experimental.results.table.verdict')}</th>
                             {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
@@ -175,6 +176,11 @@ export default function BatchItemDetail({
                                 <tr key={interaction._id || index} style={{ borderBottom: '1px solid #eee', verticalAlign: 'top' }}>
                                     <td className="p-200">{index + 1}</td>
                                     <td className="p-200">{interaction.question || '—'}</td>
+                                    {detailMode && (
+                                        <td className="p-200">
+                                            {truncate(interaction.referenceAnswer || t('experimental.results.detail.noReferenceAnswer'), 180)}
+                                        </td>
+                                    )}
                                     <td className="p-200">{truncate(interaction.answer || t('experimental.results.detail.noAnswer'), 180)}</td>
                                     <td className="p-200">{t(`experimental.results.verdict.${interactionVerdict}`)}</td>
                                     {visibleAnalyzerColumns.map(({ analyzerId, field }) => (

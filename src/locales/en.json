@@ -2019,6 +2019,7 @@
         "referringUrl": "Referring URL",
         "itemError": "Processing error",
         "referenceAnswer": "Reference answer",
+        "noReferenceAnswer": "No reference answer was used.",
         "currentAnswer": "Generated answer",
         "noAnswer": "No answer was generated.",
         "legendRemoved": "Missing from generated answer",

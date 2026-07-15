@@ -2019,6 +2019,7 @@
         "referringUrl": "URL de référence",
         "itemError": "Erreur de traitement",
         "referenceAnswer": "Réponse de référence",
+        "noReferenceAnswer": "Aucune réponse de référence n’a été utilisée.",
         "currentAnswer": "Réponse générée",
         "noAnswer": "Aucune réponse n'a été générée.",
         "legendRemoved": "Absent de la réponse générée",

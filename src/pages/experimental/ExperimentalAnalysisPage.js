@@ -350,7 +350,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
+    const handleUseAsBaseline = (batch) => {
+        setBaselineBatchId(batch._id);
+
+        const analyzerId = resolveBatchAnalyzerId(batch);
+        if (analyzerId && analyzerId !== NO_ANALYZER_ID) {
+            setSelectedAnalyzerId(analyzerId);
+        }
+    };
 
     const getRunLabel = (batch) => batch?.name || `${t('experimental.analysis.batchPrefix')} ${String(batch?._id || '').slice(-6)}`;
 
@@ -738,7 +745,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                                 size="small"
                                                 buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
                                                 disabled={!!selectedAnalyzerId && !canBaseline(batch)}
-                                                onClick={() => handleUseAsBaseline(batch._id)}
+                                                onClick={() => handleUseAsBaseline(batch)}
                                             >
                                                 {baselineBatchId === batch._id
                                                     ? t('experimental.analysis.baselineSelected')
