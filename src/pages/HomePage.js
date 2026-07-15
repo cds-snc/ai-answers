@@ -13,7 +13,7 @@ import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
-import { withCanadaCaPronunciation, withCanadaCaPronunciationBlock, CanadaCaAccessibleLabel } from "../utils/pronounceCanadaCa.js";
+import { CanadaCaAccessibleLabel } from "../utils/pronounceCanadaCa.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -202,9 +202,7 @@ const HomePage = ({ lang = "en" }) => {
           text={t("homepage.subtitle")}
           lang={lang}
         />
-        <p className="mb-200">
-          {withCanadaCaPronunciation(t("homepage.intro.researchOnly"), lang)}
-        </p>
+        <CanadaCaAccessibleLabel as="p" className="mb-200" text={t("homepage.intro.researchOnly")} lang={lang} />
         <GcdsDetails
           detailsTitle={t("homepage.privacy.title")}
           className="mb-400"
@@ -255,7 +253,7 @@ const HomePage = ({ lang = "en" }) => {
       {!reviewMode && (
         <div className="mb-600 container-custom">
           <p className="mb-300">
-            {withCanadaCaPronunciationBlock(t("homepage.about.builtBy"), lang)}{" "}
+            <CanadaCaAccessibleLabel as="span" text={t("homepage.about.builtBy")} lang={lang} />{" "}
             <a href={getPath('about', lang)}>
               {t("homepage.about.learnMore")}
             </a>

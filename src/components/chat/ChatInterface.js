@@ -11,7 +11,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
-import { withCanadaCaPronunciation, CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
+import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
@@ -124,21 +124,26 @@ const ChatInterface = ({
       }
     };
 
-    const tagNames = new Set(
-      Array.from(document.querySelectorAll('*'))
-        .map((el) => el.tagName.toLowerCase())
-        .filter((tag) => tag.startsWith('gcds-'))
-    );
+    // Group by tag in one pass — custom-element upgrade applies to the same
+    // DOM node reference, so there's no need to re-query per tag once we
+    // already have the elements.
+    const elementsByTag = new Map();
+    Array.from(document.querySelectorAll('*')).forEach((el) => {
+      const tag = el.tagName.toLowerCase();
+      if (!tag.startsWith('gcds-')) return;
+      if (!elementsByTag.has(tag)) elementsByTag.set(tag, []);
+      elementsByTag.get(tag).push(el);
+    });
 
-    const hydrated = tagNames.size
+    const hydrated = elementsByTag.size
       ? Promise.all(
-        Array.from(tagNames).map((tag) =>
+        Array.from(elementsByTag.entries()).map(([tag, elements]) =>
           // Wait for the tag's Stencil bundle to register before touching
           // componentOnReady — an element present in the DOM but not yet
           // upgraded won't have that method yet.
           customElements.whenDefined(tag).then(() =>
             Promise.all(
-              Array.from(document.querySelectorAll(tag))
+              elements
                 .filter((el) => typeof el.componentOnReady === 'function')
                 .map((el) => el.componentOnReady())
             )
@@ -645,15 +650,16 @@ const ChatInterface = ({
                       </p>
                       {message.searchUrl && (
                         <>
+                          <CanadaCaAccessibleLabel
+                            as="p"
+                            className="error-message"
+                            text={safeT("homepage.chat.messages.shortQueryDetails")}
+                            lang={lang}
+                          />
                           <p className="error-message">
-                            {withCanadaCaPronunciation(safeT("homepage.chat.messages.shortQueryDetails"), lang)}
-                          </p>
-                          <p className="error-message">
-                            {/* Link accessible name must stay one atomic string (see
-                                CanadaCaAccessibleLabel), so the appended search query
-                                is folded into `text` rather than rendered as a sibling
-                                node the way withCanadaCaPronunciation's inline spans
-                                would require. */}
+                            {/* Link accessible name must stay one atomic string, so the
+                                appended search query is folded into `text` rather than
+                                rendered as a separate sibling node. */}
                             <CanadaCaAccessibleLabel
                               as="a"
                               href={message.searchUrl}
@@ -901,8 +907,7 @@ const ChatInterface = ({
               <div className="field-container">
                 {/* The accessible-name source for the autofocused textarea (see the
                     mount-time focus effect above) — its name must stay one atomic
-                    string, so CanadaCaAccessibleLabel uses the aria-label pattern
-                    rather than withCanadaCaPronunciation's inline spans. */}
+                    string. */}
                 <CanadaCaAccessibleLabel as="label" htmlFor="message" text={inputCopy} lang={lang} />
                 <span className="hint-text" id="chat-input-hint">
                   <img
