@@ -568,13 +568,22 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         <strong>{t('experimental.analysis.expertScorerInfo')}</strong>
                                     </div>
                                 )}
-                                {baselineBatchId && datasetHasReferenceColumn && (
+                                {baselineBatchId && datasetHasReferenceColumn && selectedAnalyzerId !== 'expert-scorer' && (
                                     <div
                                         role="alert"
                                         className="mt-200"
                                         style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
                                     >
                                         <strong>{t('experimental.analysis.baselineOverridesReference')}</strong>
+                                    </div>
+                                )}
+                                {baselineBatchId && datasetHasReferenceColumn && selectedAnalyzerId === 'expert-scorer' && (
+                                    <div
+                                        role="alert"
+                                        className="mt-200"
+                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
+                                    >
+                                        <strong>{t('experimental.analysis.expertScorerBaselineHint')}</strong>
                                     </div>
                                 )}
                                 <GcdsText className="mt-200">

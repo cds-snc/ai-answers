@@ -218,10 +218,10 @@ class ExperimentalBatchService {
     async createBatch(batchData, itemsData) {
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
         const config = batchData.config || {};
+        const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
         let sourceDatasetType = '';
 
         if (batchData.type === 'analysis') {
-            const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
             const requestedAnalyzerIds = Array.isArray(config.analyzerIds)
                 ? config.analyzerIds.map(id => String(id || '').trim()).filter(Boolean)
                 : [];
@@ -292,6 +292,10 @@ class ExperimentalBatchService {
 
             finalItems = rows.map((r, idx) => {
                 const data = { ...r.data };
+                const datasetReferenceAnswer = pickExplicitReferenceAnswer(data);
+                if (selectedAnalyzerId === 'expert-scorer' && datasetReferenceAnswer) {
+                    data.goldenReferenceAnswer = datasetReferenceAnswer;
+                }
                 // If comparing against previous run, set referenceAnswer to the previous run's answer.
                 if (baselineByRowIndex.size > 0) {
                     // Batch items are numbered idx + 1 over the same sorted rows,
@@ -319,7 +323,6 @@ class ExperimentalBatchService {
 
         // Delegate batch-level validation to the analyzer. Each analyzer
         // owns its own requirements — the service just calls and throws.
-        const selectedAnalyzerId = resolveSelectedAnalyzerId(batchData.config || {});
         if (selectedAnalyzerId) {
             const analyzerConfig = await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId);
             if (sourceDatasetType === 'qa-pair' && analyzerConfig?.inputType === 'comparison') {
@@ -353,6 +356,7 @@ class ExperimentalBatchService {
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
                 referenceAnswer: pickExplicitReferenceAnswer(item) || '',
+                goldenReferenceAnswer: item.goldenReferenceAnswer || '',
                 referenceAnalysisResults: item.referenceAnalysisResults || {},
                 referenceMatch: item.referenceMatch,
                 referenceFlagged: item.referenceFlagged,
@@ -496,6 +500,7 @@ class ExperimentalBatchService {
                             question: item.question,
                             answer: item.answer || '',
                             referenceAnswer: item.referenceAnswer,
+                            goldenReferenceAnswer: item.goldenReferenceAnswer,
                             referenceAnalysisResults: item.referenceAnalysisResults,
                             referenceMatch: item.referenceMatch,
                             referenceFlagged: item.referenceFlagged,

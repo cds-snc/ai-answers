@@ -18,7 +18,11 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
     static inputType = 'comparison';
-    static outputColumns = ['explanation', 'verdict', 'confidence', 'flags', 'keyIdeasFound', 'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck'];
+    static outputColumns = [
+        'explanation', 'verdict', 'confidence', 'flags', 'keyIdeasFound',
+        'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck',
+        'driftStatus', 'driftExplanation'
+    ];
 
     static validateBatch(items) {
         const hasReference = Array.isArray(items)
@@ -54,14 +58,15 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
     }
 
     async analyze(input) {
-        const { question, answer, referenceAnswer, originalData } = input;
+        const { question, answer, referenceAnswer, goldenReferenceAnswer, originalData } = input;
 
         if (!referenceAnswer) {
             throw new Error('Expert scorer requires a reference answer.');
         }
 
         // 1. Pre-LLM auto-checks
-        const referenceType = this._getAnswerType(referenceAnswer);
+        const evaluationReferenceAnswer = goldenReferenceAnswer || referenceAnswer;
+        const referenceType = this._getAnswerType(evaluationReferenceAnswer);
         // Keep the response contract name stable for existing consumers.
         const answerType = this._getAnswerType(answer);
 
@@ -89,13 +94,32 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
             ? originalData.downloadedPages.map((p, i) => `PAGE ${i + 1}:\n${p}`).join('\n\n')
             : 'No downloaded page content available.';
 
-        const prompt = EXPERT_SCORER_PROMPT
+        let prompt = EXPERT_SCORER_PROMPT
             .replace('{question}', question)
-            .replace('{baselineAnswer}', referenceAnswer)
+            .replace('{baselineAnswer}', evaluationReferenceAnswer)
             .replace('{baselineAnswerType}', referenceType)
             .replace('{answer}', answer)
             .replace('{answerType}', answerType)
             .replace('{downloadedPages}', downloadedPages);
+
+        const hasRunBaseline = Boolean(goldenReferenceAnswer && referenceAnswer);
+        if (hasRunBaseline) {
+            prompt += `
+
+### DRIFT COMPARISON
+The Golden Answer above is the canonical dataset reference and must be used for the main verdict.
+The Previous Run Answer below is from the selected earlier system run. Separately assess whether the New Answer is better, worse, or unchanged compared with that previous answer.
+Do not let the previous-run comparison change the main verdict against the Golden Answer.
+
+Previous Run Answer:
+${referenceAnswer}
+
+Add this field to the JSON response:
+{
+  "driftStatus": "improved" | "regressed" | "unchanged" | "needs-review",
+  "driftExplanation": "Brief explanation of the change from the previous run"
+}`;
+        }
 
         // 3. Call LLM
         const llm = await this._getLLM();
@@ -103,6 +127,12 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
 
         try {
             const result = JSON.parse(response.content.trim().replace(/^```json/, '').replace(/```$/, ''));
+
+            if (hasRunBaseline) {
+                const drift = result.drift || {};
+                result.driftStatus = drift.status || result.driftStatus || 'needs-review';
+                result.driftExplanation = drift.explanation || result.driftExplanation || 'Drift could not be determined.';
+            }
 
             // Auto-tag needs-review for certain type changes if LLM didn't already fail it
             if (referenceType === 'normal' && answerType === 'clarifying-question' && result.verdict === 'pass') {

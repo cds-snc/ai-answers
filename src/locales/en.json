@@ -1855,6 +1855,7 @@
       "baselineHint": "Pick a previous analysis to act as the comparison reference. When selected, new runs are compared against that run's answers.",
       "referenceHint": "If no reference run is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
       "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison run. Use a question and answer dataset with a referenceAnswer column, or a comparison run.",
+      "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare the current answer with the selected reference run for drift.",
       "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference run's answers will replace it as the comparison reference for this run. Results will measure drift from that run, not against the dataset reference answer. Choose \"No reference run\" to compare against the dataset reference answer.",
       "runLabelLabel": "Run label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",

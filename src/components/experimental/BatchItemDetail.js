@@ -177,7 +177,10 @@ export default function BatchItemDetail({
                                     <td className="p-200">{index + 1}</td>
                                     <td className="p-200">{interaction.question || '—'}</td>
                                     <td className="p-200">
-                                        {truncate(interaction.referenceAnswer || t('experimental.results.detail.noReferenceAnswer'), 180)}
+                                        {truncate(
+                                            interaction.goldenReferenceAnswer || interaction.referenceAnswer || t('experimental.results.detail.noReferenceAnswer'),
+                                            180
+                                        )}
                                     </td>
                                     <td className="p-200">{truncate(interaction.answer || t('experimental.results.detail.noAnswer'), 180)}</td>
                                     <td className="p-200">{t(`experimental.results.verdict.${interactionVerdict}`)}</td>
