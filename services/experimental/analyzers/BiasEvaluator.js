@@ -85,11 +85,9 @@ In your JSON response, please include these additional fields:
                     currentLabel && referenceLabel && currentLabel !== referenceLabel
                 );
                 result.differenceFound = result.biasLevelChanged;
-                if (!result.differenceExplanation) {
-                    result.differenceExplanation = result.biasLevelChanged
-                        ? 'The bias level changed relative to the reference.'
-                        : 'The bias level did not change relative to the reference.';
-                }
+                result.differenceExplanation = result.biasLevelChanged
+                    ? (result.differenceExplanation || 'The bias level changed relative to the reference.')
+                    : 'The bias level did not change relative to the reference.';
             }
             return result;
         } catch (err) {
