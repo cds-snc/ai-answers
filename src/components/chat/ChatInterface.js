@@ -103,14 +103,41 @@ const ChatInterface = ({
     }
   };
 
+  // GCDS elements (gcds-header/gcds-footer in App.js, plus gcds-text/
+  // gcds-details/gcds-link on the homepage) are Stencil web components that
+  // hydrate asynchronously. If any are still settling when we call focus(),
+  // VoiceOver's automatic read-from-top on page load isn't interrupted and
+  // just reads straight through the textarea instead of landing on it. Wait
+  // for every gcds-* element already in the DOM to report itself hydrated
+  // (componentOnReady, the standard Stencil per-instance readiness API)
+  // before focusing, with a hard cap so a slow/broken component can't block
+  // focus indefinitely.
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (textareaRef.current) {
+    let cancelled = false;
+    let fallbackId;
+
+    const focusNow = () => {
+      if (!cancelled && textareaRef.current) {
         textareaRef.current.focus();
       }
-    }, 100);
+    };
 
-    return () => clearTimeout(timeoutId);
+    const gcdsElements = Array.from(document.querySelectorAll('*')).filter(
+      (el) => el.tagName.toLowerCase().startsWith('gcds-') && typeof el.componentOnReady === 'function'
+    );
+    const hydrated = gcdsElements.length
+      ? Promise.all(gcdsElements.map((el) => el.componentOnReady()))
+      : Promise.resolve();
+
+    Promise.race([
+      hydrated,
+      new Promise((resolve) => { fallbackId = setTimeout(resolve, 500); }),
+    ]).then(focusNow);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(fallbackId);
+    };
   }, []);
 
   // Manage focus across the loading lifecycle so screen reader users are never
@@ -430,11 +457,18 @@ const ChatInterface = ({
           liveReferringUrlBanner
         )
       )}
-      <section aria-labelledby="chat-section-heading">
-        <h2 id="chat-section-heading" className="sr-only">
-          {safeT("homepage.chat.section.heading")}
-        </h2>
-        <div className="message-list" role="log" aria-live="off" aria-labelledby="chat-section-heading">
+      <section aria-labelledby={messages.length > 0 ? "chat-section-heading" : undefined}>
+        {messages.length > 0 && (
+          <h2 id="chat-section-heading" className="sr-only">
+            {safeT("homepage.chat.section.heading")}
+          </h2>
+        )}
+        <div
+          className="message-list"
+          role="log"
+          aria-live="off"
+          aria-labelledby={messages.length > 0 ? "chat-section-heading" : undefined}
+        >
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
           // Every real question the user sent, whether it got a successful answer
@@ -824,9 +858,11 @@ const ChatInterface = ({
           <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
+      </section>
 
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
-        <div className="input-area mt-200">
+        <section aria-labelledby="chat-input-heading" className="input-area mt-200">
+          <h2 id="chat-input-heading" className="sr-only">{safeT("homepage.chat.input.heading")}</h2>
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
@@ -950,9 +986,8 @@ const ChatInterface = ({
             referringUrl={referringUrl}
             handleReferringUrlChange={handleReferringUrlChange}
           />
-        </div>
+        </section>
       )}
-      </section>
 
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (

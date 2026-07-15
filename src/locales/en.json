@@ -79,6 +79,7 @@
     "chat": {
       "chatId": "Chat ID",
       "input": {
+        "heading": "Question area",
         "initial": "Ask a Canada.ca question",
         "followUp": "Ask a follow-up question or reply",
         "hint": "Hint: Add details to make your question clear and complete.",
@@ -171,7 +172,7 @@
         "noDepartment": "None"
       },
       "section": {
-        "heading": "AI Answers conversation log"
+        "heading": "AI Answers conversation"
       }
     },
     "expertRating": {

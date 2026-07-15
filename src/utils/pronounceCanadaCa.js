@@ -55,3 +55,26 @@ export function canadaCaAriaLabel(text, lang = 'en') {
   const spoken = SPOKEN[lang] || SPOKEN.en;
   return text.replace(CANADA_CA_RE, spoken);
 }
+
+// For prose where per-match substitution leaves "Canada.ca" sitting visually
+// adjacent to unrelated surrounding words (the sr-only span takes no layout
+// space, so e.g. "Canada.ca Experience Office" reads/selects as one run even
+// though only "Canada.ca" was meant to be substituted). aria-label isn't an
+// option here either when the text is followed by a nested interactive
+// element (a link) — aria-label on the container would hide that element
+// from the accessibility tree. Instead, hide the *entire* passed-in string
+// behind one aria-hidden span and pair it with one sr-only span carrying the
+// fully-substituted phrase, so both the visible and spoken forms are each a
+// single atomic run. Use this for a whole sentence/phrase around the
+// mention, not for isolated "Canada.ca" substitution — for that, use
+// withCanadaCaPronunciation.
+export function withCanadaCaPronunciationBlock(text, lang = 'en') {
+  const spoken = canadaCaAriaLabel(text, lang);
+  if (!spoken) return text;
+  return (
+    <React.Fragment>
+      <span aria-hidden="true">{text}</span>
+      <span className="sr-only">{spoken}</span>
+    </React.Fragment>
+  );
+}

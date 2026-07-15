@@ -79,6 +79,7 @@
     "chat": {
       "chatId": "ID de chat",
       "input": {
+        "heading": "Zone de question – Réponses IA",
         "initial": "Posez une question sur Canada.ca",
         "followUp": "Posez une question de suivi ou répondez",
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
@@ -171,7 +172,7 @@
         "noDepartment": "Aucun"
       },
       "section": {
-        "heading": "Historique de la conversation – Réponses IA"
+        "heading": "Conversation – Réponses IA"
       }
     },
     "expertRating": {

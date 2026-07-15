@@ -5,8 +5,6 @@ import ChatAppContainer from "../components/chat/ChatAppContainer.js";
 import {
   GcdsContainer,
   GcdsDetails,
-  GcdsText,
-  GcdsLink,
   GcdsNotice,
 } from "@gcds-core/components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
@@ -15,7 +13,7 @@ import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
-import { withCanadaCaPronunciation, canadaCaAriaLabel } from "../utils/pronounceCanadaCa.js";
+import { withCanadaCaPronunciation, canadaCaAriaLabel, withCanadaCaPronunciationBlock } from "../utils/pronounceCanadaCa.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -38,7 +36,7 @@ class ErrorBoundary extends React.Component {
       return (
         <GcdsContainer layout="page">
           <h2>{t("homepage.errors.timeout.title")}</h2>
-          <GcdsText>{t("homepage.errors.timeout.message")}</GcdsText>
+          <p className="mb-300">{t("homepage.errors.timeout.message")}</p>
           <button
             onClick={() => window.location.reload()}
             className="gcds-button gcds-button--primary"
@@ -211,20 +209,20 @@ const HomePage = ({ lang = "en" }) => {
             t("homepage.subtitle")
           )}
         </h2>
-        <GcdsText className="mb-200">
+        <p className="mb-200">
           {withCanadaCaPronunciation(t("homepage.intro.researchOnly"), lang)}
-        </GcdsText>
+        </p>
         <GcdsDetails
           detailsTitle={t("homepage.privacy.title")}
           className="mb-400"
           tabIndex={0}
         >
-          <GcdsText>{t("homepage.privacy.storage")}</GcdsText>
-          <GcdsText>{t("homepage.privacy.disclaimer")}</GcdsText>
-          <GcdsText>{t("homepage.privacy.language")}</GcdsText>
-          <GcdsText>
+          <p className="mb-300">{t("homepage.privacy.storage")}</p>
+          <p className="mb-300">{t("homepage.privacy.disclaimer")}</p>
+          <p className="mb-300">{t("homepage.privacy.language")}</p>
+          <p className="mb-300">
             {t("homepage.privacy.terms")}{" "}
-            <GcdsLink
+            <a
               href={
                 lang === "fr"
                   ? "https://www.canada.ca/fr/transparence/avis.html"
@@ -237,8 +235,8 @@ const HomePage = ({ lang = "en" }) => {
               ) : (
                 t("homepage.privacy.termsLink")
               )}
-            </GcdsLink>
-          </GcdsText>
+            </a>
+          </p>
         </GcdsDetails>
         {showWarningNotice && (
           <GcdsNotice
@@ -247,7 +245,7 @@ const HomePage = ({ lang = "en" }) => {
             noticeTitle={t("homepage.warning.title")}
             className="mt-200"
           >
-            <GcdsText>{t("homepage.warning.message")}</GcdsText>
+            <p className="mb-300">{t("homepage.warning.message")}</p>
           </GcdsNotice>
         )}
         <ChatAppContainer
@@ -267,14 +265,12 @@ const HomePage = ({ lang = "en" }) => {
       </div>
       {!reviewMode && (
         <div className="mb-600 container-custom">
-          <GcdsText>
-            {withCanadaCaPronunciation(t("homepage.about.builtBy"), lang)}{" "}
-            <GcdsLink
-              href={getPath('about', lang)}
-            >
+          <p className="mb-300">
+            {withCanadaCaPronunciationBlock(t("homepage.about.builtBy"), lang)}{" "}
+            <a href={getPath('about', lang)}>
               {t("homepage.about.learnMore")}
-            </GcdsLink>
-          </GcdsText>
+            </a>
+          </p>
         </div>
       )}
     </ErrorBoundary>
