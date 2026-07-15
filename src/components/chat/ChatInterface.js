@@ -883,20 +883,6 @@ const ChatInterface = ({
           </div>
         )}
       </div>
-
-        {/* Accessible Scroll Down Button */}
-      <button
-        className="scroll-down-btn"
-        aria-label={safeT('homepage.scroll.ariaLabel')}
-        title={safeT('homepage.scroll.title')}
-        type="button"
-        tabIndex="-1"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
       </section>
 
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
@@ -1024,6 +1010,24 @@ const ChatInterface = ({
           />
         </section>
       )}
+
+      {/* Accessible Scroll Down Button — page-level utility (scrolls the whole
+          window toward the footer), not scoped to either section above, so it
+          lives outside both landmarks rather than nested inside the
+          conversation-log region. position:fixed in CSS means its DOM
+          location has no effect on where it renders visually. */}
+      <button
+        className="scroll-down-btn"
+        aria-label={safeT('homepage.scroll.ariaLabel')}
+        title={safeT('homepage.scroll.title')}
+        type="button"
+        tabIndex="-1"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (
