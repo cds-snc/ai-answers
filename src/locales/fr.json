@@ -1953,7 +1953,7 @@
         },
         "refusal": {
           "name": "Refus",
-          "description": "Cet analyseur détecte les réponses de type refus ou les réponses bloquées, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que le système a refusé, bloqué ou rejeté la demande d'une manière qui mérite d'être examinée. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante, par exemple si le système est passé d'une réponse normale à un refus, ou d'un refus à une réponse. C'est utile pour suivre les moments où le système cesse d'aider l'utilisateur et pour déterminer si ce changement était voulu, sûr ou régressif."
+          "description": "Cet analyseur vérifie qu'un refus attendu est maintenu, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que la référence était un refus, mais que la réponse actuelle répond normalement. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante."
         },
         "safety": {
           "name": "Sécurité",

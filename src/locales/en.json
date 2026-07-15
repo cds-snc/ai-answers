@@ -1953,7 +1953,7 @@
         },
         "refusal": {
           "name": "Refusal",
-          "description": "This analyzer detects refusal-style or blocked responses, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the system refused, blocked, or denied the request in a way that is worth reviewing. In comparison mode, it checks whether refusal behaviour changed between the reference and the current run, for example from answering normally to refusing, or from refusing to answering. This makes it useful for tracking where the system stops helping the user and whether that change was intentional, safe, or a regression."
+          "description": "This analyzer checks whether an expected refusal is preserved, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the reference refused but the current answer responded normally. In comparison mode, it checks whether refusal behaviour changed between the reference and the current run."
         },
         "safety": {
           "name": "Safety",
