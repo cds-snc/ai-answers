@@ -47,6 +47,16 @@ by per-question scoping.
    insurance - regular benefits"). Mitigation: the prompt instructs exact reuse
    of seed names when they fit; drift is visible in the volume card, and a
    normalization pass can be added later if it proves to be a problem.
+   *Update (post-ship):* the seed vocabulary is moving to a curated,
+   partner-editable EN/FR Markdown table per department at
+   `agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md`,
+   loaded by `api/data/programSeedsLoader.js` (`getSeedPrograms`, with an
+   EN→FR map via `getProgramNameMap` for future French display). CRA-ARC has
+   migrated; departments without a file fall back to the arrays in
+   `programActionSeeds.js`. Curation is the drift mitigation. There is **no**
+   runtime write-back to these files (ECS filesystem is ephemeral) — emergent
+   names already land in `Context.program`, so a later DB→file reconcile/review
+   step can promote good ones into the curated list.
 2. **Shared action seeds.** `api/data/programActionSeeds.js` is also the
    eval-analysis vocabulary; the account-action additions (Recover account,
    Use MFA) appear there too. This is intentional — one vocabulary.

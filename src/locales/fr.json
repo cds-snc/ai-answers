@@ -1387,7 +1387,7 @@
     "programs": {
       "title": "Volume de questions par programme",
       "subtitle": "Questions regroupées selon le programme gouvernemental visé par la question de l'utilisateur, calculé par question. Seules les questions posées après le lancement du marquage par programme sont classées.",
-      "unclassifiedNote": "{count} questions ne sont pas encore classées par programme."
+      "unclassifiedNote": "{count} questions non classées."
     },
     "referrals": {
       "title": "Principales pages référentes",

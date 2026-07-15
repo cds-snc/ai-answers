@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 import AgentOrchestratorService from '../agents/AgentOrchestratorService.js';
 import { createProgramActionAgent } from '../agents/AgentFactory.js';
 import programActionClassifyStrategy from '../agents/strategies/programActionClassifyStrategy.js';
-import { PROGRAM_SEEDS_BY_DEPARTMENT, ACTION_SEEDS } from '../api/data/programActionSeeds.js';
+import { ACTION_SEEDS } from '../api/data/programActionSeeds.js';
+import { getSeedPrograms } from '../api/data/programSeedsLoader.js';
 import { NON_CLASSIFIABLE_ANSWER_TYPES } from '../api/util/answerTypes.js';
 import ServerLoggingService from './ServerLoggingService.js';
 
@@ -69,7 +70,7 @@ class ProgramActionClassificationServiceClass {
                 department,
                 citationUrl,
                 referringUrl,
-                seedPrograms: PROGRAM_SEEDS_BY_DEPARTMENT[department] || [],
+                seedPrograms: getSeedPrograms(department),
                 actions: ACTION_SEEDS
             },
             createAgentFn: (agentType, cid) => createProgramActionAgent(agentType, cid),

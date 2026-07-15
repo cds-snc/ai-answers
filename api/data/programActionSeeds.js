@@ -9,34 +9,15 @@
 // as examples of the granularity wanted. Programs are grouped by department
 // abbrKey (see agents/prompts/scenarios/departments_EN.js — never invent new
 // abbrKeys); the action list is global across departments.
+//
+// MIGRATING TO PER-DEPARTMENT MARKDOWN: departments are moving to a curated,
+// partner-editable EN/FR list at
+//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md
+// loaded via programSeedsLoader.js (getSeedPrograms), which falls back to the
+// arrays below for any department without a file yet. CRA-ARC has migrated and
+// is intentionally no longer listed here — its .md is the source of truth.
 
 export const PROGRAM_SEEDS_BY_DEPARTMENT = {
-    'CRA-ARC': [
-        'CRA Account',
-        'My Account',
-        'My Business Account',
-        'Represent a Client',
-        'Authorize a Representative',
-        'Personal tax return',
-        'Canada Groceries and Essentials Benefit',
-        'Corporate tax return',
-        'Canada child benefit',
-        'Disability tax credit',
-        'First home savings account',
-        'Business Number (BN)',
-        'GST/HST',
-        'Payroll',
-        'Employer',
-        'Registered retirement savings plan (RRSP)',
-        'Registered Education Savings Plan (RESP)',
-        'Registered disability savings plan',
-        'Tax-free savings account (TFSA)',
-        'Underused Housing Tax',
-        'Canada Disability Benefit',
-        'Voluntary Disclosures',
-        'Taxpayer relief provisions',
-        'Charities'
-    ],
     'EDSC-ESDC': [
         'Canada Disability Benefit',
         'Canadian Dental Care Plan',
