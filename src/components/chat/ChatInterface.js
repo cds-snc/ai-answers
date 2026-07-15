@@ -11,10 +11,15 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
-import { withCanadaCaPronunciation, canadaCaAriaLabel } from '../../utils/pronounceCanadaCa.js';
+import { withCanadaCaPronunciation, CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
+
+// GCDS Stencil web components present on this page (gcds-header/gcds-footer
+// from App.js, plus gcds-text/gcds-details/gcds-link on the homepage) — see
+// the mount-time focus effect below.
+const GCDS_SELECTOR = 'gcds-header, gcds-footer, gcds-text, gcds-details, gcds-link';
 
 const ChatInterface = ({
   messages,
@@ -108,10 +113,9 @@ const ChatInterface = ({
   // hydrate asynchronously. If any are still settling when we call focus(),
   // VoiceOver's automatic read-from-top on page load isn't interrupted and
   // just reads straight through the textarea instead of landing on it. Wait
-  // for every gcds-* element already in the DOM to report itself hydrated
-  // (componentOnReady, the standard Stencil per-instance readiness API)
-  // before focusing, with a hard cap so a slow/broken component can't block
-  // focus indefinitely.
+  // for every known gcds-* tag to report itself hydrated (componentOnReady,
+  // the standard Stencil per-instance readiness API) before focusing, with a
+  // hard cap so a slow/broken component can't block focus indefinitely.
   useEffect(() => {
     let cancelled = false;
     let fallbackId;
@@ -122,17 +126,33 @@ const ChatInterface = ({
       }
     };
 
-    const gcdsElements = Array.from(document.querySelectorAll('*')).filter(
-      (el) => el.tagName.toLowerCase().startsWith('gcds-') && typeof el.componentOnReady === 'function'
+    const tagNames = new Set(
+      Array.from(document.querySelectorAll(GCDS_SELECTOR)).map((el) => el.tagName.toLowerCase())
     );
-    const hydrated = gcdsElements.length
-      ? Promise.all(gcdsElements.map((el) => el.componentOnReady()))
+
+    const hydrated = tagNames.size
+      ? Promise.all(
+        Array.from(tagNames).map((tag) =>
+          // Wait for the tag's Stencil bundle to register before touching
+          // componentOnReady — an element present in the DOM but not yet
+          // upgraded won't have that method yet.
+          customElements.whenDefined(tag).then(() =>
+            Promise.all(
+              Array.from(document.querySelectorAll(tag))
+                .filter((el) => typeof el.componentOnReady === 'function')
+                .map((el) => el.componentOnReady())
+            )
+          )
+        )
+      )
       : Promise.resolve();
 
+    // onRejected = focusNow too, so a rejected componentOnReady() still
+    // falls through to focusing instead of silently doing nothing.
     Promise.race([
       hydrated,
       new Promise((resolve) => { fallbackId = setTimeout(resolve, 500); }),
-    ]).then(focusNow);
+    ]).then(focusNow, focusNow);
 
     return () => {
       cancelled = true;
@@ -400,11 +420,6 @@ const ChatInterface = ({
   };
 
   const inputCopy = getInputCopy();
-  // The <label for="message"> below is the accessible-name source for the
-  // autofocused textarea (see the mount-time focus effect above) — its name
-  // must stay one atomic string, so it uses the aria-label pattern rather
-  // than withCanadaCaPronunciation's inline aria-hidden/sr-only spans.
-  const inputCopyAriaLabel = canadaCaAriaLabel(inputCopy, lang);
 
   // A readable department/page label for screen readers, instead of the
   // visual "domain/.../file.html" truncation (its literal dots and slashes
@@ -462,21 +477,6 @@ const ChatInterface = ({
           <h2 id="chat-section-heading" className="sr-only">
             {safeT("homepage.chat.section.heading")}
           </h2>
-        )}
-        {/* role="status" (not "progressbar" — this is an indeterminate
-            spinner, not a measurable value) gives a concise, atomic
-            "busy" announcement on its own, instead of relying on the
-            surrounding structure. aria-atomic ensures the whole label reads
-            as one phrase rather than being read piecemeal. */}
-        {isLoading && (
-          <div
-            ref={loadingContainerRef}
-            tabIndex={-1}
-            className="sr-only"
-            role="status"
-            aria-atomic="true"
-            aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
-          />
         )}
         <div className="message-list">
         {(() => {
@@ -805,6 +805,9 @@ const ChatInterface = ({
             <div
               key="loading"
               className="loading-container"
+              ref={loadingContainerRef}
+              tabIndex={-1}
+              aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
             >
               <div className="loading-animation"></div>
               <div className="loading-text">
@@ -873,13 +876,11 @@ const ChatInterface = ({
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
-                <label htmlFor="message" aria-label={inputCopyAriaLabel || undefined}>
-                  {inputCopyAriaLabel ? (
-                    <span aria-hidden="true">{inputCopy}</span>
-                  ) : (
-                    inputCopy
-                  )}
-                </label>
+                {/* The accessible-name source for the autofocused textarea (see the
+                    mount-time focus effect above) — its name must stay one atomic
+                    string, so CanadaCaAccessibleLabel uses the aria-label pattern
+                    rather than withCanadaCaPronunciation's inline spans. */}
+                <CanadaCaAccessibleLabel as="label" htmlFor="message" text={inputCopy} lang={lang} />
                 <span className="hint-text" id="chat-input-hint">
                   <img
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray}

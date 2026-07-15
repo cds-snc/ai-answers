@@ -13,7 +13,7 @@ import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
-import { withCanadaCaPronunciation, canadaCaAriaLabel, withCanadaCaPronunciationBlock } from "../utils/pronounceCanadaCa.js";
+import { withCanadaCaPronunciation, withCanadaCaPronunciationBlock, CanadaCaAccessibleLabel } from "../utils/pronounceCanadaCa.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -192,23 +192,16 @@ const HomePage = ({ lang = "en" }) => {
     return <OutageComponent lang={lang} />;
   }
 
-  const subtitleAriaLabel = canadaCaAriaLabel(t("homepage.subtitle"), lang);
-  const termsLinkAriaLabel = canadaCaAriaLabel(t("homepage.privacy.termsLink"), lang);
-
   return (
     <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
-        <h2
+        <CanadaCaAccessibleLabel
+          as="h2"
           className="homepage-subtitle mt-400"
-          aria-label={subtitleAriaLabel || undefined}
-        >
-          {subtitleAriaLabel ? (
-            <span aria-hidden="true">{t("homepage.subtitle")}</span>
-          ) : (
-            t("homepage.subtitle")
-          )}
-        </h2>
+          text={t("homepage.subtitle")}
+          lang={lang}
+        />
         <p className="mb-200">
           {withCanadaCaPronunciation(t("homepage.intro.researchOnly"), lang)}
         </p>
@@ -222,20 +215,16 @@ const HomePage = ({ lang = "en" }) => {
           <p className="mb-300">{t("homepage.privacy.language")}</p>
           <p className="mb-300">
             {t("homepage.privacy.terms")}{" "}
-            <a
+            <CanadaCaAccessibleLabel
+              as="a"
               href={
                 lang === "fr"
                   ? "https://www.canada.ca/fr/transparence/avis.html"
                   : "https://www.canada.ca/en/transparency/terms.html"
               }
-              aria-label={termsLinkAriaLabel || undefined}
-            >
-              {termsLinkAriaLabel ? (
-                <span aria-hidden="true">{t("homepage.privacy.termsLink")}</span>
-              ) : (
-                t("homepage.privacy.termsLink")
-              )}
-            </a>
+              text={t("homepage.privacy.termsLink")}
+              lang={lang}
+            />
           </p>
         </GcdsDetails>
         {showWarningNotice && (

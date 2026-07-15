@@ -16,6 +16,13 @@ const STRINGS = {
   },
 };
 
+// The localized word for "." when spoken aloud — exported so other modules
+// (e.g. pronounceCanadaCa.js) building their own spoken-form substitutions
+// reuse this translation instead of keeping an independent copy.
+export function spokenDot(lang = 'en') {
+  return (STRINGS[lang] || STRINGS.en).dot;
+}
+
 // Path segments that carry no meaningful label information.
 // Locale prefixes (en/fr/eng/fra) are included here.
 // After stripping file extensions, SharePoint/Drupal defaults (default, index)

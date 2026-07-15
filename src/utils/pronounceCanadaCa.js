@@ -1,12 +1,14 @@
 import React from 'react';
+import { spokenDot } from './citationAriaLabel.js';
 
 // Screen readers vary in how they expand "Canada.ca" — some spell it out,
 // some read the period as "point". Splitting it into a hidden visible span
 // plus a sr-only phonetic span makes every screen reader say the same thing.
-const SPOKEN = {
-  en: 'Canada dot CA',
-  fr: 'Canada point CA',
-};
+// The "dot"/"point" word itself comes from citationAriaLabel.js's spokenDot()
+// so the two files can't drift on the same translation.
+function spokenCanadaCa(lang) {
+  return `Canada ${spokenDot(lang)} CA`;
+}
 
 // Matches "Canada.ca" as a bare brand mention, not as part of a URL/hostname
 // (e.g. "www.canada.ca", "https://canada.ca/en/...") — those already read
@@ -21,7 +23,7 @@ const CANADA_CA_RE = /(?<!www\.)(?<!:\/\/)Canada\.ca(?!\/)/g;
 // or contains no qualifying match.
 export function withCanadaCaPronunciation(text, lang = 'en') {
   if (typeof text !== 'string' || !text.includes('Canada.ca')) return text;
-  const spoken = SPOKEN[lang] || SPOKEN.en;
+  const spoken = spokenCanadaCa(lang);
 
   const nodes = [];
   let lastIndex = 0;
@@ -31,7 +33,7 @@ export function withCanadaCaPronunciation(text, lang = 'en') {
     nodes.push(
       <React.Fragment key={`canada-ca-${key++}`}>
         <span aria-hidden="true">Canada.ca</span>
-        <span className="sr-only">{spoken}</span>
+        <span className="sr-only" lang={lang}>{spoken}</span>
       </React.Fragment>
     );
     lastIndex = match.index + match[0].length;
@@ -52,7 +54,7 @@ export function withCanadaCaPronunciation(text, lang = 'en') {
 // computed from except the aria-label.
 export function canadaCaAriaLabel(text, lang = 'en') {
   if (typeof text !== 'string' || !text.includes('Canada.ca')) return null;
-  const spoken = SPOKEN[lang] || SPOKEN.en;
+  const spoken = spokenCanadaCa(lang);
   return text.replace(CANADA_CA_RE, spoken);
 }
 
@@ -74,7 +76,22 @@ export function withCanadaCaPronunciationBlock(text, lang = 'en') {
   return (
     <React.Fragment>
       <span aria-hidden="true">{text}</span>
-      <span className="sr-only">{spoken}</span>
+      <span className="sr-only" lang={lang}>{spoken}</span>
     </React.Fragment>
+  );
+}
+
+// Shared implementation of the canadaCaAriaLabel atomic-name pattern (see the
+// comment above canadaCaAriaLabel) for elements whose accessible name is a
+// literal aria-label rather than derived from mixed content — headings,
+// labels, links. Renders as `as` (default 'span'), forwarding any other
+// props (className, href, htmlFor, ...) to it. Centralizes the
+// aria-label/aria-hidden wiring so call sites don't each re-derive it.
+export function CanadaCaAccessibleLabel({ as: As = 'span', text, lang = 'en', ...rest }) {
+  const ariaLabel = canadaCaAriaLabel(text, lang);
+  return (
+    <As aria-label={ariaLabel || undefined} {...rest}>
+      {ariaLabel ? <span aria-hidden="true">{text}</span> : text}
+    </As>
   );
 }

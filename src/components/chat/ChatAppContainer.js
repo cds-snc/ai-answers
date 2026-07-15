@@ -13,7 +13,6 @@ import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
-import { withCanadaCaPronunciation } from '../../utils/pronounceCanadaCa.js';
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -109,8 +108,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
   const [errorAlert, setErrorAlert] = useState('');
   const userLeftChatRef = useRef(false);
-  const hintTimerRef = useRef(null);
-  const statusTimersRef = useRef([]);
+  const stillWorkingTimerRef = useRef(null);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -179,45 +177,27 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     return () => chatEl.removeEventListener('focusout', handleFocusOut);
   }, [isLoading]);
 
-  // Timed loading announcements while in moderatingQuestion phase:
-  // 1s  — hint text
-  // 5s  — "Building context..."          (buildingContext)
-  // 8s  — "Generating answer..."         (generatingAnswer)
-  // 12s — "Still generating answer..."   (thinkingMore)
-  // All timers are cancelled if status advances or loading ends.
+  // Single reassurance cue for a slow response, instead of narrating every
+  // internal processing stage (searching, building context, verifying
+  // citation, ...) as it happens — those are implementation detail, not
+  // something a waiting user needs read out one by one, and real backend
+  // progress arrives too fast/unevenly to map onto a fixed announcement
+  // schedule anyway. The initial "Moderating your question" cue is handled
+  // separately (ChatInterface's mount-of-loading-container focus). If the
+  // request is still going after ~10s, announce once so screen reader users
+  // know nothing has stalled. displayStatus itself is unrelated to
+  // announcements now — it only drives the visible status text sighted
+  // users see (see processNextStatus/updateStatusWithTimer below).
   useEffect(() => {
-    const clearAll = () => {
-      statusTimersRef.current.forEach(id => clearTimeout(id));
-      statusTimersRef.current = [];
-      if (hintTimerRef.current) {
-        clearTimeout(hintTimerRef.current);
-        hintTimerRef.current = null;
-      }
-    };
-
-    if (!isLoading || displayStatus !== 'moderatingQuestion') {
-      clearAll();
+    if (!isLoading) {
+      clearTimeout(stillWorkingTimerRef.current);
       return;
     }
-
-    hintTimerRef.current = setTimeout(() => {
-      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
-    }, 1000);
-
-    statusTimersRef.current = [
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.buildingContext')), 5000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 12000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 17000),
-    ];
-
-    return clearAll;
-  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
-
-  // Announce other status changes immediately when they occur.
-  useEffect(() => {
-    if (!isLoading || displayStatus === 'moderatingQuestion') return;
-    announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
-  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+    stillWorkingTimerRef.current = setTimeout(() => {
+      announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore'));
+    }, 10000);
+    return () => clearTimeout(stillWorkingTimerRef.current);
+  }, [isLoading, safeT, announceToLiveRegion]);
 
   // Announce outcomes once loading ends.
   useEffect(() => {
@@ -732,7 +712,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           );
           return sentences.map((sentence, sentenceIndex) => (
             <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
-              {withCanadaCaPronunciation(decodeHTMLEntities(sentence), answerLang)}
+              {decodeHTMLEntities(sentence)}
             </p>
           ));
         })}
