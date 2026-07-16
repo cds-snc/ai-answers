@@ -19,6 +19,12 @@ import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
 // throttled status-announce effect in ChatAppContainer.
 const STATUS_ANNOUNCE_THROTTLE_MS = 4000;
 
+// Minimum gap since the last status announcement (real or fallback) before
+// the "still working" reassurance fires — see the fallback effect below,
+// which shares this clock with the throttled effect above so the two can't
+// land back to back.
+const STILL_WORKING_INTERVAL_MS = 6000;
+
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -229,17 +235,32 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     return () => clearTimeout(pendingStatusAnnounceTimeoutRef.current);
   }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
 
-  // Fallback reassurance if the request is still going after ~6s with no
-  // further status change to announce (e.g. stuck on one real backend stage
-  // the whole time, so the throttled effect above never fires again).
+  // Fallback reassurance if the request goes quiet for a while — shares the
+  // same clock (lastStatusAnnounceTimeRef) the throttled effect above writes
+  // to on every real announcement, instead of an independent fixed timer, so
+  // the two can't fire back to back. Each check either announces (if nothing
+  // else has been said in the last STILL_WORKING_INTERVAL_MS) or reschedules
+  // itself for whenever that window will next be up — so a real announcement
+  // always pushes the fallback back out, and a long-running request still
+  // gets occasional reassurance without ever duplicating a recent one.
   useEffect(() => {
     if (!isLoading) {
       clearTimeout(stillWorkingTimerRef.current);
       return;
     }
-    stillWorkingTimerRef.current = setTimeout(() => {
-      announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore'));
-    }, 6000);
+
+    const checkAndScheduleNext = () => {
+      const elapsed = Date.now() - lastStatusAnnounceTimeRef.current;
+      if (elapsed >= STILL_WORKING_INTERVAL_MS) {
+        lastStatusAnnounceTimeRef.current = Date.now();
+        announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore'));
+        stillWorkingTimerRef.current = setTimeout(checkAndScheduleNext, STILL_WORKING_INTERVAL_MS);
+      } else {
+        stillWorkingTimerRef.current = setTimeout(checkAndScheduleNext, STILL_WORKING_INTERVAL_MS - elapsed);
+      }
+    };
+
+    stillWorkingTimerRef.current = setTimeout(checkAndScheduleNext, STILL_WORKING_INTERVAL_MS);
     return () => clearTimeout(stillWorkingTimerRef.current);
   }, [isLoading, safeT, announceToLiveRegion]);
 

@@ -293,6 +293,9 @@ const ChatInterface = ({
       });
     };
 
+    // Unreachable in practice: the button is tabIndex="-1" (deliberately
+    // mouse-only, see the JSX below), so it never receives keyboard focus
+    // and this handler never fires. Left in place in case that changes.
     const handleKeyDown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -1023,7 +1026,15 @@ const ChatInterface = ({
           window toward the footer), not scoped to either section above, so it
           lives outside both landmarks rather than nested inside the
           conversation-log region. position:fixed in CSS means its DOM
-          location has no effect on where it renders visually. */}
+          location has no effect on where it renders visually.
+
+          Deliberately mouse-only, not keyboard-operable: tabIndex="-1" keeps
+          it out of the tab order on purpose — keyboard users already reach
+          the chat area via normal tab flow, so this button isn't part of
+          their expected path. The keydown handler (Enter/Space) below and
+          the .scroll-down-btn:focus rule in chat.css are unreachable as a
+          result — known, not a bug. Revisit only if the intended use case
+          changes. */}
       <button
         className="scroll-down-btn"
         aria-label={safeT('homepage.scroll.ariaLabel')}
