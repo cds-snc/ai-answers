@@ -161,6 +161,7 @@
         "shortQueryDetails": "Try again with more details below, or use this link to search the words you entered on Canada.ca.",
         "shortQuerySearch": "Search Canada.ca for:",
         "sessionTimedOut": "Your session has timed out. Please reload the page to start a new chat.",
+        "chatRunInProgress": "You have another chat running in another tab or browser window. Please wait until it has finished before making another request.",
         "limitReachedHeading": "Limit of 3 questions reached",
         "yourQuestionLabel": "Your question",
         "responseLabel": "Response",
@@ -707,7 +708,16 @@
     "session": {
       "title": "Sessions",
       "sessionId": "Session ID",
+      "sessionType": "Session type",
+      "sessionTypes": {
+        "auth": "Authenticated session",
+        "visitor": "Fingerprint",
+        "session": "Session cookie",
+        "ip": "IP fallback",
+        "unknown": "Unknown"
+      },
       "creditsLeft": "Credits left",
+      "unlimited": "Unlimited",
       "chatId": "Chat ID",
       "lastSeen": "Last seen",
       "requests": "Requests",
@@ -1068,7 +1078,7 @@
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)",
-      "storeType": "Session store (memory | mongo)",
+      "storeType": "Session store (memory | DocumentDB | Redis)",
       "store": {
         "options": {
           "memory": "Memory (in-process)",
@@ -1079,19 +1089,18 @@
       "persistence": {
         "options": {
           "memory": "Memory (in-process)",
-          "mongo": "DocumentDB (persistent/cache)"
+          "redis": "Redis (persistent/cache)"
         }
       }
     },
     "rateLimiting": {
       "title": "Rate limiting",
       "persistence": {
-        "label": "Rate-limiter persistence (memory | mongo)"
+        "label": "Rate-limiter persistence (memory | Redis)"
       },
+      "singleAnonymousChatRunEnabled": "Limit anonymous users to one active answer at a time",
       "rateLimitCapacity": "Rate limit capacity (requests)",
-      "authenticatedRateLimitCapacity": "Authenticated rate limit capacity (requests)",
-      "rateLimitRefill": "Rate limit refill (requests per min)",
-      "authenticatedRateLimitRefill": "Authenticated rate limit refill (requests per min)"
+      "rateLimitRefill": "Rate limit refill (requests per min)"
     },
     "redaction": {
       "title": "Redaction settings",
@@ -1103,7 +1112,7 @@
       "langFrench": "Français"
     },
     "metrics": {
-      "storeType": "Chat metrics store (memory | mongo)"
+      "storeType": "Chat metrics store (memory | DocumentDB)"
     }
   },
   "outage": {

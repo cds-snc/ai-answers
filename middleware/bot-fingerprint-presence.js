@@ -9,8 +9,6 @@ const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
 // These are the chat flow endpoints called during user interactions.
 const FINGERPRINT_REQUIRED_PATHS = [
   '/api/chat/chat-graph-run',
-  '/api/chat/chat-report',
-
 ];
 
 // Explicit list of routes that are always exempt. Currently empty after chat-init removal.
@@ -24,7 +22,45 @@ function matchesPath(url, paths) {
   return paths.some(path => url.includes(path));
 }
 
-export default function botFingerprintPresence(req, res, next) {
+function hashVisitorId(visitorId) {
+  return crypto.createHmac('sha256', fingerprintPepper)
+    .update(String(visitorId)).digest('hex');
+}
+
+function saveSession(req, reason) {
+  if (!req?.session || typeof req.session.save !== 'function') {
+    return Promise.resolve(false);
+  }
+
+  const sessionId = req.sessionID || req.session.id || 'unknown';
+  console.info('[botFingerprintPresence] saving session', {
+    reason,
+    sessionId,
+    hasVisitorId: Boolean(req.session.visitorId),
+  });
+
+  return new Promise((resolve, reject) => {
+    req.session.save((err) => {
+      if (err) {
+        console.error('[botFingerprintPresence] failed to save session', {
+          reason,
+          sessionId,
+          message: err.message,
+        });
+        reject(err);
+        return;
+      }
+      console.info('[botFingerprintPresence] saved session', {
+        reason,
+        sessionId,
+        hasVisitorId: Boolean(req.session.visitorId),
+      });
+      resolve(true);
+    });
+  });
+}
+
+export default async function botFingerprintPresence(req, res, next) {
   try {
     const url = (req && (req.originalUrl || req.url || '')) + '';
 
@@ -54,14 +90,18 @@ export default function botFingerprintPresence(req, res, next) {
 
     // 5. Lazy init: If visitorId missing from session but present in body, hash and store it now
     const visitorId = req.body?.visitorId || req.body?.input?.visitorId;
+    const incomingHashedVisitorId = visitorId ? hashVisitorId(visitorId) : null;
+
+    if (req.session.visitorId && incomingHashedVisitorId && req.session.visitorId !== incomingHashedVisitorId) {
+      console.warn('[botFingerprintPresence] visitorId mismatch, allowing request to continue:', {
+        url,
+        sessionId: req.sessionID || req.session.id || 'unknown',
+      });
+    }
+
     if (!req.session.visitorId && visitorId) {
-      const hashedVisitorId = crypto.createHmac('sha256', fingerprintPepper)
-        .update(String(visitorId)).digest('hex');
-      req.session.visitorId = hashedVisitorId;
-      // Save session synchronously if possible (fire-and-forget for perf)
-      if (typeof req.session.save === 'function') {
-        req.session.save(() => { }); // non-blocking
-      }
+      req.session.visitorId = incomingHashedVisitorId;
+      await saveSession(req, 'visitorId');
     }
 
     // 6. Validate visitorId is now present in session

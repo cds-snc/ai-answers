@@ -161,6 +161,7 @@
         "shortQueryDetails": "Veuillez réessayer avec plus de détails ci-dessous, ou utilisez ce lien pour rechercher les mots que vous avez entrés sur Canada.ca.",
         "shortQuerySearch": "Rechercher sur Canada.ca :",
         "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
+        "chatRunInProgress": "Vous avez un autre clavardage en cours dans un autre onglet ou navigateur. Veuillez attendre qu'il soit terminé avant de faire une autre demande.",
         "limitReachedHeading": "Limite de 3 questions atteinte",
         "yourQuestionLabel": "Votre question",
         "responseLabel": "Réponse",
@@ -707,7 +708,16 @@
     "session": {
       "title": "Sessions",
       "sessionId": "ID de session",
+      "sessionType": "Type de session",
+      "sessionTypes": {
+        "auth": "Session authentifiée",
+        "visitor": "Empreinte",
+        "session": "Témoin de session",
+        "ip": "Repli sur l'adresse IP",
+        "unknown": "Inconnu"
+      },
       "creditsLeft": "Crédits restants",
+      "unlimited": "Illimité",
       "chatId": "ID de chat",
       "lastSeen": "Dernière activité",
       "requests": "Requêtes",
@@ -1068,7 +1078,7 @@
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
-      "storeType": "Stockage de session (mémoire | mongo)",
+      "storeType": "Stockage de session (mémoire | DocumentDB | Redis)",
       "store": {
         "options": {
           "memory": "En mémoire (volatile)",
@@ -1079,19 +1089,18 @@
       "persistence": {
         "options": {
           "memory": "Mémoire (en processus)",
-          "mongo": "DocumentDB (persistant/cache)"
+          "redis": "Redis (persistant/cache)"
         }
       }
     },
     "rateLimiting": {
       "title": "Limitation du débit",
       "persistence": {
-        "label": "Persistance du limiteur de débit (mémoire | mongo)"
+        "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
+      "singleAnonymousChatRunEnabled": "Limiter les utilisateurs anonymes à une seule réponse active à la fois",
       "rateLimitCapacity": "Capacité du quota (requêtes)",
-      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
-      "rateLimitRefill": "Recharge du quota (requêtes/min)",
-      "authenticatedRateLimitRefill": "Recharge du quota authentifié (requêtes/min)"
+      "rateLimitRefill": "Recharge du quota (requêtes/min)"
     },
     "redaction": {
       "title": "Paramètres de rédaction",
@@ -1103,7 +1112,7 @@
       "langFrench": "Français"
     },
     "metrics": {
-      "storeType": "Magasin de métriques de discussion (mémoire | mongo)"
+      "storeType": "Magasin de métriques de discussion (mémoire | DocumentDB)"
     }
   },
   "outage": {

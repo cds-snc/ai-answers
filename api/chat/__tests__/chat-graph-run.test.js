@@ -4,6 +4,7 @@ import chatGraphRunHandler, { setNdjsonHeaders, setStreamingHeaders } from '../c
 const mocks = vi.hoisted(() => ({
   settingsGet: vi.fn(),
   getGraphApp: vi.fn(),
+  recordRequest: vi.fn(),
 }));
 
 vi.mock('../../../services/SettingsService.js', () => ({
@@ -21,6 +22,13 @@ vi.mock('../../../middleware/chat-session.js', () => ({
 
 vi.mock('../../../middleware/auth.js', () => ({
   withOptionalUser: (handler) => handler,
+}));
+
+vi.mock('../../../services/ChatSessionService.js', () => ({
+  default: {
+    isManagementEnabled: vi.fn(() => true),
+    recordRequest: mocks.recordRequest,
+  },
 }));
 
 vi.mock('../../../agents/graphs/registry.js', () => ({
@@ -64,6 +72,10 @@ function createRequest() {
   return {
     method: 'POST',
     headers: {},
+    sessionID: 'session-123',
+    session: {
+      visitorId: 'visitor-hash-123',
+    },
     body: {
       graph: 'GenericGraph',
       input: {
@@ -138,6 +150,13 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(res.chunks.join('')).toContain('event: result\n');
     expect(res.chunks.join('')).toContain('"chatId":"chat-from-session"');
     expect(res.end).toHaveBeenCalled();
+    expect(mocks.recordRequest).toHaveBeenCalledWith(
+      'chat-from-session',
+      expect.objectContaining({
+        error: false,
+        errorType: null,
+      })
+    );
   });
 
   it('streams NDJSON records when chat.transport is ndjson', async () => {
@@ -168,7 +187,15 @@ describe('chatGraphRunHandler transport setting', () => {
       }),
     ]));
     expect(res.end).toHaveBeenCalled();
+    expect(mocks.recordRequest).toHaveBeenCalledWith(
+      'chat-from-session',
+      expect.objectContaining({
+        error: false,
+        errorType: null,
+      })
+    );
   });
+
 });
 
 describe('setNdjsonHeaders', () => {
